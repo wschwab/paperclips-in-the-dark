@@ -1,0 +1,8 @@
+20260719134722
+-c
+-x
+ada
+-gnatA
+-gnat2022
+-gnatc
+-gnates=/home/x/code/paperclips-in-the-dark/backend-ada/core/obj/gnatprove/724eba27.tmp

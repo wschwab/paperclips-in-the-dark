@@ -1,0 +1,9 @@
+name = "paperclips_core"
+version = "0.1.0"
+description = "SPARK-provable domain core for Paperclips in the Dark"
+authors = ["Paperclips in the Dark contributors"]
+licenses = "MIT"
+project-files = ["paperclips_core.gpr"]
+
+[[depends-on]]
+gnatprove = "16.1.0"

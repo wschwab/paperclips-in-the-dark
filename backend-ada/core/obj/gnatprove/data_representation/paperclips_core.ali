@@ -1,0 +1,20 @@
+V "GNAT Lib v16"
+A -gnatA
+A -gnat2022
+A -gnatR2js
+A -gnatws
+A -gnatx
+A -gnatis
+A -mtune=generic
+A -march=x86-64
+P ZX
+
+RN
+RV NO_IMPLEMENTATION_PRAGMAS
+
+U paperclips_core%s	paperclips_core.ads	463ecb8c NE OO PK
+
+D paperclips_core.ads	20260719132837 463ecb8c paperclips_core%s
+D system.ads		20260430083320 e2b7c99d system%s
+G a e
+

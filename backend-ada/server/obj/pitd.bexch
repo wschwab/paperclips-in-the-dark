@@ -1,0 +1,26 @@
+[GENERATED OBJECT FILE]
+b__pitd.o
+[PROJECT FILES]
+/home/x/code/paperclips-in-the-dark/backend-ada/server/paperclips_server.gpr
+20260719132837 15625cd57b053955c7fcefa95ae2ce72
+/home/x/.local/share/alire/builds/aws_21.0.0_57fddf8f/b44708f5c122bf06ab79d2545e01d159db316e31cbb67e7ba08b1922cc9c1560/install_dir/share/gpr/aws.gpr
+20260719135208 04349598ae6b6bf70086e1cdbc5f9a5a
+[BOUND OBJECT FILES]
+/home/x/code/paperclips-in-the-dark/backend-ada/server/obj/pitd_callback.o
+/home/x/code/paperclips-in-the-dark/backend-ada/server/obj/pitd.o
+[GENERATED SOURCE FILES]
+b__pitd.ads
+b__pitd.adb
+b__pitd.ali
+[RESULTING OPTIONS]
+-L/home/x/code/paperclips-in-the-dark/backend-ada/server/obj/
+-L/home/x/code/paperclips-in-the-dark/backend-ada/server/obj/
+-L/home/x/.local/share/alire/builds/aws_21.0.0_57fddf8f/b44708f5c122bf06ab79d2545e01d159db316e31cbb67e7ba08b1922cc9c1560/install_dir/lib/aws.static/
+-L/home/x/.local/share/alire/toolchains/gnat_native_16.1.0_9f74f58a/lib/gcc/x86_64-pc-linux-gnu/16.1.0/adalib/
+-static
+/home/x/.local/share/alire/toolchains/gnat_native_16.1.0_9f74f58a/lib/gcc/x86_64-pc-linux-gnu/16.1.0/adalib/libgnarl.a
+/home/x/.local/share/alire/toolchains/gnat_native_16.1.0_9f74f58a/lib/gcc/x86_64-pc-linux-gnu/16.1.0/adalib/libgnat.a
+-lrt
+-lpthread
+-lm
+-ldl

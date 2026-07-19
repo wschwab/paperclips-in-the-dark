@@ -1,0 +1,21 @@
+name = "paperclips_server"
+version = "0.1.0"
+description = "AWS HTTP server for Paperclips in the Dark"
+authors = ["Paperclips in the Dark contributors"]
+licenses = "MIT"
+project-files = ["paperclips_server.gpr"]
+executables = ["pitd"]
+
+[[depends-on]]
+aws = "21.0.0"
+
+[environment]
+PRJ_BUILD.set = "Release"
+
+[gpr-externals]
+PRJ_BUILD = ["Debug", "Release"]
+GPR_BUILD = ["debug", "production", "coverage", "profiling"]
+
+[gpr-set-externals]
+PRJ_BUILD = "Release"
+GPR_BUILD = "production"

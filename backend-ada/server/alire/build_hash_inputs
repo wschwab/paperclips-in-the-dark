@@ -1,0 +1,8 @@
+dependency:aws=21.0.0=b44708f5c122bf06ab79d2545e01d159db316e31cbb67e7ba08b1922cc9c1560
+environment:PRJ_BUILD=Release
+external:GPR_BUILD=production
+external:LIBRARY_TYPE=default
+external:PAPERCLIPS_SERVER_LIBRARY_TYPE=default
+external:PRJ_BUILD=Release
+profile:paperclips_server=DEVELOPMENT
+switches:paperclips_server=-Og,-fdata-sections,-ffunction-sections,-g,-gnatVa,-gnatW8,-gnatw.X,-gnatwa,-gnaty-d,-gnaty3,-gnatyA,-gnatyB,-gnatyI,-gnatyO,-gnatyS,-gnatya,-gnatyb,-gnatyc,-gnatye,-gnatyf,-gnatyh,-gnatyi,-gnatyk,-gnatyl,-gnatym,-gnatyn,-gnatyp,-gnatyr,-gnatyt,-gnatyu,-gnatyx
