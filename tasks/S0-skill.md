@@ -14,3 +14,4 @@ acceptance:
 Spec §13 S0 + §12 non-goals (no rulebook text reproduction).
 
 ## Log
+- 2026-07-19: A2 accepted -> S0 dispatched to GPT 5.6 Luna (codex, xhigh). Prompt: tasks/dispatch/S0-prompt.md.
