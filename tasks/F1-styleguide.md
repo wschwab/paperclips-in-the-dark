@@ -15,3 +15,4 @@ Spec §12. Frontend agents build sheets to this page; no sheet work before it
 exists.
 
 ## Log
+- 2026-07-19: dispatched to GLM 5.2 (opencode-go, pi) — human-approved Grok backup. Prompt: tasks/dispatch/F1-prompt.md. Parallel with Z1 (disjoint dirs).
