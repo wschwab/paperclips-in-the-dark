@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "status": "warning",
+  "host": "linux-x64",
+  "checks": [
+    {"name": "host", "status": "ok", "message": "linux-x64"},
+    {"name": "native-c-compiler", "status": "ok", "message": "cc (GCC) 16.1.1 20260625"},
+    {"name": "target-c-compiler", "status": "ok", "message": "0.16.0"},
+    {"name": "cross-executable-builds", "status": "ok", "message": "target-capable C compiler available for non-host executable builds"},
+    {"name": "path", "status": "warning", "message": "PATH has 3 bad or empty entries out of 19"},
+    {"name": "host-target", "status": "ok", "message": "host target is supported"},
+    {"name": "target-sdk-sysroot", "status": "ok", "message": "target-capable C compiler available for non-host linker/sysroot support"},
+    {"name": "llvm-toolchain", "status": "ok", "message": "clang can compile textual LLVM IR for this host target"},
+    {"name": ".zero-write", "status": "ok", "message": ".zero is writable"},
+    {"name": "targets", "status": "ok", "message": "run `zero targets` for the supported target list"},
+    {"name": "docs-examples", "status": "warning", "message": "docs or examples are missing from this checkout"}
+  ],
+  "targetToolchains": [
+    {"target": "darwin-arm64", "status": "ok", "message": "target-capable C compiler ready for darwin-arm64", "driverKind": "target-cc", "compiler": "target-capable C compiler", "selectionSource": "target-manifest", "targetTriple": "aarch64-macos", "linkerFlavor": "cc", "libcMode": "host-default", "requiresSysroot": false, "sysrootEnv": "", "sysrootStatus": "not-required"},
+    {"target": "darwin-x64", "status": "warning", "message": "target darwin-x64 requires sysroot mode; set ZERO_SYSROOT_X86_64_MACOS to the target SDK/sysroot", "driverKind": "target-cc", "compiler": "target-capable C compiler", "selectionSource": "target-manifest", "targetTriple": "x86_64-macos", "linkerFlavor": "cc", "libcMode": "sysroot", "requiresSysroot": true, "sysrootEnv": "ZERO_SYSROOT_X86_64_MACOS", "sysrootStatus": "missing"},
+    {"target": "linux-musl-x64", "status": "ok", "message": "target-capable C compiler ready for linux-musl-x64", "driverKind": "target-cc", "compiler": "target-capable C compiler", "selectionSource": "target-manifest", "targetTriple": "x86_64-linux-musl", "linkerFlavor": "target-cc", "libcMode": "bundled-libc", "requiresSysroot": false, "sysrootEnv": "", "sysrootStatus": "not-required"},
+    {"target": "linux-musl-arm64", "status": "ok", "message": "target-capable C compiler ready for linux-musl-arm64", "driverKind": "target-cc", "compiler": "target-capable C compiler", "selectionSource": "target-manifest", "targetTriple": "aarch64-linux-musl", "linkerFlavor": "target-cc", "libcMode": "bundled-libc", "requiresSysroot": false, "sysrootEnv": "", "sysrootStatus": "not-required"},
+    {"target": "linux-x64", "status": "ok", "message": "cc ready for linux-x64", "driverKind": "host-cc", "compiler": "cc", "selectionSource": "host-default", "targetTriple": "x86_64-linux-gnu", "linkerFlavor": "target-cc", "libcMode": "sysroot", "requiresSysroot": false, "sysrootEnv": "", "sysrootStatus": "not-required"},
+    {"target": "linux-arm64", "status": "warning", "message": "target linux-arm64 requires sysroot mode; set ZERO_SYSROOT_AARCH64_LINUX_GNU to the target SDK/sysroot", "driverKind": "target-cc", "compiler": "target-capable C compiler", "selectionSource": "target-manifest", "targetTriple": "aarch64-linux-gnu", "linkerFlavor": "target-cc", "libcMode": "sysroot", "requiresSysroot": true, "sysrootEnv": "ZERO_SYSROOT_AARCH64_LINUX_GNU", "sysrootStatus": "missing"},
+    {"target": "win32-x64.exe", "status": "warning", "message": "target win32-x64.exe requires sysroot mode; set ZERO_SYSROOT_X86_64_WINDOWS_MSVC to the target SDK/sysroot", "driverKind": "target-cc", "compiler": "target-capable C compiler", "selectionSource": "target-manifest", "targetTriple": "x86_64-windows-msvc", "linkerFlavor": "lld-link", "libcMode": "sysroot", "requiresSysroot": true, "sysrootEnv": "ZERO_SYSROOT_X86_64_WINDOWS_MSVC", "sysrootStatus": "missing"},
+    {"target": "win32-arm64.exe", "status": "warning", "message": "target win32-arm64.exe requires sysroot mode; set ZERO_SYSROOT_AARCH64_WINDOWS_MSVC to the target SDK/sysroot", "driverKind": "target-cc", "compiler": "target-capable C compiler", "selectionSource": "target-manifest", "targetTriple": "aarch64-windows-msvc", "linkerFlavor": "lld-link", "libcMode": "sysroot", "requiresSysroot": true, "sysrootEnv": "ZERO_SYSROOT_AARCH64_WINDOWS_MSVC", "sysrootStatus": "missing"}
+  ],
+  "llvmToolchain": {"status":"ready","target":"linux-x64","driverKind":"clang","selectionSource":"path","compiler":"clang","targetTriple":"x86_64-unknown-linux-gnu","nativeExecutable":true,"backendLifecycle":{"stability":"experimental","defaultEligible":false,"releaseEligible":false,"fallbackEligible":false,"supportedReleaseFamily":"direct","reason":"LLVM is explicit experimental build/run/IR only; direct emitters remain the supported release path"},"reason":"clang can compile textual LLVM IR for this host target"}
+}

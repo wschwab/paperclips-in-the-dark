@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "diagnostics": [
+    {
+      "severity": "error",
+      "code": "NAM003",
+      "message": "unknown identifier 'missing_name'",
+      "path": "./src/main.0",
+      "line": 3,
+      "column": 27,
+      "length": 1,
+      "expected": "visible local, parameter, function, or builtin",
+      "actual": "no matching visible symbol",
+      "help": "declare the name before using it",
+      "fixSafety": "requires-human-review",
+      "repair": {"id": "declare-missing-symbol", "summary": "Declare the referenced symbol, import the module that provides it, or correct the identifier spelling."},
+      "related": []
+    }
+  ],
+  "safetyFacts": {"schemaVersion":1,"profile":"release-small","profileKey":"small","coverage":"checker-mir-direct-backends","bounds":{"policy":"checked","staticDiagnostics":true,"runtimeTraps":true,"trapRuntime":"pay-as-used","optimizerElision":false,"unchecked":false},"overflow":{"policy":"literal-range-checked-runtime-unchecked","integerLiterals":"range-checked","staticValues":"range-checked","runtimeArithmetic":"unchecked-machine-wrap","unchecked":true},"initialization":{"locals":"initializer-required","fields":"explicit-or-default-required","fixedArrays":"literal-or-repeat-required","maybePayloadReads":"guard-checked","unchecked":false},"aliasing":{"mutableAliases":"diagnostic","sharedWhileMutable":"diagnostic","references":"provenance-checked"},"lifetimes":{"escapedLocalBorrow":"diagnostic","returnedLocalBorrow":"diagnostic","borrowedStdlibResults":"provenance-checked"},"ownership":{"moves":"checked","useAfterMove":"diagnostic","ownedResourceDrop":"explicit"},"spans":{"construction":"type-and-mutability-checked","indexing":"bounds-checked","slicing":"order-and-bounds-checked"},"mir":{"contracts":"verified-before-direct-emission","localLayout":true,"localIndexBounds":true,"memoryOpWidths":true,"invalidMemoryContractsBlockEmission":true},"uncheckedSurfaces":[{"surface":"C imports","policy":"externally-trusted"},{"surface":"host filesystem/process/network effects","policy":"capability-gated-not-sandboxed"}]}
+}

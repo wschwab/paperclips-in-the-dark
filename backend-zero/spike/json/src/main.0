@@ -1,0 +1,31 @@
+use lib
+
+pub fn main(world: World) -> Void raises {
+    let input: Span<u8> = "{\"name\":\"paperclips\",\"count\":42,\"ok\":true}"
+    if !std.json.validateBytes(input) {
+        check world.err.write("json validate failed\n")
+        return
+    }
+    var name_buf: [32]u8 = [0_u8; 32]
+    let name: Maybe<Span<u8>> = std.json.string(name_buf, input, "name")
+    let count: Maybe<u32> = std.json.u32(input, "count")
+    let ok: Maybe<Bool> = std.json.bool(input, "ok")
+    var count_field_buf: [24]u8 = [0_u8; 24]
+    let count_field: Maybe<Span<u8>> = std.json.writeFieldU32(count_field_buf, "count", 42_u32)
+    var out: [64]u8 = [0_u8; 64]
+    var written: Maybe<Span<u8>> = null
+    if count_field.has {
+        written = std.json.writeObject2StringField(out, "name", "paperclips", count_field.value)
+    }
+    if name.has && count.has && ok.has && ok.value && written.has && std.json.validateBytes(written.value) {
+        check world.out.write("json parse+emit ok\n")
+        check world.out.write(written.value)
+        check world.out.write("\n")
+        return
+    }
+    check world.err.write("json parse+emit failed\n")
+}
+
+test "greeting is stable" {
+    expect greeting_code() == 42
+}

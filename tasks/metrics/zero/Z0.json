@@ -1,0 +1,11 @@
+{
+  "task": "Z0",
+  "track": "zero",
+  "agent": "grok-4.5 (pi, openrouter, single-shot)",
+  "date": "2026-07-19",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 21,
+  "tokens": null,
+  "defectsCaughtBy": { "toolchain": 1, "human": 0 },
+  "notes": "Zero 0.3.4 (5b3a90a) installed via zerolang.ai/install.sh. All four feasibility bars cleared; orchestrator independently re-ran hello (ok) and http-health (curl {\"status\":\"ok\"} on :9658). Wart found: std.http.listen re-execs bare `zero` without PATH search — run.sh works around with cwd symlink; candidate for Z-track AGENTS.md. Agent-facing JSON diagnostics/fix-plan/explain confirmed present (sample-nam003-*.json). Recommendation: full-parallel. HUMAN DECISION PENDING."
+}

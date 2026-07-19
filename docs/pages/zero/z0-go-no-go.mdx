@@ -1,0 +1,451 @@
+---
+title: Z0 — Zero go / no-go
+description: Feasibility spike evidence for Track Z (zerolang.ai). Recommendation only — human decides.
+---
+
+# Z0 — Zero go / no-go
+
+**Spike date:** 2026-07-19
+**Agent:** Grok 4.5 (pi)
+**Spec refs:** PAPERCLIPS.md §1 (Track Z thesis), §10 / §10.3 (escape hatch)
+
+**Recommendation: full-parallel**
+
+Zero 0.3.4 can (a) compile and run programs, (b) parse and emit JSON,
+(c) write files atomically via tmp+rename, and (d) serve HTTP GET
+`/api/health` on a fixed port with a same-module `handle` function.
+That is enough surface to chase the OpenAPI contract as a native HTTP
+backend. The escape hatch (§10.3 stdio + `http-stdio-shim`) remains a
+valid fallback if later work hits harder walls (schema-driven pretty
+JSON of arbitrary DTOs, long-lived multi-route servers, concurrent FS),
+but Z0 does **not** force that narrowing today.
+
+Human sign-off still owns the call. Evidence below.
+
+---
+
+## Toolchain acquisition (reproducible)
+
+No Zero toolchain was present on the machine. Acquisition path that
+worked:
+
+| Item | Value |
+|---|---|
+| Language | Zerolang (agent-first, graph-native) |
+| Project URL | https://zerolang.ai |
+| Source repo | https://github.com/vercel-labs/zerolang |
+| Installer | https://zerolang.ai/install.sh |
+| Version used | **0.3.4** (git build `5b3a90a`) |
+| Host | linux-x64 (Garuda/Arch), `x86_64` |
+| Asset downloaded | `zero-linux-musl-x64` from GitHub Releases latest |
+| Install location | `~/.zero/bin/zero` (~15 MB, statically linked ELF) |
+| Checksum | installer verifies against release `CHECKSUMS.txt` |
+
+### Exact install commands
+
+```sh
+curl -fsSL https://zerolang.ai/install.sh | bash
+export PATH="$HOME/.zero/bin:$PATH"
+zero --version
+# zero 0.3.4 (build 5b3a90a)
+
+zero doctor
+zero skills          # bundled agent skills: agent, builds, diagnostics, graph, language, packages, stdlib, testing, zero
+```
+
+Installer behavior (from the script itself):
+
+1. Detect OS/arch (`Linux` + `x86_64` → default `ZERO_LINUX_FLAVOR=musl` → asset `zero-linux-musl-x64`).
+2. Download `https://github.com/vercel-labs/zerolang/releases/latest/download/zero-linux-musl-x64` (or a pinned `ZERO_VERSION=v0.3.4`).
+3. Verify SHA-256 via `CHECKSUMS.txt` from the same release.
+4. Install to `${ZERO_INSTALL_DIR:-$HOME/.zero/bin}/zero`.
+
+Pinning a version:
+
+```sh
+ZERO_VERSION=v0.3.4 curl -fsSL https://zerolang.ai/install.sh | bash
+```
+
+Alternate asset names observed on the v0.3.4 release:
+`zero-darwin-arm64`, `zero-darwin-x64`, `zero-linux-arm64`,
+`zero-linux-musl-arm64`, `zero-linux-musl-x64`, `zero-linux-x64`,
+plus Windows binaries.
+
+`zero doctor --json` on this host reported overall `warning` (PATH noise
+and missing docs/examples from the standalone binary install — expected;
+not a blocker). Host C compiler, target-capable C compiler, and
+`.zero` write access were all `ok`. Cross-compilation ready for
+`linux-musl-x64` / `linux-x64` etc.
+
+Agent-facing docs/skills: `zero skills get stdlib|diagnostics|language|graph|…`
+are **bundled inside the binary** and version-matched. Prefer those over
+web docs when they disagree.
+
+Recorded under `backend-zero/spike/toolchain-version.json` and
+`backend-zero/spike/toolchain-doctor.json`.
+
+---
+
+## Spike matrix
+
+Artifacts live under `backend-zero/spike/`. Requires
+`export PATH="$HOME/.zero/bin:$PATH"`.
+
+| Capability | Dir | Result | Notes |
+|---|---|---|---|
+| (a) hello-world compile+run | `spike/hello/` | **PASS** | `zero run` → `hello from zero` |
+| (b) JSON parse + emit | `spike/json/` | **PASS** | `std.json.validateBytes` / field decode / `writeObject2StringField` |
+| (c) atomic file write | `spike/atomic-write/` | **PASS** | `std.fs.atomicWrite(path, temp, bytes)` → tmp gone, content matches |
+| (d) HTTP GET `/api/health` | `spike/http-health/` | **PASS** (with harness) | `std.http.listen(world, 9658_u16)` + same-module `handle`; returns `{"status":"ok"}` |
+
+### How to re-run
+
+```sh
+export PATH="$HOME/.zero/bin:$PATH"
+
+cd backend-zero/spike/hello && zero run
+# hello from zero
+
+cd ../json && zero run
+# json parse+emit ok
+# {"name":"paperclips","count":42}
+
+cd ../atomic-write && zero run
+# atomic write ok
+
+cd ../http-health && ./run.sh
+# listening on http://[IP_ADDRESS]:9658
+# other terminal:
+curl -sS http://[IP_ADDRESS]:9658/api/health
+# {"status":"ok"}
+curl -sS http://[IP_ADDRESS]:9658/missing
+# {"error":"not_found"}
+```
+
+HTTP response observed:
+
+```http
+HTTP/1.1 200 OK
+content-type: application/json
+connection: close
+content-length: 15
+
+{"status":"ok"}
+```
+
+404 path:
+
+```http
+HTTP/1.1 404 Not Found
+…
+{"error":"not_found"}
+```
+
+---
+
+## What worked
+
+### Graph-first workflow is real and usable
+
+`zero init --template cli` writes `zero.toml` + `zero.graph` + `src/`.
+Agents own the graph via `zero patch` / `zero query` / `zero check --json`;
+humans review `.0` projections via `zero export` / intentional
+`zero import`. Graph patches and projection import both round-trip on
+this release.
+
+### JSON (domain DTO path)
+
+`std.json` is allocation-honest: validation and shallow field lookup are
+allocation-free over `Span<u8>`; writers fill caller-owned buffers;
+tree parse needs an explicit `FixedBufAlloc`. Enough for request bodies
+and small response objects. Spike proved parse of
+`{"name":"paperclips","count":42,"ok":true}` and emit of a two-field
+object that re-validates.
+
+**Caveat for full backend:** large / deep / pretty-printed campaign
+sheets will fight fixed stack buffers (`MEM003` appears when one
+function's locals exceed 128 KiB). Expect chunking, helper splitting, or
+explicit allocators — not Go/Python-style unbounded strings.
+
+### Filesystem
+
+`std.fs.atomicWrite(path, temp, bytes)` is a native tmp+rename helper —
+exactly the persistence pattern the file-store needs. Also available:
+`writeFile`, `readFileBytes`, `rename`, `makeDir`, `exists`, `copyFile`.
+Hosted FS is capability-gated (`std.fs.host()` / path helpers); denied on
+non-host targets with `TAR002`.
+
+Note: shipped 0.3.4 **does not** expose `std.fs.ensureDir` (docs drift vs
+`zero skills get stdlib`). Use `isDir` + `makeDir`. Skill-bundled API
+listings beat website prose.
+
+### HTTP server surface
+
+Official shape works:
+
+```zero
+pub fn main(world: World) -> Void raises {
+    check std.http.listen(world, 9658_u16)
+}
+
+fn handle(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    if std.http.requestIsGet(request, "/api/health") {
+        return std.http.writeJsonOk(response, "{\"status\":\"ok\"}")
+    }
+    return std.http.writeJsonError(response, 404_u16, "not_found")
+}
+```
+
+`handle` **must be same-module** as `main` (listen prepares a handler graph
+from the package). Routing helpers (`requestIsGet`, path params, JSON body
+bounds, CORS writers, status helpers) are substantial — closer to a small
+framework than a bare socket. Outbound `std.http.fetch` also exists (curl
+provider).
+
+Listener binds **IPv4 loopback only** on an explicit port, or auto-picks
+from 3000 upward when no port is passed. Adequate for the project's
+"single local process, trusted localhost" non-goal set (§1.1).
+
+---
+
+## What hurt / exact errors
+
+### 1. `std.http.listen` re-execs bare `zero` without PATH search
+
+Plain `zero run` in `http-health` failed:
+
+```text
+zero listen: No such file or directory
+./zero.graph:1:1 BLD002: std.http.listen could not prepare a handler graph
+  expected: zero dump writes a temporary graph artifact
+  actual: zero dump failed
+  help: run zero dump on the package to inspect graph input readiness
+```
+
+`strace` root cause:
+
+```text
+execve("zero", ["zero", "dump", "--format", "binary", "--out", "/tmp/zero-listen-…/base.gra…", "."], …)
+  = -1 ENOENT (No such file or directory)
+```
+
+It does **not** search `$PATH`. Workaround shipped in the spike:
+`backend-zero/spike/http-health/run.sh` symlinks `./zero` →
+`$HOME/.zero/bin/zero` for the run, then cleans up. Any Track Z server
+launch script must keep this hack (or put a `zero` binary in cwd) until
+upstream fixes PATH lookup.
+
+### 2. Authoring via `zero patch --replace-fn` is brittle for multi-statement bodies
+
+Multi-line bodies with nested `if` / early `return` failed to parse as
+replaceFunctionBody rows (`expected: line end`). Writing `.0` source and
+`zero import` succeeded reliably. Graph-first is the thesis, but import
+from projection is a needed escape hatch for non-trivial functions —
+document that in agent instructions.
+
+### 3. Stdlib docs vs binary skill surface
+
+Website /articles mentioned `std.fs.ensureDir`; binary 0.3.4 rejected it:
+
+```text
+./src/main.0:7:25 STD002: unknown std helper 'std.fs.ensureDir'
+  expected: known std helper
+  actual: unknown std helper
+  help: use a documented std helper name
+```
+
+Rule for Track Z agents: **`zero skills get stdlib` is authoritative** for
+the installed compiler.
+
+### 4. Fixed buffers everywhere
+
+Caller-owned `[N]u8` arrays are the memory model. Fine for health checks
+and small ops; a pretty-printed multi-KB character DTO will need design
+(arena, streaming write, or split helpers). This is a productivity tax,
+not a feasibility blocker for Z1/Z2 if scoped tightly.
+
+### 5. Pre-1.0 roughness (expected)
+
+- Template CLI still ships a dummy `greeting_code` / test; harmless noise.
+- `handle` discovered in `lib` during an earlier patch landed in the wrong
+  module and would not serve until moved beside `main`.
+- Binary install has no in-tree `examples/`; clone the GitHub repo if you
+  want upstream samples (`examples/ping-pong-api`, `examples/crm-api`).
+
+No toolchain acquisition failure. No missing HTTP/JSON/FS primitives for
+the Z0 bar.
+
+---
+
+## Agent-facing diagnostics quality (the point of Track Z)
+
+These features are real on 0.3.4 and should be wired into the orchestrator
+feedback loop (§10, §11).
+
+### JSON diagnostics — `zero check --json`
+
+Sample (induced `missing_name`; full file at
+`backend-zero/spike/sample-nam003-check.json`):
+
+```json
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "diagnostics": [
+    {
+      "severity": "error",
+      "code": "NAM003",
+      "message": "unknown identifier 'missing_name'",
+      "path": "./src/main.0",
+      "line": 3,
+      "column": 27,
+      "length": 1,
+      "expected": "visible local, parameter, function, or builtin",
+      "actual": "no matching visible symbol",
+      "help": "declare the name before using it",
+      "fixSafety": "requires-human-review",
+      "repair": {
+        "id": "declare-missing-symbol",
+        "summary": "Declare the referenced symbol, import the module that provides it, or correct the identifier spelling."
+      },
+      "related": []
+    }
+  ]
+}
+```
+
+Stable fields agents can key on: `code`, `path`/`line`/`column`,
+`expected`/`actual`, `help`, `fixSafety`, `repair.id` + `repair.summary`.
+Also attaches `safetyFacts` (bounds, overflow, ownership policies) — rich
+context for a fix loop.
+
+### Typed repair metadata — `zero fix --plan --json`
+
+Same diagnostic emitted with the repair id. Safety enum from skills:
+`format-only`, `behavior-preserving`, `api-changing`, `target-changing`,
+`requires-human-review`. Sample repair plans do not yet auto-apply
+auto-safe patches for NAM003 (correctly human-gated).
+
+### Explanations — `zero explain --json NAM003`
+
+```json
+{
+  "schemaVersion": 1,
+  "code": "NAM003",
+  "category": "name",
+  "title": "Unknown name",
+  "summary": "An identifier, type name, or CLI input such as a diagnostic code does not resolve to any visible declaration.",
+  "why": "Zero resolves every name against explicit declarations and fails with close matches instead of guessing.",
+  "repair": {
+    "id": "declare-missing-symbol",
+    "summary": "Declare the name, import the module that provides it, or fix the spelling using the close matches in the diagnostic."
+  },
+  "examples": {
+    "bad": "let total: i32 = cuont",
+    "good": "let total: i32 = count"
+  }
+}
+```
+
+### Orchestrator implication
+
+For Track Z task loops, prefer:
+
+```sh
+zero check --json
+zero fix --plan --json
+zero explain --json <code>
+```
+
+over scraping human terminal prose. That is a concrete differentiator vs
+Track A (Ada diagnostics are strong but not this JSON-shaped).
+
+---
+
+## Escape hatch (§10.3) status
+
+The existing conformance shim (`conformance/bin/http-stdio-shim.mjs` →
+`startHttpStdioShim`) speaks line-delimited JSON on stdio:
+
+- **Request line:** `{ id, method, path, headers, body }`
+- **Response line:** `{ id, status, headers?, body? }`
+
+Zero can certainly implement that protocol with `World` stdin/stdout +
+`std.json` (not spiked end-to-end here because native HTTP already
+works). **Do not force the hatch at Z0.** Keep the shim as insurance for
+Z2 if native listen proves too awkward for the full route table, or if
+the bare-`zero` re-exec issue becomes operationally intolerable in CI.
+
+---
+
+## Recommendation detail
+
+| Option | When to pick | Z0 evidence |
+|---|---|---|
+| **full-parallel** (recommended) | HTTP + JSON + FS are demonstrated | All four spikes green on 0.3.4 |
+| **escape-hatch** | HTTP impractical; still want domain-logic signal | HTTP works; hatch optional |
+| **no-go** | No toolchain or language cannot express core needs | Toolchain acquired; core needs expressible |
+
+### Recommended posture if human says "go full-parallel"
+
+1. Pin Zero **0.3.4** (or newer after a re-spike) in Track Z docs; install via official `install.sh` to `~/.zero/bin`.
+2. Author server packages with same-module `handle` + `std.http.listen(world, 9657_u16)` (project default port).
+3. Ship a launch wrapper that ensures cwd `./zero` resolves (listen PATH bug).
+4. Wire `zero check --json` / `zero fix --plan --json` into orchestrator metrics (§11).
+5. Treat `zero skills get *` as stdlib truth; don't trust web article drift.
+6. Keep C1 shim around — zero cost insurance for §10.3.
+
+### Risks to track (not blockers)
+
+- Pretty-print large JSON DTOs under fixed buffers.
+- Single-threaded listen loop semantics under conformance concurrency assumptions (suite currently sequential black-box HTTP — verify when writing Z2).
+- Upstream still pre-1.0; pin versions per task and re-doctor after upgrades.
+- Agent graph-edit accuracy is the thesis under test — measure it, don't romanticize it.
+
+---
+
+## Decision (human)
+
+- [ ] **full-parallel** — proceed Z1 domain core against native HTTP target
+- [ ] **escape-hatch** — Z1 domain core behind stdio; shim fronts HTTP
+- [ ] **no-go** — drop Track Z
+
+Record sign-off in `tasks/Z0-zero-spike.md` Log before Z1 dispatch.
+
+---
+
+## Spike file tree
+
+```text
+backend-zero/
+├── .gitignore
+├── README.md
+└── spike/
+    ├── README.md
+    ├── toolchain-version.json
+    ├── toolchain-doctor.json
+    ├── sample-nam003-check.json
+    ├── sample-nam003-explain.json
+    ├── sample-nam003-fix-plan.json
+    ├── hello/
+    │   ├── RUN.md
+    │   ├── zero.toml
+    │   ├── zero.graph
+    │   └── src/{main.0,lib.0}
+    ├── json/
+    │   ├── RUN.md
+    │   ├── zero.toml
+    │   ├── zero.graph
+    │   └── src/{main.0,lib.0}
+    ├── atomic-write/
+    │   ├── RUN.md
+    │   ├── zero.toml
+    │   ├── zero.graph
+    │   └── src/{main.0,lib.0}
+    └── http-health/
+        ├── RUN.md
+        ├── run.sh          # cwd ./zero symlink harness
+        ├── zero.toml
+        ├── zero.graph
+        └── src/{main.0,lib.0}
+```

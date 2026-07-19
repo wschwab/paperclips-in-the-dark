@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "code": "NAM003",
+  "category": "name",
+  "title": "Unknown name",
+  "summary": "An identifier, type name, or CLI input such as a diagnostic code does not resolve to any visible declaration.",
+  "why": "Zero resolves every name against explicit declarations and fails with close matches instead of guessing.",
+  "repair": {"id": "declare-missing-symbol", "summary": "Declare the name, import the module that provides it, or fix the spelling using the close matches in the diagnostic."},
+  "examples": {"bad": "let total: i32 = cuont", "good": "let total: i32 = count"}
+}

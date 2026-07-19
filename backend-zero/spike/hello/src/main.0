@@ -1,0 +1,9 @@
+use lib
+
+pub fn main(world: World) -> Void raises {
+    check world.out.write("hello from zero\n")
+}
+
+test "greeting is stable" {
+    expect (greeting_code() == 42)
+}

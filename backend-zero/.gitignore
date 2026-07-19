@@ -1,0 +1,6 @@
+# Zero local cache / build products
+**/.zero/
+# std.http.listen bare-name re-exec symlink (created by run helpers)
+**/spike/**/zero
+# optional local vendor of the compiler (~15MB) — prefer ~/.zero/bin
+toolchain/

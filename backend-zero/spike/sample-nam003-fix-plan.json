@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "diagnostics": [
+    {
+      "severity": "error",
+      "code": "NAM003",
+      "message": "unknown identifier 'missing_name'",
+      "path": "./src/main.0",
+      "line": 3,
+      "column": 27,
+      "length": 1,
+      "expected": "visible local, parameter, function, or builtin",
+      "actual": "no matching visible symbol",
+      "help": "declare the name before using it",
+      "fixSafety": "requires-human-review",
+      "repair": {"id": "declare-missing-symbol", "summary": "Declare the referenced symbol, import the module that provides it, or correct the identifier spelling."},
+      "related": []
+    }
+  ]
+}

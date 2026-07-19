@@ -1,0 +1,33 @@
+use lib
+
+pub fn main(world: World) -> Void raises {
+    let path: String = ".zero/out/atomic-target.json"
+    let temp: String = ".zero/out/atomic-target.json.tmp"
+    let payload: Span<u8> = "{\n  \"status\": \"written\"\n}\n"
+    if !std.fs.isDir(".zero/out") {
+        if !std.fs.makeDir(".zero/out") {
+            check world.err.write("makeDir failed\n")
+            return
+        }
+    }
+    if !std.fs.atomicWrite(path, temp, payload) {
+        check world.err.write("atomicWrite failed\n")
+        return
+    }
+    if std.fs.exists(temp) {
+        check world.err.write("temp path still exists after rename\n")
+        return
+    }
+    var buf: [64]u8 = [0_u8; 64]
+    let fs: Fs = std.fs.host()
+    let bytes: Maybe<Span<u8>> = std.fs.readFileBytes(fs, path, buf)
+    if bytes.has && std.mem.eql(bytes.value, payload) {
+        check world.out.write("atomic write ok\n")
+        return
+    }
+    check world.err.write("atomicWrite readback mismatch\n")
+}
+
+test "greeting is stable" {
+    expect greeting_code() == 42
+}
