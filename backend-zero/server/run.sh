@@ -10,9 +10,26 @@ if [[ ! -x "${HOME}/.zero/bin/zero" ]]; then
 fi
 ln -sfn "${HOME}/.zero/bin/zero" "${ROOT}/zero"
 cleanup() { rm -f "${ROOT}/zero"; }
-trap cleanup EXIT INT TERM
+child_pid=""
+stop_child() {
+  cleanup
+  if [[ -n "${child_pid}" ]]; then
+    kill "${child_pid}" 2>/dev/null || true
+  fi
+  exit 130
+}
+trap cleanup EXIT
+trap stop_child INT TERM
 # optional: wipe data for clean conformance run when PITD_RESET=1
 if [[ "${PITD_RESET:-}" == "1" ]]; then
   rm -rf "${ROOT}/campaign-data"
 fi
-exec zero run "$@"
+set +e
+zero run "$@" &
+child_pid=$!
+wait "${child_pid}"
+status=$?
+child_pid=""
+set -e
+cleanup
+exit "${status}"

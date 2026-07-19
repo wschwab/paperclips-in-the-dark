@@ -11,10 +11,18 @@ pub fn json_response(response: MutSpan<u8>, status: u16, body: Span<u8>) -> Mayb
 }
 
 pub fn op_http_status(code: Span<u8>) -> u16 {
-    if std.mem.eql(code, "NOT_FOUND") { return 404_u16 }
-    if std.mem.eql(code, "STALE_REVISION") { return 409_u16 }
-    if std.mem.eql(code, "VALIDATION") { return 400_u16 }
-    if std.mem.eql(code, "PAYLOAD_TOO_LARGE") { return 413_u16 }
+    if std.mem.eql(code, "NOT_FOUND") {
+        return 404_u16
+    }
+    if std.mem.eql(code, "STALE_REVISION") {
+        return 409_u16
+    }
+    if std.mem.eql(code, "VALIDATION") {
+        return 400_u16
+    }
+    if std.mem.eql(code, "PAYLOAD_TOO_LARGE") {
+        return 413_u16
+    }
     // domain errors still 200 per OpenAPI OpResult note for typed failures unless listed
     return 200_u16
 }
@@ -33,7 +41,9 @@ fn path_seg(request: Span<u8>, i: usize) -> Maybe<Span<u8>> {
 
 fn startswith_api(request: Span<u8>) -> Bool {
     let p0: Maybe<Span<u8>> = path_seg(request, 0)
-    if !p0.has { return false }
+    if !p0.has {
+        return false
+    }
     return std.mem.eql(p0.value, "api")
 }
 
@@ -46,14 +56,27 @@ pub fn route(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
     // /api/health
     if std.http.requestIsGet(request, "/api/health") {
         var buf: [192]u8 = [0_u8; 192]
-        var v: Vec = jb_init(buf)
-        if !jb_begin_obj(&mut v) { return null }
-        if !jb_string_field(&mut v, false, "status", "ok") { return null }
-        if !jb_string_field(&mut v, true, "implementation", "zero") { return null }
-        if !jb_string_field(&mut v, true, "version", impl_version()) { return null }
-        if !jb_string_field(&mut v, true, "dataDir", data_dir()) { return null }
-        if !jb_end_obj(&mut v) { return null }
-        return json_response(response, 200_u16, jb_bytes(&v))
+        let v: MutSpan<u8> = buf
+        if !jb_init(v) { return null }
+        if !jb_begin_obj(v) {
+            return null
+        }
+        if !jb_string_field(v, false, "status", "ok") {
+            return null
+        }
+        if !jb_string_field(v, true, "implementation", "zero") {
+            return null
+        }
+        if !jb_string_field(v, true, "version", impl_version()) {
+            return null
+        }
+        if !jb_string_field(v, true, "dataDir", data_dir()) {
+            return null
+        }
+        if !jb_end_obj(v) {
+            return null
+        }
+        return json_response(response, 200_u16, jb_bytes(v))
     }
     // GET /api/campaign/roster
     if std.http.requestIsGet(request, "/api/campaign/roster") {
@@ -91,21 +114,21 @@ fn handle_create_character(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Sp
     if !stem.has || !pb.has {
         return respond_err(response, "VALIDATION", "gameStem and playbook required", "characters.create")
     }
-    let created: Maybe<Character> = character_create(stem.value, pb.value)
-    if !created.has {
+    var c: Character = character_new_empty()
+    if !character_create(stem.value, pb.value, &mut c) {
         return respond_err(response, "VALIDATION", "unknown game or playbook", "characters.create")
     }
-    var c: Character = created.value
     if !save_character(&c) {
         return respond_err(response, "VALIDATION", "persist failed", "characters.create")
     }
     var o: OpOutcome = outcome_ok("characters.create")
     var out: [3600]u8 = [0_u8; 3600]
-    var v: Vec = jb_init(out)
-    if !write_character_result(&c, &o, &mut v) {
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return null }
+    if !write_character_result(&c, &o, v) {
         return std.http.writeJsonError(response, 500_u16, "encode_failed")
     }
-    return json_response(response, 200_u16, jb_bytes(&v))
+    return json_response(response, 200_u16, jb_bytes(v))
 }
 
 fn handle_create_crew(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
@@ -117,31 +140,32 @@ fn handle_create_crew(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8
     if !stem.has || !ct.has {
         return respond_err(response, "VALIDATION", "gameStem and crewType required", "crews.create")
     }
-    let created: Maybe<Crew> = crew_create(stem.value, ct.value)
-    if !created.has {
+    var c: Crew = crew_new_empty()
+    if !crew_create(stem.value, ct.value, &mut c) {
         return respond_err(response, "VALIDATION", "unknown game or crew type", "crews.create")
     }
-    var c: Crew = created.value
     if !save_crew(&c) {
         return respond_err(response, "VALIDATION", "persist failed", "crews.create")
     }
     var o: OpOutcome = outcome_ok("crews.create")
     var out: [2200]u8 = [0_u8; 2200]
-    var v: Vec = jb_init(out)
-    if !write_crew_result(&c, &o, &mut v) {
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return null }
+    if !write_crew_result(&c, &o, v) {
         return std.http.writeJsonError(response, 500_u16, "encode_failed")
     }
-    return json_response(response, 200_u16, jb_bytes(&v))
+    return json_response(response, 200_u16, jb_bytes(v))
 }
 
 fn respond_err(response: MutSpan<u8>, code: Span<u8>, message: Span<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
     var out: [512]u8 = [0_u8; 512]
-    var v: Vec = jb_init(out)
-    if !write_error_result(code, message, op, &mut v) {
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return null }
+    if !write_error_result(code, message, op, v) {
         return std.http.writeJsonError(response, 500_u16, "encode_failed")
     }
     let status: u16 = op_http_status(code)
-    return json_response(response, status, jb_bytes(&v))
+    return json_response(response, status, jb_bytes(v))
 }
 
 fn route_characters(request: Span<u8>, response: MutSpan<u8>, n: usize) -> Maybe<Span<u8>> {
@@ -155,17 +179,17 @@ fn route_characters(request: Span<u8>, response: MutSpan<u8>, n: usize) -> Maybe
     }
     // GET /api/characters/{id}
     if n == 3 && std.http.requestMethodIs(request, "GET") {
-        let loaded: Maybe<Character> = load_character(id)
-        if !loaded.has {
+        var c: Character = character_new_empty()
+        if !load_character(id, &mut c) {
             return respond_err(response, "NOT_FOUND", "character not found", "characters.get")
         }
-        var c: Character = loaded.value
         var out: [3600]u8 = [0_u8; 3600]
-        var v: Vec = jb_init(out)
-        if !write_character_json(&c, &mut v) {
+        let v: MutSpan<u8> = out
+        if !jb_init(v) { return null }
+        if !write_character_json(&c, v) {
             return std.http.writeJsonError(response, 500_u16, "encode_failed")
         }
-        return json_response(response, 200_u16, jb_bytes(&v))
+        return json_response(response, 200_u16, jb_bytes(v))
     }
     // POST .../delete
     if n == 4 {
@@ -194,11 +218,10 @@ fn route_characters(request: Span<u8>, response: MutSpan<u8>, n: usize) -> Maybe
 }
 
 fn handle_character_op(request: Span<u8>, response: MutSpan<u8>, id: Span<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
-    let loaded: Maybe<Character> = load_character(id)
-    if !loaded.has {
+    var c: Character = character_new_empty()
+    if !load_character(id, &mut c) {
         return respond_err(response, "NOT_FOUND", "character not found", op)
     }
-    var c: Character = loaded.value
     let body: Span<u8> = body_or_empty(request)
     var outcome: OpOutcome = outcome_err("VALIDATION", "unknown op")
     if std.mem.eql(op, "stress.add") {
@@ -212,12 +235,16 @@ fn handle_character_op(request: Span<u8>, response: MutSpan<u8>, id: Span<u8>, o
     } else if std.mem.eql(op, "trauma.add") {
         var tbuf: [64]u8 = [0_u8; 64]
         let t: Maybe<Span<u8>> = std.json.string(tbuf, body, "trauma")
-        if !t.has { return respond_err(response, "VALIDATION", "trauma required", op) }
+        if !t.has {
+            return respond_err(response, "VALIDATION", "trauma required", op)
+        }
         outcome = op_trauma_add(&mut c, t.value)
     } else if std.mem.eql(op, "trauma.remove") {
         var tbuf: [64]u8 = [0_u8; 64]
         let t: Maybe<Span<u8>> = std.json.string(tbuf, body, "trauma")
-        if !t.has { return respond_err(response, "VALIDATION", "trauma required", op) }
+        if !t.has {
+            return respond_err(response, "VALIDATION", "trauma required", op)
+        }
         outcome = op_trauma_remove(&mut c, t.value)
     } else if std.mem.eql(op, "harm.add") {
         var dbuf: [64]u8 = [0_u8; 64]
@@ -343,15 +370,16 @@ fn handle_character_op(request: Span<u8>, response: MutSpan<u8>, id: Span<u8>, o
         }
     }
     var out: [3600]u8 = [0_u8; 3600]
-    var v: Vec = jb_init(out)
-    if !write_character_result(&c, &outcome, &mut v) {
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return null }
+    if !write_character_result(&c, &outcome, v) {
         return std.http.writeJsonError(response, 500_u16, "encode_failed")
     }
     var status: u16 = 200_u16
     if !outcome.ok {
         status = op_http_status(text_view(outcome.code, outcome.code_len))
     }
-    return json_response(response, status, jb_bytes(&v))
+    return json_response(response, status, jb_bytes(v))
 }
 
 fn route_crews(request: Span<u8>, response: MutSpan<u8>, n: usize) -> Maybe<Span<u8>> {
@@ -364,17 +392,17 @@ fn route_crews(request: Span<u8>, response: MutSpan<u8>, n: usize) -> Maybe<Span
         return respond_err(response, "VALIDATION", "bad id", "crews")
     }
     if n == 3 && std.http.requestMethodIs(request, "GET") {
-        let loaded: Maybe<Crew> = load_crew(id)
-        if !loaded.has {
+        var c: Crew = crew_new_empty()
+        if !load_crew(id, &mut c) {
             return respond_err(response, "NOT_FOUND", "crew not found", "crews.get")
         }
-        var c: Crew = loaded.value
         var out: [2200]u8 = [0_u8; 2200]
-        var v: Vec = jb_init(out)
-        if !write_crew_json(&c, &mut v) {
+        let v: MutSpan<u8> = out
+        if !jb_init(v) { return null }
+        if !write_crew_json(&c, v) {
             return std.http.writeJsonError(response, 500_u16, "encode_failed")
         }
-        return json_response(response, 200_u16, jb_bytes(&v))
+        return json_response(response, 200_u16, jb_bytes(v))
     }
     // POST delete
     if n == 4 {
@@ -389,21 +417,48 @@ fn route_crews(request: Span<u8>, response: MutSpan<u8>, n: usize) -> Maybe<Span
             unlink_all_members(id)
             let _d: Bool = delete_entity("crews", id)
             var out: [256]u8 = [0_u8; 256]
-            var v: Vec = jb_init(out)
-            if !jb_begin_obj(&mut v) { return null }
-            if !jb_bool_field(&mut v, false, "ok", true) { return null }
-            if !jb_comma(&mut v, true) { return null }
-            if !jb_key(&mut v, "applied") { return null }
-            if !jb_begin_obj(&mut v) { return null }
-            if !jb_string_field(&mut v, false, "op", "crews.delete") { return null }
-            if !jb_end_obj(&mut v) { return null }
-            if !jb_comma(&mut v, true) { return null }
-            if !jb_key(&mut v, "sideEffects") { return null }
-            if !jb_begin_arr(&mut v) { return null }
-            if !jb_end_arr(&mut v) { return null }
-            if !jb_null_field(&mut v, true, "error") { return null }
-            if !jb_end_obj(&mut v) { return null }
-            return json_response(response, 200_u16, jb_bytes(&v))
+            let v: MutSpan<u8> = out
+            if !jb_init(v) { return null }
+            if !jb_begin_obj(v) {
+                return null
+            }
+            if !jb_bool_field(v, false, "ok", true) {
+                return null
+            }
+            if !jb_comma(v, true) {
+                return null
+            }
+            if !jb_key(v, "applied") {
+                return null
+            }
+            if !jb_begin_obj(v) {
+                return null
+            }
+            if !jb_string_field(v, false, "op", "crews.delete") {
+                return null
+            }
+            if !jb_end_obj(v) {
+                return null
+            }
+            if !jb_comma(v, true) {
+                return null
+            }
+            if !jb_key(v, "sideEffects") {
+                return null
+            }
+            if !jb_begin_arr(v) {
+                return null
+            }
+            if !jb_end_arr(v) {
+                return null
+            }
+            if !jb_null_field(v, true, "error") {
+                return null
+            }
+            if !jb_end_obj(v) {
+                return null
+            }
+            return json_response(response, 200_u16, jb_bytes(v))
         }
     }
     if n >= 5 {
@@ -419,11 +474,10 @@ fn route_crews(request: Span<u8>, response: MutSpan<u8>, n: usize) -> Maybe<Span
 }
 
 fn handle_crew_op(request: Span<u8>, response: MutSpan<u8>, id: Span<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
-    let loaded: Maybe<Crew> = load_crew(id)
-    if !loaded.has {
+    var c: Crew = crew_new_empty()
+    if !load_crew(id, &mut c) {
         return respond_err(response, "NOT_FOUND", "crew not found", op)
     }
-    var c: Crew = loaded.value
     let body: Span<u8> = body_or_empty(request)
     var outcome: OpOutcome = outcome_err("VALIDATION", "unknown op")
     if std.mem.eql(op, "upgrade.mark") {
@@ -449,11 +503,12 @@ fn handle_crew_op(request: Span<u8>, response: MutSpan<u8>, id: Span<u8>, op: Sp
         }
     }
     var out: [2200]u8 = [0_u8; 2200]
-    var v: Vec = jb_init(out)
-    if !write_crew_result(&c, &outcome, &mut v) {
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return null }
+    if !write_crew_result(&c, &outcome, v) {
         return std.http.writeJsonError(response, 500_u16, "encode_failed")
     }
-    return json_response(response, 200_u16, jb_bytes(&v))
+    return json_response(response, 200_u16, jb_bytes(v))
 }
 
 fn unlink_all_members(crew_id: Span<u8>) -> Void {
@@ -472,9 +527,8 @@ fn unlink_all_members(crew_id: Span<u8>) -> Void {
             }
         }
         if std.mem.len(line) > 0 {
-            let loaded: Maybe<Character> = load_character(line)
-            if loaded.has {
-                var ch: Character = loaded.value
+            var ch: Character = character_new_empty()
+            if load_character(line, &mut ch) {
                 if std.mem.eql(text_view(ch.crew_id, ch.crew_id_len), crew_id) {
                     ch.crew_id_len = 0
                     ch.revision = ch.revision + 1
@@ -492,12 +546,21 @@ fn unlink_all_members(crew_id: Span<u8>) -> Void {
 
 fn handle_roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
     var out: [3800]u8 = [0_u8; 3800]
-    var v: Vec = jb_init(out)
-    if !jb_begin_obj(&mut v) { return null }
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return null }
+    if !jb_begin_obj(v) {
+        return null
+    }
     // characters summaries
-    if !jb_comma(&mut v, false) { return null }
-    if !jb_key(&mut v, "characters") { return null }
-    if !jb_begin_arr(&mut v) { return null }
+    if !jb_comma(v, false) {
+        return null
+    }
+    if !jb_key(v, "characters") {
+        return null
+    }
+    if !jb_begin_arr(v) {
+        return null
+    }
     var first: Bool = true
     var idx: [2048]u8 = [0_u8; 2048]
     let n_m: Maybe<usize> = index_bytes("characters", idx)
@@ -512,14 +575,17 @@ fn handle_roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
                 line = line[0..std.mem.len(line) - 1]
             }
             if std.mem.len(line) > 0 {
-                let loaded: Maybe<Character> = load_character(line)
-                if loaded.has {
+                var ch: Character = character_new_empty()
+                if load_character(line, &mut ch) {
                     if !first {
-                        if !jb_comma(&mut v, true) { return null }
+                        if !jb_comma(v, true) {
+                            return null
+                        }
                     }
                     first = false
-                    let ch: Character = loaded.value
-                    if !write_char_summary(&mut v, &ch) { return null }
+                    if !write_char_summary(v, &ch) {
+                        return null
+                    }
                 }
             }
             if j < n && idx[j] == 10_u8 {
@@ -529,11 +595,19 @@ fn handle_roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
         }
         }
     }
-    if !jb_end_arr(&mut v) { return null }
+    if !jb_end_arr(v) {
+        return null
+    }
     // crews
-    if !jb_comma(&mut v, true) { return null }
-    if !jb_key(&mut v, "crews") { return null }
-    if !jb_begin_arr(&mut v) { return null }
+    if !jb_comma(v, true) {
+        return null
+    }
+    if !jb_key(v, "crews") {
+        return null
+    }
+    if !jb_begin_arr(v) {
+        return null
+    }
     first = true
     var idx2: [2048]u8 = [0_u8; 2048]
     let n2_m: Maybe<usize> = index_bytes("crews", idx2)
@@ -548,14 +622,17 @@ fn handle_roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
                 line = line[0..std.mem.len(line) - 1]
             }
             if std.mem.len(line) > 0 {
-                let loaded: Maybe<Crew> = load_crew(line)
-                if loaded.has {
+                var cr: Crew = crew_new_empty()
+                if load_crew(line, &mut cr) {
                     if !first {
-                        if !jb_comma(&mut v, true) { return null }
+                        if !jb_comma(v, true) {
+                            return null
+                        }
                     }
                     first = false
-                    let cr: Crew = loaded.value
-                    if !write_crew_summary(&mut v, &cr) { return null }
+                    if !write_crew_summary(v, &cr) {
+                        return null
+                    }
                 }
             }
             if j < n2 && idx2[j] == 10_u8 {
@@ -565,52 +642,114 @@ fn handle_roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
         }
         }
     }
-    if !jb_end_arr(&mut v) { return null }
-    if !jb_end_obj(&mut v) { return null }
-    return json_response(response, 200_u16, jb_bytes(&v))
+    if !jb_end_arr(v) {
+        return null
+    }
+    if !jb_end_obj(v) {
+        return null
+    }
+    return json_response(response, 200_u16, jb_bytes(v))
 }
 
-fn write_char_summary(v: mutref<Vec>, c: ref<Character>) -> Bool {
-    if !jb_begin_obj(v) { return false }
-    if !jb_string_field(v, false, "id", character_id(c)) { return false }
-    if !jb_string_field(v, true, "name", text_view(c.name, c.name_len)) { return false }
-    if !jb_string_field(v, true, "alias", text_view(c.alias_text, c.alias_text_len)) { return false }
-    if !jb_string_field(v, true, "playbook", character_playbook(c)) { return false }
-    if !jb_string_field(v, true, "gameStem", character_stem(c)) { return false }
-    if !jb_string_field(v, true, "crewId", text_view(c.crew_id, c.crew_id_len)) { return false }
-    if !jb_u32_field(v, true, "stress", c.stress) { return false }
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "traumas") { return false }
-    if !jb_begin_arr(v) { return false }
+fn write_char_summary(v: MutSpan<u8>, c: ref<Character>) -> Bool {
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "id", character_id(c)) {
+        return false
+    }
+    if !jb_string_field(v, true, "name", text_view(c.name, c.name_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "alias", text_view(c.alias_text, c.alias_text_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "playbook", character_playbook(c)) {
+        return false
+    }
+    if !jb_string_field(v, true, "gameStem", character_stem(c)) {
+        return false
+    }
+    if !jb_string_field(v, true, "crewId", text_view(c.crew_id, c.crew_id_len)) {
+        return false
+    }
+    if !jb_u32_field(v, true, "stress", c.stress) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "traumas") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
     var i: u32 = 0
     while i < c.trauma_count {
         if i > 0 { if !jb_comma(v, true) { return false } }
-        if !jb_escaped_string(v, text_view(c.traumas[i as usize].text, c.traumas[i as usize].len)) { return false }
+        if !jb_escaped_string(v, trauma_view(c, i as usize)) {
+            return false
+        }
         i = i + 1
     }
-    if !jb_end_arr(v) { return false }
-    if !jb_bool_field(v, true, "isRetired", character_is_retired(c)) { return false }
-    if !jb_bool_field(v, true, "isDeadish", character_is_deadish(c)) { return false }
-    if !jb_u32_field(v, true, "revision", c.revision) { return false }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if !jb_bool_field(v, true, "isRetired", character_is_retired(c)) {
+        return false
+    }
+    if !jb_bool_field(v, true, "isDeadish", character_is_deadish(c)) {
+        return false
+    }
+    if !jb_u32_field(v, true, "revision", c.revision) {
+        return false
+    }
     return jb_end_obj(v)
 }
 
-fn write_crew_summary(v: mutref<Vec>, c: ref<Crew>) -> Bool {
-    if !jb_begin_obj(v) { return false }
-    if !jb_string_field(v, false, "id", crew_id(c)) { return false }
-    if !jb_string_field(v, true, "name", text_view(c.name, c.name_len)) { return false }
-    if !jb_string_field(v, true, "crewType", text_view(c.crew_type, c.crew_type_len)) { return false }
-    if !jb_string_field(v, true, "gameStem", text_view(c.stem, c.stem_len)) { return false }
-    if !jb_u32_field(v, true, "tier", c.tier) { return false }
-    if !jb_u32_field(v, true, "heat", c.heat) { return false }
-    if !jb_u32_field(v, true, "wanted", c.wanted) { return false }
-    if !jb_u32_field(v, true, "rep", c.rep) { return false }
-    if c.hold == 0 {
-        if !jb_string_field(v, true, "hold", "strong") { return false }
-    } else {
-        if !jb_string_field(v, true, "hold", "weak") { return false }
+fn write_crew_summary(v: MutSpan<u8>, c: ref<Crew>) -> Bool {
+    if !jb_begin_obj(v) {
+        return false
     }
-    if !jb_u32_field(v, true, "memberCount", member_count_for_crew(crew_id(c))) { return false }
-    if !jb_u32_field(v, true, "revision", c.revision) { return false }
+    if !jb_string_field(v, false, "id", crew_id(c)) {
+        return false
+    }
+    if !jb_string_field(v, true, "name", text_view(c.name, c.name_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "crewType", text_view(c.crew_type, c.crew_type_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "gameStem", text_view(c.stem, c.stem_len)) {
+        return false
+    }
+    if !jb_u32_field(v, true, "tier", c.tier) {
+        return false
+    }
+    if !jb_u32_field(v, true, "heat", c.heat) {
+        return false
+    }
+    if !jb_u32_field(v, true, "wanted", c.wanted) {
+        return false
+    }
+    if !jb_u32_field(v, true, "rep", c.rep) {
+        return false
+    }
+    if c.hold == 0 {
+        if !jb_string_field(v, true, "hold", "strong") {
+            return false
+        }
+    } else {
+        if !jb_string_field(v, true, "hold", "weak") {
+            return false
+        }
+    }
+    if !jb_u32_field(v, true, "memberCount", member_count_for_crew(crew_id(c))) {
+        return false
+    }
+    if !jb_u32_field(v, true, "revision", c.revision) {
+        return false
+    }
     return jb_end_obj(v)
 }

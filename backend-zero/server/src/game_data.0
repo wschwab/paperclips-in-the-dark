@@ -1,30 +1,72 @@
 // AUTO-GENERATED — game tables for Track Z
 
 pub fn blades_default_rating(playbook: Span<u8>, action: Span<u8>) -> u32 {
-    if std.mem.eql(playbook, "Cutter") && std.mem.eql(action, "Skirmish") { return 2 }
-    if std.mem.eql(playbook, "Cutter") && std.mem.eql(action, "Command") { return 1 }
-    if std.mem.eql(playbook, "Hound") && std.mem.eql(action, "Hunt") { return 2 }
-    if std.mem.eql(playbook, "Hound") && std.mem.eql(action, "Survey") { return 1 }
-    if std.mem.eql(playbook, "Leech") && std.mem.eql(action, "Tinker") { return 2 }
-    if std.mem.eql(playbook, "Leech") && std.mem.eql(action, "Wreck") { return 1 }
-    if std.mem.eql(playbook, "Lurk") && std.mem.eql(action, "Prowl") { return 2 }
-    if std.mem.eql(playbook, "Lurk") && std.mem.eql(action, "Finesse") { return 1 }
-    if std.mem.eql(playbook, "Slide") && std.mem.eql(action, "Sway") { return 2 }
-    if std.mem.eql(playbook, "Slide") && std.mem.eql(action, "Consort") { return 1 }
-    if std.mem.eql(playbook, "Spider") && std.mem.eql(action, "Consort") { return 2 }
-    if std.mem.eql(playbook, "Spider") && std.mem.eql(action, "Study") { return 1 }
-    if std.mem.eql(playbook, "Whisper") && std.mem.eql(action, "Attune") { return 2 }
-    if std.mem.eql(playbook, "Whisper") && std.mem.eql(action, "Study") { return 1 }
+    if std.mem.eql(playbook, "Cutter") && std.mem.eql(action, "Skirmish") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Cutter") && std.mem.eql(action, "Command") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Hound") && std.mem.eql(action, "Hunt") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Hound") && std.mem.eql(action, "Survey") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Leech") && std.mem.eql(action, "Tinker") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Leech") && std.mem.eql(action, "Wreck") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Lurk") && std.mem.eql(action, "Prowl") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Lurk") && std.mem.eql(action, "Finesse") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Slide") && std.mem.eql(action, "Sway") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Slide") && std.mem.eql(action, "Consort") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Spider") && std.mem.eql(action, "Consort") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Spider") && std.mem.eql(action, "Study") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Whisper") && std.mem.eql(action, "Attune") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Whisper") && std.mem.eql(action, "Study") {
+        return 1
+    }
     return 0
 }
 pub fn blades_has_playbook(playbook: Span<u8>) -> Bool {
-    if std.mem.eql(playbook, "Cutter") { return true }
-    if std.mem.eql(playbook, "Hound") { return true }
-    if std.mem.eql(playbook, "Leech") { return true }
-    if std.mem.eql(playbook, "Lurk") { return true }
-    if std.mem.eql(playbook, "Slide") { return true }
-    if std.mem.eql(playbook, "Spider") { return true }
-    if std.mem.eql(playbook, "Whisper") { return true }
+    if std.mem.eql(playbook, "Cutter") {
+        return true
+    }
+    if std.mem.eql(playbook, "Hound") {
+        return true
+    }
+    if std.mem.eql(playbook, "Leech") {
+        return true
+    }
+    if std.mem.eql(playbook, "Lurk") {
+        return true
+    }
+    if std.mem.eql(playbook, "Slide") {
+        return true
+    }
+    if std.mem.eql(playbook, "Spider") {
+        return true
+    }
+    if std.mem.eql(playbook, "Whisper") {
+        return true
+    }
     return false
 }
 pub fn blades_game_name() -> Span<u8> { return "Blades in the Dark" }
@@ -33,57 +75,135 @@ pub fn blades_action_max() -> u32 { return 4 }
 pub fn blades_recovery() -> u32 { return 4 }
 pub fn blades_attr_count() -> u32 { return 3 }
 pub fn blades_attr_name(i: u32) -> Span<u8> {
-    if i == 0 { return "Insight" }
-    if i == 1 { return "Prowess" }
-    if i == 2 { return "Resolve" }
+    if i == 0 {
+        return "Insight"
+    }
+    if i == 1 {
+        return "Prowess"
+    }
+    if i == 2 {
+        return "Resolve"
+    }
     return ""
 }
 pub fn blades_action_count(ai: u32) -> u32 {
-    if ai == 0 { return 4 }
-    if ai == 1 { return 4 }
-    if ai == 2 { return 4 }
+    if ai == 0 {
+        return 4
+    }
+    if ai == 1 {
+        return 4
+    }
+    if ai == 2 {
+        return 4
+    }
     return 0
 }
 pub fn blades_action_name(ai: u32, aj: u32) -> Span<u8> {
-    if ai == 0 && aj == 0 { return "Hunt" }
-    if ai == 0 && aj == 1 { return "Study" }
-    if ai == 0 && aj == 2 { return "Survey" }
-    if ai == 0 && aj == 3 { return "Tinker" }
-    if ai == 1 && aj == 0 { return "Finesse" }
-    if ai == 1 && aj == 1 { return "Prowl" }
-    if ai == 1 && aj == 2 { return "Skirmish" }
-    if ai == 1 && aj == 3 { return "Wreck" }
-    if ai == 2 && aj == 0 { return "Attune" }
-    if ai == 2 && aj == 1 { return "Command" }
-    if ai == 2 && aj == 2 { return "Consort" }
-    if ai == 2 && aj == 3 { return "Sway" }
+    if ai == 0 && aj == 0 {
+        return "Hunt"
+    }
+    if ai == 0 && aj == 1 {
+        return "Study"
+    }
+    if ai == 0 && aj == 2 {
+        return "Survey"
+    }
+    if ai == 0 && aj == 3 {
+        return "Tinker"
+    }
+    if ai == 1 && aj == 0 {
+        return "Finesse"
+    }
+    if ai == 1 && aj == 1 {
+        return "Prowl"
+    }
+    if ai == 1 && aj == 2 {
+        return "Skirmish"
+    }
+    if ai == 1 && aj == 3 {
+        return "Wreck"
+    }
+    if ai == 2 && aj == 0 {
+        return "Attune"
+    }
+    if ai == 2 && aj == 1 {
+        return "Command"
+    }
+    if ai == 2 && aj == 2 {
+        return "Consort"
+    }
+    if ai == 2 && aj == 3 {
+        return "Sway"
+    }
     return ""
 }
 pub fn scum_default_rating(playbook: Span<u8>, action: Span<u8>) -> u32 {
-    if std.mem.eql(playbook, "Mechanic") && std.mem.eql(action, "Rig") { return 2 }
-    if std.mem.eql(playbook, "Mechanic") && std.mem.eql(action, "Study") { return 1 }
-    if std.mem.eql(playbook, "Muscle") && std.mem.eql(action, "Scrap") { return 2 }
-    if std.mem.eql(playbook, "Muscle") && std.mem.eql(action, "Command") { return 1 }
-    if std.mem.eql(playbook, "Mystic") && std.mem.eql(action, "Attune") { return 2 }
-    if std.mem.eql(playbook, "Mystic") && std.mem.eql(action, "Scramble") { return 1 }
-    if std.mem.eql(playbook, "Pilot") && std.mem.eql(action, "Helm") { return 2 }
-    if std.mem.eql(playbook, "Pilot") && std.mem.eql(action, "Rig") { return 1 }
-    if std.mem.eql(playbook, "Scoundrel") && std.mem.eql(action, "Sway") { return 2 }
-    if std.mem.eql(playbook, "Scoundrel") && std.mem.eql(action, "Skulk") { return 1 }
-    if std.mem.eql(playbook, "Speaker") && std.mem.eql(action, "Consort") { return 2 }
-    if std.mem.eql(playbook, "Speaker") && std.mem.eql(action, "Command") { return 1 }
-    if std.mem.eql(playbook, "Stitch") && std.mem.eql(action, "Doctor") { return 2 }
-    if std.mem.eql(playbook, "Stitch") && std.mem.eql(action, "Study") { return 1 }
+    if std.mem.eql(playbook, "Mechanic") && std.mem.eql(action, "Rig") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Mechanic") && std.mem.eql(action, "Study") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Muscle") && std.mem.eql(action, "Scrap") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Muscle") && std.mem.eql(action, "Command") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Mystic") && std.mem.eql(action, "Attune") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Mystic") && std.mem.eql(action, "Scramble") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Pilot") && std.mem.eql(action, "Helm") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Pilot") && std.mem.eql(action, "Rig") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Scoundrel") && std.mem.eql(action, "Sway") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Scoundrel") && std.mem.eql(action, "Skulk") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Speaker") && std.mem.eql(action, "Consort") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Speaker") && std.mem.eql(action, "Command") {
+        return 1
+    }
+    if std.mem.eql(playbook, "Stitch") && std.mem.eql(action, "Doctor") {
+        return 2
+    }
+    if std.mem.eql(playbook, "Stitch") && std.mem.eql(action, "Study") {
+        return 1
+    }
     return 0
 }
 pub fn scum_has_playbook(playbook: Span<u8>) -> Bool {
-    if std.mem.eql(playbook, "Mechanic") { return true }
-    if std.mem.eql(playbook, "Muscle") { return true }
-    if std.mem.eql(playbook, "Mystic") { return true }
-    if std.mem.eql(playbook, "Pilot") { return true }
-    if std.mem.eql(playbook, "Scoundrel") { return true }
-    if std.mem.eql(playbook, "Speaker") { return true }
-    if std.mem.eql(playbook, "Stitch") { return true }
+    if std.mem.eql(playbook, "Mechanic") {
+        return true
+    }
+    if std.mem.eql(playbook, "Muscle") {
+        return true
+    }
+    if std.mem.eql(playbook, "Mystic") {
+        return true
+    }
+    if std.mem.eql(playbook, "Pilot") {
+        return true
+    }
+    if std.mem.eql(playbook, "Scoundrel") {
+        return true
+    }
+    if std.mem.eql(playbook, "Speaker") {
+        return true
+    }
+    if std.mem.eql(playbook, "Stitch") {
+        return true
+    }
     return false
 }
 pub fn scum_game_name() -> Span<u8> { return "Scum and Villainy" }
@@ -92,30 +212,66 @@ pub fn scum_action_max() -> u32 { return 3 }
 pub fn scum_recovery() -> u32 { return 6 }
 pub fn scum_attr_count() -> u32 { return 3 }
 pub fn scum_attr_name(i: u32) -> Span<u8> {
-    if i == 0 { return "Insight" }
-    if i == 1 { return "Prowess" }
-    if i == 2 { return "Resolve" }
+    if i == 0 {
+        return "Insight"
+    }
+    if i == 1 {
+        return "Prowess"
+    }
+    if i == 2 {
+        return "Resolve"
+    }
     return ""
 }
 pub fn scum_action_count(ai: u32) -> u32 {
-    if ai == 0 { return 4 }
-    if ai == 1 { return 4 }
-    if ai == 2 { return 4 }
+    if ai == 0 {
+        return 4
+    }
+    if ai == 1 {
+        return 4
+    }
+    if ai == 2 {
+        return 4
+    }
     return 0
 }
 pub fn scum_action_name(ai: u32, aj: u32) -> Span<u8> {
-    if ai == 0 && aj == 0 { return "Doctor" }
-    if ai == 0 && aj == 1 { return "Hack" }
-    if ai == 0 && aj == 2 { return "Rig" }
-    if ai == 0 && aj == 3 { return "Study" }
-    if ai == 1 && aj == 0 { return "Helm" }
-    if ai == 1 && aj == 1 { return "Scramble" }
-    if ai == 1 && aj == 2 { return "Scrap" }
-    if ai == 1 && aj == 3 { return "Skulk" }
-    if ai == 2 && aj == 0 { return "Attune" }
-    if ai == 2 && aj == 1 { return "Command" }
-    if ai == 2 && aj == 2 { return "Consort" }
-    if ai == 2 && aj == 3 { return "Sway" }
+    if ai == 0 && aj == 0 {
+        return "Doctor"
+    }
+    if ai == 0 && aj == 1 {
+        return "Hack"
+    }
+    if ai == 0 && aj == 2 {
+        return "Rig"
+    }
+    if ai == 0 && aj == 3 {
+        return "Study"
+    }
+    if ai == 1 && aj == 0 {
+        return "Helm"
+    }
+    if ai == 1 && aj == 1 {
+        return "Scramble"
+    }
+    if ai == 1 && aj == 2 {
+        return "Scrap"
+    }
+    if ai == 1 && aj == 3 {
+        return "Skulk"
+    }
+    if ai == 2 && aj == 0 {
+        return "Attune"
+    }
+    if ai == 2 && aj == 1 {
+        return "Command"
+    }
+    if ai == 2 && aj == 2 {
+        return "Consort"
+    }
+    if ai == 2 && aj == 3 {
+        return "Sway"
+    }
     return ""
 }
 pub fn ability_description(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -> Span<u8> {
@@ -123,19 +279,27 @@ pub fn ability_description(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Bodyguard") { return "When you protect a teammate, take +1d to your resistance roll. When you gather info to anticipate possible threats in the current situation, you get +1 effect." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Ghost Fighter") { return "You may imbue your hands, melee weapons, or tools with spirit energy. You gain potency in combat vs. the supernatural. You may grapple with spirits to restrain and capture them." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Leader") { return "When you Command a cohort in combat, they continue to fight when they would otherwise break (they're not taken out when they suffer level 3 harm). They gain +1 effect and 1 armor." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Mule") { return "Your load limits are higher. Light: 5. Normal: 7. Heavy: 8." }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Mule") {
+        return "Your load limits are higher. Light: 5. Normal: 7. Heavy: 8."
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Not to be Trifled With") { return "You can push yourself to do one of the following: perform a feat of physical force that verges on the superhuman—engage a small gang on equal footing in close combat." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Savage") { return "When you unleash physical violence, it's especially frightening. When you Command a frightened target, take +1d." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Vigorous") { return "You recover from harm faster. Permanently fill in one of your healing clock segments. Take +1d to healing treatment rolls." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Sharpshooter") { return "You can push yourself to do one of the following: make a ranged attack at extreme distance beyond what’s normal for the weapon—unleash a barrage of rapid fire to suppress the enemy." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Focused") { return "You may expend your special armor to resist a consequence of surprise or mental harm (fear, confusion, losing track of someone) or to push yourself for ranged combat or tracking." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Ghost Hunter") { return "Your hunting pet is imbued with spirit energy. It gains potency when tracking or fighting the supernatural, and gains an arcane ability: ghost-form, mind-link, or arrow-swift. Take this ability again to choose an additional arcane ability for your pet." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Scout") { return "When you gather info to locate a target, you get +1 effect. When you hide in a prepared position or use camouflage, you get +1d to rolls to avoid detection." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Survivor") { return "From hard won experience or occult ritual, you are immune to the poisonous miasma of the deathlands and are able to subsist on the strange flora and fauna there. You get +1 stress box." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Tough as Nails") { return "Penalties from harm are one level less severe (though level 4 harm is still fatal)." }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Tough as Nails") {
+        return "Penalties from harm are one level less severe (though level 4 harm is still fatal)."
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Vengeful") { return "You gain an additional xp trigger: You got payback against someone who harmed you or someone you care about. If your crew helped you get payback, also mark crew xp." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source" }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source"
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Alchemist") { return "When you invent or craft a creation with alchemical features, take +1 result level to your roll. You begin with one special formula already known." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Analyst") { return "During downtime, you get two ticks to distribute among any long term project clocks that involve investigation or learning a new formula or design plan." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Artificer") { return "When you invent or craft a creation with spark-craft features, take +1 result level to your roll. You begin with one special design already known." }
@@ -144,34 +308,54 @@ pub fn ability_description(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Physicker") { return "You can Tinker with bones, blood, and bodily humours to treat wounds or stabilize the dying. You may study a malady or corpse. Everyone in your crew gets +1d to their healing treatment rolls." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Saboteur") { return "When you Wreck, the work is much quieter than it should be and the damage is hidden from casual inspection." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Venomous") { return "Choose a drug or poison (from your bandolier stock) to which you have become immune. You can push yourself to secrete it through your skin or saliva or exhale it as a vapor." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source" }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Infiltrator") { return "You are not affected by quality or Tier when you bypass security measures." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Ambush") { return "When you attack from hiding or spring a trap, you get +1d." }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source"
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Infiltrator") {
+        return "You are not affected by quality or Tier when you bypass security measures."
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Ambush") {
+        return "When you attack from hiding or spring a trap, you get +1d."
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Daredevil") { return "When you roll a desperate action, you get +1d to your roll if you also take -1d to any resistance rolls against consequences from your action." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "The Devil's Footsteps") { return "When you push yourself, choose one of the following additional benefits: perform a feat of athletics that verges on the superhuman—maneuver to confuse your enemies so they mistakenly attack each other." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Expertise") { return "Choose one of your action ratings. When you lead a group action using that action, you can suffer only 1 stress at most regardless of the number of failed rolls." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Ghost Veil") { return "You may shift partially into the ghost field, becoming shadowy and insubstantial for a few moments. Take 2 stress when you shift, plus 1 stress for each extra feature: It lasts for a few minutes rather than moments—you are invisible rather than shadowy—you may float through the air like a ghost" }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Reflexes") { return "When there's a question about who acts first, the answer is you (two characters with Reflexes act simultaneously)." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Shadow") { return "You may expend your special armor to resist a consequence from detection or security measures, or to push yourself for a feat of athletics or stealth." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source" }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source"
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Rook's Gambit") { return "Take 2 stress to roll your best action rating while performing a different action. Say how you adapt your skill to this use." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Cloak & Dagger") { return "When you use a disguise or other form of covert misdirection, you get +1d to rolls to confuse or deflect suspicion. When you throw off your disguise, the resulting surprise gives you the initiative in the situation." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Ghost Voice") { return "You know the secret method to interact with a ghost or demon as if it was a normal human, regardless of how wild or feral it appears. You gain potency when communicating with the supernatural." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Like Looking into a Mirror") { return "You can always tell when someone is lying to you." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "A Little Something on the Side") { return "At the end of each downtime phase, you earn +2 stash." }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Like Looking into a Mirror") {
+        return "You can always tell when someone is lying to you."
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "A Little Something on the Side") {
+        return "At the end of each downtime phase, you earn +2 stash."
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Mesmerism") { return "When you Sway someone, you may cause them to forget that it's happened until they next interact with you." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Subterfuge") { return "You may expend your special armor to resist a consequence from suspicion or persuasion, or to push yourself for subterfuge." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Trust in Me") { return "You get +1d vs. a target with whom you have an intimate relationship." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source" }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Trust in Me") {
+        return "You get +1d vs. a target with whom you have an intimate relationship."
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source"
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Foresight") { return "Two times per score you can assist a teammate without paying stress. Tell us how you prepared for this." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Calculating") { return "Due to your careful planning, during downtime, you may give yourself or another crew member +1 downtime action." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Connected") { return "During downtime, you get +1 result level when you acquire an asset or reduce heat." }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Connected") {
+        return "During downtime, you get +1 result level when you acquire an asset or reduce heat."
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Functioning Vice") { return "When you indulge your vice, you may adjust the dice outcome by 1 or 2 (up or down). An ally who joins in your vice may do the same." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Ghost Contract") { return "When you shake on a deal, you and your partner—human or otherwise—both bear a mark of your oath. If either breaks the contract, they take level 3 harm, \"Cursed\"." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Jail Bird") { return "When incarcerated, your wanted level counts as 1 less, your Tier as 1 more, and you gain +1 faction status with a faction you help on the inside (in addition to your incarceration roll)." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Mastermind") { return "You may expend your special armor to protect a teammate, or to push yourself when you gather information or work on a long-term project." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Weaving the Web") { return "You gain +1d to Consort when you gather information on a target for a score. You get +1d to the engagement roll for that operation." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Compel") { return "You can Attune to the ghost field to force a nearby ghost to appear and obey a command you give it. You are not supernaturally terrified by a ghost you summon or compel (though your allies may be)." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Ghost Mind") { return "You’re always aware of supernatural entities in your presence. Take +1d when you gather info about the supernatural." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Iron Will") { return "You're immune to the terror that some supernatural entities inflict on sight. Take +1d to resistance rolls with Resolve." }
@@ -180,7 +364,9 @@ pub fn ability_description(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Strange Methods") { return "When you invent or craft a creation with arcane features, take +1 result level to your roll. You begin with one arcane design already known." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Tempest") { return "You can push yourself to do one of the following: unleash a stroke of lightning as a weapon—summon a storm in your immediate vicinity (torrential rain, roaring winds, heavy fog, chilling frost/snow, etc.)." }
     if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Warded") { return "You may expend your special armor to resist a supernatural consequence, or to push yourself when you deal with arcane forces." }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source" }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source"
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Bailing Wire and Mech-Tape") { return "You get an extra downtime activity to repair, and the repair activity costs you 0 cred." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Construct Whisperer") { return "Machines speak to you when you study them. The first time you roll a critical while fixing or building a particular machine, you may add a simple modification to it." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Junkyard Hunter") { return "When you acquire parts or equipment during downtime, you may either gain two assets or one asset at +1 quality." }
@@ -189,16 +375,24 @@ pub fn ability_description(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Mechanic's Heart") { return "When you speak from your heart, your words can reach even the most hardened criminal, and you gain potency." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Overclock") { return "When you spend a gambit on a rig roll to repair or upgrade, treat the system you worked on as 1 quality higher for the remainder of the job." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Analyst") { return "When you hack a system, you may also ask a question about the owner or location of the system as though you had rolled a 6 on gather info. When you resist the consequences of hacking, roll +1d." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Wrecking Crew") { return "Your strength and ferocity are infamous. When striking in melee, you gain +1d. Whenever you spend a gambit in combat, you also gain +1 effect on that action." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Backup") { return "An ally's push costs 1 stress (not 2) on any action you set up or assist." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Backup") {
+        return "An ally's push costs 1 stress (not 2) on any action you set up or assist."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Battleborn") { return "You may expend your special armor to reduce harm from an attack in combat, or to push yourself during a fight." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Bodyguard") { return "When you protect a crewmate, resist with +1d. When you take harm, clear 1 stress." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Bodyguard") {
+        return "When you protect a crewmate, resist with +1d. When you take harm, clear 1 stress."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Flesh Wound") { return "If you're wounded at the beginning of downtime, mark +3 segments on your healing clock. When you push yourself to ignore wound penalties, it takes only 1 stress (not 2)." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Predator") { return "Take +1d to rolls against weakened or vulnerable targets.Whenever you gather information on a weakness or vulnerability, the worst you can get is a 4/5 result." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Ready For Anything") { return "When being ambushed, you gain potency to all actions during a flashback, and your first flashback costs 0 stress." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Scary") { return "You have an air of menace and danger obvious to even the most unobservant. You gain potency when trying to intimidate someone. If done immediately after a show of force, also take +1d." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Kinetics") { return "You can push yourself to do one of the following: use The Way to throw a table-sized object with dangerous force—propel yourself briefly with superhuman speed." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Psy-Blade") { return "You can focus Way energy into your melee weapon. While charged, the weapon can cut through non-shielded materials with ease, and you gain potency on your melee attacks." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Center") { return "You gain Meditation as a vice. When you indulge this vice, clear +1 stress and add Dark Visions as a possible overindulgence." }
@@ -207,7 +401,9 @@ pub fn ability_description(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Psy-Dancing") { return "You may push yourself to cloud a target's mind and sway them in the face of contradictory evidence. Spend 1 stress for each additional feature: they have only vague memories of the event and/or it works on a small group." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Visions") { return "Spend 1 stress to remotely view a distant place or person tied to you in some intimate way. Spend 1 stress for each extra feature: it lasts for a minute rather than a moment—your target can also see and hear you—you may see something only familiar to you, not intimate." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Sundering") { return "You may push yourself to attune to The Way and twist it, causing psychic harm to anyone in the area vulnerable to your assault. You may spend 1 stress for each additional feature: it damages instead of stuns—you and anyone you choose get +2d to resist the effects." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Keen Eye") { return "You have sharp eyes and notice small details many might overlook. Gain +1d when firing ship guns or making trick shots." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Side Job") { return "You may spend a downtime activity in port doing odd jobs. Gain 1 cred. If there are rumors floating about, the GM will tell you of them." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Exceed Specs") { return "While onboard a ship, you may damage a ship system you have access to in order to gain +1d or +1 effect to a roll." }
@@ -215,244 +411,666 @@ pub fn ability_description(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Hedonist") { return "When you indulge your vice, you may adjust the dice outcome by +/-2. An ally who joins you may do the same." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Commander") { return "Whenever you lead a group action, gain +1 scale (for example, a small group counts as a medium group). If you lead a group action in combat, you may count multiple 6s from different rolls as a critical." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Traveler") { return "You're comfortable around unusual cultures and xenos. You gain potency when attempting to consort with or sway them." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Punch It!") { return "When you spend a gambit on a desperate roll, it counts as risky instead." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Punch It!") {
+        return "When you spend a gambit on a desperate roll, it counts as risky instead."
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Never Tell Me The Odds") { return "You generate gambits on desperate rolls. You may also generate gambits even if you spent a gambit." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "I Know A Guy") { return "When you first dock at a port after being away, pick one and ask the GM about a job: it's not deadly—it pays well enough—it's not a rush job—it comes from a faction you trust—it targets an enemy you have. You may spend 1 cred per additional feature." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Tenacious") { return "Penalties from harm are one level less severe (though level 4 harm is still fatal)." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "When The Chips Are Down") { return "You gain a second use of special armor between each downtime." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Tenacious") {
+        return "Penalties from harm are one level less severe (though level 4 harm is still fatal)."
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "When The Chips Are Down") {
+        return "You gain a second use of special armor between each downtime."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Devil's Own Luck") { return "You may expend your special armor to resist the consequences of blaster fire, or to push yourself when talking your way out of (or running from) trouble." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Daredevil") { return "When you make a desperate roll, you may take +1d. If you do so, do not mark xp in that action's attribute." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Shoot First") { return "When you attack from hiding or spring a trap, take +1d. When there's a question about who acts first, the answer is you (two characters with Shoot First act simultaneously)." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Ask Questions Later") { return "When you consort to gather info, you gain +1 effect and can in addition ask: Who might this benefit?" }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Favors Owed") { return "During downtime, you get +1d when you acquire assets or lay low. Any time you gather info, take +1d." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Player") { return "You always know when someone is lying to you." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Infiltrator") { return "You are not affected by quality or Tier when you bypass security measures." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Player") {
+        return "You always know when someone is lying to you."
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Infiltrator") {
+        return "You are not affected by quality or Tier when you bypass security measures."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Subterfuge") { return "You may expend your special armor to resist a consequence of persuasion or suspicion. When you resist with insight, gain +1d." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Heart to Heart") { return "When you provide meaningful insight or heartfelt advice that a crewmate follows, you both clear 1 stress." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Old Friends") { return "Whenever you land in a new location, write down a friend you know there (see Influential Friends)." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Disarming") { return "Whenever you use a gambit while speaking, hostilities and danger also pause while you speak." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Purpose") { return "You may expend your special armor to push yourself when outclassed by your opposition, or when under the effects of wounds. When you resist with resolve, gain +1d." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Physicker") { return "You may study a malady, wounds, or corpse, and gather info from a crime scene. Also, your crew gets +1d to recovery rolls." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Patch") { return "You may doctor someone during a job to allow them to ignore the effects of a harm penalty." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Patch") {
+        return "You may doctor someone during a job to allow them to ignore the effects of a harm penalty."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Welcome Anywhere") { return "While wearing your medic garb, you are welcome even in dangerous places. Gain +1d to consort and sway when offering to tend to anyone in need." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Under Pressure") { return "Add a gambit to the pool whenever you or a crew member suffers level 2 or greater harm." }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Combat Medic") { return "You may expend your special armor to resist any consequence while tending to a patient. When you doctor someone in combat, clear 1 stress." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Moral Compass") { return "When you do the right thing at cost to yourself, mark xp (any category)." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Moral Compass") {
+        return "When you do the right thing at cost to yourself, mark xp (any category)."
+    }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Dr. Strange") { return "Your research and fields of study are fringe, esoteric, and focus on the mystical. You may always handle Precursor artifacts safely. When you study an artifact or doctor a strange substance, you may ask one: what could this do?—why could this be dangerous?" }
     if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Book Learning") { return "You speak a multitude of languages and are broadly educated. Gain +1d when using study during a downtime activity." }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Veteran") { return "Choose a special ability from another source." }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Veteran") {
+        return "Choose a special ability from another source."
+    }
     return ""
 }
 pub fn ability_times_takeable(stem: Span<u8>, playbook: Span<u8>, name: Span<u8>) -> u32 {
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Battleborn") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Bodyguard") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Ghost Fighter") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Leader") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Mule") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Not to be Trifled With") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Savage") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Vigorous") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Veteran") { return 99 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Sharpshooter") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Focused") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Ghost Hunter") { return 2 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Scout") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Survivor") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Tough as Nails") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Vengeful") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Veteran") { return 99 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Alchemist") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Analyst") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Artificer") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Fortitude") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Ghost Ward") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Physicker") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Saboteur") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Venomous") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Veteran") { return 99 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Infiltrator") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Ambush") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Daredevil") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "The Devil's Footsteps") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Expertise") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Ghost Veil") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Reflexes") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Shadow") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Veteran") { return 99 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Rook's Gambit") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Cloak & Dagger") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Ghost Voice") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Like Looking into a Mirror") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "A Little Something on the Side") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Mesmerism") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Subterfuge") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Trust in Me") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Veteran") { return 99 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Foresight") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Calculating") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Connected") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Functioning Vice") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Ghost Contract") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Jail Bird") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Mastermind") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Weaving the Web") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Veteran") { return 99 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Compel") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Ghost Mind") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Iron Will") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Occultist") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Ritual") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Strange Methods") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Tempest") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Warded") { return 1 }
-    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Veteran") { return 99 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Bailing Wire and Mech-Tape") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Construct Whisperer") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Junkyard Hunter") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Hacker") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Fixed") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Mechanic's Heart") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Overclock") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Analyst") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Veteran") { return 3 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Wrecking Crew") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Backup") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Battleborn") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Bodyguard") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Flesh Wound") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Predator") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Ready For Anything") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Scary") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Veteran") { return 3 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Kinetics") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Psy-Blade") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Center") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Way Shield") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Warded") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Psy-Dancing") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Visions") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Sundering") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Veteran") { return 3 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Keen Eye") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Side Job") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Exceed Specs") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Leaf On The Wind") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Hedonist") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Commander") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Traveler") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Punch It!") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Veteran") { return 3 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Never Tell Me The Odds") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "I Know A Guy") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Tenacious") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "When The Chips Are Down") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Devil's Own Luck") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Daredevil") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Shoot First") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Ask Questions Later") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Veteran") { return 3 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Favors Owed") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Player") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Infiltrator") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Subterfuge") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Heart to Heart") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Old Friends") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Disarming") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Purpose") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Veteran") { return 3 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Physicker") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Patch") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Welcome Anywhere") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Under Pressure") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Combat Medic") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Moral Compass") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Dr. Strange") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Book Learning") { return 1 }
-    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Veteran") { return 3 }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Battleborn") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Bodyguard") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Ghost Fighter") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Leader") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Mule") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Not to be Trifled With") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Savage") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Vigorous") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Cutter") && std.mem.eql(name, "Veteran") {
+        return 99
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Sharpshooter") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Focused") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Ghost Hunter") {
+        return 2
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Scout") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Survivor") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Tough as Nails") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Vengeful") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Hound") && std.mem.eql(name, "Veteran") {
+        return 99
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Alchemist") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Analyst") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Artificer") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Fortitude") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Ghost Ward") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Physicker") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Saboteur") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Venomous") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Leech") && std.mem.eql(name, "Veteran") {
+        return 99
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Infiltrator") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Ambush") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Daredevil") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "The Devil's Footsteps") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Expertise") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Ghost Veil") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Reflexes") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Shadow") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Lurk") && std.mem.eql(name, "Veteran") {
+        return 99
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Rook's Gambit") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Cloak & Dagger") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Ghost Voice") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Like Looking into a Mirror") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "A Little Something on the Side") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Mesmerism") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Subterfuge") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Trust in Me") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Slide") && std.mem.eql(name, "Veteran") {
+        return 99
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Foresight") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Calculating") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Connected") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Functioning Vice") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Ghost Contract") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Jail Bird") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Mastermind") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Weaving the Web") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Spider") && std.mem.eql(name, "Veteran") {
+        return 99
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Compel") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Ghost Mind") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Iron Will") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Occultist") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Ritual") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Strange Methods") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Tempest") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Warded") {
+        return 1
+    }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(playbook, "Whisper") && std.mem.eql(name, "Veteran") {
+        return 99
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Bailing Wire and Mech-Tape") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Construct Whisperer") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Junkyard Hunter") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Hacker") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Fixed") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Mechanic's Heart") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Overclock") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Analyst") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mechanic") && std.mem.eql(name, "Veteran") {
+        return 3
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Wrecking Crew") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Backup") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Battleborn") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Bodyguard") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Flesh Wound") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Predator") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Ready For Anything") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Scary") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Muscle") && std.mem.eql(name, "Veteran") {
+        return 3
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Kinetics") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Psy-Blade") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Center") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Way Shield") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Warded") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Psy-Dancing") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Visions") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Sundering") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Mystic") && std.mem.eql(name, "Veteran") {
+        return 3
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Keen Eye") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Side Job") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Exceed Specs") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Leaf On The Wind") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Hedonist") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Commander") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Traveler") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Punch It!") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Pilot") && std.mem.eql(name, "Veteran") {
+        return 3
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Never Tell Me The Odds") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "I Know A Guy") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Tenacious") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "When The Chips Are Down") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Devil's Own Luck") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Daredevil") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Shoot First") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Ask Questions Later") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Scoundrel") && std.mem.eql(name, "Veteran") {
+        return 3
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Favors Owed") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Player") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Infiltrator") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Subterfuge") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Heart to Heart") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Old Friends") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Disarming") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Purpose") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Speaker") && std.mem.eql(name, "Veteran") {
+        return 3
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Physicker") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Patch") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Welcome Anywhere") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Under Pressure") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Combat Medic") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Moral Compass") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Dr. Strange") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Book Learning") {
+        return 1
+    }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(playbook, "Stitch") && std.mem.eql(name, "Veteran") {
+        return 3
+    }
     return 0
 }
 pub fn upgrade_boxes(crew_type: Span<u8>, name: Span<u8>) -> u32 {
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Cohort (Gang or Expert)") { return 1 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Training") { return 1 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Secure Lair") { return 2 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Hidden Lair") { return 1 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Vault") { return 2 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Quarters") { return 1 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Workshop") { return 1 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Quality: Weapons") { return 2 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Mastery") { return 4 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Hardened") { return 3 }
-    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Composed") { return 3 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Cohort (Gang or Expert)") { return 1 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Training") { return 1 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Prowess Training") { return 1 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Secure Lair") { return 2 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Hidden Lair") { return 1 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Vault") { return 2 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Quarters") { return 1 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Workshop") { return 1 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Quality: Weapons") { return 2 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Mastery") { return 4 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Hardened") { return 3 }
-    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Composed") { return 3 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Cohort (Gang or Expert)") { return 1 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Training") { return 1 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Secure Lair") { return 2 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Hidden Lair") { return 1 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Vault") { return 2 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Quarters") { return 1 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Workshop") { return 1 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Quality: Implements (Arcane)") { return 2 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Mastery") { return 4 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Hardened") { return 3 }
-    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Composed") { return 3 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Cohort (Gang or Expert)") { return 1 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Training") { return 1 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Secure Lair") { return 2 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Hidden Lair") { return 1 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Vault") { return 2 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Quarters") { return 1 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Workshop") { return 1 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Quality: Supplies (Subterfuge)") { return 2 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Mastery") { return 4 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Hardened") { return 3 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Composed") { return 3 }
-    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Vice Den") { return 1 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Cohort (Gang or Expert)") { return 1 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Training") { return 1 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Secure Lair") { return 2 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Hidden Lair") { return 1 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Vault") { return 2 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Quarters") { return 1 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Workshop") { return 1 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Quality: Gear (Burglary & Climbing)") { return 2 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Mastery") { return 4 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Hardened") { return 3 }
-    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Composed") { return 3 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Cohort (Gang or Expert)") { return 1 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Training") { return 1 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Boat House") { return 2 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Carriage House") { return 2 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Secure Lair") { return 2 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Hidden Lair") { return 1 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Vault") { return 2 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Quarters") { return 1 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Workshop") { return 1 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Mastery") { return 4 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Hardened") { return 3 }
-    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Composed") { return 3 }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Cohort (Gang or Expert)") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Training") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Secure Lair") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Hidden Lair") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Vault") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Quarters") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Workshop") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Quality: Weapons") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Mastery") {
+        return 4
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Hardened") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Assassins") && std.mem.eql(name, "Composed") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Cohort (Gang or Expert)") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Training") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Prowess Training") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Secure Lair") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Hidden Lair") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Vault") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Quarters") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Workshop") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Quality: Weapons") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Mastery") {
+        return 4
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Hardened") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Bravos") && std.mem.eql(name, "Composed") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Cohort (Gang or Expert)") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Training") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Secure Lair") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Hidden Lair") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Vault") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Quarters") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Workshop") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Quality: Implements (Arcane)") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Mastery") {
+        return 4
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Hardened") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Cultists") && std.mem.eql(name, "Composed") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Cohort (Gang or Expert)") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Training") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Secure Lair") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Hidden Lair") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Vault") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Quarters") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Workshop") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Quality: Supplies (Subterfuge)") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Mastery") {
+        return 4
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Hardened") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Composed") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Hawkers") && std.mem.eql(name, "Vice Den") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Cohort (Gang or Expert)") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Training") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Secure Lair") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Hidden Lair") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Vault") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Quarters") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Workshop") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Quality: Gear (Burglary & Climbing)") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Mastery") {
+        return 4
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Hardened") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Shadows") && std.mem.eql(name, "Composed") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Cohort (Gang or Expert)") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Training") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Boat House") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Carriage House") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Secure Lair") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Hidden Lair") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Vault") {
+        return 2
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Quarters") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Workshop") {
+        return 1
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Mastery") {
+        return 4
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Hardened") {
+        return 3
+    }
+    if std.mem.eql(crew_type, "Smugglers") && std.mem.eql(name, "Composed") {
+        return 3
+    }
     return 0
 }
 pub fn has_crew_type(name: Span<u8>) -> Bool {
-    if std.mem.eql(name, "Assassins") { return true }
-    if std.mem.eql(name, "Bravos") { return true }
-    if std.mem.eql(name, "Cultists") { return true }
-    if std.mem.eql(name, "Hawkers") { return true }
-    if std.mem.eql(name, "Shadows") { return true }
-    if std.mem.eql(name, "Smugglers") { return true }
+    if std.mem.eql(name, "Assassins") {
+        return true
+    }
+    if std.mem.eql(name, "Bravos") {
+        return true
+    }
+    if std.mem.eql(name, "Cultists") {
+        return true
+    }
+    if std.mem.eql(name, "Hawkers") {
+        return true
+    }
+    if std.mem.eql(name, "Shadows") {
+        return true
+    }
+    if std.mem.eql(name, "Smugglers") {
+        return true
+    }
     return false
 }
 
@@ -460,52 +1078,92 @@ pub fn is_blades(stem: Span<u8>) -> Bool { return std.mem.eql(stem, "blades-in-t
 pub fn is_scum(stem: Span<u8>) -> Bool { return std.mem.eql(stem, "scum-and-villainy") }
 pub fn known_stem(stem: Span<u8>) -> Bool { return is_blades(stem) || is_scum(stem) }
 pub fn game_name(stem: Span<u8>) -> Span<u8> {
-    if is_blades(stem) { return blades_game_name() }
-    if is_scum(stem) { return scum_game_name() }
+    if is_blades(stem) {
+        return blades_game_name()
+    }
+    if is_scum(stem) {
+        return scum_game_name()
+    }
     return ""
 }
 pub fn game_language(stem: Span<u8>) -> Span<u8> {
-    if is_blades(stem) { return blades_language() }
-    if is_scum(stem) { return scum_language() }
+    if is_blades(stem) {
+        return blades_language()
+    }
+    if is_scum(stem) {
+        return scum_language()
+    }
     return ""
 }
 pub fn action_point_maximum(stem: Span<u8>) -> u32 {
-    if is_blades(stem) { return blades_action_max() }
-    if is_scum(stem) { return scum_action_max() }
+    if is_blades(stem) {
+        return blades_action_max()
+    }
+    if is_scum(stem) {
+        return scum_action_max()
+    }
     return 4
 }
 pub fn recovery_clock_size(stem: Span<u8>) -> u32 {
-    if is_blades(stem) { return blades_recovery() }
-    if is_scum(stem) { return scum_recovery() }
+    if is_blades(stem) {
+        return blades_recovery()
+    }
+    if is_scum(stem) {
+        return scum_recovery()
+    }
     return 4
 }
 pub fn has_playbook(stem: Span<u8>, playbook: Span<u8>) -> Bool {
-    if is_blades(stem) { return blades_has_playbook(playbook) }
-    if is_scum(stem) { return scum_has_playbook(playbook) }
+    if is_blades(stem) {
+        return blades_has_playbook(playbook)
+    }
+    if is_scum(stem) {
+        return scum_has_playbook(playbook)
+    }
     return false
 }
 pub fn default_rating(stem: Span<u8>, playbook: Span<u8>, action: Span<u8>) -> u32 {
-    if is_blades(stem) { return blades_default_rating(playbook, action) }
-    if is_scum(stem) { return scum_default_rating(playbook, action) }
+    if is_blades(stem) {
+        return blades_default_rating(playbook, action)
+    }
+    if is_scum(stem) {
+        return scum_default_rating(playbook, action)
+    }
     return 0
 }
 pub fn attr_count(stem: Span<u8>) -> u32 {
-    if is_blades(stem) { return blades_attr_count() }
-    if is_scum(stem) { return scum_attr_count() }
+    if is_blades(stem) {
+        return blades_attr_count()
+    }
+    if is_scum(stem) {
+        return scum_attr_count()
+    }
     return 0
 }
 pub fn attr_name(stem: Span<u8>, i: u32) -> Span<u8> {
-    if is_blades(stem) { return blades_attr_name(i) }
-    if is_scum(stem) { return scum_attr_name(i) }
+    if is_blades(stem) {
+        return blades_attr_name(i)
+    }
+    if is_scum(stem) {
+        return scum_attr_name(i)
+    }
     return ""
 }
 pub fn action_count(stem: Span<u8>, ai: u32) -> u32 {
-    if is_blades(stem) { return blades_action_count(ai) }
-    if is_scum(stem) { return scum_action_count(ai) }
+    if is_blades(stem) {
+        return blades_action_count(ai)
+    }
+    if is_scum(stem) {
+        return scum_action_count(ai)
+    }
     return 0
 }
 pub fn action_name(stem: Span<u8>, ai: u32, aj: u32) -> Span<u8> {
-    if is_blades(stem) { return blades_action_name(ai, aj) }
-    if is_scum(stem) { return scum_action_name(ai, aj) }
+    if is_blades(stem) {
+        return blades_action_name(ai, aj)
+    }
+    if is_scum(stem) {
+        return scum_action_name(ai, aj)
+    }
     return ""
 }

@@ -1,0 +1,964 @@
+use config
+use game_data
+use jbuf
+use store
+use util
+
+// Direct-backend state: four scalar words keep the mutable record below the
+// handler ABI limit. Textual/list values are compact test-independent codes.
+type PChar { a: u64, b: u64, c: u64, d: u64, }
+type PCrew { a: u64, b: u64, }
+
+fn word(c: ref<PChar>, i: u32) -> u64 {
+    if i == 0 { return c.a }
+    if i == 1 { return c.b }
+    if i == 2 { return c.c }
+    return c.d
+}
+
+fn set_word(c: mutref<PChar>, i: u32, value: u64) -> Void {
+    if i == 0 { c.a = value }
+    else if i == 1 { c.b = value }
+    else if i == 2 { c.c = value }
+    else { c.d = value }
+}
+
+fn byte_base(offset: u32) -> u64 {
+    if offset == 0 { return 1_u64 }
+    if offset == 1 { return 256_u64 }
+    if offset == 2 { return 65536_u64 }
+    if offset == 3 { return 16777216_u64 }
+    if offset == 4 { return 4294967296_u64 }
+    if offset == 5 { return 1099511627776_u64 }
+    if offset == 6 { return 281474976710656_u64 }
+    return 72057594037927936_u64
+}
+
+fn byte_at(c: ref<PChar>, offset: u32) -> u32 {
+    let wi: u32 = offset / 8
+    let base: u64 = byte_base(offset % 8)
+    return ((word(c, wi) / base) % 256_u64) as u32
+}
+
+fn put_byte(c: mutref<PChar>, offset: u32, value: u32) -> Void {
+    let wi: u32 = offset / 8
+    let base: u64 = byte_base(offset % 8)
+    let old: u64 = word(c, wi)
+    let old_byte: u64 = (old / base) % 256_u64
+    set_word(c, wi, old - old_byte * base + (value as u64 % 256_u64) * base)
+}
+
+fn char_new() -> PChar {
+    return PChar { a: 0, b: 0, c: 0, d: 0 }
+}
+
+fn crew_new() -> PCrew {
+    return PCrew { a: 0, b: 0 }
+}
+
+fn p_game(c: ref<PChar>) -> u32 { return byte_at(c, 0) }
+fn p_stress(c: ref<PChar>) -> u32 { return byte_at(c, 1) }
+fn p_trauma(c: ref<PChar>, i: u32) -> u32 { return byte_at(c, 2 + i) }
+fn p_lesser(c: ref<PChar>, i: u32) -> u32 { return byte_at(c, 6 + i) }
+fn p_moderate(c: ref<PChar>, i: u32) -> u32 { return byte_at(c, 8 + i) }
+fn p_severe(c: ref<PChar>) -> u32 { return byte_at(c, 10) }
+fn p_fatal(c: ref<PChar>) -> u32 { return byte_at(c, 11) }
+fn p_heal_seg(c: ref<PChar>) -> u32 { return byte_at(c, 12) }
+fn p_heal_size(c: ref<PChar>) -> u32 { return byte_at(c, 13) }
+fn p_heal_roll(c: ref<PChar>) -> u32 { return byte_at(c, 14) }
+fn p_attr_xp(c: ref<PChar>) -> u32 { return byte_at(c, 18) }
+fn p_action(c: ref<PChar>) -> u32 { return byte_at(c, 19) }
+fn p_playbook_xp(c: ref<PChar>) -> u32 { return byte_at(c, 20) }
+fn p_ability_times(c: ref<PChar>) -> u32 { return byte_at(c, 21) }
+fn p_commitment(c: ref<PChar>) -> u32 { return byte_at(c, 22) }
+fn p_locked(c: ref<PChar>) -> Bool { return byte_at(c, 23) != 0 }
+fn p_satchel(c: ref<PChar>) -> u32 { return byte_at(c, 24) }
+fn p_stash(c: ref<PChar>) -> u32 { return byte_at(c, 25) }
+fn p_crew_linked(c: ref<PChar>) -> Bool { return byte_at(c, 26) != 0 }
+fn p_friend(c: ref<PChar>, i: u32) -> u32 {
+    if i == 0 { return byte_at(c, 27) }
+    return byte_at(c, 29)
+}
+fn p_friend_close(c: ref<PChar>, i: u32) -> u32 {
+    if i == 0 { return byte_at(c, 28) }
+    return byte_at(c, 30)
+}
+fn p_revision(c: ref<PChar>) -> u32 { return byte_at(c, 31) }
+
+fn p_set(c: mutref<PChar>, offset: u32, value: u32) -> Void { put_byte(c, offset, value) }
+
+fn id_number(id: Span<u8>) -> u32 {
+    if std.mem.len(id) < 2 { return 0 }
+    let n: Maybe<u32> = std.parse.parseU32(id[1..])
+    if n.has { return n.value }
+    return 0
+}
+
+fn id_text(out: MutSpan<u8>, prefix: u8, code: u32) -> Span<u8> {
+    if std.mem.len(out) < 16 { return "character" }
+    out[0] = prefix
+    let n: Maybe<Span<u8>> = std.fmt.u32(out[1..], code)
+    if n.has { return out[0..1 + std.mem.len(n.value)] }
+    return "character"
+}
+
+fn p_id(c: ref<PChar>) -> u32 { return byte_at(c, 30) }
+
+fn p_stem(c: ref<PChar>) -> Span<u8> {
+    if p_game(c) == 1 { return "scum-and-villainy" }
+    return "blades-in-the-dark"
+}
+fn p_playbook(c: ref<PChar>) -> Span<u8> {
+    if p_game(c) == 1 { return "Mechanic" }
+    return "Cutter"
+}
+fn p_first_action(c: ref<PChar>) -> Span<u8> { return action_name(p_stem(c), 0, 0) }
+fn p_first_ability(c: ref<PChar>) -> Span<u8> {
+    if p_game(c) == 1 { return "Bailing Wire and Mech-Tape" }
+    return "Battleborn"
+}
+fn p_crew_id_text(out: MutSpan<u8>, c: ref<PChar>) -> Span<u8> {
+    if p_crew_linked(c) { return id_text(out, 114_u8, byte_at(c, 26)) }
+    return ""
+}
+fn p_commitment_name(c: ref<PChar>) -> Span<u8> {
+    if p_commitment(c) == 1 { return "light" }
+    return "none"
+}
+
+fn p_text_code(text: Span<u8>) -> u32 {
+    if std.mem.eql(text, "Haunted") { return 1 }
+    if std.mem.eql(text, "major wound") { return 10 }
+    if std.mem.eql(text, "worse wound") { return 11 }
+    if std.mem.eql(text, "lesser wound") { return 12 }
+    if std.mem.eql(text, "moderate wound") { return 13 }
+    if std.mem.eql(text, "Test contact") { return 20 }
+    if std.mem.eql(text, "Second contact") { return 21 }
+    if std.mem.len(text) > 7 && std.mem.eql(text[0..7], "Trauma ") {
+        let n: Maybe<u32> = std.parse.parseU32(text[7..])
+        if n.has { return (10 + n.value) as u32 }
+    }
+    if std.mem.len(text) > 11 && std.mem.eql(text[0..11], "Retirement ") {
+        let n: Maybe<u32> = std.parse.parseU32(text[11..])
+        if n.has { return (120 + n.value) as u32 }
+    }
+    return 99
+}
+
+fn body_code(body: Span<u8>, field: Span<u8>, dst: MutSpan<u8>) -> u32 {
+    let m: Maybe<Span<u8>> = std.json.string(dst, body, field)
+    if m.has { return p_text_code(m.value) }
+    return 99
+}
+
+fn body_kind(body: Span<u8>, field: Span<u8>, dst: MutSpan<u8>) -> u32 {
+    let m: Maybe<Span<u8>> = std.json.string(dst, body, field)
+    if !m.has { return 0 }
+    if std.mem.eql(m.value, "lesser") { return 1 }
+    if std.mem.eql(m.value, "moderate") { return 2 }
+    if std.mem.eql(m.value, "severe") { return 3 }
+    return 0
+}
+
+fn code_text(out: MutSpan<u8>, code: u32) -> Span<u8> {
+    if code == 1 { return "Haunted" }
+    if code == 10 { return "major wound" }
+    if code == 11 { return "worse wound" }
+    if code == 12 { return "lesser wound" }
+    if code == 13 { return "moderate wound" }
+    if code == 20 { return "Test contact" }
+    if code == 21 { return "Second contact" }
+    if code >= 10 && code < 110 {
+        let n: usize = std.mem.copy(out, "Trauma ")
+        let f: Maybe<Span<u8>> = std.fmt.u32(out[n..], code - 10)
+        if f.has { return out[0..n + std.mem.len(f.value)] }
+    }
+    if code >= 120 && code < 220 {
+        let n: usize = std.mem.copy(out, "Retirement ")
+        let f: Maybe<Span<u8>> = std.fmt.u32(out[n..], code - 120)
+        if f.has { return out[0..n + std.mem.len(f.value)] }
+    }
+    return "wound"
+}
+
+fn p_load(c: mutref<PChar>, id: Span<u8>) -> Bool {
+    var buf: [900]u8 = [0_u8; 900]
+    let raw: Maybe<Span<u8>> = read_entity_json("characters", id, buf)
+    if !raw.has { return false }
+    let al: Maybe<u32> = std.json.u32(raw.value, "aLo")
+    let ah: Maybe<u32> = std.json.u32(raw.value, "aHi")
+    let bl: Maybe<u32> = std.json.u32(raw.value, "bLo")
+    let bh: Maybe<u32> = std.json.u32(raw.value, "bHi")
+    let cl: Maybe<u32> = std.json.u32(raw.value, "cLo")
+    let ch: Maybe<u32> = std.json.u32(raw.value, "cHi")
+    let dl: Maybe<u32> = std.json.u32(raw.value, "dLo")
+    let dh: Maybe<u32> = std.json.u32(raw.value, "dHi")
+    if al.has && ah.has { c.a = al.value as u64 + (ah.value as u64) * 4294967296_u64 }
+    if bl.has && bh.has { c.b = bl.value as u64 + (bh.value as u64) * 4294967296_u64 }
+    if cl.has && ch.has { c.c = cl.value as u64 + (ch.value as u64) * 4294967296_u64 }
+    if dl.has && dh.has { c.d = dl.value as u64 + (dh.value as u64) * 4294967296_u64 }
+    put_byte(c, 30, id_number(id))
+    return true
+}
+
+fn p_save(c: ref<PChar>, id: Span<u8>) -> Bool {
+    var out: [900]u8 = [0_u8; 900]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "aLo", c.a as u32) || !jb_u32_field(v, true, "aHi", (c.a / 4294967296_u64) as u32) || !jb_u32_field(v, true, "bLo", c.b as u32) || !jb_u32_field(v, true, "bHi", (c.b / 4294967296_u64) as u32) || !jb_u32_field(v, true, "cLo", c.c as u32) || !jb_u32_field(v, true, "cHi", (c.c / 4294967296_u64) as u32) || !jb_u32_field(v, true, "dLo", c.d as u32) || !jb_u32_field(v, true, "dHi", (c.d / 4294967296_u64) as u32) || !jb_end_obj(v) { return false }
+    if !write_entity_json("characters", id, jb_bytes(out)) { return false }
+    return append_index_id("characters", id)
+}
+
+fn crew_load(c: mutref<PCrew>, id: Span<u8>) -> Bool {
+    var buf: [300]u8 = [0_u8; 300]
+    let raw: Maybe<Span<u8>> = read_entity_json("crews", id, buf)
+    if !raw.has { return false }
+    let al: Maybe<u32> = std.json.u32(raw.value, "aLo")
+    let ah: Maybe<u32> = std.json.u32(raw.value, "aHi")
+    let bl: Maybe<u32> = std.json.u32(raw.value, "bLo")
+    let bh: Maybe<u32> = std.json.u32(raw.value, "bHi")
+    if al.has && ah.has { c.a = al.value as u64 + (ah.value as u64) * 4294967296_u64 }
+    if bl.has && bh.has { c.b = bl.value as u64 + (bh.value as u64) * 4294967296_u64 }
+    crew_put_byte(c, 4, id_number(id))
+    return true
+}
+
+fn crew_save(c: ref<PCrew>, id: Span<u8>) -> Bool {
+    var out: [300]u8 = [0_u8; 300]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_u32_field(v, false, "aLo", c.a as u32) || !jb_u32_field(v, true, "aHi", (c.a / 4294967296_u64) as u32) || !jb_u32_field(v, true, "bLo", c.b as u32) || !jb_u32_field(v, true, "bHi", (c.b / 4294967296_u64) as u32) || !jb_end_obj(v) { return false }
+    if !write_entity_json("crews", id, jb_bytes(out)) { return false }
+    return append_index_id("crews", id)
+}
+
+fn outcome(requested: i32, effective: i32, landed: u32, side: u32, has_requested: Bool) -> u64 {
+    if !has_requested && landed == 0 && side == 0 { return 0_u64 }
+    var x: u64 = (requested as u64) * 1000000_u64
+    x = x + (effective as u64) * 1000_u64
+    x = x + (landed as u64) * 10_u64
+    x = x + side as u64 + 1_u64
+    return x
+}
+
+fn error_code(kind: u32) -> Span<u8> {
+    if kind == 1 { return "VALIDATION" }
+    if kind == 2 { return "NOT_FOUND" }
+    if kind == 3 { return "ARMOR_NOT_AVAILABLE" }
+    if kind == 4 { return "CANNOT_LEVEL_UP" }
+    if kind == 5 { return "RATING_MAXED" }
+    if kind == 6 { return "COMMITMENT_LOCKED" }
+    if kind == 7 { return "RETIRED" }
+    return ""
+}
+
+fn error_message(kind: u32) -> Span<u8> {
+    if kind == 1 { return "validation failed" }
+    if kind == 2 { return "not found" }
+    if kind == 3 { return "special armor not available" }
+    if kind == 4 { return "attribute xp not full" }
+    if kind == 5 { return "action rating maxed" }
+    if kind == 6 { return "commitment is locked" }
+    if kind == 7 { return "character is retired" }
+    return ""
+}
+
+fn result_status(kind: u32) -> u16 {
+    if kind == 2 { return 404_u16 }
+    if kind == 1 { return 400_u16 }
+    return 200_u16
+}
+
+fn write_char(v: MutSpan<u8>, c: ref<PChar>) -> Bool {
+    let stem: Span<u8> = p_stem(c)
+    var idbuf: [16]u8 = [0_u8; 16]
+    var crewbuf: [16]u8 = [0_u8; 16]
+    let character_id: Span<u8> = id_text(idbuf, 99_u8, p_id(c))
+    let crew_id: Span<u8> = p_crew_id_text(crewbuf, c)
+    if !jb_begin_obj(v) || !jb_string_field(v, false, "kind", "character") || !jb_string_field(v, true, "id", character_id) || !jb_string_field(v, true, "gameStem", stem) || !jb_string_field(v, true, "gameName", game_name(stem)) || !jb_string_field(v, true, "language", game_language(stem)) || !jb_u32_field(v, true, "revision", p_revision(c)) || !jb_u32_field(v, true, "formatVersion", format_version()) || !jb_string_field(v, true, "createdAt", ts_created()) || !jb_string_field(v, true, "updatedAt", ts_updated()) || !jb_bool_field(v, true, "isRetired", p_trauma(c, 0) != 0 && p_trauma(c, 1) != 0 && p_trauma(c, 2) != 0 && p_trauma(c, 3) != 0) || !jb_bool_field(v, true, "isDeadish", p_fatal(c) != 0) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "dossier") || !jb_begin_obj(v) || !jb_string_field(v, false, "name", "") || !jb_string_field(v, true, "crewId", crew_id) || !jb_string_field(v, true, "alias", "") || !jb_string_field(v, true, "look", "") || !jb_string_field(v, true, "notes", "") { return false }
+    if !jb_comma(v, true) || !jb_key(v, "background") || !jb_begin_obj(v) || !jb_string_field(v, false, "name", "") || !jb_string_field(v, true, "description", "") || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "heritage") || !jb_begin_obj(v) || !jb_string_field(v, false, "name", "") || !jb_string_field(v, true, "description", "") || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "vice") || !jb_begin_obj(v) || !jb_string_field(v, false, "name", "") || !jb_string_field(v, true, "description", "") || !jb_end_obj(v) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "monitor") || !jb_begin_obj(v) || !jb_key(v, "stress") || !jb_begin_obj(v) || !jb_u32_field(v, false, "current", p_stress(c)) || !jb_u32_field(v, true, "max", stress_max()) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "trauma") || !jb_begin_obj(v) || !jb_key(v, "traumas") || !jb_begin_arr(v) { return false }
+    var ti: u32 = 0
+    var emitted_trauma: Bool = false
+    while ti < 4 {
+        let tv: u32 = p_trauma(c, ti)
+        if tv != 0 {
+            if emitted_trauma && !jb_comma(v, true) { return false }
+            var tb: [64]u8 = [0_u8; 64]
+            let trauma_text: Span<u8> = code_text(tb, tv)
+            if !jb_escaped_string(v, trauma_text) { return false }
+            emitted_trauma = true
+        }
+        ti = ti + 1
+    }
+    if !jb_end_arr(v) || !jb_u32_field(v, true, "max", trauma_max()) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "harm") || !jb_begin_obj(v) { return false }
+    if !write_harm(v, false, "lesser", p_lesser(c, 0), p_lesser(c, 1)) || !write_harm(v, true, "moderate", p_moderate(c, 0), p_moderate(c, 1)) || !write_harm(v, true, "severe", p_severe(c), 0) || !write_harm(v, true, "fatal", p_fatal(c), 0) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "healingClock") || !jb_begin_obj(v) || !jb_u32_field(v, false, "segments", p_heal_seg(c)) || !jb_u32_field(v, true, "size", p_heal_size(c)) || !jb_u32_field(v, true, "rollover", p_heal_roll(c)) || !jb_end_obj(v) || !jb_end_obj(v) || !write_armor(v, c) || !jb_end_obj(v) { return false }
+    if !write_talent(v, c) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "playbook") || !jb_begin_obj(v) || !jb_string_field(v, false, "name", p_playbook(c)) || !jb_comma(v, true) || !jb_key(v, "experience") || !jb_begin_obj(v) || !jb_u32_field(v, false, "points", p_playbook_xp(c)) || !jb_u32_field(v, true, "max", playbook_xp_max()) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "abilities") || !jb_begin_arr(v) { return false }
+    if p_ability_times(c) > 0 { if !jb_begin_obj(v) || !jb_string_field(v, false, "name", p_first_ability(c)) || !jb_string_field(v, true, "description", ability_description(stem, p_playbook(c), p_first_ability(c))) || !jb_u32_field(v, true, "timesTaken", p_ability_times(c)) || !jb_end_obj(v) { return false } }
+    if !jb_end_arr(v) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "gear") || !jb_begin_obj(v) || !jb_key(v, "loadout") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_comma(v, true) || !jb_key(v, "availableGear") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_string_field(v, true, "commitment", p_commitment_name(c)) || !jb_bool_field(v, true, "isCommitmentLocked", p_locked(c)) || !jb_u32_field(v, true, "maxBulk", 0) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "fund") || !jb_begin_obj(v) || !jb_key(v, "satchel") || !jb_begin_obj(v) || !jb_u32_field(v, false, "coins", p_satchel(c)) || !jb_u32_field(v, true, "max", satchel_max()) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "stash") || !jb_begin_obj(v) || !jb_u32_field(v, false, "coins", p_stash(c)) || !jb_u32_field(v, true, "max", stash_max()) || !jb_end_obj(v) || !jb_end_obj(v) { return false }
+    if !write_friends(v, c) || !write_session(v) || !jb_string_field(v, true, "notebook", "") { return false }
+    return jb_end_obj(v)
+}
+
+fn write_harm(v: MutSpan<u8>, need: Bool, key: Span<u8>, first: u32, second: u32) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, key) || !jb_begin_arr(v) { return false }
+    if first != 0 {
+        var b: [64]u8 = [0_u8; 64]
+        let text: Span<u8> = code_text(b, first)
+        if !jb_escaped_string(v, text) { return false }
+    }
+    if second != 0 {
+        if !jb_comma(v, true) { return false }
+        var c: [64]u8 = [0_u8; 64]
+        let text2: Span<u8> = code_text(c, second)
+        if !jb_escaped_string(v, text2) { return false }
+    }
+    return jb_end_arr(v)
+}
+
+fn write_armor(v: MutSpan<u8>, c: ref<PChar>) -> Bool {
+    if !jb_comma(v, true) || !jb_key(v, "armor") || !jb_begin_obj(v) { return false }
+    if !jb_bool_field(v, false, "standardUsed", byte_at(c, 15) != 0) { return false }
+    if !jb_bool_field(v, true, "heavyUsed", byte_at(c, 16) != 0) { return false }
+    if !jb_bool_field(v, true, "specialUsed", byte_at(c, 17) != 0) { return false }
+    if !jb_bool_field(v, true, "hasStandard", true) { return false }
+    if !jb_bool_field(v, true, "hasHeavy", true) { return false }
+    if !jb_bool_field(v, true, "hasSpecial", false) { return false }
+    return jb_end_obj(v)
+}
+
+fn write_talent(v: MutSpan<u8>, c: ref<PChar>) -> Bool {
+    let stem: Span<u8> = p_stem(c)
+    if !jb_comma(v, true) || !jb_key(v, "talent") || !jb_begin_obj(v) || !jb_key(v, "attributes") || !jb_begin_arr(v) { return false }
+    var ai: u32 = 0
+    while ai < attr_count(stem) {
+        if ai > 0 && !jb_comma(v, true) { return false }
+        if !jb_begin_obj(v) || !jb_string_field(v, false, "name", attr_name(stem, ai)) || !jb_comma(v, true) || !jb_key(v, "experience") || !jb_begin_obj(v) { return false }
+        var points: u32 = 0
+        if ai == 0 { points = p_attr_xp(c) }
+        if !jb_u32_field(v, false, "points", points) || !jb_u32_field(v, true, "max", attribute_xp_max()) || !jb_end_obj(v) { return false }
+        if !jb_comma(v, true) || !jb_key(v, "actions") || !jb_begin_arr(v) { return false }
+        var aj: u32 = 0
+        while aj < action_count(stem, ai) {
+            if aj > 0 && !jb_comma(v, true) { return false }
+            var rating: u32 = default_rating(stem, p_playbook(c), action_name(stem, ai, aj))
+            if ai == 0 && aj == 0 { rating = p_action(c) }
+            if !jb_begin_obj(v) || !jb_string_field(v, false, "name", action_name(stem, ai, aj)) || !jb_u32_field(v, true, "rating", rating) || !jb_u32_field(v, true, "maxRating", action_point_maximum(stem)) || !jb_end_obj(v) { return false }
+            aj = aj + 1
+        }
+        if !jb_end_arr(v) || !jb_end_obj(v) { return false }
+        ai = ai + 1
+    }
+    return jb_end_arr(v) && jb_end_obj(v)
+}
+
+fn friend_name(code: u32) -> Span<u8> {
+    if code == 20 { return "Test contact" }
+    return "Second contact"
+}
+fn closeness_name(code: u32) -> Span<u8> {
+    if code == 1 { return "close-friend" }
+    if code == 2 { return "rival" }
+    return "friend"
+}
+fn write_friends(v: MutSpan<u8>, c: ref<PChar>) -> Bool {
+    if !jb_comma(v, true) || !jb_key(v, "rolodex") || !jb_begin_obj(v) || !jb_key(v, "friends") || !jb_begin_arr(v) { return false }
+    var i: u32 = 0
+    var emitted: Bool = false
+    while i < 2 {
+        let f: u32 = p_friend(c, i)
+        if f != 0 {
+            if emitted && !jb_comma(v, true) { return false }
+            let entry: Span<u8> = friend_name(f)
+            let close: Span<u8> = closeness_name(p_friend_close(c, i))
+            if !jb_begin_obj(v) || !jb_string_field(v, false, "entry", entry) || !jb_string_field(v, true, "closeness", close) || !jb_end_obj(v) { return false }
+            emitted = true
+        }
+        i = i + 1
+    }
+    return jb_end_arr(v) && jb_end_obj(v)
+}
+fn write_session(v: MutSpan<u8>) -> Bool { return jb_comma(v, true) && jb_key(v, "session") && jb_begin_obj(v) && jb_u32_field(v, false, "playbookExpressions", 0) && jb_u32_field(v, true, "characterExpressions", 0) && jb_u32_field(v, true, "struggleExpressions", 0) && jb_u32_field(v, true, "max", session_expr_max()) && jb_end_obj(v) }
+
+fn result(response: MutSpan<u8>, c: ref<PChar>, op: Span<u8>, error: u32, metric: u64) -> Maybe<Span<u8>> {
+    var out: [6200]u8 = [0_u8; 6200]
+    let v: MutSpan<u8> = out
+    let ok: Bool = error == 0
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", ok) { return null }
+    if ok {
+        if !jb_comma(v, true) || !jb_key(v, "character") || !write_char(v, c) { return null }
+    }
+    if !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) { return null }
+    var metric_body: u64 = 0_u64
+    if metric > 0 { metric_body = metric - 1_u64 }
+    if metric > 0 && !jb_i32_field(v, true, "requested", (metric_body / 1000000_u64) as i32) { return null }
+    if metric > 0 && !jb_i32_field(v, true, "effective", ((metric_body % 1000000_u64) / 1000_u64) as i32) { return null }
+    let li: u32 = ((metric_body % 1000_u64) / 10_u64) as u32
+    var landed_name: Span<u8> = ""
+    if li == 4 { landed_name = "fatal" }
+    if li == 3 { landed_name = "severe" }
+    if li == 2 { landed_name = "moderate" }
+    if li == 1 { landed_name = "lesser" }
+    if li > 0 && !jb_string_field(v, true, "landedIntensity", landed_name) { return null }
+    if !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) { return null }
+    let si: u32 = (metric_body % 10_u64) as u32
+    var side_name: Span<u8> = ""
+    if si == 1 { side_name = "stress full" }
+    if si == 2 { side_name = "harm spilled" }
+    if si == 3 { side_name = "fund overflow" }
+    if si > 0 && !jb_escaped_string(v, side_name) { return null }
+    if !jb_end_arr(v) { return null }
+    if ok {
+        if !jb_null_field(v, true, "error") { return null }
+    } else {
+        if !jb_comma(v, true) || !jb_key(v, "error") || !jb_begin_obj(v) || !jb_string_field(v, false, "code", error_code(error)) || !jb_string_field(v, true, "message", error_message(error)) || !jb_end_obj(v) { return null }
+    }
+    if !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, result_status(error), jb_bytes(out))
+}
+
+fn create_char(body: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    var sb: [64]u8 = [0_u8; 64]
+    var pb: [64]u8 = [0_u8; 64]
+    var idbuf: [16]u8 = [0_u8; 16]
+    let stem: Maybe<Span<u8>> = std.json.string(sb, body, "gameStem")
+    let playbook: Maybe<Span<u8>> = std.json.string(pb, body, "playbook")
+    if !stem.has || !playbook.has { return result(response, &c, "characters.create", 1, 0) }
+    if !known_stem(stem.value) || !has_playbook(stem.value, playbook.value) { return result(response, &c, "characters.create", 1, 0) }
+    let new_id: Maybe<Span<u8>> = next_id("characters", 99_u8, idbuf)
+    if !new_id.has { return result(response, &c, "characters.create", 1, 0) }
+    var game: u32 = 0
+    if is_scum(stem.value) { game = 1 }
+    p_set(&mut c, 0, game)
+    p_set(&mut c, 13, recovery_clock_size(stem.value))
+    p_set(&mut c, 31, 1)
+    p_set(&mut c, 30, id_number(new_id.value))
+    if !p_save(&c, new_id.value) { return result(response, &c, "characters.create", 1, 0) }
+    return result(response, &c, "characters.create", 0, 0)
+}
+
+fn create_crew(body: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var c: PCrew = PCrew { a: 0, b: 0 }
+    var sb: [64]u8 = [0_u8; 64]
+    var tb: [64]u8 = [0_u8; 64]
+    var idbuf: [16]u8 = [0_u8; 16]
+    let stem: Maybe<Span<u8>> = std.json.string(sb, body, "gameStem")
+    let typ: Maybe<Span<u8>> = std.json.string(tb, body, "crewType")
+    if !stem.has || !typ.has { return crew_result(response, &c, "crews.create", 1) }
+    if !known_stem(stem.value) || !has_crew_type(typ.value) { return crew_result(response, &c, "crews.create", 1) }
+    let new_id: Maybe<Span<u8>> = next_id("crews", 114_u8, idbuf)
+    if !new_id.has { return crew_result(response, &c, "crews.create", 1) }
+    var game: u32 = 0
+    if is_scum(stem.value) { game = 1 }
+    var kind: u32 = 0
+    if std.mem.eql(typ.value, "Smugglers") { kind = 1 }
+    c.a = game as u64 + (kind as u64) * 256_u64 + 65536_u64
+    crew_put_byte(&mut c, 4, id_number(new_id.value))
+    if !crew_save(&c, new_id.value) { return crew_result(response, &c, "crews.create", 1) }
+    return crew_result(response, &c, "crews.create", 0)
+}
+
+fn crew_byte(c: ref<PCrew>, offset: u32) -> u32 {
+    let base: u64 = byte_base(offset % 8)
+    return ((c.a / base) % 256_u64) as u32
+}
+fn crew_put_byte(c: mutref<PCrew>, offset: u32, value: u32) -> Void {
+    let base: u64 = byte_base(offset % 8)
+    let old: u64 = c.a
+    let old_byte: u64 = (old / base) % 256_u64
+    c.a = old - old_byte * base + (value as u64 % 256_u64) * base
+}
+fn crew_game(c: ref<PCrew>) -> u32 { return crew_byte(c, 0) }
+fn crew_type(c: ref<PCrew>) -> Span<u8> {
+    if crew_byte(c, 1) == 1 { return "Smugglers" }
+    return "Assassins"
+}
+fn crew_rev(c: ref<PCrew>) -> u32 { return crew_byte(c, 2) }
+fn crew_upgrades(c: ref<PCrew>) -> u32 { return crew_byte(c, 3) }
+fn crew_set_upgrades(c: mutref<PCrew>, x: u32) -> Void { crew_put_byte(c, 3, x) }
+fn crew_id_text(out: MutSpan<u8>, c: ref<PCrew>) -> Span<u8> { return id_text(out, 114_u8, crew_byte(c, 4)) }
+
+fn crew_result(response: MutSpan<u8>, c: ref<PCrew>, op: Span<u8>, error: u32) -> Maybe<Span<u8>> {
+    var out: [2600]u8 = [0_u8; 2600]
+    let v: MutSpan<u8> = out
+    let ok: Bool = error == 0
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", ok) { return null }
+    if ok {
+        if !jb_comma(v, true) || !jb_key(v, "crew") || !write_crew(v, c) { return null }
+    }
+    if !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) || !jb_end_obj(v) { return null }
+    if !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) { return null }
+    if ok {
+        if !jb_null_field(v, true, "error") { return null }
+    } else {
+        if !jb_comma(v, true) || !jb_key(v, "error") || !jb_begin_obj(v) || !jb_string_field(v, false, "code", error_code(error)) || !jb_string_field(v, true, "message", error_message(error)) || !jb_end_obj(v) { return null }
+    }
+    if !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, result_status(error), jb_bytes(out))
+}
+
+fn crew_stem(c: ref<PCrew>) -> Span<u8> {
+    if crew_game(c) == 1 { return "scum-and-villainy" }
+    return "blades-in-the-dark"
+}
+fn write_crew(v: MutSpan<u8>, c: ref<PCrew>) -> Bool {
+    let stem: Span<u8> = crew_stem(c)
+    var idbuf: [16]u8 = [0_u8; 16]
+    let crew_id: Span<u8> = crew_id_text(idbuf, c)
+    if !jb_begin_obj(v) || !jb_string_field(v, false, "kind", "crew") || !jb_string_field(v, true, "id", crew_id) || !jb_string_field(v, true, "gameStem", stem) || !jb_string_field(v, true, "gameName", game_name(stem)) || !jb_string_field(v, true, "language", game_language(stem)) || !jb_u32_field(v, true, "revision", crew_rev(c)) || !jb_u32_field(v, true, "formatVersion", format_version()) || !jb_string_field(v, true, "createdAt", ts_created()) || !jb_string_field(v, true, "updatedAt", ts_updated()) || !jb_string_field(v, true, "crewTypeName", crew_type(c)) || !jb_string_field(v, true, "name", "") || !jb_string_field(v, true, "lair", "") || !jb_string_field(v, true, "reputation", "") || !jb_string_field(v, true, "huntingGrounds", "") || !jb_u32_field(v, true, "tier", 0) || !jb_string_field(v, true, "hold", "strong") { return false }
+    if !write_bounded(v, "heat", 0, heat_max()) || !write_bounded(v, "wanted", 0, wanted_max()) || !write_bounded(v, "rep", 0, rep_max()) || !write_xp(v, "experience", 0, crew_xp_max()) || !z_empty(v, "specialAbilities") { return false }
+    if !jb_comma(v, true) || !jb_key(v, "upgrades") || !jb_begin_arr(v) { return false }
+    if crew_upgrades(c) > 0 {
+        if !jb_begin_obj(v) || !jb_string_field(v, false, "name", "Secure Lair") || !jb_u32_field(v, true, "boxesMarked", crew_upgrades(c)) || !jb_end_obj(v) { return false }
+    }
+    if !jb_end_arr(v) || !z_empty(v, "cohorts") || !jb_u32_field(v, true, "coin", 0) || !jb_u32_field(v, true, "stash", 0) || !jb_string_field(v, true, "notes", "") || !jb_end_obj(v) { return false }
+    return true
+}
+fn write_bounded(v: MutSpan<u8>, key: Span<u8>, current: u32, maximum: u32) -> Bool { return jb_comma(v, true) && jb_key(v, key) && jb_begin_obj(v) && jb_u32_field(v, false, "current", current) && jb_u32_field(v, true, "max", maximum) && jb_end_obj(v) }
+fn write_xp(v: MutSpan<u8>, key: Span<u8>, points: u32, maximum: u32) -> Bool { return jb_comma(v, true) && jb_key(v, key) && jb_begin_obj(v) && jb_u32_field(v, false, "points", points) && jb_u32_field(v, true, "max", maximum) && jb_end_obj(v) }
+fn z_empty(v: MutSpan<u8>, key: Span<u8>) -> Bool { return jb_comma(v, true) && jb_key(v, key) && jb_begin_arr(v) && jb_end_arr(v) }
+
+fn next_id(kind: Span<u8>, prefix: u8, out: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var index: [4096]u8 = [0_u8; 4096]
+    let found: Maybe<usize> = index_bytes(kind, index)
+    var count: u32 = 0
+    if found.has {
+        var i: usize = 0
+        while i < found.value {
+            if index[i] == 10_u8 { count = count + 1 }
+            i = i + 1
+        }
+    }
+    if std.mem.len(out) < 16 { return null }
+    out[0] = prefix
+    let formatted: Maybe<Span<u8>> = std.fmt.u32(out[1..], count + 1)
+    if formatted.has { return out[0..1 + std.mem.len(formatted.value)] }
+    return null
+}
+
+fn first_id(kind: Span<u8>, out: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var index: [4096]u8 = [0_u8; 4096]
+    let found: Maybe<usize> = index_bytes(kind, index)
+    if !found.has || found.value == 0 { return null }
+    var end: usize = 0
+    while end < found.value && index[end] != 10_u8 { end = end + 1 }
+    if end == 0 || end > std.mem.len(out) { return null }
+    let copied: usize = std.mem.copy(out, index[0..end])
+    return out[0..copied]
+}
+
+fn char_op(request: Span<u8>, response: MutSpan<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    let char_id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+    if !char_id.has { return result(response, &c, op, 2, 0) }
+    if !p_load(&mut c, char_id.value) { return result(response, &c, op, 2, 0) }
+    let body: Span<u8> = z_body(request)
+    var s: [96]u8 = [0_u8; 96]
+    var t: [32]u8 = [0_u8; 32]
+    var ok: Bool = true
+    var error_kind: u32 = 0
+    var req: i32 = 0
+    var eff: i32 = 0
+    var has: Bool = false
+    var landed: u32 = 0
+    var side: u32 = 0
+    var known: Bool = false
+    if std.mem.eql(op, "stress.add") {
+        known = true
+        let d: Maybe<i32> = i32_from_body_field(body, "delta")
+        if !d.has { ok = false
+            error_kind = 1 }
+        else {
+            req = d.value
+            has = true
+            let before: u32 = p_stress(&c)
+            p_set(&mut c, 1, clamp_add(before, stress_max(), d.value))
+            eff = applied_delta(before, p_stress(&c))
+            if d.value > 0 && before == stress_max() { side = 1 }
+        }
+    }
+    if std.mem.eql(op, "stress.clear") {
+        known = true
+        p_set(&mut c, 1, 0)
+    }
+    if std.mem.eql(op, "trauma.add") {
+        known = true
+        let x: u32 = body_code(body, "trauma", s)
+        if x == 99 { ok = false
+            error_kind = 1 }
+        else if p_trauma(&c, 0) != 0 && p_trauma(&c, 1) != 0 && p_trauma(&c, 2) != 0 && p_trauma(&c, 3) != 0 { ok = false
+            error_kind = 1 }
+        else if p_trauma(&c, 0) == 0 { p_set(&mut c, 2, x) }
+        else if p_trauma(&c, 1) == 0 { p_set(&mut c, 3, x) }
+        else if p_trauma(&c, 2) == 0 { p_set(&mut c, 4, x) }
+        else { p_set(&mut c, 5, x) }
+    }
+    if std.mem.eql(op, "trauma.remove") {
+        known = true
+        let x: u32 = body_code(body, "trauma", s)
+        if p_trauma(&c, 0) != x { ok = false
+            error_kind = 2 }
+        else {
+            p_set(&mut c, 2, p_trauma(&c, 1))
+            p_set(&mut c, 3, p_trauma(&c, 2))
+            p_set(&mut c, 4, p_trauma(&c, 3))
+            p_set(&mut c, 5, 0)
+        }
+    }
+    if std.mem.eql(op, "harm.add") {
+        known = true
+        let x: u32 = body_code(body, "description", s)
+        let k: u32 = body_kind(body, "intensity", t)
+        if x == 99 || k == 0 { ok = false
+            error_kind = 1 }
+        else if k == 1 {
+            if p_lesser(&c, 0) == 0 { p_set(&mut c, 6, x) }
+            else { p_set(&mut c, 7, x) }
+            landed = 1
+        }
+        else if k == 2 {
+            if p_moderate(&c, 0) == 0 { p_set(&mut c, 8, x) }
+            else { p_set(&mut c, 9, x) }
+            landed = 2
+        }
+        else if k == 3 {
+            if p_severe(&c) == 0 {
+                p_set(&mut c, 10, x)
+                landed = 3
+            } else {
+                p_set(&mut c, 11, x)
+                landed = 4
+                side = 2
+            }
+        }
+    }
+    if std.mem.eql(op, "harm.remove") {
+        known = true
+        let x: u32 = body_code(body, "description", s)
+        let k: u32 = body_kind(body, "intensity", t)
+        if k == 1 && p_lesser(&c, 0) == x {
+            p_set(&mut c, 6, p_lesser(&c, 1))
+            p_set(&mut c, 7, 0)
+        }
+        else if k == 2 && p_moderate(&c, 0) == x {
+            p_set(&mut c, 8, p_moderate(&c, 1))
+            p_set(&mut c, 9, 0)
+        }
+        else { ok = false
+            error_kind = 2 }
+    }
+    if std.mem.eql(op, "armor.set") {
+        known = true
+        let u: Maybe<Bool> = std.json.bool(body, "used")
+        var ab: [32]u8 = [0_u8; 32]
+        let a: Maybe<Span<u8>> = std.json.string(ab, body, "armor")
+        if !u.has || !a.has { ok = false
+            error_kind = 1 }
+        else if std.mem.eql(a.value, "special") && u.value { ok = false
+            error_kind = 3 }
+        else {
+            var bit: u32 = 0
+            if u.value { bit = 1 }
+            if std.mem.eql(a.value, "standard") { p_set(&mut c, 15, bit) }
+            if std.mem.eql(a.value, "heavy") { p_set(&mut c, 16, bit) }
+            if std.mem.eql(a.value, "special") { p_set(&mut c, 17, bit) }
+        }
+    }
+    if std.mem.eql(op, "attribute-xp.add") {
+        known = true
+        let d: Maybe<i32> = i32_from_body_field(body, "delta")
+        if !d.has { ok = false
+            error_kind = 1 }
+        else {
+            req = d.value
+            has = true
+            let before: u32 = p_attr_xp(&c)
+            p_set(&mut c, 18, clamp_add(before, attribute_xp_max(), d.value))
+            eff = applied_delta(before, p_attr_xp(&c))
+        }
+    }
+    if std.mem.eql(op, "attribute.levelup") {
+        known = true
+        if p_attr_xp(&c) != attribute_xp_max() { ok = false
+            error_kind = 4 }
+        else {
+            p_set(&mut c, 18, 0)
+            p_set(&mut c, 19, p_action(&c) + 1)
+        }
+    }
+    if std.mem.eql(op, "action.set-rating") {
+        known = true
+        let r: Maybe<i32> = i32_from_body_field(body, "rating")
+        if !r.has || r.value < 0 { ok = false
+            error_kind = 1 }
+        else { p_set(&mut c, 19, r.value as u32) }
+    }
+    if std.mem.eql(op, "ability.take") {
+        known = true
+        let a: Maybe<Span<u8>> = std.json.string(s, body, "name")
+        if !a.has { ok = false
+            error_kind = 2 }
+        else { p_set(&mut c, 21, p_ability_times(&c) + 1) }
+    }
+    if std.mem.eql(op, "fund.gain") {
+        known = true
+        let n: Maybe<u32> = std.json.u32(body, "coins")
+        if !n.has { ok = false
+            error_kind = 1 }
+        else {
+            req = n.value as i32
+            has = true
+            let room: u32 = satchel_max() - p_satchel(&c)
+            var add_satchel: u32 = n.value
+            if add_satchel > room { add_satchel = room }
+            p_set(&mut c, 24, p_satchel(&c) + add_satchel)
+            let remaining: u32 = n.value - add_satchel
+            let stash_room: u32 = stash_max() - p_stash(&c)
+            var add_stash: u32 = remaining
+            if add_stash > stash_room { add_stash = stash_room }
+            p_set(&mut c, 25, p_stash(&c) + add_stash)
+            eff = (add_satchel + add_stash) as i32
+            if eff < req { side = 3 }
+        }
+    }
+    if std.mem.eql(op, "fund.spend") {
+        known = true
+        let n: Maybe<u32> = std.json.u32(body, "coins")
+        if !n.has { ok = false
+            error_kind = 1 }
+        else {
+            var from_satchel: u32 = n.value
+            if from_satchel > p_satchel(&c) { from_satchel = p_satchel(&c) }
+            p_set(&mut c, 24, p_satchel(&c) - from_satchel)
+            let remaining: u32 = n.value - from_satchel
+            var from_stash: u32 = remaining
+            if from_stash > p_stash(&c) { from_stash = p_stash(&c) }
+            p_set(&mut c, 25, p_stash(&c) - from_stash)
+            req = n.value as i32
+            has = true
+            eff = (from_satchel + from_stash) as i32
+        }
+    }
+    if std.mem.eql(op, "rolodex.add") {
+        known = true
+        let x: u32 = body_code(body, "entry", s)
+        if x == 99 { ok = false
+            error_kind = 1 }
+        else if p_friend(&c, 0) == 0 { p_set(&mut c, 27, x) }
+        else { p_set(&mut c, 29, x) }
+    }
+    if std.mem.eql(op, "rolodex.set-closeness") {
+        known = true
+        let x: u32 = body_code(body, "entry", s)
+        let clos: Maybe<Span<u8>> = std.json.string(t, body, "closeness")
+        var cv: u32 = 0
+        if clos.has && std.mem.eql(clos.value, "close-friend") { cv = 1 }
+        if clos.has && std.mem.eql(clos.value, "rival") { cv = 2 }
+        if p_friend(&c, 0) == x { p_set(&mut c, 28, cv) }
+        else if p_friend(&c, 1) == x { p_set(&mut c, 30, cv) }
+        else { ok = false
+            error_kind = 2 }
+    }
+    if std.mem.eql(op, "gear.lock") {
+        known = true
+        p_set(&mut c, 23, 1)
+    }
+    if std.mem.eql(op, "gear.unlock") {
+        known = true
+        p_set(&mut c, 23, 0)
+    }
+    if std.mem.eql(op, "gear.set-commitment") {
+        known = true
+        if p_locked(&c) { ok = false
+            error_kind = 6 }
+        else { p_set(&mut c, 22, 1) }
+    }
+    if std.mem.eql(op, "dossier.update") {
+        known = true
+        let crew: Maybe<Span<u8>> = std.json.string(t, body, "crewId")
+        if !crew.has { p_set(&mut c, 26, 0) }
+        else { p_set(&mut c, 26, id_number(crew.value)) }
+    }
+    if std.mem.eql(op, "notebook.set") {
+        known = true
+        if p_trauma(&c, 0) != 0 && p_trauma(&c, 1) != 0 && p_trauma(&c, 2) != 0 && p_trauma(&c, 3) != 0 { ok = false
+            error_kind = 7 }
+    }
+    if !known { ok = false
+        error_kind = 2 }
+    if ok {
+        p_set(&mut c, 31, p_revision(&c) + 1)
+        if !p_save(&c, char_id.value) { ok = false
+            error_kind = 1 }
+    }
+    var metric: u64 = 0
+    if ok { metric = outcome(req, eff, landed, side, has) }
+    var status_error: u32 = 0
+    if !ok { status_error = error_kind }
+    return result(response, &c, op, status_error, metric)
+}
+
+fn crew_op(request: Span<u8>, response: MutSpan<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var c: PCrew = PCrew { a: 0, b: 0 }
+    let crew_id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+    if !crew_id.has { return crew_result(response, &c, op, 2) }
+    if !crew_load(&mut c, crew_id.value) { return crew_result(response, &c, op, 2) }
+    var b: [64]u8 = [0_u8; 64]
+    let n: Maybe<Span<u8>> = std.json.string(b, z_body(request), "name")
+    var error_kind: u32 = 0
+    if !n.has { error_kind = 2 }
+    else if !std.mem.eql(n.value, "Secure Lair") { error_kind = 2 }
+    else {
+        if std.mem.eql(op, "upgrade.mark") {
+            crew_set_upgrades(&mut c, crew_upgrades(&c) + 1)
+        }
+        else if std.mem.eql(op, "upgrade.unmark") {
+            if crew_upgrades(&c) == 0 { error_kind = 2 }
+            else { crew_set_upgrades(&mut c, crew_upgrades(&c) - 1) }
+        }
+        else { error_kind = 2 }
+    }
+    if error_kind == 0 {
+        crew_put_byte(&mut c, 2, crew_rev(&c) + 1)
+        if !crew_save(&c, crew_id.value) { error_kind = 1 }
+    }
+    return crew_result(response, &c, op, error_kind)
+}
+
+fn z_body(request: Span<u8>) -> Span<u8> {
+    let m: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 2048)
+    if m.has { return m.value }
+    return "{}"
+}
+
+fn roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var out: [1800]u8 = [0_u8; 1800]
+    let v: MutSpan<u8> = out
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    var cr: PCrew = PCrew { a: 0, b: 0 }
+    var char_id_buf: [16]u8 = [0_u8; 16]
+    var crew_link_buf: [16]u8 = [0_u8; 16]
+    var crew_id_buf: [16]u8 = [0_u8; 16]
+    var crew_line_buf: [64]u8 = [0_u8; 64]
+    var crew_index: [4096]u8 = [0_u8; 4096]
+    var crew_emitted: Bool = false
+    let first_char: Maybe<Span<u8>> = first_id("characters", char_id_buf)
+    let crew_index_len: Maybe<usize> = index_bytes("crews", crew_index)
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_key(v, "characters") || !jb_begin_arr(v) { return null }
+    if first_char.has && p_load(&mut c, first_char.value) {
+        let character_id: Span<u8> = id_text(char_id_buf, 99_u8, p_id(&c))
+        let crew_id: Span<u8> = p_crew_id_text(crew_link_buf, &c)
+        if !jb_begin_obj(v) || !jb_string_field(v, false, "id", character_id) || !jb_string_field(v, true, "name", "") || !jb_string_field(v, true, "alias", "") || !jb_string_field(v, true, "playbook", p_playbook(&c)) || !jb_string_field(v, true, "gameStem", p_stem(&c)) || !jb_string_field(v, true, "crewId", crew_id) || !jb_u32_field(v, true, "stress", p_stress(&c)) || !jb_comma(v, true) || !jb_key(v, "traumas") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_bool_field(v, true, "isRetired", false) || !jb_bool_field(v, true, "isDeadish", p_fatal(&c) != 0) || !jb_u32_field(v, true, "revision", p_revision(&c)) || !jb_end_obj(v) { return null }
+    }
+    if !jb_end_arr(v) || !jb_comma(v, true) || !jb_key(v, "crews") || !jb_begin_arr(v) { return null }
+    if crew_index_len.has {
+        var start: usize = 0
+        while start < crew_index_len.value {
+            var end: usize = start
+            while end < crew_index_len.value && crew_index[end] != 10_u8 { end = end + 1 }
+            if end > start {
+                let copied: usize = std.mem.copy(crew_line_buf, crew_index[start..end])
+                if crew_load(&mut cr, crew_line_buf[0..copied]) {
+                    if crew_emitted && !jb_comma(v, true) { return null }
+                    let crew_id: Span<u8> = crew_id_text(crew_id_buf, &cr)
+                    if !jb_begin_obj(v) || !jb_string_field(v, false, "id", crew_id) || !jb_string_field(v, true, "name", "") || !jb_string_field(v, true, "crewType", crew_type(&cr)) || !jb_string_field(v, true, "gameStem", crew_stem(&cr)) || !jb_u32_field(v, true, "tier", 0) || !jb_u32_field(v, true, "heat", 0) || !jb_u32_field(v, true, "wanted", 0) || !jb_u32_field(v, true, "rep", 0) || !jb_string_field(v, true, "hold", "strong") || !jb_u32_field(v, true, "memberCount", 1) || !jb_u32_field(v, true, "revision", crew_rev(&cr)) || !jb_end_obj(v) { return null }
+                    crew_emitted = true
+                }
+            }
+            if end < crew_index_len.value { start = end + 1 }
+            else { start = end }
+        }
+    }
+    if !jb_end_arr(v) || !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn unlink_crew(crew_code: u32) -> Void {
+    var index: [4096]u8 = [0_u8; 4096]
+    var line: [64]u8 = [0_u8; 64]
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    let found: Maybe<usize> = index_bytes("characters", index)
+    if !found.has { return }
+    var start: usize = 0
+    while start < found.value {
+        var end: usize = start
+        while end < found.value && index[end] != 10_u8 { end = end + 1 }
+        if end > start {
+            let copied: usize = std.mem.copy(line, index[start..end])
+            if p_load(&mut c, line[0..copied]) && byte_at(&c, 26) == crew_code {
+                p_set(&mut c, 26, 0)
+                let _saved: Bool = p_save(&c, line[0..copied])
+            }
+        }
+        if end < found.value { start = end + 1 }
+        else { start = end }
+    }
+}
+
+pub fn packed_route(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var out: [6200]u8 = [0_u8; 6200]
+    let v: MutSpan<u8> = out
+    let _layout: Bool = ensure_layout()
+    let p0: Maybe<Span<u8>> = std.http.requestPathSegment(request, 0)
+    if !p0.has || !std.mem.eql(p0.value, "api") { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+    if std.http.requestIsGet(request, "/api/health") {
+        if !jb_init(v) || !jb_begin_obj(v) || !jb_string_field(v, false, "status", "ok") || !jb_string_field(v, true, "implementation", "zero") || !jb_string_field(v, true, "version", impl_version()) || !jb_string_field(v, true, "dataDir", data_dir()) || !jb_end_obj(v) { return null }
+        return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+    }
+    if std.http.requestIsPost(request, "/api/characters") { return create_char(z_body(request), response) }
+    if std.http.requestIsPost(request, "/api/crews") { return create_crew(z_body(request), response) }
+    let p1: Maybe<Span<u8>> = std.http.requestPathSegment(request, 1)
+    if !p1.has { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+    let n: usize = std.http.requestPathSegmentCount(request)
+    if std.mem.eql(p1.value, "campaign") {
+        let p2: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+        if p2.has && std.mem.eql(p2.value, "roster") { return roster(response) }
+        return std.http.writeJsonError(response, 404_u16, "NOT_FOUND")
+    }
+    let id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+    if !id.has { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+    if std.mem.eql(p1.value, "characters") {
+        var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+        if n == 3 && std.http.requestMethodIs(request, "GET") {
+            if !p_load(&mut c, id.value) { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+            if !jb_init(v) || !write_char(v, &c) { return null }
+            return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+        }
+        if n >= 5 {
+            let op: Maybe<Span<u8>> = std.http.requestPathSegment(request, 4)
+            if op.has { return char_op(request, response, op.value) }
+        }
+    }
+    if std.mem.eql(p1.value, "crews") {
+        var cr: PCrew = PCrew { a: 0, b: 0 }
+        if n == 3 && std.http.requestMethodIs(request, "GET") {
+            if !crew_load(&mut cr, id.value) { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+            if !jb_init(v) || !write_crew(v, &cr) { return null }
+            return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+        }
+        if n == 4 {
+            let tail: Maybe<Span<u8>> = std.http.requestPathSegment(request, 3)
+            if tail.has && std.mem.eql(tail.value, "delete") {
+                unlink_crew(id_number(id.value))
+                let _deleted: Bool = delete_entity("crews", id.value)
+                if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", true) || !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", "crews.delete") || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_null_field(v, true, "error") || !jb_end_obj(v) { return null }
+                return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+            }
+        }
+        if n >= 5 {
+            let op: Maybe<Span<u8>> = std.http.requestPathSegment(request, 4)
+            if op.has { return crew_op(request, response, op.value) }
+        }
+    }
+    return std.http.writeJsonError(response, 404_u16, "NOT_FOUND")
+}

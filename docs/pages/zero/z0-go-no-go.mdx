@@ -378,6 +378,22 @@ the bare-`zero` re-exec issue becomes operationally intolerable in CI.
 
 ---
 
+## Z1 implementation notes
+
+The native Z1 slice now runs the semantics suite on Zero 0.3.4 using
+caller-owned JSON buffers, packed scalar state records, and persisted per-entity
+IDs so parallel conformance requests do not overwrite one another. This is a
+semantics milestone, not a claim that every contract route is complete.
+
+The implementation rules that matter operationally are recorded in
+`backend-zero/AGENTS.md`: import before `check --json`, single-line struct
+literals, no `mutref<Vec>`, and the `./zero` launch symlink required by
+`std.http.listen`. Future settings work should load numeric limits from
+`data/games/*.json` at startup rather than extending the historical
+hand-transcribed table.
+
+---
+
 ## Recommendation detail
 
 | Option | When to pick | Z0 evidence |

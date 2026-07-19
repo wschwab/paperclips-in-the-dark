@@ -5,14 +5,7 @@ use store
 use util
 use character_ops
 
-{
-    name: [32]u8,
-    nlen: u32,
-    boxes: u32,
-
-}
-
-{
+type Crew {
     id: [40]u8,
     id_len: u32,
     stem: [32]u8,
@@ -36,7 +29,9 @@ use character_ops
     rep: u32,
     xp: u32,
     xp_max: u32,
-    upgrades: [16]Upgrade,
+    upgrade_names: [512]u8,
+    upgrade_name_lens: [16]u32,
+    upgrade_boxes: [16]u32,
     upgrade_count: u32,
     coin: u32,
     stash: u32,
@@ -45,142 +40,262 @@ use character_ops
 
 }
 
-fn empty_up() -> Upgrade {
-    return Upgrade { name: [0_u8; 32], nlen: 0, boxes: 0 }
+
+pub fn crew_set_id(c: mutref<Crew>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 40 {
+        c.id[i] = src[i]
+        i = i + 1
+    }
+    c.id_len = i as u32
+}
+
+pub fn crew_set_stem(c: mutref<Crew>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 32 {
+        c.stem[i] = src[i]
+        i = i + 1
+    }
+    c.stem_len = i as u32
+}
+
+pub fn crew_set_type(c: mutref<Crew>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 32 {
+        c.crew_type[i] = src[i]
+        i = i + 1
+    }
+    c.crew_type_len = i as u32
 }
 
 pub fn crew_new_empty() -> Crew {
-    return Crew {
-        id: [0_u8; 40],
-        id_len: 0,
-        stem: [0_u8; 32],
-        stem_len: 0,
-        crew_type: [0_u8; 32],
-        crew_type_len: 0,
-        revision: 1,
-        name: [0_u8; 48],
-        name_len: 0,
-        lair: [0_u8; 48],
-        lair_len: 0,
-        reputation: [0_u8; 48],
-        reputation_len: 0,
-        hunting: [0_u8; 48],
-        hunting_len: 0,
-        tier: 0,
-        hold: 0,
-        heat: 0,
-        wanted: 0,
-        rep: 0,
-        xp: 0,
-        xp_max: crew_xp_max(),
-        upgrades: [
-            empty_up(), empty_up(), empty_up(), empty_up(),
-            empty_up(), empty_up(), empty_up(), empty_up(),
-            empty_up(), empty_up(), empty_up(), empty_up(),
-            empty_up(), empty_up(), empty_up(), empty_up()
-        ],
-        upgrade_count: 0,
-        coin: 0,
-        stash: 0,
-        notes: [0_u8; 96],
-        notes_len: 0,
-    }
+    return Crew { id: [0_u8; 40], id_len: 0, stem: [0_u8; 32], stem_len: 0, crew_type: [0_u8; 32], crew_type_len: 0, revision: 1, name: [0_u8; 48], name_len: 0, lair: [0_u8; 48], lair_len: 0, reputation: [0_u8; 48], reputation_len: 0, hunting: [0_u8; 48], hunting_len: 0, tier: 0, hold: 0, heat: 0, wanted: 0, rep: 0, xp: 0, xp_max: crew_xp_max(), upgrade_names: [0_u8; 512], upgrade_name_lens: [0_u32; 16], upgrade_boxes: [0_u32; 16], upgrade_count: 0, coin: 0, stash: 0, notes: [0_u8; 96], notes_len: 0 }
 }
 
-pub fn crew_create(stem: Span<u8>, crew_type: Span<u8>) -> Maybe<Crew> {
-    if !known_stem(stem) { return null }
-    if !has_crew_type(crew_type) { return null }
-    var c: Crew = crew_new_empty()
-    c.stem_len = set_text(c.stem, stem)
-    c.crew_type_len = set_text(c.crew_type, crew_type)
+pub fn crew_create(stem: Span<u8>, crew_type: Span<u8>, c: mutref<Crew>) -> Bool {
+    if !known_stem(stem) {
+        return false
+    }
+    if !has_crew_type(crew_type) {
+        return false
+    }
+    crew_set_stem(c, stem)
+    crew_set_type(c, crew_type)
     var idbuf: [40]u8 = [0_u8; 40]
     let id: Maybe<Span<u8>> = write_uuid_v4(idbuf)
-    if !id.has { return null }
-    c.id_len = set_text(c.id, id.value)
+    if !id.has {
+        return false
+    }
+    crew_set_id(c, id.value)
     c.revision = 1
-    return c
+    return true
 }
 
 pub fn crew_id(c: ref<Crew>) -> Span<u8> {
     return text_view(c.id, c.id_len)
 }
 
-pub fn write_crew_json(c: ref<Crew>, v: mutref<Vec>) -> Bool {
-    if !jb_begin_obj(v) { return false }
-    if !jb_string_field(v, false, "kind", "crew") { return false }
-    if !jb_string_field(v, true, "id", crew_id(c)) { return false }
-    if !jb_string_field(v, true, "gameStem", text_view(c.stem, c.stem_len)) { return false }
-    if !jb_string_field(v, true, "gameName", game_name(text_view(c.stem, c.stem_len))) { return false }
-    if !jb_string_field(v, true, "language", game_language(text_view(c.stem, c.stem_len))) { return false }
-    if !jb_u32_field(v, true, "revision", c.revision) { return false }
-    if !jb_u32_field(v, true, "formatVersion", format_version()) { return false }
-    if !jb_string_field(v, true, "createdAt", ts_created()) { return false }
-    if !jb_string_field(v, true, "updatedAt", ts_updated()) { return false }
-    if !jb_string_field(v, true, "crewTypeName", text_view(c.crew_type, c.crew_type_len)) { return false }
-    if !jb_string_field(v, true, "name", text_view(c.name, c.name_len)) { return false }
-    if !jb_string_field(v, true, "lair", text_view(c.lair, c.lair_len)) { return false }
-    if !jb_string_field(v, true, "reputation", text_view(c.reputation, c.reputation_len)) { return false }
-    if !jb_string_field(v, true, "huntingGrounds", text_view(c.hunting, c.hunting_len)) { return false }
-    if !jb_u32_field(v, true, "tier", c.tier) { return false }
+pub fn write_crew_json(c: ref<Crew>, v: MutSpan<u8>) -> Bool {
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "kind", "crew") {
+        return false
+    }
+    if !jb_string_field(v, true, "id", crew_id(c)) {
+        return false
+    }
+    if !jb_string_field(v, true, "gameStem", text_view(c.stem, c.stem_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "gameName", game_name(text_view(c.stem, c.stem_len))) {
+        return false
+    }
+    if !jb_string_field(v, true, "language", game_language(text_view(c.stem, c.stem_len))) {
+        return false
+    }
+    if !jb_u32_field(v, true, "revision", c.revision) {
+        return false
+    }
+    if !jb_u32_field(v, true, "formatVersion", format_version()) {
+        return false
+    }
+    if !jb_string_field(v, true, "createdAt", ts_created()) {
+        return false
+    }
+    if !jb_string_field(v, true, "updatedAt", ts_updated()) {
+        return false
+    }
+    if !jb_string_field(v, true, "crewTypeName", text_view(c.crew_type, c.crew_type_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "name", text_view(c.name, c.name_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "lair", text_view(c.lair, c.lair_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "reputation", text_view(c.reputation, c.reputation_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "huntingGrounds", text_view(c.hunting, c.hunting_len)) {
+        return false
+    }
+    if !jb_u32_field(v, true, "tier", c.tier) {
+        return false
+    }
     if c.hold == 0 {
-        if !jb_string_field(v, true, "hold", "strong") { return false }
+        if !jb_string_field(v, true, "hold", "strong") {
+            return false
+        }
     } else {
-        if !jb_string_field(v, true, "hold", "weak") { return false }
+        if !jb_string_field(v, true, "hold", "weak") {
+            return false
+        }
     }
     // heat wanted rep bounded
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "heat") { return false }
-    if !jb_begin_obj(v) { return false }
-    if !jb_u32_field(v, false, "current", c.heat) { return false }
-    if !jb_u32_field(v, true, "max", heat_max()) { return false }
-    if !jb_end_obj(v) { return false }
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "wanted") { return false }
-    if !jb_begin_obj(v) { return false }
-    if !jb_u32_field(v, false, "current", c.wanted) { return false }
-    if !jb_u32_field(v, true, "max", wanted_max()) { return false }
-    if !jb_end_obj(v) { return false }
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "rep") { return false }
-    if !jb_begin_obj(v) { return false }
-    if !jb_u32_field(v, false, "current", c.rep) { return false }
-    if !jb_u32_field(v, true, "max", rep_max()) { return false }
-    if !jb_end_obj(v) { return false }
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "experience") { return false }
-    if !jb_begin_obj(v) { return false }
-    if !jb_u32_field(v, false, "points", c.xp) { return false }
-    if !jb_u32_field(v, true, "max", c.xp_max) { return false }
-    if !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "heat") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "current", c.heat) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", heat_max()) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "wanted") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "current", c.wanted) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", wanted_max()) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "rep") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "current", c.rep) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", rep_max()) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "experience") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "points", c.xp) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", c.xp_max) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
     // specialAbilities empty
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "specialAbilities") { return false }
-    if !jb_begin_arr(v) { return false }
-    if !jb_end_arr(v) { return false }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "specialAbilities") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
     // upgrades
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "upgrades") { return false }
-    if !jb_begin_arr(v) { return false }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "upgrades") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
     var i: u32 = 0
     while i < c.upgrade_count {
         if i > 0 {
-            if !jb_comma(v, true) { return false }
+            if !jb_comma(v, true) {
+                return false
+            }
         }
-        if !jb_begin_obj(v) { return false }
-        if !jb_string_field(v, false, "name", text_view(c.upgrades[i as usize].name, c.upgrades[i as usize].nlen)) { return false }
-        if !jb_u32_field(v, true, "boxesMarked", c.upgrades[i as usize].boxes) { return false }
-        if !jb_end_obj(v) { return false }
+        if !jb_begin_obj(v) {
+            return false
+        }
+        let upgrade_start: usize = i as usize * 32
+        if !jb_string_field(v, false, "name", text_view(c.upgrade_names[upgrade_start..upgrade_start + 32], c.upgrade_name_lens[i as usize])) {
+            return false
+        }
+        if !jb_u32_field(v, true, "boxesMarked", c.upgrade_boxes[i as usize]) {
+            return false
+        }
+        if !jb_end_obj(v) {
+            return false
+        }
         i = i + 1
     }
-    if !jb_end_arr(v) { return false }
+    if !jb_end_arr(v) {
+        return false
+    }
     // cohorts empty
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "cohorts") { return false }
-    if !jb_begin_arr(v) { return false }
-    if !jb_end_arr(v) { return false }
-    if !jb_u32_field(v, true, "coin", c.coin) { return false }
-    if !jb_u32_field(v, true, "stash", c.stash) { return false }
-    if !jb_string_field(v, true, "notes", text_view(c.notes, c.notes_len)) { return false }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "cohorts") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if !jb_u32_field(v, true, "coin", c.coin) {
+        return false
+    }
+    if !jb_u32_field(v, true, "stash", c.stash) {
+        return false
+    }
+    if !jb_string_field(v, true, "notes", text_view(c.notes, c.notes_len)) {
+        return false
+    }
     return jb_end_obj(v)
 }
 
@@ -200,11 +315,12 @@ pub fn op_upgrade_mark(c: mutref<Crew>, name: Span<u8>) -> OpOutcome {
 fn mark_with_max(c: mutref<Crew>, name: Span<u8>, max_boxes: u32) -> OpOutcome {
     var i: u32 = 0
     while i < c.upgrade_count {
-        if std.mem.eql(text_view(c.upgrades[i as usize].name, c.upgrades[i as usize].nlen), name) {
-            if c.upgrades[i as usize].boxes >= max_boxes {
+        let upgrade_start: usize = i as usize * 32
+        if std.mem.eql(text_view(c.upgrade_names[upgrade_start..upgrade_start + 32], c.upgrade_name_lens[i as usize]), name) {
+            if c.upgrade_boxes[i as usize] >= max_boxes {
                 return outcome_err("UPGRADE_MAXED", "upgrade maxed")
             }
-            c.upgrades[i as usize].boxes = c.upgrades[i as usize].boxes + 1
+            c.upgrade_boxes[i as usize] = c.upgrade_boxes[i as usize] + 1
             c.revision = c.revision + 1
             return outcome_ok("upgrade.mark")
         }
@@ -214,8 +330,13 @@ fn mark_with_max(c: mutref<Crew>, name: Span<u8>, max_boxes: u32) -> OpOutcome {
         return outcome_err("VALIDATION", "too many upgrades")
     }
     let idx: usize = c.upgrade_count as usize
-    c.upgrades[idx].nlen = set_text(c.upgrades[idx].name, name)
-    c.upgrades[idx].boxes = 1
+    var name_i: usize = 0
+    while name_i < std.mem.len(name) && name_i < 32 {
+        c.upgrade_names[idx * 32 + name_i] = name[name_i]
+        name_i = name_i + 1
+    }
+    c.upgrade_name_lens[idx] = name_i as u32
+    c.upgrade_boxes[idx] = 1
     c.upgrade_count = c.upgrade_count + 1
     c.revision = c.revision + 1
     return outcome_ok("upgrade.mark")
@@ -224,17 +345,24 @@ fn mark_with_max(c: mutref<Crew>, name: Span<u8>, max_boxes: u32) -> OpOutcome {
 pub fn op_upgrade_unmark(c: mutref<Crew>, name: Span<u8>) -> OpOutcome {
     var i: u32 = 0
     while i < c.upgrade_count {
-        if std.mem.eql(text_view(c.upgrades[i as usize].name, c.upgrades[i as usize].nlen), name) {
-            if c.upgrades[i as usize].boxes == 0 {
+        let upgrade_start: usize = i as usize * 32
+        if std.mem.eql(text_view(c.upgrade_names[upgrade_start..upgrade_start + 32], c.upgrade_name_lens[i as usize]), name) {
+            if c.upgrade_boxes[i as usize] == 0 {
                 return outcome_err("VALIDATION", "no boxes")
             }
             // BOX-WISE: remove one box, keep entry if boxes remain
-            c.upgrades[i as usize].boxes = c.upgrades[i as usize].boxes - 1
-            if c.upgrades[i as usize].boxes == 0 {
+            c.upgrade_boxes[i as usize] = c.upgrade_boxes[i as usize] - 1
+            if c.upgrade_boxes[i as usize] == 0 {
                 // remove entry
                 var j: u32 = i
                 while j + 1 < c.upgrade_count {
-                    c.upgrades[j as usize] = c.upgrades[(j + 1) as usize]
+                    var k: usize = 0
+                    while k < 32 {
+                        c.upgrade_names[j as usize * 32 + k] = c.upgrade_names[(j as usize + 1) * 32 + k]
+                        k = k + 1
+                    }
+                    c.upgrade_name_lens[j as usize] = c.upgrade_name_lens[(j + 1) as usize]
+                    c.upgrade_boxes[j as usize] = c.upgrade_boxes[(j + 1) as usize]
                     j = j + 1
                 }
                 c.upgrade_count = c.upgrade_count - 1
@@ -249,30 +377,38 @@ pub fn op_upgrade_unmark(c: mutref<Crew>, name: Span<u8>) -> OpOutcome {
 
 pub fn save_crew(c: ref<Crew>) -> Bool {
     var store: [2000]u8 = [0_u8; 2000]
-    var v: Vec = jb_init(store)
-    if !write_crew_json(c, &mut v) { return false }
+    let v: MutSpan<u8> = store
+    if !jb_init(v) { return false }
+    if !write_crew_json(c, v) {
+        return false
+    }
     let id: Span<u8> = crew_id(c)
-    if !write_entity_json("crews", id, jb_bytes(&v)) { return false }
+    if !write_entity_json("crews", id, jb_bytes(store)) {
+        return false
+    }
     return append_index_id("crews", id)
 }
 
-pub fn load_crew(id: Span<u8>) -> Maybe<Crew> {
+pub fn load_crew(id: Span<u8>, c: mutref<Crew>) -> Bool {
     var buf: [2000]u8 = [0_u8; 2000]
     let raw: Maybe<Span<u8>> = read_entity_json("crews", id, buf)
-    if !raw.has { return null }
-    return parse_crew(raw.value)
+    if !raw.has {
+        return false
+    }
+    return parse_crew(raw.value, c)
 }
 
-pub fn parse_crew(json: Span<u8>) -> Maybe<Crew> {
-    var c: Crew = crew_new_empty()
+pub fn parse_crew(json: Span<u8>, c: mutref<Crew>) -> Bool {
     var tbuf: [64]u8 = [0_u8; 64]
     let id: Maybe<Span<u8>> = std.json.string(tbuf, json, "id")
-    if !id.has { return null }
-    c.id_len = set_text(c.id, id.value)
+    if !id.has {
+        return false
+    }
+    crew_set_id(c, id.value)
     let stem: Maybe<Span<u8>> = std.json.string(tbuf, json, "gameStem")
-    if stem.has { c.stem_len = set_text(c.stem, stem.value) }
+    if stem.has { crew_set_stem(c, stem.value) }
     let ct: Maybe<Span<u8>> = std.json.string(tbuf, json, "crewTypeName")
-    if ct.has { c.crew_type_len = set_text(c.crew_type, ct.value) }
+    if ct.has { crew_set_type(c, ct.value) }
     let rev: Maybe<u32> = std.json.u32(json, "revision")
     if rev.has { c.revision = rev.value }
     // upgrades array scan name + boxesMarked
@@ -310,8 +446,13 @@ pub fn parse_crew(json: Span<u8>) -> Maybe<Crew> {
                         }
                         if c.upgrade_count < 16 {
                             let idx: usize = c.upgrade_count as usize
-                            c.upgrades[idx].nlen = set_text(c.upgrades[idx].name, name)
-                            c.upgrades[idx].boxes = boxes
+                            var name_i: usize = 0
+                            while name_i < std.mem.len(name) && name_i < 32 {
+                                c.upgrade_names[idx * 32 + name_i] = name[name_i]
+                                name_i = name_i + 1
+                            }
+                            c.upgrade_name_lens[idx] = name_i as u32
+                            c.upgrade_boxes[idx] = boxes
                             c.upgrade_count = c.upgrade_count + 1
                         }
                         i = j
@@ -321,35 +462,77 @@ pub fn parse_crew(json: Span<u8>) -> Maybe<Crew> {
             i = i + 1
         }
     }
-    return c
+    return true
 }
 
-pub fn write_crew_result(c: ref<Crew>, o: ref<OpOutcome>, v: mutref<Vec>) -> Bool {
-    if !jb_begin_obj(v) { return false }
-    if !jb_bool_field(v, false, "ok", o.ok) { return false }
-    if o.ok {
-        if !jb_comma(v, true) { return false }
-        if !jb_key(v, "crew") { return false }
-        if !write_crew_json(c, v) { return false }
+pub fn write_crew_result(c: ref<Crew>, o: ref<OpOutcome>, v: MutSpan<u8>) -> Bool {
+    if !jb_begin_obj(v) {
+        return false
     }
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "applied") { return false }
-    if !jb_begin_obj(v) { return false }
-    if !jb_string_field(v, false, "op", text_view(o.applied_op, o.applied_op_len)) { return false }
-    if !jb_end_obj(v) { return false }
-    if !jb_comma(v, true) { return false }
-    if !jb_key(v, "sideEffects") { return false }
-    if !jb_begin_arr(v) { return false }
-    if !jb_end_arr(v) { return false }
+    if !jb_bool_field(v, false, "ok", o.ok) {
+        return false
+    }
     if o.ok {
-        if !jb_null_field(v, true, "error") { return false }
+        if !jb_comma(v, true) {
+            return false
+        }
+        if !jb_key(v, "crew") {
+            return false
+        }
+        if !write_crew_json(c, v) {
+            return false
+        }
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "applied") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "op", text_view(o.applied_op, o.applied_op_len)) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "sideEffects") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if o.ok {
+        if !jb_null_field(v, true, "error") {
+            return false
+        }
     } else {
-        if !jb_comma(v, true) { return false }
-        if !jb_key(v, "error") { return false }
-        if !jb_begin_obj(v) { return false }
-        if !jb_string_field(v, false, "code", text_view(o.code, o.code_len)) { return false }
-        if !jb_string_field(v, true, "message", text_view(o.message, o.message_len)) { return false }
-        if !jb_end_obj(v) { return false }
+        if !jb_comma(v, true) {
+            return false
+        }
+        if !jb_key(v, "error") {
+            return false
+        }
+        if !jb_begin_obj(v) {
+            return false
+        }
+        if !jb_string_field(v, false, "code", text_view(o.code, o.code_len)) {
+            return false
+        }
+        if !jb_string_field(v, true, "message", text_view(o.message, o.message_len)) {
+            return false
+        }
+        if !jb_end_obj(v) {
+            return false
+        }
     }
     return jb_end_obj(v)
 }
@@ -357,7 +540,9 @@ pub fn write_crew_result(c: ref<Crew>, o: ref<OpOutcome>, v: mutref<Vec>) -> Boo
 pub fn member_count_for_crew(crew_id: Span<u8>) -> u32 {
     var idx: [2048]u8 = [0_u8; 2048]
     let n_m: Maybe<usize> = index_bytes("characters", idx)
-    if !n_m.has { return 0 }
+    if !n_m.has {
+        return 0
+    }
     let n: usize = n_m.value
     var count: u32 = 0
     var i: usize = 0

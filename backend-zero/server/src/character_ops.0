@@ -1,546 +1,1482 @@
+use character
 use config
 use game_data
 use jbuf
 use store
 use util
 
-// Result envelope for ops applied to a character JSON blob on disk.
-type OpMeta {
+// Side-effect scratch: fixed message slots written by ops.
+type OpOutcome {
     ok: Bool,
-    has_req: Bool,
+    code: [32]u8,
+    code_len: u32,
+    message: [96]u8,
+    message_len: u32,
+    applied_op: [32]u8,
+    applied_op_len: u32,
     requested: i32,
     effective: i32,
+    has_requested: Bool,
+    landed: [16]u8,
+    landed_len: u32,
     has_landed: Bool,
+    side0: [96]u8,
+    side0_len: u32,
+    side1: [96]u8,
+    side1_len: u32,
     side_count: u32,
-    // codes stored as short fixed strings in caller
+
 }
 
-pub fn meta_ok() -> OpMeta {
-    return OpMeta {
-        ok: true,
-        has_req: false,
-        requested: 0,
-        effective: 0,
-        has_landed: false,
-        side_count: 0,
+
+pub fn outcome_set_op(o: mutref<OpOutcome>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 32 {
+        o.applied_op[i] = src[i]
+        i = i + 1
+    }
+    o.applied_op_len = i as u32
+}
+
+pub fn outcome_set_code(o: mutref<OpOutcome>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 32 {
+        o.code[i] = src[i]
+        i = i + 1
+    }
+    o.code_len = i as u32
+}
+
+pub fn outcome_set_message(o: mutref<OpOutcome>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 96 {
+        o.message[i] = src[i]
+        i = i + 1
+    }
+    o.message_len = i as u32
+}
+
+pub fn outcome_set_side0(o: mutref<OpOutcome>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 96 {
+        o.side0[i] = src[i]
+        i = i + 1
+    }
+    o.side0_len = i as u32
+}
+
+pub fn outcome_set_side1(o: mutref<OpOutcome>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 96 {
+        o.side1[i] = src[i]
+        i = i + 1
+    }
+    o.side1_len = i as u32
+}
+
+pub fn outcome_set_landed(o: mutref<OpOutcome>, src: Span<u8>) -> Void {
+    var i: usize = 0
+    while i < std.mem.len(src) && i < 16 {
+        o.landed[i] = src[i]
+        i = i + 1
+    }
+    o.landed_len = i as u32
+}
+
+pub fn outcome_ok(op: Span<u8>) -> OpOutcome {
+    var o: OpOutcome = empty_outcome()
+    o.ok = true
+    outcome_set_op(&mut o, op)
+    return o
+}
+
+fn empty_outcome() -> OpOutcome {
+    return OpOutcome { ok: false, code: [0_u8; 32], code_len: 0, message: [0_u8; 96], message_len: 0, applied_op: [0_u8; 32], applied_op_len: 0, requested: 0, effective: 0, has_requested: false, landed: [0_u8; 16], landed_len: 0, has_landed: false, side0: [0_u8; 96], side0_len: 0, side1: [0_u8; 96], side1_len: 0, side_count: 0 }
+}
+
+pub fn outcome_err(code: Span<u8>, message: Span<u8>) -> OpOutcome {
+    var o: OpOutcome = empty_outcome()
+    o.ok = false
+    outcome_set_code(&mut o, code)
+    outcome_set_message(&mut o, message)
+    return o
+}
+
+fn add_side(o: mutref<OpOutcome>, msg: Span<u8>) -> Void {
+    if o.side_count == 0 {
+        outcome_set_side0(o, msg)
+        o.side_count = 1
+        return
+    }
+    if o.side_count == 1 {
+        outcome_set_side1(o, msg)
+        o.side_count = 2
     }
 }
 
-pub fn meta_err() -> OpMeta {
-    return OpMeta {
-        ok: false,
-        has_req: false,
-        requested: 0,
-        effective: 0,
-        has_landed: false,
-        side_count: 0,
-    }
+fn bump_rev(c: mutref<Character>) -> Void {
+    c.revision = c.revision + 1
 }
 
-// Write a newly created character JSON into out vec.
-pub fn build_new_character(out: mutref<Vec>, stem: Span<u8>, playbook: Span<u8>) -> Bool {
-    var idbuf: [40]u8 = [0_u8; 40]
-    let id: Maybe<Span<u8>> = write_uuid_v4(idbuf)
-    if !id.has {
+fn retired_guard(c: ref<Character>, op: Span<u8>) -> Bool {
+    if character_is_retired(c) {
+        // trauma.remove allowed; trauma.add when already max is DUPLICATE path elsewhere
+        if std.mem.eql(op, "trauma.remove") {
+            return false
+        }
+        // reads never get here
+        return true
+    }
+    return false
+}
+
+pub fn op_stress_add(c: mutref<Character>, delta: i32) -> OpOutcome {
+    if retired_guard(c, "stress.add") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    let before: u32 = c.stress
+    c.stress = clamp_add(c.stress, c.stress_max, delta)
+    let after: u32 = c.stress
+    var o: OpOutcome = outcome_ok("stress.add")
+    o.has_requested = true
+    o.requested = delta
+    o.effective = applied_delta(before, after)
+    if c.stress == c.stress_max {
+        add_side(&mut o, "stress full — consider trauma")
+    }
+    bump_rev(c)
+    return o
+}
+
+pub fn op_stress_clear(c: mutref<Character>) -> OpOutcome {
+    if retired_guard(c, "stress.clear") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    c.stress = 0
+    bump_rev(c)
+    return outcome_ok("stress.clear")
+}
+
+pub fn op_trauma_add(c: mutref<Character>, trauma: Span<u8>) -> OpOutcome {
+    // allowed even approaching retirement
+    if character_is_retired(c) {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    // duplicate?
+    var i: u32 = 0
+    while i < c.trauma_count {
+        if std.mem.eql(trauma_view(c, i as usize), trauma) {
+            return outcome_err("DUPLICATE", "trauma already present")
+        }
+        i = i + 1
+    }
+    if c.trauma_count >= c.trauma_max {
+        return outcome_err("VALIDATION", "trauma track full")
+    }
+    let idx: usize = c.trauma_count as usize
+    c.trauma_len[idx] = slot_copy(c, 1, 64, idx, trauma)
+    c.trauma_count = c.trauma_count + 1
+    var o: OpOutcome = outcome_ok("trauma.add")
+    if character_is_retired(c) {
+        add_side(&mut o, "character retired")
+    }
+    bump_rev(c)
+    return o
+}
+
+pub fn op_trauma_remove(c: mutref<Character>, trauma: Span<u8>) -> OpOutcome {
+    var i: u32 = 0
+    while i < c.trauma_count {
+        if std.mem.eql(trauma_view(c, i as usize), trauma) {
+            // shift down
+            var j: u32 = i
+            while j + 1 < c.trauma_count {
+                var k: usize = 0
+                while k < 64 {
+                    c.trauma_text[(j as usize) * 64 + k] = c.trauma_text[(j as usize + 1) * 64 + k]
+                    k = k + 1
+                }
+                c.trauma_len[j as usize] = c.trauma_len[(j + 1) as usize]
+                j = j + 1
+            }
+            c.trauma_count = c.trauma_count - 1
+            bump_rev(c)
+            return outcome_ok("trauma.remove")
+        }
+        i = i + 1
+    }
+    return outcome_err("NOT_FOUND", "trauma not found")
+}
+
+fn intensity_from(name: Span<u8>) -> Maybe<u32> {
+    if std.mem.eql(name, "lesser") {
+        return 1_u32
+    }
+    if std.mem.eql(name, "moderate") {
+        return 2_u32
+    }
+    if std.mem.eql(name, "severe") {
+        return 3_u32
+    }
+    if std.mem.eql(name, "fatal") {
+        return 4_u32
+    }
+    return null
+}
+
+fn intensity_name(v: u32) -> Span<u8> {
+    if v == 1 {
+        return "lesser"
+    }
+    if v == 2 {
+        return "moderate"
+    }
+    if v == 3 {
+        return "severe"
+    }
+    return "fatal"
+}
+
+fn level_count(c: ref<Character>, level: u32) -> u32 {
+    if level == 1 {
+        return c.lesser_count
+    }
+    if level == 2 {
+        return c.moderate_count
+    }
+    if level == 3 {
+        return c.severe_count
+    }
+    return c.fatal_count
+}
+
+fn level_cap(level: u32) -> u32 {
+    if level == 1 {
+        return harm_lesser_cap()
+    }
+    if level == 2 {
+        return harm_moderate_cap()
+    }
+    if level == 3 {
+        return harm_severe_cap()
+    }
+    return harm_fatal_cap()
+}
+
+fn push_harm(c: mutref<Character>, level: u32, desc: Span<u8>) -> Bool {
+    if level == 1 {
+        if c.lesser_count >= harm_lesser_cap() {
+            return false
+        }
+        let i: usize = c.lesser_count as usize
+        c.lesser_len[i] = slot_copy(c, 2, 64, i, desc)
+        c.lesser_count = c.lesser_count + 1
+        return true
+    }
+    if level == 2 {
+        if c.moderate_count >= harm_moderate_cap() {
+            return false
+        }
+        let i: usize = c.moderate_count as usize
+        c.moderate_len[i] = slot_copy(c, 3, 64, i, desc)
+        c.moderate_count = c.moderate_count + 1
+        return true
+    }
+    if level == 3 {
+        if c.severe_count >= harm_severe_cap() {
+            return false
+        }
+        let i: usize = c.severe_count as usize
+        c.severe_len[i] = slot_copy(c, 4, 64, i, desc)
+        c.severe_count = c.severe_count + 1
+        return true
+    }
+    if c.fatal_count >= harm_fatal_cap() {
         return false
     }
-    return emit_character(
-        out,
-        id.value,
-        stem,
-        playbook,
-        1,
-        0,
-        stress_max(),
-        0,
-        trauma_max(),
-        0,
-        0,
-        0,
-        0,
-        recovery_clock_size(stem),
-        0,
-        false,
-        false,
-        false,
-        0,
-        playbook_xp_max(),
-        0,
-        0,
-        satchel_max(),
-        0,
-        stash_max(),
-        0,
-        false,
-        0,
-        0,
-        0,
-        session_expr_max(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        empty_str(),
-        // trauma slots empty
-        empty_str(), empty_str(), empty_str(), empty_str(),
-        // harm empty
-        empty_str(), empty_str(), empty_str(), empty_str(), empty_str(), empty_str(),
-        // abilities none
-        empty_str(), empty_str(), 0, empty_str(), empty_str(), 0,
-        // friends none
-        empty_str(), 0, empty_str(), 0,
-        // talent XP all 0; ratings from defaults embedded in emit
-        true
-    )
+    let i: usize = c.fatal_count as usize
+    c.fatal_len[i] = slot_copy(c, 5, 64, i, desc)
+    c.fatal_count = c.fatal_count + 1
+    return true
 }
 
-fn empty_str() -> Span<u8> {
-    return ""
-}
-
-// Large emitter used by create + after mutation rebuilds.
-// survivors: caller packs mutated fields; talent ratings pulled from game_data defaults + overrides in per-op handlers via dedicated rebuild paths.
-pub fn emit_character(
-    out: mutref<Vec>,
-    id: Span<u8>,
-    stem: Span<u8>,
-    playbook: Span<u8>,
-    revision: u32,
-    stress: u32,
-    stress_max_v: u32,
-    trauma_count: u32,
-    trauma_max_v: u32,
-    lesser_count: u32,
-    moderate_count: u32,
-    severe_count: u32,
-    fatal_count: u32,
-    heal_size: u32,
-    heal_seg: u32,
-    armor_std: Bool,
-    armor_heavy: Bool,
-    armor_special: Bool,
-    playbook_xp: u32,
-    playbook_xp_max_v: u32,
-    commitment: u32,
-    satchel: u32,
-    satchel_max_v: u32,
-    stash: u32,
-    stash_max_v: u32,
-    locked: Bool,
-    expr_pb: u32,
-    expr_ch: u32,
-    expr_st: u32,
-    expr_max: u32,
-    name: Span<u8>,
-    alias: Span<u8>,
-    look: Span<u8>,
-    notes: Span<u8>,
-    crew_id: Span<u8>,
-    bg_name: Span<u8>,
-    bg_desc: Span<u8>,
-    herit_name: Span<u8>,
-    herit_desc: Span<u8>,
-    vice_name: Span<u8>,
-    vice_desc: Span<u8>,
-    notebook: Span<u8>,
-    t0: Span<u8>, t1: Span<u8>, t2: Span<u8>, t3: Span<u8>,
-    l0: Span<u8>, l1: Span<u8>, m0: Span<u8>, m1: Span<u8>, s0: Span<u8>, f0: Span<u8>,
-    ab0n: Span<u8>, ab0d: Span<u8>, ab0t: u32,
-    ab1n: Span<u8>, ab1d: Span<u8>, ab1t: u32,
-    fr0: Span<u8>, fr0c: u32,
-    fr1: Span<u8>, fr1c: u32,
-  _unused: Bool
-) -> Bool {
-    if !jb_begin_obj(out) { return false }
-    if !jb_string_field(out, false, "kind", "character") { return false }
-    if !jb_string_field(out, true, "id", id) { return false }
-    if !jb_string_field(out, true, "gameStem", stem) { return false }
-    if !jb_string_field(out, true, "gameName", game_name(stem)) { return false }
-    if !jb_string_field(out, true, "language", game_language(stem)) { return false }
-    if !jb_u32_field(out, true, "revision", revision) { return false }
-    if !jb_u32_field(out, true, "formatVersion", format_version()) { return false }
-    if !jb_string_field(out, true, "createdAt", ts_created()) { return false }
-    if !jb_string_field(out, true, "updatedAt", ts_updated()) { return false }
-    let retired: Bool = trauma_count >= trauma_max_v
-    let deadish: Bool = fatal_count > 0
-    if !jb_bool_field(out, true, "isRetired", retired) { return false }
-    if !jb_bool_field(out, true, "isDeadish", deadish) { return false }
-    // dossier
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "dossier") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_string_field(out, false, "name", name) { return false }
-    if !jb_string_field(out, true, "crewId", crew_id) { return false }
-    if !jb_string_field(out, true, "alias", alias) { return false }
-    if !jb_string_field(out, true, "look", look) { return false }
-    if !jb_string_field(out, true, "notes", notes) { return false }
-    if !emit_named(out, true, "background", bg_name, bg_desc) { return false }
-    if !emit_named(out, true, "heritage", herit_name, herit_desc) { return false }
-    if !emit_named(out, true, "vice", vice_name, vice_desc) { return false }
-    if !jb_end_obj(out) { return false }
-    // monitor
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "monitor") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !emit_bounded(out, false, "stress", stress, stress_max_v) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "trauma") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_comma(out, false) { return false }
-    if !jb_key(out, "traumas") { return false }
-    if !emit_str_list4(out, trauma_count, t0, t1, t2, t3) { return false }
-    if !jb_u32_field(out, true, "max", trauma_max_v) { return false }
-    if !jb_end_obj(out) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "harm") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_comma(out, false) { return false }
-    if !jb_key(out, "lesser") { return false }
-    if !emit_str_list2(out, lesser_count, l0, l1) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "moderate") { return false }
-    if !emit_str_list2(out, moderate_count, m0, m1) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "severe") { return false }
-    if !emit_str_list1(out, severe_count, s0) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "fatal") { return false }
-    if !emit_str_list1(out, fatal_count, f0) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "healingClock") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_u32_field(out, false, "segments", heal_seg) { return false }
-    if !jb_u32_field(out, true, "size", heal_size) { return false }
-    if !jb_u32_field(out, true, "rollover", 0) { return false }
-    if !jb_end_obj(out) { return false }
-    if !jb_end_obj(out) { return false }
-    // armor
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "armor") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_bool_field(out, false, "standardUsed", armor_std) { return false }
-    if !jb_bool_field(out, true, "heavyUsed", armor_heavy) { return false }
-    if !jb_bool_field(out, true, "specialUsed", armor_special) { return false }
-    if !jb_bool_field(out, true, "hasStandard", false) { return false }
-    if !jb_bool_field(out, true, "hasHeavy", false) { return false }
-    let has_sp: Bool = description_has_special(ab0d) || description_has_special(ab1d)
-    if !jb_bool_field(out, true, "hasSpecial", has_sp) { return false }
-    if !jb_end_obj(out) { return false }
-    if !jb_end_obj(out) { return false }
-    // talent — rebuild from game tables (fresh ratings defaults; ops overlay via parse+rebuild in handler)
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "talent") { return false }
-    if !emit_talent(out, stem, playbook) { return false }
-    // playbook
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "playbook") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_string_field(out, false, "name", playbook) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "experience") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_u32_field(out, false, "points", playbook_xp) { return false }
-    if !jb_u32_field(out, true, "max", playbook_xp_max_v) { return false }
-    if !jb_end_obj(out) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "abilities") { return false }
-    if !emit_abilities(out, ab0n, ab0d, ab0t, ab1n, ab1d, ab1t) { return false }
-    if !jb_end_obj(out) { return false }
-    // gear empty
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "gear") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_comma(out, false) { return false }
-    if !jb_key(out, "loadout") { return false }
-    if !jb_begin_arr(out) { return false }
-    if !jb_end_arr(out) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "availableGear") { return false }
-    if !jb_begin_arr(out) { return false }
-    if !jb_end_arr(out) { return false }
-    if !jb_string_field(out, true, "commitment", commitment_name(commitment)) { return false }
-    if !jb_bool_field(out, true, "isCommitmentLocked", locked) { return false }
-    if !jb_u32_field(out, true, "maxBulk", commitment_bulk(commitment)) { return false }
-    if !jb_end_obj(out) { return false }
-    // fund
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "fund") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_comma(out, false) { return false }
-    if !jb_key(out, "satchel") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_u32_field(out, false, "coins", satchel) { return false }
-    if !jb_u32_field(out, true, "max", satchel_max_v) { return false }
-    if !jb_end_obj(out) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "stash") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_u32_field(out, false, "coins", stash) { return false }
-    if !jb_u32_field(out, true, "max", stash_max_v) { return false }
-    if !jb_end_obj(out) { return false }
-    if !jb_end_obj(out) { return false }
-    // rolodex
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "rolodex") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_comma(out, false) { return false }
-    if !jb_key(out, "friends") { return false }
-    if !emit_friends(out, fr0, fr0c, fr1, fr1c) { return false }
-    if !jb_end_obj(out) { return false }
-    // session
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "session") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_u32_field(out, false, "playbookExpressions", expr_pb) { return false }
-    if !jb_u32_field(out, true, "characterExpressions", expr_ch) { return false }
-    if !jb_u32_field(out, true, "struggleExpressions", expr_st) { return false }
-    if !jb_u32_field(out, true, "max", expr_max) { return false }
-    if !jb_end_obj(out) { return false }
-    if !jb_string_field(out, true, "notebook", notebook) { return false }
-    return jb_end_obj(out)
-}
-
-fn commitment_name(v: u32) -> Span<u8> {
-    if v == 1 { return "light" }
-    if v == 2 { return "normal" }
-    if v == 3 { return "heavy" }
-    if v == 4 { return "encumbered" }
-    return "none"
-}
-
-fn commitment_bulk(v: u32) -> u32 {
-    if v == 1 { return 3 }
-    if v == 2 { return 5 }
-    if v == 3 { return 6 }
-    if v == 4 { return 9 }
-    return 0
-}
-
-fn closeness_name(v: u32) -> Span<u8> {
-    if v == 1 { return "close-friend" }
-    if v == 2 { return "rival" }
-    return "friend"
-}
-
-fn emit_named(out: mutref<Vec>, need: Bool, key: Span<u8>, name: Span<u8>, desc: Span<u8>) -> Bool {
-    if !jb_comma(out, need) { return false }
-    if !jb_key(out, key) { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_string_field(out, false, "name", name) { return false }
-    if !jb_string_field(out, true, "description", desc) { return false }
-    return jb_end_obj(out)
-}
-
-fn emit_bounded(out: mutref<Vec>, need: Bool, key: Span<u8>, cur: u32, max: u32) -> Bool {
-    if !jb_comma(out, need) { return false }
-    if !jb_key(out, key) { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_u32_field(out, false, "current", cur) { return false }
-    if !jb_u32_field(out, true, "max", max) { return false }
-    return jb_end_obj(out)
-}
-
-fn emit_str_list4(out: mutref<Vec>, count: u32, a: Span<u8>, b: Span<u8>, c: Span<u8>, d: Span<u8>) -> Bool {
-    if !jb_begin_arr(out) { return false }
-    if count > 0 {
-        if !jb_escaped_string(out, a) { return false }
+pub fn op_harm_add(c: mutref<Character>, desc: Span<u8>, intensity: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "harm.add") {
+        return outcome_err("RETIRED", "character is retired")
     }
-    if count > 1 {
-        if !jb_comma(out, true) { return false }
-        if !jb_escaped_string(out, b) { return false }
+    let lvl_m: Maybe<u32> = intensity_from(intensity)
+    if !lvl_m.has {
+        return outcome_err("VALIDATION", "bad intensity")
     }
-    if count > 2 {
-        if !jb_comma(out, true) { return false }
-        if !jb_escaped_string(out, c) { return false }
-    }
-    if count > 3 {
-        if !jb_comma(out, true) { return false }
-        if !jb_escaped_string(out, d) { return false }
-    }
-    return jb_end_arr(out)
-}
-
-fn emit_str_list2(out: mutref<Vec>, count: u32, a: Span<u8>, b: Span<u8>) -> Bool {
-    if !jb_begin_arr(out) { return false }
-    if count > 0 {
-        if !jb_escaped_string(out, a) { return false }
-    }
-    if count > 1 {
-        if !jb_comma(out, true) { return false }
-        if !jb_escaped_string(out, b) { return false }
-    }
-    return jb_end_arr(out)
-}
-
-fn emit_str_list1(out: mutref<Vec>, count: u32, a: Span<u8>) -> Bool {
-    if !jb_begin_arr(out) { return false }
-    if count > 0 {
-        if !jb_escaped_string(out, a) { return false }
-    }
-    return jb_end_arr(out)
-}
-
-fn emit_abilities(out: mutref<Vec>, n0: Span<u8>, d0: Span<u8>, t0: u32, n1: Span<u8>, d1: Span<u8>, t1: u32) -> Bool {
-    if !jb_begin_arr(out) { return false }
-    var count: u32 = 0
-    if std.mem.len(n0) > 0 { count = 1 }
-    if std.mem.len(n1) > 0 { count = count + 1 }
-    if count > 0 {
-        if !jb_begin_obj(out) { return false }
-        if !jb_string_field(out, false, "name", n0) { return false }
-        if !jb_string_field(out, true, "description", d0) { return false }
-        if !jb_u32_field(out, true, "timesTaken", t0) { return false }
-        if !jb_end_obj(out) { return false }
-    }
-    if count > 1 {
-        if !jb_comma(out, true) { return false }
-        if !jb_begin_obj(out) { return false }
-        if !jb_string_field(out, false, "name", n1) { return false }
-        if !jb_string_field(out, true, "description", d1) { return false }
-        if !jb_u32_field(out, true, "timesTaken", t1) { return false }
-        if !jb_end_obj(out) { return false }
-    }
-    return jb_end_arr(out)
-}
-
-fn emit_friends(out: mutref<Vec>, e0: Span<u8>, c0: u32, e1: Span<u8>, c1: u32) -> Bool {
-    if !jb_begin_arr(out) { return false }
-    var count: u32 = 0
-    if std.mem.len(e0) > 0 { count = 1 }
-    if std.mem.len(e1) > 0 { count = count + 1 }
-    if count > 0 {
-        if !jb_begin_obj(out) { return false }
-        if !jb_string_field(out, false, "entry", e0) { return false }
-        if !jb_string_field(out, true, "closeness", closeness_name(c0)) { return false }
-        if !jb_end_obj(out) { return false }
-    }
-    if count > 1 {
-        if !jb_comma(out, true) { return false }
-        if !jb_begin_obj(out) { return false }
-        if !jb_string_field(out, false, "entry", e1) { return false }
-        if !jb_string_field(out, true, "closeness", closeness_name(c1)) { return false }
-        if !jb_end_obj(out) { return false }
-    }
-    return jb_end_arr(out)
-}
-
-fn emit_talent(out: mutref<Vec>, stem: Span<u8>, playbook: Span<u8>) -> Bool {
-    if !jb_begin_obj(out) { return false }
-    if !jb_comma(out, false) { return false }
-    if !jb_key(out, "attributes") { return false }
-    if !jb_begin_arr(out) { return false }
-    let ac: u32 = attr_count(stem)
-    var ai: u32 = 0
-    while ai < ac {
-        if ai > 0 {
-            if !jb_comma(out, true) { return false }
-        }
-        if !jb_begin_obj(out) { return false }
-        if !jb_string_field(out, false, "name", attr_name(stem, ai)) { return false }
-        if !jb_comma(out, true) { return false }
-        if !jb_key(out, "experience") { return false }
-        if !jb_begin_obj(out) { return false }
-        if !jb_u32_field(out, false, "points", 0) { return false }
-        if !jb_u32_field(out, true, "max", attribute_xp_max()) { return false }
-        if !jb_end_obj(out) { return false }
-        if !jb_comma(out, true) { return false }
-        if !jb_key(out, "actions") { return false }
-        if !jb_begin_arr(out) { return false }
-        let jc: u32 = action_count(stem, ai)
-        var aj: u32 = 0
-        while aj < jc {
-            if aj > 0 {
-                if !jb_comma(out, true) { return false }
+    let requested: u32 = lvl_m.value
+    var level: u32 = requested
+    while level <= 4 {
+        if level_count(c, level) < level_cap(level) {
+            if push_harm(c, level, desc) {
+                var o: OpOutcome = outcome_ok("harm.add")
+                o.has_landed = true
+                outcome_set_landed(&mut o, intensity_name(level))
+                if level != requested {
+                    add_side(&mut o, "harm spilled upward")
+                }
+                bump_rev(c)
+                return o
             }
-            let an: Span<u8> = action_name(stem, ai, aj)
-            if !jb_begin_obj(out) { return false }
-            if !jb_string_field(out, false, "name", an) { return false }
-            if !jb_u32_field(out, true, "rating", default_rating(stem, playbook, an)) { return false }
-            if !jb_u32_field(out, true, "maxRating", action_point_maximum(stem)) { return false }
-            if !jb_end_obj(out) { return false }
-            aj = aj + 1
         }
-        if !jb_end_arr(out) { return false }
-        if !jb_end_obj(out) { return false }
+        level = level + 1
+    }
+    return outcome_err("SLOT_FULL_FATAL", "no harm slot available")
+}
+
+pub fn op_harm_remove(c: mutref<Character>, desc: Span<u8>, intensity: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "harm.remove") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    let lvl_m: Maybe<u32> = intensity_from(intensity)
+    if !lvl_m.has {
+        return outcome_err("VALIDATION", "bad intensity")
+    }
+    let level: u32 = lvl_m.value
+    if level == 1 {
+        return remove_from_level_lesser(c, desc)
+    }
+    if level == 2 {
+        return remove_from_level_moderate(c, desc)
+    }
+    if level == 3 {
+        return remove_from_level_severe(c, desc)
+    }
+    return remove_from_level_fatal(c, desc)
+}
+
+fn remove_from_level_lesser(c: mutref<Character>, desc: Span<u8>) -> OpOutcome {
+    var i: u32 = 0
+    while i < c.lesser_count {
+        if std.mem.eql(lesser_view(c, i as usize), desc) {
+            var j: u32 = i
+            while j + 1 < c.lesser_count {
+                var k: usize = 0
+                while k < 64 {
+                    c.lesser_text[(j as usize) * 64 + k] = c.lesser_text[(j as usize + 1) * 64 + k]
+                    k = k + 1
+                }
+                c.lesser_len[j as usize] = c.lesser_len[(j + 1) as usize]
+                j = j + 1
+            }
+            c.lesser_count = c.lesser_count - 1
+            bump_rev(c)
+            return outcome_ok("harm.remove")
+        }
+        i = i + 1
+    }
+    return outcome_err("NOT_FOUND", "harm not found")
+}
+
+fn remove_from_level_moderate(c: mutref<Character>, desc: Span<u8>) -> OpOutcome {
+    var i: u32 = 0
+    while i < c.moderate_count {
+        if std.mem.eql(moderate_view(c, i as usize), desc) {
+            var j: u32 = i
+            while j + 1 < c.moderate_count {
+                var k: usize = 0
+                while k < 64 {
+                    c.moderate_text[(j as usize) * 64 + k] = c.moderate_text[(j as usize + 1) * 64 + k]
+                    k = k + 1
+                }
+                c.moderate_len[j as usize] = c.moderate_len[(j + 1) as usize]
+                j = j + 1
+            }
+            c.moderate_count = c.moderate_count - 1
+            bump_rev(c)
+            return outcome_ok("harm.remove")
+        }
+        i = i + 1
+    }
+    return outcome_err("NOT_FOUND", "harm not found")
+}
+
+fn remove_from_level_severe(c: mutref<Character>, desc: Span<u8>) -> OpOutcome {
+    var i: u32 = 0
+    while i < c.severe_count {
+        if std.mem.eql(severe_view(c, i as usize), desc) {
+            c.severe_count = 0
+            bump_rev(c)
+            return outcome_ok("harm.remove")
+        }
+        i = i + 1
+    }
+    return outcome_err("NOT_FOUND", "harm not found")
+}
+
+fn remove_from_level_fatal(c: mutref<Character>, desc: Span<u8>) -> OpOutcome {
+    var i: u32 = 0
+    while i < c.fatal_count {
+        if std.mem.eql(fatal_view(c, i as usize), desc) {
+            c.fatal_count = 0
+            bump_rev(c)
+            return outcome_ok("harm.remove")
+        }
+        i = i + 1
+    }
+    return outcome_err("NOT_FOUND", "harm not found")
+}
+
+pub fn op_armor_set(c: mutref<Character>, armor: Span<u8>, used: Bool) -> OpOutcome {
+    // used=false always ok
+    if !used {
+        if std.mem.eql(armor, "standard") { c.armor_std_used = false }
+        else if std.mem.eql(armor, "heavy") { c.armor_heavy_used = false }
+        else if std.mem.eql(armor, "special") { c.armor_special_used = false }
+        else { return outcome_err("VALIDATION", "bad armor kind") }
+        bump_rev(c)
+        return outcome_ok("armor.set")
+    }
+    if std.mem.eql(armor, "standard") {
+        // availability derived — empty loadout => not available
+        // character JSON exposes hasStandard from loadout; without armor gear, error
+        // we compute via same helpers by writing temp check: if no standard, error
+        // access via re-export — call public character writer helpers
+        // Local reimplement
+        if !loadout_has(c, "Armor") {
+            return outcome_err("ARMOR_NOT_AVAILABLE", "standard armor not available")
+        }
+        c.armor_std_used = true
+        bump_rev(c)
+        return outcome_ok("armor.set")
+    }
+    if std.mem.eql(armor, "heavy") {
+        if !loadout_has(c, "+Heavy") {
+            return outcome_err("ARMOR_NOT_AVAILABLE", "heavy armor not available")
+        }
+        c.armor_heavy_used = true
+        bump_rev(c)
+        return outcome_ok("armor.set")
+    }
+    if std.mem.eql(armor, "special") {
+        if !ability_has_special(c) {
+            return outcome_err("ARMOR_NOT_AVAILABLE", "special armor not available")
+        }
+        c.armor_special_used = true
+        bump_rev(c)
+        return outcome_ok("armor.set")
+    }
+    return outcome_err("VALIDATION", "bad armor kind")
+}
+
+fn loadout_has(c: ref<Character>, name: Span<u8>) -> Bool {
+    var i: u32 = 0
+    while i < c.loadout_count {
+        if std.mem.eql(loadout_view(c, i as usize), name) {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}
+
+fn ability_has_special(c: ref<Character>) -> Bool {
+    var i: u32 = 0
+    while i < c.ability_count {
+        if description_has_special(ability_desc_view(c, i as usize)) {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}
+
+pub fn op_attribute_xp_add(c: mutref<Character>, attribute: Span<u8>, delta: i32) -> OpOutcome {
+    if retired_guard(c, "attribute-xp.add") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    let idx: Maybe<usize> = find_attr(c, attribute)
+    if !idx.has {
+        return outcome_err("NOT_FOUND", "attribute not found")
+    }
+    let i: usize = idx.value
+    let before: u32 = c.attr_xp[i]
+    c.attr_xp[i] = clamp_add(c.attr_xp[i], c.attr_xp_max[i], delta)
+    var o: OpOutcome = outcome_ok("attribute-xp.add")
+    o.has_requested = true
+    o.requested = delta
+    o.effective = applied_delta(before, c.attr_xp[i])
+    bump_rev(c)
+    return o
+}
+
+fn find_attr(c: ref<Character>, name: Span<u8>) -> Maybe<usize> {
+    var i: u32 = 0
+    while i < c.attr_count {
+        let start: usize = i as usize * 16
+        if std.mem.eql(text_view(c.attr_names[start..start + 16], c.attr_name_lens[i as usize]), name) {
+            return i as usize
+        }
+        i = i + 1
+    }
+    return null
+}
+
+fn find_action(c: ref<Character>, attr_i: usize, name: Span<u8>) -> Maybe<usize> {
+    var j: u32 = 0
+    while j < c.attr_action_counts[attr_i] {
+        let action_i: usize = attr_i * 4 + j as usize
+        let start: usize = action_i * 16
+        if std.mem.eql(text_view(c.action_names[start..start + 16], c.action_name_lens[action_i]), name) {
+            return j as usize
+        }
+        j = j + 1
+    }
+    return null
+}
+
+pub fn op_attribute_levelup(c: mutref<Character>, attribute: Span<u8>, action: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "attribute.levelup") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    let ai: Maybe<usize> = find_attr(c, attribute)
+    if !ai.has {
+        return outcome_err("NOT_FOUND", "attribute not found")
+    }
+    let i: usize = ai.value
+    if c.attr_xp[i] != c.attr_xp_max[i] {
+        return outcome_err("CANNOT_LEVEL_UP", "attribute xp not full")
+    }
+    let aj: Maybe<usize> = find_action(c, i, action)
+    if !aj.has {
+        return outcome_err("NOT_FOUND", "action not found")
+    }
+    let j: usize = aj.value
+    let action_i: usize = i * 4 + j
+    if c.action_ratings[action_i] >= c.action_max_ratings[action_i] {
+        return outcome_err("RATING_MAXED", "action rating maxed")
+    }
+    c.action_ratings[action_i] = c.action_ratings[action_i] + 1
+    c.attr_xp[i] = 0
+    bump_rev(c)
+    return outcome_ok("attribute.levelup")
+}
+
+pub fn op_action_set_rating(c: mutref<Character>, action: Span<u8>, rating: i32) -> OpOutcome {
+    if retired_guard(c, "action.set-rating") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    if rating < 0 {
+        return outcome_err("VALIDATION", "rating below zero")
+    }
+    var ai: u32 = 0
+    while ai < c.attr_count {
+        let aj: Maybe<usize> = find_action(c, ai as usize, action)
+        if aj.has {
+            let j: usize = aj.value
+            let r: u32 = rating as u32
+            let action_i: usize = ai as usize * 4 + j
+            if r > c.action_max_ratings[action_i] {
+                c.action_ratings[action_i] = c.action_max_ratings[action_i]
+            } else {
+                c.action_ratings[action_i] = r
+            }
+            bump_rev(c)
+            return outcome_ok("action.set-rating")
+        }
         ai = ai + 1
     }
-    if !jb_end_arr(out) { return false }
-    return jb_end_obj(out)
+    return outcome_err("NOT_FOUND", "action not found")
 }
 
-// Persist helpers
-pub fn save_character_json(id: Span<u8>, json: Span<u8>) -> Bool {
-    if !write_entity_json("characters", id, json) { return false }
+pub fn op_ability_take(c: mutref<Character>, name: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "ability.take") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    let stem: Span<u8> = character_stem(c)
+    let pb: Span<u8> = character_playbook(c)
+    let times_max: u32 = ability_times_takeable(stem, pb, name)
+    if times_max == 0 {
+        return outcome_err("NOT_FOUND", "ability not in playbook")
+    }
+    let desc: Span<u8> = ability_description(stem, pb, name)
+    // existing?
+    var i: u32 = 0
+    while i < c.ability_count {
+        if std.mem.eql(ability_name_view(c, i as usize), name) {
+            if c.ability_times[i as usize] >= times_max {
+                return outcome_err("ABILITY_MAXED", "ability maxed")
+            }
+            c.ability_times[i as usize] = c.ability_times[i as usize] + 1
+            // NOTE: does NOT clear playbook XP
+            bump_rev(c)
+            return outcome_ok("ability.take")
+        }
+        i = i + 1
+    }
+    if c.ability_count >= 4 {
+        return outcome_err("VALIDATION", "too many abilities")
+    }
+    let idx: usize = c.ability_count as usize
+    c.ability_name_lens[idx] = ability_copy_name(c, idx, name)
+    c.ability_desc_lens[idx] = ability_copy_desc(c, idx, desc)
+    c.ability_times[idx] = 1
+    c.ability_count = c.ability_count + 1
+    bump_rev(c)
+    return outcome_ok("ability.take")
+}
+
+pub fn op_fund_gain(c: mutref<Character>, coins: u32) -> OpOutcome {
+    if retired_guard(c, "fund.gain") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    var remaining: u32 = coins
+    let satchel_room: u32 = c.satchel_max - c.satchel
+    var into_satchel: u32 = remaining
+    if into_satchel > satchel_room {
+        into_satchel = satchel_room
+    }
+    c.satchel = c.satchel + into_satchel
+    remaining = remaining - into_satchel
+    let stash_room: u32 = c.stash_max - c.stash
+    var into_stash: u32 = remaining
+    if into_stash > stash_room {
+        into_stash = stash_room
+    }
+    c.stash = c.stash + into_stash
+    remaining = remaining - into_stash
+    var o: OpOutcome = outcome_ok("fund.gain")
+    o.has_requested = true
+    o.requested = coins as i32
+    o.effective = (coins - remaining) as i32
+    if remaining > 0 {
+        add_side(&mut o, "coin overflow discarded as remainder")
+    }
+    bump_rev(c)
+    return o
+}
+
+pub fn op_fund_spend(c: mutref<Character>, coins: u32) -> OpOutcome {
+    if retired_guard(c, "fund.spend") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    let max_aff: u32 = c.satchel + (c.stash / 2)
+    if coins > max_aff {
+        return outcome_err("INSUFFICIENT_FUNDS", "not enough coin")
+    }
+    var need: u32 = coins
+    if c.satchel >= need {
+        c.satchel = c.satchel - need
+        need = 0
+    } else {
+        need = need - c.satchel
+        c.satchel = 0
+        // liquidate 2 stash per 1 coin
+        let cost: u32 = need * 2
+        c.stash = c.stash - cost
+    }
+    bump_rev(c)
+    var o: OpOutcome = outcome_ok("fund.spend")
+    o.has_requested = true
+    o.requested = coins as i32
+    o.effective = coins as i32
+    return o
+}
+
+pub fn op_rolodex_add(c: mutref<Character>, entry: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "rolodex.add") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    var i: u32 = 0
+    while i < c.friend_count {
+        if std.mem.eql(friend_view(c, i as usize), entry) {
+            return outcome_err("DUPLICATE", "entry exists")
+        }
+        i = i + 1
+    }
+    if c.friend_count >= 8 {
+        return outcome_err("VALIDATION", "rolodex full")
+    }
+    let idx: usize = c.friend_count as usize
+    c.friend_lens[idx] = slot_copy(c, 7, 48, idx, entry)
+    c.friend_closeness[idx] = 0
+    c.friend_count = c.friend_count + 1
+    bump_rev(c)
+    return outcome_ok("rolodex.add")
+}
+
+pub fn op_rolodex_set_closeness(c: mutref<Character>, entry: Span<u8>, closeness: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "rolodex.set-closeness") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    let cl: Maybe<u32> = closeness_parse(closeness)
+    if !cl.has {
+        return outcome_err("VALIDATION", "bad closeness")
+    }
+    var i: u32 = 0
+    while i < c.friend_count {
+        if std.mem.eql(friend_view(c, i as usize), entry) {
+            c.friend_closeness[i as usize] = cl.value
+            bump_rev(c)
+            return outcome_ok("rolodex.set-closeness")
+        }
+        i = i + 1
+    }
+    return outcome_err("NOT_FOUND", "entry not found")
+}
+
+fn closeness_parse(name: Span<u8>) -> Maybe<u32> {
+    if std.mem.eql(name, "friend") {
+        return 0_u32
+    }
+    if std.mem.eql(name, "close-friend") {
+        return 1_u32
+    }
+    if std.mem.eql(name, "rival") {
+        return 2_u32
+    }
+    return null
+}
+
+pub fn op_gear_lock(c: mutref<Character>) -> OpOutcome {
+    if retired_guard(c, "gear.lock") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    c.commitment_locked = true
+    bump_rev(c)
+    return outcome_ok("gear.lock")
+}
+
+pub fn op_gear_unlock(c: mutref<Character>) -> OpOutcome {
+    if retired_guard(c, "gear.unlock") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    c.commitment_locked = false
+    bump_rev(c)
+    return outcome_ok("gear.unlock")
+}
+
+pub fn op_gear_set_commitment(c: mutref<Character>, commitment: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "gear.set-commitment") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    if c.commitment_locked {
+        return outcome_err("COMMITMENT_LOCKED", "commitment locked")
+    }
+    var v: u32 = 0
+    if std.mem.eql(commitment, "none") { v = 0 }
+    else if std.mem.eql(commitment, "light") { v = 1 }
+    else if std.mem.eql(commitment, "normal") { v = 2 }
+    else if std.mem.eql(commitment, "heavy") { v = 3 }
+    else if std.mem.eql(commitment, "encumbered") { v = 4 }
+    else { return outcome_err("VALIDATION", "bad commitment") }
+    c.commitment = v
+    bump_rev(c)
+    return outcome_ok("gear.set-commitment")
+}
+
+pub fn op_dossier_update_crew(c: mutref<Character>, crew_id: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "dossier.update") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    if std.mem.len(crew_id) == 0 {
+        c.crew_id_len = 0
+        bump_rev(c)
+        return outcome_ok("dossier.update")
+    }
+    if !is_safe_id(crew_id) {
+        return outcome_err("VALIDATION", "bad crewId")
+    }
+    // must exist
+    var dest: [64]u8 = [0_u8; 64]
+    let exists: Maybe<Span<u8>> = read_entity_json("crews", crew_id, dest)
+    // need only existence — small read of first bytes
+    var pbuf: [360]u8 = [0_u8; 360]
+    let path: Maybe<String> = path_entity_current(pbuf, "crews", crew_id)
+    if !path.has {
+        return outcome_err("VALIDATION", "crew missing")
+    }
+    if !std.fs.exists(path.value) {
+        return outcome_err("VALIDATION", "crew missing")
+    }
+    var crew_i: usize = 0
+    while crew_i < std.mem.len(crew_id) && crew_i < 40 {
+        c.crew_id[crew_i] = crew_id[crew_i]
+        crew_i = crew_i + 1
+    }
+    c.crew_id_len = crew_i as u32
+    bump_rev(c)
+    return outcome_ok("dossier.update")
+}
+
+pub fn op_notebook_set(c: mutref<Character>, text: Span<u8>) -> OpOutcome {
+    if retired_guard(c, "notebook.set") {
+        return outcome_err("RETIRED", "character is retired")
+    }
+    var note_i: usize = 0
+    while note_i < std.mem.len(text) && note_i < 256 {
+        c.notebook[note_i] = text[note_i]
+        note_i = note_i + 1
+    }
+    c.notebook_len = note_i as u32
+    bump_rev(c)
+    return outcome_ok("notebook.set")
+}
+
+pub fn save_character(c: ref<Character>) -> Bool {
+    var store: [3500]u8 = [0_u8; 3500]
+    let v: MutSpan<u8> = store
+    if !jb_init(v) { return false }
+    if !write_character_json(c, v) {
+        return false
+    }
+    let id: Span<u8> = character_id(c)
+    if !write_entity_json("characters", id, jb_bytes(store)) {
+        return false
+    }
     return append_index_id("characters", id)
 }
 
-pub fn load_character_json(id: Span<u8>, dest: MutSpan<u8>) -> Maybe<Span<u8>> {
-    return read_entity_json("characters", id, dest)
+// Load character by reading JSON and parsing fields we need incrementally.
+pub fn load_character(id: Span<u8>, c: mutref<Character>) -> Bool {
+    var buf: [3500]u8 = [0_u8; 3500]
+    let raw: Maybe<Span<u8>> = read_entity_json("characters", id, buf)
+    if !raw.has {
+        return false
+    }
+    return parse_character(raw.value, c)
 }
 
-// OperationResult wrapper around character JSON body already built
-pub fn write_char_op_result(
-    out: mutref<Vec>,
-    ok: Bool,
-    char_json: Span<u8>,
-    op: Span<u8>,
-    has_req: Bool,
-    requested: i32,
-    effective: i32,
-    landed: Span<u8>,
-    has_landed: Bool,
-    side0: Span<u8>,
-    side1: Span<u8>,
-    side_count: u32,
-    err_code: Span<u8>,
-    err_msg: Span<u8>
-) -> Bool {
-    if !jb_begin_obj(out) { return false }
-    if !jb_bool_field(out, false, "ok", ok) { return false }
-    if ok {
-        if !jb_raw_field(out, true, "character", char_json) { return false }
+pub fn parse_character(json: Span<u8>, c: mutref<Character>) -> Bool {
+    // id, stem, playbook, revision
+    var tbuf: [64]u8 = [0_u8; 64]
+    let id: Maybe<Span<u8>> = std.json.string(tbuf, json, "id")
+    if !id.has {
+        return false
     }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "applied") { return false }
-    if !jb_begin_obj(out) { return false }
-    if !jb_string_field(out, false, "op", op) { return false }
-    if has_req {
-        if !jb_i32_field(out, true, "requested", requested) { return false }
-        if !jb_i32_field(out, true, "effective", effective) { return false }
+    var id_i: usize = 0
+    while id_i < std.mem.len(id.value) && id_i < 40 {
+        c.id[id_i] = id.value[id_i]
+        id_i = id_i + 1
     }
-    if has_landed {
-        if !jb_string_field(out, true, "landedIntensity", landed) { return false }
+    c.id_len = id_i as u32
+    let stem: Maybe<Span<u8>> = std.json.string(tbuf, json, "gameStem")
+    if !stem.has {
+        return false
     }
-    if !jb_end_obj(out) { return false }
-    if !jb_comma(out, true) { return false }
-    if !jb_key(out, "sideEffects") { return false }
-    if !jb_begin_arr(out) { return false }
-    if side_count > 0 {
-        if !jb_escaped_string(out, side0) { return false }
+    var stem_i: usize = 0
+    while stem_i < std.mem.len(stem.value) && stem_i < 32 {
+        c.stem[stem_i] = stem.value[stem_i]
+        stem_i = stem_i + 1
     }
-    if side_count > 1 {
-        if !jb_comma(out, true) { return false }
-        if !jb_escaped_string(out, side1) { return false }
+    c.stem_len = stem_i as u32
+    let rev: Maybe<u32> = std.json.u32(json, "revision")
+    if rev.has { c.revision = rev.value }
+    // playbook name nested
+    let pb_obj: Maybe<Span<u8>> = std.json.field(json, "playbook")
+    if pb_obj.has {
+        let pb: Maybe<Span<u8>> = std.json.string(tbuf, pb_obj.value, "name")
+        if pb.has {
+            var pb_i: usize = 0
+            while pb_i < std.mem.len(pb.value) && pb_i < 24 {
+                c.playbook[pb_i] = pb.value[pb_i]
+                pb_i = pb_i + 1
+            }
+            c.playbook_len = pb_i as u32
+        }
+        let px: Maybe<Span<u8>> = std.json.field(pb_obj.value, "experience")
+        if px.has {
+            let points: Maybe<u32> = std.json.u32(px.value, "points")
+            if points.has { c.playbook_xp = points.value }
+            let mx: Maybe<u32> = std.json.u32(px.value, "max")
+            if mx.has { c.playbook_xp_max = mx.value }
+        }
     }
-    if !jb_end_arr(out) { return false }
-    if ok {
-        if !jb_null_field(out, true, "error") { return false }
+    // monitor.stress
+    let mon: Maybe<Span<u8>> = std.json.field(json, "monitor")
+    if mon.has {
+        let st: Maybe<Span<u8>> = std.json.field(mon.value, "stress")
+        if st.has {
+            let cur: Maybe<u32> = std.json.u32(st.value, "current")
+            if cur.has { c.stress = cur.value }
+            let mx: Maybe<u32> = std.json.u32(st.value, "max")
+            if mx.has { c.stress_max = mx.value }
+        }
+        let tr: Maybe<Span<u8>> = std.json.field(mon.value, "trauma")
+        if tr.has {
+            let mx: Maybe<u32> = std.json.u32(tr.value, "max")
+            if mx.has { c.trauma_max = mx.value }
+            // trauma array — scan string manually
+            parse_string_array_field(tr.value, "traumas", c)
+        }
+        let harm: Maybe<Span<u8>> = std.json.field(mon.value, "harm")
+        if harm.has {
+            parse_harm(harm.value, c)
+        }
+        let arm: Maybe<Span<u8>> = std.json.field(mon.value, "armor")
+        if arm.has {
+            let a: Maybe<Bool> = std.json.bool(arm.value, "standardUsed")
+            if a.has { c.armor_std_used = a.value }
+            let b: Maybe<Bool> = std.json.bool(arm.value, "heavyUsed")
+            if b.has { c.armor_heavy_used = b.value }
+            let d: Maybe<Bool> = std.json.bool(arm.value, "specialUsed")
+            if d.has { c.armor_special_used = d.value }
+        }
+    }
+    // dossier.crewId
+    let dos: Maybe<Span<u8>> = std.json.field(json, "dossier")
+    if dos.has {
+        let crew: Maybe<Span<u8>> = std.json.string(tbuf, dos.value, "crewId")
+        if crew.has {
+            var crew_i: usize = 0
+            while crew_i < std.mem.len(crew.value) && crew_i < 40 {
+                c.crew_id[crew_i] = crew.value[crew_i]
+                crew_i = crew_i + 1
+            }
+            c.crew_id_len = crew_i as u32
+        }
+        let nm: Maybe<Span<u8>> = std.json.string(tbuf, dos.value, "name")
+        if nm.has {
+            var name_i: usize = 0
+            while name_i < std.mem.len(nm.value) && name_i < 48 {
+                c.name[name_i] = nm.value[name_i]
+                name_i = name_i + 1
+            }
+            c.name_len = name_i as u32
+        }
+    }
+    // talent:
+    parse_talent(json, c)
+    // fund
+    let fund: Maybe<Span<u8>> = std.json.field(json, "fund")
+    if fund.has {
+        let sat: Maybe<Span<u8>> = std.json.field(fund.value, "satchel")
+        if sat.has {
+            let coins: Maybe<u32> = std.json.u32(sat.value, "coins")
+            if coins.has { c.satchel = coins.value }
+            let mx: Maybe<u32> = std.json.u32(sat.value, "max")
+            if mx.has { c.satchel_max = mx.value }
+        }
+        let st: Maybe<Span<u8>> = std.json.field(fund.value, "stash")
+        if st.has {
+            let coins: Maybe<u32> = std.json.u32(st.value, "coins")
+            if coins.has { c.stash = coins.value }
+            let mx: Maybe<u32> = std.json.u32(st.value, "max")
+            if mx.has { c.stash_max = mx.value }
+        }
+    }
+    // gear.lock
+    let gear: Maybe<Span<u8>> = std.json.field(json, "gear")
+    if gear.has {
+        let locked: Maybe<Bool> = std.json.bool(gear.value, "isCommitmentLocked")
+        if locked.has { c.commitment_locked = locked.value }
+        let comm: Maybe<Span<u8>> = std.json.string(tbuf, gear.value, "commitment")
+        if comm.has {
+            if std.mem.eql(comm.value, "light") { c.commitment = 1 }
+            else if std.mem.eql(comm.value, "normal") { c.commitment = 2 }
+            else if std.mem.eql(comm.value, "heavy") { c.commitment = 3 }
+            else if std.mem.eql(comm.value, "encumbered") { c.commitment = 4 }
+            else { c.commitment = 0 }
+        }
+    }
+    // rolodex + notebook + abilities simplified parse
+    parse_rolodex(json, c)
+    parse_abilities(json, c)
+    var nbuf: [256]u8 = [0_u8; 256]
+    let nb: Maybe<Span<u8>> = std.json.string(nbuf, json, "notebook")
+    if nb.has {
+        var ni: usize = 0
+        while ni < std.mem.len(nb.value) && ni < 256 {
+            c.notebook[ni] = nb.value[ni]
+            ni = ni + 1
+        }
+        c.notebook_len = ni as u32
+    }
+    // ensure heal size from stem
+    c.heal_size = recovery_clock_size(character_stem(c))
+    return true
+}
+
+fn parse_string_array_field(obj: Span<u8>, field: Span<u8>, c: mutref<Character>) -> Void {
+    let arr: Maybe<Span<u8>> = std.json.field(obj, field)
+    if !arr.has { return }
+    // scan quoted strings
+    let s: Span<u8> = arr.value
+    var i: usize = 0
+    while i < std.mem.len(s) {
+        if s[i] == 34_u8 {
+            i = i + 1
+            let start: usize = i
+            while i < std.mem.len(s) && s[i] != 34_u8 {
+                i = i + 1
+            }
+            if i <= std.mem.len(s) {
+                let piece: Span<u8> = s[start..i]
+                if c.trauma_count < 4 {
+                    let idx: usize = c.trauma_count as usize
+                    c.trauma_len[idx] = slot_copy(c, 1, 64, idx, piece)
+                    c.trauma_count = c.trauma_count + 1
+                }
+            }
+            if i < std.mem.len(s) { i = i + 1 }
+        } else {
+            i = i + 1
+        }
+    }
+}
+
+fn parse_harm(harm: Span<u8>, c: mutref<Character>) -> Void {
+    parse_harm_level(harm, "lesser", c, 1)
+    parse_harm_level(harm, "moderate", c, 2)
+    parse_harm_level(harm, "severe", c, 3)
+    parse_harm_level(harm, "fatal", c, 4)
+    let clock: Maybe<Span<u8>> = std.json.field(harm, "healingClock")
+    if clock.has {
+        let seg: Maybe<u32> = std.json.u32(clock.value, "segments")
+        if seg.has { c.heal_seg = seg.value }
+        let sz: Maybe<u32> = std.json.u32(clock.value, "size")
+        if sz.has { c.heal_size = sz.value }
+        let ro: Maybe<u32> = std.json.u32(clock.value, "rollover")
+        if ro.has { c.heal_roll = ro.value }
+    }
+}
+
+fn parse_harm_level(harm: Span<u8>, field: Span<u8>, c: mutref<Character>, level: u32) -> Void {
+    let arr: Maybe<Span<u8>> = std.json.field(harm, field)
+    if !arr.has { return }
+    let s: Span<u8> = arr.value
+    var i: usize = 0
+    while i < std.mem.len(s) {
+        if s[i] == 34_u8 {
+            i = i + 1
+            let start: usize = i
+            while i < std.mem.len(s) && s[i] != 34_u8 { i = i + 1 }
+            let piece: Span<u8> = s[start..i]
+            let _p: Bool = push_harm(c, level, piece)
+            if i < std.mem.len(s) { i = i + 1 }
+        } else {
+            i = i + 1
+        }
+    }
+}
+
+fn parse_talent(json: Span<u8>, c: mutref<Character>) -> Void {
+    // Rebuild from game data then overlay ratings/xp from JSON roughly via action names present.
+    let stem: Span<u8> = character_stem(c)
+    let pb: Span<u8> = character_playbook(c)
+    let ac: u32 = attr_count(stem)
+    c.attr_count = ac
+    var ai: u32 = 0
+    while ai < ac {
+        let an: Span<u8> = attr_name(stem, ai)
+        var an_i: usize = 0
+        while an_i < std.mem.len(an) && an_i < 16 {
+            c.attr_names[(ai * 16_u32) as usize + an_i] = an[an_i]
+            an_i = an_i + 1
+        }
+        c.attr_name_lens[ai as usize] = an_i as u32
+        c.attr_xp_max[ai as usize] = attribute_xp_max()
+        let jc: u32 = action_count(stem, ai)
+        c.attr_action_counts[ai as usize] = jc
+        var aj: u32 = 0
+        while aj < jc {
+            let actn: Span<u8> = action_name(stem, ai, aj)
+            let action_i: usize = (ai * 4_u32 + aj) as usize
+            let action_start: usize = action_i * 16
+            var act_i: usize = 0
+            while act_i < std.mem.len(actn) && act_i < 16 {
+                c.action_names[action_start + act_i] = actn[act_i]
+                act_i = act_i + 1
+            }
+            c.action_name_lens[action_i] = act_i as u32
+            c.action_max_ratings[action_i] = action_point_maximum(stem)
+            c.action_ratings[action_i] = default_rating(stem, pb, actn)
+            aj = aj + 1
+        }
+        ai = ai + 1
+    }
+    // Overlay XP/ratings by scanning talent JSON text for "rating":N near action names — lightweight approach:
+    let talent: Maybe<Span<u8>> = std.json.field(json, "talent")
+    if !talent.has { return }
+    // For each action, search "name":"<action>" then nearby rating via manual scanfilter
+    var ai2: u32 = 0
+    while ai2 < c.attr_count {
+        // attribute xp: look for attribute name then experience points
+        let attr_start: usize = ai2 as usize * 16
+        let an: Span<u8> = text_view(c.attr_names[attr_start..attr_start + 16], c.attr_name_lens[ai2 as usize])
+        // crude: leave at 0 unless we find points after name occurrence — parse whole attributes array items
+        var aj: u32 = 0
+        while aj < c.attr_action_counts[ai2 as usize] {
+            let action_i: usize = ai2 as usize * 4 + aj as usize
+            let action_start: usize = action_i * 16
+            let actn: Span<u8> = text_view(c.action_names[action_start..action_start + 16], c.action_name_lens[action_i])
+            let r: Maybe<u32> = find_rating_after_name(talent.value, actn)
+            if r.has {
+                c.action_ratings[action_i] = r.value
+            }
+            aj = aj + 1
+        }
+        let xp: Maybe<u32> = find_xp_after_name(talent.value, an)
+        if xp.has {
+            c.attr_xp[ai2 as usize] = xp.value
+        }
+        ai2 = ai2 + 1
+    }
+}
+
+fn find_rating_after_name(blob: Span<u8>, name: Span<u8>) -> Maybe<u32> {
+    // find "name":"<name>" then "rating":num within next ~40 bytes
+    let pos: Maybe<usize> = find_name_key(blob, name)
+    if !pos.has {
+        return null
+    }
+    let start: usize = pos.value
+    var i: usize = start
+    let end: usize = start + 80
+    var limit: usize = std.mem.len(blob)
+    if end < limit {
+        limit = end
+    }
+    // search rating
+    while i + 8 < limit {
+        if blob[i] == 114_u8 && i + 8 < limit {
+            // rough match 'rating'
+            if blob[i] == 114_u8 && blob[i + 1] == 97_u8 && blob[i + 2] == 116_u8 {
+                // find : then number
+                var j: usize = i
+                while j < limit && blob[j] != 58_u8 { j = j + 1 }
+                if j < limit {
+                    j = j + 1
+                    while j < limit && (blob[j] == 32_u8) { j = j + 1 }
+                    let parsed: Maybe<u32> = std.parse.parseU32(blob[j..limit])
+                    return parsed
+                }
+            }
+        }
+        i = i + 1
+    }
+    return null
+}
+
+fn find_xp_after_name(blob: Span<u8>, name: Span<u8>) -> Maybe<u32> {
+    let pos: Maybe<usize> = find_name_key(blob, name)
+    if !pos.has {
+        return null
+    }
+    let start: usize = pos.value
+    let end: usize = start + 120
+    var limit: usize = std.mem.len(blob)
+    if end < limit {
+        limit = end
+    }
+    var i: usize = start
+    while i + 6 < limit {
+        // "points"
+        if blob[i] == 112_u8 && blob[i + 1] == 111_u8 && blob[i + 2] == 105_u8 && blob[i + 3] == 110_u8 {
+            var j: usize = i
+            while j < limit && blob[j] != 58_u8 { j = j + 1 }
+            if j < limit {
+                j = j + 1
+                while j < limit && blob[j] == 32_u8 { j = j + 1 }
+                return std.parse.parseU32(blob[j..limit])
+            }
+        }
+        i = i + 1
+    }
+    return null
+}
+
+fn find_name_key(blob: Span<u8>, name: Span<u8>) -> Maybe<usize> {
+    // find "name":"<name>"
+    var i: usize = 0
+    let nlen: usize = std.mem.len(name)
+    while i + nlen + 10 < std.mem.len(blob) {
+        if blob[i] == 34_u8 {
+            // check name
+            // skip key name
+        }
+        // search pattern : "namevalue"
+        if i + 1 + nlen < std.mem.len(blob) {
+            if blob[i] == 34_u8 {
+                let maybe: Span<u8> = blob[i + 1..i + 1 + nlen]
+                if std.mem.eql(maybe, name) {
+                    if i + 1 + nlen < std.mem.len(blob) {
+                        if blob[i + 1 + nlen] == 34_u8 {
+                            return i
+                        }
+                    }
+                }
+            }
+        }
+        i = i + 1
+    }
+    return null
+}
+
+fn parse_rolodex(json: Span<u8>, c: mutref<Character>) -> Void {
+    let rol: Maybe<Span<u8>> = std.json.field(json, "rolodex")
+    if !rol.has { return }
+    let friends: Maybe<Span<u8>> = std.json.field(rol.value, "friends")
+    if !friends.has { return }
+    // scan objects for entry + closeness strings
+    let s: Span<u8> = friends.value
+    var i: usize = 0
+    while i < std.mem.len(s) {
+        // look for "entry"
+        if i + 7 < std.mem.len(s) && s[i] == 34_u8 && s[i + 1] == 101_u8 && s[i + 2] == 110_u8 {
+            // find next string value
+            var j: usize = i
+            while j < std.mem.len(s) && s[j] != 58_u8 { j = j + 1 }
+            if j < std.mem.len(s) {
+                j = j + 1
+                while j < std.mem.len(s) && s[j] != 34_u8 { j = j + 1 }
+                if j < std.mem.len(s) {
+                    j = j + 1
+                    let start: usize = j
+                    while j < std.mem.len(s) && s[j] != 34_u8 { j = j + 1 }
+                    let entry: Span<u8> = s[start..j]
+                    // find closeness after
+                    var k: usize = j
+                    var closeness: u32 = 0
+                    while k + 10 < std.mem.len(s) && k < j + 80 {
+                        if s[k] == 34_u8 && k + 6 < std.mem.len(s) && s[k + 1] == 99_u8 {
+                            // closeness key-ish then value
+                            var v: usize = k
+                            while v < std.mem.len(s) && s[v] != 58_u8 { v = v + 1 }
+                            if v < std.mem.len(s) {
+                                v = v + 1
+                                while v < std.mem.len(s) && s[v] != 34_u8 { v = v + 1 }
+                                if v < std.mem.len(s) {
+                                    v = v + 1
+                                    let vs: usize = v
+                                    while v < std.mem.len(s) && s[v] != 34_u8 { v = v + 1 }
+                                    let cv: Span<u8> = s[vs..v]
+                                    if std.mem.eql(cv, "close-friend") { closeness = 1 }
+                                    else if std.mem.eql(cv, "rival") { closeness = 2 }
+                                    else { closeness = 0 }
+                                }
+                            }
+                            break
+                        }
+                        k = k + 1
+                    }
+                    if c.friend_count < 8 {
+                        let idx: usize = c.friend_count as usize
+                        c.friend_lens[idx] = slot_copy(c, 7, 48, idx, entry)
+                        c.friend_closeness[idx] = closeness
+                        c.friend_count = c.friend_count + 1
+                    }
+                    i = j
+                }
+            }
+        }
+        i = i + 1
+    }
+}
+
+fn parse_abilities(json: Span<u8>, c: mutref<Character>) -> Void {
+    let pb: Maybe<Span<u8>> = std.json.field(json, "playbook")
+    if !pb.has { return }
+    let abs: Maybe<Span<u8>> = std.json.field(pb.value, "abilities")
+    if !abs.has { return }
+    let s: Span<u8> = abs.value
+    // for each "name":"X" take ability via table (reload desc)
+    var i: usize = 0
+    while i + 8 < std.mem.len(s) {
+        if s[i] == 34_u8 && s[i + 1] == 110_u8 && s[i + 2] == 97_u8 && s[i + 3] == 109_u8 {
+            // name key
+            var j: usize = i
+            while j < std.mem.len(s) && s[j] != 58_u8 { j = j + 1 }
+            if j < std.mem.len(s) {
+                j = j + 1
+                while j < std.mem.len(s) && s[j] != 34_u8 { j = j + 1 }
+                if j < std.mem.len(s) {
+                    j = j + 1
+                    let start: usize = j
+                    while j < std.mem.len(s) && s[j] != 34_u8 { j = j + 1 }
+                    let name: Span<u8> = s[start..j]
+                    // timesTaken nearby
+                    var times: u32 = 1
+                    var k: usize = j
+                    while k + 10 < std.mem.len(s) && k < j + 100 {
+                        if s[k] == 116_u8 && s[k + 1] == 105_u8 && s[k + 2] == 109_u8 {
+                            var v: usize = k
+                            while v < std.mem.len(s) && s[v] != 58_u8 { v = v + 1 }
+                            if v < std.mem.len(s) {
+                                v = v + 1
+                                while v < std.mem.len(s) && s[v] == 32_u8 { v = v + 1 }
+                                let t: Maybe<u32> = std.parse.parseU32(s[v..std.mem.len(s)])
+                                if t.has { times = t.value }
+                            }
+                            break
+                        }
+                        k = k + 1
+                    }
+                    if c.ability_count < 4 {
+                        let idx: usize = c.ability_count as usize
+                        c.ability_name_lens[idx] = ability_copy_name(c, idx, name)
+                        let desc: Span<u8> = ability_description(character_stem(c), character_playbook(c), name)
+                        c.ability_desc_lens[idx] = ability_copy_desc(c, idx, desc)
+                        c.ability_times[idx] = times
+                        c.ability_count = c.ability_count + 1
+                    }
+                    i = j
+                }
+            }
+        }
+        i = i + 1
+    }
+}
+
+pub fn write_character_result(c: ref<Character>, o: ref<OpOutcome>, v: MutSpan<u8>) -> Bool {
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_bool_field(v, false, "ok", o.ok) {
+        return false
+    }
+    if o.ok {
+        if !jb_comma(v, true) {
+            return false
+        }
+        if !jb_key(v, "character") {
+            return false
+        }
+        if !write_character_json(c, v) {
+            return false
+        }
+    }
+    // applied
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "applied") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "op", text_view(o.applied_op, o.applied_op_len)) {
+        return false
+    }
+    if o.has_requested {
+        if !jb_i32_field(v, true, "requested", o.requested) {
+            return false
+        }
+        if !jb_i32_field(v, true, "effective", o.effective) {
+            return false
+        }
+    }
+    if o.has_landed {
+        if !jb_string_field(v, true, "landedIntensity", text_view(o.landed, o.landed_len)) {
+            return false
+        }
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // sideEffects
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "sideEffects") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    if o.side_count > 0 {
+        if !jb_escaped_string(v, text_view(o.side0, o.side0_len)) {
+            return false
+        }
+    }
+    if o.side_count > 1 {
+        if !jb_comma(v, true) {
+            return false
+        }
+        if !jb_escaped_string(v, text_view(o.side1, o.side1_len)) {
+            return false
+        }
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    // error
+    if o.ok {
+        if !jb_null_field(v, true, "error") {
+            return false
+        }
     } else {
-        if !jb_comma(out, true) { return false }
-        if !jb_key(out, "error") { return false }
-        if !jb_begin_obj(out) { return false }
-        if !jb_string_field(out, false, "code", err_code) { return false }
-        if !jb_string_field(out, true, "message", err_msg) { return false }
-        if !jb_end_obj(out) { return false }
+        if !jb_comma(v, true) {
+            return false
+        }
+        if !jb_key(v, "error") {
+            return false
+        }
+        if !jb_begin_obj(v) {
+            return false
+        }
+        if !jb_string_field(v, false, "code", text_view(o.code, o.code_len)) {
+            return false
+        }
+        if !jb_string_field(v, true, "message", text_view(o.message, o.message_len)) {
+            return false
+        }
+        if !jb_end_obj(v) {
+            return false
+        }
     }
-    return jb_end_obj(out)
+    return jb_end_obj(v)
+}
+
+pub fn write_error_result(code: Span<u8>, message: Span<u8>, op: Span<u8>, v: MutSpan<u8>) -> Bool {
+    var o: OpOutcome = outcome_err(code, message)
+    outcome_set_op(&mut o, op)
+    // fake empty character not included
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_bool_field(v, false, "ok", false) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "applied") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "op", op) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "sideEffects") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "error") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "code", code) {
+        return false
+    }
+    if !jb_string_field(v, true, "message", message) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    return jb_end_obj(v)
 }

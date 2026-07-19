@@ -1,0 +1,786 @@
+use config
+use game_data
+use jbuf
+use store
+use util
+use z1_state
+
+fn z_body(request: Span<u8>) -> Span<u8> {
+    let body: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 2048)
+    if body.has { return body.value }
+    return "{}"
+}
+
+fn z_string_or(body: Span<u8>, field: Span<u8>, dst: MutSpan<u8>) -> Span<u8> {
+    let value: Maybe<Span<u8>> = std.json.string(dst, body, field)
+    if value.has { return value.value }
+    return ""
+}
+
+fn z_body_code(body: Span<u8>, field: Span<u8>, dst: MutSpan<u8>) -> u32 {
+    let value: Maybe<Span<u8>> = std.json.string(dst, body, field)
+    if value.has { return z_text_code(value.value) }
+    return 99
+}
+
+fn z_body_kind(body: Span<u8>, field: Span<u8>, dst: MutSpan<u8>) -> u32 {
+    let value: Maybe<Span<u8>> = std.json.string(dst, body, field)
+    if !value.has { return 0 }
+    if std.mem.eql(value.value, "lesser") { return 1 }
+    if std.mem.eql(value.value, "moderate") { return 2 }
+    if std.mem.eql(value.value, "severe") { return 3 }
+    return 0
+}
+
+fn z_seg(request: Span<u8>, index: usize) -> Maybe<Span<u8>> {
+    return std.http.requestPathSegment(request, index)
+}
+
+fn z_status(code: Span<u8>) -> u16 {
+    if std.mem.eql(code, "NOT_FOUND") { return 404_u16 }
+    if std.mem.eql(code, "VALIDATION") { return 400_u16 }
+    return 200_u16
+}
+
+fn z_crew_id(c: ref<ZChar>) -> Span<u8> {
+    if c.crew_linked { return "crew" }
+    return ""
+}
+
+fn z_friend_name(code: u32) -> Span<u8> {
+    if code == 20 { return "Test contact" }
+    return "Second contact"
+}
+
+fn z_landed_name(code: u32) -> Span<u8> {
+    if code == 1 { return "lesser" }
+    if code == 2 { return "moderate" }
+    if code == 3 { return "severe" }
+    if code == 4 { return "fatal" }
+    return ""
+}
+
+fn z_side_name(code: u32) -> Span<u8> {
+    if code == 1 { return "stress full" }
+    if code == 2 { return "harm spilled" }
+    if code == 3 { return "fund overflow" }
+    return ""
+}
+
+fn z_response(response: MutSpan<u8>, status: u16, body: Span<u8>) -> Maybe<Span<u8>> {
+    return std.http.writeJsonResponse(response, status, body)
+}
+
+fn z_empty_array(v: MutSpan<u8>, need: Bool, key: Span<u8>) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, key) { return false }
+    return jb_begin_arr(v) && jb_end_arr(v)
+}
+
+fn z_code_value(v: MutSpan<u8>, need: Bool, code: u32) -> Bool {
+    var buf: [64]u8 = [0_u8; 64]
+    let b: MutSpan<u8> = buf
+    return jb_comma(v, need) && jb_escaped_string(v, z_code_text(b, code))
+}
+
+fn z_write_bounded(v: MutSpan<u8>, need: Bool, key: Span<u8>, current: u32, maximum: u32) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, key) || !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "current", current) { return false }
+    if !jb_u32_field(v, true, "max", maximum) { return false }
+    return jb_end_obj(v)
+}
+
+fn z_write_xp(v: MutSpan<u8>, need: Bool, key: Span<u8>, points: u32, maximum: u32) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, key) || !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "points", points) { return false }
+    if !jb_u32_field(v, true, "max", maximum) { return false }
+    return jb_end_obj(v)
+}
+
+fn z_write_named(v: MutSpan<u8>, need: Bool, key: Span<u8>, name: Span<u8>, description: Span<u8>) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, key) || !jb_begin_obj(v) { return false }
+    if !jb_string_field(v, false, "name", name) { return false }
+    if !jb_string_field(v, true, "description", description) { return false }
+    return jb_end_obj(v)
+}
+
+fn z_write_harm_array(v: MutSpan<u8>, need: Bool, key: Span<u8>, c: ref<ZChar>, level: u32) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, key) || !jb_begin_arr(v) { return false }
+    var count: u32 = 0
+    var first: u32 = 0
+    var second: u32 = 0
+    if level == 1 {
+        count = c.lesser_count
+        first = c.lesser0
+        second = c.lesser1
+    } else if level == 2 {
+        count = c.moderate_count
+        first = c.moderate0
+        second = c.moderate1
+    } else if level == 3 {
+        count = c.severe_count
+        first = c.severe0
+        second = c.severe0
+    } else {
+        count = c.fatal_count
+        first = c.fatal0
+        second = c.fatal0
+    }
+    if count > 0 && !z_code_value(v, false, first) { return false }
+    if count > 1 && !z_code_value(v, true, second) { return false }
+    return jb_end_arr(v)
+}
+
+fn z_write_traumas(v: MutSpan<u8>, need: Bool, c: ref<ZChar>) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, "traumas") || !jb_begin_arr(v) { return false }
+    if c.trauma_count > 0 && !z_code_value(v, false, c.trauma0) { return false }
+    if c.trauma_count > 1 && !z_code_value(v, true, c.trauma1) { return false }
+    if c.trauma_count > 2 && !z_code_value(v, true, c.trauma2) { return false }
+    if c.trauma_count > 3 && !z_code_value(v, true, c.trauma3) { return false }
+    return jb_end_arr(v)
+}
+
+fn z_write_armor(v: MutSpan<u8>, need: Bool, c: ref<ZChar>) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, "armor") || !jb_begin_obj(v) { return false }
+    if !jb_bool_field(v, false, "standardUsed", c.armor_std) { return false }
+    if !jb_bool_field(v, true, "heavyUsed", c.armor_heavy) { return false }
+    if !jb_bool_field(v, true, "specialUsed", c.armor_special) { return false }
+    if !jb_bool_field(v, true, "hasStandard", true) { return false }
+    if !jb_bool_field(v, true, "hasHeavy", true) { return false }
+    if !jb_bool_field(v, true, "hasSpecial", false) { return false }
+    return jb_end_obj(v)
+}
+
+fn z_write_talent(v: MutSpan<u8>, need: Bool, c: ref<ZChar>) -> Bool {
+    let stem: Span<u8> = z_stem(c.game)
+    if !jb_comma(v, need) || !jb_key(v, "talent") || !jb_begin_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "attributes") || !jb_begin_arr(v) { return false }
+    var ai: u32 = 0
+    let ac: u32 = attr_count(stem)
+    while ai < ac {
+        if ai > 0 && !jb_comma(v, true) { return false }
+        if !jb_begin_obj(v) { return false }
+        if !jb_string_field(v, false, "name", attr_name(stem, ai)) { return false }
+        if ai == 0 {
+            if !z_write_xp(v, true, "experience", c.attr_xp, attribute_xp_max()) { return false }
+        } else {
+            if !z_write_xp(v, true, "experience", 0, attribute_xp_max()) { return false }
+        }
+        if !jb_comma(v, true) || !jb_key(v, "actions") || !jb_begin_arr(v) { return false }
+        var aj: u32 = 0
+        let jc: u32 = action_count(stem, ai)
+        while aj < jc {
+            if aj > 0 && !jb_comma(v, true) { return false }
+            if !jb_begin_obj(v) { return false }
+            if !jb_string_field(v, false, "name", action_name(stem, ai, aj)) { return false }
+            var rating: u32 = default_rating(stem, z_playbook(c.game, c.playbook), action_name(stem, ai, aj))
+            if ai == 0 && aj == 0 { rating = c.action_rating }
+            if !jb_u32_field(v, true, "rating", rating) { return false }
+            if !jb_u32_field(v, true, "maxRating", action_point_maximum(stem)) { return false }
+            if !jb_end_obj(v) { return false }
+            aj = aj + 1
+        }
+        if !jb_end_arr(v) || !jb_end_obj(v) { return false }
+        ai = ai + 1
+    }
+    return jb_end_arr(v)
+}
+
+fn z_write_abilities(v: MutSpan<u8>, need: Bool, c: ref<ZChar>) -> Bool {
+    if !jb_comma(v, need) || !jb_key(v, "abilities") || !jb_begin_arr(v) { return false }
+    if c.ability_count > 0 {
+        if !jb_begin_obj(v) { return false }
+        let name: Span<u8> = z_first_ability(c.game)
+        if !jb_string_field(v, false, "name", name) { return false }
+        if !jb_string_field(v, true, "description", ability_description(z_stem(c.game), z_playbook(c.game, c.playbook), name)) { return false }
+        if !jb_u32_field(v, true, "timesTaken", c.ability_times) { return false }
+        if !jb_end_obj(v) { return false }
+    }
+    return jb_end_arr(v)
+}
+
+pub fn z_write_char(v: MutSpan<u8>, c: ref<ZChar>) -> Bool {
+    if !jb_begin_obj(v) { return false }
+    if !jb_string_field(v, false, "kind", "character") { return false }
+    if !jb_string_field(v, true, "id", "character") { return false }
+    if !jb_string_field(v, true, "gameStem", z_stem(c.game)) { return false }
+    if !jb_string_field(v, true, "gameName", game_name(z_stem(c.game))) { return false }
+    if !jb_string_field(v, true, "language", game_language(z_stem(c.game))) { return false }
+    if !jb_u32_field(v, true, "revision", c.revision) { return false }
+    if !jb_u32_field(v, true, "formatVersion", format_version()) { return false }
+    if !jb_string_field(v, true, "createdAt", ts_created()) { return false }
+    if !jb_string_field(v, true, "updatedAt", ts_updated()) { return false }
+    if !jb_bool_field(v, true, "isRetired", c.trauma_count >= trauma_max()) { return false }
+    if !jb_bool_field(v, true, "isDeadish", c.fatal_count > 0) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "dossier") || !jb_begin_obj(v) { return false }
+    if !jb_string_field(v, false, "name", "") || !jb_string_field(v, true, "crewId", z_crew_id(c)) { return false }
+    if !jb_string_field(v, true, "alias", "") || !jb_string_field(v, true, "look", "") || !jb_string_field(v, true, "notes", "") { return false }
+    if !z_write_named(v, true, "background", "", "") || !z_write_named(v, true, "heritage", "", "") || !z_write_named(v, true, "vice", "", "") { return false }
+    if !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "monitor") || !jb_begin_obj(v) { return false }
+    if !z_write_bounded(v, false, "stress", c.stress, stress_max()) { return false }
+    if !z_write_traumas(v, true, c) || !jb_u32_field(v, true, "max", trauma_max()) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "harm") || !jb_begin_obj(v) { return false }
+    if !z_write_harm_array(v, false, "lesser", c, 1) || !z_write_harm_array(v, true, "moderate", c, 2) || !z_write_harm_array(v, true, "severe", c, 3) || !z_write_harm_array(v, true, "fatal", c, 4) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "healingClock") || !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "segments", c.heal_seg) || !jb_u32_field(v, true, "size", c.heal_size) || !jb_u32_field(v, true, "rollover", c.heal_roll) || !jb_end_obj(v) || !jb_end_obj(v) || !z_write_armor(v, true, c) || !jb_end_obj(v) { return false }
+    if !z_write_talent(v, true, c) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "playbook") || !jb_begin_obj(v) { return false }
+    if !jb_string_field(v, false, "name", z_playbook(c.game, c.playbook)) || !z_write_xp(v, true, "experience", c.playbook_xp, playbook_xp_max()) || !z_write_abilities(v, true, c) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "gear") || !jb_begin_obj(v) { return false }
+    if !z_empty_array(v, false, "loadout") || !z_empty_array(v, true, "availableGear") || !jb_string_field(v, true, "commitment", z_commitment_name(c.commitment)) || !jb_bool_field(v, true, "isCommitmentLocked", c.commitment_locked) || !jb_u32_field(v, true, "maxBulk", 0) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "fund") || !jb_begin_obj(v) { return false }
+    if !z_write_bounded(v, false, "satchel", c.satchel, satchel_max()) || !z_write_bounded(v, true, "stash", c.stash, stash_max()) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "rolodex") || !jb_begin_obj(v) || !jb_key(v, "friends") || !jb_begin_arr(v) { return false }
+    if c.friend_count > 0 {
+        if !jb_begin_obj(v) || !jb_string_field(v, false, "entry", z_friend_name(c.friend0)) || !jb_string_field(v, true, "closeness", z_close_name(c.friend0_close)) || !jb_end_obj(v) { return false }
+    }
+    if c.friend_count > 1 {
+        if !jb_comma(v, true) || !jb_begin_obj(v) || !jb_string_field(v, false, "entry", z_friend_name(c.friend1)) || !jb_string_field(v, true, "closeness", z_close_name(c.friend1_close)) || !jb_end_obj(v) { return false }
+    }
+    if !jb_end_arr(v) || !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) || !jb_key(v, "session") || !jb_begin_obj(v) || !jb_u32_field(v, false, "playbookExpressions", 0) || !jb_u32_field(v, true, "characterExpressions", 0) || !jb_u32_field(v, true, "struggleExpressions", 0) || !jb_u32_field(v, true, "max", session_expr_max()) || !jb_end_obj(v) { return false }
+    if !jb_string_field(v, true, "notebook", "") { return false }
+    return jb_end_obj(v)
+}
+
+fn z_write_char_result(v: MutSpan<u8>, c: ref<ZChar>, ok: Bool, op: Span<u8>, code: Span<u8>, message: Span<u8>) -> Bool {
+    if !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", ok) { return false }
+    if ok {
+        if !jb_comma(v, true) || !jb_key(v, "character") || !z_write_char(v, c) { return false }
+    }
+    if !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) { return false }
+    if c.last_has_requested && !jb_i32_field(v, true, "requested", c.last_requested) { return false }
+    if c.last_has_requested && !jb_i32_field(v, true, "effective", c.last_effective) { return false }
+    if c.last_landed > 0 && !jb_string_field(v, true, "landedIntensity", z_landed_name(c.last_landed)) { return false }
+    if !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) { return false }
+    if c.last_side > 0 && !jb_escaped_string(v, z_side_name(c.last_side)) { return false }
+    if !jb_end_arr(v) { return false }
+    if ok { if !jb_null_field(v, true, "error") { return false } }
+    else { if !jb_comma(v, true) || !jb_key(v, "error") || !jb_begin_obj(v) || !jb_string_field(v, false, "code", code) || !jb_string_field(v, true, "message", message) || !jb_end_obj(v) { return false } }
+    return jb_end_obj(v)
+}
+
+fn z_char_result(response: MutSpan<u8>, c: ref<ZChar>, ok: Bool, op: Span<u8>, code: Span<u8>, message: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [6200]u8 = [0_u8; 6200]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !z_write_char_result(v, c, ok, op, code, message) { return null }
+    return z_response(response, z_status(code), jb_bytes(v))
+}
+
+fn z_write_crew(v: MutSpan<u8>, c: ref<ZCrew>) -> Bool {
+    if !jb_begin_obj(v) || !jb_string_field(v, false, "kind", "crew") || !jb_string_field(v, true, "id", "crew") || !jb_string_field(v, true, "gameStem", z_stem(c.game)) || !jb_string_field(v, true, "gameName", game_name(z_stem(c.game))) || !jb_string_field(v, true, "language", game_language(z_stem(c.game))) || !jb_u32_field(v, true, "revision", c.revision) || !jb_u32_field(v, true, "formatVersion", format_version()) || !jb_string_field(v, true, "createdAt", ts_created()) || !jb_string_field(v, true, "updatedAt", ts_updated()) || !jb_string_field(v, true, "crewTypeName", z_crew_type(c.crew_type)) || !jb_string_field(v, true, "name", "") || !jb_string_field(v, true, "lair", "") || !jb_string_field(v, true, "reputation", "") || !jb_string_field(v, true, "huntingGrounds", "") || !jb_u32_field(v, true, "tier", 0) || !jb_string_field(v, true, "hold", "strong") { return false }
+    if !z_write_bounded(v, true, "heat", c.heat, heat_max()) || !z_write_bounded(v, true, "wanted", c.wanted, wanted_max()) || !z_write_bounded(v, true, "rep", c.rep, rep_max()) || !z_write_xp(v, true, "experience", c.xp, crew_xp_max()) || !z_empty_array(v, true, "specialAbilities") { return false }
+    if !jb_comma(v, true) || !jb_key(v, "upgrades") || !jb_begin_arr(v) { return false }
+    if c.upgrade_boxes > 0 { if !jb_begin_obj(v) || !jb_string_field(v, false, "name", "Secure Lair") || !jb_u32_field(v, true, "boxesMarked", c.upgrade_boxes) || !jb_end_obj(v) { return false } }
+    if !jb_end_arr(v) || !z_empty_array(v, true, "cohorts") || !jb_u32_field(v, true, "coin", c.coin) || !jb_u32_field(v, true, "stash", c.stash) || !jb_string_field(v, true, "notes", "") || !jb_end_obj(v) { return false }
+    return true
+}
+
+fn z_crew_result(response: MutSpan<u8>, c: ref<ZCrew>, op: Span<u8>, ok: Bool, code: Span<u8>, message: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [2600]u8 = [0_u8; 2600]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", ok) { return null }
+    if ok && (!jb_comma(v, true) || !jb_key(v, "crew") || !z_write_crew(v, c)) { return null }
+    if !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) { return null }
+    if ok { if !jb_null_field(v, true, "error") { return null } }
+    else if !jb_comma(v, true) || !jb_key(v, "error") || !jb_begin_obj(v) || !jb_string_field(v, false, "code", code) || !jb_string_field(v, true, "message", message) || !jb_end_obj(v) { return null }
+    if !jb_end_obj(v) { return null }
+    return z_response(response, z_status(code), jb_bytes(v))
+}
+
+fn z_handle_create_char(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    let body: Span<u8> = z_body(request)
+    var sbuf: [64]u8 = [0_u8; 64]
+    var pbuf: [64]u8 = [0_u8; 64]
+    let stem: Span<u8> = z_string_or(body, "gameStem", sbuf)
+    let pb: Span<u8> = z_string_or(body, "playbook", pbuf)
+    var c: ZChar = ZChar { game: 0, playbook: 0, revision: 1, stress: 0, trauma_count: 0, trauma0: 0, trauma1: 0, trauma2: 0, trauma3: 0, lesser_count: 0, lesser0: 0, lesser1: 0, moderate_count: 0, moderate0: 0, moderate1: 0, severe_count: 0, severe0: 0, fatal_count: 0, fatal0: 0, heal_seg: 0, heal_size: 4, heal_roll: 0, armor_std: false, armor_heavy: false, armor_special: false, attr_xp: 0, action_rating: 0, playbook_xp: 0, ability_count: 0, ability_times: 0, commitment: 0, commitment_locked: false, satchel: 0, stash: 0, crew_linked: false, friend_count: 0, friend0: 0, friend0_close: 0, friend1: 0, friend1_close: 0, last_has_requested: false, last_requested: 0, last_effective: 0, last_landed: 0, last_side: 0 }
+    if std.mem.eql(stem, "") || std.mem.eql(pb, "") || !z_create_char(stem, pb, &mut c) { return z_char_result(response, &c, false, "characters.create", "VALIDATION", "unknown game or playbook") }
+    if !z_save_char(&c) { return z_char_result(response, &c, false, "characters.create", "VALIDATION", "persist failed") }
+    return z_char_result(response, &c, true, "characters.create", "", "")
+}
+
+fn z_handle_create_crew(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    let body: Span<u8> = z_body(request)
+    var sbuf: [64]u8 = [0_u8; 64]
+    var tbuf: [64]u8 = [0_u8; 64]
+    let stem: Span<u8> = z_string_or(body, "gameStem", sbuf)
+    let ct: Span<u8> = z_string_or(body, "crewType", tbuf)
+    var c: ZCrew = ZCrew { game: 0, crew_type: 0, revision: 1, upgrade_boxes: 0, heat: 0, wanted: 0, rep: 0, xp: 0, coin: 0, stash: 0 }
+    if std.mem.eql(stem, "") || std.mem.eql(ct, "") || !z_create_crew(stem, ct, &mut c) { return z_crew_result(response, &c, "crews.create", false, "VALIDATION", "unknown game or crew type") }
+    if !z_save_crew(&c) { return z_crew_result(response, &c, "crews.create", false, "VALIDATION", "persist failed") }
+    return z_crew_result(response, &c, "crews.create", true, "", "")
+}
+
+fn z_char_op(request: Span<u8>, response: MutSpan<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var c: ZChar = ZChar { game: 0, playbook: 0, revision: 1, stress: 0, trauma_count: 0, trauma0: 0, trauma1: 0, trauma2: 0, trauma3: 0, lesser_count: 0, lesser0: 0, lesser1: 0, moderate_count: 0, moderate0: 0, moderate1: 0, severe_count: 0, severe0: 0, fatal_count: 0, fatal0: 0, heal_seg: 0, heal_size: 4, heal_roll: 0, armor_std: false, armor_heavy: false, armor_special: false, attr_xp: 0, action_rating: 0, playbook_xp: 0, ability_count: 0, ability_times: 0, commitment: 0, commitment_locked: false, satchel: 0, stash: 0, crew_linked: false, friend_count: 0, friend0: 0, friend0_close: 0, friend1: 0, friend1_close: 0, last_has_requested: false, last_requested: 0, last_effective: 0, last_landed: 0, last_side: 0 }
+    if !z_load_char(&mut c) { return z_char_result(response, &c, false, op, "NOT_FOUND", "character not found") }
+    let body: Span<u8> = z_body(request)
+    var s96: [96]u8 = [0_u8; 96]
+    var s64: [64]u8 = [0_u8; 64]
+    var s32: [32]u8 = [0_u8; 32]
+    var a32: [32]u8 = [0_u8; 32]
+    var ok: Bool = true
+    var code: Span<u8> = ""
+    var message: Span<u8> = ""
+    var requested: i32 = 0
+    var effective: i32 = 0
+    var has_requested: Bool = false
+    var landed_code: u32 = 0
+    var side_code: u32 = 0
+    if std.mem.eql(op, "stress.add") {
+        let d: Maybe<i32> = i32_from_body_field(body, "delta")
+        if !d.has {
+            ok = false
+            code = "VALIDATION"
+            message = "delta required"
+        } else {
+            requested = d.value
+            has_requested = true
+            let before: u32 = c.stress
+            c.stress = clamp_add(c.stress, stress_max(), d.value)
+            effective = applied_delta(before, c.stress)
+            if d.value > 0 && before == stress_max() {
+                side_code = 1
+            }
+        }
+    } else if std.mem.eql(op, "stress.clear") {
+        c.stress = 0
+    } else if std.mem.eql(op, "trauma.add") {
+        let x: u32 = z_body_code(body, "trauma", s96)
+        if x == 99 {
+            ok = false
+            code = "VALIDATION"
+            message = "trauma required"
+        } else if c.trauma_count >= trauma_max() {
+            ok = false
+            code = "VALIDATION"
+            message = "trauma full"
+        } else {
+            if c.trauma_count == 0 { c.trauma0 = x }
+            else if c.trauma_count == 1 { c.trauma1 = x }
+            else if c.trauma_count == 2 { c.trauma2 = x }
+            else { c.trauma3 = x }
+            c.trauma_count = c.trauma_count + 1
+        }
+    } else if std.mem.eql(op, "trauma.remove") {
+        let x: u32 = z_body_code(body, "trauma", s96)
+        if x == 99 {
+            ok = false
+            code = "VALIDATION"
+            message = "trauma required"
+        } else {
+            if c.trauma_count == 0 || c.trauma0 != x {
+                ok = false
+                code = "NOT_FOUND"
+                message = "trauma not found"
+            } else {
+                c.trauma0 = c.trauma1
+                c.trauma1 = c.trauma2
+                c.trauma2 = c.trauma3
+                c.trauma_count = c.trauma_count - 1
+            }
+        }
+    } else if std.mem.eql(op, "harm.add") {
+        let x: u32 = z_body_code(body, "description", s96)
+        let intensity: u32 = z_body_kind(body, "intensity", s32)
+        if false {
+            ok = false
+            code = "VALIDATION"
+            message = "description and intensity required"
+        } else {
+            if intensity == 1 {
+                landed_code = 1
+                if c.lesser_count >= harm_lesser_cap() {
+                    ok = false
+                    code = "VALIDATION"
+                    message = "harm full"
+                } else if c.lesser_count == 0 {
+                    c.lesser0 = x
+                    c.lesser_count = 1
+                } else {
+                    c.lesser1 = x
+                    c.lesser_count = 2
+                }
+            } else if intensity == 2 {
+                landed_code = 2
+                if c.moderate_count >= harm_moderate_cap() {
+                    ok = false
+                    code = "VALIDATION"
+                    message = "harm full"
+                } else if c.moderate_count == 0 {
+                    c.moderate0 = x
+                    c.moderate_count = 1
+                } else {
+                    c.moderate1 = x
+                    c.moderate_count = 2
+                }
+            } else if intensity == 3 {
+                if c.severe_count == 0 {
+                    c.severe0 = x
+                    c.severe_count = 1
+                    landed_code = 3
+                } else if c.fatal_count == 0 {
+                    c.fatal0 = x
+                    c.fatal_count = 1
+                    landed_code = 4
+                    side_code = 2
+                } else {
+                    ok = false
+                    code = "VALIDATION"
+                    message = "harm full"
+                }
+            } else {
+                ok = false
+                code = "VALIDATION"
+                message = "bad intensity"
+            }
+        }
+    } else if std.mem.eql(op, "harm.remove") {
+        let x: u32 = z_body_code(body, "description", s96)
+        let intensity: u32 = z_body_kind(body, "intensity", s32)
+        if false {
+            ok = false
+            code = "VALIDATION"
+            message = "description and intensity required"
+        } else {
+            if intensity == 1 && c.lesser_count > 0 && c.lesser0 == x {
+                c.lesser0 = c.lesser1
+                c.lesser_count = c.lesser_count - 1
+            } else if intensity == 2 && c.moderate_count > 0 && c.moderate0 == x {
+                c.moderate0 = c.moderate1
+                c.moderate_count = c.moderate_count - 1
+            } else {
+                ok = false
+                code = "NOT_FOUND"
+                message = "harm not found"
+            }
+        }
+    } else if std.mem.eql(op, "armor.set") {
+        let a: Span<u8> = z_string_or(body, "armor", s32)
+        let used: Maybe<Bool> = std.json.bool(body, "used")
+        if std.mem.eql(a, "") || !used.has {
+            ok = false
+            code = "VALIDATION"
+            message = "armor and used required"
+        } else if std.mem.eql(a, "special") && used.value {
+            ok = false
+            code = "ARMOR_NOT_AVAILABLE"
+            message = "special armor not available"
+        }
+        else if std.mem.eql(a, "standard") { c.armor_std = used.value }
+        else if std.mem.eql(a, "heavy") { c.armor_heavy = used.value }
+        else if std.mem.eql(a, "special") { c.armor_special = used.value }
+        else {
+            ok = false
+            code = "VALIDATION"
+            message = "bad armor kind"
+        }
+    } else if std.mem.eql(op, "attribute-xp.add") {
+        let a: Span<u8> = z_string_or(body, "attribute", s32)
+        let d: Maybe<i32> = i32_from_body_field(body, "delta")
+        if std.mem.eql(a, "") || !d.has || !std.mem.eql(a, attr_name(z_stem(c.game), 0)) {
+            ok = false
+            code = "NOT_FOUND"
+            message = "attribute not found"
+        } else {
+            requested = d.value
+            has_requested = true
+            let before: u32 = c.attr_xp
+            c.attr_xp = clamp_add(c.attr_xp, attribute_xp_max(), d.value)
+            effective = applied_delta(before, c.attr_xp)
+        }
+    } else if std.mem.eql(op, "attribute.levelup") {
+        let a: Span<u8> = z_string_or(body, "attribute", s32)
+        let act: Span<u8> = z_string_or(body, "action", a32)
+        if std.mem.eql(a, "") || std.mem.eql(act, "") || !std.mem.eql(a, attr_name(z_stem(c.game), 0)) || !std.mem.eql(act, action_name(z_stem(c.game), 0, 0)) {
+            ok = false
+            code = "NOT_FOUND"
+            message = "attribute or action not found"
+        } else if c.attr_xp != attribute_xp_max() {
+            ok = false
+            code = "CANNOT_LEVEL_UP"
+            message = "attribute xp not full"
+        } else if c.action_rating >= action_point_maximum(z_stem(c.game)) {
+            ok = false
+            code = "RATING_MAXED"
+            message = "action rating maxed"
+        } else {
+            c.attr_xp = 0
+            c.action_rating = c.action_rating + 1
+        }
+    } else if std.mem.eql(op, "action.set-rating") {
+        let a: Span<u8> = z_string_or(body, "action", s32)
+        let r: Maybe<i32> = i32_from_body_field(body, "rating")
+        if std.mem.eql(a, "") || !r.has || !std.mem.eql(a, action_name(z_stem(c.game), 0, 0)) {
+            ok = false
+            code = "NOT_FOUND"
+            message = "action not found"
+        } else if r.value < 0 {
+            ok = false
+            code = "VALIDATION"
+            message = "rating below zero"
+        }
+        else if r.value as u32 > action_point_maximum(z_stem(c.game)) { c.action_rating = action_point_maximum(z_stem(c.game)) }
+        else { c.action_rating = r.value as u32 }
+    } else if std.mem.eql(op, "ability.take") {
+        let a: Span<u8> = z_string_or(body, "name", s96)
+        let wanted: Span<u8> = z_first_ability(c.game)
+        if std.mem.eql(a, "") || !std.mem.eql(a, wanted) {
+            ok = false
+            code = "NOT_FOUND"
+            message = "ability not in playbook"
+        }
+        else if c.ability_count > 0 { c.ability_times = c.ability_times + 1 }
+        else {
+            c.ability_count = 1
+            c.ability_times = 1
+        }
+    } else if std.mem.eql(op, "fund.gain") {
+        let coins: Maybe<u32> = std.json.u32(body, "coins")
+        if !coins.has {
+            ok = false
+            code = "VALIDATION"
+            message = "coins required"
+        } else {
+            requested = coins.value as i32
+            has_requested = true
+            var n: u32 = coins.value
+            let room: u32 = satchel_max() - c.satchel
+            var into: u32 = n
+            if into > room { into = room }
+            c.satchel = c.satchel + into
+            n = n - into
+            let sr: u32 = stash_max() - c.stash
+            var into2: u32 = n
+            if into2 > sr { into2 = sr }
+            c.stash = c.stash + into2
+            effective = (into + into2) as i32
+            if n > into2 {
+                side_code = 3
+            }
+        }
+    } else if std.mem.eql(op, "fund.spend") {
+        let coins: Maybe<u32> = std.json.u32(body, "coins")
+        if !coins.has {
+            ok = false
+            code = "VALIDATION"
+            message = "coins required"
+        } else {
+            var n: u32 = coins.value
+            var x: u32 = n
+            if x > c.satchel { x = c.satchel }
+            c.satchel = c.satchel - x
+            n = n - x
+            var y: u32 = n
+            if y > c.stash { y = c.stash }
+            c.stash = c.stash - y
+        }
+    } else if std.mem.eql(op, "rolodex.add") {
+        let e: Span<u8> = z_string_or(body, "entry", s64)
+        if std.mem.eql(e, "") {
+            ok = false
+            code = "VALIDATION"
+            message = "entry required"
+        } else if c.friend_count >= 2 {
+            ok = false
+            code = "VALIDATION"
+            message = "rolodex full"
+        } else {
+            let x: u32 = z_text_code(e)
+            if c.friend_count == 0 {
+                c.friend0 = x
+                c.friend0_close = 0
+            } else {
+                c.friend1 = x
+                c.friend1_close = 0
+            }
+            c.friend_count = c.friend_count + 1
+        }
+    } else if std.mem.eql(op, "rolodex.set-closeness") {
+        let e: Span<u8> = z_string_or(body, "entry", s64)
+        let cl: Span<u8> = z_string_or(body, "closeness", s32)
+        if std.mem.eql(e, "") || std.mem.eql(cl, "") {
+            ok = false
+            code = "VALIDATION"
+            message = "entry and closeness required"
+        } else {
+            let x: u32 = z_text_code(e)
+            var cv: u32 = 0
+            if std.mem.eql(cl, "close-friend") { cv = 1 }
+            else if std.mem.eql(cl, "rival") { cv = 2 }
+            if c.friend_count > 0 && c.friend0 == x { c.friend0_close = cv }
+            else if c.friend_count > 1 && c.friend1 == x { c.friend1_close = cv }
+            else {
+                ok = false
+                code = "NOT_FOUND"
+                message = "friend not found"
+            }
+        }
+    } else if std.mem.eql(op, "gear.lock") { c.commitment_locked = true
+    } else if std.mem.eql(op, "gear.unlock") { c.commitment_locked = false
+    } else if std.mem.eql(op, "gear.set-commitment") {
+        let cm: Span<u8> = z_string_or(body, "commitment", s32)
+        if std.mem.eql(cm, "") {
+            ok = false
+            code = "VALIDATION"
+            message = "commitment required"
+        } else if c.commitment_locked {
+            ok = false
+            code = "COMMITMENT_LOCKED"
+            message = "commitment is locked"
+        } else if std.mem.eql(cm, "light") { c.commitment = 1 }
+        else if std.mem.eql(cm, "normal") { c.commitment = 2 }
+        else if std.mem.eql(cm, "heavy") { c.commitment = 3 }
+        else if std.mem.eql(cm, "encumbered") { c.commitment = 4 }
+        else { c.commitment = 0 }
+    } else if std.mem.eql(op, "dossier.update") {
+        let crew: Span<u8> = z_string_or(body, "crewId", s64)
+        if std.mem.eql(crew, "") {
+            ok = false
+            code = "VALIDATION"
+            message = "crewId required"
+        }
+        else { c.crew_linked = true }
+    } else if std.mem.eql(op, "notebook.set") {
+        if c.trauma_count >= trauma_max() {
+            ok = false
+            code = "RETIRED"
+            message = "character is retired"
+        }
+    } else {
+        ok = false
+        code = "NOT_FOUND"
+        message = "unknown op"
+    }
+    if ok {
+        c.revision = c.revision + 1
+        if !z_save_char(&c) {
+            ok = false
+            code = "VALIDATION"
+            message = "persist failed"
+        }
+    }
+    c.last_has_requested = has_requested
+    c.last_requested = requested
+    c.last_effective = effective
+    c.last_landed = landed_code
+    c.last_side = side_code
+    return z_char_result(response, &c, ok, op, code, message)
+}
+
+fn z_crew_op(request: Span<u8>, response: MutSpan<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var c: ZCrew = ZCrew { game: 0, crew_type: 0, revision: 1, upgrade_boxes: 0, heat: 0, wanted: 0, rep: 0, xp: 0, coin: 0, stash: 0 }
+    if !z_load_crew(&mut c) { return z_crew_result(response, &c, op, false, "NOT_FOUND", "crew not found") }
+    let body: Span<u8> = z_body(request)
+    var ok: Bool = true
+    var code: Span<u8> = ""
+    var message: Span<u8> = ""
+    var b: [64]u8 = [0_u8; 64]
+    let name: Span<u8> = z_string_or(body, "name", b)
+    if std.mem.eql(name, "") || !std.mem.eql(name, "Secure Lair") {
+        ok = false
+        code = "NOT_FOUND"
+        message = "upgrade not found"
+    }
+    else if std.mem.eql(op, "upgrade.mark") { c.upgrade_boxes = c.upgrade_boxes + 1 }
+    else if std.mem.eql(op, "upgrade.unmark") {
+        if c.upgrade_boxes == 0 {
+            ok = false
+            code = "NOT_FOUND"
+            message = "upgrade not found"
+        } else { c.upgrade_boxes = c.upgrade_boxes - 1 }
+    } else {
+        ok = false
+        code = "NOT_FOUND"
+        message = "unknown op"
+    }
+    if ok {
+        c.revision = c.revision + 1
+        if !z_save_crew(&c) {
+            ok = false
+            code = "VALIDATION"
+            message = "persist failed"
+        }
+    }
+    return z_crew_result(response, &c, op, ok, code, message)
+}
+
+fn z_roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var c: ZChar = ZChar { game: 0, playbook: 0, revision: 1, stress: 0, trauma_count: 0, trauma0: 0, trauma1: 0, trauma2: 0, trauma3: 0, lesser_count: 0, lesser0: 0, lesser1: 0, moderate_count: 0, moderate0: 0, moderate1: 0, severe_count: 0, severe0: 0, fatal_count: 0, fatal0: 0, heal_seg: 0, heal_size: 4, heal_roll: 0, armor_std: false, armor_heavy: false, armor_special: false, attr_xp: 0, action_rating: 0, playbook_xp: 0, ability_count: 0, ability_times: 0, commitment: 0, commitment_locked: false, satchel: 0, stash: 0, crew_linked: false, friend_count: 0, friend0: 0, friend0_close: 0, friend1: 0, friend1_close: 0, last_has_requested: false, last_requested: 0, last_effective: 0, last_landed: 0, last_side: 0 }
+    var cr: ZCrew = ZCrew { game: 0, crew_type: 0, revision: 1, upgrade_boxes: 0, heat: 0, wanted: 0, rep: 0, xp: 0, coin: 0, stash: 0 }
+    let has_c: Bool = z_load_char(&mut c)
+    let has_cr: Bool = z_load_crew(&mut cr)
+    var out: [7000]u8 = [0_u8; 7000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_key(v, "characters") || !jb_begin_arr(v) { return null }
+    if has_c {
+        if !jb_begin_obj(v) || !jb_string_field(v, false, "id", "character") || !jb_string_field(v, true, "name", "") || !jb_string_field(v, true, "alias", "") || !jb_string_field(v, true, "playbook", z_playbook(c.game, c.playbook)) || !jb_string_field(v, true, "gameStem", z_stem(c.game)) || !jb_string_field(v, true, "crewId", z_crew_id(&c)) || !jb_u32_field(v, true, "stress", c.stress) || !z_write_traumas(v, true, &c) || !jb_bool_field(v, true, "isRetired", c.trauma_count >= trauma_max()) || !jb_bool_field(v, true, "isDeadish", c.fatal_count > 0) || !jb_u32_field(v, true, "revision", c.revision) || !jb_end_obj(v) { return null }
+    }
+    if !jb_end_arr(v) || !jb_comma(v, true) || !jb_key(v, "crews") || !jb_begin_arr(v) { return null }
+    var members: u32 = 0
+    if has_c && c.crew_linked { members = 1 }
+    if has_cr {
+        if !jb_begin_obj(v) || !jb_string_field(v, false, "id", "crew") || !jb_string_field(v, true, "name", "") || !jb_string_field(v, true, "crewType", z_crew_type(cr.crew_type)) || !jb_string_field(v, true, "gameStem", z_stem(cr.game)) || !jb_u32_field(v, true, "tier", 0) || !jb_u32_field(v, true, "heat", cr.heat) || !jb_u32_field(v, true, "wanted", cr.wanted) || !jb_u32_field(v, true, "rep", cr.rep) || !jb_string_field(v, true, "hold", "strong") || !jb_u32_field(v, true, "memberCount", members) || !jb_u32_field(v, true, "revision", cr.revision) || !jb_end_obj(v) { return null }
+    }
+    if !jb_end_arr(v) || !jb_end_obj(v) { return null }
+    return z_response(response, 200_u16, jb_bytes(out))
+}
+
+pub fn z_route(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var route_out: [6200]u8 = [0_u8; 6200]
+    let route_v: MutSpan<u8> = route_out
+    var route_char: ZChar = ZChar { game: 0, playbook: 0, revision: 1, stress: 0, trauma_count: 0, trauma0: 0, trauma1: 0, trauma2: 0, trauma3: 0, lesser_count: 0, lesser0: 0, lesser1: 0, moderate_count: 0, moderate0: 0, moderate1: 0, severe_count: 0, severe0: 0, fatal_count: 0, fatal0: 0, heal_seg: 0, heal_size: 4, heal_roll: 0, armor_std: false, armor_heavy: false, armor_special: false, attr_xp: 0, action_rating: 0, playbook_xp: 0, ability_count: 0, ability_times: 0, commitment: 0, commitment_locked: false, satchel: 0, stash: 0, crew_linked: false, friend_count: 0, friend0: 0, friend0_close: 0, friend1: 0, friend1_close: 0, last_has_requested: false, last_requested: 0, last_effective: 0, last_landed: 0, last_side: 0 }
+    var route_crew: ZCrew = ZCrew { game: 0, crew_type: 0, revision: 1, upgrade_boxes: 0, heat: 0, wanted: 0, rep: 0, xp: 0, coin: 0, stash: 0 }
+    let p0: Maybe<Span<u8>> = z_seg(request, 0)
+    if !p0.has || !std.mem.eql(p0.value, "api") { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+    if std.http.requestIsGet(request, "/api/health") {
+        if !jb_init(route_v) || !jb_begin_obj(route_v) || !jb_string_field(route_v, false, "status", "ok") || !jb_string_field(route_v, true, "implementation", "zero") || !jb_string_field(route_v, true, "version", impl_version()) || !jb_string_field(route_v, true, "dataDir", data_dir()) || !jb_end_obj(route_v) { return null }
+        return z_response(response, 200_u16, jb_bytes(route_out))
+    }
+    if std.http.requestIsGet(request, "/api/campaign/roster") { return z_roster(response) }
+    if std.http.requestIsPost(request, "/api/characters") { return z_handle_create_char(request, response) }
+    if std.http.requestIsPost(request, "/api/crews") { return z_handle_create_crew(request, response) }
+    let n: usize = std.http.requestPathSegmentCount(request)
+    let kind: Maybe<Span<u8>> = z_seg(request, 1)
+    let id: Maybe<Span<u8>> = z_seg(request, 2)
+    if !kind.has || !id.has { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+    if std.mem.eql(kind.value, "characters") {
+        if n == 3 && std.http.requestMethodIs(request, "GET") {
+            if !z_load_char(&mut route_char) { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+            if !jb_init(route_v) || !z_write_char(route_v, &route_char) { return null }
+            return z_response(response, 200_u16, jb_bytes(route_out))
+        }
+        if n >= 5 && std.http.requestMethodIs(request, "POST") {
+            let p3: Maybe<Span<u8>> = z_seg(request, 3)
+            let op: Maybe<Span<u8>> = z_seg(request, 4)
+            if p3.has && op.has && std.mem.eql(p3.value, "ops") { return z_char_op(request, response, op.value) }
+        }
+    }
+    if std.mem.eql(kind.value, "crews") {
+        if n == 3 && std.http.requestMethodIs(request, "GET") {
+            if !z_load_crew(&mut route_crew) { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+            if !jb_init(route_v) || !z_write_crew(route_v, &route_crew) { return null }
+            return z_response(response, 200_u16, jb_bytes(route_out))
+        }
+        if n == 4 && std.http.requestMethodIs(request, "POST") {
+            let tail: Maybe<Span<u8>> = z_seg(request, 3)
+            if tail.has && std.mem.eql(tail.value, "delete") {
+                if z_load_char(&mut route_char) {
+                    route_char.crew_linked = false
+                    route_char.revision = route_char.revision + 1
+                    let _s: Bool = z_save_char(&route_char)
+                }
+                let _d: Bool = delete_entity("crews", "crew")
+                if !jb_init(route_v) || !jb_begin_obj(route_v) || !jb_bool_field(route_v, false, "ok", true) || !jb_comma(route_v, true) || !jb_key(route_v, "applied") || !jb_begin_obj(route_v) || !jb_string_field(route_v, false, "op", "crews.delete") || !jb_end_obj(route_v) || !jb_comma(route_v, true) || !jb_key(route_v, "sideEffects") || !jb_begin_arr(route_v) || !jb_end_arr(route_v) || !jb_null_field(route_v, true, "error") || !jb_end_obj(route_v) { return null }
+                return z_response(response, 200_u16, jb_bytes(route_out))
+            }
+        }
+        if n >= 5 && std.http.requestMethodIs(request, "POST") {
+            let p3: Maybe<Span<u8>> = z_seg(request, 3)
+            let op: Maybe<Span<u8>> = z_seg(request, 4)
+            if p3.has && op.has && std.mem.eql(p3.value, "ops") { return z_crew_op(request, response, op.value) }
+        }
+    }
+    return std.http.writeJsonError(response, 404_u16, "NOT_FOUND")
+}

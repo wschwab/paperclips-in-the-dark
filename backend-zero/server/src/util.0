@@ -1,71 +1,45 @@
 use config
 
-fn nibble(v: u8) -> u8 {
-    if v < 10 {
-        return 48_u8 + v
-    }
-    return 97_u8 + (v - 10)
-}
-
-fn write_u32_hex8(out: MutSpan<u8>, at: usize, value: u32) -> Bool {
-    if at + 8 > std.mem.len(out) {
-        return false
-    }
-    var shift: u32 = 28
-    var i: usize = 0
-    while i < 8 {
-        let nib: u8 = ((value >> shift) & 0x0f_u32) as u8
-        out[at + i] = nibble(nib)
-        if shift >= 4 {
-            shift = shift - 4
-        } else {
-            shift = 0
-        }
-        i = i + 1
-    }
-    return true
-}
-
-// UUID version-4 text (36 chars) into out. Returns written span.
+// UUID version-4 text (36 chars) via random hex — no bitops (Zero 0.3.4 has none).
 pub fn write_uuid_v4(out: MutSpan<u8>) -> Maybe<Span<u8>> {
     if std.mem.len(out) < 36 {
         return null
     }
-    let a: u32 = std.crypto.secureRandomU32()
-    let b: u32 = std.crypto.secureRandomU32()
-    let c: u32 = std.crypto.secureRandomU32()
-    let d: u32 = std.crypto.secureRandomU32()
-    // 8 hex
-    if !write_u32_hex8(out, 0, a) { return null }
+    var hexbuf: [32]u8 = [0_u8; 32]
+    let rid: Maybe<Span<u8>> = std.crypto.randomId32(hexbuf)
+    if !rid.has {
+        return null
+    }
+    let h: Span<u8> = rid.value
+    var i: usize = 0
+    while i < 8 {
+        out[i] = h[i]
+        i = i + 1
+    }
     out[8] = 45_u8
-    // next 4 from b high
-    out[9] = nibble(((b >> 28) & 0x0f_u32) as u8)
-    out[10] = nibble(((b >> 24) & 0x0f_u32) as u8)
-    out[11] = nibble(((b >> 20) & 0x0f_u32) as u8)
-    out[12] = nibble(((b >> 16) & 0x0f_u32) as u8)
+    out[9] = h[8]
+    out[10] = h[9]
+    out[11] = h[10]
+    out[12] = h[11]
     out[13] = 45_u8
-    // version 4 + 3 nibbles from b
-    out[14] = 52_u8 // '4'
-    out[15] = nibble(((b >> 12) & 0x0f_u32) as u8)
-    out[16] = nibble(((b >> 8) & 0x0f_u32) as u8)
-    out[17] = nibble(((b >> 4) & 0x0f_u32) as u8)
+    out[14] = 52_u8
+    out[15] = h[13]
+    out[16] = h[14]
+    out[17] = h[15]
     out[18] = 45_u8
-    // variant 10xx: high nibble 8..b
-    let vn: u8 = (8_u8 + (((c >> 28) & 0x03_u32) as u8))
-    out[19] = nibble(vn)
-    out[20] = nibble(((c >> 24) & 0x0f_u32) as u8)
-    out[21] = nibble(((c >> 20) & 0x0f_u32) as u8)
-    out[22] = nibble(((c >> 16) & 0x0f_u32) as u8)
+    out[19] = 97_u8
+    out[20] = h[17]
+    out[21] = h[18]
+    out[22] = h[19]
     out[23] = 45_u8
-    // 12 hex: remaining c + d
-    out[24] = nibble(((c >> 12) & 0x0f_u32) as u8)
-    out[25] = nibble(((c >> 8) & 0x0f_u32) as u8)
-    out[26] = nibble(((c >> 4) & 0x0f_u32) as u8)
-    out[27] = nibble((c & 0x0f_u32) as u8)
-    if !write_u32_hex8(out, 28, d) { return null }
-    // write_u32_hex8 wrote 8 at 28..36 — good (28+8=36)
+    var j: usize = 0
+    while j < 12 {
+        out[24 + j] = h[20 + j]
+        j = j + 1
+    }
     return out[0..36]
 }
+
 
 pub fn is_safe_id(id: Span<u8>) -> Bool {
     if std.mem.len(id) == 0 {
@@ -94,21 +68,27 @@ pub fn path_campaign(buf: MutSpan<u8>) -> Maybe<String> {
 pub fn path_index(buf: MutSpan<u8>, kind: Span<u8>) -> Maybe<String> {
     var mid: [256]u8 = [0_u8; 256]
     let kind_dir: Maybe<String> = std.path.join(mid, data_dir(), kind)
-    if !kind_dir.has { return null }
+    if !kind_dir.has {
+        return null
+    }
     return std.path.join(buf, kind_dir.value, "index.txt")
 }
 
 pub fn path_entity_dir(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
     var mid: [256]u8 = [0_u8; 256]
     let kind_dir: Maybe<String> = std.path.join(mid, data_dir(), kind)
-    if !kind_dir.has { return null }
+    if !kind_dir.has {
+        return null
+    }
     return std.path.join(buf, kind_dir.value, id)
 }
 
 pub fn path_entity_current(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
     var mid: [300]u8 = [0_u8; 300]
     let id_dir: Maybe<String> = path_entity_dir(mid, kind, id)
-    if !id_dir.has { return null }
+    if !id_dir.has {
+        return null
+    }
     return std.path.join(buf, id_dir.value, "current.json")
 }
 
@@ -176,6 +156,7 @@ pub fn i32_from_body_field(body: Span<u8>, field: Span<u8>) -> Maybe<i32> {
     return std.parse.parseI32(field_span.value)
 }
 
+// Local MutSpan path (only for true local arrays, not struct fields).
 pub fn copy_to(dst: MutSpan<u8>, src: Span<u8>) -> Maybe<Span<u8>> {
     if std.mem.len(src) > std.mem.len(dst) {
         return null
@@ -190,6 +171,157 @@ pub fn set_text(dst: MutSpan<u8>, src: Span<u8>) -> u32 {
         return 0
     }
     return std.mem.len(n_maybe.value) as u32
+}
+
+fn clamp_len(src_len: usize, cap: usize) -> usize {
+    if src_len > cap {
+        return cap
+    }
+    return src_len
+}
+
+type Fill16 {
+    data: [16]u8,
+    len: u32,
+}
+
+pub fn fill16(src: Span<u8>) -> Fill16 {
+    var d: [16]u8 = [0_u8; 16]
+    let nlen: usize = clamp_len(std.mem.len(src), 16)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill16 { data: d, len: nlen as u32 }
+}
+
+type Fill24 {
+    data: [24]u8,
+    len: u32,
+}
+
+pub fn fill24(src: Span<u8>) -> Fill24 {
+    var d: [24]u8 = [0_u8; 24]
+    let nlen: usize = clamp_len(std.mem.len(src), 24)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill24 { data: d, len: nlen as u32 }
+}
+
+type Fill32 {
+    data: [32]u8,
+    len: u32,
+}
+
+pub fn fill32(src: Span<u8>) -> Fill32 {
+    var d: [32]u8 = [0_u8; 32]
+    let nlen: usize = clamp_len(std.mem.len(src), 32)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill32 { data: d, len: nlen as u32 }
+}
+
+type Fill40 {
+    data: [40]u8,
+    len: u32,
+}
+
+pub fn fill40(src: Span<u8>) -> Fill40 {
+    var d: [40]u8 = [0_u8; 40]
+    let nlen: usize = clamp_len(std.mem.len(src), 40)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill40 { data: d, len: nlen as u32 }
+}
+
+type Fill48 {
+    data: [48]u8,
+    len: u32,
+}
+
+pub fn fill48(src: Span<u8>) -> Fill48 {
+    var d: [48]u8 = [0_u8; 48]
+    let nlen: usize = clamp_len(std.mem.len(src), 48)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill48 { data: d, len: nlen as u32 }
+}
+
+type Fill64 {
+    data: [64]u8,
+    len: u32,
+}
+
+pub fn fill64(src: Span<u8>) -> Fill64 {
+    var d: [64]u8 = [0_u8; 64]
+    let nlen: usize = clamp_len(std.mem.len(src), 64)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill64 { data: d, len: nlen as u32 }
+}
+
+type Fill96 {
+    data: [96]u8,
+    len: u32,
+}
+
+pub fn fill96(src: Span<u8>) -> Fill96 {
+    var d: [96]u8 = [0_u8; 96]
+    let nlen: usize = clamp_len(std.mem.len(src), 96)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill96 { data: d, len: nlen as u32 }
+}
+
+type Fill256 {
+    data: [256]u8,
+    len: u32,
+}
+
+pub fn fill256(src: Span<u8>) -> Fill256 {
+    var d: [256]u8 = [0_u8; 256]
+    let nlen: usize = clamp_len(std.mem.len(src), 256)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill256 { data: d, len: nlen as u32 }
+}
+
+type Fill320 {
+    data: [320]u8,
+    len: u32,
+}
+
+pub fn fill320(src: Span<u8>) -> Fill320 {
+    var d: [320]u8 = [0_u8; 320]
+    let nlen: usize = clamp_len(std.mem.len(src), 320)
+    var i: usize = 0
+    while i < nlen {
+        d[i] = src[i]
+        i = i + 1
+    }
+    return Fill320 { data: d, len: nlen as u32 }
 }
 
 pub fn text_view(buf: Span<u8>, len: u32) -> Span<u8> {

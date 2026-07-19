@@ -1,2 +1,1068 @@
-// Intentionally thin — logic lives in character_ops (locals, not record arrays).
-// Kept so earlier use-paths compile after rewrite.
+use config
+use game_data
+use jbuf
+use util
+use store
+
+type Character {
+    id: [40]u8,
+    id_len: u32,
+    stem: [32]u8,
+    stem_len: u32,
+    playbook: [24]u8,
+    playbook_len: u32,
+    revision: u32,
+    // dossier
+    name: [48]u8,
+    name_len: u32,
+    alias_text: [48]u8,
+    alias_text_len: u32,
+    look: [96]u8,
+    look_len: u32,
+    notes: [96]u8,
+    notes_len: u32,
+    crew_id: [40]u8,
+    crew_id_len: u32,
+    bg_name: [32]u8,
+    bg_name_len: u32,
+    bg_desc: [64]u8,
+    bg_desc_len: u32,
+    heritage_name: [32]u8,
+    heritage_name_len: u32,
+    heritage_desc: [64]u8,
+    heritage_desc_len: u32,
+    vice_name: [32]u8,
+    vice_name_len: u32,
+    vice_desc: [64]u8,
+    vice_desc_len: u32,
+    // monitor
+    stress: u32,
+    stress_max: u32,
+    trauma_text: [256]u8,
+    trauma_len: [4]u32,
+    trauma_count: u32,
+    trauma_max: u32,
+    lesser_text: [128]u8,
+    lesser_len: [2]u32,
+    lesser_count: u32,
+    moderate_text: [128]u8,
+    moderate_len: [2]u32,
+    moderate_count: u32,
+    severe_text: [64]u8,
+    severe_len: [1]u32,
+    severe_count: u32,
+    fatal_text: [64]u8,
+    fatal_len: [1]u32,
+    fatal_count: u32,
+    heal_seg: u32,
+    heal_size: u32,
+    heal_roll: u32,
+    armor_std_used: Bool,
+    armor_heavy_used: Bool,
+    armor_special_used: Bool,
+    // talent
+    attr_names: [64]u8,
+    attr_name_lens: [4]u32,
+    attr_xp: [4]u32,
+    attr_xp_max: [4]u32,
+    attr_action_counts: [4]u32,
+    action_names: [256]u8,
+    action_name_lens: [16]u32,
+    action_ratings: [16]u32,
+    action_max_ratings: [16]u32,
+    attr_count: u32,
+    // playbook xp/abilities
+    playbook_xp: u32,
+    playbook_xp_max: u32,
+    ability_names: [128]u8,
+    ability_name_lens: [4]u32,
+    ability_descs: [1280]u8,
+    ability_desc_lens: [4]u32,
+    ability_times: [4]u32,
+    ability_count: u32,
+    // gear (minimal)
+    commitment: u32, // 0 none 1 light 2 normal 3 heavy 4 encumbered,
+    commitment_locked: Bool,
+    loadout_text: [256]u8,
+    loadout_len: [4]u32,
+    loadout_count: u32,
+    loadout_bulk: [4]u32,
+    // fund
+    satchel: u32,
+    satchel_max: u32,
+    stash: u32,
+    stash_max: u32,
+    // rolodex
+    friend_entries: [384]u8,
+    friend_lens: [8]u32,
+    friend_closeness: [8]u32,
+    friend_count: u32,
+    // session
+    expr_pb: u32,
+    expr_ch: u32,
+    expr_st: u32,
+    expr_max: u32,
+    // notebook
+    notebook: [256]u8,
+    notebook_len: u32,
+}
+
+pub fn character_new_empty() -> Character {
+    return Character { id: [0_u8; 40], id_len: 0, stem: [0_u8; 32], stem_len: 0, playbook: [0_u8; 24], playbook_len: 0, revision: 1, name: [0_u8; 48], name_len: 0, alias_text: [0_u8; 48], alias_text_len: 0, look: [0_u8; 96], look_len: 0, notes: [0_u8; 96], notes_len: 0, crew_id: [0_u8; 40], crew_id_len: 0, bg_name: [0_u8; 32], bg_name_len: 0, bg_desc: [0_u8; 64], bg_desc_len: 0, heritage_name: [0_u8; 32], heritage_name_len: 0, heritage_desc: [0_u8; 64], heritage_desc_len: 0, vice_name: [0_u8; 32], vice_name_len: 0, vice_desc: [0_u8; 64], vice_desc_len: 0, stress: 0, stress_max: stress_max(), trauma_text: [0_u8; 256], trauma_len: [0_u32; 4], trauma_count: 0, trauma_max: trauma_max(), lesser_text: [0_u8; 128], lesser_len: [0_u32; 2], lesser_count: 0, moderate_text: [0_u8; 128], moderate_len: [0_u32; 2], moderate_count: 0, severe_text: [0_u8; 64], severe_len: [0_u32; 1], severe_count: 0, fatal_text: [0_u8; 64], fatal_len: [0_u32; 1], fatal_count: 0, heal_seg: 0, heal_size: 0, heal_roll: 0, armor_std_used: false, armor_heavy_used: false, armor_special_used: false, attr_names: [0_u8; 64], attr_name_lens: [0_u32; 4], attr_xp: [0_u32; 4], attr_xp_max: [0_u32; 4], attr_action_counts: [0_u32; 4], action_names: [0_u8; 256], action_name_lens: [0_u32; 16], action_ratings: [0_u32; 16], action_max_ratings: [0_u32; 16], attr_count: 0, playbook_xp: 0, playbook_xp_max: playbook_xp_max(), ability_names: [0_u8; 128], ability_name_lens: [0_u32; 4], ability_descs: [0_u8; 1280], ability_desc_lens: [0_u32; 4], ability_times: [0_u32; 4], ability_count: 0, commitment: 0, commitment_locked: false, loadout_text: [0_u8; 256], loadout_len: [0_u32; 4], loadout_count: 0, loadout_bulk: [0_u32; 4], satchel: 0, satchel_max: satchel_max(), stash: 0, stash_max: stash_max(), friend_entries: [0_u8; 384], friend_lens: [0_u32; 8], friend_closeness: [0_u32; 8], friend_count: 0, expr_pb: 0, expr_ch: 0, expr_st: 0, expr_max: session_expr_max(), notebook: [0_u8; 256], notebook_len: 0 }
+}
+
+
+pub fn character_create(stem: Span<u8>, playbook: Span<u8>, c: mutref<Character>) -> Bool {
+    if !known_stem(stem) {
+        return false
+    }
+    if !has_playbook(stem, playbook) {
+        return false
+    }
+    var stem_i: usize = 0
+    while stem_i < std.mem.len(stem) && stem_i < 32 {
+        c.stem[stem_i] = stem[stem_i]
+        stem_i = stem_i + 1
+    }
+    c.stem_len = stem_i as u32
+    var playbook_i: usize = 0
+    while playbook_i < std.mem.len(playbook) && playbook_i < 24 {
+        c.playbook[playbook_i] = playbook[playbook_i]
+        playbook_i = playbook_i + 1
+    }
+    c.playbook_len = playbook_i as u32
+    c.stress_max = stress_max()
+    c.trauma_max = trauma_max()
+    c.heal_size = recovery_clock_size(stem)
+    c.playbook_xp_max = playbook_xp_max()
+    c.satchel_max = satchel_max()
+    c.stash_max = stash_max()
+    c.expr_max = session_expr_max()
+    var idbuf: [40]u8 = [0_u8; 40]
+    let id: Maybe<Span<u8>> = write_uuid_v4(idbuf)
+    if !id.has {
+        return false
+    }
+    var id_i: usize = 0
+    while id_i < std.mem.len(id.value) && id_i < 40 {
+        c.id[id_i] = id.value[id_i]
+        id_i = id_i + 1
+    }
+    c.id_len = id_i as u32
+    // talent from game data
+    let ac: u32 = attr_count(stem)
+    c.attr_count = ac
+    var ai: u32 = 0
+    while ai < ac {
+        let an: Span<u8> = attr_name(stem, ai)
+        var an_i: usize = 0
+        while an_i < std.mem.len(an) && an_i < 16 {
+            c.attr_names[(ai * 16_u32) as usize + an_i] = an[an_i]
+            an_i = an_i + 1
+        }
+        c.attr_name_lens[ai as usize] = an_i as u32
+        c.attr_xp[ai as usize] = 0
+        c.attr_xp_max[ai as usize] = attribute_xp_max()
+        let jc: u32 = action_count(stem, ai)
+        c.attr_action_counts[ai as usize] = jc
+        var aj: u32 = 0
+        while aj < jc {
+            let actn: Span<u8> = action_name(stem, ai, aj)
+            let action_i: usize = (ai * 4_u32 + aj) as usize
+            let action_start: usize = action_i * 16
+            var act_i: usize = 0
+            while act_i < std.mem.len(actn) && act_i < 16 {
+                c.action_names[action_start + act_i] = actn[act_i]
+                act_i = act_i + 1
+            }
+            c.action_name_lens[action_i] = act_i as u32
+            c.action_max_ratings[action_i] = action_point_maximum(stem)
+            c.action_ratings[action_i] = default_rating(stem, playbook, actn)
+            aj = aj + 1
+        }
+        ai = ai + 1
+    }
+    c.revision = 1
+    return true
+}
+
+pub fn character_id(c: ref<Character>) -> Span<u8> {
+    return text_view(c.id, c.id_len)
+}
+
+pub fn character_stem(c: ref<Character>) -> Span<u8> {
+    return text_view(c.stem, c.stem_len)
+}
+
+pub fn character_playbook(c: ref<Character>) -> Span<u8> {
+    return text_view(c.playbook, c.playbook_len)
+}
+
+pub fn trauma_view(c: ref<Character>, i: usize) -> Span<u8> {
+    let start: usize = i * 64
+    return text_view(c.trauma_text[start..start + 64], c.trauma_len[i])
+}
+
+pub fn lesser_view(c: ref<Character>, i: usize) -> Span<u8> {
+    let start: usize = i * 64
+    return text_view(c.lesser_text[start..start + 64], c.lesser_len[i])
+}
+
+pub fn moderate_view(c: ref<Character>, i: usize) -> Span<u8> {
+    let start: usize = i * 64
+    return text_view(c.moderate_text[start..start + 64], c.moderate_len[i])
+}
+
+pub fn severe_view(c: ref<Character>, i: usize) -> Span<u8> {
+    return text_view(c.severe_text, c.severe_len[i])
+}
+
+pub fn fatal_view(c: ref<Character>, i: usize) -> Span<u8> {
+    return text_view(c.fatal_text, c.fatal_len[i])
+}
+
+pub fn loadout_view(c: ref<Character>, i: usize) -> Span<u8> {
+    let start: usize = i * 64
+    return text_view(c.loadout_text[start..start + 64], c.loadout_len[i])
+}
+
+pub fn friend_view(c: ref<Character>, i: usize) -> Span<u8> {
+    let start: usize = i * 48
+    return text_view(c.friend_entries[start..start + 48], c.friend_lens[i])
+}
+
+pub fn ability_name_view(c: ref<Character>, i: usize) -> Span<u8> {
+    let start: usize = i * 32
+    return text_view(c.ability_names[start..start + 32], c.ability_name_lens[i])
+}
+
+pub fn ability_desc_view(c: ref<Character>, i: usize) -> Span<u8> {
+    return ability_description(character_stem(c), character_playbook(c), ability_name_view(c, i))
+}
+
+pub fn slot_copy(dst: mutref<Character>, field: u32, width: u32, index: usize, src: Span<u8>) -> u32 {
+    var i: usize = 0
+    let start: usize = index * width as usize
+    while i < std.mem.len(src) && i < width as usize {
+        if field == 1 {
+            dst.trauma_text[start + i] = src[i]
+        } else if field == 2 {
+            dst.lesser_text[start + i] = src[i]
+        } else if field == 3 {
+            dst.moderate_text[start + i] = src[i]
+        } else if field == 4 {
+            dst.severe_text[start + i] = src[i]
+        } else if field == 5 {
+            dst.fatal_text[start + i] = src[i]
+        } else if field == 6 {
+            dst.loadout_text[start + i] = src[i]
+        } else {
+            dst.friend_entries[start + i] = src[i]
+        }
+        i = i + 1
+    }
+    return i as u32
+}
+
+pub fn ability_copy_name(dst: mutref<Character>, index: usize, src: Span<u8>) -> u32 {
+    if std.mem.len(src) > 32 {
+        return 32
+    }
+    return std.mem.len(src) as u32
+}
+
+pub fn ability_copy_desc(dst: mutref<Character>, index: usize, src: Span<u8>) -> u32 {
+    if std.mem.len(src) > 320 {
+        return 320
+    }
+    return std.mem.len(src) as u32
+}
+
+pub fn character_is_retired(c: ref<Character>) -> Bool {
+    return c.trauma_count >= c.trauma_max
+}
+
+pub fn character_is_deadish(c: ref<Character>) -> Bool {
+    return c.fatal_count > 0
+}
+
+fn commitment_name(v: u32) -> Span<u8> {
+    if v == 1 {
+        return "light"
+    }
+    if v == 2 {
+        return "normal"
+    }
+    if v == 3 {
+        return "heavy"
+    }
+    if v == 4 {
+        return "encumbered"
+    }
+    return "none"
+}
+
+fn commitment_max_bulk(v: u32) -> u32 {
+    if v == 1 {
+        return 3
+    }
+    if v == 2 {
+        return 5
+    }
+    if v == 3 {
+        return 6
+    }
+    if v == 4 {
+        return 9
+    }
+    return 0
+}
+
+fn closeness_name(v: u32) -> Span<u8> {
+    if v == 1 {
+        return "close-friend"
+    }
+    if v == 2 {
+        return "rival"
+    }
+    return "friend"
+}
+
+fn closeness_from(name: Span<u8>) -> Maybe<u32> {
+    if std.mem.eql(name, "friend") {
+        return 0_u32
+    }
+    if std.mem.eql(name, "close-friend") {
+        return 1_u32
+    }
+    if std.mem.eql(name, "rival") {
+        return 2_u32
+    }
+    return null
+}
+
+fn has_standard_armor(c: ref<Character>) -> Bool {
+    var i: u32 = 0
+    while i < c.loadout_count {
+        let n: Span<u8> = loadout_view(c, i as usize)
+        if spans_eql_ci_armor(n, "standard") {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}
+
+fn has_heavy_armor(c: ref<Character>) -> Bool {
+    var i: u32 = 0
+    while i < c.loadout_count {
+        let n: Span<u8> = loadout_view(c, i as usize)
+        if std.mem.eql(n, "+Heavy") || std.mem.eql(n, "+Lourde") {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}
+
+fn has_special_armor(c: ref<Character>) -> Bool {
+    var i: u32 = 0
+    while i < c.ability_count {
+        let d: Span<u8> = ability_desc_view(c, i as usize)
+        if description_has_special(d) {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}
+
+
+pub fn write_character_json(c: ref<Character>, v: MutSpan<u8>) -> Bool {
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "kind", "character") {
+        return false
+    }
+    if !jb_string_field(v, true, "id", character_id(c)) {
+        return false
+    }
+    if !jb_string_field(v, true, "gameStem", character_stem(c)) {
+        return false
+    }
+    if !jb_string_field(v, true, "gameName", game_name(character_stem(c))) {
+        return false
+    }
+    if !jb_string_field(v, true, "language", game_language(character_stem(c))) {
+        return false
+    }
+    if !jb_u32_field(v, true, "revision", c.revision) {
+        return false
+    }
+    if !jb_u32_field(v, true, "formatVersion", format_version()) {
+        return false
+    }
+    if !jb_string_field(v, true, "createdAt", ts_created()) {
+        return false
+    }
+    if !jb_string_field(v, true, "updatedAt", ts_updated()) {
+        return false
+    }
+    if !jb_bool_field(v, true, "isRetired", character_is_retired(c)) {
+        return false
+    }
+    if !jb_bool_field(v, true, "isDeadish", character_is_deadish(c)) {
+        return false
+    }
+    // dossier
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "dossier") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "name", text_view(c.name, c.name_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "crewId", text_view(c.crew_id, c.crew_id_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "alias", text_view(c.alias_text, c.alias_text_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "look", text_view(c.look, c.look_len)) {
+        return false
+    }
+    if !jb_string_field(v, true, "notes", text_view(c.notes, c.notes_len)) {
+        return false
+    }
+    if !write_named(v, true, "background", text_view(c.bg_name, c.bg_name_len), text_view(c.bg_desc, c.bg_desc_len)) {
+        return false
+    }
+    if !write_named(v, true, "heritage", text_view(c.heritage_name, c.heritage_name_len), text_view(c.heritage_desc, c.heritage_desc_len)) {
+        return false
+    }
+    if !write_named(v, true, "vice", text_view(c.vice_name, c.vice_name_len), text_view(c.vice_desc, c.vice_desc_len)) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // monitor
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "monitor") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !write_bounded(v, false, "stress", c.stress, c.stress_max) {
+        return false
+    }
+    // trauma
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "trauma") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_comma(v, false) {
+        return false
+    }
+    if !jb_key(v, "traumas") {
+        return false
+    }
+    if !write_trauma_array(v, c) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", c.trauma_max) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // harm
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "harm") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_comma(v, false) {
+        return false
+    }
+    if !jb_key(v, "lesser") {
+        return false
+    }
+    if !write_lesser_array(v, c) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "moderate") {
+        return false
+    }
+    if !write_moderate_array(v, c) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "severe") {
+        return false
+    }
+    if !write_severe_array(v, c) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "fatal") {
+        return false
+    }
+    if !write_fatal_array(v, c) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "healingClock") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "segments", c.heal_seg) {
+        return false
+    }
+    if !jb_u32_field(v, true, "size", c.heal_size) {
+        return false
+    }
+    if !jb_u32_field(v, true, "rollover", c.heal_roll) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // armor
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "armor") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_bool_field(v, false, "standardUsed", c.armor_std_used) {
+        return false
+    }
+    if !jb_bool_field(v, true, "heavyUsed", c.armor_heavy_used) {
+        return false
+    }
+    if !jb_bool_field(v, true, "specialUsed", c.armor_special_used) {
+        return false
+    }
+    if !jb_bool_field(v, true, "hasStandard", has_standard_armor(c)) {
+        return false
+    }
+    if !jb_bool_field(v, true, "hasHeavy", has_heavy_armor(c)) {
+        return false
+    }
+    if !jb_bool_field(v, true, "hasSpecial", has_special_armor(c)) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // talent
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "talent") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_comma(v, false) {
+        return false
+    }
+    if !jb_key(v, "attributes") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var ai: u32 = 0
+    while ai < c.attr_count {
+        if ai > 0 {
+            if !jb_comma(v, true) {
+                return false
+            }
+        }
+        if !jb_begin_obj(v) {
+            return false
+        }
+        let attr_start: usize = (ai * 16_u32) as usize
+        if !jb_string_field(v, false, "name", text_view(c.attr_names[attr_start..attr_start + 16], c.attr_name_lens[ai as usize])) {
+            return false
+        }
+        if !write_xp(v, true, "experience", c.attr_xp[ai as usize], c.attr_xp_max[ai as usize]) {
+            return false
+        }
+        if !jb_comma(v, true) {
+            return false
+        }
+        if !jb_key(v, "actions") {
+            return false
+        }
+        if !jb_begin_arr(v) {
+            return false
+        }
+        var aj: u32 = 0
+        while aj < c.attr_action_counts[ai as usize] {
+            if aj > 0 {
+                if !jb_comma(v, true) {
+                    return false
+                }
+            }
+            if !jb_begin_obj(v) {
+                return false
+            }
+            let action_i: usize = (ai * 4_u32 + aj) as usize
+            let action_start: usize = action_i * 16
+            if !jb_string_field(v, false, "name", text_view(c.action_names[action_start..action_start + 16], c.action_name_lens[action_i])) {
+                return false
+            }
+            if !jb_u32_field(v, true, "rating", c.action_ratings[action_i]) {
+                return false
+            }
+            if !jb_u32_field(v, true, "maxRating", c.action_max_ratings[action_i]) {
+                return false
+            }
+            if !jb_end_obj(v) {
+                return false
+            }
+            aj = aj + 1
+        }
+        if !jb_end_arr(v) {
+            return false
+        }
+        if !jb_end_obj(v) {
+            return false
+        }
+        ai = ai + 1
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // playbook
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "playbook") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "name", character_playbook(c)) {
+        return false
+    }
+    if !write_xp(v, true, "experience", c.playbook_xp, c.playbook_xp_max) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "abilities") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var bi: u32 = 0
+    while bi < c.ability_count {
+        if bi > 0 {
+            if !jb_comma(v, true) {
+                return false
+            }
+        }
+        if !jb_begin_obj(v) {
+            return false
+        }
+        if !jb_string_field(v, false, "name", ability_name_view(c, bi as usize)) {
+            return false
+        }
+        if !jb_string_field(v, true, "description", ability_desc_view(c, bi as usize)) {
+            return false
+        }
+        if !jb_u32_field(v, true, "timesTaken", c.ability_times[bi as usize]) {
+            return false
+        }
+        if !jb_end_obj(v) {
+            return false
+        }
+        bi = bi + 1
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // gear
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "gear") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_comma(v, false) {
+        return false
+    }
+    if !jb_key(v, "loadout") {
+        return false
+    }
+    if !write_gear_array(v, c) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "availableGear") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if !jb_string_field(v, true, "commitment", commitment_name(c.commitment)) {
+        return false
+    }
+    if !jb_bool_field(v, true, "isCommitmentLocked", c.commitment_locked) {
+        return false
+    }
+    if !jb_u32_field(v, true, "maxBulk", commitment_max_bulk(c.commitment)) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // fund
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "fund") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_comma(v, false) {
+        return false
+    }
+    if !jb_key(v, "satchel") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "coins", c.satchel) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", c.satchel_max) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "stash") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "coins", c.stash) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", c.stash_max) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // rolodex
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "rolodex") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_comma(v, false) {
+        return false
+    }
+    if !jb_key(v, "friends") {
+        return false
+    }
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var fi: u32 = 0
+    while fi < c.friend_count {
+        if fi > 0 {
+            if !jb_comma(v, true) {
+                return false
+            }
+        }
+        if !jb_begin_obj(v) {
+            return false
+        }
+        if !jb_string_field(v, false, "entry", friend_view(c, fi as usize)) {
+            return false
+        }
+        if !jb_string_field(v, true, "closeness", closeness_name(c.friend_closeness[fi as usize])) {
+            return false
+        }
+        if !jb_end_obj(v) {
+            return false
+        }
+        fi = fi + 1
+    }
+    if !jb_end_arr(v) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    // session
+    if !jb_comma(v, true) {
+        return false
+    }
+    if !jb_key(v, "session") {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "playbookExpressions", c.expr_pb) {
+        return false
+    }
+    if !jb_u32_field(v, true, "characterExpressions", c.expr_ch) {
+        return false
+    }
+    if !jb_u32_field(v, true, "struggleExpressions", c.expr_st) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", c.expr_max) {
+        return false
+    }
+    if !jb_end_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, true, "notebook", text_view(c.notebook, c.notebook_len)) {
+        return false
+    }
+    return jb_end_obj(v)
+}
+
+fn write_named(v: MutSpan<u8>, need: Bool, key: Span<u8>, name: Span<u8>, desc: Span<u8>) -> Bool {
+    if !jb_comma(v, need) {
+        return false
+    }
+    if !jb_key(v, key) {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_string_field(v, false, "name", name) {
+        return false
+    }
+    if !jb_string_field(v, true, "description", desc) {
+        return false
+    }
+    return jb_end_obj(v)
+}
+
+fn write_bounded(v: MutSpan<u8>, need: Bool, key: Span<u8>, cur: u32, max: u32) -> Bool {
+    if !jb_comma(v, need) {
+        return false
+    }
+    if !jb_key(v, key) {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "current", cur) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", max) {
+        return false
+    }
+    return jb_end_obj(v)
+}
+
+fn write_xp(v: MutSpan<u8>, need: Bool, key: Span<u8>, points: u32, max: u32) -> Bool {
+    if !jb_comma(v, need) {
+        return false
+    }
+    if !jb_key(v, key) {
+        return false
+    }
+    if !jb_begin_obj(v) {
+        return false
+    }
+    if !jb_u32_field(v, false, "points", points) {
+        return false
+    }
+    if !jb_u32_field(v, true, "max", max) {
+        return false
+    }
+    return jb_end_obj(v)
+}
+
+fn write_trauma_array(v: MutSpan<u8>, c: ref<Character>) -> Bool {
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var i: u32 = 0
+    while i < c.trauma_count {
+        if i > 0 {
+            if !jb_comma(v, true) {
+                return false
+            }
+        }
+        if !jb_escaped_string(v, trauma_view(c, i as usize)) {
+            return false
+        }
+        i = i + 1
+    }
+    return jb_end_arr(v)
+}
+
+fn write_lesser_array(v: MutSpan<u8>, c: ref<Character>) -> Bool {
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var i: u32 = 0
+    while i < c.lesser_count {
+        if i > 0 { if !jb_comma(v, true) { return false } }
+        if !jb_escaped_string(v, lesser_view(c, i as usize)) {
+            return false
+        }
+        i = i + 1
+    }
+    return jb_end_arr(v)
+}
+
+fn write_moderate_array(v: MutSpan<u8>, c: ref<Character>) -> Bool {
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var i: u32 = 0
+    while i < c.moderate_count {
+        if i > 0 { if !jb_comma(v, true) { return false } }
+        if !jb_escaped_string(v, moderate_view(c, i as usize)) {
+            return false
+        }
+        i = i + 1
+    }
+    return jb_end_arr(v)
+}
+
+fn write_severe_array(v: MutSpan<u8>, c: ref<Character>) -> Bool {
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var i: u32 = 0
+    while i < c.severe_count {
+        if i > 0 { if !jb_comma(v, true) { return false } }
+        if !jb_escaped_string(v, severe_view(c, i as usize)) {
+            return false
+        }
+        i = i + 1
+    }
+    return jb_end_arr(v)
+}
+
+fn write_fatal_array(v: MutSpan<u8>, c: ref<Character>) -> Bool {
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var i: u32 = 0
+    while i < c.fatal_count {
+        if i > 0 { if !jb_comma(v, true) { return false } }
+        if !jb_escaped_string(v, fatal_view(c, i as usize)) {
+            return false
+        }
+        i = i + 1
+    }
+    return jb_end_arr(v)
+}
+
+fn write_gear_array(v: MutSpan<u8>, c: ref<Character>) -> Bool {
+    if !jb_begin_arr(v) {
+        return false
+    }
+    var i: u32 = 0
+    while i < c.loadout_count {
+        if i > 0 {
+            if !jb_comma(v, true) {
+                return false
+            }
+        }
+        if !jb_begin_obj(v) {
+            return false
+        }
+        if !jb_string_field(v, false, "name", loadout_view(c, i as usize)) {
+            return false
+        }
+        if !jb_u32_field(v, true, "bulk", c.loadout_bulk[i as usize]) {
+            return false
+        }
+        if !jb_end_obj(v) {
+            return false
+        }
+        i = i + 1
+    }
+    return jb_end_arr(v)
+}

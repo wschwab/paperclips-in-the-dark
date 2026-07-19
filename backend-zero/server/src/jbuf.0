@@ -1,25 +1,56 @@
-// JSON buffer builder over a caller-owned Vec/storage.
+// JSON buffer builder over caller-owned storage and an in-band length header.
+// Zero 0.3.4 rejects mutref<Vec> and mutref shapes containing MutSpan (BLD004).
+// Keeping the writable view and its length in the caller-owned byte buffer
+// leaves every helper on the supported MutSpan surface.
 
-pub fn jb_init(storage: MutSpan<u8>) -> Vec {
-    return std.mem.vec(storage)
+fn stored_len(storage: Span<u8>) -> u32 {
+    if std.mem.len(storage) < 4 {
+        return 0
+    }
+    return (storage[0] as u32) + ((storage[1] as u32) * 256_u32) + ((storage[2] as u32) * 65536_u32) + ((storage[3] as u32) * 16777216_u32)
 }
 
-pub fn jb_len(v: ref<Vec>) -> usize {
-    return std.mem.vecLen(v)
+fn put_len(storage: MutSpan<u8>, len: u32) -> Void {
+    storage[0] = (len % 256_u32) as u8
+    storage[1] = ((len / 256_u32) % 256_u32) as u8
+    storage[2] = ((len / 65536_u32) % 256_u32) as u8
+    storage[3] = ((len / 16777216_u32) % 256_u32) as u8
 }
 
-pub fn jb_bytes(v: ref<Vec>) -> Span<u8> {
-    return std.mem.vecBytes(v)
+pub fn jb_init(storage: MutSpan<u8>) -> Bool {
+    if std.mem.len(storage) < 4 {
+        return false
+    }
+    put_len(storage, 0)
+    return true
 }
 
-fn push_byte(v: mutref<Vec>, b: u8) -> Bool {
-    return std.mem.vecPush(v, b)
+pub fn jb_len(storage: Span<u8>) -> usize {
+    return stored_len(storage) as usize
 }
 
-pub fn jb_raw(v: mutref<Vec>, text: Span<u8>) -> Bool {
+pub fn jb_bytes(storage: Span<u8>) -> Span<u8> {
+    let len: u32 = stored_len(storage)
+    if (len as usize) + 4 > std.mem.len(storage) {
+        return storage[0..0]
+    }
+    return storage[4..4 + len as usize]
+}
+
+fn push_byte(storage: MutSpan<u8>, b: u8) -> Bool {
+    let len: u32 = stored_len(storage)
+    if len + 4_u32 >= std.mem.len(storage) as u32 {
+        return false
+    }
+    storage[4 + len as usize] = b
+    put_len(storage, len + 1_u32)
+    return true
+}
+
+pub fn jb_raw(storage: MutSpan<u8>, text: Span<u8>) -> Bool {
     var i: usize = 0
     while i < std.mem.len(text) {
-        if !push_byte(v, text[i]) {
+        if !push_byte(storage, text[i]) {
             return false
         }
         i = i + 1
@@ -27,107 +58,107 @@ pub fn jb_raw(v: mutref<Vec>, text: Span<u8>) -> Bool {
     return true
 }
 
-pub fn jb_byte(v: mutref<Vec>, b: u8) -> Bool {
-    return push_byte(v, b)
+pub fn jb_byte(storage: MutSpan<u8>, b: u8) -> Bool {
+    return push_byte(storage, b)
 }
 
-pub fn jb_comma(v: mutref<Vec>, need: Bool) -> Bool {
+pub fn jb_comma(storage: MutSpan<u8>, need: Bool) -> Bool {
     if need {
-        return push_byte(v, 44_u8)
+        return push_byte(storage, 44_u8)
     }
     return true
 }
 
-pub fn jb_key(v: mutref<Vec>, key: Span<u8>) -> Bool {
-    if !push_byte(v, 34_u8) { return false }
-    if !jb_raw(v, key) { return false }
-    if !push_byte(v, 34_u8) { return false }
-    if !push_byte(v, 58_u8) { return false }
+pub fn jb_key(storage: MutSpan<u8>, key: Span<u8>) -> Bool {
+    if !push_byte(storage, 34_u8) { return false }
+    if !jb_raw(storage, key) { return false }
+    if !push_byte(storage, 34_u8) { return false }
+    if !push_byte(storage, 58_u8) { return false }
     return true
 }
 
-pub fn jb_escaped_string(v: mutref<Vec>, text: Span<u8>) -> Bool {
-    if !push_byte(v, 34_u8) { return false }
+pub fn jb_escaped_string(storage: MutSpan<u8>, text: Span<u8>) -> Bool {
+    if !push_byte(storage, 34_u8) { return false }
     var i: usize = 0
     while i < std.mem.len(text) {
         let b: u8 = text[i]
         if b == 34_u8 || b == 92_u8 {
-            if !push_byte(v, 92_u8) { return false }
-            if !push_byte(v, b) { return false }
+            if !push_byte(storage, 92_u8) { return false }
+            if !push_byte(storage, b) { return false }
         } else if b == 10_u8 {
-            if !push_byte(v, 92_u8) { return false }
-            if !push_byte(v, 110_u8) { return false }
+            if !push_byte(storage, 92_u8) { return false }
+            if !push_byte(storage, 110_u8) { return false }
         } else if b == 13_u8 {
-            if !push_byte(v, 92_u8) { return false }
-            if !push_byte(v, 114_u8) { return false }
+            if !push_byte(storage, 92_u8) { return false }
+            if !push_byte(storage, 114_u8) { return false }
         } else if b == 9_u8 {
-            if !push_byte(v, 92_u8) { return false }
-            if !push_byte(v, 116_u8) { return false }
+            if !push_byte(storage, 92_u8) { return false }
+            if !push_byte(storage, 116_u8) { return false }
         } else {
-            if !push_byte(v, b) { return false }
+            if !push_byte(storage, b) { return false }
         }
         i = i + 1
     }
-    return push_byte(v, 34_u8)
+    return push_byte(storage, 34_u8)
 }
 
-pub fn jb_string_field(v: mutref<Vec>, need_comma: Bool, key: Span<u8>, value: Span<u8>) -> Bool {
-    if !jb_comma(v, need_comma) { return false }
-    if !jb_key(v, key) { return false }
-    return jb_escaped_string(v, value)
+pub fn jb_string_field(storage: MutSpan<u8>, need_comma: Bool, key: Span<u8>, value: Span<u8>) -> Bool {
+    if !jb_comma(storage, need_comma) { return false }
+    if !jb_key(storage, key) { return false }
+    return jb_escaped_string(storage, value)
 }
 
-pub fn jb_u32_field(v: mutref<Vec>, need_comma: Bool, key: Span<u8>, value: u32) -> Bool {
-    if !jb_comma(v, need_comma) { return false }
-    if !jb_key(v, key) { return false }
+pub fn jb_u32_field(storage: MutSpan<u8>, need_comma: Bool, key: Span<u8>, value: u32) -> Bool {
+    if !jb_comma(storage, need_comma) { return false }
+    if !jb_key(storage, key) { return false }
     var num: [16]u8 = [0_u8; 16]
     let formatted: Maybe<Span<u8>> = std.fmt.u32(num, value)
     if !formatted.has { return false }
-    return jb_raw(v, formatted.value)
+    return jb_raw(storage, formatted.value)
 }
 
-pub fn jb_i32_field(v: mutref<Vec>, need_comma: Bool, key: Span<u8>, value: i32) -> Bool {
-    if !jb_comma(v, need_comma) { return false }
-    if !jb_key(v, key) { return false }
+pub fn jb_i32_field(storage: MutSpan<u8>, need_comma: Bool, key: Span<u8>, value: i32) -> Bool {
+    if !jb_comma(storage, need_comma) { return false }
+    if !jb_key(storage, key) { return false }
     var num: [16]u8 = [0_u8; 16]
     let formatted: Maybe<Span<u8>> = std.fmt.i32(num, value)
     if !formatted.has { return false }
-    return jb_raw(v, formatted.value)
+    return jb_raw(storage, formatted.value)
 }
 
-pub fn jb_bool_field(v: mutref<Vec>, need_comma: Bool, key: Span<u8>, value: Bool) -> Bool {
-    if !jb_comma(v, need_comma) { return false }
-    if !jb_key(v, key) { return false }
+pub fn jb_bool_field(storage: MutSpan<u8>, need_comma: Bool, key: Span<u8>, value: Bool) -> Bool {
+    if !jb_comma(storage, need_comma) { return false }
+    if !jb_key(storage, key) { return false }
     if value {
-        return jb_raw(v, "true")
+        return jb_raw(storage, "true")
     }
-    return jb_raw(v, "false")
+    return jb_raw(storage, "false")
 }
 
-pub fn jb_null_field(v: mutref<Vec>, need_comma: Bool, key: Span<u8>) -> Bool {
-    if !jb_comma(v, need_comma) { return false }
-    if !jb_key(v, key) { return false }
-    return jb_raw(v, "null")
+pub fn jb_null_field(storage: MutSpan<u8>, need_comma: Bool, key: Span<u8>) -> Bool {
+    if !jb_comma(storage, need_comma) { return false }
+    if !jb_key(storage, key) { return false }
+    return jb_raw(storage, "null")
 }
 
-pub fn jb_raw_field(v: mutref<Vec>, need_comma: Bool, key: Span<u8>, raw_json: Span<u8>) -> Bool {
-    if !jb_comma(v, need_comma) { return false }
-    if !jb_key(v, key) { return false }
-    return jb_raw(v, raw_json)
+pub fn jb_raw_field(storage: MutSpan<u8>, need_comma: Bool, key: Span<u8>, raw_json: Span<u8>) -> Bool {
+    if !jb_comma(storage, need_comma) { return false }
+    if !jb_key(storage, key) { return false }
+    return jb_raw(storage, raw_json)
 }
 
-pub fn jb_begin_obj(v: mutref<Vec>) -> Bool {
-    return push_byte(v, 123_u8)
+pub fn jb_begin_obj(storage: MutSpan<u8>) -> Bool {
+    return push_byte(storage, 123_u8)
 }
 
-pub fn jb_end_obj(v: mutref<Vec>) -> Bool {
-    return push_byte(v, 125_u8)
+pub fn jb_end_obj(storage: MutSpan<u8>) -> Bool {
+    return push_byte(storage, 125_u8)
 }
 
-pub fn jb_begin_arr(v: mutref<Vec>) -> Bool {
-    return push_byte(v, 91_u8)
+pub fn jb_begin_arr(storage: MutSpan<u8>) -> Bool {
+    return push_byte(storage, 91_u8)
 }
 
-pub fn jb_end_arr(v: mutref<Vec>) -> Bool {
-    return push_byte(v, 93_u8)
+pub fn jb_end_arr(storage: MutSpan<u8>) -> Bool {
+    return push_byte(storage, 93_u8)
 }

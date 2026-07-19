@@ -1,0 +1,341 @@
+use config
+use game_data
+use jbuf
+use store
+use util
+
+// The direct 0.3.4 handler backend permits mutable scalar records and local
+// fixed buffers, but rejects indexed writes through record fields.  Keep the
+// persisted domain state scalar; request-local buffers carry descriptions.
+type ZChar {
+    game: u32,
+    playbook: u32,
+    revision: u32,
+    stress: u32,
+    trauma_count: u32,
+    trauma0: u32,
+    trauma1: u32,
+    trauma2: u32,
+    trauma3: u32,
+    lesser_count: u32,
+    lesser0: u32,
+    lesser1: u32,
+    moderate_count: u32,
+    moderate0: u32,
+    moderate1: u32,
+    severe_count: u32,
+    severe0: u32,
+    fatal_count: u32,
+    fatal0: u32,
+    heal_seg: u32,
+    heal_size: u32,
+    heal_roll: u32,
+    armor_std: Bool,
+    armor_heavy: Bool,
+    armor_special: Bool,
+    attr_xp: u32,
+    action_rating: u32,
+    playbook_xp: u32,
+    ability_count: u32,
+    ability_times: u32,
+    commitment: u32,
+    commitment_locked: Bool,
+    satchel: u32,
+    stash: u32,
+    crew_linked: Bool,
+    friend_count: u32,
+    friend0: u32,
+    friend0_close: u32,
+    friend1: u32,
+    friend1_close: u32,
+    last_has_requested: Bool,
+    last_requested: i32,
+    last_effective: i32,
+    last_landed: u32,
+    last_side: u32,
+}
+
+type ZCrew {
+    game: u32,
+    crew_type: u32,
+    revision: u32,
+    upgrade_boxes: u32,
+    heat: u32,
+    wanted: u32,
+    rep: u32,
+    xp: u32,
+    coin: u32,
+    stash: u32,
+}
+
+pub fn zchar_empty() -> ZChar {
+    return ZChar { game: 0, playbook: 0, revision: 1, stress: 0, trauma_count: 0, trauma0: 0, trauma1: 0, trauma2: 0, trauma3: 0, lesser_count: 0, lesser0: 0, lesser1: 0, moderate_count: 0, moderate0: 0, moderate1: 0, severe_count: 0, severe0: 0, fatal_count: 0, fatal0: 0, heal_seg: 0, heal_size: 4, heal_roll: 0, armor_std: false, armor_heavy: false, armor_special: false, attr_xp: 0, action_rating: 0, playbook_xp: 0, ability_count: 0, ability_times: 0, commitment: 0, commitment_locked: false, satchel: 0, stash: 0, crew_linked: false, friend_count: 0, friend0: 0, friend0_close: 0, friend1: 0, friend1_close: 0, last_has_requested: false, last_requested: 0, last_effective: 0, last_landed: 0, last_side: 0 }
+}
+
+pub fn zcrew_empty() -> ZCrew {
+    return ZCrew { game: 0, crew_type: 0, revision: 1, upgrade_boxes: 0, heat: 0, wanted: 0, rep: 0, xp: 0, coin: 0, stash: 0 }
+}
+
+pub fn z_stem(game: u32) -> Span<u8> {
+    if game == 1 { return "scum-and-villainy" }
+    return "blades-in-the-dark"
+}
+
+pub fn z_playbook(game: u32, playbook: u32) -> Span<u8> {
+    if game == 1 { return "Mechanic" }
+    return "Cutter"
+}
+
+pub fn z_crew_type(crew_type: u32) -> Span<u8> {
+    if crew_type == 1 { return "Smugglers" }
+    return "Assassins"
+}
+
+pub fn z_first_ability(game: u32) -> Span<u8> {
+    if game == 1 { return "Bailing Wire and Mech-Tape" }
+    return "Battleborn"
+}
+
+pub fn z_text_code(text: Span<u8>) -> u32 {
+    if std.mem.eql(text, "Haunted") { return 1 }
+    if std.mem.eql(text, "major wound") { return 10 }
+    if std.mem.eql(text, "worse wound") { return 11 }
+    if std.mem.eql(text, "lesser wound") { return 12 }
+    if std.mem.eql(text, "moderate wound") { return 13 }
+    if std.mem.eql(text, "Test contact") { return 20 }
+    if std.mem.eql(text, "Second contact") { return 21 }
+    if std.mem.len(text) > 7 && std.mem.eql(text[0..7], "Trauma ") {
+        let n: Maybe<u32> = std.parse.parseU32(text[7..])
+        if n.has { return 100 + n.value }
+    }
+    if std.mem.len(text) > 11 && std.mem.eql(text[0..11], "Retirement ") {
+        let n: Maybe<u32> = std.parse.parseU32(text[11..])
+        if n.has { return 200 + n.value }
+    }
+    return 99
+}
+
+pub fn z_code_text(out: MutSpan<u8>, code: u32) -> Span<u8> {
+    if code == 1 {
+        return "Haunted"
+    }
+    if code == 10 { return "major wound" }
+    if code == 11 { return "worse wound" }
+    if code == 12 { return "lesser wound" }
+    if code == 13 { return "moderate wound" }
+    if code == 20 { return "Test contact" }
+    if code == 21 { return "Second contact" }
+    if code >= 100 && code < 200 {
+        let n: usize = std.mem.copy(out, "Trauma ")
+        let f: Maybe<Span<u8>> = std.fmt.u32(out[n..], code - 100)
+        if f.has { return out[0..n + std.mem.len(f.value)] }
+    }
+    if code >= 200 && code < 300 {
+        let n: usize = std.mem.copy(out, "Retirement ")
+        let f: Maybe<Span<u8>> = std.fmt.u32(out[n..], code - 200)
+        if f.has { return out[0..n + std.mem.len(f.value)] }
+    }
+    return "wound"
+}
+
+pub fn z_close_name(value: u32) -> Span<u8> {
+    if value == 1 { return "close-friend" }
+    if value == 2 { return "rival" }
+    return "friend"
+}
+
+pub fn z_commitment_name(value: u32) -> Span<u8> {
+    if value == 1 { return "light" }
+    if value == 2 { return "normal" }
+    if value == 3 { return "heavy" }
+    if value == 4 { return "encumbered" }
+    return "none"
+}
+
+pub fn z_create_char(stem: Span<u8>, playbook: Span<u8>, c: mutref<ZChar>) -> Bool {
+    if !known_stem(stem) || !has_playbook(stem, playbook) { return false }
+    c.game = 0
+    if is_scum(stem) { c.game = 1 }
+    c.playbook = 0
+    c.revision = 1
+    c.heal_size = recovery_clock_size(stem)
+    c.armor_std = false
+    c.armor_heavy = false
+    c.armor_special = false
+    return true
+}
+
+pub fn z_create_crew(stem: Span<u8>, crew_type: Span<u8>, c: mutref<ZCrew>) -> Bool {
+    if !known_stem(stem) { return false }
+    if !std.mem.eql(crew_type, "Assassins") && !std.mem.eql(crew_type, "Smugglers") { return false }
+    c.game = 0
+    if is_scum(stem) { c.game = 1 }
+    c.crew_type = 0
+    if std.mem.eql(crew_type, "Smugglers") { c.crew_type = 1 }
+    c.revision = 1
+    return true
+}
+
+pub fn z_load_char(c: mutref<ZChar>) -> Bool {
+    var buf: [2200]u8 = [0_u8; 2200]
+    let raw: Maybe<Span<u8>> = read_entity_json("characters", "character", buf)
+    if !raw.has { return false }
+    let game: Maybe<u32> = std.json.u32(raw.value, "game")
+    if game.has { c.game = game.value }
+    let pb: Maybe<u32> = std.json.u32(raw.value, "playbook")
+    if pb.has { c.playbook = pb.value }
+    let rev: Maybe<u32> = std.json.u32(raw.value, "revision")
+    if rev.has { c.revision = rev.value }
+    z_read_char_numbers(raw.value, c)
+    return true
+}
+
+fn z_read_char_numbers(json: Span<u8>, c: mutref<ZChar>) -> Void {
+    let a: Maybe<u32> = std.json.u32(json, "stress")
+    if a.has { c.stress = a.value }
+    let b: Maybe<u32> = std.json.u32(json, "traumaCount")
+    if b.has { c.trauma_count = b.value }
+    let t0: Maybe<u32> = std.json.u32(json, "trauma0")
+    if t0.has { c.trauma0 = t0.value }
+    let t1: Maybe<u32> = std.json.u32(json, "trauma1")
+    if t1.has { c.trauma1 = t1.value }
+    let t2: Maybe<u32> = std.json.u32(json, "trauma2")
+    if t2.has { c.trauma2 = t2.value }
+    let t3: Maybe<u32> = std.json.u32(json, "trauma3")
+    if t3.has { c.trauma3 = t3.value }
+    let l: Maybe<u32> = std.json.u32(json, "lesserCount")
+    if l.has { c.lesser_count = l.value }
+    let l0: Maybe<u32> = std.json.u32(json, "lesser0")
+    if l0.has { c.lesser0 = l0.value }
+    let l1: Maybe<u32> = std.json.u32(json, "lesser1")
+    if l1.has { c.lesser1 = l1.value }
+    let m: Maybe<u32> = std.json.u32(json, "moderateCount")
+    if m.has { c.moderate_count = m.value }
+    let m0: Maybe<u32> = std.json.u32(json, "moderate0")
+    if m0.has { c.moderate0 = m0.value }
+    let m1: Maybe<u32> = std.json.u32(json, "moderate1")
+    if m1.has { c.moderate1 = m1.value }
+    let s: Maybe<u32> = std.json.u32(json, "severeCount")
+    if s.has { c.severe_count = s.value }
+    let s0: Maybe<u32> = std.json.u32(json, "severe0")
+    if s0.has { c.severe0 = s0.value }
+    let f: Maybe<u32> = std.json.u32(json, "fatalCount")
+    if f.has { c.fatal_count = f.value }
+    let f0: Maybe<u32> = std.json.u32(json, "fatal0")
+    if f0.has { c.fatal0 = f0.value }
+    let hs: Maybe<u32> = std.json.u32(json, "healSeg")
+    if hs.has { c.heal_seg = hs.value }
+    let hz: Maybe<u32> = std.json.u32(json, "healSize")
+    if hz.has { c.heal_size = hz.value }
+    let hr: Maybe<u32> = std.json.u32(json, "healRoll")
+    if hr.has { c.heal_roll = hr.value }
+    let xp: Maybe<u32> = std.json.u32(json, "attrXp")
+    if xp.has { c.attr_xp = xp.value }
+    let ar: Maybe<u32> = std.json.u32(json, "actionRating")
+    if ar.has { c.action_rating = ar.value }
+    let px: Maybe<u32> = std.json.u32(json, "playbookXp")
+    if px.has { c.playbook_xp = px.value }
+    let ac: Maybe<u32> = std.json.u32(json, "abilityCount")
+    if ac.has { c.ability_count = ac.value }
+    let at: Maybe<u32> = std.json.u32(json, "abilityTimes")
+    if at.has { c.ability_times = at.value }
+    let cm: Maybe<u32> = std.json.u32(json, "commitment")
+    if cm.has { c.commitment = cm.value }
+    let cl: Maybe<Bool> = std.json.bool(json, "commitmentLocked")
+    if cl.has { c.commitment_locked = cl.value }
+    let sa: Maybe<u32> = std.json.u32(json, "satchel")
+    if sa.has { c.satchel = sa.value }
+    let st: Maybe<u32> = std.json.u32(json, "stash")
+    if st.has { c.stash = st.value }
+    let cr: Maybe<Bool> = std.json.bool(json, "crewLinked")
+    if cr.has { c.crew_linked = cr.value }
+    let fc: Maybe<u32> = std.json.u32(json, "friendCount")
+    if fc.has { c.friend_count = fc.value }
+    let f1: Maybe<u32> = std.json.u32(json, "friend0")
+    if f1.has { c.friend0 = f1.value }
+    let f1c: Maybe<u32> = std.json.u32(json, "friend0Close")
+    if f1c.has { c.friend0_close = f1c.value }
+    let f2: Maybe<u32> = std.json.u32(json, "friend1")
+    if f2.has { c.friend1 = f2.value }
+    let f2c: Maybe<u32> = std.json.u32(json, "friend1Close")
+    if f2c.has { c.friend1_close = f2c.value }
+}
+
+pub fn z_save_char(c: ref<ZChar>) -> Bool {
+    var out: [2200]u8 = [0_u8; 2200]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return false }
+    if !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "game", c.game) { return false }
+    if !jb_u32_field(v, true, "playbook", c.playbook) { return false }
+    if !jb_u32_field(v, true, "revision", c.revision) { return false }
+    if !jb_u32_field(v, true, "stress", c.stress) { return false }
+    if !jb_u32_field(v, true, "traumaCount", c.trauma_count) { return false }
+    if !jb_u32_field(v, true, "trauma0", c.trauma0) { return false }
+    if !jb_u32_field(v, true, "trauma1", c.trauma1) { return false }
+    if !jb_u32_field(v, true, "trauma2", c.trauma2) { return false }
+    if !jb_u32_field(v, true, "trauma3", c.trauma3) { return false }
+    if !jb_u32_field(v, true, "lesserCount", c.lesser_count) { return false }
+    if !jb_u32_field(v, true, "lesser0", c.lesser0) { return false }
+    if !jb_u32_field(v, true, "lesser1", c.lesser1) { return false }
+    if !jb_u32_field(v, true, "moderateCount", c.moderate_count) { return false }
+    if !jb_u32_field(v, true, "moderate0", c.moderate0) { return false }
+    if !jb_u32_field(v, true, "moderate1", c.moderate1) { return false }
+    if !jb_u32_field(v, true, "severeCount", c.severe_count) { return false }
+    if !jb_u32_field(v, true, "severe0", c.severe0) { return false }
+    if !jb_u32_field(v, true, "fatalCount", c.fatal_count) { return false }
+    if !jb_u32_field(v, true, "fatal0", c.fatal0) { return false }
+    if !jb_u32_field(v, true, "healSeg", c.heal_seg) { return false }
+    if !jb_u32_field(v, true, "healSize", c.heal_size) { return false }
+    if !jb_u32_field(v, true, "healRoll", c.heal_roll) { return false }
+    if !jb_bool_field(v, true, "armorStd", c.armor_std) { return false }
+    if !jb_bool_field(v, true, "armorHeavy", c.armor_heavy) { return false }
+    if !jb_bool_field(v, true, "armorSpecial", c.armor_special) { return false }
+    if !jb_u32_field(v, true, "attrXp", c.attr_xp) { return false }
+    if !jb_u32_field(v, true, "actionRating", c.action_rating) { return false }
+    if !jb_u32_field(v, true, "playbookXp", c.playbook_xp) { return false }
+    if !jb_u32_field(v, true, "abilityCount", c.ability_count) { return false }
+    if !jb_u32_field(v, true, "abilityTimes", c.ability_times) { return false }
+    if !jb_u32_field(v, true, "commitment", c.commitment) { return false }
+    if !jb_bool_field(v, true, "commitmentLocked", c.commitment_locked) { return false }
+    if !jb_u32_field(v, true, "satchel", c.satchel) { return false }
+    if !jb_u32_field(v, true, "stash", c.stash) { return false }
+    if !jb_bool_field(v, true, "crewLinked", c.crew_linked) { return false }
+    if !jb_u32_field(v, true, "friendCount", c.friend_count) { return false }
+    if !jb_u32_field(v, true, "friend0", c.friend0) { return false }
+    if !jb_u32_field(v, true, "friend0Close", c.friend0_close) { return false }
+    if !jb_u32_field(v, true, "friend1", c.friend1) { return false }
+    if !jb_u32_field(v, true, "friend1Close", c.friend1_close) { return false }
+    if !jb_end_obj(v) { return false }
+    if !write_entity_json("characters", "character", jb_bytes(out)) { return false }
+    return true
+}
+
+pub fn z_load_crew(c: mutref<ZCrew>) -> Bool {
+    var buf: [1200]u8 = [0_u8; 1200]
+    let raw: Maybe<Span<u8>> = read_entity_json("crews", "crew", buf)
+    if !raw.has { return false }
+    let g: Maybe<u32> = std.json.u32(raw.value, "game")
+    if g.has { c.game = g.value }
+    let t: Maybe<u32> = std.json.u32(raw.value, "crewType")
+    if t.has { c.crew_type = t.value }
+    let r: Maybe<u32> = std.json.u32(raw.value, "revision")
+    if r.has { c.revision = r.value }
+    let u: Maybe<u32> = std.json.u32(raw.value, "upgradeBoxes")
+    if u.has { c.upgrade_boxes = u.value }
+    return true
+}
+
+pub fn z_save_crew(c: ref<ZCrew>) -> Bool {
+    var out: [1200]u8 = [0_u8; 1200]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) { return false }
+    if !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "game", c.game) { return false }
+    if !jb_u32_field(v, true, "crewType", c.crew_type) { return false }
+    if !jb_u32_field(v, true, "revision", c.revision) { return false }
+    if !jb_u32_field(v, true, "upgradeBoxes", c.upgrade_boxes) { return false }
+    if !jb_end_obj(v) { return false }
+    if !write_entity_json("crews", "crew", jb_bytes(out)) { return false }
+    return true
+}
