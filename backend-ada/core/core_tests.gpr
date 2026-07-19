@@ -1,0 +1,10 @@
+with "paperclips_core.gpr";
+project Core_Tests is
+   for Source_Dirs use ("tests");
+   for Object_Dir use "obj/tests";
+   for Exec_Dir use "bin";
+   for Main use ("core_tests.adb");
+   package Compiler is
+      for Default_Switches ("Ada") use ("-gnat2022", "-gnata");
+   end Compiler;
+end Core_Tests;

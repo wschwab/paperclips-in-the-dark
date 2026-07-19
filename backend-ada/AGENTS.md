@@ -52,7 +52,8 @@ For a changed unit, prove only that unit first:
 
 Then run the project gate:
 
-    XDG_RUNTIME_DIR=/tmp alr exec -- gnatprove --level=2 --checks-as-errors=on
+    XDG_RUNTIME_DIR=/tmp alr exec -- gnatprove -P paperclips_core.gpr \
+      --level=2 --checks-as-errors=on
 
 Common counterexample patterns and fixes:
 
@@ -78,6 +79,23 @@ Common counterexample patterns and fixes:
   a later filesystem path assignment; convert the Unbounded_String in a nested
   declare block as a length-fixed constant before calling Ada.Directories or
   AWS file helpers.
+- `delta` is an Ada reserved word (case-insensitive); use `Amount`, `Change`, or
+  another domain name for clamp-operation parameters.
+- A record discriminant cannot directly constrain a scalar component subtype
+  (`Natural range 0 .. Maximum`). Keep the component `Natural` and state the
+  discriminant-dependent bound in a `Dynamic_Predicate`; GNATprove can then use
+  the same invariant without the declaration being illegal Ada.
+- Runtime-supplied maxima typed as unconstrained `Positive` can still defeat
+  AoRTE when two capacities are summed or stash is converted at 2:1. Define a
+  shared proof-safe settings `Capacity` subtype and reject absurd values at the
+  boundary; this parameterizes game rules without hardcoding any game maximum.
+- Once a separate test project is added beside the library project, gnatprove
+  can no longer infer the project file. Pass `-P paperclips_core.gpr` on the
+  whole-core gate (unit `-u` runs may still infer it only when unambiguous).
+- For a tiny ordered spillover ladder, an explicit branch per level proves the
+  ordering postcondition more reliably than a successor loop. The loop needed
+  awkward invariants about the eventual `out` value; four branches directly
+  expose both `Landed >= Requested` and the all-full failure path.
 
 ## AWS routing idioms
 

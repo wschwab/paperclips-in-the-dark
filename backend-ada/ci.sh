@@ -6,11 +6,17 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 echo "==> building core"
 (cd "$SCRIPT_DIR/core" && XDG_RUNTIME_DIR=/tmp alr --non-interactive build)
 
+echo "==> testing core"
+(cd "$SCRIPT_DIR/core" && \
+   XDG_RUNTIME_DIR=/tmp alr --non-interactive exec -- \
+   gprbuild -p -P core_tests.gpr && ./bin/core_tests)
+
 echo "==> building server"
 (cd "$SCRIPT_DIR/server" && XDG_RUNTIME_DIR=/tmp alr --non-interactive build)
 
 echo "==> proving core"
-(cd "$SCRIPT_DIR/core" && XDG_RUNTIME_DIR=/tmp alr --non-interactive exec -- gnatprove --level=2 --checks-as-errors=on)
+(cd "$SCRIPT_DIR/core" && XDG_RUNTIME_DIR=/tmp alr --non-interactive exec -- \
+   gnatprove -P paperclips_core.gpr --level=2 --checks-as-errors=on)
 
 if [ "${RUN_CONFORMANCE:-0}" = "1" ]; then
    server_pid=""

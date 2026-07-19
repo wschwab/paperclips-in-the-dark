@@ -1,0 +1,15 @@
+{
+ "task": "A1",
+ "track": "ada",
+ "agent": "gpt-5.6-luna (codex exec, xhigh, single-shot)",
+ "date": "2026-07-19",
+ "iterationsToGreen": 1,
+ "wallClockMinutes": 58,
+ "tokens": null,
+ "defectsCaughtBy": {
+  "gnatprove": 1,
+  "compiler": 0,
+  "human": 0
+ },
+ "notes": "225/225 checks proved, 28 functional contracts, zero assumptions/justified/unproved. gnatprove caught a real contract bug: Progress_Healing initially claimed every call fills the clock; proof forced clamp-and-report. This is the Track-A thesis firing. Orchestrator verified: ci.sh green from clean run, Add_Harm Post genuinely encodes spillover ladder, no hardcoded maxima in core (Capacity subtype is overflow guard, not game max). AGENTS.md extended (delta reserved word, Dynamic_Predicate discriminant bounds, harm-ladder proof pattern)."
+}
