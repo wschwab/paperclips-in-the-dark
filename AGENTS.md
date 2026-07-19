@@ -22,8 +22,13 @@ VCS operations.**
 Code is mirrored to both. Push via jj:
 
 - GitHub: `jj git push --remote origin`
-- Radicle: `jj git push --remote rad` (remote provided by `rad`; if the repo
-  isn't `rad init`-ed yet, that's a human step — flag it, don't improvise).
+- Radicle: `SSH_AUTH_SOCK=~/.radicle/agent.sock jj git push --remote rad`
+  (the Radicle key lives in an ssh-agent on that socket; if the push prompts
+  for a passphrase or the socket is missing, the agent died — ask the human
+  to rerun `ssh-agent -a ~/.radicle/agent.sock; set -x SSH_AUTH_SOCK
+  ~/.radicle/agent.sock; rad auth`).
+- RID: `rad:z3bxKrbQdawdx41PrwtRF8X96w3sU` (jj has no `--all-remotes` for
+  push — push each remote separately).
 
 Push to **both** remotes at every push point, or note explicitly which one
 you couldn't reach. Never force-push either mirror without human sign-off.
