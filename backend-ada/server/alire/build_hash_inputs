@@ -1,4 +1,6 @@
 dependency:aws=21.0.0=b44708f5c122bf06ab79d2545e01d159db316e31cbb67e7ba08b1922cc9c1560
+dependency:gnatcoll=26.0.0=0366e560f3d2fd281eb4c4b7bcd3114d1525a9041291518744160d09efc9dc54
+dependency:paperclips_core=0.1.0=5c0ef792f9e0933b67a95720be5de0dd48aa749eae7d58a945b2f54a0ecba4ad
 environment:PRJ_BUILD=Release
 external:GPR_BUILD=production
 external:LIBRARY_TYPE=default

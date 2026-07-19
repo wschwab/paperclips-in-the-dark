@@ -29,7 +29,8 @@ if [ "${RUN_CONFORMANCE:-0}" = "1" ]; then
    trap stop_server EXIT INT TERM
 
    "$SCRIPT_DIR/server/bin/pitd" --port 9657 --data /tmp/pitd-campaign-data \
-      --static "$SCRIPT_DIR/../frontend/dist" &
+      --static "$SCRIPT_DIR/../frontend/dist" \
+      --games "$SCRIPT_DIR/../data/games" &
    server_pid=$!
 
    ready=0

@@ -1,0 +1,930 @@
+{
+  "schemaVersion": 1,
+  "against": "http://localhost:9657",
+  "results": [
+    {
+      "id": "CONTRACT-BATCH-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-BATCH-001] POST /api/campaign/batch",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 7.070940999999948
+    },
+    {
+      "id": "CONTRACT-CAMPAIGN-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CAMPAIGN-001] GET /api/campaign",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 4.280812000000026
+    },
+    {
+      "id": "CONTRACT-CHARACTER-CREATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-CREATE-001] POST /api/characters",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 3.4662630000000263
+    },
+    {
+      "id": "CONTRACT-CHARACTER-DELETE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-DELETE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/delete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.8661550000000489
+    },
+    {
+      "id": "CONTRACT-CHARACTER-END-DOWNTIME-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-END-DOWNTIME-001] POST /api/characters/00000000-0000-4000-8000-000000000000/end-downtime",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.499482999999941
+    },
+    {
+      "id": "CONTRACT-CHARACTER-END-SCORE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-END-SCORE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/end-score",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.83772399999998
+    },
+    {
+      "id": "CONTRACT-CHARACTER-GET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-GET-001] GET /api/characters/00000000-0000-4000-8000-000000000000",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.9522499999999354
+    },
+    {
+      "id": "CONTRACT-CHARACTER-HISTORY-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-HISTORY-001] GET /api/characters/00000000-0000-4000-8000-000000000000/history",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.453938999999991
+    },
+    {
+      "id": "CONTRACT-CHARACTER-IMPORT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-IMPORT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/import",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.8382380000000467
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ABILITY-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ABILITY-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/ability.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6782929999999396
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ABILITY-TAKE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ABILITY-TAKE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/ability.take",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.623854999999935
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ACTION-SET-RATING-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ACTION-SET-RATING-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/action.set-rating",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6822570000000496
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ARMOR-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ARMOR-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/armor.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.689801999999986
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ATTRIBUTE-LEVELUP-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ATTRIBUTE-LEVELUP-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute.levelup",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.661685000000034
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute-xp.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6159150000000864
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute-xp.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6379120000000285
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-DOSSIER-UPDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-DOSSIER-UPDATE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/dossier.update",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7117589999999154
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-FUND-GAIN-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-FUND-GAIN-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.gain",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.527197000000001
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-FUND-LIQUIDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-FUND-LIQUIDATE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.liquidate",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6734019999998964
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-FUND-SPEND-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-FUND-SPEND-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.spend",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5534300000000485
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.612489000000096
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-CLEAR-COMMITMENTS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-CLEAR-COMMITMENTS-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.clear-commitments",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7334159999999201
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-COMMIT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-COMMIT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.commit",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6433309999999892
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-LOCK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-LOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.lock",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.569878000000017
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.6780489999999872
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-SET-COMMITMENT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-SET-COMMITMENT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.set-commitment",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7941079999999374
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-UNCOMMIT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-UNCOMMIT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.uncommit",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.7133179999999584
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-UNLOCK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-UNLOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.unlock",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.4985980000000154
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.9474480000000085
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-HEAL-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-HEAL-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.heal",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5247249999999894
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-HEALING-CLOCK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-HEALING-CLOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.healing-clock",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.655574999999999
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7110079999999925
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-NOTEBOOK-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-NOTEBOOK-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/notebook.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.8895840000000135
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/playbook-xp.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6568019999999706
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/playbook-xp.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5334169999999858
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ROLODEX-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ROLODEX-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/rolodex.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7425020000000586
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ROLODEX-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ROLODEX-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/rolodex.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5871059999999488
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ROLODEX-SET-CLOSENESS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ROLODEX-SET-CLOSENESS-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/rolodex.set-closeness",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5754590000000235
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-SESSION-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-SESSION-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/session.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.8339019999999664
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-STRESS-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-STRESS-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/stress.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.901597000000038
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-STRESS-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-STRESS-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/stress.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6820940000000064
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-TRAUMA-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-TRAUMA-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/trauma.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.019719000000009
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-TRAUMA-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-TRAUMA-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/trauma.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7673280000000204
+    },
+    {
+      "id": "CONTRACT-CHARACTER-SNAPSHOT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-SNAPSHOT-001] GET /api/characters/00000000-0000-4000-8000-000000000000/history/20260719120000000-abc",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 3.5681190000000242
+    },
+    {
+      "id": "CONTRACT-CHARACTER-UNDO-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-UNDO-001] POST /api/characters/00000000-0000-4000-8000-000000000000/undo",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6612799999999197
+    },
+    {
+      "id": "CONTRACT-CHARACTERS-LIST-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTERS-LIST-001] GET /api/characters",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 13.75469899999996
+    },
+    {
+      "id": "CONTRACT-CLOCK-CREATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-CREATE-001] POST /api/clocks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.485353000000032
+    },
+    {
+      "id": "CONTRACT-CLOCK-DELETE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-DELETE-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/delete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5722030000000586
+    },
+    {
+      "id": "CONTRACT-CLOCK-GET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-GET-001] GET /api/clocks/00000000-0000-4000-8000-000000000001",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.8228070000000116
+    },
+    {
+      "id": "CONTRACT-CLOCK-OPS-CLOCK-PROGRESS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-OPS-CLOCK-PROGRESS-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/ops/clock.progress",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5906340000000228
+    },
+    {
+      "id": "CONTRACT-CLOCK-OPS-CLOCK-RESET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-OPS-CLOCK-RESET-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/ops/clock.reset",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5087870000000976
+    },
+    {
+      "id": "CONTRACT-CLOCKS-LIST-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCKS-LIST-001] GET /api/clocks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.4001919999999473
+    },
+    {
+      "id": "CONTRACT-CREW-CREATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-CREATE-001] POST /api/crews",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 3.6825799999999163
+    },
+    {
+      "id": "CONTRACT-CREW-DELETE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-DELETE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/delete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.953930000000014
+    },
+    {
+      "id": "CONTRACT-CREW-GET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-GET-001] GET /api/crews/00000000-0000-4000-8000-000000000002",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.925738000000024
+    },
+    {
+      "id": "CONTRACT-CREW-HISTORY-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-HISTORY-001] GET /api/crews/00000000-0000-4000-8000-000000000002/history",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.889605999999958
+    },
+    {
+      "id": "CONTRACT-CREW-IMPORT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-IMPORT-001] POST /api/crews/00000000-0000-4000-8000-000000000002/import",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7728020000000697
+    },
+    {
+      "id": "CONTRACT-CREW-MEMBERS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-MEMBERS-001] GET /api/campaign/crew/00000000-0000-4000-8000-000000000002/members",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 5.623389999999972
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-ABILITY-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-ABILITY-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/ability.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6149139999999989
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-ABILITY-TAKE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-ABILITY-TAKE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/ability.take",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6152120000000423
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COHORT-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COHORT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.8473620000000892
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COHORT-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COHORT-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7395790000000488
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COHORT-UPDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COHORT-UPDATE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.update",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5675730000000385
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COIN-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COIN-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/coin.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.659697000000051
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-FIELDS-UPDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-FIELDS-UPDATE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/fields.update",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5755000000000337
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-HEAT-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-HEAT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/heat.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5536299999999983
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-HOLD-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-HOLD-SET-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/hold.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.6131339999999454
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-REP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-REP-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/rep.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.530627000000095
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-STASH-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-STASH-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/stash.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.7177890000000389
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-TIER-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-TIER-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/tier.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5069250000000238
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-UPGRADE-MARK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-UPGRADE-MARK-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/upgrade.mark",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5973500000000058
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-UPGRADE-UNMARK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-UPGRADE-UNMARK-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/upgrade.unmark",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5441580000000386
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-WANTED-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-WANTED-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/wanted.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.536785000000009
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-XP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-XP-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/xp.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5325970000000098
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-XP-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-XP-CLEAR-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/xp.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.5470729999999548
+    },
+    {
+      "id": "CONTRACT-CREW-SNAPSHOT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-SNAPSHOT-001] GET /api/crews/00000000-0000-4000-8000-000000000002/history/20260719120000000-abc",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.1660530000000335
+    },
+    {
+      "id": "CONTRACT-CREW-UNDO-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-UNDO-001] POST /api/crews/00000000-0000-4000-8000-000000000002/undo",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.478744000000006
+    },
+    {
+      "id": "CONTRACT-CREWS-LIST-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREWS-LIST-001] GET /api/crews",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 43.510463999999956
+    },
+    {
+      "id": "CONTRACT-GAME-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-001] GET /api/games/blades-in-the-dark",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 6.308396000000016
+    },
+    {
+      "id": "CONTRACT-GAME-CREW-TYPE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-CREW-TYPE-001] GET /api/games/blades-in-the-dark/crews/Assassins",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 4.490791000000058
+    },
+    {
+      "id": "CONTRACT-GAME-CREWS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-CREWS-001] GET /api/games/blades-in-the-dark/crews",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 5.363157000000001
+    },
+    {
+      "id": "CONTRACT-GAME-HERITAGES-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-HERITAGES-001] GET /api/games/blades-in-the-dark/heritages",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 3.184680999999955
+    },
+    {
+      "id": "CONTRACT-GAME-PLAYBOOK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-PLAYBOOK-001] GET /api/games/blades-in-the-dark/playbooks/Cutter",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 10.347249000000033
+    },
+    {
+      "id": "CONTRACT-GAME-PLAYBOOKS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-PLAYBOOKS-001] GET /api/games/blades-in-the-dark/playbooks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 5.715860000000021
+    },
+    {
+      "id": "CONTRACT-GAMES-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAMES-001] GET /api/games",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 4.699519000000009
+    },
+    {
+      "id": "CONTRACT-HEALTH-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-HEALTH-001] GET /api/health",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 25.439729999999997
+    },
+    {
+      "id": "CONTRACT-ROSTER-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-ROSTER-001] GET /api/campaign/roster",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 50.695475999999985
+    },
+    {
+      "id": "CONTRACT-SCHEMA-CHARACTER-001",
+      "name": "contract DTO decoders [CONTRACT-SCHEMA-CHARACTER-001] character golden document decodes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/schemas.test.ts",
+      "status": "passed",
+      "durationMs": 32.309304999999995
+    },
+    {
+      "id": "CONTRACT-SCHEMA-CLOCK-001",
+      "name": "contract DTO decoders [CONTRACT-SCHEMA-CLOCK-001] clock golden document decodes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/schemas.test.ts",
+      "status": "passed",
+      "durationMs": 12.014382000000012
+    },
+    {
+      "id": "CONTRACT-SCHEMA-CREW-001",
+      "name": "contract DTO decoders [CONTRACT-SCHEMA-CREW-001] crew golden document decodes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/schemas.test.ts",
+      "status": "passed",
+      "durationMs": 6.656512000000021
+    },
+    {
+      "id": "LIFECYCLE-CREATION-001",
+      "name": "lifecycle creation flows [LIFECYCLE-CREATION-001] character creation returns a complete DTO",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/creation.test.ts",
+      "status": "passed",
+      "durationMs": 42.66015700000003
+    },
+    {
+      "id": "LIFECYCLE-CREATION-002",
+      "name": "lifecycle creation flows [LIFECYCLE-CREATION-002] crew and clock creation are independently discoverable",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/creation.test.ts",
+      "status": "passed",
+      "durationMs": 23.53558400000003
+    },
+    {
+      "id": "LIFECYCLE-CREATION-003",
+      "name": "lifecycle creation flows [LIFECYCLE-CREATION-003] S&V creation uses the authored settings",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/creation.test.ts",
+      "status": "passed",
+      "durationMs": 4.09499999999997
+    },
+    {
+      "id": "LIFECYCLE-GAMES-001",
+      "name": "lifecycle game discovery [LIFECYCLE-GAMES-001] the games endpoint includes S&V",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/games.test.ts",
+      "status": "passed",
+      "durationMs": 24.78267699999998
+    },
+    {
+      "id": "LIFECYCLE-GAMES-002",
+      "name": "lifecycle game discovery [LIFECYCLE-GAMES-002] S&V local maxima are not the Blades defaults",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/games.test.ts",
+      "status": "passed",
+      "durationMs": 6.615072999999995
+    },
+    {
+      "id": "LIFECYCLE-IMPORT-001",
+      "name": "lifecycle import and export [LIFECYCLE-IMPORT-001] a golden character can be schema-decoded before import",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/import-export.test.ts",
+      "status": "passed",
+      "durationMs": 62.58352400000001
+    },
+    {
+      "id": "LIFECYCLE-IMPORT-002",
+      "name": "lifecycle import and export [LIFECYCLE-IMPORT-002] invalid imports return a typed validation response",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/import-export.test.ts",
+      "status": "passed",
+      "durationMs": 7.63440300000002
+    },
+    {
+      "id": "LIFECYCLE-RETIREMENT-001",
+      "name": "lifecycle retirement [LIFECYCLE-RETIREMENT-001] a retired character remains readable",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/retirement.test.ts",
+      "status": "passed",
+      "durationMs": 103.045121
+    },
+    {
+      "id": "LIFECYCLE-RETIREMENT-002",
+      "name": "lifecycle retirement [LIFECYCLE-RETIREMENT-002] character deletion requires confirmation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/retirement.test.ts",
+      "status": "passed",
+      "durationMs": 13.452611999999988
+    },
+    {
+      "id": "PERSISTENCE-ATOMIC-001",
+      "name": "persistence atomic-write crash hook [PERSISTENCE-ATOMIC-001] the optional crash hook never exposes a partial JSON document",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/atomic-write.test.ts",
+      "status": "passed",
+      "durationMs": 50.87420799999995
+    },
+    {
+      "id": "PERSISTENCE-HISTORY-001",
+      "name": "persistence history and undo [PERSISTENCE-HISTORY-001] snapshot-worthy character mutations create history entries",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/history.test.ts",
+      "status": "passed",
+      "durationMs": 41.09767499999998
+    },
+    {
+      "id": "PERSISTENCE-HISTORY-002",
+      "name": "persistence history and undo [PERSISTENCE-HISTORY-002] undo restores the pre-operation character and consumes the snapshot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/history.test.ts",
+      "status": "passed",
+      "durationMs": 22.918393999999978
+    },
+    {
+      "id": "PERSISTENCE-HISTORY-003",
+      "name": "persistence history and undo [PERSISTENCE-HISTORY-003] crew history is entity-scoped",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/history.test.ts",
+      "status": "passed",
+      "durationMs": 14.15597600000001
+    },
+    {
+      "id": "PERSISTENCE-REVISION-001",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-001] a stale If-Match returns STALE_REVISION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 57.607124999999996
+    },
+    {
+      "id": "PERSISTENCE-REVISION-002",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-002] one of two same-revision writes loses the race",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 15.295690999999977
+    },
+    {
+      "id": "PERSISTENCE-REVISION-003",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-003] idempotency repeats the original operation result",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 52.05811500000004
+    },
+    {
+      "id": "PERSISTENCE-ROUND-TRIP-001",
+      "name": "persistence round-trip identity [PERSISTENCE-ROUND-TRIP-001] character GET and download export are byte-identical",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/round-trip.test.ts",
+      "status": "passed",
+      "durationMs": 45.02310399999999
+    },
+    {
+      "id": "PERSISTENCE-ROUND-TRIP-002",
+      "name": "persistence round-trip identity [PERSISTENCE-ROUND-TRIP-002] crew GET and download export preserve the full DTO",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/round-trip.test.ts",
+      "status": "passed",
+      "durationMs": 24.675119999999993
+    },
+    {
+      "id": "SEMANTICS-ARMOR-AVAILABILITY-001",
+      "name": "§5.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-001] unavailable special armor is a typed error",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/armor-availability.test.ts",
+      "status": "passed",
+      "durationMs": 37.07426699999996
+    },
+    {
+      "id": "SEMANTICS-ARMOR-AVAILABILITY-002",
+      "name": "§5.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-002] clearing an armor-used flag is always permitted",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/armor-availability.test.ts",
+      "status": "passed",
+      "durationMs": 13.262787000000003
+    },
+    {
+      "id": "SEMANTICS-BOUNDED-INTEGER-001",
+      "name": "§5.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-001] stress addition clamps at the game maximum",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/bounded-integer.test.ts",
+      "status": "passed",
+      "durationMs": 52.381696000000034
+    },
+    {
+      "id": "SEMANTICS-BOUNDED-INTEGER-002",
+      "name": "§5.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-002] action ratings clamp below zero",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/bounded-integer.test.ts",
+      "status": "passed",
+      "durationMs": 23.213336000000027
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-LOCK-001",
+      "name": "§5.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-001] locked commitment rejects changes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-lock.test.ts",
+      "status": "passed",
+      "durationMs": 52.09047300000003
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-LOCK-002",
+      "name": "§5.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-002] unlock permits an explicit commitment change",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-lock.test.ts",
+      "status": "passed",
+      "durationMs": 25.937500999999997
+    },
+    {
+      "id": "SEMANTICS-CROSS-LINKS-001",
+      "name": "§5.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-001] dossier crewId accepts an existing crew and roster counts members",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/cross-links.test.ts",
+      "status": "passed",
+      "durationMs": 59.40013499999998
+    },
+    {
+      "id": "SEMANTICS-CROSS-LINKS-002",
+      "name": "§5.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-002] deleting a crew unlinks its members",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/cross-links.test.ts",
+      "status": "passed",
+      "durationMs": 33.29937799999993
+    },
+    {
+      "id": "SEMANTICS-FUND-001",
+      "name": "§5.1.8 fund gains expose partial capacity [SEMANTICS-FUND-001] satchel then stash fill and overflow is visible",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund.test.ts",
+      "status": "passed",
+      "durationMs": 40.861609999999985
+    },
+    {
+      "id": "SEMANTICS-FUND-002",
+      "name": "§5.1.8 fund gains expose partial capacity [SEMANTICS-FUND-002] spending uses satchel before stash liquidation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund.test.ts",
+      "status": "passed",
+      "durationMs": 14.328380999999979
+    },
+    {
+      "id": "SEMANTICS-HARM-SPILLOVER-001",
+      "name": "§5.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-001] full severe harm rolls upward into fatal",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/harm-spillover.test.ts",
+      "status": "passed",
+      "durationMs": 41.11751199999998
+    },
+    {
+      "id": "SEMANTICS-HARM-SPILLOVER-002",
+      "name": "§5.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-002] removing one intensity does not cascade another slot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/harm-spillover.test.ts",
+      "status": "passed",
+      "durationMs": 26.653569000000005
+    },
+    {
+      "id": "SEMANTICS-RETIRED-DEADISH-001",
+      "name": "§5.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-001] the final trauma retires the character and exposes both flags",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/retired-deadish.test.ts",
+      "status": "passed",
+      "durationMs": 53.590483000000006
+    },
+    {
+      "id": "SEMANTICS-RETIRED-DEADISH-002",
+      "name": "§5.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-002] retired reads work but notebook writes return RETIRED",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/retired-deadish.test.ts",
+      "status": "passed",
+      "durationMs": 38.13126600000004
+    },
+    {
+      "id": "SEMANTICS-ROLODEX-001",
+      "name": "§5.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-001] friend can move through close-friend to rival",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/rolodex.test.ts",
+      "status": "passed",
+      "durationMs": 57.05785700000001
+    },
+    {
+      "id": "SEMANTICS-ROLODEX-002",
+      "name": "§5.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-002] rival can be downgraded back to friend",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/rolodex.test.ts",
+      "status": "passed",
+      "durationMs": 25.08132599999999
+    },
+    {
+      "id": "SEMANTICS-STRESS-OVERFLOW-001",
+      "name": "§5.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-001] full stress does not add trauma automatically",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/stress-overflow.test.ts",
+      "status": "passed",
+      "durationMs": 47.91186499999998
+    },
+    {
+      "id": "SEMANTICS-STRESS-OVERFLOW-002",
+      "name": "§5.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-002] trauma is a separate explicit operation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/stress-overflow.test.ts",
+      "status": "passed",
+      "durationMs": 51.576367000000005
+    },
+    {
+      "id": "SEMANTICS-UPGRADES-001",
+      "name": "§5.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-001] marking the same multi-box upgrade twice retains two boxes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/upgrades.test.ts",
+      "status": "passed",
+      "durationMs": 54.65080499999999
+    },
+    {
+      "id": "SEMANTICS-UPGRADES-002",
+      "name": "§5.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-002] unmarking removes one box instead of the whole upgrade",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/upgrades.test.ts",
+      "status": "passed",
+      "durationMs": 25.10447300000004
+    },
+    {
+      "id": "SEMANTICS-XP-TRACKS-001",
+      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-001] attribute level-up clears only that attribute track",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
+      "status": "passed",
+      "durationMs": 49.04299699999996
+    },
+    {
+      "id": "SEMANTICS-XP-TRACKS-002",
+      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-002] taking an ability does not clear playbook XP",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
+      "status": "passed",
+      "durationMs": 14.226016000000016
+    },
+    {
+      "id": "SEMANTICS-XP-TRACKS-003",
+      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-003] S&V action maxima and healing clock size come from game data",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
+      "status": "passed",
+      "durationMs": 6.11958199999998
+    }
+  ],
+  "summary": {
+    "total": 131,
+    "passed": 131,
+    "failed": 0,
+    "skipped": 0,
+    "todo": 0
+  }
+}

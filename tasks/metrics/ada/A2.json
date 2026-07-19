@@ -1,0 +1,24 @@
+{
+ "task": "A2",
+ "track": "ada",
+ "agent": "gpt-5.6-luna (codex exec, xhigh)",
+ "date": "2026-07-19",
+ "attempts": 2,
+ "iterationsToGreen": {
+  "attempt2_conformanceRuns": 7,
+  "attempt2_compileLoops": 13
+ },
+ "wallClockMinutes": null,
+ "tokens": {
+  "attempt1": 116597,
+  "attempt2": null
+ },
+ "defectsCaughtBy": {
+  "orchestratorReview": 1,
+  "conformance": "~43 across trajectory 88->131",
+  "compiler": 13,
+  "human": 0
+ },
+ "conformancePassRateAtFirstClaim": "131/131 claimed; orchestrator reproduced 131/131 (repo-root launch)",
+ "notes": "Attempt 1 REJECTED: Python HTTP boundary supervised by pitd \u2014 architecture violation invisible to the black-box suite; caught only via implementer disclosure + review. Attempt 2: pure Ada/AWS calling proven core (verified: no child processes, 8 AWS threads, pitd_callback.adb links Paperclips_Core). Known wart, non-blocking: data/games and static dir resolve relative to CWD \u2014 server must be launched from repo root; flagged for a --games flag or exe-relative resolution in later polish. Scorecard: tasks/metrics/ada/A2-scorecard.json."
+}

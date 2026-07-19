@@ -112,6 +112,27 @@ Common counterexample patterns and fixes:
 - Reject .. path segments before joining a request path to the static root.
   Only GET/HEAD should reach static serving; reserve /api/* for API routes.
 
+## A2 server boundary
+
+- The SPARK-off HTTP, GNATCOLL JSON, and persistence boundary is entirely Ada
+  in `server/src/pitd_callback.adb`; `pitd` starts AWS directly and never
+  spawns or supervises another runtime. Numeric route mutations call the
+  proven `paperclips_core` bounded-integer operations directly.
+- Atomic persistence writes a same-directory `.tmp`, fsyncs it, renames it,
+  and fsyncs the directory. DTO files are stable, pretty-printed JSON ending in
+  one newline.
+- `--test-hooks` is the only switch that may enable destructive crash hooks.
+  Test hooks are disabled by default; the conformance-safe hook reports 501
+  when disabled.
+- Server data is read through an explicit format-version migration pipeline;
+  format version 1 currently has no transformation step.
+- AWS 21 request JSON is exposed through `AWS.Status.Binary_Data`, not
+  `AWS.Status.Payload` (the latter is the SOAP payload accessor).
+- `Ada.Directories.Rename` refuses an existing destination; on the supported
+  POSIX target use `GNAT.OS_Lib.Rename_File` for the atomic replacement point.
+- GNATCOLL 21 pulls `libgpr` 21, which fails under GNAT 16.1. GNATCOLL 26's
+  core-only packaging is compatible here and avoids that dependency.
+
 ## Alire command cheatsheet
 
     XDG_RUNTIME_DIR=/tmp alr --non-interactive build

@@ -135,6 +135,179 @@ hashes = [
 ]
 url = "https://github.com/alire-project/GNAT-FSF-builds/releases/download/gnat-16.1.0-1/gnat-x86_64-linux-16.1.0-1.tar.gz"
 [[solution.state]]
+crate = "gnatcoll"
+fulfilment = "solved"
+pinned = false
+transitivity = "direct"
+versions = "26.0.0"
+[solution.state.release]
+authors = [
+"AdaCore",
+]
+description = "GNAT Components Collection - Core packages"
+licenses = "GPL-3.0-or-later WITH GCC-exception-3.1"
+maintainers = [
+"chouteau@adacore.com",
+"sagaert@adacore.com",
+]
+maintainers-logins = [
+"Fabien-Chouteau",
+"AldanTanneo",
+]
+name = "gnatcoll"
+project-files = [
+"core/gnatcoll_core.gpr",
+]
+tags = [
+"gnatcoll",
+"json",
+"email",
+"refcount",
+"vfs",
+]
+version = "26.0.0"
+website = "https://github.com/adacore/gnatcoll-core"
+[solution.state.release.configuration]
+auto_gpr_with = true
+disabled = true
+generate_ada = true
+generate_c = true
+generate_gpr = true
+output_dir = "config"
+[solution.state.release.gpr-externals]
+GNATCOLL_BLAKE3_ARCH = [
+"x86_64-linux",
+"aarch64-linux",
+"x86_64-windows",
+"generic",
+]
+GNATCOLL_MADVISE = [
+"yes",
+"no",
+]
+GNATCOLL_MMAP = [
+"yes",
+"no",
+]
+GNATCOLL_XXHASH_ARCH = [
+"x86_64",
+"generic",
+]
+[solution.state.release.origin]
+hashes = [
+"sha512:cc5dd0a199115fee269ec1ef963b80abbb56e3029e817d5dbfe71e90fff09d0535ae5be86dedb6d3fbcc74cfa2f3e2e7885de800e5805f9f596507814dce6d4b",
+]
+url = "https://github.com/AdaCore/gnatcoll-core/archive/refs/tags/v26.0.0.zip"
+[[solution.state.release.depends-on]]
+gnat = ">=14"
+gnatcoll_minimal = "~26.0.0"
+[[solution.state]]
+crate = "gnatcoll_minimal"
+fulfilment = "solved"
+pinned = false
+transitivity = "indirect"
+versions = "~26.0.0"
+[solution.state.release]
+authors = [
+"AdaCore",
+]
+description = "GNAT Components Collection - Minimal"
+licenses = "GPL-3.0-or-later WITH GCC-exception-3.1"
+maintainers = [
+"chouteau@adacore.com",
+"sagaert@adacore.com",
+]
+maintainers-logins = [
+"Fabien-Chouteau",
+"AldanTanneo",
+]
+name = "gnatcoll_minimal"
+project-files = [
+"minimal/gnatcoll_minimal.gpr",
+]
+tags = [
+"gnatcoll",
+"asserts",
+"encoders",
+"stream",
+"storage",
+]
+version = "26.0.0"
+website = "https://github.com/adacore/gnatcoll-core"
+[solution.state.release.configuration]
+auto_gpr_with = true
+disabled = true
+generate_ada = true
+generate_c = true
+generate_gpr = true
+output_dir = "config"
+[solution.state.release.gpr-externals]
+GNATCOLL_BUILD_MODE = [
+"DEBUG",
+"PROD",
+]
+GNATCOLL_OS = [
+"windows",
+"unix",
+"osx",
+]
+LIBRARY_TYPE = [
+"static",
+"relocatable",
+"static-pic",
+]
+[solution.state.release.gpr-set-externals]
+GNATCOLL_OS = "unix"
+GNATCOLL_VERSION = "26.0.0"
+[solution.state.release.origin]
+hashes = [
+"sha512:cc5dd0a199115fee269ec1ef963b80abbb56e3029e817d5dbfe71e90fff09d0535ae5be86dedb6d3fbcc74cfa2f3e2e7885de800e5805f9f596507814dce6d4b",
+]
+url = "https://github.com/AdaCore/gnatcoll-core/archive/refs/tags/v26.0.0.zip"
+[[solution.state.release.depends-on]]
+gnat = ">=14"
+[[solution.state]]
+crate = "gnatprove"
+fulfilment = "solved"
+pinned = false
+transitivity = "indirect"
+versions = "16.1.0"
+[solution.state.release]
+authors = [
+"AdaCore",
+]
+auto-gpr-with = false
+description = "Automatic formal verification of SPARK code"
+licenses = "GPL-3.0-or-later"
+long-description = "GNATprove, which provides automatic formal verification of SPARK code, is based on the [open-source](https://github.com/AdaCore/spark2014) [SPARK Pro](https://www.adacore.com/sparkpro) by [AdaCore](https://www.adacore.com).\nThe [SPARK Pro User's Guide](https://docs.adacore.com/spark2014-docs/html/ug/index.html) provides extensive documentation on how to use GNATprove.\nNote that because this version of GNATprove is built from an intermediate commit of SPARK Pro, it is not representative of any specific SPARK Pro release, and the SPARK Pro documentation may describe features or capabilities that are not yet available in this version of GNATprove.\n\nTo use GNATprove, simply add it to your Alire project using\n\n    alr with gnatprove\n\nYou will then be able to run GNATprove:\n\n    alr gnatprove\n\nFor more details on getting started using GNATprove, see [Getting Started with SPARK](https://docs.adacore.com/spark2014-docs/html/ug/en/getting_started.html) from the [SPARK Pro User's Guide](https://docs.adacore.com/spark2014-docs/html/ug/index.html).\n\nTo get started with the SPARK language, see the [Introduction to SPARK](https://learn.adacore.com/courses/intro-to-spark/index.html) course on [learn.adacore.com](https://learn.adacore.com/index.html).\n"
+maintainers = [
+"Fabien Chouteau <chouteau@adacore.com>",
+"CÃ©sar Sagaert <sagaert@adacore.com>",
+]
+maintainers-logins = [
+"Fabien-Chouteau",
+"AldanTanneo",
+]
+name = "gnatprove"
+version = "16.1.0"
+website = "https://docs.adacore.com/spark2014-docs/html/ug/index.html"
+[solution.state.release.configuration]
+auto_gpr_with = true
+disabled = true
+generate_ada = true
+generate_c = true
+generate_gpr = true
+output_dir = "config"
+[solution.state.release.environment]
+[solution.state.release.environment.PATH]
+prepend = "${CRATE_ROOT}/bin"
+[solution.state.release.origin]
+binary = true
+hashes = [
+"sha256:82528bef29857e239373fcc36732837d743f5a00805d502c70455422ffc97191",
+]
+url = "https://github.com/alire-project/GNAT-FSF-builds/releases/download/gnatprove-16.1.0-1/gnatprove-x86_64-linux-16.1.0-1.tar.gz"
+[[solution.state]]
 crate = "make"
 fulfilment = "solved"
 pinned = false
@@ -181,6 +354,15 @@ version = "3.6.3"
 website = "https://www.openssl.org"
 [solution.state.release.origin]
 url = "system:openssl"
+[[solution.state]]
+crate = "paperclips_core"
+fulfilment = "linked"
+pinned = false
+transitivity = "direct"
+versions = "*"
+[solution.state.link]
+lockfiled = true
+path = "../core"
 [[solution.state]]
 crate = "xmlada"
 fulfilment = "solved"

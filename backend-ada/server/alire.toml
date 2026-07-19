@@ -9,6 +9,15 @@ executables = ["pitd"]
 [[depends-on]]
 aws = "21.0.0"
 
+[[depends-on]]
+gnatcoll = "26.0.0"
+
+[[depends-on]]
+paperclips_core = "*"
+
+[[pins]]
+paperclips_core = { path = "../core" }
+
 [environment]
 PRJ_BUILD.set = "Release"
 
