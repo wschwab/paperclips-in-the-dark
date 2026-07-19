@@ -19,3 +19,7 @@ client + effect/Schema decoding mirroring contract/schemas. Never edited by
 implementation tasks afterward.
 
 ## Log
+- 2026-07-19: contract frozen; C1 dispatched to GPT 5.6 Luna (codex exec,
+  gpt-5.6-luna, xhigh, --full-auto + workspace network). Prompt:
+  tasks/dispatch/C1-prompt.md. Orchestrator owns VCS; implementer forbidden
+  from contract/ and git/jj.

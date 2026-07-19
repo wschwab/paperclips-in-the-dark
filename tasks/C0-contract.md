@@ -36,3 +36,6 @@ x-snapshot flags per op, If-Match/Idempotency-Key headers, no nulls anywhere.
   defect caught by validation: UUID regex variant group {4}→{3}.
 - 2026-07-19: STATUS: done pending human contract-freeze sign-off (spec §13 —
   freeze is a human gate before C1 dispatch).
+- 2026-07-19: **CONTRACT v1 FROZEN** — human sign-off ("lock it in") in
+  orchestration session. contract/ and conformance/ now closed to
+  implementation tasks; changes only via a contract-change task. C0 DONE.
