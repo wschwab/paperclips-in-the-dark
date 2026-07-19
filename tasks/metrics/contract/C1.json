@@ -1,0 +1,13 @@
+{
+  "task": "C1",
+  "track": "contract",
+  "agent": "gpt-5.6-luna (codex exec, xhigh, single-shot)",
+  "date": "2026-07-19",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single non-interactive dispatch; all acceptance passed on orchestrator re-run from clean install.",
+  "wallClockMinutes": 27,
+  "tokens": 241306,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "human": 0 },
+  "loc": { "suites": null, "tooling": null },
+  "notes": "131 tests (contract 90 / semantics 23 / persistence 9 / lifecycle 9). Tooling test coverage thin (2 tests: shim, report) — shim gets real exercise only if Z-track escape hatch fires. S&V cases assert settings-driven maxima. Assignment note for E0: C1+A-track=Luna, F-track+Z-track=Grok — model/track confound, unavoidable at n=1, must be flagged in the memo."
+}

@@ -1,0 +1,26 @@
+{
+  "name": "paperclips-in-the-dark-conformance",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Black-box conformance suite for the Paperclips in the Dark API",
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:tooling": "vitest run --config vitest.tooling.config.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "bin": {
+    "conformance": "bin/conformance.mjs",
+    "pitd-http-stdio-shim": "bin/http-stdio-shim.mjs"
+  },
+  "dependencies": {
+    "effect": "^3.16.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  }
+}

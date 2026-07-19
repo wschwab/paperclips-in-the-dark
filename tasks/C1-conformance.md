@@ -23,3 +23,10 @@ implementation tasks afterward.
   gpt-5.6-luna, xhigh, --full-auto + workspace network). Prompt:
   tasks/dispatch/C1-prompt.md. Orchestrator owns VCS; implementer forbidden
   from contract/ and git/jj.
+- 2026-07-19: DONE. Orchestrator acceptance from clean install: 131 tests
+  collect with 0 collection errors and fail only on dead target; report
+  harness emits valid JSON with stable IDs (sorted); 11 semantics files;
+  S&V cases assert settings-driven maxima; shim+report tooling tests green;
+  typecheck green; contract/ untouched. Caveat: tooling tests are thin (2).
+  Metrics: tasks/metrics/contract/C1.json. conformance/ NOW FROZEN for
+  implementation tasks.
