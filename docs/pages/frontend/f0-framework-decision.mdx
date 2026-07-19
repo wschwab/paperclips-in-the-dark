@@ -1,0 +1,47 @@
+---
+title: F0 — Frontend framework decision
+---
+
+# F0 — Frontend framework decision
+
+**Decision:** plain DOM + small helpers. No React/Preact/Svelte/Solid.
+
+## Why
+
+F0's job is a static Vite shell, `effect/Schema` decoders, and a health-check
+page that talks only to `/api/*`. Spec §12 already picks the stack's real
+workhorses: **Effect** for HTTP + decoding + services, and condensed sheet
+furniture built later against a styleguide. A component framework would sit
+between those two without carrying either.
+
+- **Entities are whole DTOs.** Mutations POST an op and get the full character /
+  crew / clock back. The UI redraws from server state; there is no rich
+  client-side graph to hydrate. Fine-grained reactivity buys little.
+- **Aesthetic work is F1.** Until the styleguide exists, framework-tied
+  component abstractions are premature. Plain HTML + CSS (then SVG clocks,
+  track boxes, stamps) maps 1:1 onto the sheet furniture the book look needs.
+- **Agent-first product.** The primary client is the agent skill against the
+  same API. The web UI is a debugable thin client. Every dependency is surface
+  area for agents and humans tracing isDOM → fetch → decoder.
+- **Multi-tab safety is revisions**, not client stores. A stale tab gets
+  `STALE_REVISION` and refetches. No CRDT, no local optimistic layer in v1.
+
+## What "plain DOM + small helpers" means
+
+- `el` / `setChildren` / `clear` — ~30 lines, no VDOM.
+- Page modules expose `mountX(root): dispose`.
+- Effect programs for I/O; `Effect.runPromise` at the mount boundary.
+- Stateful widgets later (clock dial, stress track) can be small classes or
+  pure render functions — promote only when a second call site demands it.
+
+## Rejected alternatives
+
+| Option | Why not (for F0) |
+|---|---|
+| Preact / React | JSX components ideal for F2 sheets, but F0–F1 don't need diffing or a virtual tree. Can adopt later without rewriting decoders. |
+| Solid / Svelte | Best-in-class reactivity; overkill for "paint DTO fields after decode". |
+| htm + preact | Attractive middle ground; still a framework boundary for little gain before F1. |
+
+**Revisit trigger:** if F2 sheet pages accumulate repeated mount/update
+boilerplate (>3 near-identical page modules), reconsider Preact. Decoders and
+the `/api/*` client stay framework-agnostic either way.

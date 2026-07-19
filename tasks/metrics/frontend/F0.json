@@ -1,0 +1,14 @@
+{
+  "task": "F0",
+  "track": "frontend",
+  "agent": "grok-4.5 (pi, openrouter, non-interactive single-shot)",
+  "date": "2026-07-19",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single non-interactive dispatch; self-reported acceptance confirmed by orchestrator from clean install (rm -rf node_modules dist; npm ci; build + 18/18 tests green).",
+  "wallClockMinutes": 12,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "human": 0 },
+  "loc": { "implementation": null, "tests": null },
+  "conformancePassRateAtFirstClaim": null,
+  "notes": "effect pinned 3.21.4 (registry min-release-age). Plain-DOM decision documented in docs/pages/frontend/f0-framework-decision.mdx. Scope compliance verified: only frontend/ + docs/pages/frontend/ touched."
+}

@@ -2,3 +2,5 @@
 .git/
 agent-docs/
 blades-in-the-sheets
+node_modules/
+dist/
