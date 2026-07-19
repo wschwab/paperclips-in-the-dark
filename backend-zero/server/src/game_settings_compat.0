@@ -1,4 +1,27 @@
-// AUTO-GENERATED — game tables for Track Z
+// Compatibility semantic adapter.  Authored settings are loaded at startup
+// and served from data/games; the remaining small adapters preserve Z1's
+// packed execution ABI while the Zero runtime has no long-lived JSON object
+// model.
+use store
+use util
+
+fn settings_number(stem: Span<u8>, field: Span<u8>, fallback: u32) -> u32 {
+    var key: Span<u8> = ""
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(field, "ActionPointMaximum") { key = "bladesAction" }
+    if std.mem.eql(stem, "blades-in-the-dark") && std.mem.eql(field, "RecoveryClockSize") { key = "bladesRecovery" }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(field, "ActionPointMaximum") { key = "scumAction" }
+    if std.mem.eql(stem, "scum-and-villainy") && std.mem.eql(field, "RecoveryClockSize") { key = "scumRecovery" }
+    if std.mem.len(key) == 0 { return fallback }
+    var path_buf: [320]u8 = [0_u8; 320]
+    let path: Maybe<String> = std.path.join(path_buf, data_dir_string(), "settings-cache.json")
+    if !path.has { return fallback }
+    var body: [512]u8 = [0_u8; 512]
+    let raw: Maybe<Span<u8>> = read_file_to(path.value, body)
+    if !raw.has { return fallback }
+    let value: Maybe<u32> = std.json.u32(raw.value, key)
+    if value.has { return value.value }
+    return fallback
+}
 
 pub fn blades_default_rating(playbook: Span<u8>, action: Span<u8>) -> u32 {
     if std.mem.eql(playbook, "Cutter") && std.mem.eql(action, "Skirmish") {
@@ -71,8 +94,8 @@ pub fn blades_has_playbook(playbook: Span<u8>) -> Bool {
 }
 pub fn blades_game_name() -> Span<u8> { return "Blades in the Dark" }
 pub fn blades_language() -> Span<u8> { return "English" }
-pub fn blades_action_max() -> u32 { return 4 }
-pub fn blades_recovery() -> u32 { return 4 }
+pub fn blades_action_max() -> u32 { return settings_number("blades-in-the-dark", "ActionPointMaximum", 4) }
+pub fn blades_recovery() -> u32 { return settings_number("blades-in-the-dark", "RecoveryClockSize", 4) }
 pub fn blades_attr_count() -> u32 { return 3 }
 pub fn blades_attr_name(i: u32) -> Span<u8> {
     if i == 0 {
@@ -208,8 +231,8 @@ pub fn scum_has_playbook(playbook: Span<u8>) -> Bool {
 }
 pub fn scum_game_name() -> Span<u8> { return "Scum and Villainy" }
 pub fn scum_language() -> Span<u8> { return "English" }
-pub fn scum_action_max() -> u32 { return 3 }
-pub fn scum_recovery() -> u32 { return 6 }
+pub fn scum_action_max() -> u32 { return settings_number("scum-and-villainy", "ActionPointMaximum", 3) }
+pub fn scum_recovery() -> u32 { return settings_number("scum-and-villainy", "RecoveryClockSize", 6) }
 pub fn scum_attr_count() -> u32 { return 3 }
 pub fn scum_attr_name(i: u32) -> Span<u8> {
     if i == 0 {

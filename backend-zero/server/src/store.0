@@ -9,7 +9,7 @@ pub fn ensure_layout() -> Bool {
         }
     }
     var b1: [160]u8 = [0_u8; 160]
-    let ch: Maybe<String> = std.path.join(b1, data_dir(), "characters")
+    let ch: Maybe<String> = std.path.join(b1, data_dir_string(), "characters")
     if !ch.has {
         return false
     }
@@ -17,7 +17,7 @@ pub fn ensure_layout() -> Bool {
         return false
     }
     var b2: [160]u8 = [0_u8; 160]
-    let cr: Maybe<String> = std.path.join(b2, data_dir(), "crews")
+    let cr: Maybe<String> = std.path.join(b2, data_dir_string(), "crews")
     if !cr.has {
         return false
     }
@@ -217,6 +217,17 @@ pub fn write_entity_json(kind: Span<u8>, id: Span<u8>, json: Span<u8>) -> Bool {
     return atomic_write_bytes(path.value, json)
 }
 
+pub fn write_entity_state(kind: Span<u8>, id: Span<u8>, json: Span<u8>) -> Bool {
+    var dbuf: [320]u8 = [0_u8; 320]
+    let dir: Maybe<String> = path_entity_dir(dbuf, kind, id)
+    if !dir.has { return false }
+    if !ensure_dir(dir.value) { return false }
+    var pbuf: [360]u8 = [0_u8; 360]
+    let path: Maybe<String> = path_entity_state(pbuf, kind, id)
+    if !path.has { return false }
+    return atomic_write_bytes(path.value, json)
+}
+
 pub fn read_entity_json(kind: Span<u8>, id: Span<u8>, dest: MutSpan<u8>) -> Maybe<Span<u8>> {
     var pbuf: [360]u8 = [0_u8; 360]
     let path: Maybe<String> = path_entity_current(pbuf, kind, id)
@@ -226,6 +237,13 @@ pub fn read_entity_json(kind: Span<u8>, id: Span<u8>, dest: MutSpan<u8>) -> Mayb
     if !std.fs.exists(path.value) {
         return null
     }
+    return read_file_to(path.value, dest)
+}
+
+pub fn read_entity_state(kind: Span<u8>, id: Span<u8>, dest: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var pbuf: [360]u8 = [0_u8; 360]
+    let path: Maybe<String> = path_entity_state(pbuf, kind, id)
+    if !path.has || !std.fs.exists(path.value) { return null }
     return read_file_to(path.value, dest)
 }
 

@@ -42,6 +42,29 @@ the frozen contract or conformance sources.
 - Prefer fixed-size buffers and small helper functions; split large handlers
   and keep local buffers comfortably below the runtime's practical limits.
 
+## Z2-specific runtime rules
+
+- The direct HTTP callback ABI has a practical eight-slot limit. A `Span` or
+  `MutSpan` consumes two slots, so helpers that accept several spans must be
+  split before they are called from `route`; `zero check` may still accept a
+  graph whose live handler traps with `handler_failed`.
+- `std.http.listen` requires a literal port in Zero 0.3.4. `run.sh` accepts
+  `--port` for the orchestrator contract, but the compiled listener remains
+  the 9657 target unless a separately imported graph is built; do not replace
+  the literal with an environment lookup and assume it is runtime-safe.
+- The callback has no `World` output capability. Request JSON logging must be
+  implemented through a future listener/runtime capability or explicitly
+  reported as unreachable; do not fake stdout logging with response bytes.
+- `current.json` is the wire source of truth. The packed scalar state is only
+  an execution cache; sync it after a normal mutation, but do not sync it over
+  an import response after the imported DTO has been atomically written.
+- Snapshot filenames must be safe path segments and unique across revisions;
+  retain `.state` sidecars when restoring and remove both DTO and sidecar on
+  undo, import-history reset, or the 50-entry eviction boundary.
+- A graph is not a scorecard. The acceptance run must use a fresh data
+  directory, a live `zero run`, the exact Vitest command, and a process check;
+  archive the observed result under `backend-zero/` or `docs/pages/zero/`.
+
 ## Native HTTP launch
 
 `std.http.listen` re-executes a bare `zero` and does not perform PATH search.

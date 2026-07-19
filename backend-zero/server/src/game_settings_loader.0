@@ -1,0 +1,55 @@
+use store
+use util
+use jbuf
+
+// Startup validation deliberately reads every authored settings document.  The
+// HTTP projections also read these files on demand; this startup pass makes a
+// missing or truncated game asset fail before the listener accepts traffic.
+fn load_one(name: Span<u8>) -> Bool {
+    var path_buf: [256]u8 = [0_u8; 256]
+    let path: Maybe<String> = std.path.join(path_buf, "../../data/games", name)
+    if !path.has { return false }
+    var body: [70000]u8 = [0_u8; 70000]
+    let raw: Maybe<Span<u8>> = read_file_to(path.value, body)
+    return raw.has
+}
+
+fn load_number(name: Span<u8>, field: Span<u8>, fallback: u32) -> u32 {
+    var path_buf: [256]u8 = [0_u8; 256]
+    let path: Maybe<String> = std.path.join(path_buf, "../../data/games", name)
+    if !path.has { return fallback }
+    var body: [70000]u8 = [0_u8; 70000]
+    let raw: Maybe<Span<u8>> = read_file_to(path.value, body)
+    if !raw.has { return fallback }
+    let value: Maybe<u32> = std.json.u32(raw.value, field)
+    if value.has { return value.value }
+    return fallback
+}
+
+fn write_settings_cache() -> Bool {
+    var cache: [256]u8 = [0_u8; 256]
+    let v: MutSpan<u8> = cache
+    let blades_action: u32 = load_number("blades-in-the-dark.json", "ActionPointMaximum", 4)
+    let blades_recovery: u32 = load_number("blades-in-the-dark.json", "RecoveryClockSize", 4)
+    let scum_action: u32 = load_number("scum-and-villainy.json", "ActionPointMaximum", 3)
+    let scum_recovery: u32 = load_number("scum-and-villainy.json", "RecoveryClockSize", 6)
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_u32_field(v, false, "bladesAction", blades_action) || !jb_u32_field(v, true, "bladesRecovery", blades_recovery) || !jb_u32_field(v, true, "scumAction", scum_action) || !jb_u32_field(v, true, "scumRecovery", scum_recovery) || !jb_end_obj(v) { return false }
+    var path_buf: [320]u8 = [0_u8; 320]
+    let path: Maybe<String> = std.path.join(path_buf, data_dir_string(), "settings-cache.json")
+    if !path.has { return false }
+    if atomic_write_bytes(path.value, jb_bytes(cache)) { return true }
+    let written: Maybe<usize> = std.fs.writeBytes(path.value, jb_bytes(cache))
+    return written.has
+}
+
+pub fn load_game_settings() -> Bool {
+    if !load_one("games.json") { return false }
+    if !load_one("blades-in-the-dark.json") { return false }
+    if !load_one("blades-in-the-dark-crews.json") { return false }
+    if !load_one("scum-and-villainy.json") { return false }
+    if !load_one("français-blades-in-the-dark.json") { return false }
+    if !load_one("rus-blades-in-the-dark.json") { return false }
+    if !load_one("demo-character.json") { return false }
+    if !load_one("game-settings-schema.json") { return false }
+    return write_settings_cache()
+}

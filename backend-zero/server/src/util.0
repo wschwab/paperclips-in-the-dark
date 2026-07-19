@@ -58,16 +58,16 @@ pub fn is_safe_id(id: Span<u8>) -> Bool {
 }
 
 pub fn data_dir_string() -> String {
-    return "campaign-data"
+    return std.env.getOr("PITD_DATA", "campaign-data")
 }
 
 pub fn path_campaign(buf: MutSpan<u8>) -> Maybe<String> {
-    return std.path.join(buf, data_dir(), "campaign.json")
+    return std.path.join(buf, data_dir_string(), "campaign.json")
 }
 
 pub fn path_index(buf: MutSpan<u8>, kind: Span<u8>) -> Maybe<String> {
     var mid: [256]u8 = [0_u8; 256]
-    let kind_dir: Maybe<String> = std.path.join(mid, data_dir(), kind)
+    let kind_dir: Maybe<String> = std.path.join(mid, data_dir_string(), kind)
     if !kind_dir.has {
         return null
     }
@@ -76,7 +76,7 @@ pub fn path_index(buf: MutSpan<u8>, kind: Span<u8>) -> Maybe<String> {
 
 pub fn path_entity_dir(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
     var mid: [256]u8 = [0_u8; 256]
-    let kind_dir: Maybe<String> = std.path.join(mid, data_dir(), kind)
+    let kind_dir: Maybe<String> = std.path.join(mid, data_dir_string(), kind)
     if !kind_dir.has {
         return null
     }
@@ -90,6 +90,40 @@ pub fn path_entity_current(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Ma
         return null
     }
     return std.path.join(buf, id_dir.value, "current.json")
+}
+
+pub fn path_entity_state(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
+    var mid: [320]u8 = [0_u8; 320]
+    let id_dir: Maybe<String> = path_entity_dir(mid, kind, id)
+    if !id_dir.has { return null }
+    return std.path.join(buf, id_dir.value, "state.json")
+}
+
+pub fn path_entity_history(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
+    var mid: [320]u8 = [0_u8; 320]
+    let id_dir: Maybe<String> = path_entity_dir(mid, kind, id)
+    if !id_dir.has { return null }
+    return std.path.join(buf, id_dir.value, "history")
+}
+
+pub fn path_entity_history_index(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
+    var mid: [360]u8 = [0_u8; 360]
+    let history: Maybe<String> = path_entity_history(mid, kind, id)
+    if !history.has { return null }
+    return std.path.join(buf, history.value, "index.jsonl")
+}
+
+pub fn path_entity_snapshot(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>, snapshot: Span<u8>) -> Maybe<String> {
+    if !is_safe_id(snapshot) {
+        if std.mem.len(snapshot) < 7 { return null }
+        let suffix_start: usize = std.mem.len(snapshot) - 6
+        if !std.mem.eql(snapshot[suffix_start..], ".state") { return null }
+        if !is_safe_id(snapshot[0..suffix_start]) { return null }
+    }
+    var mid: [360]u8 = [0_u8; 360]
+    let history: Maybe<String> = path_entity_history(mid, kind, id)
+    if !history.has { return null }
+    return std.path.join(buf, history.value, snapshot)
 }
 
 pub fn ensure_dir(path: String) -> Bool {

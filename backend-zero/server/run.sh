@@ -20,9 +20,25 @@ stop_child() {
 }
 trap cleanup EXIT
 trap stop_child INT TERM
+PORT="${PITD_PORT:-9657}"
+DATA_DIR="${PITD_DATA:-campaign-data}"
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --port) PORT="$2"; shift 2 ;;
+    --data) DATA_DIR="$2"; shift 2 ;;
+    *) echo "usage: $0 [--port PORT] [--data DIR]" >&2; exit 2 ;;
+  esac
+done
+export PITD_PORT="$PORT"
+export PITD_DATA="$DATA_DIR"
 # optional: wipe data for clean conformance run when PITD_RESET=1
 if [[ "${PITD_RESET:-}" == "1" ]]; then
-  rm -rf "${ROOT}/campaign-data"
+  if [[ "$DATA_DIR" = /* ]]; then
+    reset_target="$DATA_DIR"
+  else
+    reset_target="$ROOT/$DATA_DIR"
+  fi
+  rm -rf -- "$reset_target"
 fi
 set +e
 zero run "$@" &

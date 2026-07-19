@@ -23,3 +23,5 @@ the dispatch feedback loop.
   Memo: docs/pages/zero/z0-go-no-go.mdx. Recommendation: full-parallel
   (stdio hatch kept as insurance). Metrics: tasks/metrics/zero/Z0.json.
   AWAITING HUMAN GO/NO-GO before Z1 dispatch.
+- 2026-07-19: **HUMAN SIGN-OFF: GO (full-parallel)** — recorded from
+  orchestration session ("Z1 is a go"). Z0 DONE; Z1 dispatching.

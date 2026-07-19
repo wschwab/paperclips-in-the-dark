@@ -1,12 +1,16 @@
 use z1_packed
+use z2_api
 use store
+use game_settings_loader
 
 fn handle(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
-    return packed_route(request, response)
+    return route(request, response)
 }
 
 pub fn main(world: World) -> Void raises {
     let _ok: Bool = ensure_layout()
+    let _settings: Bool = load_game_settings()
+    let _synced: Bool = sync_all_current()
     check std.http.listen(world, 9657_u16)
 }
 

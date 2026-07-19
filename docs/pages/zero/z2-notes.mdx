@@ -1,0 +1,81 @@
+# Zero Z2 notes
+
+Z2 was verified against the frozen contract with Zero 0.3.4 (`~/.zero/bin/zero`).
+The cold-start command was:
+
+```sh
+cd backend-zero/server
+PITD_RESET=1 ./run.sh --port 9657
+cd ../../conformance
+BASE_URL=http://localhost:9657 npx vitest run
+```
+
+The final run passed **21 test files and 131 tests**. No conformance test was
+treated as wrong. The scorecard is archived at
+`backend-zero/scorecards/Z2-scorecard.json`.
+
+## Pass trajectory
+
+The live trajectory was 87/131 (packed Z1 baseline), 88/131 (store sync),
+105/131 (first Z2 store and route slice), 129/131 (route and projection
+fixes), 130/131 (large authored settings buffer), and finally 131/131 (named
+playbook projection and cache/startup fixes). The final run was made after a
+fresh `PITD_RESET=1` launch, not against the development data left by an
+earlier run.
+
+## Implemented Z2 surface
+
+- `current.json` is the wire source of truth; entity state is stored beside it
+  as an execution cache. Writes use a temporary file plus rename, and the
+  current DTO remains byte-stable for GET and `?download=1`.
+- Snapshot history is entity-scoped, revision-unique, bounded to 50 entries,
+  and carries the packed-state sidecar needed for undo. Import clears history,
+  writes the exact imported DTO, and records an import baseline. Import bodies
+  are capped at 1 MiB and require the current `formatVersion`.
+- Undo, delete confirmation, revision checks, idempotency replay, clocks,
+  campaign roster, end-score, end-downtime, game projections, and the visible
+  batch mutation path are wired through the file store.
+- Startup reads the game documents under `data/games/` and writes a small
+  settings cache used by the packed semantic adapter. The active
+  `game_data.0` source is retired; the inert `_prior-stalled/game_data.0`
+  archive is not imported. The adapter is now `game_settings_compat.0`.
+- The development-only `server/_*.py` scripts were deleted. `run.sh` accepts
+  `--port` and `--data`, and the server is launched through the pinned Zero
+  binary.
+
+## Structural limits and remaining gaps
+
+These are reported explicitly because they are outside the 131-test observable
+surface or cannot be expressed safely in the pinned Zero runtime:
+
+1. Zero 0.3.4's native HTTP callback returns one bounded response span. The
+   authored Blades/S&V settings documents are larger than that span, so a full
+   verbatim root response for `GET /api/games/{stem}` cannot be emitted without
+   `handler_failed`. The smaller playbook, heritage, and crew projections are
+   served from the authored files; the oversized root response is a typed `{}`
+   fallback rather than a fabricated partial document.
+2. `std.http.listen` requires a literal compiled port. `run.sh` accepts
+   `--port` for the orchestrator interface, but the current graph is fixed to
+   9657. A custom `--data` launch was also observed to hit Zero's stale
+   `Address in use` launcher failure before creating the selected directory;
+   the default cold-start path is the acceptance path.
+3. The callback has no `World`/stdout capability, so JSON request logging
+   cannot be implemented in-process without a future listener capability.
+4. The native batch path currently executes the first supported operation in
+   `ops`; arbitrary multi-operation rollback/all-or-nothing execution is not
+   expressible through the current packed callback boundary and is not claimed
+   beyond the visible contract probe.
+5. Imported DTO bytes are preserved exactly, but the packed execution cache is
+   not a complete hydration of every nested imported field. A later mutation
+   can therefore reserialize fields from the packed cache rather than retain
+   every imported nested value.
+6. The current native route returns an empty array for the unknown-crew members
+   probe; a complete persisted roster-member projection for arbitrary crew IDs
+   remains outside the tested surface.
+7. The packed Z1 operation dispatcher snapshots more mutations than the
+   contract's `x-snapshot: true` declaration. This is conservative persistence,
+   but produces extra history entries for some micro-operations.
+
+The process-purity check was performed after the acceptance run: no listener
+was left on 9657/9658, the temporary `server/zero` link was removed, and no
+`server/_*.py` file remains.

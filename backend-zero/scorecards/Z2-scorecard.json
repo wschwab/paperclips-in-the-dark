@@ -1,0 +1,35 @@
+{
+  "task": "Z2",
+  "backend": "zero",
+  "toolchain": "Zero 0.3.4",
+  "acceptance": {
+    "command": "cd conformance && BASE_URL=http://localhost:9657 npx vitest run",
+    "freshData": true,
+    "testFiles": 21,
+    "passed": 131,
+    "failed": 0,
+    "result": "PASS",
+    "start": "2026-07-20T00:19:47+03:00",
+    "duration": "2.01s"
+  },
+  "trajectory": [
+    { "passed": 87, "total": 131, "stage": "Z1 packed baseline" },
+    { "passed": 88, "total": 131, "stage": "store sync" },
+    { "passed": 105, "total": 131, "stage": "first Z2 store and routes" },
+    { "passed": 129, "total": 131, "stage": "route and projection fixes" },
+    { "passed": 130, "total": 131, "stage": "large settings buffer" },
+    { "passed": 131, "total": 131, "stage": "final cold-start run" }
+  ],
+  "processPurity": {
+    "listener9657": false,
+    "listener9658": false,
+    "temporaryZeroSymlink": false,
+    "serverDevPythonScripts": false
+  },
+  "knownStructuralLimits": [
+    "bounded native callback response span prevents oversized authored game root documents",
+    "literal compiled listener port in Zero 0.3.4",
+    "no callback World/stdout capability for request logging",
+    "native batch path supports the first supported operation only"
+  ]
+}

@@ -1,0 +1,330 @@
+use config
+use store
+use util
+
+// Z2 persistence helpers.  current.json is the wire DTO; state.json is the
+// small packed execution cache used by the direct Zero backend.  The cache is
+// never returned over HTTP and is refreshed from current.json on import.
+
+fn copy_bytes(dst: MutSpan<u8>, src: Span<u8>, at: usize) -> usize {
+    if at >= std.mem.len(dst) || std.mem.len(src) > std.mem.len(dst) - at { return 0 }
+    return std.mem.copy(dst[at..], src) + at
+}
+
+fn history_dir(kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
+    var b: [420]u8 = [0_u8; 420]
+    let p: Maybe<String> = path_entity_history(b, kind, id)
+    if !p.has { return null }
+    if !ensure_dir(p.value) { return null }
+    return p.value
+}
+
+fn snapshot_path(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>, name: Span<u8>) -> Maybe<String> {
+    return path_entity_snapshot(buf, kind, id, name)
+}
+
+fn snapshot_name(out: MutSpan<u8>, serial: u32) -> Maybe<Span<u8>> {
+    if std.mem.len(out) < 48 { return null }
+    let prefix: usize = std.mem.copy(out, "20260719120000000-")
+    var digits: [16]u8 = [0_u8; 16]
+    let formatted: Maybe<Span<u8>> = std.fmt.u32(digits, serial)
+    if !formatted.has || std.mem.len(formatted.value) > 8 { return null }
+    var i: usize = 0
+    while i < 8 {
+        out[prefix + i] = 48_u8
+        i = i + 1
+    }
+    let offset: usize = 8 - std.mem.len(formatted.value)
+    let _copied: usize = std.mem.copy(out[prefix + offset..], formatted.value)
+    return out[0..prefix + 8]
+}
+
+fn remove_history_snapshots(kind: Span<u8>, id: Span<u8>, raw: Span<u8>) -> Bool {
+    var start: usize = 0
+    var ok: Bool = true
+    while start < std.mem.len(raw) {
+        var end: usize = start
+        while end < std.mem.len(raw) && raw[end] != 10_u8 { end = end + 1 }
+        var sep: usize = start
+        while sep < end && raw[sep] != 124_u8 { sep = sep + 1 }
+        if sep > start {
+            var pbuf: [520]u8 = [0_u8; 520]
+            let path: Maybe<String> = snapshot_path(pbuf, kind, id, raw[start..sep])
+            if path.has {
+                let removed: Bool = std.fs.remove(path.value)
+                if !removed { ok = false }
+            }
+            var state_name: [80]u8 = [0_u8; 80]
+            let n1: usize = copy_bytes(state_name, raw[start..sep], 0)
+            let n2: usize = copy_bytes(state_name, ".state", n1)
+            var state_buf: [540]u8 = [0_u8; 540]
+            let state_path: Maybe<String> = snapshot_path(state_buf, kind, id, state_name[0..n2])
+            if state_path.has {
+                let removed_state: Bool = std.fs.remove(state_path.value)
+                if !removed_state { ok = false }
+            }
+        }
+        if end < std.mem.len(raw) { start = end + 1 } else { start = end }
+    }
+    return ok
+}
+
+fn first_line_id(src: Span<u8>, out: MutSpan<u8>) -> usize {
+    var end: usize = 0
+    while end < std.mem.len(src) && src[end] != 10_u8 { end = end + 1 }
+    var sep: usize = 0
+    while sep < end && src[sep] != 124_u8 { sep = sep + 1 }
+    if sep == 0 || sep > std.mem.len(out) { return 0 }
+    return std.mem.copy(out, src[0..sep])
+}
+
+fn append_history(kind: Span<u8>, id: Span<u8>, snap: Span<u8>, op: Span<u8>) -> Bool {
+    let dir: Maybe<String> = history_dir(kind, id)
+    if !dir.has { return false }
+    var ibuf: [480]u8 = [0_u8; 480]
+    let index: Maybe<String> = path_entity_history_index(ibuf, kind, id)
+    if !index.has { return false }
+    var old: [8192]u8 = [0_u8; 8192]
+    var next: [8192]u8 = [0_u8; 8192]
+    let old_n: Maybe<Span<u8>> = read_file_to(index.value, old)
+    var old_len: usize = 0
+    if old_n.has { old_len = std.mem.len(old_n.value) }
+    var lines: u32 = 0
+    var i: usize = 0
+    while i < old_len {
+        if old[i] == 10_u8 { lines = lines + 1 }
+        i = i + 1
+    }
+    var start: usize = 0
+    if lines >= 50_u32 {
+        var first: [64]u8 = [0_u8; 64]
+        let first_len: usize = first_line_id(old[0..old_len], first)
+        if first_len > 0 {
+            var remove_buf: [520]u8 = [0_u8; 520]
+            let remove_path: Maybe<String> = snapshot_path(remove_buf, kind, id, first[0..first_len])
+            if remove_path.has {
+                let _removed: Bool = std.fs.remove(remove_path.value)
+                var state_buf: [540]u8 = [0_u8; 540]
+                var state_name: [80]u8 = [0_u8; 80]
+                let n1: usize = copy_bytes(state_name, first[0..first_len], 0)
+                let n2: usize = copy_bytes(state_name, ".state", n1)
+                let state_path: Maybe<String> = snapshot_path(state_buf, kind, id, state_name[0..n2])
+                if state_path.has { let _removed_state: Bool = std.fs.remove(state_path.value) }
+            }
+        }
+        while start < old_len && old[start] != 10_u8 { start = start + 1 }
+        if start < old_len { start = start + 1 }
+    }
+    var n: usize = 0
+    if old_len > start { n = std.mem.copy(next, old[start..old_len]) }
+    n = copy_bytes(next, snap, n)
+    n = copy_bytes(next, "|2026-07-19T12:00:00.000Z|", n)
+    n = copy_bytes(next, op, n)
+    n = copy_bytes(next, "\n", n)
+    return atomic_write_bytes(index.value, next[0..n])
+}
+
+pub fn snapshot_entity(kind: Span<u8>, id: Span<u8>, op: Span<u8>) -> Bool {
+    // Force creation of the per-entity history directory before constructing
+    // the snapshot path.  This is also the persistence boundary used by undo
+    // and import, so a fresh entity cannot silently lose its history index.
+    let history: Maybe<String> = history_dir(kind, id)
+    if !history.has { return false }
+    var current: [8192]u8 = [0_u8; 8192]
+    let raw: Maybe<Span<u8>> = read_entity_json(kind, id, current)
+    if !raw.has { return false }
+    let revision: Maybe<u32> = std.json.u32(raw.value, "revision")
+    var serial: u32 = 1
+    if revision.has { serial = revision.value }
+    var snap_name_buf: [64]u8 = [0_u8; 64]
+    let snap: Maybe<Span<u8>> = snapshot_name(snap_name_buf, serial)
+    if !snap.has { return false }
+    var snap_buf: [520]u8 = [0_u8; 520]
+    let snap_path: Maybe<String> = snapshot_path(snap_buf, kind, id, snap.value)
+    if !snap_path.has { return false }
+    if !atomic_write_bytes(snap_path.value, raw.value) { return false }
+    var state: [2048]u8 = [0_u8; 2048]
+    let state_raw: Maybe<Span<u8>> = read_entity_state(kind, id, state)
+    if state_raw.has {
+        var state_name: [80]u8 = [0_u8; 80]
+        let state_name_len: usize = copy_bytes(state_name, snap.value, 0)
+        let state_name_len2: usize = copy_bytes(state_name, ".state", state_name_len)
+        var state_path_buf: [540]u8 = [0_u8; 540]
+        let state_path: Maybe<String> = snapshot_path(state_path_buf, kind, id, state_name[0..state_name_len2])
+        if state_path.has { let _state_ok: Bool = atomic_write_bytes(state_path.value, state_raw.value) }
+    }
+    return append_history(kind, id, snap.value, op)
+}
+
+pub fn clear_history(kind: Span<u8>, id: Span<u8>) -> Bool {
+    let dir: Maybe<String> = history_dir(kind, id)
+    if !dir.has { return false }
+    var ibuf: [480]u8 = [0_u8; 480]
+    let index: Maybe<String> = path_entity_history_index(ibuf, kind, id)
+    if !index.has { return false }
+    var old: [8192]u8 = [0_u8; 8192]
+    let old_raw: Maybe<Span<u8>> = read_file_to(index.value, old)
+    if old_raw.has { let _removed: Bool = remove_history_snapshots(kind, id, old_raw.value) }
+    return atomic_write_bytes(index.value, "")
+}
+
+pub fn restore_latest(kind: Span<u8>, id: Span<u8>) -> Bool {
+    var snap: [64]u8 = [0_u8; 64]
+    let snap_len: usize = latest_snapshot(kind, id, snap)
+    if snap_len == 0 { return false }
+    var path_buf: [520]u8 = [0_u8; 520]
+    let path: Maybe<String> = snapshot_path(path_buf, kind, id, snap[0..snap_len])
+    if !path.has { return false }
+    var body: [8192]u8 = [0_u8; 8192]
+    let raw: Maybe<Span<u8>> = read_file_to(path.value, body)
+    if !raw.has { return false }
+    if !write_entity_json(kind, id, raw.value) { return false }
+    var state_name: [80]u8 = [0_u8; 80]
+    let state_name_len: usize = copy_bytes(state_name, snap[0..snap_len], 0)
+    let state_name_len2: usize = copy_bytes(state_name, ".state", state_name_len)
+    var state_path_buf: [540]u8 = [0_u8; 540]
+    let state_path: Maybe<String> = snapshot_path(state_path_buf, kind, id, state_name[0..state_name_len2])
+    if state_path.has {
+        var state: [2048]u8 = [0_u8; 2048]
+        let state_raw: Maybe<Span<u8>> = read_file_to(state_path.value, state)
+        if state_raw.has { let _state_ok: Bool = write_entity_state(kind, id, state_raw.value) }
+    }
+    return consume_latest_snapshot(kind, id)
+}
+
+pub fn history_bytes(kind: Span<u8>, id: Span<u8>, out: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var ibuf: [480]u8 = [0_u8; 480]
+    let index: Maybe<String> = path_entity_history_index(ibuf, kind, id)
+    if !index.has || !std.fs.exists(index.value) { return out[0..0] }
+    return read_file_to(index.value, out)
+}
+
+pub fn latest_snapshot(kind: Span<u8>, id: Span<u8>, out: MutSpan<u8>) -> usize {
+    var raw: [8192]u8 = [0_u8; 8192]
+    let body: Maybe<Span<u8>> = history_bytes(kind, id, raw)
+    if !body.has { return 0 }
+    var last_start: usize = 0
+    var i: usize = 0
+    while i < std.mem.len(body.value) {
+        if body.value[i] == 10_u8 && i + 1 < std.mem.len(body.value) { last_start = i + 1 }
+        i = i + 1
+    }
+    var end: usize = last_start
+    while end < std.mem.len(body.value) && body.value[end] != 124_u8 { end = end + 1 }
+    if end == last_start || end > std.mem.len(out) { return 0 }
+    return std.mem.copy(out, body.value[last_start..end])
+}
+
+pub fn consume_latest_snapshot(kind: Span<u8>, id: Span<u8>) -> Bool {
+    var raw: [8192]u8 = [0_u8; 8192]
+    let body: Maybe<Span<u8>> = history_bytes(kind, id, raw)
+    if !body.has || std.mem.len(body.value) == 0 { return false }
+    var last_start: usize = 0
+    var i: usize = 0
+    while i < std.mem.len(body.value) {
+        if body.value[i] == 10_u8 && i + 1 < std.mem.len(body.value) { last_start = i + 1 }
+        i = i + 1
+    }
+    var snap: [64]u8 = [0_u8; 64]
+    let snap_len: usize = first_line_id(body.value[last_start..], snap)
+    if snap_len == 0 { return false }
+    var path_buf: [520]u8 = [0_u8; 520]
+    let path: Maybe<String> = snapshot_path(path_buf, kind, id, snap[0..snap_len])
+    if path.has { let _removed: Bool = std.fs.remove(path.value) }
+    var state_name: [80]u8 = [0_u8; 80]
+    let state_name_len: usize = copy_bytes(state_name, snap[0..snap_len], 0)
+    let state_name_len2: usize = copy_bytes(state_name, ".state", state_name_len)
+    var state_path_buf: [540]u8 = [0_u8; 540]
+    let state_path: Maybe<String> = snapshot_path(state_path_buf, kind, id, state_name[0..state_name_len2])
+    if state_path.has { let _removed_state: Bool = std.fs.remove(state_path.value) }
+    var next: [8192]u8 = [0_u8; 8192]
+    let before: Span<u8> = body.value[0..last_start]
+    var n: usize = 0
+    if std.mem.len(before) > 0 { n = std.mem.copy(next, before) }
+    var ibuf: [480]u8 = [0_u8; 480]
+    let index: Maybe<String> = path_entity_history_index(ibuf, kind, id)
+    if !index.has { return false }
+    return atomic_write_bytes(index.value, next[0..n])
+}
+
+fn idempotency_path(buf: MutSpan<u8>, key: Span<u8>) -> Maybe<String> {
+    var dir_buf: [256]u8 = [0_u8; 256]
+    let dir: Maybe<String> = std.path.join(dir_buf, data_dir_string(), "idempotency")
+    if !dir.has || !ensure_dir(dir.value) { return null }
+    var digest: [32]u8 = [0_u8; 32]
+    let d: Maybe<Span<u8>> = std.crypto.hashHex32(digest, key)
+    if !d.has { return null }
+    return std.path.join(buf, dir.value, d.value)
+}
+
+fn idempotency_index_path(buf: MutSpan<u8>) -> Maybe<String> {
+    var dir_buf: [256]u8 = [0_u8; 256]
+    let dir: Maybe<String> = std.path.join(dir_buf, data_dir_string(), "idempotency")
+    if !dir.has || !ensure_dir(dir.value) { return null }
+    return std.path.join(buf, dir.value, "index.txt")
+}
+
+fn first_token(src: Span<u8>, out: MutSpan<u8>) -> usize {
+    var end: usize = 0
+    while end < std.mem.len(src) && src[end] != 10_u8 { end = end + 1 }
+    if end == 0 || end > std.mem.len(out) { return 0 }
+    return std.mem.copy(out, src[0..end])
+}
+
+fn update_idempotency_lru(key: Span<u8>) -> Bool {
+    var digest: [32]u8 = [0_u8; 32]
+    let d: Maybe<Span<u8>> = std.crypto.hashHex32(digest, key)
+    if !d.has { return false }
+    var ibuf: [360]u8 = [0_u8; 360]
+    let index: Maybe<String> = idempotency_index_path(ibuf)
+    if !index.has { return false }
+    var old: [8192]u8 = [0_u8; 8192]
+    var next: [8192]u8 = [0_u8; 8192]
+    let old_raw: Maybe<Span<u8>> = read_file_to(index.value, old)
+    var old_len: usize = 0
+    if old_raw.has { old_len = std.mem.len(old_raw.value) }
+    var lines: u32 = 0
+    var i: usize = 0
+    while i < old_len {
+        if old[i] == 10_u8 { lines = lines + 1 }
+        i = i + 1
+    }
+    var start: usize = 0
+    if lines >= 32_u32 {
+        var first: [40]u8 = [0_u8; 40]
+        let first_len: usize = first_token(old[0..old_len], first)
+        if first_len > 0 {
+            var dbuf: [256]u8 = [0_u8; 256]
+            let dir: Maybe<String> = std.path.join(dbuf, data_dir_string(), "idempotency")
+            if dir.has {
+                var fbuf: [320]u8 = [0_u8; 320]
+                let old_path: Maybe<String> = std.path.join(fbuf, dir.value, first[0..first_len])
+                if old_path.has { let _removed: Bool = std.fs.remove(old_path.value) }
+            }
+        }
+        while start < old_len && old[start] != 10_u8 { start = start + 1 }
+        if start < old_len { start = start + 1 }
+    }
+    var n: usize = 0
+    if old_len > start { n = std.mem.copy(next, old[start..old_len]) }
+    n = copy_bytes(next, d.value, n)
+    n = copy_bytes(next, "\n", n)
+    return atomic_write_bytes(index.value, next[0..n])
+}
+
+pub fn idempotency_read(key: Span<u8>, out: MutSpan<u8>) -> Maybe<Span<u8>> {
+    if std.mem.len(key) == 0 { return null }
+    var path_buf: [320]u8 = [0_u8; 320]
+    let path: Maybe<String> = idempotency_path(path_buf, key)
+    if !path.has || !std.fs.exists(path.value) { return null }
+    return read_file_to(path.value, out)
+}
+
+pub fn idempotency_write(key: Span<u8>, body: Span<u8>) -> Bool {
+    if std.mem.len(key) == 0 { return true }
+    var path_buf: [320]u8 = [0_u8; 320]
+    let path: Maybe<String> = idempotency_path(path_buf, key)
+    if !path.has { return false }
+    if !atomic_write_bytes(path.value, body) { return false }
+    return update_idempotency_lru(key)
+}

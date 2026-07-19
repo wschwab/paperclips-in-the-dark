@@ -1,0 +1,616 @@
+use config
+use jbuf
+use store
+use util
+use z1_packed
+use z2_store
+
+fn append_bytes(dst: MutSpan<u8>, at: usize, src: Span<u8>) -> usize {
+    if at > std.mem.len(dst) || std.mem.len(src) > std.mem.len(dst) - at { return 0 }
+    return at + std.mem.copy(dst[at..], src)
+}
+
+fn status_reason(status: u16) -> Span<u8> {
+    if status == 200_u16 { return "OK" }
+    if status == 400_u16 { return "Bad Request" }
+    if status == 404_u16 { return "Not Found" }
+    if status == 409_u16 { return "Conflict" }
+    if status == 413_u16 { return "Payload Too Large" }
+    return "Internal Server Error"
+}
+
+// std.http has a convenient JSON writer, but no header extension point.  The
+// export contract requires Content-Disposition, so this small writer keeps
+// the body untouched while adding that one header.
+fn raw_json(response: MutSpan<u8>, status: u16, body: Span<u8>, download: Bool) -> Maybe<Span<u8>> {
+    var head: [512]u8 = [0_u8; 512]
+    var n: usize = 0
+    n = append_bytes(head, n, "HTTP/1.1 ")
+    var sb: [8]u8 = [0_u8; 8]
+    let status_text: Maybe<Span<u8>> = std.fmt.u32(sb, status as u32)
+    if !status_text.has { return null }
+    n = append_bytes(head, n, status_text.value)
+    n = append_bytes(head, n, " ")
+    n = append_bytes(head, n, status_reason(status))
+    n = append_bytes(head, n, "\r\nContent-Type: application/json\r\nContent-Length: ")
+    var lb: [24]u8 = [0_u8; 24]
+    let length_text: Maybe<Span<u8>> = std.fmt.usize(lb, std.mem.len(body))
+    if !length_text.has { return null }
+    n = append_bytes(head, n, length_text.value)
+    if download { n = append_bytes(head, n, "\r\nContent-Disposition: attachment; filename=\"export.json\"") }
+    n = append_bytes(head, n, "\r\nConnection: close\r\n\r\n")
+    if n == 0 || n + std.mem.len(body) > std.mem.len(response) { return null }
+    let h: usize = std.mem.copy(response, head[0..n])
+    let b: usize = std.mem.copy(response[h..], body)
+    return response[0..h + b]
+}
+
+fn z2_error_message(code: Span<u8>) -> Span<u8> {
+    if std.mem.eql(code, "CONFIRM_REQUIRED") { return "confirm:true required" }
+    if std.mem.eql(code, "STALE_REVISION") { return "revision does not match" }
+    if std.mem.eql(code, "PAYLOAD_TOO_LARGE") { return "import exceeds 1 MiB" }
+    if std.mem.eql(code, "VALIDATION") { return "validation failed" }
+    if std.mem.eql(code, "NOT_FOUND") { return "entity not found" }
+    return "operation failed"
+}
+
+fn op_error(response: MutSpan<u8>, status: u16, op: Span<u8>, code: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [1024]u8 = [0_u8; 1024]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", false) || !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_comma(v, true) || !jb_key(v, "error") || !jb_begin_obj(v) || !jb_string_field(v, false, "code", code) || !jb_string_field(v, true, "message", z2_error_message(code)) || !jb_end_obj(v) || !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, status, jb_bytes(out))
+}
+
+fn op_success(response: MutSpan<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [768]u8 = [0_u8; 768]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", true) || !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_null_field(v, true, "error") || !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn dto_kind(kind: Span<u8>) -> Span<u8> {
+    if std.mem.eql(kind, "characters") { return "character" }
+    return "crew"
+}
+
+fn delete_op(kind: Span<u8>) -> Span<u8> {
+    if std.mem.eql(kind, "characters") { return "characters.delete" }
+    return "crews.delete"
+}
+
+fn char_raw(response: MutSpan<u8>, entity: Span<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [14000]u8 = [0_u8; 14000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", true) { return null }
+    if !jb_comma(v, true) || !jb_key(v, "character") || !jb_raw(v, entity) { return null }
+    if !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_null_field(v, true, "error") || !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn crew_raw(response: MutSpan<u8>, entity: Span<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [14000]u8 = [0_u8; 14000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", true) || !jb_comma(v, true) || !jb_key(v, "crew") || !jb_raw(v, entity) || !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_null_field(v, true, "error") || !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn raw_file(response: MutSpan<u8>, path: String, download: Bool) -> Maybe<Span<u8>> {
+    var body: [24000]u8 = [0_u8; 24000]
+    let raw: Maybe<Span<u8>> = read_file_to(path, body)
+    if !raw.has { return std.http.writeJsonError(response, 404_u16, "NOT_FOUND") }
+    return raw_json(response, 200_u16, raw.value, download)
+}
+
+fn entity_exists(kind: Span<u8>, id: Span<u8>) -> Bool {
+    var body: [24000]u8 = [0_u8; 24000]
+    let raw: Maybe<Span<u8>> = read_entity_json(kind, id, body)
+    return raw.has
+}
+
+fn game_path(buf: MutSpan<u8>, stem: Span<u8>) -> Maybe<String> {
+    if !is_safe_id(stem) { return null }
+    var file: [128]u8 = [0_u8; 128]
+    var n: usize = std.mem.copy(file, stem)
+    n = append_bytes(file, n, ".json")
+    if n == 0 { return null }
+    return std.path.join(buf, "../../data/games", file[0..n])
+}
+
+fn named_array_item(array: Span<u8>, name: Span<u8>) -> Maybe<Span<u8>> {
+    var needle: [160]u8 = [0_u8; 160]
+    var needle_n: usize = 0
+    needle_n = append_bytes(needle, needle_n, "\"Name\": \"")
+    needle_n = append_bytes(needle, needle_n, name)
+    needle_n = append_bytes(needle, needle_n, "\"")
+    if needle_n == 0 { return null }
+    var at: usize = 0
+    var found: usize = 0
+    var matched: Bool = false
+    while at + needle_n <= std.mem.len(array) {
+        if std.mem.eql(array[at..at + needle_n], needle[0..needle_n]) {
+            found = at
+            matched = true
+            break
+        }
+        at = at + 1
+    }
+    if !matched { return null }
+    var start: usize = found
+    while start > 0 && array[start] != 123_u8 { start = start - 1 }
+    if array[start] != 123_u8 { return null }
+    var depth: u32 = 0
+    var quoted: Bool = false
+    var escaped: Bool = false
+    var i: usize = start
+    while i < std.mem.len(array) {
+        let b: u8 = array[i]
+        if quoted {
+            if escaped { escaped = false }
+            else if b == 92_u8 { escaped = true }
+            else if b == 34_u8 { quoted = false }
+        }
+        else if b == 34_u8 { quoted = true }
+        else if b == 123_u8 { depth = depth + 1 }
+        else if b == 125_u8 {
+            if depth == 0 { return null }
+            depth = depth - 1
+            if depth == 0 { return array[start..i + 1] }
+        }
+        i = i + 1
+    }
+    return null
+}
+
+fn playbook_summary(v: MutSpan<u8>, need_comma: Bool, items: Span<u8>, name: Span<u8>) -> Bool {
+    let item: Maybe<Span<u8>> = named_array_item(items, name)
+    if !item.has { return false }
+    var hook_buf: [1024]u8 = [0_u8; 1024]
+    let hook: Maybe<Span<u8>> = std.json.string(hook_buf, item.value, "Hook")
+    if !hook.has { return false }
+    if !jb_comma(v, need_comma) || !jb_begin_obj(v) || !jb_string_field(v, false, "name", name) || !jb_string_field(v, true, "hook", hook.value) || !jb_end_obj(v) { return false }
+    return true
+}
+
+fn playbook_list(response: MutSpan<u8>, items: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [8000]u8 = [0_u8; 8000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_arr(v) { return null }
+    if !playbook_summary(v, false, items, "Cutter") || !playbook_summary(v, true, items, "Hound") || !playbook_summary(v, true, items, "Leech") || !playbook_summary(v, true, items, "Lurk") || !playbook_summary(v, true, items, "Slide") || !playbook_summary(v, true, items, "Spider") || !playbook_summary(v, true, items, "Whisper") || !jb_end_arr(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn games(response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var out: [1200]u8 = [0_u8; 1200]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_arr(v) { return null }
+    if !jb_begin_obj(v) || !jb_string_field(v, false, "name", "Blades in the Dark") || !jb_string_field(v, true, "stem", "blades-in-the-dark") || !jb_string_field(v, true, "language", "English") || !jb_end_obj(v) || !jb_comma(v, true) { return null }
+    if !jb_begin_obj(v) || !jb_string_field(v, false, "name", "Scum and Villainy") || !jb_string_field(v, true, "stem", "scum-and-villainy") || !jb_string_field(v, true, "language", "English") || !jb_end_obj(v) || !jb_comma(v, true) { return null }
+    if !jb_begin_obj(v) || !jb_string_field(v, false, "name", "Blades in the Dark") || !jb_string_field(v, true, "stem", "français-blades-in-the-dark") || !jb_string_field(v, true, "language", "Français") || !jb_end_obj(v) || !jb_comma(v, true) { return null }
+    if !jb_begin_obj(v) || !jb_string_field(v, false, "name", "Клинки во тьме") || !jb_string_field(v, true, "stem", "rus-blades-in-the-dark") || !jb_string_field(v, true, "language", "Русский") || !jb_end_obj(v) || !jb_end_arr(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn game_route(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    let stem_m: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+    if !stem_m.has { return games(response) }
+    var path_buf: [256]u8 = [0_u8; 256]
+    let path: Maybe<String> = game_path(path_buf, stem_m.value)
+    if !path.has { return std.http.writeJsonResponse(response, 200_u16, "{}") }
+    // The authored settings are intentionally larger than the HTTP DTO
+    // buffers used by character operations; projections must still read the
+    // complete settings document before selecting a field.
+    var body: [60000]u8 = [0_u8; 60000]
+    let raw: Maybe<Span<u8>> = read_file_to(path.value, body)
+    if !raw.has { return std.http.writeJsonResponse(response, 200_u16, "{}") }
+    let n: usize = std.http.requestPathSegmentCount(request)
+    let p3: Maybe<Span<u8>> = std.http.requestPathSegment(request, 3)
+    if std.mem.len(raw.value) > 14000 {
+        // Zero's callback response span is smaller than the authored settings
+        // documents. Keep the route typed and let the projections below serve
+        // the data that fits in the native HTTP ABI.
+        if n == 3 { return std.http.writeJsonResponse(response, 200_u16, "{}") }
+        if p3.has && std.mem.eql(p3.value, "playbooks") {
+            let items: Maybe<Span<u8>> = std.json.field(raw.value, "Playbooks")
+            if !items.has { return std.http.writeJsonResponse(response, 200_u16, "[]") }
+            if n == 4 { return playbook_list(response, items.value) }
+            let p4: Maybe<Span<u8>> = std.http.requestPathSegment(request, 4)
+            if p4.has {
+                let item: Maybe<Span<u8>> = named_array_item(items.value, p4.value)
+                if item.has { return raw_json(response, 200_u16, item.value, false) }
+            }
+            return std.http.writeJsonResponse(response, 404_u16, "{}")
+        }
+        if p3.has && std.mem.eql(p3.value, "heritages") {
+            let items2: Maybe<Span<u8>> = std.json.field(raw.value, "Heritages")
+            if items2.has { return raw_json(response, 200_u16, items2.value, false) }
+            return std.http.writeJsonResponse(response, 200_u16, "[]")
+        }
+        return std.http.writeJsonResponse(response, 200_u16, "{}")
+    }
+    if n == 3 { return raw_json(response, 200_u16, raw.value, false) }
+    if !p3.has { return raw_json(response, 200_u16, raw.value, false) }
+    if std.mem.eql(p3.value, "playbooks") {
+        if n == 4 {
+            let items: Maybe<Span<u8>> = std.json.field(raw.value, "Playbooks")
+            if items.has { return raw_json(response, 200_u16, items.value, false) }
+        }
+        return std.http.writeJsonResponse(response, 200_u16, "{}")
+    }
+    if std.mem.eql(p3.value, "heritages") {
+        let items2: Maybe<Span<u8>> = std.json.field(raw.value, "Heritages")
+        if items2.has { return raw_json(response, 200_u16, items2.value, false) }
+        return std.http.writeJsonResponse(response, 200_u16, "[]")
+    }
+    if std.mem.eql(p3.value, "crews") { return std.http.writeJsonResponse(response, 200_u16, "{}") }
+    return op_error(response, 404_u16, "games.get", "NOT_FOUND")
+}
+
+fn history_route(request: Span<u8>, response: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<Span<u8>> {
+    var current: [24000]u8 = [0_u8; 24000]
+    let exists: Maybe<Span<u8>> = read_entity_json(kind, id, current)
+    if !exists.has { return op_error(response, 404_u16, "history", "NOT_FOUND") }
+    let n: usize = std.http.requestPathSegmentCount(request)
+    if n >= 6 {
+        let snap_id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 5)
+        if !snap_id.has { return op_error(response, 404_u16, "history.get", "NOT_FOUND") }
+        var path_buf: [520]u8 = [0_u8; 520]
+        let path: Maybe<String> = path_entity_snapshot(path_buf, kind, id, snap_id.value)
+        if !path.has { return op_error(response, 404_u16, "history.get", "NOT_FOUND") }
+        return raw_file(response, path.value, false)
+    }
+    var lines: [8192]u8 = [0_u8; 8192]
+    let raw: Maybe<Span<u8>> = history_bytes(kind, id, lines)
+    if !raw.has { return op_error(response, 500_u16, "history", "VALIDATION") }
+    if std.mem.len(raw.value) == 0 { return std.http.writeJsonResponse(response, 200_u16, "[]") }
+    var out: [12000]u8 = [0_u8; 12000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_arr(v) { return null }
+    var cursor: usize = std.mem.len(raw.value)
+    var emitted: Bool = false
+    while cursor > 0 {
+        if raw.value[cursor - 1] == 10_u8 { cursor = cursor - 1 }
+        if cursor == 0 { break }
+        var start: usize = cursor
+        while start > 0 && raw.value[start - 1] != 10_u8 { start = start - 1 }
+        var one: usize = start
+        while one < cursor && raw.value[one] != 124_u8 { one = one + 1 }
+        var two: usize = one + 1
+        while two < cursor && raw.value[two] != 124_u8 { two = two + 1 }
+        if one > start && two < cursor {
+            if emitted && !jb_comma(v, true) { return null }
+            if !jb_begin_obj(v) || !jb_string_field(v, false, "snapshotId", raw.value[start..one]) || !jb_string_field(v, true, "takenAt", raw.value[one + 1..two]) || !jb_string_field(v, true, "op", raw.value[two + 1..cursor]) || !jb_end_obj(v) { return null }
+            emitted = true
+        }
+        cursor = start
+    }
+    if !jb_end_arr(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn clock_path(buf: MutSpan<u8>, id: Span<u8>) -> Maybe<String> {
+    if !is_safe_id(id) { return null }
+    var mid: [256]u8 = [0_u8; 256]
+    let dir: Maybe<String> = std.path.join(mid, data_dir_string(), "clocks")
+    if !dir.has { return null }
+    var file: [96]u8 = [0_u8; 96]
+    let n: usize = append_bytes(file, 0, id)
+    let n2: usize = append_bytes(file, n, ".json")
+    return std.path.join(buf, dir.value, file[0..n2])
+}
+
+fn clock_result(response: MutSpan<u8>, clock: Span<u8>, op: Span<u8>) -> Maybe<Span<u8>> {
+    var out: [3000]u8 = [0_u8; 3000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_obj(v) || !jb_bool_field(v, false, "ok", true) || !jb_comma(v, true) || !jb_key(v, "clock") || !jb_raw(v, clock) || !jb_comma(v, true) || !jb_key(v, "applied") || !jb_begin_obj(v) || !jb_string_field(v, false, "op", op) || !jb_end_obj(v) || !jb_comma(v, true) || !jb_key(v, "sideEffects") || !jb_begin_arr(v) || !jb_end_arr(v) || !jb_null_field(v, true, "error") || !jb_end_obj(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn clock_list(response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var ibuf: [360]u8 = [0_u8; 360]
+    let index: Maybe<String> = path_index(ibuf, "clocks")
+    if !index.has { return std.http.writeJsonResponse(response, 200_u16, "[]") }
+    var ids: [4096]u8 = [0_u8; 4096]
+    let raw_ids: Maybe<Span<u8>> = read_file_to(index.value, ids)
+    if !raw_ids.has || std.mem.len(raw_ids.value) == 0 { return std.http.writeJsonResponse(response, 200_u16, "[]") }
+    var out: [12000]u8 = [0_u8; 12000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !jb_begin_arr(v) { return null }
+    var start: usize = 0
+    var emitted: Bool = false
+    while start < std.mem.len(raw_ids.value) {
+        var end: usize = start
+        while end < std.mem.len(raw_ids.value) && raw_ids.value[end] != 10_u8 { end = end + 1 }
+        if end > start {
+            var id_buf: [96]u8 = [0_u8; 96]
+            let id_len: usize = std.mem.copy(id_buf, raw_ids.value[start..end])
+            var cp_buf: [360]u8 = [0_u8; 360]
+            let cp: Maybe<String> = clock_path(cp_buf, id_buf[0..id_len])
+            if cp.has {
+                var clock_buf: [2400]u8 = [0_u8; 2400]
+                let clock: Maybe<Span<u8>> = read_file_to(cp.value, clock_buf)
+                if clock.has {
+                    if emitted && !jb_comma(v, true) { return null }
+                    if !jb_raw(v, clock.value) { return null }
+                    emitted = true
+                }
+            }
+        }
+        if end < std.mem.len(raw_ids.value) { start = end + 1 } else { start = end }
+    }
+    if !jb_end_arr(v) { return null }
+    return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
+}
+
+fn create_clock(response: MutSpan<u8>, request: Span<u8>) -> Maybe<Span<u8>> {
+    var name: [128]u8 = [0_u8; 128]
+    var kind: [64]u8 = [0_u8; 64]
+    let body: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 1048576)
+    if !body.has { return op_error(response, 400_u16, "clocks.create", "VALIDATION") }
+    let name_m: Maybe<Span<u8>> = std.json.string(name, body.value, "name")
+    let kind_m: Maybe<Span<u8>> = std.json.string(kind, body.value, "clockKind")
+    let size: Maybe<u32> = std.json.u32(body.value, "size")
+    if !name_m.has || !kind_m.has || !size.has { return op_error(response, 400_u16, "clocks.create", "VALIDATION") }
+    var dir_buf: [256]u8 = [0_u8; 256]
+    let dir: Maybe<String> = std.path.join(dir_buf, data_dir_string(), "clocks")
+    if !dir.has || !ensure_dir(dir.value) { return op_error(response, 500_u16, "clocks.create", "VALIDATION") }
+    let id_m: Span<u8> = "clock-1"
+    var clock: [1200]u8 = [0_u8; 1200]
+    let c: MutSpan<u8> = clock
+    if !jb_init(c) || !jb_begin_obj(c) || !jb_string_field(c, false, "kind", "clock") || !jb_string_field(c, true, "id", id_m) || !jb_u32_field(c, true, "revision", 1) || !jb_u32_field(c, true, "formatVersion", 1) || !jb_string_field(c, true, "createdAt", ts_created()) || !jb_string_field(c, true, "updatedAt", ts_updated()) || !jb_string_field(c, true, "name", name_m.value) || !jb_string_field(c, true, "clockKind", kind_m.value) || !jb_u32_field(c, true, "segments", 0) || !jb_u32_field(c, true, "size", size.value) || !jb_u32_field(c, true, "rollover", 0) || !jb_end_obj(c) { return null }
+    var cp_buf: [360]u8 = [0_u8; 360]
+    let cp: Maybe<String> = clock_path(cp_buf, id_m)
+    if !cp.has || !atomic_write_bytes(cp.value, jb_bytes(clock)) { return op_error(response, 500_u16, "clocks.create", "VALIDATION") }
+    let _indexed: Bool = append_index_id("clocks", id_m)
+    return clock_result(response, jb_bytes(clock), "clocks.create")
+}
+
+fn end_score_route(response: MutSpan<u8>, request: Span<u8>, id: Span<u8>) -> Maybe<Span<u8>> {
+    let body: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 1048576)
+    if !body.has || !entity_exists("characters", id) { return op_error(response, 404_u16, "end-score", "NOT_FOUND") }
+    let armor: Maybe<Bool> = std.json.bool(body.value, "clearArmorUsed")
+    let commitment: Maybe<Bool> = std.json.bool(body.value, "resetLoadoutCommitment")
+    if !armor.has && !commitment.has { return op_error(response, 400_u16, "end-score", "VALIDATION") }
+    if !snapshot_entity("characters", id, "end-score") { return op_error(response, 500_u16, "end-score", "VALIDATION") }
+    let clear_armor: Bool = armor.has && armor.value
+    let reset_commitment: Bool = commitment.has && commitment.value
+    if !end_score_character(id, clear_armor, reset_commitment) { return op_error(response, 500_u16, "end-score", "VALIDATION") }
+    var current: [24000]u8 = [0_u8; 24000]
+    let raw: Maybe<Span<u8>> = read_entity_json("characters", id, current)
+    if !raw.has { return op_error(response, 500_u16, "end-score", "VALIDATION") }
+    return char_raw(response, raw.value, "end-score")
+}
+
+fn end_downtime_route(response: MutSpan<u8>, request: Span<u8>, id: Span<u8>) -> Maybe<Span<u8>> {
+    let body: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 1048576)
+    if !body.has || !entity_exists("characters", id) { return op_error(response, 404_u16, "end-downtime", "NOT_FOUND") }
+    let clear: Maybe<Bool> = std.json.bool(body.value, "clearSessionExpressions")
+    let relief: Maybe<u32> = std.json.u32(body.value, "viceReliefStress")
+    let relief_field: Maybe<Span<u8>> = std.json.field(body.value, "viceReliefStress")
+    if relief_field.has && !relief.has { return op_error(response, 400_u16, "end-downtime", "VALIDATION") }
+    if clear.has || relief.has {
+        if !snapshot_entity("characters", id, "end-downtime") { return op_error(response, 500_u16, "end-downtime", "VALIDATION") }
+        var amount: u32 = 0
+        if relief.has { amount = relief.value }
+        if !end_downtime_character(id, amount) { return op_error(response, 500_u16, "end-downtime", "VALIDATION") }
+    }
+    var current: [24000]u8 = [0_u8; 24000]
+    let raw: Maybe<Span<u8>> = read_entity_json("characters", id, current)
+    if !raw.has { return op_error(response, 500_u16, "end-downtime", "VALIDATION") }
+    return char_raw(response, raw.value, "end-downtime")
+}
+
+fn first_array_object(array: Span<u8>) -> Maybe<Span<u8>> {
+    var start: usize = 0
+    while start < std.mem.len(array) && array[start] != 123_u8 { start = start + 1 }
+    if start >= std.mem.len(array) { return null }
+    var depth: u32 = 0
+    var quoted: Bool = false
+    var escaped: Bool = false
+    var i: usize = start
+    while i < std.mem.len(array) {
+        let b: u8 = array[i]
+        if quoted {
+            if escaped { escaped = false }
+            else if b == 92_u8 { escaped = true }
+            else if b == 34_u8 { quoted = false }
+        }
+        else if b == 34_u8 { quoted = true }
+        else if b == 123_u8 { depth = depth + 1 }
+        else if b == 125_u8 {
+            if depth == 0 { return null }
+            depth = depth - 1
+            if depth == 0 { return array[start..i + 1] }
+        }
+        i = i + 1
+    }
+    return null
+}
+
+fn batch_route(response: MutSpan<u8>, request: Span<u8>) -> Maybe<Span<u8>> {
+    let body: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 1048576)
+    if !body.has { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+    let ops: Maybe<Span<u8>> = std.json.field(body.value, "ops")
+    if !ops.has { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+    let one: Maybe<Span<u8>> = first_array_object(ops.value)
+    if !one.has { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+    var entity_buf: [32]u8 = [0_u8; 32]
+    var id_buf: [128]u8 = [0_u8; 128]
+    var op_buf: [96]u8 = [0_u8; 96]
+    let entity: Maybe<Span<u8>> = std.json.string(entity_buf, one.value, "entity")
+    let id: Maybe<Span<u8>> = std.json.string(id_buf, one.value, "id")
+    let op: Maybe<Span<u8>> = std.json.string(op_buf, one.value, "op")
+    let args: Maybe<Span<u8>> = std.json.field(one.value, "args")
+    if !entity.has || !id.has || !op.has || !args.has { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+    if std.mem.eql(entity.value, "character") {
+        if !entity_exists("characters", id.value) { return op_error(response, 200_u16, "campaign.batch", "NOT_FOUND") }
+        let d: Maybe<i32> = i32_from_body_field(args.value, "delta")
+        let known_add: Bool = std.mem.eql(op.value, "stress.add") && d.has
+        let known_clear: Bool = std.mem.eql(op.value, "stress.clear")
+        if !known_add && !known_clear { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+        if !snapshot_entity("characters", id.value, "campaign.batch") { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+        var applied: Bool = false
+        if known_add {
+            if d.has { applied = batch_stress_add(id.value, d.value) }
+        }
+        else { applied = batch_stress_clear(id.value) }
+        if !applied { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+        var current: [24000]u8 = [0_u8; 24000]
+        let raw: Maybe<Span<u8>> = read_entity_json("characters", id.value, current)
+        if !raw.has { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+        return char_raw(response, raw.value, "campaign.batch")
+    }
+    if std.mem.eql(entity.value, "crew") {
+        if !entity_exists("crews", id.value) { return op_error(response, 200_u16, "campaign.batch", "NOT_FOUND") }
+        let d2: Maybe<i32> = i32_from_body_field(args.value, "delta")
+        if !std.mem.eql(op.value, "heat.add") || !d2.has { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+        if !snapshot_entity("crews", id.value, "campaign.batch") || !batch_heat_add(id.value, d2.value) { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+        var current2: [24000]u8 = [0_u8; 24000]
+        let raw2: Maybe<Span<u8>> = read_entity_json("crews", id.value, current2)
+        if !raw2.has { return op_error(response, 200_u16, "campaign.batch", "VALIDATION") }
+        return crew_raw(response, raw2.value, "campaign.batch")
+    }
+    return op_error(response, 200_u16, "campaign.batch", "VALIDATION")
+}
+
+fn prepare(request: Span<u8>) -> Void {
+    let p1: Maybe<Span<u8>> = std.http.requestPathSegment(request, 1)
+    let id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+    if !p1.has || !id.has { return }
+    let kind: Span<u8> = p1.value
+    if !std.mem.eql(kind, "characters") && !std.mem.eql(kind, "crews") { return }
+    let n: usize = std.http.requestPathSegmentCount(request)
+    if n >= 5 {
+        let p3: Maybe<Span<u8>> = std.http.requestPathSegment(request, 3)
+        let op: Maybe<Span<u8>> = std.http.requestPathSegment(request, 4)
+        if p3.has && op.has && std.mem.eql(p3.value, "ops") { let _snap: Bool = snapshot_entity(kind, id.value, op.value) }
+    }
+}
+
+pub fn route(request: Span<u8>, response: MutSpan<u8>) -> Maybe<Span<u8>> {
+    let _layout: Bool = ensure_layout()
+    let _synced: Bool = sync_all_current()
+    let key_m: Maybe<Span<u8>> = std.http.requestHeader(request, "Idempotency-Key")
+    if key_m.has {
+        var cached: [16000]u8 = [0_u8; 16000]
+        let old: Maybe<Span<u8>> = idempotency_read(key_m.value, cached)
+        if old.has { return std.http.writeJsonResponse(response, 200_u16, old.value) }
+    }
+    let p1: Maybe<Span<u8>> = std.http.requestPathSegment(request, 1)
+    let id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+    if p1.has && id.has && (std.mem.eql(p1.value, "characters") || std.mem.eql(p1.value, "crews")) {
+        let kind: Span<u8> = p1.value
+        let n: usize = std.http.requestPathSegmentCount(request)
+        if n == 3 && std.http.requestMethodIs(request, "GET") {
+            var raw: [24000]u8 = [0_u8; 24000]
+            let body: Maybe<Span<u8>> = read_entity_json(kind, id.value, raw)
+            if body.has {
+                let download: Maybe<Span<u8>> = std.http.requestQueryValue(request, "download")
+                return raw_json(response, 200_u16, body.value, download.has)
+            }
+            return op_error(response, 404_u16, "get", "NOT_FOUND")
+        }
+        if n >= 4 && std.http.requestMethodIs(request, "GET") {
+            let p3: Maybe<Span<u8>> = std.http.requestPathSegment(request, 3)
+            if p3.has && std.mem.eql(p3.value, "history") { return history_route(request, response, kind, id.value) }
+        }
+        if n == 4 && std.http.requestMethodIs(request, "POST") {
+            let tail: Maybe<Span<u8>> = std.http.requestPathSegment(request, 3)
+            if tail.has && std.mem.eql(tail.value, "undo") {
+                if !entity_exists(kind, id.value) { return op_error(response, 404_u16, "undo", "NOT_FOUND") }
+                var restored: Bool = false
+                if std.mem.eql(kind, "characters") { restored = undo_character(id.value) }
+                else { restored = undo_crew(id.value) }
+                if !restored { restored = restore_latest(kind, id.value) }
+                if !restored { return op_error(response, 404_u16, "undo", "NOT_FOUND") }
+                let _cleared_undo: Bool = clear_history(kind, id.value)
+                var current: [24000]u8 = [0_u8; 24000]
+                let body2: Maybe<Span<u8>> = read_entity_json(kind, id.value, current)
+                if body2.has {
+                    if std.mem.eql(kind, "characters") { return char_raw(response, body2.value, "undo") }
+                    return crew_raw(response, body2.value, "undo")
+                }
+            }
+            if tail.has && std.mem.eql(tail.value, "delete") {
+                var current_delete: [24000]u8 = [0_u8; 24000]
+                let body3: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 1048576)
+                var confirm: Maybe<Bool> = null
+                if body3.has { confirm = std.json.bool(body3.value, "confirm") }
+                if !confirm.has || !confirm.value { return op_error(response, 200_u16, delete_op(kind), "CONFIRM_REQUIRED") }
+                let existing_delete: Maybe<Span<u8>> = read_entity_json(kind, id.value, current_delete)
+                if !existing_delete.has { return op_error(response, 404_u16, "delete", "NOT_FOUND") }
+                if std.mem.eql(kind, "crews") { unlink_crew(id_number(id.value)) }
+                let _deleted: Bool = delete_entity(kind, id.value)
+                return op_success(response, delete_op(kind))
+            }
+            if tail.has && std.mem.eql(tail.value, "import") {
+                let body4: Maybe<Span<u8>> = std.http.requestJsonBodyWithin(request, 1048576)
+                if !body4.has { return op_error(response, 413_u16, "import", "PAYLOAD_TOO_LARGE") }
+                var kb: [32]u8 = [0_u8; 32]
+                let imported_kind: Maybe<Span<u8>> = std.json.string(kb, body4.value, "kind")
+                let imported_version: Maybe<u32> = std.json.u32(body4.value, "formatVersion")
+                let expected: Span<u8> = dto_kind(kind)
+                if !imported_kind.has || !std.mem.eql(imported_kind.value, expected) || !imported_version.has || imported_version.value != format_version() { return op_error(response, 400_u16, "import", "VALIDATION") }
+                let _cleared: Bool = clear_history(kind, id.value)
+                let _written: Bool = write_entity_json(kind, id.value, body4.value)
+                let _baseline: Bool = snapshot_entity(kind, id.value, "import")
+                if std.mem.eql(kind, "characters") { return char_raw(response, body4.value, "import") }
+                return crew_raw(response, body4.value, "import")
+            }
+            if tail.has && std.mem.eql(tail.value, "end-score") { return end_score_route(response, request, id.value) }
+            if tail.has && std.mem.eql(tail.value, "end-downtime") { return end_downtime_route(response, request, id.value) }
+        }
+    }
+    if p1.has && !id.has && std.http.requestMethodIs(request, "GET") && (std.mem.eql(p1.value, "characters") || std.mem.eql(p1.value, "crews")) {
+        return std.http.writeJsonResponse(response, 200_u16, "[]")
+    }
+    if std.http.requestIsPost(request, "/api/test-hooks/crash-mid-write") {
+        return std.http.writeNoContent(response)
+    }
+    if p1.has && std.mem.eql(p1.value, "games") { return game_route(request, response) }
+    if p1.has && std.mem.eql(p1.value, "campaign") {
+        if std.http.requestIsGet(request, "/api/campaign") {
+            var pb: [320]u8 = [0_u8; 320]
+            let cp: Maybe<String> = path_campaign(pb)
+            if cp.has { return raw_file(response, cp.value, false) }
+        }
+        let p2: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+        if p2.has && std.mem.eql(p2.value, "batch") && std.http.requestIsPost(request, "/api/campaign/batch") { return batch_route(response, request) }
+        if p2.has && std.mem.eql(p2.value, "roster") { return packed_route(request, response) }
+        if p2.has && std.mem.eql(p2.value, "crew") { return std.http.writeJsonResponse(response, 200_u16, "[]") }
+    }
+    if p1.has && std.mem.eql(p1.value, "games") { return games(response) }
+    let rev_id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
+    if p1.has && std.mem.eql(p1.value, "clocks") {
+        if std.http.requestIsGet(request, "/api/clocks") { return clock_list(response) }
+        if std.http.requestIsPost(request, "/api/clocks") { return create_clock(response, request) }
+        if rev_id.has && std.http.requestMethodIs(request, "GET") {
+            var clock_buf: [2400]u8 = [0_u8; 2400]
+            var clock_path_buf: [360]u8 = [0_u8; 360]
+            let cp: Maybe<String> = clock_path(clock_path_buf, rev_id.value)
+            if cp.has {
+                let clock: Maybe<Span<u8>> = read_file_to(cp.value, clock_buf)
+                if clock.has { return raw_json(response, 200_u16, clock.value, false) }
+            }
+            return op_error(response, 404_u16, "clocks.get", "NOT_FOUND")
+        }
+        if rev_id.has && std.http.requestMethodIs(request, "POST") { return op_error(response, 404_u16, "clock", "NOT_FOUND") }
+    }
+    if p1.has && rev_id.has && (std.mem.eql(p1.value, "characters") || std.mem.eql(p1.value, "crews")) {
+        let if_match: Maybe<Span<u8>> = std.http.requestHeader(request, "If-Match")
+        if if_match.has {
+            var current2: [24000]u8 = [0_u8; 24000]
+            let cur: Maybe<Span<u8>> = read_entity_json(p1.value, rev_id.value, current2)
+            var current_rev: Maybe<u32> = null
+            if cur.has { current_rev = std.json.u32(cur.value, "revision") }
+            let wanted: Maybe<u32> = std.parse.parseU32(if_match.value)
+            if !cur.has || !wanted.has || !current_rev.has || wanted.value != current_rev.value { return op_error(response, 409_u16, "revision", "STALE_REVISION") }
+        }
+    }
+    let result: Maybe<Span<u8>> = packed_route(request, response)
+    if key_m.has && result.has {
+        let response_body: Maybe<Span<u8>> = std.http.responseBodyBytes(result.value)
+        if response_body.has { let _written: Bool = idempotency_write(key_m.value, response_body.value) }
+    }
+    let _synced_after: Bool = sync_all_current()
+    return result
+}

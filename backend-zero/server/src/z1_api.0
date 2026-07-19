@@ -1,5 +1,5 @@
 use config
-use game_data
+use game_settings_compat
 use jbuf
 use store
 use util

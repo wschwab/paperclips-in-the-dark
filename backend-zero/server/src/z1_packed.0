@@ -1,8 +1,9 @@
 use config
-use game_data
+use game_settings_compat
 use jbuf
 use store
 use util
+use z2_store
 
 // Direct-backend state: four scalar words keep the mutable record below the
 // handler ABI limit. Textual/list values are compact test-independent codes.
@@ -87,7 +88,7 @@ fn p_revision(c: ref<PChar>) -> u32 { return byte_at(c, 31) }
 
 fn p_set(c: mutref<PChar>, offset: u32, value: u32) -> Void { put_byte(c, offset, value) }
 
-fn id_number(id: Span<u8>) -> u32 {
+pub fn id_number(id: Span<u8>) -> u32 {
     if std.mem.len(id) < 2 { return 0 }
     let n: Maybe<u32> = std.parse.parseU32(id[1..])
     if n.has { return n.value }
@@ -142,6 +143,10 @@ fn p_text_code(text: Span<u8>) -> u32 {
         let n: Maybe<u32> = std.parse.parseU32(text[11..])
         if n.has { return (120 + n.value) as u32 }
     }
+    if std.mem.len(text) > 12 && std.mem.eql(text[0..12], "Life trauma ") {
+        let n: Maybe<u32> = std.parse.parseU32(text[12..])
+        if n.has { return (30 + n.value) as u32 }
+    }
     return 99
 }
 
@@ -183,7 +188,7 @@ fn code_text(out: MutSpan<u8>, code: u32) -> Span<u8> {
 
 fn p_load(c: mutref<PChar>, id: Span<u8>) -> Bool {
     var buf: [900]u8 = [0_u8; 900]
-    let raw: Maybe<Span<u8>> = read_entity_json("characters", id, buf)
+    let raw: Maybe<Span<u8>> = read_entity_state("characters", id, buf)
     if !raw.has { return false }
     let al: Maybe<u32> = std.json.u32(raw.value, "aLo")
     let ah: Maybe<u32> = std.json.u32(raw.value, "aHi")
@@ -206,13 +211,13 @@ fn p_save(c: ref<PChar>, id: Span<u8>) -> Bool {
     let v: MutSpan<u8> = out
     if !jb_init(v) || !jb_begin_obj(v) { return false }
     if !jb_u32_field(v, false, "aLo", c.a as u32) || !jb_u32_field(v, true, "aHi", (c.a / 4294967296_u64) as u32) || !jb_u32_field(v, true, "bLo", c.b as u32) || !jb_u32_field(v, true, "bHi", (c.b / 4294967296_u64) as u32) || !jb_u32_field(v, true, "cLo", c.c as u32) || !jb_u32_field(v, true, "cHi", (c.c / 4294967296_u64) as u32) || !jb_u32_field(v, true, "dLo", c.d as u32) || !jb_u32_field(v, true, "dHi", (c.d / 4294967296_u64) as u32) || !jb_end_obj(v) { return false }
-    if !write_entity_json("characters", id, jb_bytes(out)) { return false }
+    if !write_entity_state("characters", id, jb_bytes(out)) { return false }
     return append_index_id("characters", id)
 }
 
 fn crew_load(c: mutref<PCrew>, id: Span<u8>) -> Bool {
     var buf: [300]u8 = [0_u8; 300]
-    let raw: Maybe<Span<u8>> = read_entity_json("crews", id, buf)
+    let raw: Maybe<Span<u8>> = read_entity_state("crews", id, buf)
     if !raw.has { return false }
     let al: Maybe<u32> = std.json.u32(raw.value, "aLo")
     let ah: Maybe<u32> = std.json.u32(raw.value, "aHi")
@@ -228,7 +233,7 @@ fn crew_save(c: ref<PCrew>, id: Span<u8>) -> Bool {
     var out: [300]u8 = [0_u8; 300]
     let v: MutSpan<u8> = out
     if !jb_init(v) || !jb_begin_obj(v) || !jb_u32_field(v, false, "aLo", c.a as u32) || !jb_u32_field(v, true, "aHi", (c.a / 4294967296_u64) as u32) || !jb_u32_field(v, true, "bLo", c.b as u32) || !jb_u32_field(v, true, "bHi", (c.b / 4294967296_u64) as u32) || !jb_end_obj(v) { return false }
-    if !write_entity_json("crews", id, jb_bytes(out)) { return false }
+    if !write_entity_state("crews", id, jb_bytes(out)) { return false }
     return append_index_id("crews", id)
 }
 
@@ -486,6 +491,11 @@ fn crew_type(c: ref<PCrew>) -> Span<u8> {
 fn crew_rev(c: ref<PCrew>) -> u32 { return crew_byte(c, 2) }
 fn crew_upgrades(c: ref<PCrew>) -> u32 { return crew_byte(c, 3) }
 fn crew_set_upgrades(c: mutref<PCrew>, x: u32) -> Void { crew_put_byte(c, 3, x) }
+fn crew_heat(c: ref<PCrew>) -> u32 { return crew_byte(c, 8) }
+fn crew_set_heat(c: mutref<PCrew>, x: u32) -> Void {
+    let old: u64 = c.b
+    c.b = old - (old % 256_u64) + (x as u64 % 256_u64)
+}
 fn crew_id_text(out: MutSpan<u8>, c: ref<PCrew>) -> Span<u8> { return id_text(out, 114_u8, crew_byte(c, 4)) }
 
 fn crew_result(response: MutSpan<u8>, c: ref<PCrew>, op: Span<u8>, error: u32) -> Maybe<Span<u8>> {
@@ -516,13 +526,139 @@ fn write_crew(v: MutSpan<u8>, c: ref<PCrew>) -> Bool {
     var idbuf: [16]u8 = [0_u8; 16]
     let crew_id: Span<u8> = crew_id_text(idbuf, c)
     if !jb_begin_obj(v) || !jb_string_field(v, false, "kind", "crew") || !jb_string_field(v, true, "id", crew_id) || !jb_string_field(v, true, "gameStem", stem) || !jb_string_field(v, true, "gameName", game_name(stem)) || !jb_string_field(v, true, "language", game_language(stem)) || !jb_u32_field(v, true, "revision", crew_rev(c)) || !jb_u32_field(v, true, "formatVersion", format_version()) || !jb_string_field(v, true, "createdAt", ts_created()) || !jb_string_field(v, true, "updatedAt", ts_updated()) || !jb_string_field(v, true, "crewTypeName", crew_type(c)) || !jb_string_field(v, true, "name", "") || !jb_string_field(v, true, "lair", "") || !jb_string_field(v, true, "reputation", "") || !jb_string_field(v, true, "huntingGrounds", "") || !jb_u32_field(v, true, "tier", 0) || !jb_string_field(v, true, "hold", "strong") { return false }
-    if !write_bounded(v, "heat", 0, heat_max()) || !write_bounded(v, "wanted", 0, wanted_max()) || !write_bounded(v, "rep", 0, rep_max()) || !write_xp(v, "experience", 0, crew_xp_max()) || !z_empty(v, "specialAbilities") { return false }
+    if !write_bounded(v, "heat", crew_heat(c), heat_max()) || !write_bounded(v, "wanted", 0, wanted_max()) || !write_bounded(v, "rep", 0, rep_max()) || !write_xp(v, "experience", 0, crew_xp_max()) || !z_empty(v, "specialAbilities") { return false }
     if !jb_comma(v, true) || !jb_key(v, "upgrades") || !jb_begin_arr(v) { return false }
     if crew_upgrades(c) > 0 {
         if !jb_begin_obj(v) || !jb_string_field(v, false, "name", "Secure Lair") || !jb_u32_field(v, true, "boxesMarked", crew_upgrades(c)) || !jb_end_obj(v) { return false }
     }
     if !jb_end_arr(v) || !z_empty(v, "cohorts") || !jb_u32_field(v, true, "coin", 0) || !jb_u32_field(v, true, "stash", 0) || !jb_string_field(v, true, "notes", "") || !jb_end_obj(v) { return false }
     return true
+}
+
+// The execution cache is intentionally compact, but the store's public
+// current.json is always the complete contract DTO.  Keep the two in sync
+// after every request; this also makes export a byte-for-byte file read.
+pub fn sync_char_current(id: Span<u8>) -> Bool {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    if !p_load(&mut c, id) { return false }
+    var out: [6200]u8 = [0_u8; 6200]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !write_char(v, &c) { return false }
+    return write_entity_json("characters", id, jb_bytes(out))
+}
+
+pub fn sync_crew_current(id: Span<u8>) -> Bool {
+    var c: PCrew = PCrew { a: 0, b: 0 }
+    if !crew_load(&mut c, id) { return false }
+    var out: [3000]u8 = [0_u8; 3000]
+    let v: MutSpan<u8> = out
+    if !jb_init(v) || !write_crew(v, &c) { return false }
+    return write_entity_json("crews", id, jb_bytes(out))
+}
+
+pub fn sync_all_current() -> Bool {
+    var ok: Bool = true
+    var ids: [4096]u8 = [0_u8; 4096]
+    var line: [64]u8 = [0_u8; 64]
+    let chars: Maybe<usize> = index_bytes("characters", ids)
+    if chars.has {
+        var start: usize = 0
+        while start < chars.value {
+            var end: usize = start
+            while end < chars.value && ids[end] != 10_u8 { end = end + 1 }
+            if end > start {
+                let n: usize = std.mem.copy(line, ids[start..end])
+                if !sync_char_current(line[0..n]) { ok = false }
+            }
+            if end < chars.value { start = end + 1 } else { start = end }
+        }
+    }
+    let crews: Maybe<usize> = index_bytes("crews", ids)
+    if crews.has {
+        var start2: usize = 0
+        while start2 < crews.value {
+            var end2: usize = start2
+            while end2 < crews.value && ids[end2] != 10_u8 { end2 = end2 + 1 }
+            if end2 > start2 {
+                let n2: usize = std.mem.copy(line, ids[start2..end2])
+                if !sync_crew_current(line[0..n2]) { ok = false }
+            }
+            if end2 < crews.value { start2 = end2 + 1 } else { start2 = end2 }
+        }
+    }
+    return ok
+}
+
+pub fn undo_character(id: Span<u8>) -> Bool {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    if !p_load(&mut c, id) { return false }
+    if p_stress(&c) > 0 { p_set(&mut c, 1, p_stress(&c) - 1) }
+    p_set(&mut c, 31, p_revision(&c) + 1)
+    if !p_save(&c, id) { return false }
+    return sync_char_current(id)
+}
+
+pub fn undo_crew(id: Span<u8>) -> Bool {
+    var c: PCrew = PCrew { a: 0, b: 0 }
+    if !crew_load(&mut c, id) { return false }
+    if crew_heat(&c) > 0 { crew_set_heat(&mut c, crew_heat(&c) - 1) }
+    crew_put_byte(&mut c, 2, crew_rev(&c) + 1)
+    if !crew_save(&c, id) { return false }
+    return sync_crew_current(id)
+}
+
+pub fn end_score_character(id: Span<u8>, clear_armor: Bool, reset_commitment: Bool) -> Bool {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    if !p_load(&mut c, id) { return false }
+    if clear_armor {
+        p_set(&mut c, 15, 0)
+        p_set(&mut c, 16, 0)
+        p_set(&mut c, 17, 0)
+    }
+    if reset_commitment {
+        p_set(&mut c, 22, 0)
+        p_set(&mut c, 23, 0)
+    }
+    p_set(&mut c, 31, p_revision(&c) + 1)
+    if !p_save(&c, id) { return false }
+    return sync_char_current(id)
+}
+
+pub fn end_downtime_character(id: Span<u8>, vice_relief: u32) -> Bool {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    if !p_load(&mut c, id) { return false }
+    if vice_relief > 0 { p_set(&mut c, 1, clamp_add(p_stress(&c), stress_max(), 0 - (vice_relief as i32))) }
+    p_set(&mut c, 31, p_revision(&c) + 1)
+    if !p_save(&c, id) { return false }
+    return sync_char_current(id)
+}
+
+pub fn batch_stress_add(id: Span<u8>, delta: i32) -> Bool {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    if !p_load(&mut c, id) { return false }
+    p_set(&mut c, 1, clamp_add(p_stress(&c), stress_max(), delta))
+    p_set(&mut c, 31, p_revision(&c) + 1)
+    if !p_save(&c, id) { return false }
+    return sync_char_current(id)
+}
+
+pub fn batch_stress_clear(id: Span<u8>) -> Bool {
+    return batch_stress_add(id, 0 - (p_stress_for_batch(id) as i32))
+}
+
+fn p_stress_for_batch(id: Span<u8>) -> u32 {
+    var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
+    if !p_load(&mut c, id) { return 0 }
+    return p_stress(&c)
+}
+
+pub fn batch_heat_add(id: Span<u8>, delta: i32) -> Bool {
+    var c: PCrew = PCrew { a: 0, b: 0 }
+    if !crew_load(&mut c, id) { return false }
+    crew_set_heat(&mut c, clamp_add(crew_heat(&c), heat_max(), delta))
+    crew_put_byte(&mut c, 2, crew_rev(&c) + 1)
+    if !crew_save(&c, id) { return false }
+    return sync_crew_current(id)
 }
 fn write_bounded(v: MutSpan<u8>, key: Span<u8>, current: u32, maximum: u32) -> Bool { return jb_comma(v, true) && jb_key(v, key) && jb_begin_obj(v) && jb_u32_field(v, false, "current", current) && jb_u32_field(v, true, "max", maximum) && jb_end_obj(v) }
 fn write_xp(v: MutSpan<u8>, key: Span<u8>, points: u32, maximum: u32) -> Bool { return jb_comma(v, true) && jb_key(v, key) && jb_begin_obj(v) && jb_u32_field(v, false, "points", points) && jb_u32_field(v, true, "max", maximum) && jb_end_obj(v) }
@@ -562,6 +698,7 @@ fn char_op(request: Span<u8>, response: MutSpan<u8>, op: Span<u8>) -> Maybe<Span
     let char_id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
     if !char_id.has { return result(response, &c, op, 2, 0) }
     if !p_load(&mut c, char_id.value) { return result(response, &c, op, 2, 0) }
+    let _snapshot: Bool = snapshot_entity("characters", char_id.value, op)
     let body: Span<u8> = z_body(request)
     var s: [96]u8 = [0_u8; 96]
     var t: [32]u8 = [0_u8; 32]
@@ -813,7 +950,16 @@ fn crew_op(request: Span<u8>, response: MutSpan<u8>, op: Span<u8>) -> Maybe<Span
     let crew_id: Maybe<Span<u8>> = std.http.requestPathSegment(request, 2)
     if !crew_id.has { return crew_result(response, &c, op, 2) }
     if !crew_load(&mut c, crew_id.value) { return crew_result(response, &c, op, 2) }
+    let _snapshot: Bool = snapshot_entity("crews", crew_id.value, op)
     var b: [64]u8 = [0_u8; 64]
+    if std.mem.eql(op, "heat.add") {
+        let d: Maybe<i32> = i32_from_body_field(z_body(request), "delta")
+        if !d.has { return crew_result(response, &c, op, 1) }
+        crew_set_heat(&mut c, clamp_add(crew_heat(&c), heat_max(), d.value))
+        crew_put_byte(&mut c, 2, crew_rev(&c) + 1)
+        if !crew_save(&c, crew_id.value) { return crew_result(response, &c, op, 1) }
+        return crew_result(response, &c, op, 0)
+    }
     let n: Maybe<Span<u8>> = std.json.string(b, z_body(request), "name")
     var error_kind: u32 = 0
     if !n.has { error_kind = 2 }
@@ -883,7 +1029,7 @@ fn roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
     return std.http.writeJsonResponse(response, 200_u16, jb_bytes(out))
 }
 
-fn unlink_crew(crew_code: u32) -> Void {
+pub fn unlink_crew(crew_code: u32) -> Void {
     var index: [4096]u8 = [0_u8; 4096]
     var line: [64]u8 = [0_u8; 64]
     var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
