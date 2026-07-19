@@ -1,0 +1,77 @@
+---
+title: F1 — Style guide
+---
+
+# F1 — Style guide
+
+**Deliverable:** `/styleguide` — every sheet-furniture component rendered
+before any real sheet page exists. F2 builds character/crew sheets against
+this page.
+
+## What shipped
+
+| Piece | Where |
+|---|---|
+| Route `/styleguide` | `frontend/src/pages/styleguide.ts` + client router in `main.ts` |
+| Action dots | `frontend/src/components/action-dots.ts` |
+| Stress track | `frontend/src/components/stress-track.ts` |
+| Trauma stamps | `frontend/src/components/trauma-stamps.ts` |
+| Harm table | `frontend/src/components/harm-table.ts` |
+| SVG clocks (4/6/8) | `frontend/src/components/clock.ts` |
+| Inked checkboxes | `frontend/src/components/checkbox.ts` |
+| Palette + type specimens | rendered on the styleguide page itself |
+| Theme system | `frontend/src/styles/theme.css` + `frontend/src/lib/theme.ts` |
+| Self-hosted fonts | `frontend/public/fonts/` · faces declared in `src/styles/fonts.css` |
+
+## Aesthetic (spec §12)
+
+- **Palette:** ink `#1a1a1a`, paper `#e8e0d0`, blood `#a02c2c`. Dark mode =
+  lamplit `#141210` ground with paper-toned text. High-contrast variant
+  via `data-contrast="high"`.
+- **Type:** League Gothic (heads) → Oswald (labels) → Alegreya Sans (body) →
+  Alegreya (notes) → Special Elite (stamps) → IM Fell English (epigraphs).
+  Every stack carries a system fallback. Subsets: latin + latin-ext; cyrillic
+  retained for Oswald and Alegreya Sans.
+- **Texture:** SVG fractal-noise paper grain, heavy rules, stamp motifs.
+- **A11y:** `:focus-visible` blood ring, `prefers-reduced-motion` kills
+  transitions, manual light/dark/auto + Hi-C toggle in the app bar.
+
+## Fonts & licenses
+
+All files live under `frontend/public/fonts/`. **No hotlinking.** See
+`frontend/public/fonts/LICENSE.md` for the per-family table. Five faces are
+SIL OFL 1.1; Special Elite is Apache 2.0 (OSI-approved, freely redistributable;
+recorded honestly rather than mislabeled OFL). No commercial faces (no Kirsty).
+
+Rebuild the woff2 + `fonts.css` pipeline with:
+
+```bash
+cd frontend && python3 scripts/build-fonts.py
+```
+
+## How to view
+
+```bash
+cd frontend
+npm ci
+npm run dev          # http://localhost:5173/styleguide
+```
+
+Theme controls sit in the top app bar: **Auto / Light / Dark / Hi-C**.
+
+## Import surface for F2
+
+```ts
+import {
+  actionDots,
+  stressTrack,
+  traumaStamps,
+  harmTable,
+  bladesHarmTable,
+  clock,
+  inkedCheckbox,
+} from "../components/index.js";
+```
+
+Capacities (stress max, clock segments, harm slots) are always parameters —
+never hardcoded game maxima (spec §5).

@@ -1,0 +1,9 @@
+{
+ "task": "F1",
+ "track": "frontend",
+ "agent": "grok-4.5 (pi, openrouter); GLM 5.2 false-start (quota 429)",
+ "date": "2026-07-19",
+ "attempts": 2,
+ "iterationsToGreen": 1,
+ "notes": "Orchestrator acceptance: build + 18/18 existing tests green; 0 gstatic/googleapis refs in dist; 26 self-hosted woff2; /styleguide route + component modules verified on dev server (smoke-level; full visual pass deferred to F2 review). DEVIATION accepted+logged: Special Elite is Apache-2.0 not OFL (as Google distributes it) \u2014 spec \u00a712 intent (free, self-hostable, non-commercial faces) satisfied. Implementer disclosed the license mismatch unprompted."
+}

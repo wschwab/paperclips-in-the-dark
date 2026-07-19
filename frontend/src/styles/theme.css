@@ -1,0 +1,179 @@
+/*
+ * theme.css — Paperclips in the Dark aesthetic token system (spec §12).
+ *
+ *  Raw palette tokens (never redefined) drive semantic tokens, which are
+ *  swapped per theme (light / dark / high-contrast). Sheets and the
+ *  styleguide consume semantic tokens only; nothing in components hardcodes
+ *  a hex.
+ *
+ *  Manual override: <html data-theme="light|dark|auto"> and
+ *  <html data-contrast="high">. "auto" (or no attribute) delegates to
+ *  prefers-color-scheme.
+ */
+
+:root {
+  /* raw palette — constant. spec §12 */
+  --ink: #1a1a1a;
+  --paper: #e8e0d0;
+  --paper-raised: #efe7d6;
+  --paper-sunk: #d6cdb8;
+  --blood: #a02c2c;
+  --lamplit: #141210;
+
+  /* default = light theme semantic tokens */
+  --surface: var(--paper);
+  --surface-raised: var(--paper-raised);
+  --surface-sunk: var(--paper-sunk);
+  --text: var(--ink);
+  --text-muted: #5a5044;
+  --text-faint: #8a7e6a;
+  --accent: var(--blood);
+  --accent-strong: #7a1d1d;
+  --rule: rgba(26, 26, 26, 0.35);
+  --rule-heavy: rgba(26, 26, 26, 0.75);
+  --grain-opacity: 0.22;
+  --grain-blend: multiply;
+  --shadow: rgba(26, 26, 26, 0.28);
+  --fill: var(--ink);
+  --fill-accent: var(--blood);
+  --empty: transparent;
+  --fill-border: var(--ink);
+
+  /* borders */
+  --border-thin: 1px;
+  --border-medium: 2px;
+  --border-thick: 3px;
+
+  /* focus / motion */
+  --focus-ring: var(--blood);
+  --focus-offset: 2px;
+  --transition-fast: 120ms ease-out;
+  --transition-med: 220ms ease-out;
+  --radius: 2px;
+  --radius-large: 6px;
+
+  /* layout */
+  --sheet-width: 920px;
+  --gutter: 24px;
+
+  color-scheme: light;
+}
+
+/* ── Dark theme ────────────────────────────────────────────────
+ * Inverts to lamplit-dark (#141210 ground, paper-toned text).
+ * Applied via prefers-color-scheme when no manual override, or via
+ * [data-theme="dark"] when the user forces it. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --surface: var(--lamplit);
+    --surface-raised: #201a17;
+    --surface-sunk: #100d0b;
+    --text: #e1d8c3;
+    --text-muted: #aa9d83;
+    --text-faint: #756958;
+    --accent: #d24642;
+    --accent-strong: #e85a4a;
+    --rule: rgba(225, 216, 195, 0.25);
+    --rule-heavy: rgba(225, 216, 195, 0.55);
+    --grain-opacity: 0.08;
+    --grain-blend: screen;
+    --shadow: rgba(0, 0, 0, 0.6);
+    --fill: var(--text);
+    --fill-accent: var(--accent);
+    --fill-border: var(--text);
+    color-scheme: dark;
+  }
+}
+
+[data-theme="dark"] {
+  --surface: var(--lamplit);
+  --surface-raised: #201a17;
+  --surface-sunk: #100d0b;
+  --text: #e1d8c3;
+  --text-muted: #aa9d83;
+  --text-faint: #756958;
+  --accent: #d24642;
+  --accent-strong: #e85a4a;
+  --rule: rgba(225, 216, 195, 0.25);
+  --rule-heavy: rgba(225, 216, 195, 0.55);
+  --grain-opacity: 0.08;
+  --grain-blend: screen;
+  --shadow: rgba(0, 0, 0, 0.6);
+  --fill: var(--text);
+  --fill-accent: var(--accent);
+  --fill-border: var(--text);
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  /* explicit light override */
+  color-scheme: light;
+}
+
+/* ── High-contrast variant ──────────────────────────────────────
+ * Composes with whatever theme is active. Boosts accent, kills faded
+ * rules, thickens sheet-furniture borders for low-vision legibility. */
+[data-contrast="high"] {
+  --accent: #d10000;
+  --accent-strong: #b00000;
+  --text: var(--ink);
+  --text-muted: var(--ink);
+  --text-faint: #2a2a2a;
+  --rule: var(--ink);
+  --rule-heavy: var(--ink);
+  --grain-opacity: 0;
+  --shadow: rgba(0, 0, 0, 0.55);
+  --border-thin: 2px;
+  --border-medium: 3px;
+  --border-thick: 4px;
+}
+
+[data-theme="dark"][data-contrast="high"] {
+  --surface: #000000;
+  --surface-raised: #080808;
+  --surface-sunk: #000000;
+  --text: #ffffff;
+  --text-muted: #ffffff;
+  --text-faint: #d8d8d8;
+  --accent: #ff4136;
+  --accent-strong: #ff6760;
+  --rule: #ffffff;
+  --rule-heavy: #ffffff;
+  --fill: #ffffff;
+  --fill-accent: #ff4136;
+  --fill-border: #ffffff;
+}
+
+/* high-contrast + OS dark, no manual theme override */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme])[data-contrast="high"] {
+    --surface: #000000;
+    --surface-raised: #080808;
+    --surface-sunk: #000000;
+    --text: #ffffff;
+    --text-muted: #ffffff;
+    --text-faint: #d8d8d8;
+    --accent: #ff4136;
+    --accent-strong: #ff6760;
+    --rule: #ffffff;
+    --rule-heavy: #ffffff;
+    --fill: #ffffff;
+    --fill-accent: #ff4136;
+    --fill-border: #ffffff;
+  }
+}
+
+/* ── Reduced motion ────────────────────────────────────────────
+ * Spec §12 accessibility. Honor the user's preference globally: stop
+ * every transition and animation the app declares. The *page* never
+ * depends on motion to convey state — focus and color carry it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,467 @@
+/*
+ * components.css — sheet furniture (spec §12): action dots, stress track,
+ * trauma stamps, harm table, SVG clocks, inked checkboxes. Shared by
+ * /styleguide and F2 sheets.
+ */
+
+/* ── Action dots ─────────────────────────────────────────────── */
+
+.action {
+  display: grid;
+  grid-template-columns: 7em 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.action .action-name {
+  font-family: var(--font-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+  color: var(--text);
+  border-bottom: var(--border-thin) solid var(--rule);
+  padding-bottom: 1px;
+}
+.action .action-rating {
+  font-family: var(--font-head);
+  font-size: 1.05rem;
+  color: var(--text-faint);
+  min-width: 1.2em;
+  text-align: right;
+}
+.action .action-dots {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.action-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: var(--border-medium) solid var(--fill-border);
+  background: var(--empty);
+  padding: 0;
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: background var(--transition-fast);
+}
+.action-dot[data-fill="1"] {
+  background: var(--fill);
+  border-color: var(--fill);
+}
+.action-dot:focus-visible {
+  outline-color: var(--accent);
+}
+
+/* ── Stress track (heavy boxes) ──────────────────────────────── */
+
+.stress-track {
+  display: inline-grid;
+  grid-auto-flow: row;
+  gap: 6px;
+  padding: 6px;
+  border: var(--border-thick) solid var(--rule-heavy);
+  border-radius: var(--radius);
+  background: var(--surface-sunk);
+}
+.stress-track.rows {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, 1fr);
+}
+.stress-box {
+  width: 38px;
+  height: 38px;
+  border: var(--border-thick) solid var(--fill-border);
+  background: var(--empty);
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: background var(--transition-fast);
+}
+.stress-box[data-stress="1"] {
+  background: var(--fill);
+}
+.stress-box[data-stress="2"] {
+  /* reserved: spilled / over-capacity stress */
+  background: var(--fill-accent);
+}
+.stress-box:focus-visible {
+  outline-color: var(--accent);
+}
+.stress-label {
+  margin-top: 6px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* ── Trauma stamps ───────────────────────────────────────────── */
+
+.trauma-stamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px;
+  border: var(--border-medium) dashed var(--rule);
+}
+.trauma-stamp {
+  font-family: var(--font-typewriter);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 10px 4px;
+  border: var(--border-medium) solid var(--rule-heavy);
+  background: var(--surface-raised);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.1;
+  /* a slight tilt — these read as rubber-stamped onto the sheet */
+  transform: rotate(-1.6deg);
+  position: relative;
+  box-shadow: 0.5px 1px 0 var(--shadow);
+  transition: transform var(--transition-fast),
+              color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+.trauma-stamp:nth-child(odd)  { transform: rotate(1.4deg) translateY(1px); }
+.trauma-stamp:nth-child(3n)   { transform: rotate(-2.2deg); }
+.trauma-stamp[data-stamped="1"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  /* inked look — layered text-shadow + slight ink-blot shadow */
+  text-shadow: 0.4px 0 0 var(--accent), -0.4px 0 0 var(--accent);
+}
+.trauma-stamp[data-stamped="0"] {
+  color: var(--text-faint);
+  border-style: dashed;
+  border-color: var(--rule);
+  box-shadow: none;
+}
+.trauma-stamp:hover { transform: rotate(0deg); }
+.trauma-stamp:focus-visible { outline-color: var(--accent); }
+
+/* ── Harm table ──────────────────────────────────────────────── */
+
+.harm-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-body);
+  background: var(--surface-raised);
+}
+.harm-table th,
+.harm-table td {
+  border: var(--border-thin) solid var(--rule);
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.harm-table thead th {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  background: var(--surface-sunk);
+}
+.harm-table tbody tr {
+  border-top: var(--border-medium) solid var(--rule-heavy);
+}
+.harm-table .harm-level {
+  font-family: var(--font-label);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  width: 7em;
+}
+.harm-table tr[data-level="lesser"]   .harm-level { color: var(--text-muted); }
+.harm-table tr[data-level="moderate"] .harm-level { color: var(--text); }
+.harm-table tr[data-level="severe"]   .harm-level { color: var(--accent); font-weight: 700; }
+.harm-table tr[data-level="fatal"]    .harm-level {
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+}
+.harm-slot {
+  display: inline-block;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: 4px;
+  border: var(--border-medium) solid var(--fill-border);
+  background: var(--empty);
+  vertical-align: middle;
+  border-radius: var(--radius);
+}
+.harm-slot[data-filled="1"] {
+  background: var(--fill);
+}
+.harm-slot-list {
+  white-space: nowrap;
+}
+
+/* ── SVG clock ───────────────────────────────────────────────── */
+
+.clock {
+  display: block;
+  width: 140px;
+  height: 140px;
+}
+.clock .clock-frame { fill: none; stroke: var(--rule-heavy); stroke-width: 3; }
+.clock .clock-segment {
+  fill: var(--empty);
+  stroke: var(--rule-heavy);
+  stroke-width: 2;
+  transition: fill var(--transition-fast);
+  cursor: pointer;
+}
+.clock .clock-segment[data-filled="1"] { fill: var(--fill); }
+.clock .clock-segment[data-filled="2"] { fill: var(--fill-accent); }
+.clock .clock-segment:focus { outline: none; }
+.clock .clock-segment:focus-visible { stroke: var(--accent); stroke-width: 4; }
+.clock .clock-tick {
+  stroke: var(--rule-heavy);
+  stroke-width: 2;
+  fill: none;
+}
+.clock .clock-label {
+  font-family: var(--font-label);
+  font-size: 8px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Inked checkbox / square toggle ──────────────────────────── */
+
+.inked-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border: var(--border-medium) solid var(--fill-border);
+  background: var(--empty);
+  cursor: pointer;
+  display: inline-block;
+  flex: 0 0 22px;
+  position: relative;
+  border-radius: var(--radius);
+  transition: background var(--transition-fast);
+  vertical-align: middle;
+}
+.inked-check:focus-visible { outline-color: var(--accent); }
+.inked-check[data-checked="1"],
+.inked-check:checked {
+  background: var(--fill);
+}
+/* inked mark: a diagonal ticking-pen stroke drawn via CSS gradient */
+.inked-check[data-checked="1"]::after,
+.inked-check:checked::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background-image:
+    linear-gradient(
+      to top right,
+      transparent 38%,
+      var(--surface) 38% 50%,
+      transparent 50% 62%,
+      var(--surface) 62% 75%,
+      transparent 75%
+    );
+  background-size: 100% 100%;
+}
+
+/* ── Tagline, palette swatches, type specimens ──────────────── */
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+.swatch .swatch-chip {
+  width: 120px;
+  height: 64px;
+  border: var(--border-thin) solid var(--rule);
+  border-radius: var(--radius);
+}
+.swatch .swatch-hex {
+  font-family: var(--font-typewriter);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.type-specimen {
+  border: var(--border-thin) solid var(--rule);
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+.type-specimen + .type-specimen { margin-top: 12px; }
+.type-specimen .specimen-meta {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+/* ── Styleguide layout ──────────────────────────────────────── */
+
+.styleguide {
+  max-width: var(--sheet-width);
+  margin: 0 auto;
+  padding: var(--gutter);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 4vw, 40px);
+}
+.styleguide section[role="region"] {
+  border-top: var(--border-thick) double var(--rule-heavy);
+  padding-top: 18px;
+}
+.styleguide .sg-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: start;
+}
+.styleguide .sg-cols {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  align-items: start;
+}
+.styleguide .sg-clocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  align-items: end;
+}
+.styleguide .sg-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.styleguide .sg-figure > figcaption {
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* ── Theme controls (the manual toggle) ─────────────────────── */
+
+.theme-controls {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: var(--border-thin) solid var(--rule);
+  border-radius: var(--radius-large);
+  background: var(--surface-raised);
+}
+.theme-controls button {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.theme-controls button:hover {
+  background: var(--surface-sunk);
+}
+.theme-controls button[aria-pressed="true"] {
+  background: var(--fill);
+  color: var(--surface);
+  border-color: var(--fill);
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px var(--gutter);
+  border-bottom: var(--border-thick) solid var(--rule-heavy);
+  background: var(--surface-raised);
+}
+.app-bar h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+.app-bar nav { display: flex; gap: 12px; align-items: center; }
+.app-bar nav a { text-decoration: none; }
+.app-bar nav a[aria-current="page"] {
+  color: var(--text);
+  text-decoration: underline;
+}
+.app-bar a.app-title {
+  color: inherit;
+  text-decoration: none;
+}
+.app-bar a.app-title:hover {
+  color: var(--accent);
+}
+
+/* ── Layout helpers ─────────────────────────────────────────── */
+
+.outlet {
+  min-height: 60vh;
+}
+.pad {
+  max-width: var(--sheet-width);
+  margin: 0 auto;
+  padding: var(--gutter);
+}
+.home .tagline {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* inked checkbox + label pair */
+.inked-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+}
+.inked-check-text {
+  user-select: none;
+}
+
+/* styleguide header lede */
+.sg-header .epigraph {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+.sg-header h1 {
+  margin-bottom: 8px;
+}
+.sg-header .serif {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--text-muted);
+}
+
+code {
+  font-family: var(--font-typewriter);
+  font-size: 0.9em;
+  background: var(--surface-sunk);
+  padding: 1px 4px;
+  border-radius: var(--radius);
+}
