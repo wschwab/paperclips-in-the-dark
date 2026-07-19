@@ -16,3 +16,4 @@ exists.
 
 ## Log
 - 2026-07-19: dispatched to GLM 5.2 (opencode-go, pi) — human-approved Grok backup. Prompt: tasks/dispatch/F1-prompt.md. Parallel with Z1 (disjoint dirs).
+- 2026-07-19: attempt 1 FAILED — opencode-go 429 monthly usage limit (resets ~2h25m). Partial work on disk (frontend/public/, src/styles/). Auto-resume scheduled post-reset; human may short-circuit by enabling balance usage or approving a different provider.

@@ -1,0 +1,546 @@
+use config
+use game_data
+use jbuf
+use store
+use util
+
+// Result envelope for ops applied to a character JSON blob on disk.
+type OpMeta {
+    ok: Bool,
+    has_req: Bool,
+    requested: i32,
+    effective: i32,
+    has_landed: Bool,
+    side_count: u32,
+    // codes stored as short fixed strings in caller
+}
+
+pub fn meta_ok() -> OpMeta {
+    return OpMeta {
+        ok: true,
+        has_req: false,
+        requested: 0,
+        effective: 0,
+        has_landed: false,
+        side_count: 0,
+    }
+}
+
+pub fn meta_err() -> OpMeta {
+    return OpMeta {
+        ok: false,
+        has_req: false,
+        requested: 0,
+        effective: 0,
+        has_landed: false,
+        side_count: 0,
+    }
+}
+
+// Write a newly created character JSON into out vec.
+pub fn build_new_character(out: mutref<Vec>, stem: Span<u8>, playbook: Span<u8>) -> Bool {
+    var idbuf: [40]u8 = [0_u8; 40]
+    let id: Maybe<Span<u8>> = write_uuid_v4(idbuf)
+    if !id.has {
+        return false
+    }
+    return emit_character(
+        out,
+        id.value,
+        stem,
+        playbook,
+        1,
+        0,
+        stress_max(),
+        0,
+        trauma_max(),
+        0,
+        0,
+        0,
+        0,
+        recovery_clock_size(stem),
+        0,
+        false,
+        false,
+        false,
+        0,
+        playbook_xp_max(),
+        0,
+        0,
+        satchel_max(),
+        0,
+        stash_max(),
+        0,
+        false,
+        0,
+        0,
+        0,
+        session_expr_max(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        empty_str(),
+        // trauma slots empty
+        empty_str(), empty_str(), empty_str(), empty_str(),
+        // harm empty
+        empty_str(), empty_str(), empty_str(), empty_str(), empty_str(), empty_str(),
+        // abilities none
+        empty_str(), empty_str(), 0, empty_str(), empty_str(), 0,
+        // friends none
+        empty_str(), 0, empty_str(), 0,
+        // talent XP all 0; ratings from defaults embedded in emit
+        true
+    )
+}
+
+fn empty_str() -> Span<u8> {
+    return ""
+}
+
+// Large emitter used by create + after mutation rebuilds.
+// survivors: caller packs mutated fields; talent ratings pulled from game_data defaults + overrides in per-op handlers via dedicated rebuild paths.
+pub fn emit_character(
+    out: mutref<Vec>,
+    id: Span<u8>,
+    stem: Span<u8>,
+    playbook: Span<u8>,
+    revision: u32,
+    stress: u32,
+    stress_max_v: u32,
+    trauma_count: u32,
+    trauma_max_v: u32,
+    lesser_count: u32,
+    moderate_count: u32,
+    severe_count: u32,
+    fatal_count: u32,
+    heal_size: u32,
+    heal_seg: u32,
+    armor_std: Bool,
+    armor_heavy: Bool,
+    armor_special: Bool,
+    playbook_xp: u32,
+    playbook_xp_max_v: u32,
+    commitment: u32,
+    satchel: u32,
+    satchel_max_v: u32,
+    stash: u32,
+    stash_max_v: u32,
+    locked: Bool,
+    expr_pb: u32,
+    expr_ch: u32,
+    expr_st: u32,
+    expr_max: u32,
+    name: Span<u8>,
+    alias: Span<u8>,
+    look: Span<u8>,
+    notes: Span<u8>,
+    crew_id: Span<u8>,
+    bg_name: Span<u8>,
+    bg_desc: Span<u8>,
+    herit_name: Span<u8>,
+    herit_desc: Span<u8>,
+    vice_name: Span<u8>,
+    vice_desc: Span<u8>,
+    notebook: Span<u8>,
+    t0: Span<u8>, t1: Span<u8>, t2: Span<u8>, t3: Span<u8>,
+    l0: Span<u8>, l1: Span<u8>, m0: Span<u8>, m1: Span<u8>, s0: Span<u8>, f0: Span<u8>,
+    ab0n: Span<u8>, ab0d: Span<u8>, ab0t: u32,
+    ab1n: Span<u8>, ab1d: Span<u8>, ab1t: u32,
+    fr0: Span<u8>, fr0c: u32,
+    fr1: Span<u8>, fr1c: u32,
+  _unused: Bool
+) -> Bool {
+    if !jb_begin_obj(out) { return false }
+    if !jb_string_field(out, false, "kind", "character") { return false }
+    if !jb_string_field(out, true, "id", id) { return false }
+    if !jb_string_field(out, true, "gameStem", stem) { return false }
+    if !jb_string_field(out, true, "gameName", game_name(stem)) { return false }
+    if !jb_string_field(out, true, "language", game_language(stem)) { return false }
+    if !jb_u32_field(out, true, "revision", revision) { return false }
+    if !jb_u32_field(out, true, "formatVersion", format_version()) { return false }
+    if !jb_string_field(out, true, "createdAt", ts_created()) { return false }
+    if !jb_string_field(out, true, "updatedAt", ts_updated()) { return false }
+    let retired: Bool = trauma_count >= trauma_max_v
+    let deadish: Bool = fatal_count > 0
+    if !jb_bool_field(out, true, "isRetired", retired) { return false }
+    if !jb_bool_field(out, true, "isDeadish", deadish) { return false }
+    // dossier
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "dossier") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_string_field(out, false, "name", name) { return false }
+    if !jb_string_field(out, true, "crewId", crew_id) { return false }
+    if !jb_string_field(out, true, "alias", alias) { return false }
+    if !jb_string_field(out, true, "look", look) { return false }
+    if !jb_string_field(out, true, "notes", notes) { return false }
+    if !emit_named(out, true, "background", bg_name, bg_desc) { return false }
+    if !emit_named(out, true, "heritage", herit_name, herit_desc) { return false }
+    if !emit_named(out, true, "vice", vice_name, vice_desc) { return false }
+    if !jb_end_obj(out) { return false }
+    // monitor
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "monitor") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !emit_bounded(out, false, "stress", stress, stress_max_v) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "trauma") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_comma(out, false) { return false }
+    if !jb_key(out, "traumas") { return false }
+    if !emit_str_list4(out, trauma_count, t0, t1, t2, t3) { return false }
+    if !jb_u32_field(out, true, "max", trauma_max_v) { return false }
+    if !jb_end_obj(out) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "harm") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_comma(out, false) { return false }
+    if !jb_key(out, "lesser") { return false }
+    if !emit_str_list2(out, lesser_count, l0, l1) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "moderate") { return false }
+    if !emit_str_list2(out, moderate_count, m0, m1) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "severe") { return false }
+    if !emit_str_list1(out, severe_count, s0) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "fatal") { return false }
+    if !emit_str_list1(out, fatal_count, f0) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "healingClock") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_u32_field(out, false, "segments", heal_seg) { return false }
+    if !jb_u32_field(out, true, "size", heal_size) { return false }
+    if !jb_u32_field(out, true, "rollover", 0) { return false }
+    if !jb_end_obj(out) { return false }
+    if !jb_end_obj(out) { return false }
+    // armor
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "armor") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_bool_field(out, false, "standardUsed", armor_std) { return false }
+    if !jb_bool_field(out, true, "heavyUsed", armor_heavy) { return false }
+    if !jb_bool_field(out, true, "specialUsed", armor_special) { return false }
+    if !jb_bool_field(out, true, "hasStandard", false) { return false }
+    if !jb_bool_field(out, true, "hasHeavy", false) { return false }
+    let has_sp: Bool = description_has_special(ab0d) || description_has_special(ab1d)
+    if !jb_bool_field(out, true, "hasSpecial", has_sp) { return false }
+    if !jb_end_obj(out) { return false }
+    if !jb_end_obj(out) { return false }
+    // talent — rebuild from game tables (fresh ratings defaults; ops overlay via parse+rebuild in handler)
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "talent") { return false }
+    if !emit_talent(out, stem, playbook) { return false }
+    // playbook
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "playbook") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_string_field(out, false, "name", playbook) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "experience") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_u32_field(out, false, "points", playbook_xp) { return false }
+    if !jb_u32_field(out, true, "max", playbook_xp_max_v) { return false }
+    if !jb_end_obj(out) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "abilities") { return false }
+    if !emit_abilities(out, ab0n, ab0d, ab0t, ab1n, ab1d, ab1t) { return false }
+    if !jb_end_obj(out) { return false }
+    // gear empty
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "gear") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_comma(out, false) { return false }
+    if !jb_key(out, "loadout") { return false }
+    if !jb_begin_arr(out) { return false }
+    if !jb_end_arr(out) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "availableGear") { return false }
+    if !jb_begin_arr(out) { return false }
+    if !jb_end_arr(out) { return false }
+    if !jb_string_field(out, true, "commitment", commitment_name(commitment)) { return false }
+    if !jb_bool_field(out, true, "isCommitmentLocked", locked) { return false }
+    if !jb_u32_field(out, true, "maxBulk", commitment_bulk(commitment)) { return false }
+    if !jb_end_obj(out) { return false }
+    // fund
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "fund") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_comma(out, false) { return false }
+    if !jb_key(out, "satchel") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_u32_field(out, false, "coins", satchel) { return false }
+    if !jb_u32_field(out, true, "max", satchel_max_v) { return false }
+    if !jb_end_obj(out) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "stash") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_u32_field(out, false, "coins", stash) { return false }
+    if !jb_u32_field(out, true, "max", stash_max_v) { return false }
+    if !jb_end_obj(out) { return false }
+    if !jb_end_obj(out) { return false }
+    // rolodex
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "rolodex") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_comma(out, false) { return false }
+    if !jb_key(out, "friends") { return false }
+    if !emit_friends(out, fr0, fr0c, fr1, fr1c) { return false }
+    if !jb_end_obj(out) { return false }
+    // session
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "session") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_u32_field(out, false, "playbookExpressions", expr_pb) { return false }
+    if !jb_u32_field(out, true, "characterExpressions", expr_ch) { return false }
+    if !jb_u32_field(out, true, "struggleExpressions", expr_st) { return false }
+    if !jb_u32_field(out, true, "max", expr_max) { return false }
+    if !jb_end_obj(out) { return false }
+    if !jb_string_field(out, true, "notebook", notebook) { return false }
+    return jb_end_obj(out)
+}
+
+fn commitment_name(v: u32) -> Span<u8> {
+    if v == 1 { return "light" }
+    if v == 2 { return "normal" }
+    if v == 3 { return "heavy" }
+    if v == 4 { return "encumbered" }
+    return "none"
+}
+
+fn commitment_bulk(v: u32) -> u32 {
+    if v == 1 { return 3 }
+    if v == 2 { return 5 }
+    if v == 3 { return 6 }
+    if v == 4 { return 9 }
+    return 0
+}
+
+fn closeness_name(v: u32) -> Span<u8> {
+    if v == 1 { return "close-friend" }
+    if v == 2 { return "rival" }
+    return "friend"
+}
+
+fn emit_named(out: mutref<Vec>, need: Bool, key: Span<u8>, name: Span<u8>, desc: Span<u8>) -> Bool {
+    if !jb_comma(out, need) { return false }
+    if !jb_key(out, key) { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_string_field(out, false, "name", name) { return false }
+    if !jb_string_field(out, true, "description", desc) { return false }
+    return jb_end_obj(out)
+}
+
+fn emit_bounded(out: mutref<Vec>, need: Bool, key: Span<u8>, cur: u32, max: u32) -> Bool {
+    if !jb_comma(out, need) { return false }
+    if !jb_key(out, key) { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_u32_field(out, false, "current", cur) { return false }
+    if !jb_u32_field(out, true, "max", max) { return false }
+    return jb_end_obj(out)
+}
+
+fn emit_str_list4(out: mutref<Vec>, count: u32, a: Span<u8>, b: Span<u8>, c: Span<u8>, d: Span<u8>) -> Bool {
+    if !jb_begin_arr(out) { return false }
+    if count > 0 {
+        if !jb_escaped_string(out, a) { return false }
+    }
+    if count > 1 {
+        if !jb_comma(out, true) { return false }
+        if !jb_escaped_string(out, b) { return false }
+    }
+    if count > 2 {
+        if !jb_comma(out, true) { return false }
+        if !jb_escaped_string(out, c) { return false }
+    }
+    if count > 3 {
+        if !jb_comma(out, true) { return false }
+        if !jb_escaped_string(out, d) { return false }
+    }
+    return jb_end_arr(out)
+}
+
+fn emit_str_list2(out: mutref<Vec>, count: u32, a: Span<u8>, b: Span<u8>) -> Bool {
+    if !jb_begin_arr(out) { return false }
+    if count > 0 {
+        if !jb_escaped_string(out, a) { return false }
+    }
+    if count > 1 {
+        if !jb_comma(out, true) { return false }
+        if !jb_escaped_string(out, b) { return false }
+    }
+    return jb_end_arr(out)
+}
+
+fn emit_str_list1(out: mutref<Vec>, count: u32, a: Span<u8>) -> Bool {
+    if !jb_begin_arr(out) { return false }
+    if count > 0 {
+        if !jb_escaped_string(out, a) { return false }
+    }
+    return jb_end_arr(out)
+}
+
+fn emit_abilities(out: mutref<Vec>, n0: Span<u8>, d0: Span<u8>, t0: u32, n1: Span<u8>, d1: Span<u8>, t1: u32) -> Bool {
+    if !jb_begin_arr(out) { return false }
+    var count: u32 = 0
+    if std.mem.len(n0) > 0 { count = 1 }
+    if std.mem.len(n1) > 0 { count = count + 1 }
+    if count > 0 {
+        if !jb_begin_obj(out) { return false }
+        if !jb_string_field(out, false, "name", n0) { return false }
+        if !jb_string_field(out, true, "description", d0) { return false }
+        if !jb_u32_field(out, true, "timesTaken", t0) { return false }
+        if !jb_end_obj(out) { return false }
+    }
+    if count > 1 {
+        if !jb_comma(out, true) { return false }
+        if !jb_begin_obj(out) { return false }
+        if !jb_string_field(out, false, "name", n1) { return false }
+        if !jb_string_field(out, true, "description", d1) { return false }
+        if !jb_u32_field(out, true, "timesTaken", t1) { return false }
+        if !jb_end_obj(out) { return false }
+    }
+    return jb_end_arr(out)
+}
+
+fn emit_friends(out: mutref<Vec>, e0: Span<u8>, c0: u32, e1: Span<u8>, c1: u32) -> Bool {
+    if !jb_begin_arr(out) { return false }
+    var count: u32 = 0
+    if std.mem.len(e0) > 0 { count = 1 }
+    if std.mem.len(e1) > 0 { count = count + 1 }
+    if count > 0 {
+        if !jb_begin_obj(out) { return false }
+        if !jb_string_field(out, false, "entry", e0) { return false }
+        if !jb_string_field(out, true, "closeness", closeness_name(c0)) { return false }
+        if !jb_end_obj(out) { return false }
+    }
+    if count > 1 {
+        if !jb_comma(out, true) { return false }
+        if !jb_begin_obj(out) { return false }
+        if !jb_string_field(out, false, "entry", e1) { return false }
+        if !jb_string_field(out, true, "closeness", closeness_name(c1)) { return false }
+        if !jb_end_obj(out) { return false }
+    }
+    return jb_end_arr(out)
+}
+
+fn emit_talent(out: mutref<Vec>, stem: Span<u8>, playbook: Span<u8>) -> Bool {
+    if !jb_begin_obj(out) { return false }
+    if !jb_comma(out, false) { return false }
+    if !jb_key(out, "attributes") { return false }
+    if !jb_begin_arr(out) { return false }
+    let ac: u32 = attr_count(stem)
+    var ai: u32 = 0
+    while ai < ac {
+        if ai > 0 {
+            if !jb_comma(out, true) { return false }
+        }
+        if !jb_begin_obj(out) { return false }
+        if !jb_string_field(out, false, "name", attr_name(stem, ai)) { return false }
+        if !jb_comma(out, true) { return false }
+        if !jb_key(out, "experience") { return false }
+        if !jb_begin_obj(out) { return false }
+        if !jb_u32_field(out, false, "points", 0) { return false }
+        if !jb_u32_field(out, true, "max", attribute_xp_max()) { return false }
+        if !jb_end_obj(out) { return false }
+        if !jb_comma(out, true) { return false }
+        if !jb_key(out, "actions") { return false }
+        if !jb_begin_arr(out) { return false }
+        let jc: u32 = action_count(stem, ai)
+        var aj: u32 = 0
+        while aj < jc {
+            if aj > 0 {
+                if !jb_comma(out, true) { return false }
+            }
+            let an: Span<u8> = action_name(stem, ai, aj)
+            if !jb_begin_obj(out) { return false }
+            if !jb_string_field(out, false, "name", an) { return false }
+            if !jb_u32_field(out, true, "rating", default_rating(stem, playbook, an)) { return false }
+            if !jb_u32_field(out, true, "maxRating", action_point_maximum(stem)) { return false }
+            if !jb_end_obj(out) { return false }
+            aj = aj + 1
+        }
+        if !jb_end_arr(out) { return false }
+        if !jb_end_obj(out) { return false }
+        ai = ai + 1
+    }
+    if !jb_end_arr(out) { return false }
+    return jb_end_obj(out)
+}
+
+// Persist helpers
+pub fn save_character_json(id: Span<u8>, json: Span<u8>) -> Bool {
+    if !write_entity_json("characters", id, json) { return false }
+    return append_index_id("characters", id)
+}
+
+pub fn load_character_json(id: Span<u8>, dest: MutSpan<u8>) -> Maybe<Span<u8>> {
+    return read_entity_json("characters", id, dest)
+}
+
+// OperationResult wrapper around character JSON body already built
+pub fn write_char_op_result(
+    out: mutref<Vec>,
+    ok: Bool,
+    char_json: Span<u8>,
+    op: Span<u8>,
+    has_req: Bool,
+    requested: i32,
+    effective: i32,
+    landed: Span<u8>,
+    has_landed: Bool,
+    side0: Span<u8>,
+    side1: Span<u8>,
+    side_count: u32,
+    err_code: Span<u8>,
+    err_msg: Span<u8>
+) -> Bool {
+    if !jb_begin_obj(out) { return false }
+    if !jb_bool_field(out, false, "ok", ok) { return false }
+    if ok {
+        if !jb_raw_field(out, true, "character", char_json) { return false }
+    }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "applied") { return false }
+    if !jb_begin_obj(out) { return false }
+    if !jb_string_field(out, false, "op", op) { return false }
+    if has_req {
+        if !jb_i32_field(out, true, "requested", requested) { return false }
+        if !jb_i32_field(out, true, "effective", effective) { return false }
+    }
+    if has_landed {
+        if !jb_string_field(out, true, "landedIntensity", landed) { return false }
+    }
+    if !jb_end_obj(out) { return false }
+    if !jb_comma(out, true) { return false }
+    if !jb_key(out, "sideEffects") { return false }
+    if !jb_begin_arr(out) { return false }
+    if side_count > 0 {
+        if !jb_escaped_string(out, side0) { return false }
+    }
+    if side_count > 1 {
+        if !jb_comma(out, true) { return false }
+        if !jb_escaped_string(out, side1) { return false }
+    }
+    if !jb_end_arr(out) { return false }
+    if ok {
+        if !jb_null_field(out, true, "error") { return false }
+    } else {
+        if !jb_comma(out, true) { return false }
+        if !jb_key(out, "error") { return false }
+        if !jb_begin_obj(out) { return false }
+        if !jb_string_field(out, false, "code", err_code) { return false }
+        if !jb_string_field(out, true, "message", err_msg) { return false }
+        if !jb_end_obj(out) { return false }
+    }
+    return jb_end_obj(out)
+}

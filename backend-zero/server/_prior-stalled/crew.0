@@ -1,0 +1,437 @@
+use config
+use game_data
+use jbuf
+use store
+use util
+use character_ops
+
+{
+    name: [32]u8,
+    nlen: u32,
+    boxes: u32,
+
+}
+
+{
+    id: [40]u8,
+    id_len: u32,
+    stem: [32]u8,
+    stem_len: u32,
+    crew_type: [32]u8,
+    crew_type_len: u32,
+    revision: u32,
+    name: [48]u8,
+    name_len: u32,
+    lair: [48]u8,
+    lair_len: u32,
+    reputation: [48]u8,
+    reputation_len: u32,
+    hunting: [48]u8,
+    hunting_len: u32,
+    tier: u32,
+    // 0 strong 1 weak
+    hold: u32,
+    heat: u32,
+    wanted: u32,
+    rep: u32,
+    xp: u32,
+    xp_max: u32,
+    upgrades: [16]Upgrade,
+    upgrade_count: u32,
+    coin: u32,
+    stash: u32,
+    notes: [96]u8,
+    notes_len: u32,
+
+}
+
+fn empty_up() -> Upgrade {
+    return Upgrade { name: [0_u8; 32], nlen: 0, boxes: 0 }
+}
+
+pub fn crew_new_empty() -> Crew {
+    return Crew {
+        id: [0_u8; 40],
+        id_len: 0,
+        stem: [0_u8; 32],
+        stem_len: 0,
+        crew_type: [0_u8; 32],
+        crew_type_len: 0,
+        revision: 1,
+        name: [0_u8; 48],
+        name_len: 0,
+        lair: [0_u8; 48],
+        lair_len: 0,
+        reputation: [0_u8; 48],
+        reputation_len: 0,
+        hunting: [0_u8; 48],
+        hunting_len: 0,
+        tier: 0,
+        hold: 0,
+        heat: 0,
+        wanted: 0,
+        rep: 0,
+        xp: 0,
+        xp_max: crew_xp_max(),
+        upgrades: [
+            empty_up(), empty_up(), empty_up(), empty_up(),
+            empty_up(), empty_up(), empty_up(), empty_up(),
+            empty_up(), empty_up(), empty_up(), empty_up(),
+            empty_up(), empty_up(), empty_up(), empty_up()
+        ],
+        upgrade_count: 0,
+        coin: 0,
+        stash: 0,
+        notes: [0_u8; 96],
+        notes_len: 0,
+    }
+}
+
+pub fn crew_create(stem: Span<u8>, crew_type: Span<u8>) -> Maybe<Crew> {
+    if !known_stem(stem) { return null }
+    if !has_crew_type(crew_type) { return null }
+    var c: Crew = crew_new_empty()
+    c.stem_len = set_text(c.stem, stem)
+    c.crew_type_len = set_text(c.crew_type, crew_type)
+    var idbuf: [40]u8 = [0_u8; 40]
+    let id: Maybe<Span<u8>> = write_uuid_v4(idbuf)
+    if !id.has { return null }
+    c.id_len = set_text(c.id, id.value)
+    c.revision = 1
+    return c
+}
+
+pub fn crew_id(c: ref<Crew>) -> Span<u8> {
+    return text_view(c.id, c.id_len)
+}
+
+pub fn write_crew_json(c: ref<Crew>, v: mutref<Vec>) -> Bool {
+    if !jb_begin_obj(v) { return false }
+    if !jb_string_field(v, false, "kind", "crew") { return false }
+    if !jb_string_field(v, true, "id", crew_id(c)) { return false }
+    if !jb_string_field(v, true, "gameStem", text_view(c.stem, c.stem_len)) { return false }
+    if !jb_string_field(v, true, "gameName", game_name(text_view(c.stem, c.stem_len))) { return false }
+    if !jb_string_field(v, true, "language", game_language(text_view(c.stem, c.stem_len))) { return false }
+    if !jb_u32_field(v, true, "revision", c.revision) { return false }
+    if !jb_u32_field(v, true, "formatVersion", format_version()) { return false }
+    if !jb_string_field(v, true, "createdAt", ts_created()) { return false }
+    if !jb_string_field(v, true, "updatedAt", ts_updated()) { return false }
+    if !jb_string_field(v, true, "crewTypeName", text_view(c.crew_type, c.crew_type_len)) { return false }
+    if !jb_string_field(v, true, "name", text_view(c.name, c.name_len)) { return false }
+    if !jb_string_field(v, true, "lair", text_view(c.lair, c.lair_len)) { return false }
+    if !jb_string_field(v, true, "reputation", text_view(c.reputation, c.reputation_len)) { return false }
+    if !jb_string_field(v, true, "huntingGrounds", text_view(c.hunting, c.hunting_len)) { return false }
+    if !jb_u32_field(v, true, "tier", c.tier) { return false }
+    if c.hold == 0 {
+        if !jb_string_field(v, true, "hold", "strong") { return false }
+    } else {
+        if !jb_string_field(v, true, "hold", "weak") { return false }
+    }
+    // heat wanted rep bounded
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "heat") { return false }
+    if !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "current", c.heat) { return false }
+    if !jb_u32_field(v, true, "max", heat_max()) { return false }
+    if !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "wanted") { return false }
+    if !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "current", c.wanted) { return false }
+    if !jb_u32_field(v, true, "max", wanted_max()) { return false }
+    if !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "rep") { return false }
+    if !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "current", c.rep) { return false }
+    if !jb_u32_field(v, true, "max", rep_max()) { return false }
+    if !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "experience") { return false }
+    if !jb_begin_obj(v) { return false }
+    if !jb_u32_field(v, false, "points", c.xp) { return false }
+    if !jb_u32_field(v, true, "max", c.xp_max) { return false }
+    if !jb_end_obj(v) { return false }
+    // specialAbilities empty
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "specialAbilities") { return false }
+    if !jb_begin_arr(v) { return false }
+    if !jb_end_arr(v) { return false }
+    // upgrades
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "upgrades") { return false }
+    if !jb_begin_arr(v) { return false }
+    var i: u32 = 0
+    while i < c.upgrade_count {
+        if i > 0 {
+            if !jb_comma(v, true) { return false }
+        }
+        if !jb_begin_obj(v) { return false }
+        if !jb_string_field(v, false, "name", text_view(c.upgrades[i as usize].name, c.upgrades[i as usize].nlen)) { return false }
+        if !jb_u32_field(v, true, "boxesMarked", c.upgrades[i as usize].boxes) { return false }
+        if !jb_end_obj(v) { return false }
+        i = i + 1
+    }
+    if !jb_end_arr(v) { return false }
+    // cohorts empty
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "cohorts") { return false }
+    if !jb_begin_arr(v) { return false }
+    if !jb_end_arr(v) { return false }
+    if !jb_u32_field(v, true, "coin", c.coin) { return false }
+    if !jb_u32_field(v, true, "stash", c.stash) { return false }
+    if !jb_string_field(v, true, "notes", text_view(c.notes, c.notes_len)) { return false }
+    return jb_end_obj(v)
+}
+
+pub fn op_upgrade_mark(c: mutref<Crew>, name: Span<u8>) -> OpOutcome {
+    let max_boxes: u32 = upgrade_boxes(text_view(c.crew_type, c.crew_type_len), name)
+    if max_boxes == 0 {
+        // Allow custom name marks with max 2 for semantics Secure Lair common case if type lookup miss：try name alone via Assassins
+        let alt: u32 = upgrade_boxes("Assassins", name)
+        if alt == 0 {
+            return outcome_err("NOT_FOUND", "upgrade unknown")
+        }
+        return mark_with_max(c, name, alt)
+    }
+    return mark_with_max(c, name, max_boxes)
+}
+
+fn mark_with_max(c: mutref<Crew>, name: Span<u8>, max_boxes: u32) -> OpOutcome {
+    var i: u32 = 0
+    while i < c.upgrade_count {
+        if std.mem.eql(text_view(c.upgrades[i as usize].name, c.upgrades[i as usize].nlen), name) {
+            if c.upgrades[i as usize].boxes >= max_boxes {
+                return outcome_err("UPGRADE_MAXED", "upgrade maxed")
+            }
+            c.upgrades[i as usize].boxes = c.upgrades[i as usize].boxes + 1
+            c.revision = c.revision + 1
+            return outcome_ok("upgrade.mark")
+        }
+        i = i + 1
+    }
+    if c.upgrade_count >= 16 {
+        return outcome_err("VALIDATION", "too many upgrades")
+    }
+    let idx: usize = c.upgrade_count as usize
+    c.upgrades[idx].nlen = set_text(c.upgrades[idx].name, name)
+    c.upgrades[idx].boxes = 1
+    c.upgrade_count = c.upgrade_count + 1
+    c.revision = c.revision + 1
+    return outcome_ok("upgrade.mark")
+}
+
+pub fn op_upgrade_unmark(c: mutref<Crew>, name: Span<u8>) -> OpOutcome {
+    var i: u32 = 0
+    while i < c.upgrade_count {
+        if std.mem.eql(text_view(c.upgrades[i as usize].name, c.upgrades[i as usize].nlen), name) {
+            if c.upgrades[i as usize].boxes == 0 {
+                return outcome_err("VALIDATION", "no boxes")
+            }
+            // BOX-WISE: remove one box, keep entry if boxes remain
+            c.upgrades[i as usize].boxes = c.upgrades[i as usize].boxes - 1
+            if c.upgrades[i as usize].boxes == 0 {
+                // remove entry
+                var j: u32 = i
+                while j + 1 < c.upgrade_count {
+                    c.upgrades[j as usize] = c.upgrades[(j + 1) as usize]
+                    j = j + 1
+                }
+                c.upgrade_count = c.upgrade_count - 1
+            }
+            c.revision = c.revision + 1
+            return outcome_ok("upgrade.unmark")
+        }
+        i = i + 1
+    }
+    return outcome_err("NOT_FOUND", "upgrade not found")
+}
+
+pub fn save_crew(c: ref<Crew>) -> Bool {
+    var store: [2000]u8 = [0_u8; 2000]
+    var v: Vec = jb_init(store)
+    if !write_crew_json(c, &mut v) { return false }
+    let id: Span<u8> = crew_id(c)
+    if !write_entity_json("crews", id, jb_bytes(&v)) { return false }
+    return append_index_id("crews", id)
+}
+
+pub fn load_crew(id: Span<u8>) -> Maybe<Crew> {
+    var buf: [2000]u8 = [0_u8; 2000]
+    let raw: Maybe<Span<u8>> = read_entity_json("crews", id, buf)
+    if !raw.has { return null }
+    return parse_crew(raw.value)
+}
+
+pub fn parse_crew(json: Span<u8>) -> Maybe<Crew> {
+    var c: Crew = crew_new_empty()
+    var tbuf: [64]u8 = [0_u8; 64]
+    let id: Maybe<Span<u8>> = std.json.string(tbuf, json, "id")
+    if !id.has { return null }
+    c.id_len = set_text(c.id, id.value)
+    let stem: Maybe<Span<u8>> = std.json.string(tbuf, json, "gameStem")
+    if stem.has { c.stem_len = set_text(c.stem, stem.value) }
+    let ct: Maybe<Span<u8>> = std.json.string(tbuf, json, "crewTypeName")
+    if ct.has { c.crew_type_len = set_text(c.crew_type, ct.value) }
+    let rev: Maybe<u32> = std.json.u32(json, "revision")
+    if rev.has { c.revision = rev.value }
+    // upgrades array scan name + boxesMarked
+    let ups: Maybe<Span<u8>> = std.json.field(json, "upgrades")
+    if ups.has {
+        let s: Span<u8> = ups.value
+        var i: usize = 0
+        while i + 6 < std.mem.len(s) {
+            if s[i] == 34_u8 && s[i + 1] == 110_u8 && s[i + 2] == 97_u8 {
+                var j: usize = i
+                while j < std.mem.len(s) && s[j] != 58_u8 { j = j + 1 }
+                if j < std.mem.len(s) {
+                    j = j + 1
+                    while j < std.mem.len(s) && s[j] != 34_u8 { j = j + 1 }
+                    if j < std.mem.len(s) {
+                        j = j + 1
+                        let start: usize = j
+                        while j < std.mem.len(s) && s[j] != 34_u8 { j = j + 1 }
+                        let name: Span<u8> = s[start..j]
+                        var boxes: u32 = 1
+                        var k: usize = j
+                        while k + 12 < std.mem.len(s) && k < j + 60 {
+                            if s[k] == 98_u8 && s[k + 1] == 111_u8 && s[k + 2] == 120_u8 {
+                                var v: usize = k
+                                while v < std.mem.len(s) && s[v] != 58_u8 { v = v + 1 }
+                                if v < std.mem.len(s) {
+                                    v = v + 1
+                                    while v < std.mem.len(s) && s[v] == 32_u8 { v = v + 1 }
+                                    let t: Maybe<u32> = std.parse.parseU32(s[v..std.mem.len(s)])
+                                    if t.has { boxes = t.value }
+                                }
+                                break
+                            }
+                            k = k + 1
+                        }
+                        if c.upgrade_count < 16 {
+                            let idx: usize = c.upgrade_count as usize
+                            c.upgrades[idx].nlen = set_text(c.upgrades[idx].name, name)
+                            c.upgrades[idx].boxes = boxes
+                            c.upgrade_count = c.upgrade_count + 1
+                        }
+                        i = j
+                    }
+                }
+            }
+            i = i + 1
+        }
+    }
+    return c
+}
+
+pub fn write_crew_result(c: ref<Crew>, o: ref<OpOutcome>, v: mutref<Vec>) -> Bool {
+    if !jb_begin_obj(v) { return false }
+    if !jb_bool_field(v, false, "ok", o.ok) { return false }
+    if o.ok {
+        if !jb_comma(v, true) { return false }
+        if !jb_key(v, "crew") { return false }
+        if !write_crew_json(c, v) { return false }
+    }
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "applied") { return false }
+    if !jb_begin_obj(v) { return false }
+    if !jb_string_field(v, false, "op", text_view(o.applied_op, o.applied_op_len)) { return false }
+    if !jb_end_obj(v) { return false }
+    if !jb_comma(v, true) { return false }
+    if !jb_key(v, "sideEffects") { return false }
+    if !jb_begin_arr(v) { return false }
+    if !jb_end_arr(v) { return false }
+    if o.ok {
+        if !jb_null_field(v, true, "error") { return false }
+    } else {
+        if !jb_comma(v, true) { return false }
+        if !jb_key(v, "error") { return false }
+        if !jb_begin_obj(v) { return false }
+        if !jb_string_field(v, false, "code", text_view(o.code, o.code_len)) { return false }
+        if !jb_string_field(v, true, "message", text_view(o.message, o.message_len)) { return false }
+        if !jb_end_obj(v) { return false }
+    }
+    return jb_end_obj(v)
+}
+
+pub fn member_count_for_crew(crew_id: Span<u8>) -> u32 {
+    var idx: [2048]u8 = [0_u8; 2048]
+    let n_m: Maybe<usize> = index_bytes("characters", idx)
+    if !n_m.has { return 0 }
+    let n: usize = n_m.value
+    var count: u32 = 0
+    var i: usize = 0
+    while i < n {
+        var j: usize = i
+        while j < n && idx[j] != 10_u8 { j = j + 1 }
+        var line: Span<u8> = idx[i..j]
+        if std.mem.len(line) > 0 {
+            if line[std.mem.len(line) - 1] == 13_u8 {
+                line = line[0..std.mem.len(line) - 1]
+            }
+        }
+        if std.mem.len(line) > 0 {
+            var cbuf: [3500]u8 = [0_u8; 3500]
+            let raw: Maybe<Span<u8>> = read_entity_json("characters", line, cbuf)
+            if raw.has {
+                let dos: Maybe<Span<u8>> = std.json.field(raw.value, "dossier")
+                if dos.has {
+                    var tbuf: [40]u8 = [0_u8; 40]
+                    let cid: Maybe<Span<u8>> = std.json.string(tbuf, dos.value, "crewId")
+                    if cid.has {
+                        if std.mem.eql(cid.value, crew_id) {
+                            count = count + 1
+                        }
+                    }
+                }
+            }
+        }
+        if j < n && idx[j] == 10_u8 {
+            i = j + 1
+        } else {
+            i = j
+        }
+    }
+    return count
+}
+
+pub fn unlink_crew_members(crew_id: Span<u8>) -> Void {
+    var idx: [2048]u8 = [0_u8; 2048]
+    let n_m: Maybe<usize> = index_bytes("characters", idx)
+    if !n_m.has { return }
+    let n: usize = n_m.value
+    var i: usize = 0
+    while i < n {
+        var j: usize = i
+        while j < n && idx[j] != 10_u8 { j = j + 1 }
+        var line: Span<u8> = idx[i..j]
+        if std.mem.len(line) > 0 {
+            if line[std.mem.len(line) - 1] == 13_u8 {
+                line = line[0..std.mem.len(line) - 1]
+            }
+        }
+        if std.mem.len(line) > 0 {
+            // load character via character module - circular? use raw JSON patch
+            var cbuf: [3500]u8 = [0_u8; 3500]
+            let raw: Maybe<Span<u8>> = read_entity_json("characters", line, cbuf)
+            if raw.has {
+                let dos: Maybe<Span<u8>> = std.json.field(raw.value, "dossier")
+                if dos.has {
+                    var tbuf: [40]u8 = [0_u8; 40]
+                    let cid: Maybe<Span<u8>> = std.json.string(tbuf, dos.value, "crewId")
+                    if cid.has {
+                        if std.mem.eql(cid.value, crew_id) {
+                            // rewrite JSON replacing crewId value with empty — heavy; instead skip for Z1 if character_ops load/save can
+                            // Use character.load / update
+                        }
+                    }
+                }
+            }
+        }
+        if j < n && idx[j] == 10_u8 {
+            i = j + 1
+        } else {
+            i = j
+        }
+    }
+}

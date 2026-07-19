@@ -1,0 +1,197 @@
+use config
+use util
+use jbuf
+
+pub fn ensure_layout() -> Bool {
+    if !std.fs.isDir(data_dir_string()) {
+        if !std.fs.makeDir(data_dir_string()) {
+            return false
+        }
+    }
+    var b1: [160]u8 = [0_u8; 160]
+    let ch: Maybe<String> = std.path.join(b1, data_dir(), "characters")
+    if !ch.has { return false }
+    if !ensure_dir(ch.value) { return false }
+    var b2: [160]u8 = [0_u8; 160]
+    let cr: Maybe<String> = std.path.join(b2, data_dir(), "crews")
+    if !cr.has { return false }
+    if !ensure_dir(cr.value) { return false }
+    var cb: [160]u8 = [0_u8; 160]
+    let cp: Maybe<String> = path_campaign(cb)
+    if !cp.has { return false }
+    if !std.fs.exists(cp.value) {
+        var body_store: [256]u8 = [0_u8; 256]
+        var v: Vec = jb_init(body_store)
+        if !jb_begin_obj(&mut v) { return false }
+        if !jb_string_field(&mut v, false, "kind", "campaign") { return false }
+        if !jb_string_field(&mut v, true, "name", campaign_name()) { return false }
+        if !jb_string_field(&mut v, true, "gameStem", "blades-in-the-dark") { return false }
+        if !jb_string_field(&mut v, true, "createdAt", ts_created()) { return false }
+        if !jb_u32_field(&mut v, true, "formatVersion", format_version()) { return false }
+        if !jb_end_obj(&mut v) { return false }
+        if !atomic_write_bytes(cp.value, jb_bytes(&v)) { return false }
+    }
+    return true
+}
+
+pub fn atomic_write_bytes(path: String, bytes: Span<u8>) -> Bool {
+    var tmpb: [256]u8 = [0_u8; 256]
+    let t: Maybe<String> = std.fs.tempName(tmpb, "pitd")
+    if t.has {
+        return std.fs.atomicWrite(path, t.value, bytes)
+    }
+    let w: Maybe<usize> = std.fs.writeBytes(path, bytes)
+    return w.has
+}
+
+pub fn read_file_to(path: String, dest: MutSpan<u8>) -> Maybe<Span<u8>> {
+    let n: Maybe<usize> = std.fs.readBytes(path, dest)
+    if !n.has {
+        return null
+    }
+    if n.value > std.mem.len(dest) {
+        return null
+    }
+    return dest[0..n.value]
+}
+
+fn contains_line(hay: Span<u8>, needle: Span<u8>) -> Bool {
+    var i: usize = 0
+    let nlen: usize = std.mem.len(needle)
+    let hlen: usize = std.mem.len(hay)
+    if nlen == 0 { return false }
+    while i + nlen <= hlen {
+        if std.mem.eql(hay[i..i + nlen], needle) {
+            let before_ok: Bool = i == 0 || hay[i - 1] == 10_u8
+            let after_i: usize = i + nlen
+            let after_ok: Bool = after_i == hlen || hay[after_i] == 10_u8 || hay[after_i] == 13_u8
+            if before_ok && after_ok {
+                return true
+            }
+        }
+        i = i + 1
+    }
+    return false
+}
+
+pub fn append_index_id(kind: Span<u8>, id: Span<u8>) -> Bool {
+    var ibuf: [256]u8 = [0_u8; 256]
+    let ip: Maybe<String> = path_index(ibuf, kind)
+    if !ip.has { return false }
+    var storage: [4096]u8 = [0_u8; 4096]
+    var out: Vec = jb_init(storage)
+    let prev: Maybe<usize> = std.fs.readBytes(ip.value, storage)
+    if prev.has {
+        if prev.value > std.mem.len(storage) { return false }
+        if contains_line(storage[0..prev.value], id) {
+            return true
+        }
+        var i: usize = 0
+        while i < prev.value {
+            if !std.mem.vecPush(&mut out, storage[i]) { return false }
+            i = i + 1
+        }
+        if prev.value > 0 {
+            if storage[prev.value - 1] != 10_u8 {
+                if !std.mem.vecPush(&mut out, 10_u8) { return false }
+            }
+        }
+    }
+    var j: usize = 0
+    while j < std.mem.len(id) {
+        if !std.mem.vecPush(&mut out, id[j]) { return false }
+        j = j + 1
+    }
+    if !std.mem.vecPush(&mut out, 10_u8) { return false }
+    return atomic_write_bytes(ip.value, jb_bytes(&out))
+}
+
+pub fn remove_index_id(kind: Span<u8>, id: Span<u8>) -> Bool {
+    var ibuf: [256]u8 = [0_u8; 256]
+    let ip: Maybe<String> = path_index(ibuf, kind)
+    if !ip.has { return false }
+    var existing: [4096]u8 = [0_u8; 4096]
+    let prev: Maybe<usize> = std.fs.readBytes(ip.value, existing)
+    if !prev.has { return true }
+    if prev.value > std.mem.len(existing) { return false }
+    var out_store: [4096]u8 = [0_u8; 4096]
+    var out: Vec = jb_init(out_store)
+    var i: usize = 0
+    let hlen: usize = prev.value
+    while i < hlen {
+        var j: usize = i
+        while j < hlen && existing[j] != 10_u8 {
+            j = j + 1
+        }
+        var line2: Span<u8> = existing[i..j]
+        if std.mem.len(line2) > 0 {
+            if line2[std.mem.len(line2) - 1] == 13_u8 {
+                line2 = line2[0..std.mem.len(line2) - 1]
+            }
+        }
+        if !std.mem.eql(line2, id) && std.mem.len(line2) > 0 {
+            var k: usize = 0
+            while k < std.mem.len(line2) {
+                if !std.mem.vecPush(&mut out, line2[k]) { return false }
+                k = k + 1
+            }
+            if !std.mem.vecPush(&mut out, 10_u8) { return false }
+        }
+        if j < hlen && existing[j] == 10_u8 {
+            i = j + 1
+        } else {
+            i = j
+        }
+    }
+    return atomic_write_bytes(ip.value, jb_bytes(&out))
+}
+
+pub fn write_entity_json(kind: Span<u8>, id: Span<u8>, json: Span<u8>) -> Bool {
+    var dbuf: [320]u8 = [0_u8; 320]
+    let dir: Maybe<String> = path_entity_dir(dbuf, kind, id)
+    if !dir.has { return false }
+    if !ensure_dir(dir.value) { return false }
+    var pbuf: [360]u8 = [0_u8; 360]
+    let path: Maybe<String> = path_entity_current(pbuf, kind, id)
+    if !path.has { return false }
+    return atomic_write_bytes(path.value, json)
+}
+
+pub fn read_entity_json(kind: Span<u8>, id: Span<u8>, dest: MutSpan<u8>) -> Maybe<Span<u8>> {
+    var pbuf: [360]u8 = [0_u8; 360]
+    let path: Maybe<String> = path_entity_current(pbuf, kind, id)
+    if !path.has { return null }
+    if !std.fs.exists(path.value) {
+        return null
+    }
+    return read_file_to(path.value, dest)
+}
+
+pub fn delete_entity(kind: Span<u8>, id: Span<u8>) -> Bool {
+    var pbuf: [360]u8 = [0_u8; 360]
+    let path: Maybe<String> = path_entity_current(pbuf, kind, id)
+    if path.has {
+        if std.fs.exists(path.value) {
+            let _r: Bool = std.fs.remove(path.value)
+        }
+    }
+    var dbuf: [320]u8 = [0_u8; 320]
+    let dir: Maybe<String> = path_entity_dir(dbuf, kind, id)
+    if dir.has {
+        let _d: Bool = std.fs.removeDir(dir.value)
+    }
+    return remove_index_id(kind, id)
+}
+
+pub fn index_bytes(kind: Span<u8>, dest: MutSpan<u8>) -> Maybe<usize> {
+    var ibuf: [256]u8 = [0_u8; 256]
+    let ip: Maybe<String> = path_index(ibuf, kind)
+    if !ip.has { return null }
+    if !std.fs.exists(ip.value) {
+        return 0
+    }
+    let n: Maybe<usize> = std.fs.readBytes(ip.value, dest)
+    if !n.has { return 0 }
+    if n.value > std.mem.len(dest) { return null }
+    return n.value
+}

@@ -1,0 +1,236 @@
+use config
+
+fn nibble(v: u8) -> u8 {
+    if v < 10 {
+        return 48_u8 + v
+    }
+    return 97_u8 + (v - 10)
+}
+
+fn write_u32_hex8(out: MutSpan<u8>, at: usize, value: u32) -> Bool {
+    if at + 8 > std.mem.len(out) {
+        return false
+    }
+    var shift: u32 = 28
+    var i: usize = 0
+    while i < 8 {
+        let nib: u8 = ((value >> shift) & 0x0f_u32) as u8
+        out[at + i] = nibble(nib)
+        if shift >= 4 {
+            shift = shift - 4
+        } else {
+            shift = 0
+        }
+        i = i + 1
+    }
+    return true
+}
+
+// UUID version-4 text (36 chars) into out. Returns written span.
+pub fn write_uuid_v4(out: MutSpan<u8>) -> Maybe<Span<u8>> {
+    if std.mem.len(out) < 36 {
+        return null
+    }
+    let a: u32 = std.crypto.secureRandomU32()
+    let b: u32 = std.crypto.secureRandomU32()
+    let c: u32 = std.crypto.secureRandomU32()
+    let d: u32 = std.crypto.secureRandomU32()
+    // 8 hex
+    if !write_u32_hex8(out, 0, a) { return null }
+    out[8] = 45_u8
+    // next 4 from b high
+    out[9] = nibble(((b >> 28) & 0x0f_u32) as u8)
+    out[10] = nibble(((b >> 24) & 0x0f_u32) as u8)
+    out[11] = nibble(((b >> 20) & 0x0f_u32) as u8)
+    out[12] = nibble(((b >> 16) & 0x0f_u32) as u8)
+    out[13] = 45_u8
+    // version 4 + 3 nibbles from b
+    out[14] = 52_u8 // '4'
+    out[15] = nibble(((b >> 12) & 0x0f_u32) as u8)
+    out[16] = nibble(((b >> 8) & 0x0f_u32) as u8)
+    out[17] = nibble(((b >> 4) & 0x0f_u32) as u8)
+    out[18] = 45_u8
+    // variant 10xx: high nibble 8..b
+    let vn: u8 = (8_u8 + (((c >> 28) & 0x03_u32) as u8))
+    out[19] = nibble(vn)
+    out[20] = nibble(((c >> 24) & 0x0f_u32) as u8)
+    out[21] = nibble(((c >> 20) & 0x0f_u32) as u8)
+    out[22] = nibble(((c >> 16) & 0x0f_u32) as u8)
+    out[23] = 45_u8
+    // 12 hex: remaining c + d
+    out[24] = nibble(((c >> 12) & 0x0f_u32) as u8)
+    out[25] = nibble(((c >> 8) & 0x0f_u32) as u8)
+    out[26] = nibble(((c >> 4) & 0x0f_u32) as u8)
+    out[27] = nibble((c & 0x0f_u32) as u8)
+    if !write_u32_hex8(out, 28, d) { return null }
+    // write_u32_hex8 wrote 8 at 28..36 — good (28+8=36)
+    return out[0..36]
+}
+
+pub fn is_safe_id(id: Span<u8>) -> Bool {
+    if std.mem.len(id) == 0 {
+        return false
+    }
+    var i: usize = 0
+    while i < std.mem.len(id) {
+        let b: u8 = id[i]
+        let ok: Bool = (b >= 48_u8 && b <= 57_u8) || (b >= 65_u8 && b <= 90_u8) || (b >= 97_u8 && b <= 122_u8) || b == 45_u8
+        if !ok {
+            return false
+        }
+        i = i + 1
+    }
+    return true
+}
+
+pub fn data_dir_string() -> String {
+    return "campaign-data"
+}
+
+pub fn path_campaign(buf: MutSpan<u8>) -> Maybe<String> {
+    return std.path.join(buf, data_dir(), "campaign.json")
+}
+
+pub fn path_index(buf: MutSpan<u8>, kind: Span<u8>) -> Maybe<String> {
+    var mid: [256]u8 = [0_u8; 256]
+    let kind_dir: Maybe<String> = std.path.join(mid, data_dir(), kind)
+    if !kind_dir.has { return null }
+    return std.path.join(buf, kind_dir.value, "index.txt")
+}
+
+pub fn path_entity_dir(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
+    var mid: [256]u8 = [0_u8; 256]
+    let kind_dir: Maybe<String> = std.path.join(mid, data_dir(), kind)
+    if !kind_dir.has { return null }
+    return std.path.join(buf, kind_dir.value, id)
+}
+
+pub fn path_entity_current(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
+    var mid: [300]u8 = [0_u8; 300]
+    let id_dir: Maybe<String> = path_entity_dir(mid, kind, id)
+    if !id_dir.has { return null }
+    return std.path.join(buf, id_dir.value, "current.json")
+}
+
+pub fn ensure_dir(path: String) -> Bool {
+    if std.fs.isDir(path) {
+        return true
+    }
+    return std.fs.makeDir(path)
+}
+
+pub fn clamp_u32(value: u32, max: u32) -> u32 {
+    if value > max {
+        return max
+    }
+    return value
+}
+
+pub fn clamp_add(current: u32, max: u32, delta: i32) -> u32 {
+    if delta >= 0 {
+        let d: u32 = delta as u32
+        if current >= max {
+            return max
+        }
+        let room: u32 = max - current
+        if d >= room {
+            return max
+        }
+        return current + d
+    }
+    let ad: u32 = (0 - delta) as u32
+    if ad >= current {
+        return 0
+    }
+    return current - ad
+}
+
+pub fn applied_delta(before: u32, after: u32) -> i32 {
+    if after >= before {
+        return (after - before) as i32
+    }
+    return 0 - ((before - after) as i32)
+}
+
+pub fn string_field_decode(dst: MutSpan<u8>, body: Span<u8>, field: Span<u8>) -> Maybe<Span<u8>> {
+    return std.json.string(dst, body, field)
+}
+
+pub fn bool_field(body: Span<u8>, field: Span<u8>) -> Maybe<Bool> {
+    return std.json.bool(body, field)
+}
+
+pub fn u32_field(body: Span<u8>, field: Span<u8>) -> Maybe<u32> {
+    return std.json.u32(body, field)
+}
+
+pub fn i32_from_body_field(body: Span<u8>, field: Span<u8>) -> Maybe<i32> {
+    let pos: Maybe<u32> = std.json.u32(body, field)
+    if pos.has {
+        return pos.value as i32
+    }
+    let field_span: Maybe<Span<u8>> = std.json.field(body, field)
+    if !field_span.has {
+        return null
+    }
+    return std.parse.parseI32(field_span.value)
+}
+
+pub fn copy_to(dst: MutSpan<u8>, src: Span<u8>) -> Maybe<Span<u8>> {
+    if std.mem.len(src) > std.mem.len(dst) {
+        return null
+    }
+    let n: usize = std.mem.copy(dst, src)
+    return dst[0..n]
+}
+
+pub fn set_text(dst: MutSpan<u8>, src: Span<u8>) -> u32 {
+    let n_maybe: Maybe<Span<u8>> = copy_to(dst, src)
+    if !n_maybe.has {
+        return 0
+    }
+    return std.mem.len(n_maybe.value) as u32
+}
+
+pub fn text_view(buf: Span<u8>, len: u32) -> Span<u8> {
+    let n: usize = len as usize
+    if n > std.mem.len(buf) {
+        return buf[0..0]
+    }
+    return buf[0..n]
+}
+
+pub fn spans_eql_ci_armor(name: Span<u8>, kind: Span<u8>) -> Bool {
+    // kind: standard|heavy|special — match loadout item names per C# lists (English subset for Z1)
+    if std.mem.eql(kind, "standard") {
+        return std.mem.eql(name, "Armor") || std.mem.eql(name, "Armure")
+    }
+    if std.mem.eql(kind, "heavy") {
+        return std.mem.eql(name, "+Heavy") || std.mem.eql(name, "+Lourde") || std.mem.eql(name, "Armor")
+    }
+    return false
+}
+
+pub fn description_has_special(desc: Span<u8>) -> Bool {
+    // case-sensitive substring search for "special armor"
+    return contains_ascii(desc, "special armor") || contains_ascii(desc, "armure spéciale") || contains_ascii(desc, "особая защита") || contains_ascii(desc, "особую защиту")
+}
+
+pub fn contains_ascii(hay: Span<u8>, needle: Span<u8>) -> Bool {
+    let nlen: usize = std.mem.len(needle)
+    let hlen: usize = std.mem.len(hay)
+    if nlen == 0 {
+        return true
+    }
+    if nlen > hlen {
+        return false
+    }
+    var i: usize = 0
+    while i + nlen <= hlen {
+        if std.mem.eql(hay[i..i + nlen], needle) {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}

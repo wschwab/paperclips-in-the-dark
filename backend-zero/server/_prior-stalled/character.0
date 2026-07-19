@@ -1,0 +1,2 @@
+// Intentionally thin — logic lives in character_ops (locals, not record arrays).
+// Kept so earlier use-paths compile after rewrite.

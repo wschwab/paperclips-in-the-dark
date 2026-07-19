@@ -1,0 +1,29 @@
+// Fixed numeric maxima. Per spec §5 the only game-JSON-derived numbers are
+// ActionPointMaximum and RecoveryClockSize (see data.0); the rest mirror
+// the C# reference Models constants (MonitorStress.DefaultMaxStress=9,
+// MonitorTrauma.MaxTraumas=4, FundStash=40, FundSatchel=4). These C# values
+// are not overridden by any of the supported games.
+
+pub fn stress_max() -> u32 { return 9 }
+pub fn trauma_max() -> u32 { return 4 }
+pub fn attribute_xp_max() -> u32 { return 6 }
+pub fn playbook_xp_max() -> u32 { return 8 }
+pub fn satchel_max() -> u32 { return 4 }
+pub fn stash_max() -> u32 { return 40 }
+pub fn session_expr_max() -> u32 { return 4 }
+pub fn heat_max() -> u32 { return 9 }
+pub fn wanted_max() -> u32 { return 4 }
+pub fn rep_max() -> u32 { return 12 }
+pub fn crew_xp_max() -> u32 { return 10 }
+pub fn harm_lesser_cap() -> u32 { return 3 }
+pub fn harm_moderate_cap() -> u32 { return 2 }
+pub fn harm_severe_cap() -> u32 { return 1 }
+pub fn harm_fatal_cap() -> u32 { return 1 }
+
+pub fn format_version() -> u32 { return 1 }
+pub fn impl_version() -> Span<u8> { return "0.1.0-z1" }
+pub fn impl_kind() -> Span<u8> { return "zero" }
+pub fn ts_created() -> Span<u8> { return "2026-07-19T12:00:00.000Z" }
+pub fn ts_updated() -> Span<u8> { return "2026-07-19T12:00:01.000Z" }
+pub fn campaign_name() -> Span<u8> { return "Local Table" }
+pub fn data_dir() -> Span<u8> { return "campaign-data" }
