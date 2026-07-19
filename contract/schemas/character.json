@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/character.json",
+  "title": "Character",
+  "type": "object",
+  "required": [
+    "kind", "id", "gameStem", "gameName", "language", "revision",
+    "formatVersion", "createdAt", "updatedAt", "dossier", "monitor", "talent",
+    "playbook", "gear", "fund", "rolodex", "session", "notebook",
+    "isRetired", "isDeadish"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "character" },
+    "id": { "$ref": "common.json#/$defs/uuid" },
+    "gameStem": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+    "gameName": { "type": "string" },
+    "language": { "type": "string" },
+    "revision": { "$ref": "common.json#/$defs/revision" },
+    "formatVersion": { "$ref": "common.json#/$defs/formatVersion" },
+    "createdAt": { "$ref": "common.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "common.json#/$defs/timestamp" },
+    "isRetired": { "type": "boolean" },
+    "isDeadish": { "type": "boolean" },
+    "dossier": {
+      "type": "object",
+      "required": ["name", "crewId", "alias", "look", "notes", "background", "heritage", "vice"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "crewId": {
+          "type": "string",
+          "description": "UUID of linked crew, or empty string",
+          "pattern": "^([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})?$"
+        },
+        "alias": { "type": "string" },
+        "look": { "type": "string" },
+        "notes": { "type": "string" },
+        "background": { "$ref": "common.json#/$defs/namedDescription" },
+        "heritage": { "$ref": "common.json#/$defs/namedDescription" },
+        "vice": { "$ref": "common.json#/$defs/namedDescription" }
+      }
+    },
+    "monitor": {
+      "type": "object",
+      "required": ["stress", "trauma", "harm", "armor"],
+      "additionalProperties": false,
+      "properties": {
+        "stress": { "$ref": "common.json#/$defs/boundedInteger" },
+        "trauma": {
+          "type": "object",
+          "required": ["traumas", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "traumas": { "type": "array", "items": { "type": "string" } },
+            "max": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "harm": {
+          "type": "object",
+          "required": ["lesser", "moderate", "severe", "fatal", "healingClock"],
+          "additionalProperties": false,
+          "properties": {
+            "lesser": { "type": "array", "items": { "type": "string" } },
+            "moderate": { "type": "array", "items": { "type": "string" } },
+            "severe": { "type": "array", "items": { "type": "string" } },
+            "fatal": { "type": "array", "items": { "type": "string" } },
+            "healingClock": {
+              "type": "object",
+              "required": ["segments", "size", "rollover"],
+              "additionalProperties": false,
+              "properties": {
+                "segments": { "type": "integer", "minimum": 0 },
+                "size": { "type": "integer", "minimum": 1 },
+                "rollover": { "type": "integer", "minimum": 0 }
+              }
+            }
+          }
+        },
+        "armor": {
+          "type": "object",
+          "required": [
+            "standardUsed", "heavyUsed", "specialUsed",
+            "hasStandard", "hasHeavy", "hasSpecial"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "standardUsed": { "type": "boolean" },
+            "heavyUsed": { "type": "boolean" },
+            "specialUsed": { "type": "boolean" },
+            "hasStandard": { "type": "boolean", "description": "derived from loadout" },
+            "hasHeavy": { "type": "boolean", "description": "derived from loadout" },
+            "hasSpecial": { "type": "boolean", "description": "derived from ability descriptions" }
+          }
+        }
+      }
+    },
+    "talent": {
+      "type": "object",
+      "required": ["attributes"],
+      "additionalProperties": false,
+      "properties": {
+        "attributes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "experience", "actions"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "experience": { "$ref": "common.json#/$defs/experience" },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "rating", "maxRating"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": { "type": "string" },
+                    "rating": { "type": "integer", "minimum": 0 },
+                    "maxRating": { "type": "integer", "minimum": 1 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "playbook": {
+      "type": "object",
+      "required": ["name", "experience", "abilities"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "experience": { "$ref": "common.json#/$defs/experience" },
+        "abilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "timesTaken"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "timesTaken": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+    "gear": {
+      "type": "object",
+      "required": ["loadout", "availableGear", "commitment", "isCommitmentLocked", "maxBulk"],
+      "additionalProperties": false,
+      "properties": {
+        "loadout": { "$ref": "#/$defs/gearItems" },
+        "availableGear": { "$ref": "#/$defs/gearItems" },
+        "commitment": { "$ref": "common.json#/$defs/commitment" },
+        "isCommitmentLocked": { "type": "boolean" },
+        "maxBulk": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "fund": {
+      "type": "object",
+      "required": ["satchel", "stash"],
+      "additionalProperties": false,
+      "properties": {
+        "satchel": {
+          "type": "object",
+          "required": ["coins", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "coins": { "type": "integer", "minimum": 0 },
+            "max": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "stash": {
+          "type": "object",
+          "required": ["coins", "max"],
+          "additionalProperties": false,
+          "properties": {
+            "coins": { "type": "integer", "minimum": 0 },
+            "max": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "rolodex": {
+      "type": "object",
+      "required": ["friends"],
+      "additionalProperties": false,
+      "properties": {
+        "friends": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["entry", "closeness"],
+            "additionalProperties": false,
+            "properties": {
+              "entry": { "type": "string", "minLength": 1 },
+              "closeness": { "$ref": "common.json#/$defs/closeness" }
+            }
+          }
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "required": ["playbookExpressions", "characterExpressions", "struggleExpressions", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "playbookExpressions": { "type": "integer", "minimum": 0 },
+        "characterExpressions": { "type": "integer", "minimum": 0 },
+        "struggleExpressions": { "type": "integer", "minimum": 0 },
+        "max": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "notebook": { "type": "string" }
+  },
+  "$defs": {
+    "gearItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "bulk"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "bulk": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

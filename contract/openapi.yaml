@@ -1,0 +1,1464 @@
+openapi: 3.1.0
+info:
+  title: Paperclips in the Dark API
+  version: 1.0.0
+  license: { name: MIT, identifier: MIT }
+  description: >
+    Agent-first campaign sheet manager for Blades in the Dark. Sheet manager,
+    not rules engine: structural constraints only. All mutations are POST with
+    JSON bodies and return the uniform OperationResult with the FULL entity DTO.
+    All numeric maxima come from game-settings JSON, never hardcoded.
+    Mutations accept optional If-Match (revision) and Idempotency-Key headers.
+    Snapshot-worthiness of each mutation is declared via x-snapshot.
+servers:
+  - url: http://localhost:9657/api
+
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+    ifMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: Entity revision; mismatch → 409 STALE_REVISION.
+      schema: { type: integer }
+    idempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema: { type: string, maxLength: 128 }
+    download:
+      name: download
+      in: query
+      required: false
+      description: "download=1 adds Content-Disposition (export)."
+      schema: { enum: ["1"] }
+  schemas:
+    Character: { $ref: "./schemas/character.json" }
+    Crew: { $ref: "./schemas/crew.json" }
+    Clock: { $ref: "./schemas/clock.json" }
+    OperationResult: { $ref: "./schemas/operation-result.json" }
+    Delta:
+      type: object
+      required: [delta]
+      additionalProperties: false
+      properties:
+        delta: { type: integer }
+    Named:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name: { type: string, minLength: 1 }
+    Confirm:
+      type: object
+      required: [confirm]
+      additionalProperties: false
+      properties:
+        confirm: { const: true }
+  responses:
+    OpResult:
+      description: Uniform operation result (also used for typed failures, still HTTP 200 unless noted; NOT_FOUND → 404, STALE_REVISION → 409, VALIDATION → 400, PAYLOAD_TOO_LARGE → 413).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/OperationResult" }
+
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Health + agent-skill discovery
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "./schemas/campaign.json#/$defs/health" }
+
+  /campaign:
+    get:
+      operationId: getCampaign
+      responses:
+        "200":
+          description: campaign metadata
+          content:
+            application/json:
+              schema: { $ref: "./schemas/campaign.json#/$defs/campaign" }
+  /campaign/roster:
+    get:
+      operationId: getRoster
+      responses:
+        "200":
+          description: all character + crew summaries
+          content:
+            application/json:
+              schema: { $ref: "./schemas/campaign.json#/$defs/roster" }
+  /campaign/crew/{crewId}/members:
+    get:
+      operationId: getCrewMembers
+      parameters:
+        - { name: crewId, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+      responses:
+        "200":
+          description: characters linked to this crew
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "./schemas/campaign.json#/$defs/characterSummary" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /campaign/batch:
+    post:
+      operationId: batch
+      summary: Sequential all-or-nothing multi-op; single snapshot + history entry
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ops]
+              additionalProperties: false
+              properties:
+                ops:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items:
+                    type: object
+                    required: [entity, id, op, args]
+                    additionalProperties: false
+                    properties:
+                      entity: { enum: [character, crew, clock] }
+                      id: { type: string }
+                      op: { type: string, description: "dotted op name, e.g. stress.add" }
+                      args: { type: object }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+
+  /games:
+    get:
+      operationId: listGames
+      responses:
+        "200":
+          description: installed games
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [name, stem, language]
+                  properties:
+                    name: { type: string }
+                    stem: { type: string }
+                    language: { type: string }
+  /games/{stem}:
+    get:
+      operationId: getGame
+      parameters:
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+      responses:
+        "200":
+          description: full game-settings JSON (authored data, served verbatim from data/games/)
+          content:
+            application/json:
+              schema: { type: object }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /games/{stem}/playbooks:
+    get:
+      operationId: listPlaybooks
+      parameters:
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+      responses:
+        "200":
+          description: playbook name + hook list
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /games/{stem}/playbooks/{playbook}:
+    get:
+      operationId: getPlaybook
+      parameters:
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: playbook, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: full playbook settings
+          content:
+            application/json:
+              schema: { type: object }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /games/{stem}/heritages:
+    get:
+      operationId: listHeritages
+      parameters:
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+      responses:
+        "200":
+          description: heritage list
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /games/{stem}/crews:
+    get:
+      operationId: getCrewSettings
+      parameters:
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+      responses:
+        "200":
+          description: crew game settings
+          content:
+            application/json:
+              schema: { type: object }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /games/{stem}/crews/{crewType}:
+    get:
+      operationId: getCrewTypeSettings
+      parameters:
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: crewType, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: full crew type settings
+          content:
+            application/json:
+              schema: { type: object }
+        "404": { $ref: "#/components/responses/OpResult" }
+
+  # ------------------------------------------------------------ characters
+  /characters:
+    get:
+      operationId: listCharacters
+      responses:
+        "200":
+          description: character summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "./schemas/campaign.json#/$defs/characterSummary" }
+    post:
+      operationId: createCharacter
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameStem, playbook]
+              additionalProperties: false
+              properties:
+                gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+                playbook: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}:
+    get:
+      operationId: getCharacter
+      summary: Full DTO; byte-identical to current.json on disk. ?download=1 = export.
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+        - { $ref: "#/components/parameters/download" }
+      responses:
+        "200":
+          description: character DTO
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Character" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/delete:
+    post:
+      operationId: deleteCharacter
+      x-snapshot: false
+      description: Requires confirm:true (CONFIRM_REQUIRED otherwise). Removes entity and its history.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Confirm" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/import:
+    post:
+      operationId: importCharacter
+      x-snapshot: true
+      description: Schema-validated full-DTO replacement; 1 MiB cap; clears history, takes one baseline snapshot.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Character" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "413": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/history:
+    get:
+      operationId: listCharacterHistory
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: snapshot list, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "./schemas/campaign.json#/$defs/historyEntry" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/history/{snapshotId}:
+    get:
+      operationId: getCharacterSnapshot
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+        - { name: snapshotId, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+      responses:
+        "200":
+          description: snapshot DTO (read-only)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Character" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/undo:
+    post:
+      operationId: undoCharacter
+      x-snapshot: false
+      description: Restore newest snapshot and delete it (consecutive undos walk backwards). No history → NO_HISTORY.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+
+  /characters/{id}/ops/stress.add:
+    post:
+      operationId: stressAdd
+      x-snapshot: true
+      description: "Clamped delta (BoundedInteger semantics): applied.effective reports the clamp. At max stress a 'stress full — consider trauma' sideEffect is added; NEVER auto-trauma."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/stress.clear:
+    post:
+      operationId: stressClear
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/trauma.add:
+    post:
+      operationId: traumaAdd
+      x-snapshot: true
+      description: Separate explicit op (stress overflow never auto-traumas). Duplicate → DUPLICATE. Adding the max-th trauma retires the character (sideEffect).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trauma]
+              additionalProperties: false
+              properties:
+                trauma: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/trauma.remove:
+    post:
+      operationId: traumaRemove
+      x-snapshot: true
+      description: Allowed even when retired (spec §5.1.9 exception).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trauma]
+              additionalProperties: false
+              properties:
+                trauma: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/harm.add:
+    post:
+      operationId: harmAdd
+      x-snapshot: true
+      description: "Spillover ladder: rolls UPWARD when slots full (lesser→moderate→severe→fatal). Landing intensity reported in applied.landedIntensity + sideEffect when it differs from requested. All full at/above requested → SLOT_FULL_FATAL."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description, intensity]
+              additionalProperties: false
+              properties:
+                description: { type: string, minLength: 1 }
+                intensity: { $ref: "./schemas/common.json#/$defs/harmIntensity" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/harm.remove:
+    post:
+      operationId: harmRemove
+      x-snapshot: true
+      description: Exact intensity only; never cascades.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description, intensity]
+              additionalProperties: false
+              properties:
+                description: { type: string, minLength: 1 }
+                intensity: { $ref: "./schemas/common.json#/$defs/harmIntensity" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/harm.heal:
+    post:
+      operationId: harmHeal
+      x-snapshot: true
+      description: "Requires healing clock full (else CANNOT_HEAL). Resets clock (rollover applied), shifts moderate→lesser and severe→moderate; fatal never shifts or clears."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/harm.healing-clock:
+    post:
+      operationId: harmHealingClock
+      x-snapshot: false
+      description: Rollover clock; overflow past full is carried and applied on reset.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [segments]
+              additionalProperties: false
+              properties:
+                segments: { type: integer }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/armor.set:
+    post:
+      operationId: armorSet
+      x-snapshot: false
+      description: "Set used flag for one armor kind. Setting used=true without availability (loadout/ability-derived, exposed as monitor.armor.has*) → ARMOR_NOT_AVAILABLE. used=false always succeeds."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [armor, used]
+              additionalProperties: false
+              properties:
+                armor: { enum: [standard, heavy, special] }
+                used: { type: boolean }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/playbook-xp.add:
+    post:
+      operationId: playbookXpAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/playbook-xp.clear:
+    post:
+      operationId: playbookXpClear
+      x-snapshot: true
+      description: "Explicit clear (e.g. after spending a playbook advance). NOTE the asymmetry: ability.take does NOT clear playbook XP; only this op and attribute.levelup (attribute track only) clear XP."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/attribute-xp.add:
+    post:
+      operationId: attributeXpAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attribute, delta]
+              additionalProperties: false
+              properties:
+                attribute: { type: string, minLength: 1 }
+                delta: { type: integer }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/attribute-xp.clear:
+    post:
+      operationId: attributeXpClear
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attribute]
+              additionalProperties: false
+              properties:
+                attribute: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/attribute.levelup:
+    post:
+      operationId: attributeLevelup
+      x-snapshot: true
+      description: "Requires that attribute's XP track full (CANNOT_LEVEL_UP), action exists (NOT_FOUND), action below max rating (RATING_MAXED). Increments the action rating and clears that attribute's XP track."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [attribute, action]
+              additionalProperties: false
+              properties:
+                attribute: { type: string, minLength: 1 }
+                action: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/action.set-rating:
+    post:
+      operationId: actionSetRating
+      x-snapshot: true
+      description: Direct set, clamped 0..maxRating (game settings ActionPointMaximum).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, rating]
+              additionalProperties: false
+              properties:
+                action: { type: string, minLength: 1 }
+                rating: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/ability.take:
+    post:
+      operationId: abilityTake
+      x-snapshot: true
+      description: "Validated against playbook settings (TimesTakeable → ABILITY_MAXED). Does NOT spend playbook XP — asymmetric flow, see playbook-xp.clear."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/ability.remove:
+    post:
+      operationId: abilityRemove
+      x-snapshot: true
+      description: Removes the whole ability entry including all stacked takes.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.add:
+    post:
+      operationId: gearAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, bulk]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+                bulk: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.remove:
+    post:
+      operationId: gearRemove
+      x-snapshot: true
+      description: Also removes the item from loadout (sideEffect when it was committed).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.commit:
+    post:
+      operationId: gearCommit
+      x-snapshot: false
+      description: "Preconditions: commitment ≠ none (NO_COMMITMENT), item available (NOT_FOUND), bulk fits (OVER_BULK), not already committed (DUPLICATE), not locked (COMMITMENT_LOCKED)."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.uncommit:
+    post:
+      operationId: gearUncommit
+      x-snapshot: false
+      description: Locked → COMMITMENT_LOCKED.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.set-commitment:
+    post:
+      operationId: gearSetCommitment
+      x-snapshot: false
+      description: Locked → COMMITMENT_LOCKED. MaxBulk per option comes from game settings.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commitment]
+              additionalProperties: false
+              properties:
+                commitment: { $ref: "./schemas/common.json#/$defs/commitment" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.clear-commitments:
+    post:
+      operationId: gearClearCommitments
+      x-snapshot: true
+      description: Clears loadout AND resets commitment to none. Locked → COMMITMENT_LOCKED.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.lock:
+    post:
+      operationId: gearLock
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.unlock:
+    post:
+      operationId: gearUnlock
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/fund.gain:
+    post:
+      operationId: fundGain
+      x-snapshot: true
+      description: "Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [coins]
+              additionalProperties: false
+              properties:
+                coins: { type: integer, minimum: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/fund.spend:
+    post:
+      operationId: fundSpend
+      x-snapshot: true
+      description: "Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with maxAffordable detail."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [coins]
+              additionalProperties: false
+              properties:
+                coins: { type: integer, minimum: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/fund.liquidate:
+    post:
+      operationId: fundLiquidate
+      x-snapshot: true
+      description: "Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [coins]
+              additionalProperties: false
+              properties:
+                coins: { type: integer, minimum: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/rolodex.add:
+    post:
+      operationId: rolodexAdd
+      x-snapshot: true
+      description: Duplicate entry → DUPLICATE. New friends start at closeness "friend".
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entry]
+              additionalProperties: false
+              properties:
+                entry: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/rolodex.remove:
+    post:
+      operationId: rolodexRemove
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entry]
+              additionalProperties: false
+              properties:
+                entry: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/rolodex.set-closeness:
+    post:
+      operationId: rolodexSetCloseness
+      x-snapshot: true
+      description: "Full transition set (friend/close-friend/rival) — supersedes the reference's four named upgrade/downgrade methods with one total operation."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entry, closeness]
+              additionalProperties: false
+              properties:
+                entry: { type: string, minLength: 1 }
+                closeness: { $ref: "./schemas/common.json#/$defs/closeness" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/dossier.update:
+    post:
+      operationId: dossierUpdate
+      x-snapshot: true
+      description: Partial update — only provided fields change. crewId must reference an existing crew or be empty string (VALIDATION).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                name: { type: string }
+                alias: { type: string }
+                look: { type: string }
+                notes: { type: string }
+                crewId: { type: string }
+                background: { $ref: "./schemas/common.json#/$defs/namedDescription" }
+                heritage: { $ref: "./schemas/common.json#/$defs/namedDescription" }
+                vice: { $ref: "./schemas/common.json#/$defs/namedDescription" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/session.set:
+    post:
+      operationId: sessionSet
+      x-snapshot: false
+      description: Partial update; each value clamped 0..max (game settings).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                playbookExpressions: { type: integer, minimum: 0 }
+                characterExpressions: { type: integer, minimum: 0 }
+                struggleExpressions: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/notebook.set:
+    post:
+      operationId: notebookSet
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              additionalProperties: false
+              properties:
+                text: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/end-score:
+    post:
+      operationId: endScore
+      x-snapshot: true
+      description: "Composite helper; explicit flags per sub-action so no procedure is encoded. Single snapshot + history entry."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                clearArmorUsed: { type: boolean }
+                resetLoadoutCommitment: { type: boolean }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/end-downtime:
+    post:
+      operationId: endDowntime
+      x-snapshot: true
+      description: "Composite helper: clears session expressions; optional caller-supplied vice-relief stress clear amount (GM judgment stays outside)."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                clearSessionExpressions: { type: boolean }
+                viceReliefStress: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+
+  # ------------------------------------------------------------ crews
+  /crews:
+    get:
+      operationId: listCrews
+      responses:
+        "200":
+          description: crew summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "./schemas/campaign.json#/$defs/crewSummary" }
+    post:
+      operationId: createCrew
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gameStem, crewType]
+              additionalProperties: false
+              properties:
+                gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+                crewType: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}:
+    get:
+      operationId: getCrew
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+        - { $ref: "#/components/parameters/download" }
+      responses:
+        "200":
+          description: crew DTO (byte-identical to disk)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Crew" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/delete:
+    post:
+      operationId: deleteCrew
+      x-snapshot: false
+      description: confirm:true required. Unlinks member characters (clears their crewId; reported in sideEffects).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Confirm" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/import:
+    post:
+      operationId: importCrew
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Crew" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "413": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/history:
+    get:
+      operationId: listCrewHistory
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: snapshot list, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "./schemas/campaign.json#/$defs/historyEntry" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/history/{snapshotId}:
+    get:
+      operationId: getCrewSnapshot
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+        - { name: snapshotId, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+      responses:
+        "200":
+          description: snapshot DTO
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Crew" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/undo:
+    post:
+      operationId: undoCrew
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/heat.add:
+    post:
+      operationId: heatAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/wanted.add:
+    post:
+      operationId: wantedAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/rep.add:
+    post:
+      operationId: repAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/tier.add:
+    post:
+      operationId: tierAdd
+      x-snapshot: true
+      description: Bounded below at 0; applied delta reported.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/hold.set:
+    post:
+      operationId: holdSet
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hold]
+              additionalProperties: false
+              properties:
+                hold: { $ref: "./schemas/common.json#/$defs/hold" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/xp.add:
+    post:
+      operationId: crewXpAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/xp.clear:
+    post:
+      operationId: crewXpClear
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/ability.take:
+    post:
+      operationId: crewAbilityTake
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/ability.remove:
+    post:
+      operationId: crewAbilityRemove
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/upgrade.mark:
+    post:
+      operationId: upgradeMark
+      x-snapshot: true
+      description: One box; TotalBoxes from crew game settings → UPGRADE_MAXED.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/upgrade.unmark:
+    post:
+      operationId: upgradeUnmark
+      x-snapshot: true
+      description: "Box-wise: removes ONE box; entry disappears only at 0 boxes. Deliberate divergence from the C# reference (which removed the whole upgrade)."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Named" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/cohort.add:
+    post:
+      operationId: cohortAdd
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cohortKind]
+              additionalProperties: false
+              properties:
+                cohortKind: { $ref: "./schemas/common.json#/$defs/cohortType" }
+                gangType: { type: string }
+                expertType: { type: string }
+                quality: { type: integer, minimum: 0 }
+                scale: { type: integer, minimum: 0 }
+                hasArmor: { type: boolean }
+                edges: { type: array, items: { type: string } }
+                flaws: { type: array, items: { type: string } }
+                description: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/cohort.update:
+    post:
+      operationId: cohortUpdate
+      x-snapshot: true
+      description: Partial update by cohortId.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cohortId]
+              additionalProperties: false
+              minProperties: 2
+              properties:
+                cohortId: { type: string }
+                gangType: { type: string }
+                expertType: { type: string }
+                quality: { type: integer, minimum: 0 }
+                scale: { type: integer, minimum: 0 }
+                hasArmor: { type: boolean }
+                edges: { type: array, items: { type: string } }
+                flaws: { type: array, items: { type: string } }
+                harm: { $ref: "./schemas/common.json#/$defs/cohortHarm" }
+                description: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/cohort.remove:
+    post:
+      operationId: cohortRemove
+      x-snapshot: true
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cohortId]
+              additionalProperties: false
+              properties:
+                cohortId: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/coin.add:
+    post:
+      operationId: coinAdd
+      x-snapshot: true
+      description: Bounded below at 0; applied delta reported.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/stash.add:
+    post:
+      operationId: stashAdd
+      x-snapshot: true
+      description: Bounded below at 0; applied delta reported.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/fields.update:
+    post:
+      operationId: crewFieldsUpdate
+      x-snapshot: true
+      description: Partial update of free-text crew fields.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                name: { type: string }
+                lair: { type: string }
+                reputation: { type: string }
+                huntingGrounds: { type: string }
+                notes: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+
+  # ------------------------------------------------------------ clocks
+  /clocks:
+    get:
+      operationId: listClocks
+      responses:
+        "200":
+          description: all campaign clocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Clock" }
+    post:
+      operationId: createClock
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, clockKind, size]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+                clockKind: { enum: [project, rollover] }
+                size: { type: integer, minimum: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+  /clocks/{id}:
+    get:
+      operationId: getClock
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: clock DTO
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Clock" }
+        "404": { $ref: "#/components/responses/OpResult" }
+  /clocks/{id}/delete:
+    post:
+      operationId: deleteClock
+      x-snapshot: false
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Confirm" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /clocks/{id}/ops/clock.progress:
+    post:
+      operationId: clockProgress
+      x-snapshot: false
+      description: "Project clocks clamp at full; rollover clocks carry overflow (applied on reset)."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [segments]
+              additionalProperties: false
+              properties:
+                segments: { type: integer }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /clocks/{id}/ops/clock.reset:
+    post:
+      operationId: clockReset
+      x-snapshot: false
+      description: Rollover clocks re-apply carried overflow after reset.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }

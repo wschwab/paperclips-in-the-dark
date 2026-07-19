@@ -1,0 +1,14 @@
+{
+  "task": "C0",
+  "track": "contract",
+  "agent": "claude-fable-5 (orchestrator, per AGENTS.md exception)",
+  "date": "2026-07-19",
+  "iterationsToGreen": 4,
+  "iterationNotes": "1: redocly recommended-ruleset errors (security/summary rules, disabled with rationale); 2: license/localhost warnings; 3: ajv strict date-time format needed ajv-formats; 4: UUID regex variant group {4}->{3} caught by fixture validation.",
+  "wallClockMinutes": 35,
+  "tokens": null,
+  "defectsCaughtBy": { "linter": 1, "schemaValidation": 1, "human": 0 },
+  "loc": { "openapi": 1460, "schemas": 620, "fixtures": 210, "auditDoc": 120 },
+  "conformancePassRate": null,
+  "notes": "Conformance N/A: C0 produces the contract the suite is built from."
+}

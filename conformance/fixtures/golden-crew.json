@@ -1,0 +1,47 @@
+{
+  "kind": "crew",
+  "id": "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+  "gameStem": "blades-in-the-dark",
+  "gameName": "Blades in the Dark",
+  "language": "English",
+  "revision": 5,
+  "formatVersion": 1,
+  "createdAt": "2026-07-19T12:00:00.000Z",
+  "updatedAt": "2026-07-19T14:31:02.001Z",
+  "crewTypeName": "Assassins",
+  "name": "The Red Sashes",
+  "lair": "A hidden cellar in Silk Shore",
+  "reputation": "Brutal",
+  "huntingGrounds": "Charterhall",
+  "tier": 0,
+  "hold": "strong",
+  "heat": { "current": 4, "max": 9 },
+  "wanted": { "current": 1, "max": 4 },
+  "rep": { "current": 3, "max": 12 },
+  "experience": { "points": 2, "max": 10 },
+  "specialAbilities": [
+    { "name": "Predators", "timesTaken": 1 }
+  ],
+  "upgrades": [
+    { "name": "Quality: Weapons", "boxesMarked": 1 },
+    { "name": "Cohort (Gang or Expert)", "boxesMarked": 1 }
+  ],
+  "cohorts": [
+    {
+      "id": "3d2f8a1b-6c4d-4e2f-9a0b-1c2d3e4f5a6b",
+      "cohortKind": "gang",
+      "gangType": "Thugs",
+      "expertType": "",
+      "quality": 0,
+      "scale": 1,
+      "hasArmor": false,
+      "edges": ["Fearsome"],
+      "flaws": ["Savage"],
+      "harm": "healthy",
+      "description": "A gang of street thugs"
+    }
+  ],
+  "coin": 4,
+  "stash": 0,
+  "notes": ""
+}

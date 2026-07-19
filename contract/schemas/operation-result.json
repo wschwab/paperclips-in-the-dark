@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/operation-result.json",
+  "title": "OperationResult",
+  "type": "object",
+  "required": ["ok", "applied", "sideEffects", "error"],
+  "additionalProperties": false,
+  "properties": {
+    "ok": { "type": "boolean" },
+    "character": { "$ref": "character.json" },
+    "crew": { "$ref": "crew.json" },
+    "clock": { "$ref": "clock.json" },
+    "applied": {
+      "type": "object",
+      "required": ["op"],
+      "additionalProperties": false,
+      "properties": {
+        "op": { "type": "string", "description": "dotted op name, e.g. stress.add" },
+        "requested": { "type": "integer" },
+        "effective": { "type": "integer" },
+        "landedIntensity": {
+          "$ref": "common.json#/$defs/harmIntensity",
+          "description": "harm.add only: where the harm actually landed after spillover"
+        }
+      }
+    },
+    "sideEffects": { "type": "array", "items": { "type": "string" } },
+    "error": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["code", "message"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "$ref": "common.json#/$defs/errorCode" },
+            "message": { "type": "string" },
+            "details": { "type": "object" }
+          }
+        }
+      ]
+    },
+    "batch": {
+      "type": "array",
+      "description": "campaign.batch only: per-op outcomes",
+      "items": {
+        "type": "object",
+        "required": ["ok", "op"],
+        "additionalProperties": false,
+        "properties": {
+          "ok": { "type": "boolean" },
+          "op": { "type": "string" },
+          "error": {
+            "oneOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "required": ["code", "message"],
+                "properties": {
+                  "code": { "$ref": "common.json#/$defs/errorCode" },
+                  "message": { "type": "string" },
+                  "details": { "type": "object" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "description": "Exactly one of character/crew/clock is present when ok=true and the op targets an entity; none on pure failures. On failure ok=false and error is non-null."
+}

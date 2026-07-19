@@ -1,0 +1,13 @@
+{
+  "kind": "clock",
+  "id": "a1b2c3d4-5e6f-47a8-9b0c-1d2e3f4a5b6c",
+  "revision": 2,
+  "formatVersion": 1,
+  "createdAt": "2026-07-19T12:05:00.000Z",
+  "updatedAt": "2026-07-19T13:00:00.000Z",
+  "name": "Infiltrate the Bluecoats",
+  "clockKind": "project",
+  "segments": 3,
+  "size": 8,
+  "rollover": 0
+}

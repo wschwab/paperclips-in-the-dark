@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/campaign.json",
+  "title": "Campaign metadata and aggregate views",
+  "$defs": {
+    "campaign": {
+      "type": "object",
+      "required": ["kind", "name", "gameStem", "createdAt", "formatVersion"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "campaign" },
+        "name": { "type": "string" },
+        "gameStem": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+        "createdAt": { "$ref": "common.json#/$defs/timestamp" },
+        "formatVersion": { "$ref": "common.json#/$defs/formatVersion" }
+      }
+    },
+    "health": {
+      "type": "object",
+      "required": ["status", "implementation", "version", "dataDir"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "const": "ok" },
+        "implementation": { "enum": ["ada", "zero"] },
+        "version": { "type": "string" },
+        "dataDir": { "type": "string" }
+      }
+    },
+    "characterSummary": {
+      "type": "object",
+      "required": [
+        "id", "name", "alias", "playbook", "gameStem", "crewId",
+        "stress", "traumas", "isRetired", "isDeadish", "revision"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "common.json#/$defs/uuid" },
+        "name": { "type": "string" },
+        "alias": { "type": "string" },
+        "playbook": { "type": "string" },
+        "gameStem": { "type": "string" },
+        "crewId": { "type": "string" },
+        "stress": { "type": "integer", "minimum": 0 },
+        "traumas": { "type": "array", "items": { "type": "string" } },
+        "isRetired": { "type": "boolean" },
+        "isDeadish": { "type": "boolean" },
+        "revision": { "$ref": "common.json#/$defs/revision" }
+      }
+    },
+    "crewSummary": {
+      "type": "object",
+      "required": [
+        "id", "name", "crewType", "gameStem", "tier", "heat", "wanted",
+        "rep", "hold", "memberCount", "revision"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "common.json#/$defs/uuid" },
+        "name": { "type": "string" },
+        "crewType": { "type": "string" },
+        "gameStem": { "type": "string" },
+        "tier": { "type": "integer", "minimum": 0 },
+        "heat": { "type": "integer", "minimum": 0 },
+        "wanted": { "type": "integer", "minimum": 0 },
+        "rep": { "type": "integer", "minimum": 0 },
+        "hold": { "$ref": "common.json#/$defs/hold" },
+        "memberCount": { "type": "integer", "minimum": 0 },
+        "revision": { "$ref": "common.json#/$defs/revision" }
+      }
+    },
+    "roster": {
+      "type": "object",
+      "required": ["characters", "crews"],
+      "additionalProperties": false,
+      "properties": {
+        "characters": { "type": "array", "items": { "$ref": "#/$defs/characterSummary" } },
+        "crews": { "type": "array", "items": { "$ref": "#/$defs/crewSummary" } }
+      }
+    },
+    "historyEntry": {
+      "type": "object",
+      "required": ["snapshotId", "takenAt", "op"],
+      "additionalProperties": false,
+      "properties": {
+        "snapshotId": { "type": "string", "pattern": "^[0-9]{17}-[A-Za-z0-9]+$" },
+        "takenAt": { "$ref": "common.json#/$defs/timestamp" },
+        "op": { "type": "string", "description": "the op whose pre-state this snapshot preserves" }
+      }
+    }
+  }
+}

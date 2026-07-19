@@ -1,0 +1,9 @@
+# v1 is a single local trusted-user process (PAPERCLIPS §1.1): no auth by design.
+# operation descriptions carry the semantics; summaries add nothing for agents.
+extends:
+  - recommended
+rules:
+  security-defined: off
+  operation-summary: off
+  operation-4xx-response: off # pure-GET list/health endpoints have no failure mode
+  no-server-example.com: off # localhost IS the deployment target (single local process)

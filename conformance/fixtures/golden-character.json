@@ -1,0 +1,114 @@
+{
+  "kind": "character",
+  "id": "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
+  "gameStem": "blades-in-the-dark",
+  "gameName": "Blades in the Dark",
+  "language": "English",
+  "revision": 12,
+  "formatVersion": 1,
+  "createdAt": "2026-07-19T12:00:00.000Z",
+  "updatedAt": "2026-07-19T14:30:12.417Z",
+  "isRetired": false,
+  "isDeadish": false,
+  "dossier": {
+    "name": "Brenda Hilton",
+    "crewId": "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+    "alias": "Webweaver",
+    "look": "Professional, upkept attire",
+    "notes": "",
+    "background": { "name": "Military", "description": "Ex-mercenary sailor" },
+    "heritage": { "name": "The Dagger Isles", "description": "My family are well-known pirates" },
+    "vice": { "name": "Obligation", "description": "I donate spare coin to my family." }
+  },
+  "monitor": {
+    "stress": { "current": 3, "max": 9 },
+    "trauma": { "traumas": ["Haunted"], "max": 4 },
+    "harm": {
+      "lesser": ["Ashamed"],
+      "moderate": [],
+      "severe": [],
+      "fatal": [],
+      "healingClock": { "segments": 1, "size": 4, "rollover": 0 }
+    },
+    "armor": {
+      "standardUsed": false,
+      "heavyUsed": false,
+      "specialUsed": false,
+      "hasStandard": true,
+      "hasHeavy": false,
+      "hasSpecial": true
+    }
+  },
+  "talent": {
+    "attributes": [
+      {
+        "name": "Insight",
+        "experience": { "points": 3, "max": 6 },
+        "actions": [
+          { "name": "Hunt", "rating": 1, "maxRating": 4 },
+          { "name": "Study", "rating": 1, "maxRating": 4 },
+          { "name": "Survey", "rating": 1, "maxRating": 4 },
+          { "name": "Tinker", "rating": 0, "maxRating": 4 }
+        ]
+      },
+      {
+        "name": "Prowess",
+        "experience": { "points": 0, "max": 6 },
+        "actions": [
+          { "name": "Finesse", "rating": 0, "maxRating": 4 },
+          { "name": "Prowl", "rating": 1, "maxRating": 4 },
+          { "name": "Skirmish", "rating": 0, "maxRating": 4 },
+          { "name": "Wreck", "rating": 0, "maxRating": 4 }
+        ]
+      },
+      {
+        "name": "Resolve",
+        "experience": { "points": 1, "max": 6 },
+        "actions": [
+          { "name": "Attune", "rating": 0, "maxRating": 4 },
+          { "name": "Command", "rating": 0, "maxRating": 4 },
+          { "name": "Consort", "rating": 2, "maxRating": 4 },
+          { "name": "Sway", "rating": 1, "maxRating": 4 }
+        ]
+      }
+    ]
+  },
+  "playbook": {
+    "name": "Spider",
+    "experience": { "points": 7, "max": 8 },
+    "abilities": [
+      { "name": "Foresight", "description": "Two times per score you can assist a teammate without paying stress.", "timesTaken": 1 },
+      { "name": "Mastermind", "description": "You may expend your special armor to protect a teammate.", "timesTaken": 1 }
+    ]
+  },
+  "gear": {
+    "loadout": [{ "name": "Armor", "bulk": 2 }],
+    "availableGear": [
+      { "name": "Armor", "bulk": 2 },
+      { "name": "Fine cover identity", "bulk": 0 },
+      { "name": "Fine bottle of whiskey", "bulk": 1 },
+      { "name": "A Blade or Two", "bulk": 1 }
+    ],
+    "commitment": "light",
+    "isCommitmentLocked": false,
+    "maxBulk": 3
+  },
+  "fund": {
+    "satchel": { "coins": 4, "max": 4 },
+    "stash": { "coins": 11, "max": 40 }
+  },
+  "rolodex": {
+    "friends": [
+      { "entry": "Salia, an information broker", "closeness": "friend" },
+      { "entry": "Jennah, a servant", "closeness": "close-friend" },
+      { "entry": "Riven, a chemist", "closeness": "rival" }
+    ]
+  },
+  "session": {
+    "playbookExpressions": 1,
+    "characterExpressions": 2,
+    "struggleExpressions": 1,
+    "max": 2
+  },
+  "notebook": ""
+}

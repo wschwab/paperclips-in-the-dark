@@ -1,0 +1,82 @@
+# C0 operations audit — agent-api-spec §8–9 vs C# `Models/`
+
+Audited 2026-07-19 against `blades-in-the-sheets/Models/` (authoritative).
+Verdicts: **adopted** (catalog matches source), **corrected** (catalog wrong or
+incomplete; contract follows source or spec §7.2), **diverged** (contract
+deliberately differs from source; noted), **dropped**.
+
+## Character operations
+
+| Op | C# source | Verdict | Notes |
+|---|---|---|---|
+| stress.add | `MonitorStress.CurrentStress` ← `BoundedInteger(9)` | corrected | Clamps; no auto-trauma. Catalog's own §7.2 first draft ("overflow → trauma") was self-corrected in-document; contract reports `applied` delta + `sideEffect` advisory at max. Max from game settings, not 9. |
+| stress.clear | `CurrentStress = 0` | adopted | x-snapshot: false. |
+| trauma.add | `MonitorTrauma.Add` | corrected | Fails when already retired (4 = `MaxTraumas`, hardcoded in C#; contract reads from game settings) → error `RETIRED`; duplicate (SortedSet) → `DUPLICATE`. Spec §5.1.9: trauma-list edits are the exception to the RETIRED guard — contract allows *remove* always, *add* only up to max (add at max is structurally impossible anyway). |
+| trauma.remove | `MonitorTrauma.Remove` | adopted | Missing → `NOT_FOUND`. |
+| harm.add | `MonitorHarm.AddHarm` | **corrected** | Spillover ladder lesser→moderate→severe→fatal (a lesser request can land in fatal). Catalog said "fails if no slot available at that intensity or below" — wrong direction. Contract: reports landing intensity in `applied`/`sideEffects`; only all-full at-or-above → `SLOT_FULL_FATAL`. Slot caps 2/2/1/1 from game settings. |
+| harm.remove | `MonitorHarm.RemoveHarm` | adopted | Exact intensity only, never cascades. |
+| harm.heal | `MonitorHarm.Heal` | adopted | Requires clock full (`Ding`), resets clock (rollover preserved via `RolloverClock.Reset`), shifts moderate→lesser, severe→moderate; **fatal never shifts or clears**. Not-full → `CANNOT_HEAL`. |
+| harm.healing-clock | `RolloverClock.Progress` | adopted | Rollover semantics: overflow segments carried, applied on reset. Clock size from game settings (`RecoveryClockSize`). |
+| armor.\* set used | `Character.Use/Restore*Armor` | corrected | Derived availability: standard/heavy from loadout item names (localized magic strings), special from ability descriptions. Use without availability throws → `ARMOR_NOT_AVAILABLE`. Restore always succeeds. Precondition exposed via GET (character DTO carries `hasArmor`/`hasHeavyArmor`/`hasSpecialArmor`). S&V quirk preserved: heavy-armor detection falls back to standard-armor names for non-BitD games. |
+| playbook.xp.add / clear | `Playbook.Experience` (`ExperienceTracker(8)`) | adopted | Clamped; max from game settings (8 is C# default). Clear is explicit op. |
+| attribute.xp.add / clear | `TalentAttribute.Experience` (max 6) | adopted | Same pattern. |
+| attribute.levelup | `TalentAttribute.LevelUp(action)` | adopted | Requires XP full (`CANNOT_LEVEL_UP`), action exists (`NOT_FOUND`), not at max rating (`RATING_MAXED`); increments rating, clears that attribute's XP. **Asymmetry documented**: taking an ability never touches playbook XP — level-up is the only XP-clearing flow, and it clears only the attribute track it levels. |
+| ability.take | `Playbook.TakeAbility` | adopted | TimesTakeable check via setting → `ABILITY_MAXED`. Does NOT spend playbook XP (asymmetric flow, §5.1.5). |
+| ability.remove | `Playbook.RemoveAbility` | adopted | Removes the whole entry including all stacked takes (not box-wise); noted in contract description. |
+| action.set-rating | `TalentAction.Rating` | adopted | Clamped 0..`ActionPointMaximum` (game settings; 4 in BitD). |
+| gear.add / remove | `Gear.Add/RemoveAvailableItem` | adopted | Dup add → `DUPLICATE`; remove also removes from loadout. |
+| gear.commit | `Character.CommitGear` → `Gear.CanCommitGear` | corrected | Preconditions: commitment ≠ none (`NO_COMMITMENT`), item available (`NOT_FOUND`), bulk fits (`OVER_BULK`), not already committed (`DUPLICATE`). Catalog said "commitment not locked" — **C# never checks `IsCommitmentLocked` in CommitGear**; contract enforces the lock at API level for commit/uncommit/set-commitment/clear (`COMMITMENT_LOCKED`), documented as an API-level rule. |
+| gear.uncommit | `Gear.UncommitGear` | adopted | |
+| gear.set-commitment | `GearCommitment.Commitment` | adopted | Enum none/light/normal/heavy/encumbered; MaxBulk per option from game settings (C# defaults 0/3/5/6/9). |
+| gear.clear-commitments | `Gear.ClearCommitments` | adopted | Also resets commitment to none (documented). |
+| gear.lock / unlock | `Gear.IsCommitmentLocked` | **added** | Plain bool in C# with no ops; spec §5.1.10 requires explicit lock/unlock ops. |
+| fund.gain | `Fund.Gain` | **corrected** | Satchel (max 4) → stash (max 40) overflow; C# silently drops the final remainder (returns bool only) — contract surfaces dropped coins as `sideEffects` + `applied.effective` (§5.1.8). |
+| fund.spend | `Fund.Spend` | adopted | Satchel first, then stash liquidation at 2 stash → 1 coin; insufficient → `INSUFFICIENT_FUNDS` with `maxAffordable` detail. |
+| fund.liquidate | `Fund.Liquidate` | adopted | Satchel must fit `coins` (`SATCHEL_FULL`), stash needs 2×coins (`INSUFFICIENT_FUNDS`). |
+| rolodex add/remove | `Rolodex.Add/RemoveFriend` | corrected | C# silently no-ops on duplicate add / missing remove; contract returns `DUPLICATE` / `NOT_FOUND` (agents need the signal). |
+| rolodex transitions | `UpgradeFriend`, `DowngradeFriend`, `DowngradeCloseFriend`, `UpgradeRival` | **corrected** | Catalog only had 2 of 4 transitions (REVIEW gap). Contract: single op `rolodex.set-closeness {closeness}` covering the full state set friend/close-friend/rival — supersedes the four named transitions, no information loss, no invalid states. |
+| dossier / background / heritage / vice | `Dossier` setters | adopted | Partial update; all POST in contract (no PATCH — §7.1 all-mutations-POST). |
+| session.set | `Session` (`BoundedInteger(2)` ×3) | adopted | Clamped 0–2 (`MaxExpressions`; contract reads from game settings where present). |
+| notebook.set | `Character.Notebook` | adopted | POST. |
+| retired guard | `Character.IsRetired`, `IsDeadish` | corrected | §5.1.9: all mutating ops on retired characters → `RETIRED` except trauma-list edits; reads always OK; roster exposes both flags. C# has no such guard (UI-enforced) — API-level rule, documented. |
+
+## Crew operations
+
+| Op | C# source | Verdict | Notes |
+|---|---|---|---|
+| heat / wanted / rep add | `BoundedInteger` 0–9 / 0–4 / 0–12 | adopted | Clamp + `applied` delta. Maxima from game settings. |
+| tier.add | `Crew.Tier` plain int | corrected | Unbounded in C#; contract bounds ≥ 0 and reports applied delta (negative tiers are nonsense). |
+| hold.set | `Crew.Hold` enum | adopted | strong/weak. |
+| crew xp add / clear | `ExperienceTracker(10)` | adopted | |
+| crew ability take/remove | `Crew.Take/RemoveSpecialAbility` | adopted | Same TimesTakeable pattern as playbook. |
+| upgrade.mark | `Crew.MarkUpgrade` | adopted | `TotalBoxes` from crew game settings → `UPGRADE_MAXED`. |
+| upgrade.unmark | `Crew.UnmarkUpgrade` | **diverged** | C# removes the whole upgrade entry (`Upgrades.Remove(name)`) even though box-wise `CrewUpgrade.Unmark()` exists unused. Per spec §5.1.6 the contract is box-wise: decrement one box, entry removed only at 0 boxes. Deliberate divergence from reference. |
+| cohort add/get/update/remove | `Crew.Add/RemoveCohort`, `Cohort` setters | adopted | Cohort ids are server UUIDs; edges/flaws/harm/type enums lowercase. Update is partial via POST. |
+| coin / stash add | `Crew.Coin/Stash` plain ints | corrected | Unbounded in C#; contract bounds ≥ 0, reports applied delta. |
+| crew fields update | `Crew` setters | adopted | POST partial update. |
+| crew delete → unlink members | — (not in C#) | **added** | Spec §5.1.11: deleting a crew clears `crewId` on member characters; `memberCount` = scan by crewId. |
+
+## Campaign / infrastructure (§9 + PAPERCLIPS additions)
+
+| Item | Verdict | Notes |
+|---|---|---|
+| roster / crew-members | adopted | Summaries include `isRetired` **and** `isDeadish` (§5.1.9). |
+| undo/history | corrected | Snapshot **before** snapshot-worthy (`x-snapshot: true`) ops only; micro-ops (armor, loadout toggle, session, notebook) are x-snapshot:false. MaxHistorySnapshots 50 (catalog said 20; PAPERCLIPS §4 wins). Timestamp `yyyyMMddHHmmssfff`-shortid (catalog's second precision collides). |
+| export/import | corrected | No separate export endpoint: `GET ?download=1` (REVIEW #17). Import = POST, schema-validated, 1 MiB cap, clears history + baseline snapshot. |
+| delete | corrected | `POST /{id}/delete` with `confirm: true` (`CONFIRM_REQUIRED`), not HTTP DELETE (§7.1). |
+| batch / end-score / end-downtime | added | PAPERCLIPS §7.2 composites; single snapshot, all-or-nothing. |
+| revisions | added | `revision` int on every entity; optional `If-Match` → `STALE_REVISION` 409. |
+| clocks (project/rollover) | **added** | `ProjectClock`/`RolloverClock` exist in Models and PAPERCLIPS §5 lists Clocks as an entity; catalog omitted campaign-level clock ops entirely. Contract adds `/api/clocks` CRUD + progress/reset with rollover semantics. |
+| result shape | corrected | Catalog's `OperationResult<T>`/`warning`/`sideEffects`-dict → PAPERCLIPS §7.1 uniform shape: `ok`, full entity DTO, `applied {op, requested, effective}`, `sideEffects: string[]`, `error {code, message}`. |
+
+## Error codes (contract enumeration)
+
+`NOT_FOUND, VALIDATION, STALE_REVISION, RETIRED, CONFIRM_REQUIRED, DUPLICATE,
+SLOT_FULL_FATAL, CANNOT_HEAL, ARMOR_NOT_AVAILABLE, ABILITY_MAXED,
+CANNOT_LEVEL_UP, RATING_MAXED, UPGRADE_MAXED, INSUFFICIENT_FUNDS, SATCHEL_FULL,
+OVER_BULK, NO_COMMITMENT, COMMITMENT_LOCKED, NO_HISTORY, GAME_NOT_FOUND,
+PAYLOAD_TOO_LARGE`.
+
+Catalog codes dropped: `STRESS_OVERFLOW` (not an error), `HARM_SLOT_FULL`
+(replaced by spillover + `SLOT_FULL_FATAL`), `INVALID_INTENSITY`/`FRIEND_EXISTS`
+(→ `VALIDATION`/`DUPLICATE`).

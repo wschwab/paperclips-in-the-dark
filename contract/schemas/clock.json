@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/clock.json",
+  "title": "Clock",
+  "type": "object",
+  "required": [
+    "kind", "id", "revision", "formatVersion", "createdAt", "updatedAt",
+    "name", "clockKind", "segments", "size", "rollover"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "clock" },
+    "id": { "$ref": "common.json#/$defs/uuid" },
+    "revision": { "$ref": "common.json#/$defs/revision" },
+    "formatVersion": { "$ref": "common.json#/$defs/formatVersion" },
+    "createdAt": { "$ref": "common.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "common.json#/$defs/timestamp" },
+    "name": { "type": "string" },
+    "clockKind": { "enum": ["project", "rollover"] },
+    "segments": { "type": "integer", "minimum": 0 },
+    "size": { "type": "integer", "minimum": 1 },
+    "rollover": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "overflow segments carried past full; always 0 for project clocks"
+    }
+  }
+}

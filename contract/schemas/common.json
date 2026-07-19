@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/common.json",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC"
+    },
+    "revision": { "type": "integer", "minimum": 1 },
+    "formatVersion": { "type": "integer", "minimum": 1 },
+    "boundedInteger": {
+      "type": "object",
+      "required": ["current", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "current": { "type": "integer", "minimum": 0 },
+        "max": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "experience": {
+      "type": "object",
+      "required": ["points", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "points": { "type": "integer", "minimum": 0 },
+        "max": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "clockState": {
+      "type": "object",
+      "required": ["segments", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "segments": { "type": "integer", "minimum": 0 },
+        "size": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "namedDescription": {
+      "type": "object",
+      "required": ["name", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "harmIntensity": { "enum": ["lesser", "moderate", "severe", "fatal"] },
+    "closeness": { "enum": ["friend", "close-friend", "rival"] },
+    "commitment": { "enum": ["none", "light", "normal", "heavy", "encumbered"] },
+    "hold": { "enum": ["strong", "weak"] },
+    "cohortType": { "enum": ["gang", "expert"] },
+    "cohortHarm": { "enum": ["healthy", "weakened", "impaired", "broken", "dead"] },
+    "errorCode": {
+      "enum": [
+        "NOT_FOUND", "VALIDATION", "STALE_REVISION", "RETIRED",
+        "CONFIRM_REQUIRED", "DUPLICATE", "SLOT_FULL_FATAL", "CANNOT_HEAL",
+        "ARMOR_NOT_AVAILABLE", "ABILITY_MAXED", "CANNOT_LEVEL_UP",
+        "RATING_MAXED", "UPGRADE_MAXED", "INSUFFICIENT_FUNDS", "SATCHEL_FULL",
+        "OVER_BULK", "NO_COMMITMENT", "COMMITMENT_LOCKED", "NO_HISTORY",
+        "GAME_NOT_FOUND", "PAYLOAD_TOO_LARGE"
+      ]
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/crew.json",
+  "title": "Crew",
+  "type": "object",
+  "required": [
+    "kind", "id", "gameStem", "gameName", "language", "revision",
+    "formatVersion", "createdAt", "updatedAt", "crewTypeName", "name", "lair",
+    "reputation", "huntingGrounds", "tier", "hold", "heat", "wanted", "rep",
+    "experience", "specialAbilities", "upgrades", "cohorts", "coin", "stash",
+    "notes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "crew" },
+    "id": { "$ref": "common.json#/$defs/uuid" },
+    "gameStem": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+    "gameName": { "type": "string" },
+    "language": { "type": "string" },
+    "revision": { "$ref": "common.json#/$defs/revision" },
+    "formatVersion": { "$ref": "common.json#/$defs/formatVersion" },
+    "createdAt": { "$ref": "common.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "common.json#/$defs/timestamp" },
+    "crewTypeName": { "type": "string" },
+    "name": { "type": "string" },
+    "lair": { "type": "string" },
+    "reputation": { "type": "string" },
+    "huntingGrounds": { "type": "string" },
+    "tier": { "type": "integer", "minimum": 0 },
+    "hold": { "$ref": "common.json#/$defs/hold" },
+    "heat": { "$ref": "common.json#/$defs/boundedInteger" },
+    "wanted": { "$ref": "common.json#/$defs/boundedInteger" },
+    "rep": { "$ref": "common.json#/$defs/boundedInteger" },
+    "experience": { "$ref": "common.json#/$defs/experience" },
+    "specialAbilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "timesTaken"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "timesTaken": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "upgrades": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "boxesMarked"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "boxesMarked": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "cohorts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id", "cohortKind", "gangType", "expertType", "quality", "scale",
+          "hasArmor", "edges", "flaws", "harm", "description"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "common.json#/$defs/uuid" },
+          "cohortKind": { "$ref": "common.json#/$defs/cohortType" },
+          "gangType": { "type": "string" },
+          "expertType": { "type": "string" },
+          "quality": { "type": "integer", "minimum": 0 },
+          "scale": { "type": "integer", "minimum": 0 },
+          "hasArmor": { "type": "boolean" },
+          "edges": { "type": "array", "items": { "type": "string" } },
+          "flaws": { "type": "array", "items": { "type": "string" } },
+          "harm": { "$ref": "common.json#/$defs/cohortHarm" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "coin": { "type": "integer", "minimum": 0 },
+    "stash": { "type": "integer", "minimum": 0 },
+    "notes": { "type": "string" }
+  }
+}
