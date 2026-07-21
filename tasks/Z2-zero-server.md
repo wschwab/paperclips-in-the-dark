@@ -34,3 +34,9 @@ Spec §10/§10.3. Same §4 file-store rules where reachable.
   response ceiling at roughly 6 KiB even with a 30 KiB local builder, so full
   observable parity now requires the spec §10.3 neutral shim. No provider limit
   was encountered.
+- 2026-07-22: Track Z paused at the maximum achievable boundary for Zero 0.3.4.
+  The native HTTP failure is reported upstream as
+  https://github.com/vercel-labs/zerolang/issues/430; the missing persistent
+  stdin capability is https://github.com/vercel-labs/zerolang/issues/431.
+  Preserve the Z2/Z2S probes and metrics for immediate retest on a future Zero
+  release; no process-per-request workaround is planned while Track A advances.

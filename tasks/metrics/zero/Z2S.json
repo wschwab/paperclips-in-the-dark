@@ -1,0 +1,42 @@
+{
+  "task": "Z2S",
+  "track": "zero",
+  "date": "2026-07-21",
+  "startedAt": "2026-07-21T17:29:21+03:00",
+  "pausedAt": "2026-07-21T17:48:00+03:00",
+  "wallClockMinutes": 19,
+  "toolchain": "Zero 0.3.4 (build 5b3a90a)",
+  "result": "blocked-at-persistent-stdio-boundary",
+  "agents": [
+    {
+      "model": "gpt-5.6-luna",
+      "provider": "openai-codex",
+      "harness": "pi",
+      "thinking": "xhigh",
+      "sessionId": "019f8515-347e-7574-9c4b-493f34f4e0f5",
+      "attempts": 1,
+      "result": "diagnostic accepted"
+    }
+  ],
+  "providerLimitEncountered": false,
+  "tests": [
+    {
+      "command": "cd backend-zero/spike/stdio-jsonl-20260721T1731 && zero import . && zero check --json && printf JSONL | zero run",
+      "result": "PASS: import succeeded, check ok=true, one-line echo exited 0 at EOF"
+    },
+    {
+      "command": "node backend-zero/spike/stdio-stream-probe-20260721T1758.mjs",
+      "result": "BLOCKED: beforeClose was empty after 2s with stdin kept open; exact child PID archived in output"
+    },
+    {
+      "command": "node backend-zero/spike/shim-stream-probe-20260721T1759.mjs",
+      "result": "BLOCKED: frozen pitd-http-stdio-shim GET /api/health timed out after 2s; shim stopped"
+    }
+  ],
+  "implementation": {
+    "status": "not-claimed",
+    "archive": "backend-zero/spike/stdio-child-attempt-20260721T1756-560795",
+    "reason": "std.io scans existing spans; std.fs /dev/stdin read does not provide a persistent line stream"
+  },
+  "next": "Add a true stdin World capability or streaming file-read primitive; otherwise measure a neutral process-per-request Node dispatcher."
+}

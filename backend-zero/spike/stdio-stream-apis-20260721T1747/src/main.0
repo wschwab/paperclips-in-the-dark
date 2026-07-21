@@ -1,0 +1,11 @@
+pub fn main(world: World) -> Void raises {
+    var buffer: [4096]u8 = [0_u8; 4096]
+    let read: Maybe<usize> = std.fs.readBytesAt("/dev/stdin", 0, buffer)
+    if read.has {
+        check world.out.write("read=")
+        var nbuf: [24]u8 = [0_u8; 24]
+        let n: Maybe<Span<u8>> = std.fmt.usize(nbuf, read.value)
+        if n.has { check world.out.write(n.value) }
+        check world.out.write("\n")
+    }
+}

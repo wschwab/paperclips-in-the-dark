@@ -85,6 +85,81 @@ surface or cannot be expressed safely in the pinned Zero runtime:
    contract's `x-snapshot: true` declaration. This is conservative persistence,
    but produces extra history entries for some micro-operations.
 
+## Z2S stdio transport decision (2026-07-21)
+
+Upstream tracking: [`std.http.listen` response failure #430](https://github.com/vercel-labs/zerolang/issues/430)
+and [persistent stdin feature request #431](https://github.com/vercel-labs/zerolang/issues/431).
+
+The neutral HTTP-to-stdio escape hatch was stopped at the transport boundary.
+Zero 0.3.4 is `0.3.4 (build 5b3a90a)`. `zero skills get stdlib` exposes
+`std.io` line scanners over caller-owned byte spans and `World.out`/`World.err`
+output, but no stdin stream capability. The language skill explicitly says
+that hosted programs receive input from `std.args` and files through
+`std.fs`; `std.io.nextLine` only scans bytes already in memory. The
+additional `std.fs.readBytes` and `std.fs.readBytesAt` probes are preserved at
+`backend-zero/spike/stdio-stream-apis-20260721T1747/`; both checked successfully
+but produced no output and exited 0 while the pipe remained open (child PIDs
+`525192` and `533838`).
+
+The smallest actual JSONL proof is preserved at
+`backend-zero/spike/stdio-jsonl-20260721T1731/`:
+
+```sh
+cd backend-zero/spike/stdio-jsonl-20260721T1731
+~/.zero/bin/zero import .
+~/.zero/bin/zero check --json
+printf '%s\n' '{"id":"probe-1","method":"GET","path":"/api/health","body":null}' | ~/.zero/bin/zero run
+```
+
+It exits 0 and emits the same JSONL line. This proves only EOF-delimited
+input; it does not prove a persistent stream.
+
+```json
+{"id":"probe-1","method":"GET","path":"/api/health","body":null}
+```
+
+The attempted persistent child is archived at
+`backend-zero/spike/stdio-child-attempt-20260721T1756-560795/`. It opens
+`/dev/stdin` with `std.fs.openOrRaise` and uses `std.fs.readOrRaise`; the
+preserved probe `backend-zero/spike/stdio-stream-probe-20260721T1758.mjs`
+keeps stdin open after writing one request. Its exact result was:
+
+```json
+{"childPid":572803,"beforeClose":"","stderr":"","stopped":true}
+```
+
+The equivalent existing shim probe is
+`backend-zero/spike/shim-stream-probe-20260721T1759.mjs`. It started the
+frozen `pitd-http-stdio-shim` on port `19658`, then `GET /api/health` timed out
+while the child stdin remained open:
+
+```json
+{"shimPid":587748,"result":"TimeoutError: The operation was aborted due to timeout","stdout":"{\"status\":\"listening\",\"port\":19658}\\n","stderr":"","stopped":true}
+```
+
+The exact child and shim PIDs above were stopped by their probes; no listener
+remained on `19658`. The archived child implementation is diagnostic only and
+is not a usable launcher. Do not claim the stdio acceptance until Zero exposes
+an actual stdin/stream capability.
+
+### Resumption / alternative design
+
+Resume with a future Zero release that adds a stdin `World` capability or a
+streaming file-read primitive, then rerun:
+
+```sh
+cd backend-zero/spike/stdio-child-attempt-20260721T1756-560795
+~/.zero/bin/zero import . && ~/.zero/bin/zero check --json
+node ../stdio-stream-probe-20260721T1758.mjs
+node ../shim-stream-probe-20260721T1759.mjs
+```
+
+If Zero remains one-shot-only, use a neutral Node line dispatcher as the
+alternative: own JSONL framing in the launcher, invoke `zero run` once per
+complete request with a closed one-line stdin, and preserve the HTTP shim's
+request/response IDs. That design must be measured and documented as a
+process-per-request adapter before it can replace this blocked stream path.
+
 The process-purity check was performed after the acceptance run: no listener
 was left on 9657/9658, the temporary `server/zero` link was removed, and no
 `server/_*.py` file remains.

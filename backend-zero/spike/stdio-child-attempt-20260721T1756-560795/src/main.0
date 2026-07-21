@@ -1,0 +1,65 @@
+use config
+use jbuf
+
+fn build_response(storage: MutSpan<u8>, id: Span<u8>, method: Span<u8>, path: Span<u8>) -> Bool {
+    let healthy: Bool = std.mem.eql(method, "GET") && std.mem.eql(path, "/api/health")
+    var status: u32 = 404_u32
+    if healthy { status = 200_u32 }
+    if !jb_init(storage) || !jb_begin_obj(storage) || !jb_string_field(storage, false, "id", id) || !jb_u32_field(storage, true, "status", status) || !jb_comma(storage, true) || !jb_key(storage, "headers") || !jb_begin_obj(storage) || !jb_string_field(storage, false, "content-type", "application/json") || !jb_end_obj(storage) || !jb_comma(storage, true) || !jb_key(storage, "body") {
+        return false
+    }
+    if healthy {
+        if !jb_begin_obj(storage) || !jb_string_field(storage, false, "status", "ok") || !jb_string_field(storage, true, "implementation", "zero") || !jb_string_field(storage, true, "version", impl_version()) || !jb_string_field(storage, true, "dataDir", data_dir()) || !jb_end_obj(storage) {
+            return false
+        }
+    } else if !jb_raw(storage, "{\"error\":\"NOT_FOUND\"}") {
+        return false
+    }
+    return jb_end_obj(storage)
+}
+
+pub fn main(world: World) -> Void raises {
+    let fs: Fs = std.fs.host()
+    var input: owned<File> = check std.fs.openOrRaise(fs, "/dev/stdin")
+    var read_buffer: [8192]u8 = [0_u8; 8192]
+    var pending: [16384]u8 = [0_u8; 16384]
+    var pending_len: usize = 0
+    var response: [2048]u8 = [0_u8; 2048]
+    while true {
+        let count_raw: usize = check std.fs.readOrRaise(&mut input, read_buffer)
+        if count_raw == 0 {
+            break
+        }
+        var count: usize = count_raw
+        if count > std.mem.len(read_buffer) {
+            count = std.mem.len(read_buffer)
+        }
+        var i: usize = 0
+        while i < count {
+            if read_buffer[i] == 10_u8 {
+                var id_buffer: [128]u8 = [0_u8; 128]
+                var method_buffer: [16]u8 = [0_u8; 16]
+                var path_buffer: [256]u8 = [0_u8; 256]
+                let id_m: Maybe<Span<u8>> = std.json.string(id_buffer, pending[0..pending_len], "id")
+                let method_m: Maybe<Span<u8>> = std.json.string(method_buffer, pending[0..pending_len], "method")
+                let path_m: Maybe<Span<u8>> = std.json.string(path_buffer, pending[0..pending_len], "path")
+                var id: Span<u8> = ""
+                var method: Span<u8> = ""
+                var path: Span<u8> = ""
+                if id_m.has { id = id_m.value }
+                if method_m.has { method = method_m.value }
+                if path_m.has { path = path_m.value }
+                if !build_response(response, id, method, path) {
+                    break
+                }
+                check world.out.write(jb_bytes(response))
+                check world.out.write("\n")
+                pending_len = 0
+            } else if pending_len < std.mem.len(pending) {
+                pending[pending_len] = read_buffer[i]
+                pending_len = pending_len + 1
+            }
+            i = i + 1
+        }
+    }
+}

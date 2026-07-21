@@ -1,0 +1,11 @@
+pub fn main(world: World) -> Void raises {
+    let fs: Fs = std.fs.host()
+    var input: owned<File> = check std.fs.openOrRaise(fs, "/dev/stdin")
+    var buffer: [4096]u8 = [0_u8; 4096]
+    let count: usize = check std.fs.readOrRaise(&mut input, buffer)
+    let line: Maybe<Span<u8>> = std.io.nextLine(buffer[0..count], 0)
+    if line.has {
+        check world.out.write(line.value)
+        check world.out.write("\n")
+    }
+}
