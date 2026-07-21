@@ -1,7 +1,7 @@
 // Campaign data directory + fixed timestamps (schema admits any RFC3339 UTC).
 
 pub fn data_dir() -> Span<u8> {
-    return "campaign-data"
+    return std.env.getOr("PITD_DATA", "campaign-data")
 }
 
 pub fn ts_created() -> Span<u8> {

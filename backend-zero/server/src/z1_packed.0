@@ -667,19 +667,44 @@ fn z_empty(v: MutSpan<u8>, key: Span<u8>) -> Bool { return jb_comma(v, true) && 
 fn next_id(kind: Span<u8>, prefix: u8, out: MutSpan<u8>) -> Maybe<Span<u8>> {
     var index: [4096]u8 = [0_u8; 4096]
     let found: Maybe<usize> = index_bytes(kind, index)
-    var count: u32 = 0
+    var sequence_path_buf: [256]u8 = [0_u8; 256]
+    let sequence_path: Maybe<String> = path_id_sequence(sequence_path_buf, kind)
+    if !sequence_path.has { return null }
+    var next: u32 = 1
+    var sequence: [32]u8 = [0_u8; 32]
+    let stored: Maybe<Span<u8>> = read_file_to(sequence_path.value, sequence)
+    if stored.has && std.mem.len(stored.value) > 0 {
+        let parsed: Maybe<u32> = std.parse.parseU32(stored.value)
+        if parsed.has && parsed.value > 0 { next = parsed.value }
+    }
+    var max_seen: u32 = 0
     if found.has {
-        var i: usize = 0
-        while i < found.value {
-            if index[i] == 10_u8 { count = count + 1 }
-            i = i + 1
+        var start: usize = 0
+        while start < found.value {
+            var end: usize = start
+            while end < found.value && index[end] != 10_u8 { end = end + 1 }
+            var line: Span<u8> = index[start..end]
+            if std.mem.len(line) > 0 && line[std.mem.len(line) - 1] == 13_u8 {
+                line = line[0..std.mem.len(line) - 1]
+            }
+            if std.mem.len(line) > 1 {
+                let seen: u32 = id_number(line)
+                if seen > max_seen { max_seen = seen }
+            }
+            if end < found.value { start = end + 1 }
+            else { start = end }
         }
     }
+    if max_seen >= next { next = max_seen + 1 }
     if std.mem.len(out) < 16 { return null }
     out[0] = prefix
-    let formatted: Maybe<Span<u8>> = std.fmt.u32(out[1..], count + 1)
-    if formatted.has { return out[0..1 + std.mem.len(formatted.value)] }
-    return null
+    let formatted: Maybe<Span<u8>> = std.fmt.u32(out[1..], next)
+    if !formatted.has { return null }
+    var following_buf: [16]u8 = [0_u8; 16]
+    let following: Maybe<Span<u8>> = std.fmt.u32(following_buf, next + 1)
+    if !following.has { return null }
+    if !atomic_write_bytes(sequence_path.value, following.value) { return null }
+    return out[0..1 + std.mem.len(formatted.value)]
 }
 
 fn first_id(kind: Span<u8>, out: MutSpan<u8>) -> Maybe<Span<u8>> {
@@ -988,7 +1013,7 @@ fn z_body(request: Span<u8>) -> Span<u8> {
 }
 
 fn roster(response: MutSpan<u8>) -> Maybe<Span<u8>> {
-    var out: [1800]u8 = [0_u8; 1800]
+    var out: [14000]u8 = [0_u8; 14000]
     let v: MutSpan<u8> = out
     var c: PChar = PChar { a: 0, b: 0, c: 0, d: 0 }
     var cr: PCrew = PCrew { a: 0, b: 0 }

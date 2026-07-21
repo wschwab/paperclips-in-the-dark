@@ -32,6 +32,15 @@ earlier run.
   and carries the packed-state sidecar needed for undo. Import clears history,
   writes the exact imported DTO, and records an import baseline. Import bodies
   are capped at 1 MiB and require the current `formatVersion`.
+- Numeric entity IDs use a per-kind persisted `next-id.txt` sequence. Creation
+  bootstraps or repairs that sequence from the largest indexed suffix, then
+  advances it before writing the entity, so deletion cannot recycle a live ID.
+- The direct HTTP runtime still returns `handler_failed` once a roster response
+  grows to roughly 6 KiB. Increasing the local JSON builder from 14 KiB to
+  30 KiB did not change that boundary and conflicts with the runtime's practical
+  handler-stack limits. Larger accumulated rosters therefore require the neutral
+  HTTP-to-stdio shim described by spec §10.3; this is a transport limitation,
+  not a domain-store failure.
 - Undo, delete confirmation, revision checks, idempotency replay, clocks,
   campaign roster, end-score, end-downtime, game projections, and the visible
   batch mutation path are wired through the file store.

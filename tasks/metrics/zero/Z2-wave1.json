@@ -1,0 +1,42 @@
+{
+  "task": "Z2",
+  "track": "zero",
+  "wave": 1,
+  "date": "2026-07-21",
+  "startedAt": "2026-07-21T07:48:07+03:00",
+  "pausedAt": "2026-07-21T07:53:45+03:00",
+  "wallClockMinutes": 6,
+  "agent": "deepseek-v4-pro (opencode-go, pi, high)",
+  "attempts": 1,
+  "tokens": null,
+  "providerLimitEncountered": false,
+  "pauseReason": "Orchestrator false-positive liveness diagnosis: pi -p buffered terminal output while the saved session recorded five active reasoning/tool-call cycles. The orchestrator interrupted the model before its first edit.",
+  "livenessCorrection": {
+    "sessionId": "019f8303-bd37-7ded-a87a-58f59ca0bcc5",
+    "activeFrom": "2026-07-21T04:51:32.626Z",
+    "activeThrough": "2026-07-21T04:51:58.629Z",
+    "observedAgentCycles": 5,
+    "providerStall": false
+  },
+  "tests": [
+    {
+      "command": "cd conformance && npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "backend": "ada",
+      "command": "BASE_URL=http://localhost:9658 npx vitest run suites/persistence/repeatability.test.ts",
+      "result": "1 passed"
+    },
+    {
+      "backend": "zero",
+      "command": "BASE_URL=http://localhost:9657 npx vitest run suites/persistence/repeatability.test.ts",
+      "result": "1 failed: roster status 500 after 12 successful crew creations"
+    }
+  ],
+  "remainingGaps": [
+    "Zero roster response fails as persisted crew count grows.",
+    "Zero --data wrapper argument does not affect the runtime data directory.",
+    "Focused regression is red on Zero; broad acceptance was intentionally not started."
+  ]
+}

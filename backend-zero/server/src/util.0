@@ -74,6 +74,15 @@ pub fn path_index(buf: MutSpan<u8>, kind: Span<u8>) -> Maybe<String> {
     return std.path.join(buf, kind_dir.value, "index.txt")
 }
 
+pub fn path_id_sequence(buf: MutSpan<u8>, kind: Span<u8>) -> Maybe<String> {
+    var mid: [256]u8 = [0_u8; 256]
+    let kind_dir: Maybe<String> = std.path.join(mid, data_dir_string(), kind)
+    if !kind_dir.has {
+        return null
+    }
+    return std.path.join(buf, kind_dir.value, "next-id.txt")
+}
+
 pub fn path_entity_dir(buf: MutSpan<u8>, kind: Span<u8>, id: Span<u8>) -> Maybe<String> {
     var mid: [256]u8 = [0_u8; 256]
     let kind_dir: Maybe<String> = std.path.join(mid, data_dir_string(), kind)
