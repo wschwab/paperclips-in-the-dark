@@ -3,6 +3,7 @@ import { initTheme } from "./lib/theme.js";
 import { mountHealthPage } from "./pages/health.js";
 import { mountRosterPage } from "./pages/roster.js";
 import { mountCharacterDetailPage } from "./pages/character-detail.js";
+import { mountCrewDetailPage } from "./pages/crew-detail.js";
 import { renderShell } from "./pages/shell.js";
 import { mountStyleguidePage } from "./pages/styleguide.js";
 
@@ -58,6 +59,14 @@ function render(): void {
     const characterId = charMatch[1];
     document.title = "Character — Paperclips in the Dark";
     disposePage = mountCharacterDetailPage(outlet, characterId);
+    return;
+  }
+
+  const crewMatch = path.match(/^\/crew\/([A-Za-z0-9-]+)$/);
+  if (crewMatch) {
+    const crewId = crewMatch[1];
+    document.title = "Crew — Paperclips in the Dark";
+    disposePage = mountCrewDetailPage(outlet, crewId);
     return;
   }
 

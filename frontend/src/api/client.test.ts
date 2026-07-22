@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, ApiError, DecodeError } from "./client.js";
+import { getRoster, getCharacter, getCrew, ApiError, DecodeError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -188,6 +188,87 @@ describe("getCharacter", () => {
 
     const result = await Effect.runPromise(
       Effect.either(getCharacter("some-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("getCrew", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/crews/{id} and decodes a valid crew", async () => {
+    const crewId = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
+    const crewData = {
+      kind: "crew",
+      id: crewId,
+      gameStem: "blades-in-the-dark",
+      gameName: "Blades in the Dark",
+      language: "en",
+      revision: 5,
+      formatVersion: 1,
+      createdAt: "2026-07-22T00:00:00.000Z",
+      updatedAt: "2026-07-22T00:00:00.000Z",
+      crewTypeName: "Assassins",
+      name: "The Red Sashes",
+      lair: "Northside safehouse",
+      reputation: "ruthless",
+      huntingGrounds: "The Docks",
+      tier: 1,
+      hold: "strong",
+      heat: { current: 4, max: 9 },
+      wanted: { current: 1, max: 4 },
+      rep: { current: 3, max: 12 },
+      experience: { points: 2, max: 8 },
+      specialAbilities: [],
+      upgrades: [],
+      cohorts: [],
+      coin: 0,
+      stash: 2,
+      notes: "Up-and-coming crew",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewData),
+    });
+
+    const result = await Effect.runPromise(getCrew(crewId));
+    expect(result.id).toBe(crewId);
+    expect(result.name).toBe("The Red Sashes");
+    expect(global.fetch).toHaveBeenCalledWith(`/api/crews/${crewId}`, {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails with 404", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCrew("nonexistent-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid crew JSON", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCrew("some-id")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

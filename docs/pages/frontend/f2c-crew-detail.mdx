@@ -1,0 +1,19 @@
+# Crew detail page (F2c)
+
+`/crew/:id` is the third Ada-backed application page. It requests
+`GET /api/crews/{id}`, decodes the full Crew DTO with the shared
+frontend schema, and displays the crew's key attributes: name, type, lair,
+hunting grounds, reputation, tier, hold, heat, wanted, rep,
+coin, stash, and notes.
+
+The page follows the same pattern as the character detail page:
+- explicit loading, error states
+- aria-live region for accessibility
+- same Effect-based error handling (ApiError, DecodeError)
+- client-side routing via history.pushState
+
+The roster page links to crew detail with `<a href="/crew/{id}">`,
+so navigation is purely client-side after the roster loads.
+
+F2c is read-only, displaying the crew summary. Editing, creation flow,
+history, undo, and stale-revision handling remain later F2 slices.

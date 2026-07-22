@@ -1,0 +1,21 @@
+{
+  "task": "F2c",
+  "track": "frontend",
+  "date": "2026-07-22",
+  "waveStart": "2026-07-22T15:44:00+03:00",
+  "waveEnd": "2026-07-22T15:48:00+03:00",
+  "elapsedMinutes": 4,
+  "implementationAgent": "Claude Haiku 4.5, high effort, Claude Code CLI 2.1.216",
+  "reviewAgent": "Claude Sonnet 5, medium effort, Claude Code CLI 2.1.216, subscription OAuth",
+  "attempts": 1,
+  "iterationsToGreen": 1,
+  "tests": [
+    "frontend: 3 focused getCrew tests passed (red-green TDD)",
+    "frontend: 27 total API and schema-decoder tests passed",
+    "frontend: TypeScript and Vite production build passed",
+    "Ada: live acceptance — created a crew via POST /api/crews with gameStem=blades-in-the-dark and crewType=Assassins, confirmed GET /api/crews/{id} returns the full Crew DTO, /crew/{id} serves the SPA shell, and an unknown id returns 404"
+  ],
+  "review": "Sonnet found no blocking issues. The documentation field-list overclaim was corrected during orchestration acceptance. Remaining non-blocking observations: the implementation report's 'full crew DTO rendering' framing is broader than the actual partial read-only summary (consistent with the F2b character-detail precedent), and the /crew/:id route regex accepts any hyphenated alphanumeric id rather than only UUIDs (falls through to a 404/decode-error path, matching character-detail's identical pattern).",
+  "providerLimit": "none",
+  "notes": "Crew detail page reuses existing Crew DTO schema and backend endpoint (GET /api/crews/{id} from A2). Red-green TDD: wrote getCrew API tests first (3 tests failed), implemented minimal client method and crew-detail.ts page (all tests passed). Page rendering follows character-detail.ts pattern: Effect-based error handling, aria-live, loading/error/success states. Router extends main.ts to match /crew/:id and dispatch to crew detail page. Roster page updated with links to crew detail pages. Acceptance agent independently reran `npm test -- --run` (27/27) and `npm run build`, then spun up a fresh isolated backend-ada instance (temp data/games dirs seeded from the repo's data/games fixtures on port 9758), created a crew via POST /api/crews, confirmed GET /api/crews/{id} returns a decodable Crew DTO, /crew/{id} serves the SPA shell, and an unknown id returns 404; the exact server PID was stopped afterward and the temp dir removed. No forbidden paths (contract/, conformance/, blades-in-the-sheets/) touched. Crew detail page renders crew name, type, basics (lair, hunting grounds, reputation), status (tier, hold, heat, wanted, rep), fund (coin, stash), and notes sections."
+}

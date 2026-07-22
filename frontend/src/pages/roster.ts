@@ -21,11 +21,15 @@ function renderCrew(cr: CrewSummary): HTMLElement {
   return el(
     "li",
     { "data-crew-id": cr.id },
-    el("strong", {}, cr.name),
     el(
-      "span",
-      {},
-      ` ${cr.crewType} • tier ${cr.tier} • heat ${cr.heat} • ${cr.memberCount} members`,
+      "a",
+      { href: `/crew/${cr.id}` },
+      el("strong", {}, cr.name),
+      el(
+        "span",
+        {},
+        ` ${cr.crewType} • tier ${cr.tier} • heat ${cr.heat} • ${cr.memberCount} members`,
+      ),
     ),
   );
 }
