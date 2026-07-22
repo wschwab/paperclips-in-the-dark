@@ -1,0 +1,25 @@
+# Character creation page (F2e)
+
+`/character/create` is the fifth Ada-backed application page. It requests
+`GET /api/games/{gameStem}/playbooks` to populate a playbook `<select>`, then
+on submit `POST`s `{ gameStem, playbook }` to `/api/characters`, decodes the
+created character out of the returned `OperationResult`, and navigates to
+`/character/{id}` on success.
+
+The page follows the same pattern as the rest of F2:
+- explicit loading, error states
+- aria-live region for accessibility
+- same Effect-based error handling (ApiError, DecodeError)
+- client-side routing via history.pushState
+
+`getPlaybookList` decodes the backend's raw game-settings passthrough, which
+returns playbook objects with a capitalized `Name` field (see
+`pitd_callback.adb`'s `Get(G, "Playbooks")`) — the client maps that down to a
+plain `string[]` of playbook names for the form.
+
+The roster page links to character creation with `<a href="/character/create">`,
+so navigation is purely client-side.
+
+F2e only supports creating a character with a game and playbook; editing,
+crew assignment at creation time, and validation beyond the required playbook
+selection remain later F2 slices.

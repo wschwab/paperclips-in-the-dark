@@ -2,6 +2,7 @@ import { Effect, Schema } from "effect";
 import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema, type HistoryEntry, HistoryEntry as HistoryEntrySchema } from "../schema/campaign.js";
 import { type Character, Character as CharacterSchema } from "../schema/character.js";
 import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
+import { OperationResult as OperationResultSchema } from "../schema/operation-result.js";
 
 /**
  * Same-origin API client. Always uses relative `/api/*` paths so the
@@ -103,6 +104,49 @@ export function getCharacterHistory(id: string): Effect.Effect<readonly HistoryE
     const raw = yield* fetchJson(`/api/characters/${id}/history`);
     return yield* Effect.try({
       try: () => Schema.decodeUnknownSync(Schema.Array(HistoryEntrySchema))(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function getPlaybookList(gameStem: string): Effect.Effect<readonly string[], ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/games/${gameStem}/playbooks`);
+    return yield* Effect.try({
+      try: () => {
+        if (!Array.isArray(raw)) {
+          throw new Error("Expected playbooks array");
+        }
+        return raw.map((pb: unknown) => {
+          if (typeof pb === "object" && pb !== null && "Name" in pb) {
+            const name = (pb as { Name?: unknown }).Name;
+            if (typeof name === "string") {
+              return name;
+            }
+          }
+          throw new Error("Invalid playbook structure");
+        });
+      },
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function createCharacter(gameStem: string, playbook: string): Effect.Effect<Character, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson("/api/characters", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameStem, playbook }),
+    });
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(raw);
+        if (!opResult.character) {
+          throw new Error("Missing character in OperationResult");
+        }
+        return opResult.character;
+      },
       catch: (cause) => new DecodeError(cause),
     });
   });

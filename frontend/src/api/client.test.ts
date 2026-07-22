@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, ApiError, DecodeError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, ApiError, DecodeError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -335,6 +335,179 @@ describe("getCharacterHistory", () => {
 
     const result = await Effect.runPromise(
       Effect.either(getCharacterHistory("some-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("getPlaybookList", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/games/{gameStem}/playbooks and decodes playbook names", async () => {
+    const playbookData = [
+      { Name: "Cutter" },
+      { Name: "Hound" },
+      { Name: "Spider" },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(playbookData),
+    });
+
+    const result = await Effect.runPromise(getPlaybookList("blades-in-the-dark"));
+    expect(result).toEqual(["Cutter", "Hound", "Spider"]);
+    expect(global.fetch).toHaveBeenCalledWith("/api/games/blades-in-the-dark/playbooks", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getPlaybookList("nonexistent-game")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not a valid playbook array", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getPlaybookList("blades-in-the-dark")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("createCharacter", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters and decodes the created character from OperationResult", async () => {
+    const characterData = {
+      kind: "character",
+      id: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
+      gameStem: "blades-in-the-dark",
+      gameName: "Blades in the Dark",
+      language: "en",
+      revision: 1,
+      formatVersion: 1,
+      createdAt: "2026-07-24T00:00:00.000Z",
+      updatedAt: "2026-07-24T00:00:00.000Z",
+      isRetired: false,
+      isDeadish: false,
+      dossier: {
+        name: "Rowan",
+        crewId: "",
+        alias: "",
+        look: "",
+        notes: "",
+        background: { name: "Dock Worker", description: "" },
+        heritage: { name: "Duskborn", description: "" },
+        vice: { name: "Gambling", description: "" },
+      },
+      monitor: {
+        stress: { current: 0, max: 9 },
+        trauma: { traumas: [], max: 4 },
+        harm: {
+          lesser: [],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+        armor: {
+          standardUsed: false,
+          heavyUsed: false,
+          specialUsed: false,
+          hasStandard: false,
+          hasHeavy: false,
+          hasSpecial: false,
+        },
+      },
+      talent: { attributes: [] },
+      playbook: { name: "Cutter", experience: { points: 0, max: 8 }, abilities: [] },
+      gear: { loadout: [], availableGear: [], commitment: "none", isCommitmentLocked: false, maxBulk: 6 },
+      fund: { satchel: { coins: 0, max: 12 }, stash: { coins: 0, max: 16 } },
+      rolodex: { friends: [] },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5 },
+      notebook: "",
+    };
+
+    const opResult = {
+      ok: true,
+      character: characterData,
+      applied: { op: "character.create" },
+      sideEffects: [],
+      error: null,
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opResult),
+    });
+
+    const result = await Effect.runPromise(
+      createCharacter("blades-in-the-dark", "Cutter"),
+    );
+    expect(result.id).toBe("c46ba7cb-993b-4fc7-974d-fb95eacd5446");
+    expect(result.dossier.name).toBe("Rowan");
+    expect(result.playbook.name).toBe("Cutter");
+    expect(global.fetch).toHaveBeenCalledWith("/api/characters", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ gameStem: "blades-in-the-dark", playbook: "Cutter" }),
+    });
+  });
+
+  it("exposes ApiError when POST fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Bad Request",
+      status: 400,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createCharacter("blades-in-the-dark", "Cutter")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid OperationResult", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createCharacter("blades-in-the-dark", "Cutter")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

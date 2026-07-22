@@ -1,0 +1,19 @@
+{
+  "taskId": "F2e",
+  "title": "Character creation form",
+  "track": "frontend",
+  "date": "2026-07-24",
+  "iterations": 2,
+  "compileErrors": 2,
+  "testFailures": 0,
+  "notes": "RED: Added tests for createCharacter and getPlaybookList. Fixed test data structure (Experience.points not .current, Commitment enum not object). GREEN: Implemented API clients and character-create page. TypeScript build errors (unused import, type mismatch) fixed in one iteration. All 33 frontend tests pass, build succeeds. Live Ada acceptance: character creation endpoint works, playbooks list loads, created character retrieves from GET endpoint. ACCEPTANCE PASS (Sonnet 5): implementation report overstated getPlaybookList test coverage (claimed 3 tests, 0 existed) and the vocs docs page was missing. Added the 3 missing getPlaybookList tests (verified red via reverted import, then green — 36/36 total) and docs/pages/frontend/f2e-character-creation.mdx. No behavior change to createCharacter, character-create.ts, main.ts, or roster.ts. Independently re-ran live Ada acceptance against a fresh instance (port 9771, PID 665579): playbooks list, POST/GET character, roster listing, and both SPA routes all verified; PID killed, port confirmed clean, temp dirs removed.",
+  "filesChanged": [
+    "frontend/src/api/client.ts",
+    "frontend/src/api/client.test.ts",
+    "frontend/src/pages/character-create.ts",
+    "frontend/src/pages/roster.ts",
+    "frontend/src/main.ts",
+    "tasks/F2e-character-creation.md",
+    "docs/pages/frontend/f2e-character-creation.mdx"
+  ]
+}

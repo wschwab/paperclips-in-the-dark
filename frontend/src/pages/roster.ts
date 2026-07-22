@@ -61,6 +61,7 @@ function renderRoster(roster: Roster): HTMLElement {
       { className: "roster-characters" },
       el("h2", {}, `Characters (${roster.characters.length})`),
       charactersSection,
+      el("a", { href: "/character/create", className: "btn-primary" }, "+ Create Character"),
     ),
     el(
       "div",

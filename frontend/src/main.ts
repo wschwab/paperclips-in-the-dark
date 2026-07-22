@@ -1,12 +1,15 @@
 import { el, setChildren } from "./lib/dom.js";
 import { initTheme } from "./lib/theme.js";
+import { getPlaybookList } from "./api/client.js";
 import { mountHealthPage } from "./pages/health.js";
 import { mountRosterPage } from "./pages/roster.js";
 import { mountCharacterDetailPage } from "./pages/character-detail.js";
 import { mountCharacterHistoryPage } from "./pages/character-history.js";
+import { mountCharacterCreatePage } from "./pages/character-create.js";
 import { mountCrewDetailPage } from "./pages/crew-detail.js";
 import { renderShell } from "./pages/shell.js";
 import { mountStyleguidePage } from "./pages/styleguide.js";
+import { Effect } from "effect";
 
 import "./styles/fonts.css";
 import "./styles/theme.css";
@@ -52,6 +55,39 @@ function render(): void {
   if (path === "/roster") {
     document.title = "Roster — Paperclips in the Dark";
     disposePage = mountRosterPage(outlet);
+    return;
+  }
+
+  if (path === "/character/create") {
+    document.title = "Create Character — Paperclips in the Dark";
+    const createOutlet = outlet;
+    let cancelled = false;
+    createOutlet.textContent = "Loading playbooks…";
+
+    disposePage = () => {
+      cancelled = true;
+    };
+
+    void Effect.runPromise(
+      Effect.match(getPlaybookList("blades-in-the-dark"), {
+        onFailure: (err) => {
+          if (cancelled) return;
+          createOutlet.textContent = `Failed to load playbooks: ${String(err)}`;
+        },
+        onSuccess: (playbooks) => {
+          if (cancelled) return;
+          const createDisposer = mountCharacterCreatePage(
+            createOutlet,
+            "blades-in-the-dark",
+            Array.from(playbooks),
+            (character) => {
+              navigate(`/character/${character.id}`);
+            },
+          );
+          disposePage = createDisposer;
+        },
+      }),
+    );
     return;
   }
 
