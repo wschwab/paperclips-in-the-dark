@@ -18,6 +18,7 @@ export function renderShell(opts: ShellOptions): {
     "nav",
     { "aria-label": "Primary" },
     navLink("/", "Health", opts.currentPath),
+    navLink("/roster", "Roster", opts.currentPath),
     navLink("/styleguide", "Style guide", opts.currentPath),
     mountThemeControls(),
   );

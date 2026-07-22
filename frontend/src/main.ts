@@ -1,6 +1,7 @@
 import { el, setChildren } from "./lib/dom.js";
 import { initTheme } from "./lib/theme.js";
 import { mountHealthPage } from "./pages/health.js";
+import { mountRosterPage } from "./pages/roster.js";
 import { renderShell } from "./pages/shell.js";
 import { mountStyleguidePage } from "./pages/styleguide.js";
 
@@ -42,6 +43,12 @@ function render(): void {
   if (path === "/styleguide") {
     document.title = "Style guide — Paperclips in the Dark";
     disposePage = mountStyleguidePage(outlet);
+    return;
+  }
+
+  if (path === "/roster") {
+    document.title = "Roster — Paperclips in the Dark";
+    disposePage = mountRosterPage(outlet);
     return;
   }
 

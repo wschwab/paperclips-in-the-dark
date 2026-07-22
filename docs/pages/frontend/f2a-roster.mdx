@@ -1,0 +1,13 @@
+# Campaign roster (F2a)
+
+`/roster` is the first Ada-backed application page. It requests
+`GET /api/campaign/roster`, decodes the response with the shared frontend
+schema, and displays character and crew summaries.
+
+The page has explicit loading, error, empty, and populated states. Character
+and crew UUIDs are retained as `data-character-id` and `data-crew-id`
+attributes so later detail-page slices can attach navigation without changing
+the roster data contract.
+
+F2a is deliberately read-only. Creating, editing, detail pages, history,
+undo, and stale-revision handling remain later F2 slices.

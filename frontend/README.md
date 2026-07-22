@@ -22,6 +22,7 @@ src/
   lib/dom.ts             plain-DOM helpers (el, setChildren)
   lib/theme.ts           light/dark/auto + high-contrast controller
   pages/health.ts        health-check page (F0)
+  pages/roster.ts        Ada-backed campaign roster (F2a)
   pages/styleguide.ts    /styleguide component library (F1)
   pages/shell.ts         app bar + nav chrome
   schema/                effect/Schema decoders mirroring contract/schemas/
@@ -39,3 +40,4 @@ Style guide: `docs/pages/frontend/f1-styleguide.mdx`.
 |---|---|
 | `/` | Health check (F0) |
 | `/styleguide` | Component library (F1) — build sheets against this |
+| `/roster` | Character and crew summaries from the Ada backend (F2a) |

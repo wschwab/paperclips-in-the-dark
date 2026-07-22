@@ -1,0 +1,22 @@
+{
+  "task": "F2a",
+  "track": "frontend",
+  "date": "2026-07-22",
+  "waveStart": "2026-07-22T14:45:15+03:00",
+  "waveEnd": "2026-07-22T14:55:00+03:00",
+  "elapsedMinutes": 10,
+  "implementationAgent": "Claude Haiku 4.5, high effort, Claude Code CLI 2.1.216, subscription OAuth",
+  "reviewAgent": "Claude Sonnet 5, medium effort, Claude Code CLI 2.1.216, subscription OAuth",
+  "attempts": 1,
+  "iterationsToGreen": 2,
+  "tests": [
+    "frontend: 3 focused getRoster tests passed",
+    "frontend: 21 full tests passed",
+    "frontend: TypeScript and Vite production build passed",
+    "Ada: test-spa-routes.sh passed after first reproducing /roster HTTP 404",
+    "Ada server rebuilt successfully"
+  ],
+  "review": "Sonnet identified missing page-state tests, aria-live, unmatched-route behavior, and minor cancellation/simplification concerns. The orchestrator fixed aria state and removed nonexistent detail links. Live acceptance independently exposed the Ada SPA deep-link 404 and added a durable regression.",
+  "providerLimit": "none",
+  "notes": "The in-app browser backend was unavailable, so live acceptance verified HTTP deep-link, API, HTML shell, bundle serving, and missing-asset behavior rather than rendered pixels. Full interactive Claude CLI was used, not claude -p."
+}

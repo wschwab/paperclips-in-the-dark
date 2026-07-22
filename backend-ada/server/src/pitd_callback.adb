@@ -520,7 +520,27 @@ package body Pitd_Callback is
       elsif Path="/api/test-hooks/crash-mid-write" then Response:=AWS.Response.Build(AWS.MIME.Text_Plain,"",AWS.Messages.S501);
       elsif Path'Length>=5 and then Path(Path'First..Path'First+4)="/api/" then Response:=Fail(AWS.Messages.S404,"request","NOT_FOUND");
       elsif AWS.Status.Method(Request)=AWS.Status.GET or else AWS.Status.Method(Request)=AWS.Status.HEAD then
-         declare N:constant String:=To_String(Static_Root)&(if Path="/" then "/index.html" else Path);begin if Path'Length>1 and then Ada.Strings.Fixed.Index(Path,"..")/=0 then Response:=AWS.Response.Acknowledge(AWS.Messages.S404,"Not found",AWS.MIME.Text_Plain);elsif Ada.Directories.Exists(N) and then Ada.Directories.Kind(N)=Ada.Directories.Ordinary_File then Response:=AWS.Response.File(AWS.MIME.Content_Type(N),N);else Response:=AWS.Response.Acknowledge(AWS.Messages.S404,"Not found",AWS.MIME.Text_Plain);end if;end;
+         declare
+            N : constant String := To_String (Static_Root) &
+              (if Path = "/" then "/index.html" else Path);
+            Index_File : constant String := To_String (Static_Root) & "/index.html";
+         begin
+            if Path'Length > 1 and then Ada.Strings.Fixed.Index (Path, "..") /= 0 then
+               Response := AWS.Response.Acknowledge
+                 (AWS.Messages.S404, "Not found", AWS.MIME.Text_Plain);
+            elsif Ada.Directories.Exists (N) and then
+              Ada.Directories.Kind (N) = Ada.Directories.Ordinary_File
+            then
+               Response := AWS.Response.File (AWS.MIME.Content_Type (N), N);
+            elsif Ada.Strings.Fixed.Index (Path, ".") = 0 and then
+              Ada.Directories.Exists (Index_File)
+            then
+               Response := AWS.Response.File (AWS.MIME.Text_HTML, Index_File);
+            else
+               Response := AWS.Response.Acknowledge
+                 (AWS.Messages.S404, "Not found", AWS.MIME.Text_Plain);
+            end if;
+         end;
       else Response:=AWS.Response.Acknowledge(AWS.Messages.S405,"Method not allowed",AWS.MIME.Text_Plain);end if;
       Ada.Text_IO.Put_Line("{""method"":"""&AWS.Status.Method(Request)&""",""path"":"""&Path&""",""status"":"&AWS.Messages.Image(AWS.Response.Status_Code(Response))&"}");return Response;
    exception when E:others => Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(E));return Fail(AWS.Messages.S400,"request","VALIDATION",Message=>Ada.Exceptions.Exception_Message(E));

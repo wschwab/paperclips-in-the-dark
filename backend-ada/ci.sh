@@ -17,6 +17,9 @@ echo "==> building server"
 echo "==> testing executable-relative launch defaults"
 "$SCRIPT_DIR/test-launch-paths.sh"
 
+echo "==> testing SPA deep-link routes"
+"$SCRIPT_DIR/test-spa-routes.sh"
+
 echo "==> proving core"
 (cd "$SCRIPT_DIR/core" && XDG_RUNTIME_DIR=/tmp alr --non-interactive exec -- \
    gnatprove -P paperclips_core.gpr --level=2 --checks-as-errors=on)
