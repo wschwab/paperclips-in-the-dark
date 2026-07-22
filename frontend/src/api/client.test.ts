@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, ApiError, DecodeError } from "./client.js";
+import { getRoster, getCharacter, ApiError, DecodeError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -80,6 +80,114 @@ describe("getRoster", () => {
 
     const result = await Effect.runPromise(
       Effect.either(getRoster()),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("getCharacter", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/characters/{id} and decodes a valid character", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    const characterData = {
+      kind: "character",
+      id: characterId,
+      gameStem: "blades-in-the-dark",
+      gameName: "Blades in the Dark",
+      language: "en",
+      revision: 12,
+      formatVersion: 1,
+      createdAt: "2026-07-22T00:00:00.000Z",
+      updatedAt: "2026-07-22T00:00:00.000Z",
+      isRetired: false,
+      isDeadish: false,
+      dossier: {
+        name: "Brenda Hilton",
+        crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+        alias: "Webweaver",
+        look: "Keen and calculating",
+        notes: "Spider operative",
+        background: { name: "Urchin", description: "" },
+        heritage: { name: "Akorosi", description: "" },
+        vice: { name: "Gambling", description: "" },
+      },
+      monitor: {
+        stress: { current: 3, max: 9 },
+        trauma: { traumas: ["Haunted"], max: 4 },
+        harm: {
+          lesser: [],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+        armor: {
+          standardUsed: false,
+          heavyUsed: false,
+          specialUsed: false,
+          hasStandard: true,
+          hasHeavy: false,
+          hasSpecial: false,
+        },
+      },
+      talent: { attributes: [] },
+      playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
+      gear: {
+        loadout: [],
+        availableGear: [],
+        commitment: "none",
+        isCommitmentLocked: false,
+        maxBulk: 8,
+      },
+      fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
+      rolodex: { friends: [] },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+      notebook: "",
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(characterData),
+    });
+
+    const result = await Effect.runPromise(getCharacter(characterId));
+    expect(result.id).toBe(characterId);
+    expect(result.dossier.name).toBe("Brenda Hilton");
+    expect(global.fetch).toHaveBeenCalledWith(`/api/characters/${characterId}`, {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails with 404", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCharacter("nonexistent-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid character JSON", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCharacter("some-id")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

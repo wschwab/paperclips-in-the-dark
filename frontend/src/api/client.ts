@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema } from "../schema/campaign.js";
+import { type Character, Character as CharacterSchema } from "../schema/character.js";
 
 /**
  * Same-origin API client. Always uses relative `/api/*` paths so the
@@ -71,6 +72,16 @@ export function getRoster(): Effect.Effect<Roster, ApiError | DecodeError> {
     const raw = yield* fetchJson("/api/campaign/roster");
     return yield* Effect.try({
       try: () => Schema.decodeUnknownSync(RosterSchema)(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function getCharacter(id: string): Effect.Effect<Character, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/characters/${id}`);
+    return yield* Effect.try({
+      try: () => Schema.decodeUnknownSync(CharacterSchema)(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });

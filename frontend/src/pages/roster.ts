@@ -8,8 +8,12 @@ function renderCharacter(c: CharacterSummary): HTMLElement {
   return el(
     "li",
     { "data-character-id": c.id },
-    el("strong", {}, c.name),
-    el("span", {}, ` ${c.alias} • ${c.playbook}${status}`),
+    el(
+      "a",
+      { href: `/character/${c.id}` },
+      el("strong", {}, c.name),
+      el("span", {}, ` ${c.alias} • ${c.playbook}${status}`),
+    ),
   );
 }
 

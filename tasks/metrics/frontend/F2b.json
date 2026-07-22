@@ -1,0 +1,21 @@
+{
+  "task": "F2b",
+  "track": "frontend",
+  "date": "2026-07-22",
+  "waveStart": "2026-07-22T15:30:19+03:00",
+  "waveEnd": "2026-07-22T15:40:55+03:00",
+  "elapsedMinutes": 11,
+  "implementationAgent": "Claude Haiku 4.5, high effort, Claude Code CLI 2.1.216",
+  "reviewAgent": "Claude Sonnet 5, medium effort, Claude Code CLI 2.1.216, subscription OAuth",
+  "attempts": 1,
+  "iterationsToGreen": 1,
+  "tests": [
+    "frontend: 3 focused getCharacter tests passed (red-green TDD)",
+    "frontend: 24 total API and schema-decoder tests passed",
+    "frontend: TypeScript and Vite production build passed",
+    "Ada: live acceptance — created a character via POST /api/characters, confirmed GET /api/characters/{id} returns the full Character DTO, /character/{id} serves the SPA shell, and an unknown id returns 404"
+  ],
+  "review": "Sonnet found no blocking issues. Non-blocking: no component-level test for character-detail.ts loading/error/success states (mirrors a pre-existing gap in roster.ts from F2a), 'alias' rendered without a label, and the implementationAgent label ('Claude Haiku 4.5') doesn't match the CLAUDE.md/AGENTS.md primary-agent roster (Grok 4.5/pi, GPT 5.6 Luna/Codex) — worth flagging to the orchestrator, not an acceptance blocker for this slice.",
+  "providerLimit": "none",
+  "notes": "Character detail page reuses existing Character DTO schema and backend endpoint (GET /api/characters/{id} from A2). Red-green: wrote getCharacter API tests first (failed), implemented minimal client method (passed). Page rendering follows roster.ts pattern: Effect-based error handling, aria-live, loading/error states. Router extends main.ts to match /character/:id and dispatch to character detail page. Roster page updated with links to character detail. Acceptance agent independently ran a fresh isolated backend-ada instance and confirmed the live route/API round-trip; no forbidden paths (contract/, conformance/, blades-in-the-sheets/) were touched. An earlier inherited-server probe artifact was removed through the exact confirmed-delete endpoint and its exact stale server PID was stopped by the orchestrator."
+}

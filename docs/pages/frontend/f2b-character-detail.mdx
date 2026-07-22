@@ -1,0 +1,18 @@
+# Character detail page (F2b)
+
+`/character/:id` is the second Ada-backed application page. It requests
+`GET /api/characters/{id}`, decodes the full Character DTO with the shared
+frontend schema, and displays the character's key attributes: name, alias,
+playbook, heritage, background, vice, stress, traumas, and notes.
+
+The page follows the same pattern as the roster:
+- explicit loading, error states
+- aria-live region for accessibility
+- same Effect-based error handling (ApiError, DecodeError)
+- client-side routing via history.pushState
+
+The roster page links to character detail with `<a href="/character/{id}">`,
+so navigation is purely client-side after the roster loads.
+
+F2b is read-only, displaying the character summary. Editing, creation flow,
+history, undo, and stale-revision handling remain later F2 slices.
