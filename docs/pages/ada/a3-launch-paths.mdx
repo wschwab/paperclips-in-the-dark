@@ -1,0 +1,18 @@
+# Ada launch-path defaults
+
+The Ada server's development defaults are resolved from the executable's
+location, not the caller's current working directory. Launching
+`backend-ada/server/bin/pitd` by an absolute or relative path therefore finds:
+
+- `campaign-data/`
+- `frontend/dist/`
+- `data/games/`
+
+Explicit `--data`, `--static`, and `--games` arguments remain authoritative.
+`backend-ada/test-launch-paths.sh`, run by `backend-ada/ci.sh`, launches the
+server from `/tmp` and checks both the built frontend and a game-data endpoint.
+
+This development default assumes the checked-in build layout. Invocation by a
+bare command found through `$PATH`, relocation of the binary, and invocation
+through a symlink are not portable installation mechanisms yet; use the
+explicit path flags for those cases.

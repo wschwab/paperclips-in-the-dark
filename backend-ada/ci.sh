@@ -14,6 +14,9 @@ echo "==> testing core"
 echo "==> building server"
 (cd "$SCRIPT_DIR/server" && XDG_RUNTIME_DIR=/tmp alr --non-interactive build)
 
+echo "==> testing executable-relative launch defaults"
+"$SCRIPT_DIR/test-launch-paths.sh"
+
 echo "==> proving core"
 (cd "$SCRIPT_DIR/core" && XDG_RUNTIME_DIR=/tmp alr --non-interactive exec -- \
    gnatprove -P paperclips_core.gpr --level=2 --checks-as-errors=on)

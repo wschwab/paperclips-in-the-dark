@@ -1,0 +1,57 @@
+{
+  "task": "A3",
+  "track": "ada",
+  "date": "2026-07-22",
+  "startedAt": "2026-07-22T10:03:52+03:00",
+  "acceptedAt": "2026-07-22T10:13:47+03:00",
+  "wallClockMinutesToAcceptance": 10,
+  "result": "accepted",
+  "agents": [
+    {
+      "model": "claude-haiku-4.5",
+      "provider": "Anthropic subscription",
+      "harness": "full interactive Claude Code 2.1.216",
+      "effort": "high",
+      "sessionName": "pitd-a3-haiku",
+      "attempts": 1,
+      "result": "implementation accepted after orchestrator made scratch regression durable"
+    },
+    {
+      "model": "claude-sonnet-5",
+      "provider": "Anthropic subscription",
+      "harness": "full interactive Claude Code 2.1.216",
+      "effort": "high",
+      "sessionName": "pitd-a3-sonnet-review",
+      "attempts": 1,
+      "result": "review findings accepted; no model edits"
+    }
+  ],
+  "providerLimitEncountered": false,
+  "providerEvents": [
+    "Haiku's first API request transiently retried and then recovered",
+    "Claude login warned that subscription authentication expires in 3 days"
+  ],
+  "tests": [
+    {
+      "command": "Haiku scratch launch check from /tmp before implementation",
+      "result": "RED: static root 404; game endpoint 400"
+    },
+    {
+      "command": "Haiku scratch launch check from /tmp after implementation",
+      "result": "PASS: static root 200; game endpoint 200"
+    },
+    {
+      "command": "Haiku scratch explicit override check",
+      "result": "PASS: --static and --games remained authoritative; --data parsing unchanged"
+    },
+    {
+      "command": "backend-ada/ci.sh",
+      "result": "PASS: core tests, durable launch-path regression, and 225 proof checks"
+    }
+  ],
+  "knownLimitations": [
+    "Defaults intentionally assume the development binary layout backend-ada/server/bin/pitd",
+    "Bare-name invocation resolved through PATH and symlinked invocation are not covered by A3"
+  ],
+  "next": "Proceed to the next small Ada task; use Haiku for bounded red-green work and Sonnet for time-boxed review at lower effort unless deep analysis is needed."
+}
