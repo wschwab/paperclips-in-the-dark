@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, ApiError, DecodeError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, ApiError, DecodeError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -269,6 +269,72 @@ describe("getCrew", () => {
 
     const result = await Effect.runPromise(
       Effect.either(getCrew("some-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("getCharacterHistory", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/characters/{id}/history and decodes a valid history array", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    const historyData = [
+      {
+        snapshotId: "20260722160000000-abc123",
+        takenAt: "2026-07-22T16:00:00.000Z",
+        op: "stress.add",
+      },
+      {
+        snapshotId: "20260722150000000-def456",
+        takenAt: "2026-07-22T15:00:00.000Z",
+        op: "trauma.mark",
+      },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(historyData),
+    });
+
+    const result = await Effect.runPromise(getCharacterHistory(characterId));
+    expect(result).toHaveLength(2);
+    expect(result[0]?.op).toBe("stress.add");
+    expect(result[1]?.op).toBe("trauma.mark");
+    expect(global.fetch).toHaveBeenCalledWith(`/api/characters/${characterId}/history`, {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails with 404", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCharacterHistory("nonexistent-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid history array", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCharacterHistory("some-id")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

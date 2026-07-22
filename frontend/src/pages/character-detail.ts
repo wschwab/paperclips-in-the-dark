@@ -14,6 +14,11 @@ function renderCharacterDetail(c: Character): HTMLElement {
       { className: "character-header" },
       el("h1", {}, `${c.dossier.name}${status}`),
       el("p", { className: "alias" }, c.dossier.alias),
+      el(
+        "nav",
+        { className: "character-nav" },
+        el("a", { href: `/character/${c.id}/history` }, "History"),
+      ),
     ),
     el(
       "div",

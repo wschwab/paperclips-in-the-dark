@@ -1,0 +1,21 @@
+# Character history page (F2d)
+
+`/character/:id/history` is the fourth Ada-backed application page. It requests
+`GET /api/characters/{id}` for the character context and `GET /api/characters/{id}/history`
+for the history snapshots, decodes both with the shared frontend schemas, and displays
+a chronological history list of operations that created snapshots.
+
+The page follows the same pattern as character detail:
+- explicit loading, error states
+- aria-live region for accessibility
+- same Effect-based error handling (ApiError, DecodeError)
+- client-side routing via history.pushState
+
+Each history entry displays the operation name, the snapshot ID, and the timestamp
+when the snapshot was taken (the pre-state of that operation).
+
+The character detail page links to history with `<a href="/character/:id/history">`,
+so navigation is purely client-side after character detail loads.
+
+F2d is read-only, displaying the operation history. Restoration from snapshots,
+crew history, stale-revision handling, and editing remain later F2 slices.

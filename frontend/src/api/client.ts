@@ -1,5 +1,5 @@
 import { Effect, Schema } from "effect";
-import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema } from "../schema/campaign.js";
+import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema, type HistoryEntry, HistoryEntry as HistoryEntrySchema } from "../schema/campaign.js";
 import { type Character, Character as CharacterSchema } from "../schema/character.js";
 import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
 
@@ -93,6 +93,16 @@ export function getCrew(id: string): Effect.Effect<Crew, ApiError | DecodeError>
     const raw = yield* fetchJson(`/api/crews/${id}`);
     return yield* Effect.try({
       try: () => Schema.decodeUnknownSync(CrewSchema)(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function getCharacterHistory(id: string): Effect.Effect<readonly HistoryEntry[], ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/characters/${id}/history`);
+    return yield* Effect.try({
+      try: () => Schema.decodeUnknownSync(Schema.Array(HistoryEntrySchema))(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });

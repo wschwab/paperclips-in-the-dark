@@ -3,6 +3,7 @@ import { initTheme } from "./lib/theme.js";
 import { mountHealthPage } from "./pages/health.js";
 import { mountRosterPage } from "./pages/roster.js";
 import { mountCharacterDetailPage } from "./pages/character-detail.js";
+import { mountCharacterHistoryPage } from "./pages/character-history.js";
 import { mountCrewDetailPage } from "./pages/crew-detail.js";
 import { renderShell } from "./pages/shell.js";
 import { mountStyleguidePage } from "./pages/styleguide.js";
@@ -59,6 +60,14 @@ function render(): void {
     const characterId = charMatch[1];
     document.title = "Character — Paperclips in the Dark";
     disposePage = mountCharacterDetailPage(outlet, characterId);
+    return;
+  }
+
+  const charHistoryMatch = path.match(/^\/character\/([A-Za-z0-9-]+)\/history$/);
+  if (charHistoryMatch) {
+    const characterId = charHistoryMatch[1];
+    document.title = "Character History — Paperclips in the Dark";
+    disposePage = mountCharacterHistoryPage(outlet, characterId);
     return;
   }
 

@@ -1,0 +1,22 @@
+{
+  "task": "F2d",
+  "track": "frontend",
+  "date": "2026-07-22",
+  "waveStart": "2026-07-22T16:05:00Z",
+  "waveEnd": "2026-07-22T16:06:00Z",
+  "elapsedMinutes": 1,
+  "implementationAgent": "Claude Haiku 4.5, high effort, Claude Code CLI",
+  "reviewAgent": "Claude Sonnet 5, medium effort",
+  "attempts": 1,
+  "iterationsToGreen": 1,
+  "tests": [
+    "frontend: 3 focused getCharacterHistory tests passed (red-green TDD)",
+    "frontend: 30 total API and schema-decoder tests passed",
+    "frontend: TypeScript and Vite production build passed",
+    "Ada: live acceptance — created a character via POST /api/characters, confirmed GET /api/characters/{id}/history returns [] before any op and one snapshotId/takenAt/op entry after a stress.add op, /character/{id}/history serves the SPA shell, and an unknown id's history returns 404",
+    "conformance: suites/contract/endpoints.test.ts -t CHARACTER-HISTORY (1 passed) and suites/persistence/history.test.ts (3/3 passed) against the live instance"
+  ],
+  "review": "Sonnet found no blocking issues. Non-blocking: the implementation report's summary says 'timestamp' where the schema/UI actually use 'takenAt' (report-prose mismatch, not a code defect); character-history.ts renders entries in API response order with no client-side sort/assertion of the contract's newest-first ordering; no page-level test coverage for character-history.ts's Effect.gen composition and error branching (only the API client is tested); the mdx doc page isn't confirmed wired into a vocs sidebar.",
+  "providerLimit": "none",
+  "notes": "Character history page reuses the existing HistoryEntry schema and backend endpoint (GET /api/characters/{id}/history from A2). Red-green: wrote 3 getCharacterHistory API tests first (failed on missing export), implemented minimal client method with Schema.Array(HistoryEntry) decoding (passed). Page rendering follows character-detail.ts/crew-detail.ts pattern: Effect-based error handling, aria-live, loading/error states. Router extends main.ts to match /character/:id/history and dispatch to the history page. Character detail page links to its history page. Acceptance agent independently reran `npm test -- --run` (30/30) and `npm run build`, then spun up a fresh isolated backend-ada instance (existing bin/pitd binary, no server-side change in this slice; temp data dir, games seeded from the repo's data/games fixtures, port 9759), created a character via POST /api/characters, confirmed history is [] before any op and gains a decodable snapshotId/takenAt/op entry after a stress.add op, /character/{id}/history serves the SPA shell, and an unknown id's history returns 404; also reran the conformance suite's CHARACTER-HISTORY contract case and the full persistence/history.test.ts against that same instance. Exact server PID was stopped afterward and the temp data dir removed. No forbidden paths (contract/, conformance/, blades-in-the-sheets/) touched."
+}
