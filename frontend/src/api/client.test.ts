@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, ApiError, DecodeError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, ApiError, DecodeError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -508,6 +508,162 @@ describe("createCharacter", () => {
 
     const result = await Effect.runPromise(
       Effect.either(createCharacter("blades-in-the-dark", "Cutter")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("getCrewTypeList", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/games/{gameStem}/crews and decodes crew type names", async () => {
+    const crewSettingsData = {
+      CrewTypes: [
+        { Name: "Assassins" },
+        { Name: "Blades" },
+        { Name: "Bravos" },
+      ],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewSettingsData),
+    });
+
+    const result = await Effect.runPromise(getCrewTypeList("blades-in-the-dark"));
+    expect(result).toEqual(["Assassins", "Blades", "Bravos"]);
+    expect(global.fetch).toHaveBeenCalledWith("/api/games/blades-in-the-dark/crews", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCrewTypeList("nonexistent-game")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid crew types object", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCrewTypeList("blades-in-the-dark")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("createCrew", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews and decodes the created crew from OperationResult", async () => {
+    const crewData = {
+      kind: "crew",
+      id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+      gameStem: "blades-in-the-dark",
+      gameName: "Blades in the Dark",
+      language: "en",
+      revision: 1,
+      formatVersion: 1,
+      createdAt: "2026-07-24T00:00:00.000Z",
+      updatedAt: "2026-07-24T00:00:00.000Z",
+      crewTypeName: "Assassins",
+      name: "",
+      lair: "",
+      reputation: "",
+      huntingGrounds: "",
+      tier: 0,
+      hold: "strong",
+      heat: { current: 0, max: 9 },
+      wanted: { current: 0, max: 4 },
+      rep: { current: 0, max: 12 },
+      experience: { points: 0, max: 8 },
+      specialAbilities: [],
+      upgrades: [],
+      cohorts: [],
+      coin: 0,
+      stash: 0,
+      notes: "",
+    };
+
+    const opResult = {
+      ok: true,
+      crew: crewData,
+      applied: { op: "crew.create" },
+      sideEffects: [],
+      error: null,
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opResult),
+    });
+
+    const result = await Effect.runPromise(
+      createCrew("blades-in-the-dark", "Assassins"),
+    );
+    expect(result.id).toBe("8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2");
+    expect(result.crewTypeName).toBe("Assassins");
+    expect(global.fetch).toHaveBeenCalledWith("/api/crews", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        gameStem: "blades-in-the-dark",
+        crewType: "Assassins",
+      }),
+    });
+  });
+
+  it("exposes ApiError when POST fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Bad Request",
+      status: 400,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createCrew("blades-in-the-dark", "Assassins")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid OperationResult", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createCrew("blades-in-the-dark", "Assassins")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

@@ -1,0 +1,27 @@
+# Crew creation page (F2f)
+
+`/crew/create` is the sixth Ada-backed application page. It requests
+`GET /api/games/{gameStem}/crews` to populate a crew-type `<select>`, then
+on submit `POST`s `{ gameStem, crewType }` to `/api/crews`, decodes the
+created crew out of the returned `OperationResult`, and navigates to
+`/crew/{id}` on success.
+
+The page follows the same pattern as character creation (F2e):
+- explicit loading, error states
+- aria-live region for accessibility
+- same Effect-based error handling (ApiError, DecodeError)
+- client-side routing via history.pushState
+
+`getCrewTypeList` decodes the backend's raw game-settings passthrough,
+which returns crew settings objects with a `CrewTypes` array, each having a
+capitalized `Name` field — the client maps that down to a plain `string[]`
+of crew type names for the form.
+
+The roster page links to crew creation with `<a href="/crew/create">`,
+so navigation is purely client-side.
+
+F2f only supports creating a crew with a game and crew type; editing,
+member assignment, and other crew operations remain later F2 slices.
+The API contract does not support setting crew name at creation time
+(POST request schema has `additionalProperties: false`), so crew names
+default to empty string on creation.

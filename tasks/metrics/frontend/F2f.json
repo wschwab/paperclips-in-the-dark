@@ -1,0 +1,21 @@
+{
+  "task": "F2f",
+  "track": "frontend",
+  "date": "2026-07-24",
+  "waveStart": "2026-07-24T09:00:00Z",
+  "waveEnd": "2026-07-24T09:25:00Z",
+  "elapsedMinutes": 25,
+  "implementationAgent": "Claude Haiku 4.5, default effort, Claude Code CLI",
+  "attempts": 1,
+  "iterationsToGreen": 1,
+  "tests": [
+    "frontend: 4 focused getCrewTypeList tests (success, ApiError, DecodeError, one removed for name parameter unsupported)",
+    "frontend: 4 focused createCrew tests (success without optional name, ApiError, DecodeError)",
+    "frontend: 42 total tests passed (24 client tests + 18 decoder tests)",
+    "frontend: TypeScript and Vite production build passed",
+    "Ada: live acceptance on fresh isolated server (port 9780, temp data/games dirs): GET /api/games/blades-in-the-dark/crews returned 6 crew types; POST /api/crews with {gameStem, crewType} returned 200 with full Crew DTO; GET /api/crews/{id} retrieved created crew; /api/campaign/roster listed crew; no forbidden paths touched"
+  ],
+  "review": "API contract discovery: POST /api/crews has additionalProperties: false, so optional 'name' parameter cannot be sent. Crew creation form simplified to crew-type select only. All tests aligned with API spec. Live acceptance verified end-to-end crew creation flow.",
+  "providerLimit": "none",
+  "notes": "Strict red-green TDD: wrote failing tests for getCrewTypeList and createCrew, then implemented to pass. Frontend-only slice; Ada server binary unchanged. No edits to contract/, conformance/, or blades-in-the-sheets/."
+}

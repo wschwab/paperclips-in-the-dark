@@ -151,3 +151,53 @@ export function createCharacter(gameStem: string, playbook: string): Effect.Effe
     });
   });
 }
+
+export function getCrewTypeList(gameStem: string): Effect.Effect<readonly string[], ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/games/${gameStem}/crews`);
+    return yield* Effect.try({
+      try: () => {
+        if (typeof raw !== "object" || raw === null || !("CrewTypes" in raw)) {
+          throw new Error("Expected crews object with CrewTypes array");
+        }
+        const crewTypes = (raw as { CrewTypes?: unknown }).CrewTypes;
+        if (!Array.isArray(crewTypes)) {
+          throw new Error("CrewTypes is not an array");
+        }
+        return crewTypes.map((ct: unknown) => {
+          if (typeof ct === "object" && ct !== null && "Name" in ct) {
+            const name = (ct as { Name?: unknown }).Name;
+            if (typeof name === "string") {
+              return name;
+            }
+          }
+          throw new Error("Invalid crew type structure");
+        });
+      },
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function createCrew(gameStem: string, crewType: string): Effect.Effect<Crew, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson("/api/crews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gameStem,
+        crewType,
+      }),
+    });
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(raw);
+        if (!opResult.crew) {
+          throw new Error("Missing crew in OperationResult");
+        }
+        return opResult.crew;
+      },
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}

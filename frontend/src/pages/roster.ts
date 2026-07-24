@@ -68,6 +68,7 @@ function renderRoster(roster: Roster): HTMLElement {
       { className: "roster-crews" },
       el("h2", {}, `Crews (${roster.crews.length})`),
       crewsSection,
+      el("a", { href: "/crew/create", className: "btn-primary" }, "+ Create Crew"),
     ),
   );
 }
