@@ -1,10 +1,20 @@
 import { Effect } from "effect";
-import { ApiError, DecodeError, getCharacter } from "../api/client.js";
+import { ApiError, DecodeError, getCharacter, stressAdd, StaleRevisionError } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
 
-function renderCharacterDetail(c: Character): HTMLElement {
+function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLoading: boolean, stressError: string | null): HTMLElement {
   const status = c.isRetired ? " (retired)" : c.isDeadish ? " (deadish)" : "";
+
+  const stressButton = el(
+    "button",
+    {
+      disabled: isStressLoading,
+      title: "Add 1 stress",
+    },
+    isStressLoading ? "…" : "+1",
+  );
+  stressButton.addEventListener("click", onStressAdd);
 
   return el(
     "section",
@@ -43,7 +53,12 @@ function renderCharacterDetail(c: Character): HTMLElement {
       el("h2", {}, "Status"),
       el("dl", {},
         el("dt", {}, "Stress"),
-        el("dd", {}, `${c.monitor.stress.current} / ${c.monitor.stress.max}`),
+        el("dd", {},
+          el("div", { style: "display: flex; gap: 1em; align-items: center;" },
+            el("span", {}, `${c.monitor.stress.current} / ${c.monitor.stress.max}`),
+            stressButton,
+          ),
+        ),
         el("dt", {}, "Traumas"),
         el("dd", {},
           c.monitor.trauma.traumas.length === 0
@@ -51,6 +66,9 @@ function renderCharacterDetail(c: Character): HTMLElement {
             : c.monitor.trauma.traumas.join(", "),
         ),
       ),
+      stressError
+        ? el("p", { className: "error", style: "margin-top: 1em;" }, stressError)
+        : null,
     ),
     el(
       "div",
@@ -88,9 +106,54 @@ export function mountCharacterDetailPage(
   characterId: string,
 ): () => void {
   let cancelled = false;
+  let currentCharacter: Character | null = null;
+  let isStressLoading = false;
+  let stressError: string | null = null;
+
   root.setAttribute("aria-live", "polite");
   root.setAttribute("aria-busy", "true");
   setChildren(root, renderLoading());
+
+  const renderDetail = () => {
+    if (currentCharacter) {
+      setChildren(root, renderCharacterDetail(currentCharacter, onStressAdd, isStressLoading, stressError));
+    }
+  };
+
+  const onStressAdd = () => {
+    if (!currentCharacter || isStressLoading) return;
+    isStressLoading = true;
+    stressError = null;
+    renderDetail();
+
+    const program = stressAdd(characterId, 1, currentCharacter.revision);
+
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          isStressLoading = false;
+          if (err instanceof StaleRevisionError) {
+            stressError = "Sheet is stale — reload the page";
+          } else if (err instanceof ApiError) {
+            stressError = `API error (${err.status}): ${err.body}`;
+          } else if (err instanceof DecodeError) {
+            stressError = `Invalid response: ${err.message}`;
+          } else {
+            stressError = String(err);
+          }
+          renderDetail();
+        },
+        onSuccess: (character) => {
+          if (cancelled) return;
+          isStressLoading = false;
+          stressError = null;
+          currentCharacter = character;
+          renderDetail();
+        },
+      }),
+    );
+  };
 
   const program = Effect.gen(function* () {
     const character = yield* getCharacter(characterId);
@@ -113,7 +176,8 @@ export function mountCharacterDetailPage(
       onSuccess: (character) => {
         if (cancelled) return;
         root.setAttribute("aria-busy", "false");
-        setChildren(root, renderCharacterDetail(character));
+        currentCharacter = character;
+        renderDetail();
       },
     }),
   );

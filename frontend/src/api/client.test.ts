@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, ApiError, DecodeError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -664,6 +664,159 @@ describe("createCrew", () => {
 
     const result = await Effect.runPromise(
       Effect.either(createCrew("blades-in-the-dark", "Assassins")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("stressAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/stress.add with delta and If-Match header, decodes character from OperationResult", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    const characterData = {
+      kind: "character",
+      id: characterId,
+      gameStem: "blades-in-the-dark",
+      gameName: "Blades in the Dark",
+      language: "en",
+      revision: 13,
+      formatVersion: 1,
+      createdAt: "2026-07-22T00:00:00.000Z",
+      updatedAt: "2026-07-24T00:00:00.000Z",
+      isRetired: false,
+      isDeadish: false,
+      dossier: {
+        name: "Brenda Hilton",
+        crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+        alias: "Webweaver",
+        look: "Keen and calculating",
+        notes: "Spider operative",
+        background: { name: "Urchin", description: "" },
+        heritage: { name: "Akorosi", description: "" },
+        vice: { name: "Gambling", description: "" },
+      },
+      monitor: {
+        stress: { current: 4, max: 9 },
+        trauma: { traumas: ["Haunted"], max: 4 },
+        harm: {
+          lesser: [],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+        armor: {
+          standardUsed: false,
+          heavyUsed: false,
+          specialUsed: false,
+          hasStandard: true,
+          hasHeavy: false,
+          hasSpecial: false,
+        },
+      },
+      talent: { attributes: [] },
+      playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
+      gear: {
+        loadout: [],
+        availableGear: [],
+        commitment: "none",
+        isCommitmentLocked: false,
+        maxBulk: 8,
+      },
+      fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
+      rolodex: { friends: [] },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+      notebook: "",
+    };
+
+    const opResult = {
+      ok: true,
+      character: characterData,
+      applied: { op: "stress.add", requested: 1, effective: 1 },
+      sideEffects: [],
+      error: null,
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opResult),
+    });
+
+    const result = await Effect.runPromise(
+      stressAdd(characterId, 1, 12),
+    );
+    expect(result.id).toBe(characterId);
+    expect(result.monitor.stress.current).toBe(4);
+    expect(global.fetch).toHaveBeenCalledWith(`/api/characters/${characterId}/ops/stress.add`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": "12",
+      },
+      body: JSON.stringify({ delta: 1 }),
+    });
+  });
+
+  it("exposes StaleRevisionError when API returns 409 with STALE_REVISION error code", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    const errorResponse = {
+      ok: false,
+      character: null,
+      applied: { op: "stress.add" },
+      sideEffects: [],
+      error: {
+        code: "STALE_REVISION",
+        message: "Character revision mismatch",
+        details: { currentRevision: 15 },
+      },
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => JSON.stringify(errorResponse),
+      status: 409,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(stressAdd(characterId, 1, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof StaleRevisionError) {
+      expect(result.left.currentRevision).toBe(15);
+    }
+  });
+
+  it("exposes ApiError when POST fails with non-409 status", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(stressAdd("nonexistent-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid OperationResult", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(stressAdd("some-id", 1, 1)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

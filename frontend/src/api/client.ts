@@ -32,6 +32,14 @@ export class DecodeError extends Error {
   }
 }
 
+export class StaleRevisionError extends Error {
+  readonly _tag = "StaleRevisionError";
+  constructor(readonly currentRevision: number) {
+    super(`Stale revision: server has revision ${currentRevision}`);
+    this.name = "StaleRevisionError";
+  }
+}
+
 export function fetchJson(
   path: string,
   init?: RequestInit,
@@ -196,6 +204,55 @@ export function createCrew(gameStem: string, crewType: string): Effect.Effect<Cr
           throw new Error("Missing crew in OperationResult");
         }
         return opResult.crew;
+      },
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function stressAdd(id: string, delta: number, revision: number): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(`/api/characters/${id}/ops/stress.add`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "If-Match": String(revision),
+          },
+          body: JSON.stringify({ delta }),
+        });
+        const text = await response.text();
+        return { response, text };
+      },
+      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+    });
+
+    if (!res.response.ok) {
+      if (res.response.status === 409) {
+        const opResult = yield* Effect.try({
+          try: () => Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text)),
+          catch: (cause) => new DecodeError(cause),
+        });
+        if (opResult.error?.code === "STALE_REVISION") {
+          const currentRevision = opResult.error.details?.currentRevision;
+          if (typeof currentRevision === "number") {
+            yield* Effect.fail(new StaleRevisionError(currentRevision));
+          }
+          yield* Effect.fail(new StaleRevisionError(0));
+        }
+      }
+      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    }
+
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.character) {
+          throw new Error("Missing character in OperationResult");
+        }
+        return opResult.character;
       },
       catch: (cause) => new DecodeError(cause),
     });

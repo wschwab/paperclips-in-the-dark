@@ -1,0 +1,39 @@
+# Character stress mutation (F2g)
+
+F2g adds the first character-detail mutation: a `+1` stress button that calls the
+`stressAdd` API client method, which `POST`s to `/api/characters/{id}/ops/stress.add`
+with a Delta body (`{ delta: 1 }`) and an `If-Match` header set to the character's
+current revision. The response is decoded as an `OperationResult` containing the
+updated character DTO.
+
+## API client: `stressAdd(id, delta, revision)`
+
+Calls `POST /api/characters/{id}/ops/stress.add` with:
+- Delta body: `{ delta: number }`
+- If-Match header: current character revision (prevents stale writes)
+
+Returns the full updated `Character` DTO on success (`ok: true`).
+
+On `409 STALE_REVISION`, raises a distinct `StaleRevisionError` (not a generic ApiError)
+with the current server revision attached — the UI shows "Sheet is stale — reload the page"
+without attempting automatic recovery (undo/merge is a later slice).
+
+## Character detail page
+
+The stress display in the monitor section now shows `current / max` alongside a `+1`
+button that calls `stressAdd`. While the request is in flight, the button shows `…`
+and is disabled.
+
+On success, the page re-renders with the updated stress value and clears any error.
+
+On `StaleRevisionError`, shows "Sheet is stale — reload the page" in place of the
+character detail (does not re-render the full page, but blocks further mutations).
+
+On other API failures, shows the error message inline below the stress monitor.
+
+## Scope
+
+F2g is a minimal one-operation slice: stress.add only. No undo, history, refetch,
+or other operations are implemented. The stress maximum is never hardcoded on the
+frontend — it comes from `character.monitor.stress.max`, which is set by the backend
+from game-settings JSON.

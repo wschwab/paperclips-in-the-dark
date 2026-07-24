@@ -1,0 +1,20 @@
+{
+  "task": "F2g",
+  "track": "frontend",
+  "date": "2026-07-24",
+  "waveStart": "2026-07-24T16:20:00Z",
+  "waveEnd": "2026-07-24T16:25:00Z",
+  "elapsedMinutes": 5,
+  "implementationAgent": "Claude Haiku 4.5, default effort, Claude Code CLI",
+  "attempts": 1,
+  "iterationsToGreen": 1,
+  "tests": [
+    "frontend: 4 focused stressAdd tests (success with If-Match header, 409 StaleRevisionError, ApiError, DecodeError)",
+    "frontend: 46 total tests passed (4 new stressAdd + 42 existing client/decoder tests)",
+    "frontend: TypeScript and Vite production build passed",
+    "Ada: live acceptance on fresh isolated server (port 9657, temp data/games dirs): POST /api/characters/{id}/ops/stress.add with {delta: 1} and If-Match header returns 200 with updated character; 409 response with STALE_REVISION error code verified; stress.max read from game-settings, never hardcoded; no forbidden paths touched"
+  ],
+  "review": "API contract confirmation: stressAdd POSTs {delta} body with If-Match header; OperationResult response decoded for character DTO. StaleRevisionError distinct from ApiError. Character detail page +1 stress button calls stressAdd, re-renders on success, shows stale-revision message on 409.",
+  "providerLimit": "none",
+  "notes": "Strict red-green TDD: 4 failing tests for stressAdd before implementation, all passing after. Frontend-only slice; Ada server unchanged. No edits to contract/, conformance/, or blades-in-the-sheets/. Minimal mutation scope: stress.add only, no undo or stale-version recovery."
+}
