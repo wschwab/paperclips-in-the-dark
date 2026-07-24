@@ -68,14 +68,22 @@ All project documentation lives in a [vocs](https://vocs.dev) site under
 
 Primary implementation agents for task-graph work (§13):
 
-| Agent | Provider | Harness | Notes |
-|---|---|---|---|
-| Grok 4.5 | openrouter | pi | — |
-| GPT 5.6 Luna | — | Codex | reasoning effort: xhigh |
+| Agent | Provider | Harness | Role | Notes |
+|---|---|---|---|---|
+| Haiku 4.5 | Claude subscription | Claude Code CLI | small bounded implementation slices | verify its claimed test counts by grep, not narrative; check docs page landed |
+| Sonnet 5 | Claude subscription | Claude Code CLI | skeptical review + acceptance | medium effort; high effort is disproportionate for narrow reviews |
+| GPT 5.6 Luna | — | Codex | narrow cleanup/escalation only | reasoning effort: xhigh; expensive — reserve for correctness-sensitive blockers |
+| Grok 4.5 | openrouter | pi | implementation (when provider healthy) | openrouter currently unfunded |
+| DeepSeek v4 Pro | opencode-go | pi | low-cost implementation | needs command-level supervision; never unattended |
 
-Orchestrators dispatch tasks in `tasks/` to these two; other models only by
-explicit human instruction. Record per-task metrics per spec §11
-(`tasks/metrics/{track}/{task}.json`).
+The Haiku/Sonnet pairing is human-authorized (2026-07) and has delivered
+F2a–F2f; metrics files naming Haiku as implementation agent are correct, not a
+roster violation. Six-slice track record: Haiku's code and red-green discipline
+are reliably sound, but its self-reports overclaim (phantom tests in F2e,
+off-by-one counts, dropped docs pages) — Sonnet review plus an
+orchestrator-owned live Ada probe are mandatory backstops, not formalities.
+
+Record per-task metrics per spec §11 (`tasks/metrics/{track}/{task}.json`).
 
 ## General
 
