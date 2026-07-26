@@ -3,7 +3,7 @@ import { ApiError, DecodeError, getCharacter, stressAdd, StaleRevisionError } fr
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
 
-function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLoading: boolean, stressError: string | null): HTMLElement {
+function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLoading: boolean, stressError: string | null, refreshNotice: string | null = null): HTMLElement {
   const status = c.isRetired ? " (retired)" : c.isDeadish ? " (deadish)" : "";
 
   const stressButton = el(
@@ -69,6 +69,9 @@ function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLo
       stressError
         ? el("p", { className: "error", style: "margin-top: 1em;" }, stressError)
         : null,
+      refreshNotice
+        ? el("p", { className: "notice", style: "margin-top: 1em;" }, refreshNotice)
+        : null,
     ),
     el(
       "div",
@@ -109,6 +112,7 @@ export function mountCharacterDetailPage(
   let currentCharacter: Character | null = null;
   let isStressLoading = false;
   let stressError: string | null = null;
+  let refreshNotice: string | null = null;
 
   root.setAttribute("aria-live", "polite");
   root.setAttribute("aria-busy", "true");
@@ -116,7 +120,7 @@ export function mountCharacterDetailPage(
 
   const renderDetail = () => {
     if (currentCharacter) {
-      setChildren(root, renderCharacterDetail(currentCharacter, onStressAdd, isStressLoading, stressError));
+      setChildren(root, renderCharacterDetail(currentCharacter, onStressAdd, isStressLoading, stressError, refreshNotice));
     }
   };
 
@@ -124,6 +128,7 @@ export function mountCharacterDetailPage(
     if (!currentCharacter || isStressLoading) return;
     isStressLoading = true;
     stressError = null;
+    refreshNotice = null;
     renderDetail();
 
     const program = stressAdd(characterId, 1, currentCharacter.revision);
@@ -134,20 +139,53 @@ export function mountCharacterDetailPage(
           if (cancelled) return;
           isStressLoading = false;
           if (err instanceof StaleRevisionError) {
-            stressError = "Sheet is stale — reload the page";
+            refreshNotice = null;
+            stressError = null;
+            renderDetail();
+            const recoverProgram = getCharacter(characterId);
+            void Effect.runPromise(
+              Effect.match(recoverProgram, {
+                onFailure: (recoverErr) => {
+                  if (cancelled) return;
+                  if (recoverErr instanceof ApiError) {
+                    stressError = `Sheet refresh failed (${recoverErr.status}): ${recoverErr.body}`;
+                  } else if (recoverErr instanceof DecodeError) {
+                    stressError = `Sheet refresh failed (invalid response): ${recoverErr.message}`;
+                  } else {
+                    stressError = `Sheet refresh failed: ${String(recoverErr)}`;
+                  }
+                  renderDetail();
+                },
+                onSuccess: (character) => {
+                  if (cancelled) return;
+                  currentCharacter = character;
+                  refreshNotice = "Sheet refreshed because it changed elsewhere";
+                  renderDetail();
+                  setTimeout(() => {
+                    if (!cancelled) {
+                      refreshNotice = null;
+                      renderDetail();
+                    }
+                  }, 3000);
+                },
+              }),
+            );
           } else if (err instanceof ApiError) {
             stressError = `API error (${err.status}): ${err.body}`;
+            renderDetail();
           } else if (err instanceof DecodeError) {
             stressError = `Invalid response: ${err.message}`;
+            renderDetail();
           } else {
             stressError = String(err);
+            renderDetail();
           }
-          renderDetail();
         },
         onSuccess: (character) => {
           if (cancelled) return;
           isStressLoading = false;
           stressError = null;
+          refreshNotice = null;
           currentCharacter = character;
           renderDetail();
         },

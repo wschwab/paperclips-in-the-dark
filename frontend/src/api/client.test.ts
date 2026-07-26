@@ -823,4 +823,23 @@ describe("stressAdd", () => {
       expect(result.left).toBeInstanceOf(DecodeError);
     }
   });
+
+  it("exposes ApiError (not DecodeError) when 409 response body is malformed", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "not json",
+      status: 409,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(stressAdd("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(ApiError);
+      if (result.left instanceof ApiError) {
+        expect(result.left.status).toBe(409);
+      }
+    }
+  });
 });

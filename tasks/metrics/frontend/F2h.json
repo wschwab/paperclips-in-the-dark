@@ -1,0 +1,27 @@
+{
+  "task": "F2h",
+  "track": "frontend",
+  "date": "2026-07-26",
+  "waveStart": "2026-07-26T15:08:00Z",
+  "waveEnd": "2026-07-26T15:20:00Z",
+  "elapsedMinutes": 12,
+  "implementationAgent": "Claude Haiku 4.5, default effort, Claude Code CLI",
+  "attempts": 1,
+  "iterationsToGreen": 1,
+  "tests": [
+    "frontend: 1 focused test for malformed 409 body recovery (now returns ApiError, not DecodeError)",
+    "frontend: 47 total tests passed (1 new malformed-409 test + 28 stressAdd/client tests + 18 schema decoder tests)",
+    "frontend: TypeScript and Vite production build passed",
+    "Ada: live acceptance on fresh isolated server (port 9752, temp data/games dirs): character created (revision 1, stress 0/9 from game-settings); POST /api/characters/{id}/ops/stress.add with {delta: 1} and If-Match: 1 returns 200 with updated character (revision 2, stress 1/9); subsequent POST with old If-Match: 1 returns 409 with STALE_REVISION error code and current character state (revision 2, stress 1/9); getCharacter refetch returns fresh state; no forbidden paths touched"
+  ],
+  "review": "API client fix: malformed 409 body no longer falls through to DecodeError; now emits ApiError(409). Page recovery: StaleRevisionError triggers automatic getCharacter refetch; on success, character re-renders with fresh state and non-blocking notice shown for 3s; on refetch failure, error shown and user can retry. User's failed mutation is not auto-retried.",
+  "providerLimit": "none",
+  "notes": "Strict red-green TDD: 1 failing test for malformed-409 before implementation, all 47 passing after. Addresses F2g nonblocking review note (malformed 409 handling). Page-level stale-revision recovery only; no undo, merge, automatic retry, or generic edit infrastructure. No edits to contract/, conformance/, or blades-in-the-sheets/.",
+  "acceptance": {
+    "agent": "Sonnet 5, medium effort, Claude Code CLI",
+    "date": "2026-07-26",
+    "fix": "character-detail.ts: StaleRevisionError branch cleared isStressLoading but never called renderDetail() before the async getCharacter refetch, leaving the disabled/loading DOM stuck with no in-flight indicator until the refetch callback resolved. Added the missing renderDetail() call to match every sibling branch.",
+    "testGap": "No DOM-level regression test added for the fix or for the recovery UX generally: repo has no jsdom/happy-dom dependency and vitest.config.ts runs environment: \"node\" (no document global); none of F2a-F2g's page components have unit tests either. Pre-existing, repo-wide gap, recorded as a follow-up rather than expanded in this pass.",
+    "verified": ["npm test -- --run: 47/47 green", "npm run build: tsc --noEmit + vite build, green", "no forbidden paths touched"]
+  }
+}

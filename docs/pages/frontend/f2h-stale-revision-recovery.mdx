@@ -1,0 +1,37 @@
+# Stale revision recovery (F2h)
+
+F2h replaces the dead-end "sheet is stale — reload the page" error message with
+automatic recovery: when a mutation (like `stressAdd`) fails with `409 STALE_REVISION`,
+the UI now refetches the character, re-renders the updated sheet, and shows a brief
+non-blocking notice. The user's attempted mutation is **not** auto-retried — they see
+the fresh state and can decide whether to try again.
+
+## Page-level behavior
+
+On `StaleRevisionError` during a mutation:
+
+1. Clear the stress loading state and error message.
+2. Call `getCharacter(characterId)` to refetch the current server state.
+3. If the refetch succeeds:
+   - Update the displayed character with the fresh data.
+   - Show a non-blocking notice: "Sheet refreshed because it changed elsewhere"
+   - Auto-dismiss the notice after 3 seconds.
+4. If the refetch fails:
+   - Show an error message: "Sheet refresh failed (${status}): ${body}"
+   - User remains on the page and can retry their mutation once the sheet is stable.
+
+The UI does not attempt to merge or re-apply the failed mutation. This preserves
+the user's agency: they see what changed on the server and decide their next move.
+
+## API client fix
+
+Addresses a nonblocking F2g review note: a malformed `409` response body no longer
+falls through to `DecodeError`. The `stressAdd` client method now catches JSON parse
+or decode failures on a `409` response and emits a generic `ApiError(409)` instead,
+reserving `StaleRevisionError` for properly decoded `STALE_REVISION` error codes.
+
+## Scope
+
+F2h covers only the stale-revision recovery path on the character detail page during
+stress mutation. No undo, merge, automatic retry, or other operations are added.
+No changes to the API contract or error types in `client.ts`.

@@ -231,16 +231,18 @@ export function stressAdd(id: string, delta: number, revision: number): Effect.E
 
     if (!res.response.ok) {
       if (res.response.status === 409) {
-        const opResult = yield* Effect.try({
-          try: () => Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text)),
-          catch: (cause) => new DecodeError(cause),
-        });
-        if (opResult.error?.code === "STALE_REVISION") {
-          const currentRevision = opResult.error.details?.currentRevision;
-          if (typeof currentRevision === "number") {
-            yield* Effect.fail(new StaleRevisionError(currentRevision));
+        try {
+          const parsed = JSON.parse(res.text);
+          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
+          if (opResult.error?.code === "STALE_REVISION") {
+            const currentRevision = opResult.error.details?.currentRevision;
+            if (typeof currentRevision === "number") {
+              yield* Effect.fail(new StaleRevisionError(currentRevision));
+            }
+            yield* Effect.fail(new StaleRevisionError(0));
           }
-          yield* Effect.fail(new StaleRevisionError(0));
+        } catch {
+          // Malformed 409 body: fall through to ApiError
         }
       }
       yield* Effect.fail(new ApiError(res.response.status, res.text));
