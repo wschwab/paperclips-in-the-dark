@@ -9,14 +9,18 @@
 
 ## 1. Vision
 
-Paperclips in the Dark is a **campaign sheet manager for Blades in the Dark** designed agent-first: the primary client is an AI agent assisting a GM or player at the table, with a human web UI as a styled thin client of the same API. It is a **sheet manager, not a rules engine** — it enforces structural constraints (bounded stress, harm slots, XP tracks) but never dice mechanics, position/effect, or GM judgment.
+Paperclips in the Dark is a **campaign sheet manager for Blades in the Dark** designed agent-first: the primary client is an AI agent assisting a GM or player at the table, with a human web UI as a styled thin client of the same API. It is a **sheet manager, not a rules engine** — it enforces structural constraints (bounded stress, harm slots, XP tracks) but never dice mechanics, position/effect, or GM judgment. It *should* be a reference meant for real-time tracking during sessions, easily usable for both humans and agents. Information should be clearly presented and easy to update.
 
-It is simultaneously a **language experiment**, with two parallel backend implementations built from one language-neutral contract:
+Paperclips is simultaneously a **language experiment**, with two parallel backend implementations built from one language-neutral contract:
 
 - **Track A — Ada + SPARK.** Thesis: agent-written code fails by silent invariant violation; SPARK turns domain invariants into compiler-checked contracts, so a toolchain with thin LLM training data but loud, provable rejection may out-produce a familiar one.
-- **Track Z — Zero (zerolang.ai).** Thesis: a language designed for agents (graph-first source, JSON diagnostics, typed repair metadata) helps agents ship faster. Pre-1.0; treated as an experiment with an explicit escape hatch (§10.3).
+- **Track Z — Zero (zerolang.ai).** Thesis: a language designed for agents (graph-first source, JSON diagnostics, typed repair metadata) helps agents ship faster. Pre-1.0; treated as an experiment with an explicit escape hatch (§10.3). **Currently halted**, see Zerolang issues [430](https://github.com/vercel-labs/zerolang/issues/430), [431](https://github.com/vercel-labs/zerolang/issues/431)
 
 Both tracks must pass the **same black-box conformance suite** against the same OpenAPI contract. The suite, not either implementation, is the source of truth.
+
+Another experiment in development has been developing around orchestration techniques. Orchestration has been accomplished both with and without leveraging a specific orchestration framework. Different models have been tested as subagents. 
+
+Notes should be kept locally and untracked in `agent-docs/`.
 
 ### 1.1 Non-goals
 
@@ -33,7 +37,7 @@ Both tracks must pass the **same black-box conformance suite** against the same 
 |---|---|
 | Domain semantics (`Models/`, ~2.5k LOC C#) | Ported, not re-derived. §5 catalogs the load-bearing behaviors. The C# source is the reference for any ambiguity. |
 | `Persistence.Test` suite | Semantics mined into the conformance suite (§8). Port test *cases*, not test code. |
-| Game data JSON (`UI/wwwroot/data/*.json`) | Copied verbatim (games.json, blades-in-the-dark.json, crews, scum-and-villainy, translations, schema). Attribute arazni; SRD content is CC-BY per the Blades license. **Assumption: reuse is fine; revisit if arazni's licensing says otherwise.** |
+| Game data JSON (`UI/wwwroot/data/*.json`) | Copied verbatim (games.json, blades-in-the-dark.json, crews, scum-and-villainy, translations, schema). Attribute arazni (permission given in private correspondence); SRD content is CC-BY per the Blades license. |
 | `docs/agent-api-spec.md` | Adopted as the operations catalog, with the corrections in §7.2. |
 
 Everything else (Blazor UI, Blazored.LocalStorage, PWA/service workers, Newtonsoft pipeline, migrations V2–4) is left behind.
@@ -292,7 +296,7 @@ Critical path: C0 → C1 → A0 → A1 → A2 → {F2, S0}. Z-track and F0/F1 pa
 
 ## 14. Open items
 
-1. **License** — confirm arazni's terms for game-data JSON + ported semantics; plan assumes OK.
+1. **License** — arazni has granted permission.
 2. **Name** — working title **Paperclips in the Dark** (repo `paperclips-in-the-dark`, binary `pitd`). The tagline writes itself: *"maximizing coin, not paperclips — probably."*
 3. Multi-campaign support (multiple `DataDir`s via `--data` flag) is trivial and in scope; campaign *switching* UI is F2-optional.
 4. Scum & Villainy support rides for free if no maxima are hardcoded — S&V-specific conformance cases are included in C1 to keep everyone honest.

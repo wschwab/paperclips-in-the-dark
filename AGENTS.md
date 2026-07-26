@@ -7,7 +7,7 @@ context: `blades-in-the-sheets/` (symlink); fast full-repo context in
 ## Version control: jj (Jujutsu)
 
 This repo is jj-colocated (`.jj/` + `.git/`). **Use `jj`, not `git`, for all
-VCS operations.**
+VCS operations. Exception: pushing to the Radicle remote should use git.**
 
 - `jj st` / `jj diff` / `jj log` instead of git equivalents.
 - Start work with `jj new -m "<what this change will do>"`; describe with
@@ -17,18 +17,20 @@ VCS operations.**
   the git side directly; jj owns the store. Read-only git commands are fine.
 - Bookmarks track branches: `jj bookmark set main -r @-` before pushing.
 
+**Exception: Pushing to Radicle**
+- Radicle’s remote helper does not support the dry-run required by `jj git push`. Until that incompatibility is fixed, push Radicle with: `SSH_AUTH_SOCK=~/.radicle/agent.sock git push rad main`
+- Afterward, reconcile jj’s remote state with: `jj git fetch --remote rad`
+- All other Git-side mutations remain prohibited.
+
 ## Mirroring: Radicle + GitHub
 
-Code is mirrored to both. Push via jj:
+Code is mirrored to both. Push to Github via jj:
 
-- GitHub: `jj git push --remote origin`
-- Radicle: `SSH_AUTH_SOCK=~/.radicle/agent.sock jj git push --remote rad`
-  (the Radicle key lives in an ssh-agent on that socket; if the push prompts
-  for a passphrase or the socket is missing, the agent died — ask the human
-  to rerun `ssh-agent -a ~/.radicle/agent.sock; set -x SSH_AUTH_SOCK
-  ~/.radicle/agent.sock; rad auth`).
-- RID: `rad:z3bxKrbQdawdx41PrwtRF8X96w3sU` (jj has no `--all-remotes` for
-  push — push each remote separately).
+- Github: `jj git push --remote origin`
+- Radicle: instructions above
+
+  (the Radicle key lives in an ssh-agent on that socket; if the push prompts for a passphrase or the socket is missing, the agent died — ask the human to rerun `ssh-agent -a ~/.radicle/agent.sock; set -x SSH_AUTH_SOCK ~/.radicle/agent.sock; rad auth`).
+- RID: `rad:z3bxKrbQdawdx41PrwtRF8X96w3sU`
 
 Push to **both** remotes at every push point, or note explicitly which one
 you couldn't reach. Never force-push either mirror without human sign-off.

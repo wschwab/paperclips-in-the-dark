@@ -1,8 +1,7 @@
 # Paperclips in the Dark
 
-An **agent-first campaign sheet manager for Blades in the Dark** — the primary
-client is an AI agent assisting a GM or player at the table; the human web UI
-is a styled thin client of the same API. It is a *sheet manager, not a rules
+An **sheet manager for Blades in the Dark**, accessible as either an API or visual GUI.
+Paperclips (or PitD) is a *sheet manager, not a rules
 engine*: it enforces structural constraints (bounded stress, harm slots, XP
 tracks) and never dice mechanics, position/effect, or GM judgment.
 
@@ -20,6 +19,11 @@ must pass the same black-box conformance suite.
 
 The suite, not either implementation, is the source of truth. Experiment
 metrics live in `tasks/metrics/`; the comparison memo lands with task E0.
+
+**Update:** current constraints in Zero ran into a blocker. For now, 
+progress continues only on the Ada track.
+
+See further: Zerolang issues [430](https://github.com/vercel-labs/zerolang/issues/430), [431](https://github.com/vercel-labs/zerolang/issues/431)
 
 ## Layout
 
@@ -57,17 +61,15 @@ crate dependency. See `backend-ada/AGENTS.md` for the hard-won toolchain notes.
 
 ## Provenance & credit
 
-Domain semantics, test cases, and game data are salvaged from
+Domain semantics, test cases, and game data lean on
 [blades-in-the-sheets](https://github.com/arazni/blades-in-the-sheets) by
-**arazni** (license confirmation pending — see spec §14.1). SRD content is
+**arazni**, used with permission. SRD content is
 CC-BY per the Blades in the Dark license; Blades in the Dark is by John
 Harper / One Seven Design. This project reproduces no rulebook text.
 
 ## Mirrors
 
+Paperclips is available both on Github and on the Radicle network.
+
 - GitHub: `wschwab/paperclips-in-the-dark`
 - Radicle: `rad:z3bxKrbQdawdx41PrwtRF8X96w3sU`
-
-Built by an orchestrated team of AI coding agents (task graph in `tasks/`,
-ground rules in `AGENTS.md`) with human gates at contract freeze and
-track go/no-go decisions.
