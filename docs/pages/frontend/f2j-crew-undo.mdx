@@ -1,0 +1,47 @@
+# Crew undo action (F2j)
+
+F2j adds an undo control to the crew detail page that calls the `undoCrew` API
+client method, which `POST`s to `/api/crews/{id}/undo` and restores the newest
+snapshot, walking undo history backwards on consecutive calls.
+
+## API client: `undoCrew(id)`
+
+Calls `POST /api/crews/{id}/undo` with an empty JSON body. Returns the full
+updated `Crew` DTO on success (`ok: true` in `OperationResult`).
+
+On `200` with `ok: false` and `error.code: "NO_HISTORY"`, raises an `ApiError`
+with body starting with `"NO_HISTORY"` — the UI surfaces this as a non-blocking
+notice rather than an error. This occurs when there are no snapshots to restore
+(e.g., immediately after crew creation or after all snapshots have been consumed
+by previous undos).
+
+On `409 STALE_REVISION`, raises a distinct `StaleRevisionError` with the
+current server revision — the UI triggers the same stale-revision recovery
+path used by other crew mutations: refetch the crew, re-render with fresh data,
+and show a brief non-blocking notice.
+
+## Crew detail page
+
+A new **Actions** section is rendered below the crew notes. It contains an
+"Undo last change" button that calls `undoCrew`. While the request is in
+flight, the button shows `…` and is disabled.
+
+On success, the page re-renders with the restored crew DTO and clears any
+notices or errors.
+
+On `NO_HISTORY`, a non-blocking notice "Nothing to undo — no history available"
+is shown below the Status section. The notice does not block further actions.
+
+On `StaleRevisionError`, the stale-revision recovery path runs: refetch the
+crew, show "Sheet refreshed because it changed elsewhere" for 3 seconds, and
+leave the undo to the user to try again.
+
+On other API failures, the error message appears inline below the Status
+section as a notice.
+
+## Scope
+
+F2j mirrors F2i for crews: undo from the detail page only. No undo from the
+history page. The control is a single button with no confirmation dialog.
+Consecutive undos walk backwards through the snapshot history; each call
+restores one snapshot and deletes it.

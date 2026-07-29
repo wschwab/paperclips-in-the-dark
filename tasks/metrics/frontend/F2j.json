@@ -1,0 +1,13 @@
+{
+  "task": "F2j",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-pro (opencode-go via pi, -p, stdin closed)",
+  "reviewAgent": "claude-fable-5 (orchestrator review)",
+  "date": "2026-07-29",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, first pass accepted. 6 undoCrew tests verified exact by grep; 59/59 + build reproduced by orchestrator. Mirror-slice of F2i executed faithfully, including the synchronous renderDetail discipline in every branch.",
+  "wallClockMinutes": 8,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "Live Ada probe (port 9813, exact-PID cleanup verified): crew rep.add 0->3 (rev 2), undo restores rep 0 (rev 3), second undo HTTP 200 ok:false NO_HISTORY. Second consecutive clean DeepSeek slice under the new pairing; no command-constraint violations."
+}

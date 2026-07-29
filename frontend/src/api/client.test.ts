@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -833,6 +833,180 @@ describe("stressAdd", () => {
 
     const result = await Effect.runPromise(
       Effect.either(stressAdd("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(ApiError);
+      if (result.left instanceof ApiError) {
+        expect(result.left.status).toBe(409);
+      }
+    }
+  });
+});
+
+describe("undoCrew", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/undo and decodes crew from OperationResult on success", async () => {
+    const crewId = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
+    const crewData = {
+      kind: "crew",
+      id: crewId,
+      gameStem: "blades-in-the-dark",
+      gameName: "Blades in the Dark",
+      language: "en",
+      revision: 6,
+      formatVersion: 1,
+      createdAt: "2026-07-22T00:00:00.000Z",
+      updatedAt: "2026-07-24T00:00:00.000Z",
+      crewTypeName: "Assassins",
+      name: "The Red Sashes",
+      lair: "Northside safehouse",
+      reputation: "ruthless",
+      huntingGrounds: "The Docks",
+      tier: 1,
+      hold: "strong",
+      heat: { current: 2, max: 9 },
+      wanted: { current: 1, max: 4 },
+      rep: { current: 3, max: 12 },
+      experience: { points: 2, max: 8 },
+      specialAbilities: [],
+      upgrades: [],
+      cohorts: [],
+      coin: 0,
+      stash: 2,
+      notes: "Up-and-coming crew",
+    };
+
+    const opResult = {
+      ok: true,
+      crew: crewData,
+      applied: { op: "crew.undo" },
+      sideEffects: [],
+      error: null,
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opResult),
+    });
+
+    const result = await Effect.runPromise(
+      undoCrew(crewId),
+    );
+    expect(result.id).toBe(crewId);
+    expect(result.heat.current).toBe(2);
+    expect(global.fetch).toHaveBeenCalledWith(`/api/crews/${crewId}/undo`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+  });
+
+  it("exposes ApiError when server returns NO_HISTORY error code", async () => {
+    const crewId = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
+    const errorResponse = {
+      ok: false,
+      applied: { op: "crew.undo" },
+      sideEffects: [],
+      error: {
+        code: "NO_HISTORY",
+        message: "No history to undo",
+      },
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(errorResponse),
+      status: 200,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(undoCrew(crewId)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(ApiError);
+      if (result.left instanceof ApiError) {
+        expect(result.left.status).toBe(200);
+      }
+    }
+  });
+
+  it("exposes StaleRevisionError when API returns 409 with STALE_REVISION error code", async () => {
+    const crewId = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
+    const errorResponse = {
+      ok: false,
+      crew: null,
+      applied: { op: "crew.undo" },
+      sideEffects: [],
+      error: {
+        code: "STALE_REVISION",
+        message: "Crew revision mismatch",
+        details: { currentRevision: 7 },
+      },
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => JSON.stringify(errorResponse),
+      status: 409,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(undoCrew(crewId)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof StaleRevisionError) {
+      expect(result.left.currentRevision).toBe(7);
+    }
+  });
+
+  it("exposes ApiError when POST fails with non-409 status", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(undoCrew("nonexistent-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid OperationResult", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(undoCrew("some-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+
+  it("exposes ApiError (not DecodeError) when 409 response body is malformed", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "not json",
+      status: 409,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(undoCrew("some-id")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

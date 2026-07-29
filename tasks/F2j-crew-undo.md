@@ -24,3 +24,10 @@ crew mutation ops UI in this slice.
 - 2026-07-29: dispatched to DeepSeek v4 Pro (pi, opencode-go, -p, stdin
   closed) immediately after F2i acceptance. Prompt:
   tasks/dispatch/F2j-prompt.md (same hard command constraints).
+- 2026-07-29: DONE. Orchestrator acceptance: 6 undoCrew tests verified by
+  grep; 59/59 tests + build green on rerun; diff read — faithful mirror of
+  F2i (error typing, synchronous renderDetail in every branch). Live Ada
+  probe (port 9813, PID 251266, killed + port verified clean): rep.add 0→3
+  (rev 2), undo restores rep 0 (rev 3), second undo → HTTP 200 ok:false
+  NO_HISTORY. Docs page present and accurate. No forbidden paths/commands.
+  Metrics: tasks/metrics/frontend/F2j.json. Status: accepted.

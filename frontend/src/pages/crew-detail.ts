@@ -1,9 +1,19 @@
 import { Effect } from "effect";
-import { ApiError, DecodeError, getCrew } from "../api/client.js";
+import { ApiError, DecodeError, getCrew, undoCrew, StaleRevisionError } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Crew } from "../schema/crew.js";
 
-function renderCrewDetail(c: Crew): HTMLElement {
+function renderCrewDetail(c: Crew, onUndo: () => void, isUndoLoading: boolean, undoNotice: string | null = null, refreshNotice: string | null = null): HTMLElement {
+  const undoButton = el(
+    "button",
+    {
+      disabled: isUndoLoading,
+      title: "Undo last change",
+    },
+    isUndoLoading ? "…" : "Undo last change",
+  );
+  undoButton.addEventListener("click", onUndo);
+
   return el(
     "section",
     { className: "crew-detail" },
@@ -42,6 +52,12 @@ function renderCrewDetail(c: Crew): HTMLElement {
         el("dt", {}, "Rep"),
         el("dd", {}, `${c.rep.current} / ${c.rep.max}`),
       ),
+      refreshNotice
+        ? el("p", { className: "notice", style: "margin-top: 1em;" }, refreshNotice)
+        : null,
+      undoNotice
+        ? el("p", { className: "notice", style: "margin-top: 1em;" }, undoNotice)
+        : null,
     ),
     el(
       "div",
@@ -59,6 +75,12 @@ function renderCrewDetail(c: Crew): HTMLElement {
       { className: "crew-notes" },
       el("h2", {}, "Notes"),
       el("p", {}, c.notes || "(no notes)"),
+    ),
+    el(
+      "div",
+      { className: "crew-actions" },
+      el("h2", {}, "Actions"),
+      undoButton,
     ),
   );
 }
@@ -90,9 +112,91 @@ export function mountCrewDetailPage(
   crewId: string,
 ): () => void {
   let cancelled = false;
+  let currentCrew: Crew | null = null;
+  let isUndoLoading = false;
+  let undoNotice: string | null = null;
+  let refreshNotice: string | null = null;
+
   root.setAttribute("aria-live", "polite");
   root.setAttribute("aria-busy", "true");
   setChildren(root, renderLoading());
+
+  const renderDetail = () => {
+    if (currentCrew) {
+      setChildren(root, renderCrewDetail(currentCrew, onUndo, isUndoLoading, undoNotice, refreshNotice));
+    }
+  };
+
+  const onUndo = () => {
+    if (!currentCrew || isUndoLoading) return;
+    isUndoLoading = true;
+    undoNotice = null;
+    renderDetail();
+
+    const program = undoCrew(crewId);
+
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          isUndoLoading = false;
+          if (err instanceof StaleRevisionError) {
+            refreshNotice = null;
+            renderDetail();
+            const recoverProgram = getCrew(crewId);
+            void Effect.runPromise(
+              Effect.match(recoverProgram, {
+                onFailure: (recoverErr) => {
+                  if (cancelled) return;
+                  if (recoverErr instanceof ApiError) {
+                    undoNotice = `Sheet refresh failed (${recoverErr.status}): ${recoverErr.body}`;
+                  } else if (recoverErr instanceof DecodeError) {
+                    undoNotice = `Sheet refresh failed (invalid response): ${recoverErr.message}`;
+                  } else {
+                    undoNotice = `Sheet refresh failed: ${String(recoverErr)}`;
+                  }
+                  renderDetail();
+                },
+                onSuccess: (crew) => {
+                  if (cancelled) return;
+                  currentCrew = crew;
+                  refreshNotice = "Sheet refreshed because it changed elsewhere";
+                  renderDetail();
+                  setTimeout(() => {
+                    if (!cancelled) {
+                      refreshNotice = null;
+                      renderDetail();
+                    }
+                  }, 3000);
+                },
+              }),
+            );
+          } else if (err instanceof ApiError) {
+            if (err.body.startsWith("NO_HISTORY")) {
+              undoNotice = "Nothing to undo — no history available";
+            } else {
+              undoNotice = `API error (${err.status}): ${err.body}`;
+            }
+            renderDetail();
+          } else if (err instanceof DecodeError) {
+            undoNotice = `Invalid response: ${err.message}`;
+            renderDetail();
+          } else {
+            undoNotice = String(err);
+            renderDetail();
+          }
+        },
+        onSuccess: (crew) => {
+          if (cancelled) return;
+          isUndoLoading = false;
+          refreshNotice = null;
+          undoNotice = null;
+          currentCrew = crew;
+          renderDetail();
+        },
+      }),
+    );
+  };
 
   const program = Effect.gen(function* () {
     const crew = yield* getCrew(crewId);
@@ -115,7 +219,8 @@ export function mountCrewDetailPage(
       onSuccess: (crew) => {
         if (cancelled) return;
         root.setAttribute("aria-busy", "false");
-        setChildren(root, renderCrewDetail(crew));
+        currentCrew = crew;
+        renderDetail();
       },
     }),
   );
