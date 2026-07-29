@@ -1,0 +1,13 @@
+{
+  "task": "F2i",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-pro (opencode-go via pi, -p, stdin closed)",
+  "reviewAgent": "claude-fable-5 (orchestrator review; no separate review model this slice)",
+  "date": "2026-07-29",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, first pass accepted. Claimed 6 undoCharacter tests verified exact by grep; full suite 53/53 + build green on orchestrator rerun. No command-constraint violations observed in report or diff (no VCS, no kills, no deletions, no servers started).",
+  "wallClockMinutes": 10,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "First slice under the DeepSeek-primary/Luna-escalation roster. NO_HISTORY handling depends on client-side 'code: message' formatting of ok:false 200 responses; verified correct against live Ada (NO_HISTORY arrives as HTTP 200 ok:false). Live probe: stress 0->2 (rev2), undo restores 0 (rev3), second undo NO_HISTORY. Orchestrator probe initially used wrong body field (amount vs delta) — probe error, not implementation defect."
+}

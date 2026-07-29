@@ -1,9 +1,9 @@
 import { Effect } from "effect";
-import { ApiError, DecodeError, getCharacter, stressAdd, StaleRevisionError } from "../api/client.js";
+import { ApiError, DecodeError, getCharacter, stressAdd, undoCharacter, StaleRevisionError } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
 
-function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLoading: boolean, stressError: string | null, refreshNotice: string | null = null): HTMLElement {
+function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLoading: boolean, stressError: string | null, refreshNotice: string | null = null, onUndo: () => void, isUndoLoading: boolean, undoNotice: string | null = null): HTMLElement {
   const status = c.isRetired ? " (retired)" : c.isDeadish ? " (deadish)" : "";
 
   const stressButton = el(
@@ -15,6 +15,16 @@ function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLo
     isStressLoading ? "…" : "+1",
   );
   stressButton.addEventListener("click", onStressAdd);
+
+  const undoButton = el(
+    "button",
+    {
+      disabled: isUndoLoading,
+      title: "Undo last change",
+    },
+    isUndoLoading ? "…" : "Undo last change",
+  );
+  undoButton.addEventListener("click", onUndo);
 
   return el(
     "section",
@@ -72,6 +82,15 @@ function renderCharacterDetail(c: Character, onStressAdd: () => void, isStressLo
       refreshNotice
         ? el("p", { className: "notice", style: "margin-top: 1em;" }, refreshNotice)
         : null,
+      undoNotice
+        ? el("p", { className: "notice", style: "margin-top: 1em;" }, undoNotice)
+        : null,
+    ),
+    el(
+      "div",
+      { className: "character-actions" },
+      el("h2", {}, "Actions"),
+      undoButton,
     ),
     el(
       "div",
@@ -113,6 +132,8 @@ export function mountCharacterDetailPage(
   let isStressLoading = false;
   let stressError: string | null = null;
   let refreshNotice: string | null = null;
+  let isUndoLoading = false;
+  let undoNotice: string | null = null;
 
   root.setAttribute("aria-live", "polite");
   root.setAttribute("aria-busy", "true");
@@ -120,7 +141,7 @@ export function mountCharacterDetailPage(
 
   const renderDetail = () => {
     if (currentCharacter) {
-      setChildren(root, renderCharacterDetail(currentCharacter, onStressAdd, isStressLoading, stressError, refreshNotice));
+      setChildren(root, renderCharacterDetail(currentCharacter, onStressAdd, isStressLoading, stressError, refreshNotice, onUndo, isUndoLoading, undoNotice));
     }
   };
 
@@ -186,6 +207,79 @@ export function mountCharacterDetailPage(
           isStressLoading = false;
           stressError = null;
           refreshNotice = null;
+          currentCharacter = character;
+          renderDetail();
+        },
+      }),
+    );
+  };
+
+  const onUndo = () => {
+    if (!currentCharacter || isUndoLoading) return;
+    isUndoLoading = true;
+    undoNotice = null;
+    renderDetail();
+
+    const program = undoCharacter(characterId);
+
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          isUndoLoading = false;
+          if (err instanceof StaleRevisionError) {
+            refreshNotice = null;
+            stressError = null;
+            renderDetail();
+            const recoverProgram = getCharacter(characterId);
+            void Effect.runPromise(
+              Effect.match(recoverProgram, {
+                onFailure: (recoverErr) => {
+                  if (cancelled) return;
+                  if (recoverErr instanceof ApiError) {
+                    stressError = `Sheet refresh failed (${recoverErr.status}): ${recoverErr.body}`;
+                  } else if (recoverErr instanceof DecodeError) {
+                    stressError = `Sheet refresh failed (invalid response): ${recoverErr.message}`;
+                  } else {
+                    stressError = `Sheet refresh failed: ${String(recoverErr)}`;
+                  }
+                  renderDetail();
+                },
+                onSuccess: (character) => {
+                  if (cancelled) return;
+                  currentCharacter = character;
+                  refreshNotice = "Sheet refreshed because it changed elsewhere";
+                  renderDetail();
+                  setTimeout(() => {
+                    if (!cancelled) {
+                      refreshNotice = null;
+                      renderDetail();
+                    }
+                  }, 3000);
+                },
+              }),
+            );
+          } else if (err instanceof ApiError) {
+            if (err.body.startsWith("NO_HISTORY")) {
+              undoNotice = "Nothing to undo — no history available";
+            } else {
+              stressError = `API error (${err.status}): ${err.body}`;
+            }
+            renderDetail();
+          } else if (err instanceof DecodeError) {
+            stressError = `Invalid response: ${err.message}`;
+            renderDetail();
+          } else {
+            stressError = String(err);
+            renderDetail();
+          }
+        },
+        onSuccess: (character) => {
+          if (cancelled) return;
+          isUndoLoading = false;
+          stressError = null;
+          refreshNotice = null;
+          undoNotice = null;
           currentCharacter = character;
           renderDetail();
         },

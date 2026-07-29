@@ -1,0 +1,49 @@
+# Character undo action (F2i)
+
+F2i adds an undo control to the character detail page that calls the
+`undoCharacter` API client method, which `POST`s to `/api/characters/{id}/undo`
+and restores the newest snapshot, walking undo history backwards on consecutive
+calls.
+
+## API client: `undoCharacter(id)`
+
+Calls `POST /api/characters/{id}/undo` with an empty JSON body. Returns the
+full updated `Character` DTO on success (`ok: true` in `OperationResult`).
+
+On `200` with `ok: false` and `error.code: "NO_HISTORY"`, raises an `ApiError`
+with body starting with `"NO_HISTORY"` — the UI surfaces this as a non-blocking
+notice rather than an error. This occurs when there are no snapshots to restore
+(e.g., immediately after character creation or after all snapshots have been
+consumed by previous undos).
+
+On `409 STALE_REVISION`, raises a distinct `StaleRevisionError` with the
+current server revision — the UI triggers the same stale-revision recovery
+path used by `stressAdd`: refetch the character, re-render with fresh data,
+and show a brief non-blocking notice.
+
+## Character detail page
+
+A new **Actions** section is rendered below the Status monitor. It contains
+an "Undo last change" button that calls `undoCharacter`. While the request
+is in flight, the button shows `…` and is disabled.
+
+On success, the page re-renders with the restored character DTO and clears
+any notices or errors.
+
+On `NO_HISTORY`, a non-blocking notice "Nothing to undo — no history available"
+is shown below the Status section (same notice area as the stale-revision
+refresh notice). The notice does not block further actions.
+
+On `StaleRevisionError`, the existing stale-revision recovery path runs:
+refetch the character, show "Sheet refreshed because it changed elsewhere"
+for 3 seconds, and leave the undo to the user to try again.
+
+On other API failures, the error message appears inline below the Status
+section using the existing error display.
+
+## Scope
+
+F2i is a minimal slice: undo from the detail page only. No crew undo, no
+undo from the history page, no batch undo. The control is a single button
+with no confirmation dialog. Consecutive undos walk backwards through the
+snapshot history; each call restores one snapshot and deletes it.
