@@ -1,0 +1,96 @@
+---
+title: C3 — Crew contacts & factions contract change
+description: Human-authorized 2026-07-29 breach of the contract freeze adding contacts and factions to the crew entity
+---
+
+# C3: Crew Contacts & Factions
+
+Contract-change task **C3** (2026-07-29), the one sanctioned breach of the
+contract freeze (spec §13) — authorized by the human ("Please do change the
+contract for Factions and Contacts on the Crew sheet"). Crew gains a
+`contacts` list and a `factions` list with status tracking; ops mirror the
+rolodex ergonomics. Server support is a follow-up A-track task; until then the
+new conformance tests fail red by design.
+
+## Why
+
+The F2 sheet plan (human-provided sheet spec, 2026-07-29) requires a **Crew
+Contacts & Factions** section: contacts with name + profession, factions with
+a status that the GM adjusts. Neither exists in the domain — not in the C#
+`Models/` reference, not in the crew schema. The frozen API had no way to
+represent or mutate them, so a contract change was the only path.
+
+## Design
+
+- **`contacts`** — array of `{ name, profession }`. Names are unique within
+  the list; adding a duplicate is `DUPLICATE`, removing an unknown name is
+  `NOT_FOUND`. The F2 sketch floated an optional `closeness` on contacts; it
+  was deliberately dropped from v1 — the rolodex already models closeness on
+  characters, and a closeness transition op can be added later without a
+  breaking change if the UI needs it.
+- **`factions`** — array of `{ name, status }`. Faction names are free-form
+  (custom names allowed; the UI may offer known factions as a menu but any
+  string is valid). `status` is an integer **clamped to the game-settings
+  faction-status range** (BoundedInteger semantics) — the range is never
+  hardcoded in the contract or the tests. `faction.set-status` is a *total*
+  op mirroring `rolodex.set-closeness`: it creates the faction on first set
+  and updates it otherwise (no separate create op, no duplicates).
+- Both properties are **optional in the schema until the formatVersion bump**:
+  servers implementing C3 MUST emit them (empty array when none); clients and
+  older servers MUST tolerate absence. This keeps existing backends decoding.
+
+## Operations
+
+| Op | Body | Errors | Notes |
+|---|---|---|---|
+| `POST /api/crews/{id}/ops/contact.add` | `{ name, profession }` (name minLength 1) | `DUPLICATE` | x-snapshot |
+| `POST /api/crews/{id}/ops/contact.remove` | `{ name }` | `NOT_FOUND` | x-snapshot |
+| `POST /api/crews/{id}/ops/faction.set-status` | `{ name, status }` | — | Upsert; status clamped to game-settings range, `applied.effective` reports the clamp; x-snapshot |
+| `POST /api/crews/{id}/ops/faction.remove` | `{ name }` | `NOT_FOUND` | x-snapshot |
+
+All four take the standard `If-Match` / `Idempotency-Key` parameters and
+return the uniform `OperationResult` with the full crew DTO.
+
+## Status range convention
+
+The clamp range comes from game-settings JSON, like every other maximum in
+this project (spec §5: never hardcode maxima). The convention, defined here
+and enforced by the conformance suite: each game-settings file gains a
+top-level `FactionStatus` object `{ Min, Max }` (PascalCase, matching
+`RecoveryClockSize` / `ActionPointMaximum`). The A-track server task adds the
+key to `data/games/*.json` and clamps against it; until then the clamping
+tests fail red with "expected undefined to be defined".
+
+## Schema
+
+`contract/schemas/crew.json` gains two optional array properties
+(`additionalProperties: false` inside each item):
+
+```json
+"contacts": [{ "name": "Rolan Wott", "profession": "magistrate" }],
+"factions": [{ "name": "The Crows", "status": -1 }]
+```
+
+`conformance/fixtures/golden-crew.json` was extended with both so the golden
+document exercises the new fields end to end.
+
+## Conformance
+
+16 new tests (11 red against the current backends, 5 shape/idempotency tests
+green):
+
+- `CONTRACT-CREW-OPS-{CONTACT-ADD,CONTACT-REMOVE,FACTION-SET-STATUS,FACTION-REMOVE}-001`
+  — endpoint shape against an unknown crew id; green now (unknown ops return a
+  valid `OperationResult`).
+- `SEMANTICS-CREW-CONTACTS-001..004` and `SEMANTICS-CREW-FACTIONS-001..006` —
+  add/remove, `DUPLICATE` / `NOT_FOUND`, upsert, and clamping with
+  `applied.effective`; all red until server support lands.
+- `PERSISTENCE-REVISION-004/005` — stale `If-Match` (`STALE_REVISION`) and
+  `Idempotency-Key` replay on the new ops; 004 red now, 005 green (the
+  generic idempotency layer replays any op).
+
+## Follow-ups
+
+1. A-track server support (implement the four ops in Ada, emit
+   contacts/factions in the crew DTO, add `FactionStatus` to game-settings).
+2. Crew-sheet Contacts & Factions UI slice (closes the loop with the F2 plan).

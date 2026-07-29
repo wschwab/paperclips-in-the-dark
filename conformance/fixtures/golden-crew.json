@@ -15,16 +15,37 @@
   "huntingGrounds": "Charterhall",
   "tier": 0,
   "hold": "strong",
-  "heat": { "current": 4, "max": 9 },
-  "wanted": { "current": 1, "max": 4 },
-  "rep": { "current": 3, "max": 12 },
-  "experience": { "points": 2, "max": 10 },
+  "heat": {
+    "current": 4,
+    "max": 9
+  },
+  "wanted": {
+    "current": 1,
+    "max": 4
+  },
+  "rep": {
+    "current": 3,
+    "max": 12
+  },
+  "experience": {
+    "points": 2,
+    "max": 10
+  },
   "specialAbilities": [
-    { "name": "Predators", "timesTaken": 1 }
+    {
+      "name": "Predators",
+      "timesTaken": 1
+    }
   ],
   "upgrades": [
-    { "name": "Quality: Weapons", "boxesMarked": 1 },
-    { "name": "Cohort (Gang or Expert)", "boxesMarked": 1 }
+    {
+      "name": "Quality: Weapons",
+      "boxesMarked": 1
+    },
+    {
+      "name": "Cohort (Gang or Expert)",
+      "boxesMarked": 1
+    }
   ],
   "cohorts": [
     {
@@ -35,13 +56,33 @@
       "quality": 0,
       "scale": 1,
       "hasArmor": false,
-      "edges": ["Fearsome"],
-      "flaws": ["Savage"],
+      "edges": [
+        "Fearsome"
+      ],
+      "flaws": [
+        "Savage"
+      ],
       "harm": "healthy",
       "description": "A gang of street thugs"
     }
   ],
   "coin": 4,
   "stash": 0,
-  "notes": ""
+  "notes": "",
+  "contacts": [
+    {
+      "name": "Rolan Wott",
+      "profession": "magistrate"
+    }
+  ],
+  "factions": [
+    {
+      "name": "The Crows",
+      "status": -1
+    },
+    {
+      "name": "Ironhook Prison",
+      "status": 2
+    }
+  ]
 }

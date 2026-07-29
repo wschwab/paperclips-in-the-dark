@@ -1322,6 +1322,88 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/contact.add:
+    post:
+      operationId: crewContactAdd
+      x-snapshot: true
+      description: "C3 contract change (2026-07-29, human-authorized). Duplicate name → DUPLICATE."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, profession]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+                profession: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/contact.remove:
+    post:
+      operationId: crewContactRemove
+      x-snapshot: true
+      description: "C3 contract change. Unknown name → NOT_FOUND."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/faction.set-status:
+    post:
+      operationId: factionSetStatus
+      x-snapshot: true
+      description: "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, status]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+                status: { type: integer }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/faction.remove:
+    post:
+      operationId: factionRemove
+      x-snapshot: true
+      description: "C3 contract change. Unknown name → NOT_FOUND."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/coin.add:
     post:
       operationId: coinAdd

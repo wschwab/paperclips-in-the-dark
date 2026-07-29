@@ -76,6 +76,11 @@ const crewOpCases: Array<[string, unknown]> = [
   ["ops/cohort.add", { cohortKind: "gang" }],
   ["ops/cohort.update", { cohortId: unknownId, description: "Test" }],
   ["ops/cohort.remove", { cohortId: unknownId }],
+  // C3 contract change (2026-07-29): crew contacts & factions ops.
+  ["ops/contact.add", { name: "Test", profession: "Test" }],
+  ["ops/contact.remove", { name: "Test" }],
+  ["ops/faction.set-status", { name: "Test", status: 0 }],
+  ["ops/faction.remove", { name: "Test" }],
   ["ops/coin.add", operationBody],
   ["ops/stash.add", operationBody],
   ["ops/fields.update", { name: "Test" }],

@@ -29,6 +29,29 @@ export function firstPlaybook(stem: string): string {
   return playbook.Name;
 }
 
+export interface FactionStatusRange {
+  Min: number;
+  Max: number;
+}
+
+/**
+ * C3 contract change (2026-07-29): faction status is clamped to the
+ * game-settings faction-status range (see docs/pages/contract/c3-crew-contacts-factions.mdx).
+ * Convention: game-settings JSON carries a top-level `FactionStatus` object
+ * `{ Min, Max }` (PascalCase like RecoveryClockSize / ActionPointMaximum).
+ * Returns undefined until the A-track follow-up adds the range to the data
+ * files; the range is never hardcoded here or in the contract.
+ */
+export function factionStatusRange(stem: string): FactionStatusRange | undefined {
+  const setting = gameSetting(stem) as GameSetting & { FactionStatus?: { Min?: number; Max?: number } };
+  const range = setting.FactionStatus;
+  if (range === undefined) return undefined;
+  if (typeof range.Min !== "number" || typeof range.Max !== "number") {
+    throw new Error(`game-settings ${stem}: FactionStatus must have numeric Min and Max`);
+  }
+  return { Min: range.Min, Max: range.Max };
+}
+
 export function firstAction(stem: string): { attribute: string; action: string } {
   const setting = gameSetting(stem);
   const attribute = setting.Attributes[0];

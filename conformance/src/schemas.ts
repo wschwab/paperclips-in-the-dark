@@ -127,6 +127,11 @@ const Crew = Schema.Struct({
   coin: Schema.Number,
   stash: Schema.Number,
   notes: Schema.String,
+  // C3 contract change (2026-07-29): optional until formatVersion bump —
+  // servers implementing C3 MUST emit them (empty array when none); clients
+  // MUST tolerate absence, so existing backends still decode.
+  contacts: Schema.optional(Schema.Array(Schema.Struct({ name: Schema.String, profession: Schema.String }))),
+  factions: Schema.optional(Schema.Array(Schema.Struct({ name: Schema.String, status: Schema.Number }))),
 });
 
 const Clock = Schema.Struct({
