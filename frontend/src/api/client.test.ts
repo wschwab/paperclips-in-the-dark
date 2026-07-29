@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -1096,6 +1096,408 @@ describe("undoCrew", () => {
       if (result.left instanceof ApiError) {
         expect(result.left.status).toBe(409);
       }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2m client methods — dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame
+// ---------------------------------------------------------------------------
+
+function makeChar(overrides: Record<string, unknown> = {}) {
+  return {
+    kind: "character",
+    id: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
+    gameStem: "blades-in-the-dark",
+    gameName: "Blades in the Dark",
+    language: "en",
+    revision: 12,
+    formatVersion: 1,
+    createdAt: "2026-07-22T00:00:00.000Z",
+    updatedAt: "2026-07-22T00:00:00.000Z",
+    isRetired: false,
+    isDeadish: false,
+    dossier: {
+      name: "Brenda Hilton",
+      crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+      alias: "Webweaver",
+      look: "Keen and calculating",
+      notes: "Spider operative",
+      background: { name: "Urchin", description: "" },
+      heritage: { name: "Akorosi", description: "" },
+      vice: { name: "Gambling", description: "" },
+    },
+    monitor: {
+      stress: { current: 3, max: 9 },
+      trauma: { traumas: ["Haunted"], max: 4 },
+      harm: {
+        lesser: [],
+        moderate: [],
+        severe: [],
+        fatal: [],
+        healingClock: { segments: 0, size: 6, rollover: 0 },
+      },
+      armor: {
+        standardUsed: false,
+        heavyUsed: false,
+        specialUsed: false,
+        hasStandard: true,
+        hasHeavy: false,
+        hasSpecial: false,
+      },
+    },
+    talent: { attributes: [] },
+    playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
+    gear: {
+      loadout: [],
+      availableGear: [],
+      commitment: "none",
+      isCommitmentLocked: false,
+      maxBulk: 8,
+    },
+    fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
+    rolodex: { friends: [] },
+    session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+    notebook: "",
+    ...overrides,
+  };
+}
+
+function opOk(character: unknown) {
+  return {
+    ok: true,
+    character,
+    applied: { op: "dossier.update" },
+    sideEffects: [],
+    error: null,
+  };
+}
+
+function staleResp(opName: string, currentRevision: number) {
+  return {
+    ok: false,
+    applied: { op: opName },
+    sideEffects: [],
+    error: {
+      code: "STALE_REVISION",
+      message: "Revision mismatch",
+      details: { currentRevision },
+    },
+  };
+}
+
+describe("dossierUpdate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/dossier.update with partial fields and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      dossier: {
+        name: "Renamed",
+        crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+        alias: "NewAlias",
+        look: "",
+        notes: "",
+        background: { name: "Labor", description: "" },
+        heritage: { name: "Tycherosi", description: "" },
+        vice: { name: "Gambling", description: "" },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      dossierUpdate("c46ba7cb-993b-4fc7-974d-fb95eacd5446", { name: "Renamed", alias: "NewAlias" }, 12),
+    );
+    expect(result.dossier.name).toBe("Renamed");
+    expect(result.dossier.alias).toBe("NewAlias");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/dossier.update",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ name: "Renamed", alias: "NewAlias" }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("dossier.update", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(dossierUpdate("some-id", { name: "X" }, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+      if (result.left instanceof StaleRevisionError) {
+        expect(result.left.currentRevision).toBe(15);
+      }
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(dossierUpdate("some-id", { name: "X" }, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("stressClear", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/stress.clear with If-Match", async () => {
+    const cleared = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        stress: { current: 0, max: 9 },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(cleared)),
+    });
+
+    const result = await Effect.runPromise(
+      stressClear("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+    );
+    expect(result.monitor.stress.current).toBe(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/stress.clear",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: "{}",
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("stress.clear", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(stressClear("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => "not found",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(stressClear("nonexistent", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+});
+
+describe("traumaAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/trauma.add with trauma name and If-Match", async () => {
+    const withTrauma = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        trauma: { traumas: ["Haunted", "Cold"], max: 4 },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(withTrauma)),
+    });
+
+    const result = await Effect.runPromise(
+      traumaAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Cold", 12),
+    );
+    expect(result.monitor.trauma.traumas).toContain("Cold");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/trauma.add",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ trauma: "Cold" }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("trauma.add", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(traumaAdd("some-id", "Cold", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => "not found",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(traumaAdd("nonexistent", "Cold", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+});
+
+describe("traumaRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/trauma.remove with trauma name and If-Match", async () => {
+    const withoutTrauma = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        trauma: { traumas: [], max: 4 },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(withoutTrauma)),
+    });
+
+    const result = await Effect.runPromise(
+      traumaRemove("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Haunted", 12),
+    );
+    expect(result.monitor.trauma.traumas).not.toContain("Haunted");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/trauma.remove",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ trauma: "Haunted" }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("trauma.remove", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(traumaRemove("some-id", "Cold", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("getGame", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/games/{stem} and returns raw game-settings JSON", async () => {
+    const gameData = {
+      Name: "Blades in the Dark",
+      Traumas: ["Cold", "Haunted", "Obsessed"],
+      StressMax: 9,
+      TraumaMax: 4,
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(gameData),
+    });
+
+    const result = await Effect.runPromise(getGame("blades-in-the-dark"));
+    expect(result).toEqual(gameData);
+    expect(global.fetch).toHaveBeenCalledWith("/api/games/blades-in-the-dark", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => "Not Found",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getGame("nonexistent")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
     }
   });
 });

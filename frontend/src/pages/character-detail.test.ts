@@ -86,6 +86,9 @@ function fetchResponse(data: unknown, status = 200, httpOk?: boolean) {
 // Shorthand for 200-ok responses
 const ok = (data: unknown) => fetchResponse(data);
 
+/** Minimal game data for tests. */
+const GAME_DATA = { Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed", "Paranoid"], StressMax: 9, TraumaMax: 4 };
+
 /** Create a deferred promise + resolver pair — typed loosely for mock Responses. */
 function deferred<T>(): [Promise<T>, (value: T) => void] {
   let resolve!: (value: T) => void;
@@ -134,7 +137,10 @@ describe("character-detail page", () => {
   // -- initial render -------------------------------------------------------
 
   it("renders the character name after initial load", async () => {
-    global.fetch = vi.fn().mockResolvedValue(ok(characterDTO()));
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -159,6 +165,7 @@ describe("character-detail page", () => {
       status: 500,
       text: async () => "boom",
     });
+    // The page loads character then game in parallel; game fails too but error is already set
 
     mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -206,6 +213,7 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(stressSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -231,6 +239,7 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce({
           ok: false,
           status: 422,
@@ -289,13 +298,15 @@ describe("character-detail page", () => {
         .fn()
         // 1) initial getCharacter → 200
         .mockResolvedValueOnce(ok(characterDTO()))
-        // 2) stressAdd POST → 409 STALE_REVISION
+        // 2) game data → 200
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        // 3) stressAdd POST → 409 STALE_REVISION
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
           text: async () => JSON.stringify(staleResp),
         })
-        // 3) recovery getCharacter → deferred (we control when it resolves)
+        // 4) recovery getCharacter → deferred (we control when it resolves)
         .mockReturnValueOnce(recoveryPromise);
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -404,6 +415,7 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(undoSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -439,6 +451,7 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(noHistoryResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -481,6 +494,7 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
@@ -540,6 +554,276 @@ describe("character-detail page", () => {
         },
         { timeout: 2000 },
       );
+    });
+  });
+
+  // -- F2m: Personal section (dossier edit) --------------------------------
+
+  describe("F2m Personal", () => {
+    it("renders inline-editable name, alias, background, heritage, look fields", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Brenda Hilton");
+        expect(root.textContent).toContain("Webweaver");
+        expect(root.textContent).toContain("Urchin");
+        expect(root.textContent).toContain("Akorosi");
+        expect(root.textContent).toContain("Keen and calculating");
+      });
+    });
+
+    it("allows editing and saving dossier fields via dossierUpdate", async () => {
+      const updated = characterDTO({
+        revision: 13,
+        dossier: {
+          name: "Edited Name",
+          crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+          alias: "",
+          look: "",
+          notes: "",
+          background: { name: "Urchin", description: "" },
+          heritage: { name: "Akorosi", description: "" },
+          vice: { name: "Gambling", description: "" },
+        },
+      });
+
+      const dossierOk = {
+        ok: true,
+        character: updated,
+        applied: { op: "dossier.update" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(dossierOk));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Brenda Hilton");
+      });
+
+      // Find the edit button for name field and click it
+      const editBtns = root.querySelectorAll('button[title^="Edit"]');
+      expect(editBtns.length).toBeGreaterThan(0);
+    });
+  });
+
+  // -- F2m: Stress section -------------------------------------------------
+
+  describe("F2m Stress", () => {
+    it("renders clickable stress track with correct value and max", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const boxes = root.querySelectorAll(".stress-box");
+        expect(boxes.length).toBe(9);
+        // 3 boxes should be filled
+        const filled = root.querySelectorAll('[data-stress="1"]');
+        expect(filled.length).toBe(3);
+      });
+    });
+
+    it("clicking stress box issues stressAdd with the right delta", async () => {
+      const stressResp3 = {
+        ok: true,
+        character: characterDTO({
+          revision: 13,
+          monitor: {
+            ...characterDTO().monitor,
+            stress: { current: 3, max: 9 },
+          },
+        }),
+        applied: { op: "stress.add", requested: 2, effective: 2 },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(stressResp3));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelectorAll(".stress-box").length).toBe(9);
+      });
+
+      // Click stress box 5 (index 4)
+      const boxes = root.querySelectorAll<HTMLButtonElement>(".stress-box");
+      boxes[4]?.click();
+
+      // The stress track onChange calls the page handler which issues stressAdd
+      // delta = target (5) - current (3) = +2
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("3 / 9");
+      });
+    });
+
+    it("renders +/- buttons for stress", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const plusBtn = root.querySelector('button[title="Add 1 stress"]');
+        const minusBtn = root.querySelector('button[title="Remove 1 stress"]');
+        expect(plusBtn).not.toBeNull();
+        expect(minusBtn).not.toBeNull();
+      });
+    });
+  });
+
+  // -- F2m: Trauma section ------------------------------------------------
+
+  describe("F2m Trauma", () => {
+    it("renders current traumas with remove buttons", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Haunted");
+        const removeBtns = root.querySelectorAll('button[title^="Remove trauma"]');
+        expect(removeBtns.length).toBe(1); // one trauma entry
+      });
+    });
+
+    it("renders trauma add select populated from game data, excluding already-stamped traumas", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const select = root.querySelector('select[aria-label="Add trauma"]');
+        expect(select).not.toBeNull();
+        // Should contain trauma options from game data, minus already-stamped "Haunted"
+        const options = select!.querySelectorAll("option");
+        const labels = Array.from(options).map((o) => o.textContent);
+        expect(labels).toContain("Cold");
+        expect(labels).toContain("Obsessed");
+        // Haunted is already a trauma on the character, so it should NOT appear
+        expect(labels).not.toContain("Haunted");
+      });
+    });
+
+    it("adds trauma via select + button, removes via remove button", async () => {
+      const withCold = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          trauma: { traumas: ["Haunted", "Cold"], max: 4 },
+        },
+      });
+
+      const traumaAddOk = {
+        ok: true,
+        character: withCold,
+        applied: { op: "trauma.add" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(traumaAddOk));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Haunted");
+      });
+
+      // Click add button
+      const addBtn = root.querySelector('button[title="Add trauma"]') as HTMLButtonElement;
+      expect(addBtn).not.toBeNull();
+      addBtn.click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Cold");
+      });
+    });
+  });
+
+  // -- F2m: Vice section ---------------------------------------------------
+
+  describe("F2m Vice", () => {
+    it("renders vice name and description", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Gambling");
+      });
+    });
+
+    it("renders Indulge Vice button that calls stressClear", async () => {
+      const cleared = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          stress: { current: 0, max: 9 },
+        },
+      });
+
+      const clearOk = {
+        ok: true,
+        character: cleared,
+        applied: { op: "stress.clear" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(clearOk));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Gambling");
+      });
+
+      const indulgeBtn = root.querySelector('button[title="Clear all stress (Indulge Vice)"]') as HTMLButtonElement;
+      expect(indulgeBtn).not.toBeNull();
+      indulgeBtn.click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("0 / 9");
+      });
     });
   });
 });

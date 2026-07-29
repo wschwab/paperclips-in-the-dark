@@ -338,6 +338,108 @@ export function createCrew(gameStem: string, crewType: string): Effect.Effect<Cr
   });
 }
 
+// ---------------------------------------------------------------------------
+// F2m operations — dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame
+// ---------------------------------------------------------------------------
+
+/** Generic mutator helper: POST to /ops/{op}, parse OperationResult, extract character. */
+function characterMutate(
+  id: string,
+  op: string,
+  revision: number,
+  body: unknown = {},
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(`/api/characters/${id}/ops/${op}`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "If-Match": String(revision),
+          },
+          body: JSON.stringify(body),
+        });
+        const text = await response.text();
+        return { response, text };
+      },
+      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+    });
+
+    if (!res.response.ok) {
+      if (res.response.status === 409) {
+        try {
+          const parsed = JSON.parse(res.text);
+          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
+          if (opResult.error?.code === "STALE_REVISION") {
+            const currentRevision = opResult.error.details?.currentRevision;
+            if (typeof currentRevision === "number") {
+              yield* Effect.fail(new StaleRevisionError(currentRevision));
+            }
+            yield* Effect.fail(new StaleRevisionError(0));
+          }
+        } catch {
+          // Malformed 409 body: fall through to ApiError
+        }
+      }
+      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    }
+
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.character) {
+          throw new Error("Missing character in OperationResult");
+        }
+        return opResult.character;
+      },
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function dossierUpdate(
+  id: string,
+  fields: Record<string, unknown>,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "dossier.update", revision, fields);
+}
+
+export function stressClear(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "stress.clear", revision);
+}
+
+export function traumaAdd(
+  id: string,
+  trauma: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "trauma.add", revision, { trauma });
+}
+
+export function traumaRemove(
+  id: string,
+  trauma: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "trauma.remove", revision, { trauma });
+}
+
+export function getGame(gameStem: string): Effect.Effect<Record<string, unknown>, ApiError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/games/${gameStem}`);
+    if (typeof raw !== "object" || raw === null) {
+      yield* Effect.fail(new ApiError(0, "Expected object"));
+    }
+    return raw as Record<string, unknown>;
+  });
+}
+
 export function stressAdd(id: string, delta: number, revision: number): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
     const res = yield* Effect.tryPromise({

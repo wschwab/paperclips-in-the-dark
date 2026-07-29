@@ -1,0 +1,95 @@
+---
+title: F2m — Character Sheet: Personal, Stress, Trauma, Vice
+---
+
+# F2m: Character Sheet — Personal, Stress, Trauma, Vice
+
+Implemented per the [F2 sheet plan](/frontend/f2-sheet-plan) UI idioms and op
+mapping. All data flows through the frozen contract operations; test coverage
+is red-green on both the API client and page layers.
+
+## Client methods added
+
+| Method | Endpoint | If-Match | Notes |
+|--------|----------|----------|-------|
+| `dossierUpdate` | `ops/dossier.update` | ✓ | Partial update — only provided fields change |
+| `stressClear` | `ops/stress.clear` | ✓ | No request body |
+| `traumaAdd` | `ops/trauma.add` | ✓ | `{ trauma: string }` |
+| `traumaRemove` | `ops/trauma.remove` | ✓ | `{ trauma: string }` |
+| `getGame` | `/games/{stem}` | — | Returns raw game-settings JSON |
+
+All mutation methods share `characterMutate`, a generic helper that POSTs to
+the op endpoint, parses the `OperationResult`, and extracts the updated
+`Character` DTO. Stale-revision handling follows the existing `stressAdd`
+pattern: `409` + `STALE_REVISION` error code → `StaleRevisionError`.
+
+## Page sections
+
+### Personal
+
+Five fields (name, alias, background, heritage, look) display in read mode
+with an edit button (✎). Clicking edit shows an `<input>` with save (✓) and
+cancel (✕) buttons. Only one field can edit at a time. Save calls
+`dossierUpdate` with the changed field. Background and heritage are
+`NamedDescription` objects; the UI edits the `name` property.
+
+### Stress
+
+- **Stress track**: Uses the `stressTrack` component from F1 with `onChange`.
+  Clicking box N computes `delta = N - current` and calls `stressAdd(delta)`.
+- **+/− buttons**: `+1` calls `stressAdd(1)`, `−` calls `stressAdd(-1)`.
+  Buttons are disabled when the operation is in-flight or when stress is at
+  the boundary (0 or max).
+- Counter display: `{current} / {max}` from the DTO, never hardcoded.
+
+### Traumas
+
+- Current traumas displayed as stamped labels with per-entry remove buttons
+  (✕). Each remove calls `traumaRemove(name)`.
+- **Add trauma**: A `<select>` populated from game-settings JSON `Traumas`
+  array, filtered to exclude already-stamped traumas. An add button (+) calls
+  `traumaAdd(selectedTrauma)`.
+
+### Vice
+
+- Vice name displayed bold (`c.dossier.vice.name`).
+- Vice description shown in serif if non-empty.
+- **Indulge Vice** button calls `stressClear()`. Disabled when stress is
+  already 0 or an operation is in-flight.
+
+## Stale-revision pattern (F2h rule)
+
+Every mutation branch renders synchronously before async work begins
+and follows the same stale-revision recovery:
+
+1. Set loading flag → `renderDetailWrapper()` (sync)
+2. POST the op
+3. On success: `currentCharacter = updated`, clear loading, render
+4. On `StaleRevisionError`: render (sync), then fetch `getCharacter` to
+   recover; show "Sheet refreshed" notice for 3 seconds
+
+## Game data loading
+
+The page parallel-fetches character DTO and game-settings JSON on mount.
+Game data (`getGame`) provides the trauma list for the add-trauma `<select>`.
+If the game data fetch fails, the trauma menu is empty (no available traumas
+to add), but the rest of the sheet renders normally.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`)
+
+- `describe("dossierUpdate")` — 3 tests
+- `describe("stressClear")` — 3 tests
+- `describe("traumaAdd")` — 3 tests
+- `describe("traumaRemove")` — 2 tests
+- `describe("getGame")` — 2 tests
+
+### Page tests (`src/pages/character-detail.test.ts`)
+
+- `describe("F2m Personal")` — 2 tests
+- `describe("F2m Stress")` — 3 tests
+- `describe("F2m Trauma")` — 3 tests
+- `describe("F2m Vice")` — 2 tests
+
+All 101 tests pass (58 client + 19 character-detail page + 18 schema + 6 crew-detail).

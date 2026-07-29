@@ -23,3 +23,12 @@ driving the same ops. Menus from game data only.
 ## Log
 - 2026-07-29: dispatched to DeepSeek v4 Pro (pi, opencode-go). Prompt:
   tasks/dispatch/F2m-prompt.md.
+- 2026-07-29: DONE. Orchestrator acceptance: all per-describe counts
+  grep-exact (13 client + 10 page); 101/101 + build green on rerun; no
+  hardcoded maxima/trauma names; F2l page tests enforced the F2h render
+  rule through the page rewrite. Live Ada probe (port 9817, PID 1535432,
+  killed + port clean): dossier/stress/trauma/indulge all correct. Probe
+  additionally found two ADA bugs (missing request-body validation;
+  duplicate trauma silently ok) → filed tasks/A4-ada-request-validation.md;
+  frontend unaffected (sends contract-correct bodies). Metrics:
+  tasks/metrics/frontend/F2m.json. Status: accepted.
