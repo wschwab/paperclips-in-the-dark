@@ -846,7 +846,6 @@ describe("stressAdd", () => {
     const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
     const errorResponse = {
       ok: false,
-      character: null,
       applied: { op: "stress.add" },
       sideEffects: [],
       error: {
@@ -866,8 +865,11 @@ describe("stressAdd", () => {
       Effect.either(stressAdd(characterId, 1, 12)),
     );
     expect(result._tag).toBe("Left");
-    if (result._tag === "Left" && result.left instanceof StaleRevisionError) {
-      expect(result.left.currentRevision).toBe(15);
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+      if (result.left instanceof StaleRevisionError) {
+        expect(result.left.currentRevision).toBe(15);
+      }
     }
   });
 
@@ -1020,7 +1022,6 @@ describe("undoCrew", () => {
     const crewId = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
     const errorResponse = {
       ok: false,
-      crew: null,
       applied: { op: "crew.undo" },
       sideEffects: [],
       error: {
@@ -1040,8 +1041,11 @@ describe("undoCrew", () => {
       Effect.either(undoCrew(crewId)),
     );
     expect(result._tag).toBe("Left");
-    if (result._tag === "Left" && result.left instanceof StaleRevisionError) {
-      expect(result.left.currentRevision).toBe(7);
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+      if (result.left instanceof StaleRevisionError) {
+        expect(result.left.currentRevision).toBe(7);
+      }
     }
   });
 
@@ -1221,7 +1225,6 @@ describe("undoCharacter", () => {
     const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
     const errorResponse = {
       ok: false,
-      character: null,
       applied: { op: "character.undo" },
       sideEffects: [],
       error: {
@@ -1241,8 +1244,11 @@ describe("undoCharacter", () => {
       Effect.either(undoCharacter(characterId)),
     );
     expect(result._tag).toBe("Left");
-    if (result._tag === "Left" && result.left instanceof StaleRevisionError) {
-      expect(result.left.currentRevision).toBe(15);
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+      if (result.left instanceof StaleRevisionError) {
+        expect(result.left.currentRevision).toBe(15);
+      }
     }
   });
 

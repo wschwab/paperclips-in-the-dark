@@ -1,0 +1,111 @@
+# DOM test environment (F2l)
+
+F2l adds a DOM test environment for page-level component tests
+and writes the first suite of page-level regression tests.
+Previously the test suite ran entirely in Node (`vitest.config.ts`
+had `environment: "node"`), so every page component test would
+immediately crash on `document.createElement`. Page components
+were not tested at all — bugs could only be caught by review.
+
+## Why this exists: the F2h lesson
+
+F2h shipped a real bug: in the `StaleRevisionError` branch of
+`onStressAdd`, `renderDetail()` was not called synchronously before
+the async recovery fetch. The button stayed in a stale disabled
+state until the refetch completed.
+
+Review caught it. No test could, because there was no DOM test
+environment. F2l closes that gap.
+
+## Environment split
+
+Page tests live alongside implementation in `src/pages/*.test.ts`
+and use the `// @vitest-environment happy-dom` pragma:
+
+```ts
+// @vitest-environment happy-dom
+import { describe, it, expect, vi } from "vitest";
+```
+
+All other tests (`src/api/*.test.ts`, `src/schema/*.test.ts`)
+continue to run in Node. The environment is declared per-file, so
+there is zero risk of accidental environment bleed.
+
+**Dependency**: `happy-dom` (devDependency in `frontend/package.json`).
+
+## How to write a page test
+
+```ts
+// @vitest-environment happy-dom
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { mountCharacterDetailPage } from "./character-detail.js";
+
+describe("character-detail page", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  it("renders the character name after initial load", async () => {
+    // Mock fetch — the API client calls global.fetch
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify(characterDTO()),
+    });
+
+    mountCharacterDetailPage(root, characterId);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector("h1")?.textContent).toContain("Character Name");
+    });
+  });
+});
+```
+
+### Key patterns
+
+1. **Mock `global.fetch`** — pages use the same API client tested in
+   `client.test.ts`; mock fetch at the boundary exactly as those tests do.
+
+2. **Use `vi.waitFor`** — page components render asynchronously (initial
+   load, mutation results). Poll the DOM until the expected content appears.
+
+3. **Re-query after DOM replacement** — when the page calls
+   `setChildren(root, ...)` (which it does on every render), old element
+   references are detached. Always re-query with `root.querySelector()`
+   after a render-triggering action.
+
+4. **Mock OperationResult wrapper** — mutations (`stressAdd`, `undoCharacter`,
+   `undoCrew`) return `OperationResult` DTOs wrapping the entity, not bare
+   entities. Mock accordingly.
+
+5. **Avoid `null` for optional schema fields** — the Effect Schema
+   `OperationResult` decode rejects `crew: null` / `character: null`
+   (`Schema.optional(Crew)` accepts `undefined`/absent but not `null`).
+   Omit those fields entirely in mock error responses.
+
+6. **Deferred promises for timing-sensitive tests** — when you need to
+   assert DOM state *before* an async recovery completes, return a deferred
+   promise from the mock, inspect the DOM, then resolve it.
+
+## F2h regression test (RED-first proof)
+
+The key test: `character-detail page > stressAdd > re-renders synchronously
+before recovery fetch when StaleRevisionError occurs — F2h regression`
+
+It uses a deferred promise for the recovery fetch and asserts that the
+stress button is re-enabled *before* the recovery resolves. This proves
+`renderDetail()` was called synchronously in the `StaleRevisionError`
+handler — the exact call that was missing in the F2h bug.
+
+**RED evidence**: Temporarily removing the `renderDetail()` call in the
+`onStressAdd` → `StaleRevisionError` branch causes the test to fail with
+a timeout — the button stays disabled because `renderDetail()` was never
+called synchronously.
+
+**GREEN evidence**: With `renderDetail()` restored, the test passes —
+the button re-enables immediately, and the refresh notice appears after
+recovery completes.

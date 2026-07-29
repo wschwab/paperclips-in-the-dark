@@ -25,3 +25,15 @@ as the existing client tests do; no live server in tests.
   closed) after F2k acceptance. Prompt: tasks/dispatch/F2l-prompt.md (same
   hard command constraints; npm install of the DOM env dev-dependency is
   explicitly allowed this slice).
+- 2026-07-29: DONE. Orchestrator acceptance: happy-dom env via per-file
+  pragma; 15 new page tests (9 character-detail + 6 crew-detail — report
+  claimed 12/file, actual 9, logged as first DeepSeek overclaim); 78/78 +
+  build green on rerun; zero production-code changes. F2h red-first proof
+  reproduced independently (reverted renderDetail() line 165 → regression
+  test fails; restored → green). DeepSeek also found a real latent bug in
+  existing client tests: the three StaleRevisionError tests mocked
+  character/crew as null (breaking decode) with conditional instanceof
+  assertions that could never fail. Acceptance fix (orchestrator): nulls
+  removed, assertions made unconditional — all 45 still green, client code
+  was correct, only the test evidence was vacuous. Metrics:
+  tasks/metrics/frontend/F2l.json. Status: accepted.

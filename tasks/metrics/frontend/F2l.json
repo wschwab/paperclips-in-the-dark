@@ -1,0 +1,13 @@
+{
+  "task": "F2l",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-pro (opencode-go via pi, -p, stdin closed)",
+  "reviewAgent": "claude-fable-5 (orchestrator review + acceptance fixes)",
+  "date": "2026-07-29",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch. Core deliverable accepted first pass: happy-dom env, 15 page tests (9 character-detail + 6 crew-detail), zero production-code changes. Orchestrator independently reproduced the F2h red-first proof (reverted renderDetail() -> regression test fails; restored -> green).",
+  "wallClockMinutes": 12,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 1, "human": 0 },
+  "notes": "First DeepSeek self-report inaccuracy in the series: claimed 12 tests in character-detail.test.ts, actual 9 (its own 78 total was only consistent with 9+6 — fabricated per-describe padding). Same genre as Haiku's F2c/F2f overclaims; grep-don't-trust remains warranted. Counterweight: it found a REAL latent bug in existing client tests — the three StaleRevisionError tests used character/crew: null mocks that broke schema decode, and their conditional instanceof assertions could never fail (vacuous evidence). Orchestrator acceptance fix: removed the null fields, made assertions unconditional; all 45 client tests still green, proving the client code was correct and only the test evidence was vacuous."
+}
