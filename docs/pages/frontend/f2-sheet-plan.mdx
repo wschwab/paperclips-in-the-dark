@@ -1,0 +1,79 @@
+# F2 sheet completion plan
+
+Human-provided sheet spec (2026-07-29, this plan is its normative digest) →
+slice series F2m–F2x. Blades in the Sheets is the visual/structural
+reference; the frozen contract is the behavioral one.
+
+## UI idioms (orchestrator decisions)
+
+- **Trackers are clickable box/dot rows** in the F1 styleguide idiom (stress
+  track, action dots, trauma stamps, harm table, SVG clocks) — clicking box
+  N sets the value to N; every tracker also gets small **+/− buttons** for
+  precision and accessibility. Buttons are the API write path; boxes are
+  sugar over the same ops.
+- Menus (traumas, abilities, reputations, cohort types, clock sizes) are
+  native `<select>` populated **from game-settings JSON only** — no
+  hardcoded lists, ever (spec §5).
+- Collapsible sections use `<details>/<summary>` (gear item menu, ability
+  descriptions).
+- Derived values (Lifestyle = stash ÷ 10, load headroom, wanted from heat)
+  are display-only, computed client-side from the DTO.
+
+## Section → contract op mapping
+
+Character: Personal→`dossierUpdate`; Stress→`stressAdd`/`stressClear`
+(Indulge Vice = stressClear with the vice shown beside it);
+Traumas→`traumaAdd`/`traumaRemove` (menu from game data `Traumas`);
+Health→`harmAdd` (custom description supported by the op), `harmHeal`,
+`harmRemove`, `harmHealingClock`, `armorSet`; Talents→`actionSetRating`,
+`attributeXpAdd`/`attributeXpClear`, `attributeLevelup`;
+Playbook→`playbookXpAdd`/`playbookXpClear`, `abilityTake`/`abilityRemove`
+(menu + descriptions from playbook `SpecialAbilities`);
+Contacts→`rolodexAdd`/`rolodexRemove`/`rolodexSetCloseness` (close friend /
+rival = closeness states; playbook `Rolodex` seeds the menu);
+Gear→`gearAdd`/`gearRemove`/`gearCommit`/`gearUncommit`/`gearLock`/
+`gearUnlock`/`gearSetCommitment`/`gearClearCommitments` (loadout selector =
+commitment; item menu from playbook `Items` + `SharedItems`);
+Coin→`fundGain`/`fundSpend`/`stashAdd`/`fundLiquidate`;
+Projects→`createClock`/`clockProgress`/`clockReset`/`deleteClock`;
+Score XP→`sessionSet` (three expression tracks, playbook-specific text from
+`ExperienceCondition`; desperate-action XP lands on attribute XP trackers);
+Notes→`notebookSet`.
+
+Crew: Profile→`crewFieldsUpdate`; Rep/Turf→`repAdd`; Heat→`heatAdd`;
+Wanted→`wantedAdd`; Hold→`holdSet`; Tier→`tierAdd`;
+Coin→`coinAdd` (loose) / `stashAdd`-analogue per contract (vaults);
+Playbook→`crewAbilityTake`/`crewAbilityRemove`, `upgradeMark`/
+`upgradeUnmark` (training, mastery, quality items, and the **lair
+advancement chart are all views over the same playbook-specific `Upgrades`
+data** — the chart is a rendering of upgrades, not a new domain concept);
+Cohorts→`cohortAdd`/`cohortRemove`/`cohortUpdate`;
+XP→`crewXpAdd`/`crewXpClear` (criteria text from `ExperienceTrigger`).
+
+## Recorded decisions (flagged to human)
+
+1. **Crew Contacts & Factions: DEFERRED.** No faction/contact state exists
+   in the C# Models or the frozen crew schema; supporting status tracking
+   requires a contract-change task (human gate). Until then the crew sheet
+   ships without that section; faction notes can live in crew `notes`.
+2. Playbook extras (Hound's pet, Leech's alchemicals) are **gear items** —
+   they already appear in each playbook's `Items` list in the game data —
+   plus freeform notes. No custom fields.
+3. Vehicles (Smuggler edges/flaws) are **cohorts** with a description
+   carrying edges/flaws text. Same rationale: the C# domain has no vehicle
+   entity; cohort is the closest modeled concept and the SRD treats crew
+   vehicles cohort-adjacently.
+4. Lifestyle/Rating is **derived display** (stash ÷ 10), not stored.
+5. Turf is rendered inside the rep tracker (turf fills rep boxes per SRD),
+   not a separate stored track.
+6. Desperate-action XP has no dedicated tracker; the SRD marks it on
+   attribute XP, which the Talents section already exposes.
+
+## Slice series
+
+F2m Personal+Stress+Trauma+Vice · F2n Health · F2o Talents+XP+Score-XP ·
+F2p Playbook abilities · F2q Contacts (rolodex) · F2r Gear/loadout ·
+F2s Coin+Projects · F2t Notes+extras polish · F2u Crew profile+trackers ·
+F2v Crew playbook+upgrades+lair chart · F2w Cohorts · F2x Crew XP.
+Each slice: red-green client tests + page tests (happy-dom, F2l), docs
+page, orchestrator live Ada probe.
