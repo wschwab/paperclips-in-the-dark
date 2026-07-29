@@ -1,0 +1,18 @@
+{
+  "task": "F2n",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-pro (opencode-go via pi; bulk, prior session) + deepseek-v4-flash-0731 (nous via prime-agent rlm; build fix + docs page)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator review)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 2,
+  "iterationNotes": "Prior Fable-5 session died at spend limit mid-slice leaving tests green but build red (unused import) and docs page missing. Flash finisher child fixed both in one dispatch; claims verified by rerun (123/123, build green) and grep. Its report was exact except a trivial docs line-count off-by-one (127 vs 126).",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Live Ada probe (port 9671, orchestrator): harm.add spillover ladder w/ landedIntensity, harm.remove, ARMOR_NOT_AVAILABLE all correct with revision advance. Probe found TWO ADA SERVER BUGS: harm.heal + harm.healing-clock unimplemented (VALIDATION unknown operation), and a Revision_Gate leak \u2014 any failed op with If-Match permanently wedges the entity (string check wants rev N, gate wants N+1). Filed tasks/A5-ada-harm-heal-revision-gate.md. Heal-path live acceptance deferred to A5."
+}

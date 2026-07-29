@@ -29,3 +29,14 @@ XP on attributes).
 
 ## Log
 - 2026-07-29: task created on human authorization; deferred behind F2m.
+- 2026-08-07: DONE. Contract/schema/openapi edits from prior session; conformance
+  additions + docs page by deepseek-v4-flash-0731 (prime-agent child c3-finisher).
+  Orchestrator verification (all reran independently): redocly lint clean; all 3
+  golden fixtures ajv-VALID (draft 2020-12); conformance typecheck + tooling green;
+  live vs Ada: 149 tests = 138 green / 11 red, red set exactly the new C3
+  semantics + PERSISTENCE-REVISION-004 (no regressions). Faction status range
+  read from game-settings via new FactionStatus {Min,Max} convention (grep: no
+  hardcoded range). Child self-report was fully accurate and it caught the
+  orchestrator's op-naming error (faction.set-status, not faction.status.set).
+  Follow-up: A-track server support task (contacts/factions ops + FactionStatus
+  game-settings key).

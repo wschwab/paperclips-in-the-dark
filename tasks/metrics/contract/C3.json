@@ -1,0 +1,18 @@
+{
+  "task": "C3",
+  "track": "contract",
+  "implementationAgent": "orchestrator (contract edits, prior session) + deepseek-v4-flash-0731 (nous via prime-agent rlm; conformance + docs)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch. Every claim reproduced exactly: lint, ajv x3, typecheck, tooling 2/2, live 138/11 with identical red list. Child corrected orchestrator's op-name error in the dispatch prompt.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "New conformance ops red-by-design pending A-track server support. FactionStatus {Min,Max} game-settings convention introduced and documented; range never hardcoded."
+}
