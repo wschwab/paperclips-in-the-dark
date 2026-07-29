@@ -78,8 +78,15 @@ Primary implementation agents for task-graph work (§13):
 | Grok 4.5 | openrouter | pi | implementation (when provider healthy) | openrouter currently unfunded |
 | DeepSeek v4 Pro | opencode-go | pi | low-cost implementation | needs command-level supervision; never unattended |
 
-The Haiku/Sonnet pairing is human-authorized (2026-07) and has delivered
-F2a–F2f; metrics files naming Haiku as implementation agent are correct, not a
+Active pairing (human-authorized 2026-07-29): **DeepSeek v4 Pro
+(opencode-go via pi) as primary bounded-slice implementer, GPT 5.6 Luna
+(codex, xhigh) for tasks that need it** — escalation, proof/toolchain work,
+correctness-sensitive blockers. DeepSeek dispatches carry hard command
+constraints (no broad kills, no deletions, exact-PID cleanup, no VCS); the
+orchestrator reviews every diff and owns the live Ada probe.
+
+The earlier Haiku/Sonnet pairing was human-authorized (2026-07) and delivered
+F2a–F2h; metrics files naming Haiku as implementation agent are correct, not a
 roster violation. Six-slice track record: Haiku's code and red-green discipline
 are reliably sound, but its self-reports overclaim (phantom tests in F2e,
 off-by-one counts, dropped docs pages) — Sonnet review plus an
