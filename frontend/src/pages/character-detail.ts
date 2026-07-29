@@ -11,8 +11,14 @@ import {
   dossierUpdate,
   undoCharacter,
   StaleRevisionError,
+  harmAdd,
+  harmHeal,
+  harmRemove,
+  harmHealingClock,
+  armorSet,
 } from "../api/client.js";
 import { stressTrack } from "../components/stress-track.js";
+import { clock } from "../components/clock.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
 
@@ -60,10 +66,15 @@ interface RenderState {
   isTraumaLoading: boolean;
   isDossierLoading: boolean;
   isUndoLoading: boolean;
+  isHarmLoading: boolean;
+  isArmorLoading: boolean;
+  isHealLoading: boolean;
+  isClockLoading: boolean;
   // Error / notice
   errorMsg: string | null;
   noticeMsg: string | null;
   undoNotice: string | null;
+  harmSpillNotice: string | null;
   // Editing
   editing: EditingState | null;
   // Handlers
@@ -77,6 +88,11 @@ interface RenderState {
     onDossierSave: () => void;
     onDossierCancel: () => void;
     onUndo: () => void;
+    onHarmAdd: () => void;
+    onHarmRemove: (description: string, intensity: string) => void;
+    onHarmHeal: () => void;
+    onHarmHealingClock: () => void;
+    onArmorSet: (armor: string, used: boolean) => void;
   };
 }
 
@@ -88,7 +104,8 @@ function renderDetail(state: RenderState): HTMLElement {
   const availableTraumas = traumaList.filter((t) => !currentTraumas.has(t));
 
   const anyLoading = state.isStressLoading || state.isStressClearLoading ||
-    state.isTraumaLoading || state.isDossierLoading || state.isUndoLoading;
+    state.isTraumaLoading || state.isDossierLoading || state.isUndoLoading ||
+    state.isHarmLoading || state.isArmorLoading || state.isHealLoading || state.isClockLoading;
 
   // -- Stress track ---------------------------------------------------------
 
@@ -289,6 +306,169 @@ function renderDetail(state: RenderState): HTMLElement {
       ),
     ),
 
+    // -- Health (F2n) -------------------------------------------------------
+
+    el(
+      "div",
+      { className: "character-health" },
+      el("h2", {}, "Health"),
+
+      // Harm table
+      (() => {
+        const h = c.monitor.harm;
+        const harmLevels = [
+          { key: "lesser" as const, label: "Lesser", capacity: 2 },
+          { key: "moderate" as const, label: "Moderate", capacity: 2 },
+          { key: "severe" as const, label: "Severe", capacity: 1 },
+          { key: "fatal" as const, label: "Fatal", capacity: 1 },
+        ];
+
+        const rows = harmLevels.map((level) => {
+          const entries = h[level.key] as readonly string[];
+          const cells: HTMLElement[] = [];
+          for (let i = 0; i < level.capacity; i++) {
+            const text = entries[i] || "";
+            cells.push(
+              el("td", { className: "harm-cell" },
+                el("span", {}, text),
+                text
+                  ? el("button", {
+                    type: "button",
+                    disabled: anyLoading,
+                    title: `Remove harm: ${text}`,
+                    className: "harm-remove-btn",
+                  }, "✕")
+                  : null,
+              ),
+            );
+          }
+          return el("tr", { "data-level": level.key },
+            el("th", { scope: "row", className: "harm-level" }, level.label),
+            ...cells,
+          );
+        });
+
+        // Wire up remove handlers
+        rows.forEach((row, idx) => {
+          const level = harmLevels[idx]!;
+          const entries = h[level.key] as readonly string[];
+          const btns = row.querySelectorAll("button");
+          btns.forEach((btn, entryIdx) => {
+            const desc = entries[entryIdx];
+            if (desc) {
+              btn.addEventListener("click", () => handlers.onHarmRemove(desc, level.key));
+            }
+          });
+        });
+
+        return el("table", { className: "harm-table" },
+          el("caption", { className: "lbl" }, "Harm"),
+          el("thead", {},
+            el("tr", {},
+              el("th", { scope: "col" }, "Level"),
+              el("th", { scope: "col" }, "Injury"),
+              el("th", { scope: "col" }, "Injury"),
+            ),
+          ),
+          el("tbody", {}, ...rows),
+        );
+      })(),
+
+      // Harm spillover notice
+      state.harmSpillNotice
+        ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.harmSpillNotice)
+        : null,
+
+      // Add harm controls
+      el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
+        el("select", { "aria-label": "Harm intensity", disabled: anyLoading },
+          el("option", { value: "" }, "--"),
+          el("option", { value: "lesser" }, "Lesser"),
+          el("option", { value: "moderate" }, "Moderate"),
+          el("option", { value: "severe" }, "Severe"),
+          el("option", { value: "fatal" }, "Fatal"),
+        ),
+        el("input", {
+          type: "text",
+          "aria-label": "Harm description",
+          disabled: anyLoading,
+          placeholder: "injury description",
+        }),
+        (() => {
+          const addBtn = el("button", {
+            type: "button",
+            disabled: anyLoading,
+            title: "Add harm",
+          }, state.isHarmLoading ? "…" : "+");
+          addBtn.addEventListener("click", handlers.onHarmAdd);
+          return addBtn;
+        })(),
+      ),
+
+      // Armor checkboxes
+      (() => {
+        const armorKinds = [
+          { key: "standard" as const, label: "Standard", has: c.monitor.armor.hasStandard, used: c.monitor.armor.standardUsed },
+          { key: "heavy" as const, label: "Heavy", has: c.monitor.armor.hasHeavy, used: c.monitor.armor.heavyUsed },
+          { key: "special" as const, label: "Special", has: c.monitor.armor.hasSpecial, used: c.monitor.armor.specialUsed },
+        ];
+        const armorLabels = armorKinds.map((a) => {
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.dataset.armorKind = a.key;
+          cb.disabled = anyLoading || !a.has;
+          cb.checked = a.used;
+          cb.addEventListener("change", () => {
+            handlers.onArmorSet(a.key, cb.checked);
+          });
+          return el("label", { style: "display: flex; align-items: center; gap: 0.25em;" },
+            cb,
+            el("span", {}, `${a.label}${!a.has ? " (n/a)" : ""}`),
+          );
+        });
+        return el("div", { style: "margin-top: 1em;" },
+          el("h3", { className: "lbl" }, "Armor"),
+          el("div", { style: "display: flex; gap: 1em; flex-wrap: wrap;" }, ...armorLabels),
+        );
+      })(),
+
+      // Healing clock
+      (() => {
+        const hc = c.monitor.harm.healingClock;
+        const clockFull = hc.segments >= hc.size;
+
+        const clockEl = clock({
+          segments: hc.size,
+          value: hc.segments,
+          label: "Healing",
+          size: 100,
+        });
+
+        const addSegmentBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || state.isClockLoading,
+          title: "Add healing segment",
+        }, state.isClockLoading ? "…" : "+1 segment");
+        addSegmentBtn.addEventListener("click", handlers.onHarmHealingClock);
+
+        const healBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || state.isHealLoading || !clockFull,
+          title: "Heal harm (requires full clock)",
+        }, state.isHealLoading ? "…" : "Heal");
+        healBtn.addEventListener("click", handlers.onHarmHeal);
+
+        return el("div", { style: "margin-top: 1em;" },
+          el("h3", { className: "lbl" }, "Healing Clock"),
+          clockEl,
+          el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em;" },
+            addSegmentBtn,
+            healBtn,
+          ),
+        );
+      })(),
+    ),
+
     // Info
     el(
       "div",
@@ -369,12 +549,20 @@ export function mountCharacterDetailPage(
   let errorMsg: string | null = null;
   let noticeMsg: string | null = null;
   let undoNotice: string | null = null;
+  let harmSpillNotice: string | null = null;
   let editing: EditingState | null = null;
+
+  // F2n Health state
+  let isHarmLoading = false;
+  let isArmorLoading = false;
+  let isHealLoading = false;
+  let isClockLoading = false;
 
   const clearNotices = () => {
     errorMsg = null;
     noticeMsg = null;
     undoNotice = null;
+    harmSpillNotice = null;
   };
 
   const refreshAndShowNotice = () => {
@@ -694,10 +882,213 @@ export function mountCharacterDetailPage(
         }),
       );
     },
+
+    // -- F2n: Health handlers -----------------------------------------------
+
+    onHarmAdd: () => {
+      if (!currentCharacter || isHarmLoading) return;
+      const intensitySelect = root.querySelector('select[aria-label="Harm intensity"]') as HTMLSelectElement;
+      const descInput = root.querySelector('input[aria-label="Harm description"]') as HTMLInputElement;
+      const intensity = intensitySelect?.value;
+      const description = descInput?.value?.trim();
+      if (!intensity || !description) return;
+      isHarmLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = harmAdd(characterId, description, intensity, currentCharacter.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isHarmLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshAndShowNotice();
+            } else if (err instanceof ApiError) {
+              errorMsg = `API error (${err.status}): ${err.body}`;
+              renderDetailWrapper();
+            } else if (err instanceof DecodeError) {
+              errorMsg = `Invalid response: ${err.message}`;
+              renderDetailWrapper();
+            } else {
+              errorMsg = String(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: (result) => {
+            if (cancelled) return;
+            isHarmLoading = false;
+            currentCharacter = result.character;
+            if (result.landedIntensity && result.landedIntensity !== intensity) {
+              harmSpillNotice = `spilled to ${result.landedIntensity}`;
+              setTimeout(() => {
+                if (!cancelled) {
+                  harmSpillNotice = null;
+                  renderDetailWrapper();
+                }
+              }, 5000);
+            }
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
+
+    onHarmRemove: (description: string, intensity: string) => {
+      if (!currentCharacter || isHarmLoading) return;
+      isHarmLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = harmRemove(characterId, description, intensity, currentCharacter.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isHarmLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshAndShowNotice();
+            } else if (err instanceof ApiError) {
+              errorMsg = `API error (${err.status}): ${err.body}`;
+              renderDetailWrapper();
+            } else if (err instanceof DecodeError) {
+              errorMsg = `Invalid response: ${err.message}`;
+              renderDetailWrapper();
+            } else {
+              errorMsg = String(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: (character) => {
+            if (cancelled) return;
+            isHarmLoading = false;
+            currentCharacter = character;
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
+
+    onHarmHeal: () => {
+      if (!currentCharacter || isHealLoading) return;
+      if (currentCharacter.monitor.harm.healingClock.segments < currentCharacter.monitor.harm.healingClock.size) return;
+      isHealLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = harmHeal(characterId, currentCharacter.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isHealLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshAndShowNotice();
+            } else if (err instanceof ApiError) {
+              errorMsg = `API error (${err.status}): ${err.body}`;
+              renderDetailWrapper();
+            } else if (err instanceof DecodeError) {
+              errorMsg = `Invalid response: ${err.message}`;
+              renderDetailWrapper();
+            } else {
+              errorMsg = String(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: (character) => {
+            if (cancelled) return;
+            isHealLoading = false;
+            currentCharacter = character;
+            noticeMsg = "Harm healed — clock reset";
+            setTimeout(() => {
+              if (!cancelled) {
+                noticeMsg = null;
+                renderDetailWrapper();
+              }
+            }, 4000);
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
+
+    onHarmHealingClock: () => {
+      if (!currentCharacter || isClockLoading) return;
+      const hc = currentCharacter.monitor.harm.healingClock;
+      const nextSegments = hc.segments + 1;
+      isClockLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = harmHealingClock(characterId, nextSegments, currentCharacter.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isClockLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshAndShowNotice();
+            } else if (err instanceof ApiError) {
+              errorMsg = `API error (${err.status}): ${err.body}`;
+              renderDetailWrapper();
+            } else if (err instanceof DecodeError) {
+              errorMsg = `Invalid response: ${err.message}`;
+              renderDetailWrapper();
+            } else {
+              errorMsg = String(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: (character) => {
+            if (cancelled) return;
+            isClockLoading = false;
+            currentCharacter = character;
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
+
+    onArmorSet: (armor: string, used: boolean) => {
+      if (!currentCharacter || isArmorLoading) return;
+      isArmorLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = armorSet(characterId, armor, used, currentCharacter.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isArmorLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshAndShowNotice();
+            } else if (err instanceof ApiError) {
+              errorMsg = `API error (${err.status}): ${err.body}`;
+              renderDetailWrapper();
+            } else if (err instanceof DecodeError) {
+              errorMsg = `Invalid response: ${err.message}`;
+              renderDetailWrapper();
+            } else {
+              errorMsg = String(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: (character) => {
+            if (cancelled) return;
+            isArmorLoading = false;
+            currentCharacter = character;
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
   };
-
-
-
 
   const renderDetailWrapper = () => {
     if (!currentCharacter) return;
@@ -709,9 +1100,14 @@ export function mountCharacterDetailPage(
       isTraumaLoading,
       isDossierLoading,
       isUndoLoading,
+      isHarmLoading,
+      isArmorLoading,
+      isHealLoading,
+      isClockLoading,
       errorMsg,
       noticeMsg,
       undoNotice,
+      harmSpillNotice,
       editing,
       handlers,
     }));

@@ -24,3 +24,12 @@ Check each op's request body in the frozen openapi.yaml.
 ## Log
 - 2026-07-29: dispatched to DeepSeek v4 Pro (pi, opencode-go). Prompt:
   tasks/dispatch/F2n-prompt.md.
+- 2026-08-07: prior session (Fable 5) died at spend limit mid-slice; recovery in
+  prime-agent session. deepseek-v4-flash-0731 child fixed the TS6133 build break
+  and wrote docs/pages/frontend/f2n-health.mdx; orchestrator verified 123/123
+  tests + build green by rerun. Live Ada probe: harm.add incl. spillover ladder
+  (lesser→moderate observed, landedIntensity correct), harm.remove, armor
+  ARMOR_NOT_AVAILABLE, revision advance — all good. BUT harm.heal +
+  harm.healing-clock are unimplemented server-side, and a failed op wedges the
+  entity via a Revision_Gate leak → filed tasks/A5-ada-harm-heal-revision-gate.md.
+  Frontend slice accepted; heal-path live acceptance deferred to A5.

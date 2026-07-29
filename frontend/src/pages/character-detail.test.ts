@@ -772,6 +772,283 @@ describe("character-detail page", () => {
     });
   });
 
+  // -- F2n: Health section -------------------------------------------------
+
+  describe("F2n Health", () => {
+    it("renders the harm table from character DTO", async () => {
+      const dto = characterDTO({
+        monitor: {
+          ...characterDTO().monitor,
+          harm: {
+            lesser: ["Battered"],
+            moderate: [],
+            severe: ["Broken leg"],
+            fatal: [],
+            healingClock: { segments: 2, size: 6, rollover: 0 },
+          },
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(dto))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".harm-table")).not.toBeNull();
+        expect(root.textContent).toContain("Battered");
+        expect(root.textContent).toContain("Broken leg");
+      });
+    });
+
+    it("renders add-harm controls with intensity select and text input", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const intensitySelect = root.querySelector('select[aria-label="Harm intensity"]');
+        expect(intensitySelect).not.toBeNull();
+        const descInput = root.querySelector('input[aria-label="Harm description"]');
+        expect(descInput).not.toBeNull();
+        const addBtn = root.querySelector('button[title="Add harm"]');
+        expect(addBtn).not.toBeNull();
+      });
+    });
+
+    it("adds a harm entry and shows spillover notice when landedIntensity differs", async () => {
+      const withSpilled = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          harm: {
+            lesser: ["Battered", "Cut"],
+            moderate: ["Stabbed"],
+            severe: [],
+            fatal: [],
+            healingClock: { segments: 0, size: 6, rollover: 0 },
+          },
+        },
+      });
+
+      const harmAddResp = {
+        ok: true,
+        character: withSpilled,
+        applied: { op: "harm.add", landedIntensity: "moderate" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(harmAddResp));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Brenda Hilton");
+      });
+
+      // Select intensity and type description
+      const intensitySelect = root.querySelector('select[aria-label="Harm intensity"]') as HTMLSelectElement;
+      intensitySelect.value = "lesser";
+      intensitySelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+      const descInput = root.querySelector('input[aria-label="Harm description"]') as HTMLInputElement;
+      descInput.value = "Stabbed";
+      descInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+      const addBtn = root.querySelector('button[title="Add harm"]') as HTMLButtonElement;
+      addBtn.click();
+
+      await vi.waitFor(() => {
+        // Should show spillover notice
+        expect(root.textContent).toContain("spilled to moderate");
+      });
+    });
+
+    it("renders armor checkboxes from DTO", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Standard");
+        expect(root.textContent).toContain("Heavy");
+        expect(root.textContent).toContain("Special");
+      });
+    });
+
+    it("toggles armor checkbox via armorSet", async () => {
+      const armorOn = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          armor: {
+            standardUsed: true,
+            heavyUsed: false,
+            specialUsed: false,
+            hasStandard: true,
+            hasHeavy: false,
+            hasSpecial: false,
+          },
+        },
+      });
+
+      const armorSetResp = {
+        ok: true,
+        character: armorOn,
+        applied: { op: "armor.set" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(armorSetResp));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Standard");
+      });
+
+      // Find the standard armor checkbox
+      const allInputs = root.querySelectorAll('input');
+      let standardCheck: HTMLInputElement | null = null;
+      for (let i = 0; i < allInputs.length; i++) {
+        const inp = allInputs[i] as HTMLInputElement;
+        if (inp.getAttribute('data-armor-kind') === 'standard' || inp.dataset?.armorKind === 'standard') {
+          standardCheck = inp;
+          break;
+        }
+      }
+      expect(standardCheck).not.toBeNull();
+      standardCheck!.checked = true;
+      standardCheck!.dispatchEvent(new Event('change', { bubbles: true }));
+
+      await vi.waitFor(() => {
+        // After toggle to true, the character should be updated
+        expect(global.fetch).toHaveBeenCalledTimes(3); // getChar, getGame, armorSet
+      });
+    });
+
+    it("renders healing clock from DTO and allows segment add", async () => {
+      const clockTicked = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          harm: {
+            lesser: [],
+            moderate: [],
+            severe: [],
+            fatal: [],
+            healingClock: { segments: 1, size: 6, rollover: 0 },
+          },
+        },
+      });
+
+      const clockAddResp = {
+        ok: true,
+        character: clockTicked,
+        applied: { op: "harm.healing-clock" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(clockAddResp));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const clock = root.querySelector(".clock");
+        expect(clock).not.toBeNull();
+      });
+
+      const addSegmentBtn = root.querySelector('button[title="Add healing segment"]') as HTMLButtonElement;
+      expect(addSegmentBtn).not.toBeNull();
+      addSegmentBtn.click();
+
+      await vi.waitFor(() => {
+        // After add, the character updates
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+      });
+    });
+
+    it("displays harm remove button per entry and removes harm", async () => {
+      const dto = characterDTO({
+        monitor: {
+          ...characterDTO().monitor,
+          harm: {
+            lesser: ["Battered"],
+            moderate: [],
+            severe: [],
+            fatal: [],
+            healingClock: { segments: 0, size: 6, rollover: 0 },
+          },
+        },
+      });
+
+      const removed = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          harm: {
+            lesser: [],
+            moderate: [],
+            severe: [],
+            fatal: [],
+            healingClock: { segments: 0, size: 6, rollover: 0 },
+          },
+        },
+      });
+
+      const removeResp = {
+        ok: true,
+        character: removed,
+        applied: { op: "harm.remove" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(dto))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(removeResp));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Battered");
+      });
+
+      const removeBtn = root.querySelector('button[title^="Remove harm"]') as HTMLButtonElement;
+      expect(removeBtn).not.toBeNull();
+      removeBtn.click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(3);
+      });
+    });
+  });
+
   // -- F2m: Vice section ---------------------------------------------------
 
   describe("F2m Vice", () => {

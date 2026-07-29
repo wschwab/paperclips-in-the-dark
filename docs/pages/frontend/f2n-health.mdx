@@ -1,0 +1,126 @@
+---
+title: F2n — Character Sheet: Health (harm, armor, healing clock)
+---
+
+# F2n: Character Sheet — Health (harm, armor, healing clock)
+
+Implemented per the [F2 sheet plan](/frontend/f2-sheet-plan) UI idioms and op
+mapping. All data flows through the frozen contract operations; test coverage
+is red-green on both the API client and page layers.
+
+## Client methods added
+
+| Method | Endpoint | If-Match | Body | Returns |
+|--------|----------|----------|------|---------|
+| `harmAdd` | `ops/harm.add` | ✓ | `{ description, intensity }` | `HarmAddResult` — `{ character, landedIntensity }` |
+| `harmHeal` | `ops/harm.heal` | ✓ | — | updated `Character` |
+| `harmRemove` | `ops/harm.remove` | ✓ | `{ description, intensity }` | updated `Character` |
+| `harmHealingClock` | `ops/harm.healing-clock` | ✓ | `{ segments }` | updated `Character` |
+| `armorSet` | `ops/armor.set` | ✓ | `{ armor, used }` | updated `Character` |
+
+Four of the five go through the existing `characterMutate` generic helper
+(same as the F2m operations): POST to `/api/characters/{id}/ops/{op}` with an
+`If-Match` header set to the character's current revision, decode the
+`OperationResult`, and extract the updated `Character` DTO. Stale-revision
+handling follows the established pattern: `409` + `STALE_REVISION` error code
+→ `StaleRevisionError`.
+
+`harmAdd` is the exception: it needs the `applied` block of the
+`OperationResult` in addition to the updated character, so it has its own
+fetch/parse path and returns `HarmAddResult { character, landedIntensity }`
+with `landedIntensity: string | null` (`null` when the harm landed exactly
+where requested).
+
+## Harm spillover (`landedIntensity`)
+
+The frozen contract's `harm.add` describes a **spillover ladder that rolls
+upward** when slots are full (`lesser → moderate → severe → fatal`), with the
+landing intensity reported in `applied.landedIntensity` (plus a side effect)
+when it differs from the requested intensity; if every slot at or above the
+requested level is full the op fails with `SLOT_FULL_FATAL`.
+
+The client surfaces that as `result.landedIntensity`. In the page, the
+add-harm handler compares it to the requested intensity and, when they
+differ, shows a `spilled to {landedIntensity}` notice under the harm table
+for 5 seconds before clearing it.
+
+`harm.remove` is exact-intensity only and never cascades (per the contract),
+so the remove buttons pass both the description and the level key of the row
+the harm is rendered in.
+
+## Page sections
+
+### Harm table
+
+Rendered from `c.monitor.harm` as a `<table class="harm-table">` with one row
+per intensity level and two "Injury" columns per row. Slot counts per level
+are as coded in `renderDetail`: 2 for Lesser, 2 for Moderate, 1 for Severe,
+1 for Fatal. Each occupied slot shows the harm's description plus a ✕ remove
+button (disabled while any operation is in flight) that calls
+`onHarmRemove(description, levelKey)`; empty slots render blank.
+
+### Add harm control
+
+A row under the table with an intensity `<select>` (`--` / Lesser / Moderate
+/ Severe / Fatal, labelled `Harm intensity`), a text input labelled `Harm
+description`, and a `+` button labelled `Add harm`. The handler reads both
+controls, ignores empty input, and calls `harmAdd(characterId, description,
+intensity, revision)`. The button shows `…` while the add is in flight; the
+whole control is disabled whenever any health operation is loading.
+
+### Armor checkboxes
+
+Three checkboxes — Standard, Heavy, Special — driven by the DTO:
+`monitor.armor.hasStandard/hasHeavy/hasSpecial` gate availability (a
+checkbox for an unavailable kind is disabled and its label shows `(n/a)`),
+and `standardUsed/heavyUsed/specialUsed` set the checked state. A `change`
+event calls `onArmorSet(kind, checked)` → `armorSet`, which POSTs
+`{ armor, used }`. Per the contract, setting `used=true` without availability
+fails with `ARMOR_NOT_AVAILABLE`; `used=false` always succeeds.
+
+### Healing clock
+
+An SVG clock (the shared `clock` component, size 100 px, label "Healing")
+whose segment count is `harm.healingClock.size` **from the DTO** — the
+backend sets it from the game-settings `RecoveryClockSize` — and whose fill
+is `harm.healingClock.segments`. No clock size is hardcoded on the frontend.
+Two buttons sit below it:
+
+- **`+1 segment`** calls `harmHealingClock(characterId, segments + 1,
+  revision)` with the next segment count. The contract op is a rollover
+  clock: overflow past full is carried and applied on reset.
+- **`Heal`** calls `harmHeal` and is disabled until the clock is full
+  (`segments >= size`). Per the contract, healing requires a full clock
+  (else `CANNOT_HEAL`), resets the clock (rollover applied), shifts
+  `moderate → lesser` and `severe → moderate`, and fatal harm never shifts or
+  clears. On success the page shows a "Harm healed — clock reset" notice for
+  4 seconds.
+
+## Stale-revision pattern (F2h rule)
+
+All five health handlers follow the same recovery flow as the F2m
+operations: set the loading flag → render synchronously → POST the op → on
+success swap in the updated DTO and re-render → on `StaleRevisionError`
+render, then `getCharacter` to recover and show the "Sheet refreshed because
+it changed elsewhere" notice.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`)
+
+- `describe("harmAdd")` — 4 tests (request shape, `landedIntensity` on
+  spillover, stale revision, non-409 API error)
+- `describe("harmHeal")` — 3 tests
+- `describe("harmRemove")` — 2 tests
+- `describe("harmHealingClock")` — 2 tests
+- `describe("armorSet")` — 4 tests (request shape, uncheck, stale revision,
+  `ARMOR_NOT_AVAILABLE`)
+
+### Page tests (`src/pages/character-detail.test.ts`)
+
+- `describe("F2n Health")` — 7 tests (harm table render, add controls,
+  spillover notice, armor checkbox render + toggle via `armorSet`, healing
+  clock render + segment add, harm remove)
+
+All 123 tests pass (73 client + 26 character-detail page + 18 schema + 6
+crew-detail), and `npm run build` (tsc + vite) is green.

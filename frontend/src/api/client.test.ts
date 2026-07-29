@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -1701,6 +1701,426 @@ describe("undoCharacter", () => {
       if (result.left instanceof ApiError) {
         expect(result.left.status).toBe(409);
       }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2n client methods — harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet
+// ---------------------------------------------------------------------------
+
+function harmOpOk(character: unknown, opName: string, overrides: Record<string, unknown> = {}) {
+  return {
+    ok: true,
+    character,
+    applied: { op: opName, ...overrides },
+    sideEffects: [],
+    error: null,
+  };
+}
+
+describe("harmAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/harm.add with description, intensity, and If-Match", async () => {
+    const withLesser = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        harm: {
+          lesser: ["Battered"],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(withLesser, "harm.add")),
+    });
+
+    const result = await Effect.runPromise(
+      harmAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Battered", "lesser", 12),
+    );
+    expect(result.character.monitor.harm.lesser).toContain("Battered");
+    expect(result.landedIntensity).toBeNull();
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/harm.add",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ description: "Battered", intensity: "lesser" }),
+      },
+    );
+  });
+
+  it("returns landedIntensity when spillover occurs", async () => {
+    // When a lesser harm spills to moderate because lesser slots are full,
+    // the API reports applied.landedIntensity that differs from the request.
+    const withSpilled = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        harm: {
+          lesser: ["A", "B"],
+          moderate: ["Stabbed"],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(withSpilled, "harm.add", { landedIntensity: "moderate" })),
+    });
+
+    const result = await Effect.runPromise(
+      harmAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Stabbed", "lesser", 12),
+    );
+    expect(result.character.monitor.harm.moderate).toContain("Stabbed");
+    expect(result.landedIntensity).toBe("moderate");
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("harm.add", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(harmAdd("some-id", "ouch", "lesser", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "SLOT_FULL_FATAL",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(harmAdd("some-id", "ouch", "fatal", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+describe("harmHeal", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/harm.heal with no body and If-Match", async () => {
+    const healed = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        harm: {
+          lesser: ["Battered"],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(healed, "harm.heal")),
+    });
+
+    const result = await Effect.runPromise(
+      harmHeal("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+    );
+    expect(result.monitor.harm.lesser).toContain("Battered");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/harm.heal",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: "{}",
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("harm.heal", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(harmHeal("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "CANNOT_HEAL",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(harmHeal("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+describe("harmRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/harm.remove with description, intensity, and If-Match", async () => {
+    const removed = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        harm: {
+          lesser: [],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(removed, "harm.remove")),
+    });
+
+    const result = await Effect.runPromise(
+      harmRemove("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Battered", "lesser", 12),
+    );
+    expect(result.monitor.harm.lesser).not.toContain("Battered");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/harm.remove",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ description: "Battered", intensity: "lesser" }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("harm.remove", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(harmRemove("some-id", "ouch", "lesser", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("harmHealingClock", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/harm.healing-clock with segments and If-Match", async () => {
+    const ticked = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        harm: {
+          lesser: ["Battered"],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 2, size: 6, rollover: 0 },
+        },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(ticked, "harm.healing-clock")),
+    });
+
+    const result = await Effect.runPromise(
+      harmHealingClock("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 2, 12),
+    );
+    expect(result.monitor.harm.healingClock.segments).toBe(2);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/harm.healing-clock",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ segments: 2 }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("harm.healing-clock", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(harmHealingClock("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("armorSet", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/armor.set with armor kind, used flag, and If-Match", async () => {
+    const armorOn = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        armor: {
+          standardUsed: true,
+          heavyUsed: false,
+          specialUsed: false,
+          hasStandard: true,
+          hasHeavy: false,
+          hasSpecial: false,
+        },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(armorOn, "armor.set")),
+    });
+
+    const result = await Effect.runPromise(
+      armorSet("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "standard", true, 12),
+    );
+    expect(result.monitor.armor.standardUsed).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/armor.set",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ armor: "standard", used: true }),
+      },
+    );
+  });
+
+  it("sends used=false to uncheck armor", async () => {
+    const armorOff = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        armor: {
+          standardUsed: false,
+          heavyUsed: false,
+          specialUsed: false,
+          hasStandard: true,
+          hasHeavy: false,
+          hasSpecial: false,
+        },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(armorOff, "armor.set")),
+    });
+
+    const result = await Effect.runPromise(
+      armorSet("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "standard", false, 12),
+    );
+    expect(result.monitor.armor.standardUsed).toBe(false);
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("armor.set", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(armorSet("some-id", "standard", true, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "ARMOR_NOT_AVAILABLE",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(armorSet("some-id", "heavy", true, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(422);
     }
   });
 });

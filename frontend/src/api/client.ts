@@ -430,6 +430,106 @@ export function traumaRemove(
   return characterMutate(id, "trauma.remove", revision, { trauma });
 }
 
+// ---------------------------------------------------------------------------
+// F2n operations — harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet
+// ---------------------------------------------------------------------------
+
+/** Result of harmAdd: includes character and optional landedIntensity for spillover notice. */
+export interface HarmAddResult {
+  character: Character;
+  landedIntensity: string | null;
+}
+
+export function harmAdd(
+  id: string,
+  description: string,
+  intensity: string,
+  revision: number,
+): Effect.Effect<HarmAddResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(`/api/characters/${id}/ops/harm.add`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "If-Match": String(revision),
+          },
+          body: JSON.stringify({ description, intensity }),
+        });
+        const text = await response.text();
+        return { response, text };
+      },
+      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+    });
+
+    if (!res.response.ok) {
+      if (res.response.status === 409) {
+        try {
+          const parsed = JSON.parse(res.text);
+          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
+          if (opResult.error?.code === "STALE_REVISION") {
+            const currentRevision = opResult.error.details?.currentRevision;
+            if (typeof currentRevision === "number") {
+              yield* Effect.fail(new StaleRevisionError(currentRevision));
+            }
+            yield* Effect.fail(new StaleRevisionError(0));
+          }
+        } catch {
+          // Malformed 409 body: fall through to ApiError
+        }
+      }
+      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    }
+
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.character) {
+          throw new Error("Missing character in OperationResult");
+        }
+        const landedIntensity = opResult.applied.landedIntensity ?? null;
+        return { character: opResult.character, landedIntensity };
+      },
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function harmHeal(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "harm.heal", revision);
+}
+
+export function harmRemove(
+  id: string,
+  description: string,
+  intensity: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "harm.remove", revision, { description, intensity });
+}
+
+export function harmHealingClock(
+  id: string,
+  segments: number,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "harm.healing-clock", revision, { segments });
+}
+
+export function armorSet(
+  id: string,
+  armor: string,
+  used: boolean,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "armor.set", revision, { armor, used });
+}
+
 export function getGame(gameStem: string): Effect.Effect<Record<string, unknown>, ApiError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/games/${gameStem}`);
