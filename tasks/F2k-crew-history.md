@@ -22,3 +22,10 @@ slice (undo already covers the mutation path).
 - 2026-07-29: dispatched to DeepSeek v4 Pro (pi, opencode-go, -p, stdin
   closed) after F2j acceptance. Prompt: tasks/dispatch/F2k-prompt.md (same
   hard command constraints).
+- 2026-07-29: DONE. Orchestrator acceptance: 4 getCrewHistory tests verified
+  by grep; 63/63 tests + build green on rerun; diff read — mirrors
+  character-history, router matches /crew/{id}/history before /crew/{id}.
+  Live Ada probe (port 9815, PID 312575, killed + port verified clean):
+  empty history, rep.add → 1 entry (op rep.add), SPA route 200, unknown-id
+  404. Docs page present. No forbidden paths/commands. Metrics:
+  tasks/metrics/frontend/F2k.json. Status: accepted.

@@ -7,6 +7,7 @@ import { mountCharacterDetailPage } from "./pages/character-detail.js";
 import { mountCharacterHistoryPage } from "./pages/character-history.js";
 import { mountCharacterCreatePage } from "./pages/character-create.js";
 import { mountCrewDetailPage } from "./pages/crew-detail.js";
+import { mountCrewHistoryPage } from "./pages/crew-history.js";
 import { mountCrewCreatePage } from "./pages/crew-create.js";
 import { renderShell } from "./pages/shell.js";
 import { mountStyleguidePage } from "./pages/styleguide.js";
@@ -146,6 +147,14 @@ function render(): void {
     const crewId = crewMatch[1];
     document.title = "Crew — Paperclips in the Dark";
     disposePage = mountCrewDetailPage(outlet, crewId);
+    return;
+  }
+
+  const crewHistoryMatch = path.match(/^\/crew\/([A-Za-z0-9-]+)\/history$/);
+  if (crewHistoryMatch) {
+    const crewId = crewHistoryMatch[1];
+    document.title = "Crew History — Paperclips in the Dark";
+    disposePage = mountCrewHistoryPage(outlet, crewId);
     return;
   }
 

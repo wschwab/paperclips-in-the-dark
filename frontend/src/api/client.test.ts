@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -274,6 +274,84 @@ describe("getCrew", () => {
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(DecodeError);
     }
+  });
+});
+
+describe("getCrewHistory", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/crews/{id}/history and decodes a valid history array", async () => {
+    const crewId = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
+    const historyData = [
+      {
+        snapshotId: "20260722160000000-abc123",
+        takenAt: "2026-07-22T16:00:00.000Z",
+        op: "heat.add",
+      },
+      {
+        snapshotId: "20260722150000000-def456",
+        takenAt: "2026-07-22T15:00:00.000Z",
+        op: "rep.add",
+      },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(historyData),
+    });
+
+    const result = await Effect.runPromise(getCrewHistory(crewId));
+    expect(result).toHaveLength(2);
+    expect(result[0]?.op).toBe("heat.add");
+    expect(result[1]?.op).toBe("rep.add");
+    expect(global.fetch).toHaveBeenCalledWith(`/api/crews/${crewId}/history`, {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails with 404", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCrewHistory("nonexistent-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response is not valid history array", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCrewHistory("some-id")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+
+  it("decodes an empty history list as an empty array", async () => {
+    const crewId = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify([]),
+    });
+
+    const result = await Effect.runPromise(getCrewHistory(crewId));
+    expect(result).toHaveLength(0);
   });
 });
 

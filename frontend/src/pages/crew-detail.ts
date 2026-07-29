@@ -35,6 +35,9 @@ function renderCrewDetail(c: Crew, onUndo: () => void, isUndoLoading: boolean, u
         el("dt", {}, "Reputation"),
         el("dd", {}, c.reputation || "(not set)"),
       ),
+      el("p", {},
+        el("a", { href: `/crew/${c.id}/history` }, "History"),
+      ),
     ),
     el(
       "div",

@@ -160,6 +160,16 @@ export function createCharacter(gameStem: string, playbook: string): Effect.Effe
   });
 }
 
+export function getCrewHistory(id: string): Effect.Effect<readonly HistoryEntry[], ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/crews/${id}/history`);
+    return yield* Effect.try({
+      try: () => Schema.decodeUnknownSync(Schema.Array(HistoryEntrySchema))(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
 export function getCrewTypeList(gameStem: string): Effect.Effect<readonly string[], ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/games/${gameStem}/crews`);

@@ -1,0 +1,36 @@
+# Crew history page (F2k)
+
+`/crew/:id/history` is the crew counterpart to the character history page. It requests
+`GET /api/crews/{id}` for the crew context and `GET /api/crews/{id}/history`
+for the history snapshots, decodes both with the shared frontend schemas, and displays
+a chronological history list of operations that created snapshots.
+
+The page follows the same pattern as the character history page (F2d):
+- explicit loading, error states
+- aria-live region for accessibility
+- same Effect-based error handling (ApiError, DecodeError)
+- client-side routing via history.pushState
+
+Each history entry displays the operation name, the snapshot ID, and the timestamp
+when the snapshot was taken.
+
+The crew detail page links to history with `<a href="/crew/:id/history">`,
+so navigation is purely client-side after crew detail loads.
+
+## API client: `getCrewHistory(id)`
+
+Calls `GET /api/crews/{id}/history`. Returns `readonly HistoryEntry[]` on
+success. Raises `ApiError` on non-2xx responses and `DecodeError` when the
+response body cannot be decoded as a `HistoryEntry` array.
+
+Three client test cases cover:
+- success decode of a history entry list
+- empty list (returns empty array)
+- error typing (ApiError on 404, DecodeError on invalid JSON)
+
+## Scope
+
+F2k mirrors F2d for crews. Read-only display only — no snapshot-restore UI
+(undo already covers the mutation path in F2j). The page renders a header
+with the crew name and a list of history entries or an "(no history snapshots)"
+message when the array is empty.

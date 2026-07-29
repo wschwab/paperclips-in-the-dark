@@ -1,0 +1,13 @@
+{
+  "task": "F2k",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-pro (opencode-go via pi, -p, stdin closed)",
+  "reviewAgent": "claude-fable-5 (orchestrator review)",
+  "date": "2026-07-29",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, first pass accepted. 4 getCrewHistory tests verified exact by grep; 63/63 + build reproduced by orchestrator.",
+  "wallClockMinutes": 7,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "Live Ada probe (port 9815, exact-PID cleanup verified): empty history [], rep.add populates 1 entry (op rep.add), /crew/{id}/history SPA route 200, unknown-id API 404. Third consecutive clean DeepSeek first-pass slice; exact self-report again."
+}
