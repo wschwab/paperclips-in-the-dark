@@ -389,12 +389,21 @@ function characterMutate(
     return yield* Effect.try({
       try: () => {
         const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.ok) {
+          if (opResult.error) {
+            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
+          }
+          throw new ApiError(res.response.status, "Operation failed");
+        }
         if (!opResult.character) {
           throw new Error("Missing character in OperationResult");
         }
         return opResult.character;
       },
-      catch: (cause) => new DecodeError(cause),
+      catch: (cause) => {
+        if (cause instanceof ApiError) return cause;
+        return new DecodeError(cause);
+      },
     });
   });
 }
@@ -758,4 +767,86 @@ export function factionRemove(
   revision: number,
 ): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "faction.remove", revision, { name });
+}
+
+// ---------------------------------------------------------------------------
+// F2o operations — actionSetRating, attributeXpAdd, attributeXpClear,
+// attributeLevelup, sessionSet, getPlaybook
+// ---------------------------------------------------------------------------
+
+/**
+ * Direct-set an action rating. The server clamps to the action's maxRating
+ * (game-settings ActionPointMaximum); the page compares the requested value
+ * with the returned DTO rating to surface a clamp notice.
+ */
+export function actionSetRating(
+  id: string,
+  action: string,
+  rating: number,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "action.set-rating", revision, { action, rating });
+}
+
+export function attributeXpAdd(
+  id: string,
+  attribute: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "attribute-xp.add", revision, { attribute, delta });
+}
+
+export function attributeXpClear(
+  id: string,
+  attribute: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "attribute-xp.clear", revision, { attribute });
+}
+
+/**
+ * Spend a full attribute XP track to raise one of that attribute's actions.
+ * Server rejects with CANNOT_LEVEL_UP when the track is not full and
+ * RATING_MAXED when the action is already at max rating.
+ */
+export function attributeLevelup(
+  id: string,
+  attribute: string,
+  action: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "attribute.levelup", revision, { attribute, action });
+}
+
+export interface SessionFields {
+  playbookExpressions?: number;
+  characterExpressions?: number;
+  struggleExpressions?: number;
+}
+
+/**
+ * Partial session update — only the provided fields are sent (contract
+ * requires minProperties 1); each value is clamped 0..max by the server.
+ */
+export function sessionSet(
+  id: string,
+  fields: SessionFields,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "session.set", revision, fields);
+}
+
+/** Full playbook settings for one playbook (raw game-data object). */
+export function getPlaybook(
+  gameStem: string,
+  playbook: string,
+): Effect.Effect<Record<string, unknown>, ApiError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/games/${gameStem}/playbooks/${playbook}`);
+    if (typeof raw !== "object" || raw === null) {
+      yield* Effect.fail(new ApiError(0, "Expected object"));
+    }
+    return raw as Record<string, unknown>;
+  });
 }

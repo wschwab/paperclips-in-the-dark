@@ -4,6 +4,7 @@ import {
   DecodeError,
   getCharacter,
   getGame,
+  getPlaybook,
   stressAdd,
   stressClear,
   traumaAdd,
@@ -16,8 +17,15 @@ import {
   harmRemove,
   harmHealingClock,
   armorSet,
+  actionSetRating,
+  attributeXpAdd,
+  attributeXpClear,
+  attributeLevelup,
+  sessionSet,
+  type SessionFields,
 } from "../api/client.js";
 import { stressTrack } from "../components/stress-track.js";
+import { actionDots } from "../components/action-dots.js";
 import { clock } from "../components/clock.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
@@ -53,6 +61,30 @@ function buildDossierPayload(field: DossierField, value: string): Record<string,
   return { [field.key]: { name: field.field === "name" ? value : "", description: field.field === "description" ? value : "" } };
 }
 
+/**
+ * Playbook-specific Score XP text: the playbook's ExperienceCondition,
+ * from the playbook endpoint response or (fallback) the game-data Playbooks
+ * list. Returns null when neither source has it (graceful degradation).
+ */
+function extractExperienceCondition(
+  playbookData: Record<string, unknown> | null,
+  gameData: Record<string, unknown> | null,
+  playbookName: string,
+): string | null {
+  if (playbookData && typeof playbookData.ExperienceCondition === "string") {
+    return playbookData.ExperienceCondition;
+  }
+  if (Array.isArray(gameData?.Playbooks)) {
+    const found = (gameData!.Playbooks as Array<Record<string, unknown>>).find(
+      (p) => p && typeof p === "object" && p.Name === playbookName,
+    );
+    if (found && typeof found.ExperienceCondition === "string") {
+      return found.ExperienceCondition;
+    }
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
@@ -70,6 +102,11 @@ interface RenderState {
   isArmorLoading: boolean;
   isHealLoading: boolean;
   isClockLoading: boolean;
+  // F2o Talents state
+  isTalentsLoading: boolean;
+  isSessionLoading: boolean;
+  clampNotice: string | null;
+  experienceCondition: string | null;
   // Error / notice
   errorMsg: string | null;
   noticeMsg: string | null;
@@ -93,6 +130,13 @@ interface RenderState {
     onHarmHeal: () => void;
     onHarmHealingClock: () => void;
     onArmorSet: (armor: string, used: boolean) => void;
+    onActionSetRating: (attribute: string, action: string, next: number) => void;
+    onActionDelta: (attribute: string, action: string, delta: number) => void;
+    onAttributeXpDelta: (attribute: string, delta: number) => void;
+    onAttributeXpClear: (attribute: string) => void;
+    onAttributeLevelup: (attribute: string) => void;
+    onSessionTrack: (field: keyof SessionFields, next: number) => void;
+    onSessionDelta: (field: keyof SessionFields, delta: number) => void;
   };
 }
 
@@ -469,6 +513,179 @@ function renderDetail(state: RenderState): HTMLElement {
       })(),
     ),
 
+    // -- Talents + XP + Score XP (F2o) --------------------------------------
+
+    (() => {
+      const actionDescription = (attribute: string, action: string): string | null => {
+        const attrs = Array.isArray(gameData?.Attributes)
+          ? (gameData!.Attributes as Array<Record<string, unknown>>)
+          : [];
+        const attr = attrs.find((a) => a.Name === attribute);
+        const actions = attr && Array.isArray(attr.Actions)
+          ? (attr.Actions as Array<Record<string, unknown>>)
+          : [];
+        const act = actions.find((x) => x.Name === action);
+        return act && typeof act.ShortDescription === "string"
+          ? act.ShortDescription
+          : null;
+      };
+
+      const attributeGroups = c.talent.attributes.map((attr) =>
+        el("div", { className: "talent-attribute", "data-attribute": attr.name, style: "margin-bottom: 1em;" },
+          el("h3", { className: "lbl" }, attr.name),
+
+          // Action rows: dot rows (click dot N → set rating N) + −/+ buttons
+          ...attr.actions.map((action) => {
+            const desc = actionDescription(attr.name, action.name);
+            const dots = actionDots({
+              name: action.name,
+              value: action.rating,
+              max: action.maxRating,
+              onChange: (next) => handlers.onActionSetRating(attr.name, action.name, next),
+            });
+            const minusBtn = el("button", {
+              type: "button",
+              disabled: anyLoading || action.rating <= 0,
+              title: `Decrease ${action.name} rating`,
+            }, "−");
+            minusBtn.addEventListener("click", () => handlers.onActionDelta(attr.name, action.name, -1));
+            // + stays enabled at max: the server clamps and the page reports it
+            const plusBtn = el("button", {
+              type: "button",
+              disabled: anyLoading,
+              title: `Increase ${action.name} rating`,
+            }, "+");
+            plusBtn.addEventListener("click", () => handlers.onActionDelta(attr.name, action.name, 1));
+
+            return el("div", {
+              className: "talent-action-row",
+              "data-attribute": attr.name,
+              "data-action": action.name,
+              style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.25em 0;",
+            },
+              el("span", {
+                className: "lbl",
+                style: "min-width: 6em;",
+                title: desc ?? undefined,
+              }, action.name),
+              dots,
+              minusBtn,
+              plusBtn,
+              el("span", {}, `${action.rating}/${action.maxRating}`),
+            );
+          }),
+
+          // Attribute XP tracker: points/max with +/−, clear, and levelup
+          (() => {
+            const xp = attr.experience;
+            const minusBtn = el("button", {
+              type: "button",
+              disabled: anyLoading || xp.points <= 0,
+              title: `Remove 1 XP (${attr.name})`,
+            }, "−");
+            minusBtn.addEventListener("click", () => handlers.onAttributeXpDelta(attr.name, -1));
+            const plusBtn = el("button", {
+              type: "button",
+              disabled: anyLoading || xp.points >= xp.max,
+              title: `Add 1 XP (${attr.name})`,
+            }, "+");
+            plusBtn.addEventListener("click", () => handlers.onAttributeXpDelta(attr.name, 1));
+            const clearBtn = el("button", {
+              type: "button",
+              disabled: anyLoading || xp.points === 0,
+              title: `Clear XP (${attr.name})`,
+            }, "clear");
+            clearBtn.addEventListener("click", () => handlers.onAttributeXpClear(attr.name));
+
+            // Level up: pick an action below max rating, spend the full XP track
+            const levelable = attr.actions.filter((a) => a.rating < a.maxRating);
+            const levelSelect = el("select", {
+              "aria-label": `Level up action (${attr.name})`,
+              disabled: anyLoading || levelable.length === 0,
+            }, ...levelable.map((a) => el("option", { value: a.name }, a.name)));
+            const levelBtn = el("button", {
+              type: "button",
+              disabled: anyLoading || xp.points < xp.max || levelable.length === 0,
+              title: `Level up ${attr.name} (spends XP)`,
+              "data-levelup-attribute": attr.name,
+            }, state.isTalentsLoading ? "…" : "Level up");
+            levelBtn.addEventListener("click", () => handlers.onAttributeLevelup(attr.name));
+
+            return el("div", {
+              className: "talent-xp",
+              "data-attribute": attr.name,
+              style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin-top: 0.5em;",
+            },
+              el("span", { className: "lbl" }, "XP:"),
+              el("span", {}, `${xp.points} / ${xp.max}`),
+              minusBtn,
+              plusBtn,
+              clearBtn,
+              el("span", { className: "lbl", style: "margin-left: 0.75em;" }, "Level up:"),
+              levelSelect,
+              levelBtn,
+            );
+          })(),
+        ),
+      );
+
+      // Score XP sub-section: three session expression tracks
+      const sessionTracks: Array<{ key: keyof SessionFields; label: string; short: string }> = [
+        { key: "playbookExpressions", label: "Playbook expressions", short: "playbook" },
+        { key: "characterExpressions", label: "Character expressions", short: "character" },
+        { key: "struggleExpressions", label: "Struggle expressions", short: "struggle" },
+      ];
+      const sessionEls = sessionTracks.map((t) => {
+        const track = stressTrack({
+          value: c.session[t.key],
+          max: c.session.max,
+          label: t.label,
+          onChange: (next) => handlers.onSessionTrack(t.key, next),
+        });
+        track.setAttribute("data-session-track", t.short);
+        const minusBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || c.session[t.key] <= 0,
+          title: `Remove 1 ${t.label}`,
+        }, "−");
+        minusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, -1));
+        const plusBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || c.session[t.key] >= c.session.max,
+          title: `Add 1 ${t.label}`,
+        }, "+");
+        plusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, 1));
+        return el("div", {
+          className: "session-track",
+          "data-session-track": t.short,
+          style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;",
+        },
+          track,
+          el("span", {}, `${c.session[t.key]} / ${c.session.max}`),
+          minusBtn,
+          plusBtn,
+        );
+      });
+
+      return el("div", { className: "character-talents" },
+        el("h2", {}, "Talents"),
+        ...attributeGroups,
+        el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Score XP"),
+        el("p", { className: "serif", style: "font-size: 0.95em; margin: 0.25em 0;" },
+          "Desperate action XP is marked on the attribute XP tracks above."),
+        state.experienceCondition
+          ? el("p", { className: "serif", style: "font-size: 0.95em; margin: 0.25em 0;" },
+              el("strong", {}, `${c.playbook.name}: `),
+              state.experienceCondition,
+            )
+          : null,
+        ...sessionEls,
+        state.clampNotice
+          ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.clampNotice)
+          : null,
+      );
+    })(),
+
     // Info
     el(
       "div",
@@ -558,11 +775,19 @@ export function mountCharacterDetailPage(
   let isHealLoading = false;
   let isClockLoading = false;
 
+  // F2o Talents state
+  let isTalentsLoading = false;
+  let isSessionLoading = false;
+  let clampNotice: string | null = null;
+  let experienceCondition: string | null = null;
+  let playbookData: Record<string, unknown> | null = null;
+
   const clearNotices = () => {
     errorMsg = null;
     noticeMsg = null;
     undoNotice = null;
     harmSpillNotice = null;
+    clampNotice = null;
   };
 
   const refreshAndShowNotice = () => {
@@ -592,6 +817,40 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
             }
           }, 3000);
+        },
+      }),
+    );
+  };
+
+  /** Shared F2o mutation runner: standard error paths + stale-revision recovery (F2h rule). */
+  const runCharacterMutate = (
+    program: Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError>,
+    onSuccess: (character: Character) => void,
+    clearLoading: () => void,
+  ) => {
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          clearLoading();
+          if (err instanceof StaleRevisionError) {
+            renderDetailWrapper();
+            refreshAndShowNotice();
+          } else if (err instanceof ApiError) {
+            errorMsg = `API error (${err.status}): ${err.body}`;
+            renderDetailWrapper();
+          } else if (err instanceof DecodeError) {
+            errorMsg = `Invalid response: ${err.message}`;
+            renderDetailWrapper();
+          } else {
+            errorMsg = String(err);
+            renderDetailWrapper();
+          }
+        },
+        onSuccess: (character) => {
+          if (cancelled) return;
+          clearLoading();
+          onSuccess(character);
         },
       }),
     );
@@ -1088,6 +1347,130 @@ export function mountCharacterDetailPage(
         }),
       );
     },
+
+    // -- F2o: Talents + XP + Score XP handlers ------------------------------
+
+    onActionSetRating: (attribute: string, action: string, next: number) => {
+      if (!currentCharacter || isTalentsLoading) return;
+      isTalentsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = actionSetRating(characterId, action, next, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          // Server clamps to the action's maxRating; surface a notice when it did.
+          const attr = character.talent.attributes.find((a) => a.name === attribute);
+          const act = attr?.actions.find((a) => a.name === action);
+          if (act && act.rating < next) {
+            clampNotice = `Server clamped ${action} rating to ${act.rating} (max ${act.maxRating})`;
+            setTimeout(() => {
+              if (!cancelled) {
+                clampNotice = null;
+                renderDetailWrapper();
+              }
+            }, 5000);
+          }
+          renderDetailWrapper();
+        },
+        () => { isTalentsLoading = false; },
+      );
+    },
+
+    onActionDelta: (attribute: string, action: string, delta: number) => {
+      if (!currentCharacter || isTalentsLoading) return;
+      const attr = currentCharacter.talent.attributes.find((a) => a.name === attribute);
+      const act = attr?.actions.find((a) => a.name === action);
+      if (!act) return;
+      const next = act.rating + delta;
+      if (next < 0) return;
+      // next may exceed maxRating: the server clamps and the success path reports it.
+      handlers.onActionSetRating(attribute, action, next);
+    },
+
+    onAttributeXpDelta: (attribute: string, delta: number) => {
+      if (!currentCharacter || isTalentsLoading) return;
+      isTalentsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = attributeXpAdd(characterId, attribute, delta, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isTalentsLoading = false; },
+      );
+    },
+
+    onAttributeXpClear: (attribute: string) => {
+      if (!currentCharacter || isTalentsLoading) return;
+      isTalentsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = attributeXpClear(characterId, attribute, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isTalentsLoading = false; },
+      );
+    },
+
+    onAttributeLevelup: (attribute: string) => {
+      if (!currentCharacter || isTalentsLoading) return;
+      const sel = root.querySelector(
+        `select[aria-label="Level up action (${attribute})"]`,
+      ) as HTMLSelectElement;
+      const action = sel?.value || null;
+      if (!action) return;
+      isTalentsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = attributeLevelup(characterId, attribute, action, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isTalentsLoading = false; },
+      );
+    },
+
+    onSessionTrack: (field: keyof SessionFields, next: number) => {
+      if (!currentCharacter || isSessionLoading) return;
+      if (next < 0 || next > currentCharacter.session.max) return;
+      isSessionLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      // Contract: partial update, send only the changed field
+      const program = sessionSet(characterId, { [field]: next }, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isSessionLoading = false; },
+      );
+    },
+
+    onSessionDelta: (field: keyof SessionFields, delta: number) => {
+      if (!currentCharacter || isSessionLoading) return;
+      const next = currentCharacter.session[field] + delta;
+      if (next < 0 || next > currentCharacter.session.max) return;
+      handlers.onSessionTrack(field, next);
+    },
   };
 
   const renderDetailWrapper = () => {
@@ -1104,6 +1487,10 @@ export function mountCharacterDetailPage(
       isArmorLoading,
       isHealLoading,
       isClockLoading,
+      isTalentsLoading,
+      isSessionLoading,
+      clampNotice,
+      experienceCondition,
       errorMsg,
       noticeMsg,
       undoNotice,
@@ -1117,11 +1504,16 @@ export function mountCharacterDetailPage(
   root.setAttribute("aria-busy", "true");
   setChildren(root, renderLoading());
 
-  // Fetch character + game data in parallel
+  // Fetch character + game data + playbook settings in parallel
   const loadProgram = Effect.gen(function* () {
     const character = yield* getCharacter(characterId);
     const game = yield* Effect.either(getGame(character.gameStem));
-    return { character, game };
+    // Playbook settings carry the ExperienceCondition for the Score XP track;
+    // failures degrade gracefully (fall back to game-data Playbooks lookup).
+    const playbook = yield* Effect.either(
+      getPlaybook(character.gameStem, character.playbook.name),
+    );
+    return { character, game, playbook };
   });
 
   void Effect.runPromise(
@@ -1137,13 +1529,17 @@ export function mountCharacterDetailPage(
               : String(err);
         setChildren(root, renderError(msg));
       },
-      onSuccess: ({ character, game }) => {
+      onSuccess: ({ character, game, playbook }) => {
         if (cancelled) return;
         root.setAttribute("aria-busy", "false");
         currentCharacter = character;
         if (game._tag === "Right") {
           gameData = game.right;
         }
+        if (playbook._tag === "Right") {
+          playbookData = playbook.right;
+        }
+        experienceCondition = extractExperienceCondition(playbookData, gameData, character.playbook.name);
         renderDetailWrapper();
       },
     }),

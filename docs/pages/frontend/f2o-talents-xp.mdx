@@ -1,0 +1,133 @@
+---
+title: F2o — Character Sheet: Talents + XP + Score XP
+---
+
+# F2o: Character Sheet — Talents + XP + Score XP
+
+Implemented per the [F2 sheet plan](/frontend/f2-sheet-plan) UI idioms and op
+mapping. All data flows through the frozen contract operations; test coverage
+is red-green on both the API client and page layers.
+
+## Client methods added
+
+| Method | Endpoint | If-Match | Body | Returns |
+|--------|----------|----------|------|---------|
+| `actionSetRating` | `ops/action.set-rating` | ✓ | `{ action, rating }` | updated `Character` |
+| `attributeXpAdd` | `ops/attribute-xp.add` | ✓ | `{ attribute, delta }` | updated `Character` |
+| `attributeXpClear` | `ops/attribute-xp.clear` | ✓ | `{ attribute }` | updated `Character` |
+| `attributeLevelup` | `ops/attribute.levelup` | ✓ | `{ attribute, action }` | updated `Character` |
+| `sessionSet` | `ops/session.set` | ✓ | partial `{ playbookExpressions?, characterExpressions?, struggleExpressions? }` | updated `Character` |
+| `getPlaybook` | `/games/{stem}/playbooks/{name}` | — | — | raw playbook-settings JSON |
+
+All five mutators go through the existing `characterMutate` generic helper:
+POST to `/api/characters/{id}/ops/{op}` with an `If-Match` header set to the
+character's current revision, decode the `OperationResult`, and extract the
+updated `Character` DTO. Stale-revision handling follows the F2h rule: `409`
++ `STALE_REVISION` error code → `StaleRevisionError`, and the page refetches.
+
+`characterMutate` also gained the op-level guard the crew helper already had:
+a `200` response whose `OperationResult` has `ok: false` (the server's
+op-level failure shape, e.g. `CANNOT_LEVEL_UP`, `RATING_MAXED`,
+`VALIDATION`) now surfaces as an `ApiError` carrying the error code instead
+of silently returning the attached character.
+
+## Clamp semantics
+
+Per the frozen contract, `action.set-rating` clamps the requested rating to
+the action's `maxRating` (game-settings `ActionPointMaximum`), and
+`session.set` clamps each provided value to `0..session.max`. The server
+reports neither clamp in `applied` for these ops, so the page detects a
+clamp by comparing the requested value with the rating/value on the returned
+DTO and shows a `Server clamped {action} rating to {n} (max {m})` notice
+under the Talents section for 5 seconds.
+
+Because the DTO is the source of truth for the UI (dot rows render
+`maxRating` dots and session tracks render `session.max` boxes — never a
+hardcoded maximum), a clamp normally can only happen when the server's view
+of a maximum is lower than the client's (e.g. game settings changed). The
+action `+` button is intentionally left enabled at max so a clamped request
+is visible instead of silently ignored.
+
+## Page sections
+
+### Talents
+
+One block per attribute group (Insight / Prowess / Resolve — **from the DTO's
+`talent.attributes`, not hardcoded**):
+
+- **Action rows**: each action renders as an F1 `actionDots` row with
+  `max = action.maxRating` (DTO-driven). Clicking dot N calls
+  `actionSetRating(N)`; clicking the filled terminal clears. A `−` button
+  (disabled at 0) and a `+` button sit beside the dots and call
+  `actionSetRating(rating ± 1)`.
+- **Labels & tooltips**: the action label's `title` tooltip shows the
+  `ShortDescription` looked up from the game-settings `Attributes` data
+  (`getGame`), keyed by attribute name then action name. Missing data
+  degrades to no tooltip.
+- **Attribute XP tracker**: shows `points / max` from
+  `attribute.experience` with `−` (disabled at 0), `+` (disabled at max),
+  and a `clear` button calling `attributeXpClear`. `+`/`−` call
+  `attributeXpAdd(attribute, ±1)`.
+- **Level up**: a `<select>` of the attribute's actions with
+  `rating < maxRating` (the server rejects maxed actions with
+  `RATING_MAXED`) plus a `Level up` button. The button is disabled until
+  the XP track is full (`points >= max`; the server rejects otherwise with
+  `CANNOT_LEVEL_UP`). `attributeLevelup` spends the full track, raises the
+  chosen action by one, and clears the track (all server-side).
+
+### Score XP
+
+A sub-section of Talents with the three session expression tracks
+(playbook / character / struggle) driven by the DTO's `session` block:
+
+- Each track is a clickable box row (F1 `stressTrack` idiom) with
+  `max = session.max` from the DTO, plus `−`/`+` buttons (disabled at the
+  0/max boundaries).
+- Interactions call `sessionSet` with **only the changed field** (the
+  contract requires `minProperties: 1` and rejects unknown fields).
+- Playbook-specific text: the character's playbook `ExperienceCondition` is
+  fetched via `getPlaybook(gameStem, playbookName)` on mount and shown under
+  the Score XP heading. If that fetch fails, the page falls back to the
+  `Playbooks` array already present in the game-settings JSON; if neither
+  source has it, the text is omitted (graceful degradation).
+- A display-only note explains that **desperate-action XP is marked on the
+  attribute XP tracks** above (per the F2 sheet plan decision #6).
+
+## Stale-revision pattern (F2h rule)
+
+All five talent/session handlers share a small `runCharacterMutate` runner
+with the established flow: set the loading flag → render synchronously →
+POST the op → on success swap in the updated DTO and re-render → on
+`StaleRevisionError` render, then `getCharacter` to recover and show the
+"Sheet refreshed because it changed elsewhere" notice.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — red-green per method
+
+- `describe("actionSetRating")` — 4 tests (request shape, op-level
+  `ok:false` → `ApiError`, stale revision, non-409 error)
+- `describe("attributeXpAdd")` — 4 tests
+- `describe("attributeXpClear")` — 3 tests
+- `describe("attributeLevelup")` — 4 tests (request shape, `CANNOT_LEVEL_UP`
+  and `RATING_MAXED` op errors, stale revision)
+- `describe("sessionSet")` — 4 tests (single-field body, multi-field body,
+  stale revision, non-409 error)
+- `describe("getPlaybook")` — 2 tests
+
+### Page tests (`src/pages/character-detail.test.ts`)
+
+- `describe("F2o Talents + Score XP")` — 9 tests: attribute groups/dot
+  rows/XP trackers/session tracks render from the DTO with game-data
+  tooltips and the playbook `ExperienceCondition`; dot-row click posts
+  `actionSetRating`; `+`/`−` adjust; clamp notice on a clamped response;
+  XP add + clear; levelup with the selected action; levelup disabled until
+  the track is full; session box click and `+` send only the changed field;
+  fallback to the game-data `ExperienceCondition` when the playbook fetch
+  fails.
+
+The mount now fetches character + game data + playbook settings in
+parallel; the playbook fetch is optional and failures degrade gracefully
+(verified by the fallback test). Full suite: 174 tests green
+(106 client + 35 character-detail + 15 crew-detail + 18 schema), and
+`npm run build` (tsc + vite) is green.

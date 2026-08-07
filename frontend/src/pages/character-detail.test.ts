@@ -89,6 +89,17 @@ const ok = (data: unknown) => fetchResponse(data);
 /** Minimal game data for tests. */
 const GAME_DATA = { Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed", "Paranoid"], StressMax: 9, TraumaMax: 4 };
 
+/** Playbook settings fixture — mirrors /api/games/{stem}/playbooks/{name}. */
+const PLAYBOOK_DATA = {
+  Name: "Spider",
+  Hook: "Spiders are good at masterminding maneuvers.",
+  ExperienceCondition: "You addressed a challenge with calculation or conspiracy",
+  SpecialAbilities: [],
+  Items: [],
+  Rolodex: { Name: "Shrewd Friends", Friends: [] },
+  DefaultActionPoints: [],
+};
+
 /** Create a deferred promise + resolver pair — typed loosely for mock Responses. */
 function deferred<T>(): [Promise<T>, (value: T) => void] {
   let resolve!: (value: T) => void;
@@ -140,7 +151,8 @@ describe("character-detail page", () => {
     global.fetch = vi
       .fn()
       .mockResolvedValueOnce(ok(characterDTO()))
-      .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+      .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -214,6 +226,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(stressSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -240,6 +253,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce({
           ok: false,
           status: 422,
@@ -300,6 +314,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         // 2) game data → 200
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         // 3) stressAdd POST → 409 STALE_REVISION
         .mockResolvedValueOnce({
           ok: false,
@@ -416,6 +431,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(undoSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -452,6 +468,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(noHistoryResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -495,6 +512,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
@@ -564,7 +582,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -604,6 +623,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -625,15 +645,16 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
       await vi.waitFor(() => {
-        const boxes = root.querySelectorAll(".stress-box");
+        const boxes = root.querySelectorAll(".character-stress .stress-box");
         expect(boxes.length).toBe(9);
         // 3 boxes should be filled
-        const filled = root.querySelectorAll('[data-stress="1"]');
+        const filled = root.querySelectorAll('.character-stress [data-stress="1"]');
         expect(filled.length).toBe(3);
       });
     });
@@ -657,16 +678,17 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(stressResp3));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelectorAll(".stress-box").length).toBe(9);
+        expect(root.querySelectorAll(".character-stress .stress-box").length).toBe(9);
       });
 
       // Click stress box 5 (index 4)
-      const boxes = root.querySelectorAll<HTMLButtonElement>(".stress-box");
+      const boxes = root.querySelectorAll<HTMLButtonElement>(".character-stress .stress-box");
       boxes[4]?.click();
 
       // The stress track onChange calls the page handler which issues stressAdd
@@ -680,7 +702,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -700,7 +723,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }));
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -715,7 +739,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }));
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -753,6 +778,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(traumaAddOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -792,7 +818,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(dto))
-        .mockResolvedValueOnce(ok(GAME_DATA));
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -807,7 +834,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok(GAME_DATA));
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -848,6 +876,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(harmAddResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -878,7 +907,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok(GAME_DATA));
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -917,6 +947,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(armorSetResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -941,7 +972,7 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         // After toggle to true, the character should be updated
-        expect(global.fetch).toHaveBeenCalledTimes(3); // getChar, getGame, armorSet
+        expect(global.fetch).toHaveBeenCalledTimes(4); // getChar, getGame, getPlaybook, armorSet
       });
     });
 
@@ -972,6 +1003,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(clockAddResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -987,7 +1019,7 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         // After add, the character updates
-        expect(global.fetch).toHaveBeenCalledTimes(3);
+        expect(global.fetch).toHaveBeenCalledTimes(4); // + getPlaybook on mount
       });
     });
 
@@ -1031,6 +1063,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(dto))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(removeResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1044,7 +1077,7 @@ describe("character-detail page", () => {
       removeBtn.click();
 
       await vi.waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(3);
+        expect(global.fetch).toHaveBeenCalledTimes(4); // + getPlaybook on mount
       });
     });
   });
@@ -1056,7 +1089,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
-        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }));
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1086,6 +1120,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok(clearOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1100,6 +1135,524 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         expect(root.textContent).toContain("0 / 9");
+      });
+    });
+  });
+
+  // -- F2o: Talents + XP + Score XP ----------------------------------------
+
+  describe("F2o Talents + Score XP", () => {
+    /** Character DTO with a populated talent section. */
+    function talentDTO(overrides: Record<string, unknown> = {}) {
+      return characterDTO({
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 2, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 1, maxRating: 4 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+            {
+              name: "Prowess",
+              experience: { points: 6, max: 6 },
+              actions: [
+                { name: "Finesse", rating: 2, maxRating: 4 },
+                { name: "Prowl", rating: 0, maxRating: 4 },
+                { name: "Skirmish", rating: 1, maxRating: 4 },
+                { name: "Wreck", rating: 0, maxRating: 4 },
+              ],
+            },
+            {
+              name: "Resolve",
+              experience: { points: 0, max: 6 },
+              actions: [
+                { name: "Attune", rating: 0, maxRating: 4 },
+                { name: "Command", rating: 2, maxRating: 4 },
+                { name: "Consort", rating: 1, maxRating: 4 },
+                { name: "Sway", rating: 0, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+        ...overrides,
+      });
+    }
+
+    /** Game data including Attributes (ShortDescription source for action tooltips). */
+    const TALENT_GAME_DATA = {
+      Name: "Blades in the Dark",
+      Traumas: ["Cold", "Haunted"],
+      StressMax: 9,
+      TraumaMax: 4,
+      Attributes: [
+        {
+          Name: "Insight",
+          Actions: [
+            { Name: "Hunt", ShortDescription: "When you Hunt, you carefully track a target.", LongDescription: "" },
+            { Name: "Study", ShortDescription: "When you Study, you scrutinize details.", LongDescription: "" },
+            { Name: "Survey", ShortDescription: "When you Survey, you observe the situation.", LongDescription: "" },
+            { Name: "Tinker", ShortDescription: "When you Tinker, you fiddle with devices.", LongDescription: "" },
+          ],
+        },
+        {
+          Name: "Prowess",
+          Actions: [
+            { Name: "Finesse", ShortDescription: "When you Finesse, you employ dextrous manipulation.", LongDescription: "" },
+            { Name: "Prowl", ShortDescription: "When you Prowl, you traverse skillfully and quietly.", LongDescription: "" },
+            { Name: "Skirmish", ShortDescription: "When you Skirmish, you entangle a target.", LongDescription: "" },
+            { Name: "Wreck", ShortDescription: "When you Wreck, you smash things.", LongDescription: "" },
+          ],
+        },
+        {
+          Name: "Resolve",
+          Actions: [
+            { Name: "Attune", ShortDescription: "When you Attune, you tune to the ghost field.", LongDescription: "" },
+            { Name: "Command", ShortDescription: "When you Command, you compel obedience.", LongDescription: "" },
+            { Name: "Consort", ShortDescription: "When you Consort, you socialize with friends.", LongDescription: "" },
+            { Name: "Sway", ShortDescription: "When you Sway, you influence with guile.", LongDescription: "" },
+          ],
+        },
+      ],
+    };
+
+    const charOpOk = (character: unknown, opName: string) => ({
+      ok: true,
+      character,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    it("renders attribute groups, dot rows, XP trackers, session tracks, and playbook XP text from game data", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Brenda Hilton");
+      });
+
+      // Attribute groups come from the DTO
+      const groups = root.querySelectorAll(".talent-attribute");
+      expect(groups.length).toBe(3);
+      expect(root.querySelector('.talent-attribute[data-attribute="Insight"]')).not.toBeNull();
+      expect(root.querySelector('.talent-attribute[data-attribute="Prowess"]')).not.toBeNull();
+      expect(root.querySelector('.talent-attribute[data-attribute="Resolve"]')).not.toBeNull();
+
+      // Action dot rows: max from DTO maxRating (4 dots for Hunt)
+      const huntRow = root.querySelector('.talent-action-row[data-action="Hunt"]');
+      expect(huntRow).not.toBeNull();
+      expect(huntRow!.querySelectorAll(".action-dot").length).toBe(4);
+
+      // XP trackers show points/max from the DTO
+      expect(root.querySelector('.talent-xp[data-attribute="Insight"]')?.textContent).toContain("2 / 6");
+      expect(root.querySelector('.talent-xp[data-attribute="Prowess"]')?.textContent).toContain("6 / 6");
+
+      // Score XP: three session tracks + playbook ExperienceCondition text
+      expect(root.querySelectorAll(".session-track").length).toBe(3);
+      expect(root.querySelector('[data-session-track="playbook"]')).not.toBeNull();
+      expect(root.querySelector('[data-session-track="character"]')).not.toBeNull();
+      expect(root.querySelector('[data-session-track="struggle"]')).not.toBeNull();
+      expect(root.textContent).toContain("You addressed a challenge with calculation or conspiracy");
+      expect(root.textContent).toContain("Desperate action XP is marked on the attribute XP tracks");
+
+      // Tooltips come from game data Attributes
+      const huntLabel = huntRow!.querySelector(".lbl") as HTMLElement | null;
+      expect(huntLabel?.title).toContain("When you Hunt");
+    });
+
+    it("clicking an action dot issues actionSetRating with the dot index", async () => {
+      const raised = talentDTO({
+        revision: 13,
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 2, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 3, maxRating: 4 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(raised, "action.set-rating")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.talent-action-row[data-action="Hunt"]')).not.toBeNull();
+      });
+
+      const huntRow = root.querySelector('.talent-action-row[data-action="Hunt"]')!;
+      (huntRow.querySelectorAll<HTMLButtonElement>(".action-dot")[2]!).click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/action.set-rating`,
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "If-Match": "12",
+            },
+            body: JSON.stringify({ action: "Hunt", rating: 3 }),
+          },
+        );
+      });
+    });
+
+    it("action +/− buttons adjust the rating via actionSetRating", async () => {
+      const plusResp = talentDTO({
+        revision: 13,
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 2, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 2, maxRating: 4 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+      });
+      const minusResp = talentDTO({
+        revision: 14,
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 2, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 1, maxRating: 4 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(plusResp, "action.set-rating")))
+        .mockResolvedValueOnce(ok(charOpOk(minusResp, "action.set-rating")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Increase Hunt rating"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Increase Hunt rating"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/action.set-rating`,
+          expect.objectContaining({
+            body: JSON.stringify({ action: "Hunt", rating: 2 }),
+          }),
+        );
+      });
+      // wait for the mutation to land and re-render before the next click
+      await vi.waitFor(() => {
+        expect(root.querySelector('.talent-action-row[data-action="Hunt"]')?.textContent).toContain("2/4");
+      });
+
+      (root.querySelector('button[title="Decrease Hunt rating"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/action.set-rating`,
+          expect.objectContaining({
+            body: JSON.stringify({ action: "Hunt", rating: 1 }),
+          }),
+        );
+      });
+    });
+
+    it("shows a clamp notice when the server clamps a requested rating", async () => {
+      // Hunt is at 2/4 in the client's view; the server's max is 3, so a
+      // request for 4 comes back clamped to 3.
+      const clamped = talentDTO({
+        revision: 13,
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 2, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 3, maxRating: 3 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(clamped, "action.set-rating")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.talent-action-row[data-action="Hunt"]')).not.toBeNull();
+      });
+
+      const huntRow = root.querySelector('.talent-action-row[data-action="Hunt"]')!;
+      (huntRow.querySelectorAll<HTMLButtonElement>(".action-dot")[3]!).click(); // dot 4 -> request 4
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("clamped");
+      });
+    });
+
+    it("attribute XP tracker adds and clears XP via attributeXpAdd/attributeXpClear", async () => {
+      const added = talentDTO({
+        revision: 13,
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 3, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 1, maxRating: 4 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+      });
+      const cleared = talentDTO({
+        revision: 14,
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 0, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 1, maxRating: 4 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(added, "attribute-xp.add")))
+        .mockResolvedValueOnce(ok(charOpOk(cleared, "attribute-xp.clear")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 XP (Insight)"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Add 1 XP (Insight)"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/attribute-xp.add`,
+          expect.objectContaining({
+            body: JSON.stringify({ attribute: "Insight", delta: 1 }),
+          }),
+        );
+      });
+      // wait for the mutation to land and re-render before the next click
+      await vi.waitFor(() => {
+        expect(root.querySelector('.talent-xp[data-attribute="Insight"]')?.textContent).toContain("3 / 6");
+      });
+
+      (root.querySelector('button[title="Clear XP (Insight)"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/attribute-xp.clear`,
+          expect.objectContaining({
+            body: JSON.stringify({ attribute: "Insight" }),
+          }),
+        );
+      });
+    });
+
+    it("levelup posts the selected action via attributeLevelup when the XP track is full", async () => {
+      const leveled = talentDTO({
+        revision: 13,
+        talent: {
+          attributes: [
+            {
+              name: "Prowess",
+              experience: { points: 0, max: 6 },
+              actions: [
+                { name: "Finesse", rating: 3, maxRating: 4 },
+                { name: "Prowl", rating: 0, maxRating: 4 },
+                { name: "Skirmish", rating: 1, maxRating: 4 },
+                { name: "Wreck", rating: 0, maxRating: 4 },
+              ],
+            },
+          ],
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(leveled, "attribute.levelup")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Level up action (Prowess)"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Level up action (Prowess)"]') as HTMLSelectElement;
+      select.value = "Finesse";
+      const levelBtn = root.querySelector('button[data-levelup-attribute="Prowess"]') as HTMLButtonElement;
+      expect(levelBtn.disabled).toBe(false);
+      levelBtn.click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/attribute.levelup`,
+          expect.objectContaining({
+            body: JSON.stringify({ attribute: "Prowess", action: "Finesse" }),
+          }),
+        );
+      });
+    });
+
+    it("disables levelup until the XP track is full", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[data-levelup-attribute="Insight"]')).not.toBeNull();
+      });
+
+      // Insight has 2/6 XP -> level up disabled
+      const insightBtn = root.querySelector('button[data-levelup-attribute="Insight"]') as HTMLButtonElement;
+      expect(insightBtn.disabled).toBe(true);
+      // Prowess has 6/6 XP -> level up enabled
+      const prowessBtn = root.querySelector('button[data-levelup-attribute="Prowess"]') as HTMLButtonElement;
+      expect(prowessBtn.disabled).toBe(false);
+    });
+
+    it("session track boxes and +/− send only the changed field via sessionSet", async () => {
+      const pbUpdated = talentDTO({
+        revision: 13,
+        session: { playbookExpressions: 2, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+      });
+      const stUpdated = talentDTO({
+        revision: 14,
+        session: { playbookExpressions: 2, characterExpressions: 0, struggleExpressions: 1, max: 3 },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(pbUpdated, "session.set")))
+        .mockResolvedValueOnce(ok(charOpOk(stUpdated, "session.set")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('[data-session-track="playbook"]')).not.toBeNull();
+      });
+
+      // Click box 2 on the playbook track
+      const playbookTrack = root.querySelector('[data-session-track="playbook"]')!;
+      const box2 = playbookTrack.querySelectorAll<HTMLButtonElement>(".stress-box")[1]!;
+      box2.click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/session.set`,
+          expect.objectContaining({
+            body: JSON.stringify({ playbookExpressions: 2 }),
+          }),
+        );
+      });
+      // wait for the mutation to land and re-render before the next click
+      await vi.waitFor(() => {
+        expect(root.querySelector('[data-session-track="playbook"]')?.textContent).toContain("2 / 3");
+      });
+
+      // + button on the struggle track
+      (root.querySelector('button[title="Add 1 Struggle expressions"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/session.set`,
+          expect.objectContaining({
+            body: JSON.stringify({ struggleExpressions: 1 }),
+          }),
+        );
+      });
+    });
+
+    it("falls back to the game-data playbook ExperienceCondition when the playbook fetch fails", async () => {
+      const gameWithPlaybooks = {
+        ...TALENT_GAME_DATA,
+        Playbooks: [{ Name: "Spider", ExperienceCondition: "You wove a conspiracy from the shadows" }],
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(gameWithPlaybooks))
+        // no playbook mock: the /playbooks/{name} fetch fails and degrades gracefully
+        .mockResolvedValueOnce(ok(charOpOk(talentDTO(), "action.set-rating")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("You wove a conspiracy from the shadows");
       });
     });
   });

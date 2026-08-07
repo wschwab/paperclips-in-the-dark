@@ -1,0 +1,18 @@
+{
+  "task": "F2o",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch. Report accurate incl. a proactive flag (session.set missing server-side) that the orchestrator's probe confirmed. 174=144+30 (21 client + 9 page) verified.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "Score XP UI ships but needs A7 for live support. Levelup clamp verified live (rating cannot exceed maxRating). No hardcoded lists/maxima; menus + descriptions from game data, playbook ExperienceCondition via new getPlaybook."
+}

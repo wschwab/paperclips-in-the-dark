@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -2182,6 +2182,16 @@ function crewOpErr(opName: string, code: string, message: string, crew: unknown)
   };
 }
 
+function charOpErr(opName: string, code: string, message: string, character: unknown) {
+  return {
+    ok: false,
+    applied: { op: opName },
+    sideEffects: [],
+    error: { code, message },
+    character,
+  };
+}
+
 const CREW_ID_F2Y = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
 
 describe("crewContactAdd", () => {
@@ -2447,6 +2457,563 @@ describe("factionRemove", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2o operations — actionSetRating, attributeXpAdd, attributeXpClear,
+// attributeLevelup, sessionSet, getPlaybook
+// ---------------------------------------------------------------------------
+
+/** Character DTO with a populated talent section (3 attributes, 4 actions each). */
+function talentChar(overrides: Record<string, unknown> = {}) {
+  return makeChar({
+    revision: 13,
+    talent: {
+      attributes: [
+        {
+          name: "Insight",
+          experience: { points: 2, max: 6 },
+          actions: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ],
+        },
+        {
+          name: "Prowess",
+          experience: { points: 6, max: 6 },
+          actions: [
+            { name: "Finesse", rating: 2, maxRating: 4 },
+            { name: "Prowl", rating: 0, maxRating: 4 },
+            { name: "Skirmish", rating: 1, maxRating: 4 },
+            { name: "Wreck", rating: 0, maxRating: 4 },
+          ],
+        },
+        {
+          name: "Resolve",
+          experience: { points: 0, max: 6 },
+          actions: [
+            { name: "Attune", rating: 0, maxRating: 4 },
+            { name: "Command", rating: 2, maxRating: 4 },
+            { name: "Consort", rating: 1, maxRating: 4 },
+            { name: "Sway", rating: 0, maxRating: 4 },
+          ],
+        },
+      ],
+    },
+    ...overrides,
+  });
+}
+
+describe("actionSetRating", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/action.set-rating with action, rating, and If-Match", async () => {
+    const updated = talentChar({
+      talent: {
+        attributes: [
+          {
+            name: "Insight",
+            experience: { points: 2, max: 6 },
+            actions: [
+              { name: "Hunt", rating: 3, maxRating: 4 },
+              { name: "Study", rating: 2, maxRating: 4 },
+              { name: "Survey", rating: 0, maxRating: 4 },
+              { name: "Tinker", rating: 1, maxRating: 4 },
+            ],
+          },
+        ],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      actionSetRating("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Hunt", 3, 12),
+    );
+    const hunt = result.talent.attributes[0]?.actions[0];
+    expect(hunt?.name).toBe("Hunt");
+    expect(hunt?.rating).toBe(3);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/action.set-rating",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ action: "Hunt", rating: 3 }),
+      },
+    );
+  });
+
+  it("exposes ApiError with the error code when the op result is ok:false (server clamp/validation failure)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("action.set-rating", "VALIDATION", "unknown action", talentChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(actionSetRating("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Nope", 1, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("action.set-rating", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(actionSetRating("some-id", "Hunt", 2, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "RATING_MAXED",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(actionSetRating("some-id", "Hunt", 9, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+describe("attributeXpAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/attribute-xp.add with attribute, delta, and If-Match", async () => {
+    const updated = talentChar({
+      talent: {
+        attributes: [
+          {
+            name: "Insight",
+            experience: { points: 3, max: 6 },
+            actions: [
+              { name: "Hunt", rating: 1, maxRating: 4 },
+              { name: "Study", rating: 2, maxRating: 4 },
+              { name: "Survey", rating: 0, maxRating: 4 },
+              { name: "Tinker", rating: 1, maxRating: 4 },
+            ],
+          },
+        ],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      attributeXpAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Insight", 1, 12),
+    );
+    expect(result.talent.attributes[0]?.experience.points).toBe(3);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/attribute-xp.add",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ attribute: "Insight", delta: 1 }),
+      },
+    );
+  });
+
+  it("exposes ApiError with the error code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("attribute-xp.add", "VALIDATION", "unknown attribute", talentChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeXpAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Nope", 1, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("attribute-xp.add", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeXpAdd("some-id", "Insight", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeXpAdd("some-id", "Insight", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("attributeXpClear", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/attribute-xp.clear with attribute and If-Match", async () => {
+    const updated = talentChar({
+      talent: {
+        attributes: [
+          {
+            name: "Insight",
+            experience: { points: 0, max: 6 },
+            actions: [
+              { name: "Hunt", rating: 1, maxRating: 4 },
+              { name: "Study", rating: 2, maxRating: 4 },
+              { name: "Survey", rating: 0, maxRating: 4 },
+              { name: "Tinker", rating: 1, maxRating: 4 },
+            ],
+          },
+        ],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      attributeXpClear("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Insight", 12),
+    );
+    expect(result.talent.attributes[0]?.experience.points).toBe(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/attribute-xp.clear",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ attribute: "Insight" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with the error code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("attribute-xp.clear", "VALIDATION", "unknown attribute", talentChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeXpClear("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Nope", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("attribute-xp.clear", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeXpClear("some-id", "Insight", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("attributeLevelup", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/attribute.levelup with attribute, action, and If-Match", async () => {
+    const updated = talentChar({
+      talent: {
+        attributes: [
+          {
+            name: "Prowess",
+            experience: { points: 0, max: 6 },
+            actions: [
+              { name: "Finesse", rating: 3, maxRating: 4 },
+              { name: "Prowl", rating: 0, maxRating: 4 },
+              { name: "Skirmish", rating: 1, maxRating: 4 },
+              { name: "Wreck", rating: 0, maxRating: 4 },
+            ],
+          },
+        ],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      attributeLevelup("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Prowess", "Finesse", 12),
+    );
+    const finesse = result.talent.attributes[0]?.actions[0];
+    expect(finesse?.rating).toBe(3);
+    expect(result.talent.attributes[0]?.experience.points).toBe(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/attribute.levelup",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ attribute: "Prowess", action: "Finesse" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with CANNOT_LEVEL_UP code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("attribute.levelup", "CANNOT_LEVEL_UP", "XP track not full", talentChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeLevelup("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Insight", "Hunt", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("CANNOT_LEVEL_UP");
+    }
+  });
+
+  it("exposes ApiError with RATING_MAXED code when the action is already at max", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("attribute.levelup", "RATING_MAXED", "action at max rating", talentChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeLevelup("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Prowess", "Finesse", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("RATING_MAXED");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("attribute.levelup", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(attributeLevelup("some-id", "Prowess", "Finesse", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("sessionSet", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts only the changed field to /api/characters/{id}/ops/session.set with If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      session: { playbookExpressions: 2, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      sessionSet("c46ba7cb-993b-4fc7-974d-fb95eacd5446", { playbookExpressions: 2 }, 12),
+    );
+    expect(result.session.playbookExpressions).toBe(2);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/session.set",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ playbookExpressions: 2 }),
+      },
+    );
+  });
+
+  it("posts multiple changed fields when provided", async () => {
+    const updated = makeChar({
+      revision: 13,
+      session: { playbookExpressions: 1, characterExpressions: 1, struggleExpressions: 0, max: 3 },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      sessionSet("c46ba7cb-993b-4fc7-974d-fb95eacd5446", { playbookExpressions: 1, characterExpressions: 1 }, 12),
+    );
+    expect(result.session.playbookExpressions).toBe(1);
+    expect(result.session.characterExpressions).toBe(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/session.set",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ playbookExpressions: 1, characterExpressions: 1 }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("session.set", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(sessionSet("some-id", { playbookExpressions: 1 }, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "VALIDATION",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(sessionSet("some-id", { playbookExpressions: 1 }, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+describe("getPlaybook", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/games/{stem}/playbooks/{name} and returns the raw playbook settings object", async () => {
+    const playbookData = {
+      Name: "Spider",
+      Hook: "Spiders are good at masterminding maneuvers.",
+      ExperienceCondition: "You addressed a challenge with calculation or conspiracy",
+      SpecialAbilities: [],
+      Items: [],
+      Rolodex: { Name: "Shrewd Friends", Friends: [] },
+      DefaultActionPoints: [],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(playbookData),
+    });
+
+    const result = await Effect.runPromise(getPlaybook("blades-in-the-dark", "Spider"));
+    expect(result.ExperienceCondition).toBe("You addressed a challenge with calculation or conspiracy");
+    expect(global.fetch).toHaveBeenCalledWith("/api/games/blades-in-the-dark/playbooks/Spider", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when fetch fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getPlaybook("blades-in-the-dark", "Ghost")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
     }
   });
 });
