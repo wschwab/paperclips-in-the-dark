@@ -518,6 +518,70 @@ package body Pitd_Callback is
       elsif Op = "gear.set-commitment" then
          if Bool_Field(Get(E,"gear"),"isCommitmentLocked") then return Error_Result(Op,"COMMITMENT_LOCKED","commitment is locked",E); end if;
          declare X : constant JSON_Value := Get(E,"gear"); begin Set_Field(X,"commitment",Str_Field(B,"commitment")); end;
+      elsif Op = "gear.add" then
+         declare G : constant JSON_Value := Get(E,"gear"); A : constant JSON_Array := Get(G,"availableGear"); Name : constant String := Str_Field(B,"name"); begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name") = Name then return Error_Result(Op,"DUPLICATE","item already available",E); end if;
+            end loop;
+            declare O : JSON_Array := A; X : JSON_Value := Create_Object; begin
+               Set_Field(X,"name",Name);Set_Field(X,"bulk",Int_Field(B,"bulk"));Append(O,X);Set_Field(G,"availableGear",O);
+            end;
+         end;
+      elsif Op = "gear.remove" then
+         declare G : constant JSON_Value := Get(E,"gear"); A : constant JSON_Array := Get(G,"availableGear"); L : constant JSON_Array := Get(G,"loadout"); Name : constant String := Str_Field(B,"name"); Found : Boolean := False; begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name") = Name then Found := True; end if;
+            end loop;
+            for I in 1..Length(L) loop
+               if Str_Field(Get(L,I),"name") = Name then Found := True; end if;
+            end loop;
+            if not Found then return Error_Result(Op,"NOT_FOUND","item not found",E); end if;
+            declare O : JSON_Array := Empty_Array; M : JSON_Array := Empty_Array; begin
+               for I in 1..Length(A) loop
+                  if Str_Field(Get(A,I),"name") /= Name then Append(O,Get(A,I)); end if;
+               end loop;
+               for I in 1..Length(L) loop
+                  if Str_Field(Get(L,I),"name") /= Name then Append(M,Get(L,I)); end if;
+               end loop;
+               Set_Field(G,"availableGear",O);Set_Field(G,"loadout",M);
+            end;
+         end;
+      elsif Op = "gear.commit" then
+         declare G : constant JSON_Value := Get(E,"gear"); A : constant JSON_Array := Get(G,"availableGear"); L : constant JSON_Array := Get(G,"loadout"); Name : constant String := Str_Field(B,"name"); Item : JSON_Value := JSON_Null; begin
+            if Bool_Field(G,"isCommitmentLocked") then return Error_Result(Op,"COMMITMENT_LOCKED","commitment is locked",E); end if;
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name") = Name then Item := Get(A,I); exit; end if;
+            end loop;
+            if Item.Kind = JSON_Null_Type then return Error_Result(Op,"NOT_FOUND","item not available",E); end if;
+            if Str_Field(G,"commitment") = "" then return Error_Result(Op,"NO_COMMITMENT","no commitment set",E); end if;
+            for I in 1..Length(L) loop
+               if Str_Field(Get(L,I),"name") = Name then return Error_Result(Op,"DUPLICATE","item already committed",E); end if;
+            end loop;
+            declare Sum : Integer := 0; begin
+               for I in 1..Length(L) loop Sum := Sum + Int_Field(Get(L,I),"bulk"); end loop;
+               if Int_Field(Item,"bulk") > Int_Field(G,"maxBulk") - Sum then return Error_Result(Op,"OVER_BULK","item exceeds bulk limit",E); end if;
+            end;
+            declare O : JSON_Array := L; begin Append(O,Item);Set_Field(G,"loadout",O); end;
+         end;
+      elsif Op = "gear.uncommit" then
+         declare G : constant JSON_Value := Get(E,"gear"); L : constant JSON_Array := Get(G,"loadout"); Name : constant String := Str_Field(B,"name"); Found : Boolean := False; begin
+            if Bool_Field(G,"isCommitmentLocked") then return Error_Result(Op,"COMMITMENT_LOCKED","commitment is locked",E); end if;
+            for I in 1..Length(L) loop
+               if Str_Field(Get(L,I),"name") = Name then Found := True; end if;
+            end loop;
+            if not Found then return Error_Result(Op,"NOT_FOUND","item not in loadout",E); end if;
+            declare O : JSON_Array := Empty_Array; begin
+               for I in 1..Length(L) loop
+                  if Str_Field(Get(L,I),"name") /= Name then Append(O,Get(L,I)); end if;
+               end loop;
+               Set_Field(G,"loadout",O);
+            end;
+         end;
+      elsif Op = "gear.clear-commitments" then
+         declare G : constant JSON_Value := Get(E,"gear"); begin
+            if Bool_Field(G,"isCommitmentLocked") then return Error_Result(Op,"COMMITMENT_LOCKED","commitment is locked",E); end if;
+            Set_Field(G,"loadout",Empty_Array);Set_Field(G,"commitment","");
+         end;
       elsif Op = "notebook.set" then Set_Field(E,"notebook",Str_Field(B,"text"));
       elsif Op = "hold.set" then Set_Field(E,"hold",Str_Field(B,"hold","weak"));
       elsif Op = "session.set" then
