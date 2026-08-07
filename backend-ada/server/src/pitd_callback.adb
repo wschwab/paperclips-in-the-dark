@@ -505,6 +505,7 @@ package body Pitd_Callback is
       end;
       elsif Op="rolodex.add" then declare R:constant JSON_Value:=Get(E,"rolodex");A:constant JSON_Array:=Get(R,"friends");O:JSON_Array:=A;X:JSON_Value:=Create_Object;begin Set_Field(X,"entry",Str_Field(B,"entry"));Set_Field(X,"closeness","friend");Append(O,X);Set_Field(R,"friends",O);end;
       elsif Op="rolodex.set-closeness" then declare A:constant JSON_Array:=Get(Get(E,"rolodex"),"friends");begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Str_Field(B,"entry") then Set_Field(Get(A,I),"closeness",Str_Field(B,"closeness","friend"));end if;end loop;end;
+      elsif Op="rolodex.remove" then declare A:constant JSON_Array:=Get(Get(E,"rolodex"),"friends");O:JSON_Array:=Empty_Array;Entry_Name:constant String:=Str_Field(B,"entry");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Entry_Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Error_Result(Op,"NOT_FOUND","rolodex entry not found",E);end if;Set_Field(Get(E,"rolodex"),"friends",O);end;
       elsif Op="contact.add" then declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);Name:constant String:=Str_Field(B,"name");begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then return Error_Result(Op,"DUPLICATE","contact already exists",E);end if;end loop;declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin Set_Field(X,"name",Name);Set_Field(X,"profession",Str_Field(B,"profession"));Append(O,X);Set_Field(E,"contacts",O);end;end;
       elsif Op="contact.remove" then declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Error_Result(Op,"NOT_FOUND","contact not found",E);end if;Set_Field(E,"contacts",O);end;
       elsif Op="faction.set-status" then declare G:constant JSON_Value:=Game(Str_Field(E,"gameStem"));Lo:Integer:=Integer'First;Hi:Integer:=Integer'Last;begin if G.Kind=JSON_Object_Type and then Has_Field(G,"FactionStatus") then declare FS:constant JSON_Value:=Get(G,"FactionStatus");begin Lo:=Int_Field(FS,"Min",Integer'First);Hi:=Int_Field(FS,"Max",Integer'Last);end;end if;declare A:constant JSON_Array:=(if Has_Field(E,"factions") then Get(E,"factions") else Empty_Array);Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin Requested:=Int_Field(B,"status");Effective:=Integer'Min(Integer'Max(Requested,Lo),Hi);for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Set_Field(Get(A,I),"status",Effective);Found:=True;end if;end loop;if not Found then declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin Set_Field(X,"name",Name);Set_Field(X,"status",Effective);Append(O,X);Set_Field(E,"factions",O);end;end if;end;return Success_Result(Op,E,Requested,Effective);end;
@@ -517,6 +518,29 @@ package body Pitd_Callback is
             else Core_Clamp_Subtract(Natural(Int_Field(Target,"current")),Natural(Int_Field(Target,"max")),Natural(-Requested),New_Value,Applied); end if;
             Set_Field(Target,"current",Integer(New_Value));Effective:=(if Requested >= 0 then Integer(Applied) else -Integer(Applied));return Success_Result(Op,E,Requested,Effective);
          end;
+      elsif Op = "coin.add" or else Op = "stash.add" or else Op = "tier.add" then
+         if Kind /= "crew" then return Error_Result(Op,"VALIDATION","crew-only operation",E); end if;
+         declare Name : constant String := (if Op="coin.add" then "coin" elsif Op="stash.add" then "stash" else "tier");
+            Cur : constant Integer := Int_Field(E,Name); Req : constant Integer := Int_Field(B,"delta");
+         begin
+            Requested := Req;
+            if Req >= 0 then
+               New_Value := (if Cur > Integer'Last - Req then Integer'Last else Cur + Req);
+               Effective := Integer(New_Value) - Cur;
+            else
+               New_Value := (if Cur < Integer'First - Req or else Cur + Req <= 0 then 0 else Cur + Req);
+               Effective := Integer(New_Value) - Cur;
+            end if;
+            Set_Field(E,Name,Integer(New_Value));return Success_Result(Op,E,Requested,Effective);
+         end;
+      elsif Op = "xp.add" then
+         if Kind /= "crew" then return Error_Result(Op,"VALIDATION","crew-only operation",E); end if;
+         Target := Get (E,"experience"); Requested := Int_Field (B,"delta");
+         Core_Clamp_Add (Natural (Int_Field (Target,"points")),Natural (Int_Field (Target,"max")),Natural'Max (0,Requested),New_Value,Applied);
+         Set_Field (Target,"points",Integer (New_Value)); Effective := Integer (Applied); return Success_Result (Op,E,Requested,Effective);
+      elsif Op = "xp.clear" then
+         if Kind /= "crew" then return Error_Result(Op,"VALIDATION","crew-only operation",E); end if;
+         declare X : constant JSON_Value := Get (E,"experience"); begin Set_Field (X,"points",Integer'(0)); end;
       elsif Op = "clock.progress" then
          Requested:=Int_Field(B,"segments");Core_Clamp_Add(Natural(Int_Field(E,"segments")),Natural(Int_Field(E,"size")),Natural'Max(0,Requested),New_Value,Applied);
          Set_Field(E,"segments",Integer(New_Value));return Success_Result(Op,E);
@@ -592,6 +616,50 @@ package body Pitd_Callback is
          end;
       elsif Op = "notebook.set" then Set_Field(E,"notebook",Str_Field(B,"text"));
       elsif Op = "hold.set" then Set_Field(E,"hold",Str_Field(B,"hold","weak"));
+      elsif Op = "cohort.add" then
+         declare Kind_Of : constant String := Str_Field(B,"cohortKind"); begin
+            if Kind_Of /= "gang" and then Kind_Of /= "expert" then
+               return Error_Result(Op,"VALIDATION","cohortKind must be gang or expert",E);
+            end if;
+            declare A : constant JSON_Array := Get(E,"cohorts"); O : JSON_Array := A; X : JSON_Value := Create_Object; begin
+               Set_Field(X,"id",New_Id);Set_Field(X,"cohortKind",Kind_Of);
+               Set_Field(X,"gangType",Str_Field(B,"gangType"));Set_Field(X,"expertType",Str_Field(B,"expertType"));
+               Set_Field(X,"quality",Int_Field(B,"quality"));Set_Field(X,"scale",Int_Field(B,"scale"));
+               Set_Field(X,"hasArmor",Bool_Field(B,"hasArmor"));
+               Set_Field(X,"edges",(if Has_Field(B,"edges") then Get(B,"edges") else Empty_List));
+               Set_Field(X,"flaws",(if Has_Field(B,"flaws") then Get(B,"flaws") else Empty_List));
+               Set_Field(X,"harm","healthy");Set_Field(X,"description",Str_Field(B,"description"));
+               Append(O,X);Set_Field(E,"cohorts",O);
+            end;
+         end;
+      elsif Op = "cohort.remove" then
+         declare A : constant JSON_Array := Get(E,"cohorts"); O : JSON_Array := Empty_Array;
+            Id : constant String := Str_Field(B,"cohortId"); Found : Boolean := False;
+         begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"id") = Id then Found := True;
+               else Append(O,Get(A,I)); end if;
+            end loop;
+            if not Found then return Error_Result(Op,"NOT_FOUND","cohort not found",E); end if;
+            Set_Field(E,"cohorts",O);
+         end;
+      elsif Op = "cohort.update" then
+         declare A : constant JSON_Array := Get(E,"cohorts"); Id : constant String := Str_Field(B,"cohortId"); Found : Boolean := False; begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"id") = Id then
+                  Found := True;
+                  declare C : constant JSON_Value := Get(A,I);
+                     procedure Copy (Name : UTF8_String; Value : JSON_Value) is
+                     begin
+                        if Has_Field(C,Name) then Set_Field(C,Name,Clone(Value)); end if;
+                     end Copy;
+                  begin
+                     Map_JSON_Object (B, Copy'Access);
+                  end;
+               end if;
+            end loop;
+            if not Found then return Error_Result(Op,"NOT_FOUND","cohort not found",E); end if;
+         end;
       elsif Op = "session.set" then
          declare
             S : constant JSON_Value := Get (E, "session");

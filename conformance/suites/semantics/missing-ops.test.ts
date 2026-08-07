@@ -1,0 +1,90 @@
+import { describe, expect } from "vitest";
+import { api } from "../../src/api.js";
+import { testCase } from "../../src/test-case.js";
+import { newCrew, newCharacter } from "../../src/suite-helpers.js";
+
+/**
+ * A11: the remaining missing ops — crew cohorts (add/remove/update), crew
+ * coin/stash/tier deltas, crew xp add/clear, and character rolodex.remove.
+ */
+describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove", () => {
+  testCase("SEMANTICS-COHORT-001", "cohort.add appends a cohort with an id; update mutates; remove drops; unknown → NOT_FOUND", async () => {
+    const crew = await newCrew();
+    const added = await api.crewOp(crew.id, "cohort.add", {
+      cohortKind: "gang", gangType: "Thugs", quality: 1,
+    });
+    expect(added.ok).toBe(true);
+    expect(added.crew?.cohorts).toHaveLength(1);
+    const cohort = added.crew?.cohorts[0];
+    expect(cohort?.id).toBeTruthy();
+    expect(cohort?.cohortKind).toBe("gang");
+    expect(cohort?.gangType).toBe("Thugs");
+    expect(cohort?.quality).toBe(1);
+    expect(cohort?.harm).toBe("healthy");
+
+    const updated = await api.crewOp(crew.id, "cohort.update", {
+      cohortId: cohort?.id ?? "", quality: 2, harm: "weakened",
+    });
+    expect(updated.ok).toBe(true);
+    expect(updated.crew?.cohorts[0].quality).toBe(2);
+    expect(updated.crew?.cohorts[0].harm).toBe("weakened");
+
+    const removed = await api.crewOp(crew.id, "cohort.remove", { cohortId: cohort?.id ?? "" });
+    expect(removed.ok).toBe(true);
+    expect(removed.crew?.cohorts).toHaveLength(0);
+
+    const unknown = await api.crewOp(crew.id, "cohort.remove", { cohortId: "no-such-id" });
+    expect(unknown.ok).toBe(false);
+    expect(unknown.error?.code).toBe("NOT_FOUND");
+  });
+
+  testCase("SEMANTICS-CREW-FUND-001", "crew coin.add / stash.add / tier.add report applied deltas; tier floors at 0", async () => {
+    const crew = await newCrew();
+    const coin = await api.crewOp(crew.id, "coin.add", { delta: 5 });
+    expect(coin.ok).toBe(true);
+    expect(coin.crew?.coin).toBe(5);
+    expect(coin.applied.requested).toBe(5);
+    expect(coin.applied.effective).toBe(5);
+
+    const stash = await api.crewOp(crew.id, "stash.add", { delta: 7 });
+    expect(stash.ok).toBe(true);
+    expect(stash.crew?.stash).toBe(7);
+
+    const tier = await api.crewOp(crew.id, "tier.add", { delta: 1 });
+    expect(tier.ok).toBe(true);
+    expect(tier.crew?.tier).toBe(1);
+
+    const tierDown = await api.crewOp(crew.id, "tier.add", { delta: -5 });
+    expect(tierDown.ok).toBe(true);
+    expect(tierDown.crew?.tier).toBe(0);
+  });
+
+  testCase("SEMANTICS-CREW-XP-001", "crew xp.add clamps to max; xp.clear resets", async () => {
+    const crew = await newCrew();
+    const max = crew.experience.max;
+    const added = await api.crewOp(crew.id, "xp.add", { delta: max + 3 });
+    expect(added.ok).toBe(true);
+    expect(added.crew?.experience.points).toBe(max);
+
+    const cleared = await api.crewOp(crew.id, "xp.clear");
+    expect(cleared.ok).toBe(true);
+    expect(cleared.crew?.experience.points).toBe(0);
+  });
+
+  testCase("SEMANTICS-ROLODEX-REMOVE-001", "character rolodex.remove drops a friend; unknown → NOT_FOUND", async () => {
+    const character = await newCharacter();
+    const added = await api.characterOp(character.id, "rolodex.add", { entry: "Marlane" });
+    expect(added.ok).toBe(true);
+    expect(added.character?.rolodex.friends).toContainEqual(
+      expect.objectContaining({ entry: "Marlane" }),
+    );
+
+    const removed = await api.characterOp(character.id, "rolodex.remove", { entry: "Marlane" });
+    expect(removed.ok).toBe(true);
+    expect(removed.character?.rolodex.friends.find((f) => f.entry === "Marlane")).toBeUndefined();
+
+    const unknown = await api.characterOp(character.id, "rolodex.remove", { entry: "Nobody" });
+    expect(unknown.ok).toBe(false);
+    expect(unknown.error?.code).toBe("NOT_FOUND");
+  });
+});
