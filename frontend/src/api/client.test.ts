@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, cohortAdd, cohortRemove, cohortUpdate, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -5800,6 +5800,126 @@ describe("cohortUpdate", () => {
     const result = await Effect.runPromise(
       Effect.either(cohortUpdate(CREW_ID_F2Y, { cohortId: "some-id", quality: 2 }, 5)),
     );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2x crew operations — crewXpAdd, crewXpClear
+// ---------------------------------------------------------------------------
+
+describe("crewXpAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/xp.add with delta and If-Match, decodes crew from OperationResult", async () => {
+    const gained = makeCrew({ revision: 6, experience: { points: 3, max: 8 } });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(gained, "xp.add")),
+    });
+
+    const result = await Effect.runPromise(crewXpAdd(CREW_ID_F2Y, 1, 5));
+    expect(result.experience.points).toBe(3);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/xp.add`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ delta: 1 }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the op result is ok:false (VALIDATION)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("xp.add", "VALIDATION", "delta out of range", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewXpAdd(CREW_ID_F2Y, 99, 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("xp.add", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewXpAdd(CREW_ID_F2Y, 1, 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("crewXpClear", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/xp.clear with empty body and If-Match, decodes crew", async () => {
+    const cleared = makeCrew({ revision: 6, experience: { points: 0, max: 8 } });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(cleared, "xp.clear")),
+    });
+
+    const result = await Effect.runPromise(crewXpClear(CREW_ID_F2Y, 5));
+    expect(result.experience.points).toBe(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/xp.clear`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: "{}",
+      },
+    );
+  });
+
+  it("exposes ApiError when the op result is ok:false (VALIDATION)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("xp.clear", "VALIDATION", "nothing to clear", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewXpClear(CREW_ID_F2Y, 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("xp.clear", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewXpClear(CREW_ID_F2Y, 5)));
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(StaleRevisionError);

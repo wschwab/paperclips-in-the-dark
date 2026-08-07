@@ -1,0 +1,98 @@
+---
+title: F2x — Crew Sheet: Crew XP
+---
+
+# F2x: Crew Sheet — Crew XP
+
+Adds the Crew XP section to the crew sheet: an experience `points/max`
+tracker (clickable boxes + −/+ buttons + a clear button) driven by
+`crewXpAdd` / `crewXpClear`, with the crew type's **`ExperienceTrigger`
+criteria text** shown beneath — sourced from the crew game data, never
+hardcoded. Per `f2-sheet-plan.mdx`, Crew XP→`crewXpAdd`/`crewXpClear`.
+
+## Client methods added
+
+Both ops go through the existing `crewMutate` helper (POST
+`/api/crews/{id}/ops/{op}` with `If-Match`, decode `OperationResult`,
+extract the updated `Crew`). Stale-revision handling follows F2h/F2y/F2v:
+`409` + `STALE_REVISION` → `StaleRevisionError` → re-render, refetch via
+`getCrew`, "Sheet refreshed" notice.
+
+| Method | Endpoint | Body | Returns |
+|--------|----------|------|---------|
+| `crewXpAdd` | `ops/xp.add` | `{ delta }` | updated `Crew` |
+| `crewXpClear` | `ops/xp.clear` | — (no request body) | updated `Crew` |
+
+Server semantics (contract-frozen, A11 implements server-side in parallel):
+`xp.add` applies the delta and **clamps points to the crew's
+`experience.max`** (the DTO `Experience` type, mirroring the contract's
+bounded integer); `xp.clear` resets points to 0. The client never hardcodes
+a maximum — `points`/`max` both come from the DTO.
+
+## Criteria text comes from crew game data
+
+The criteria line under the tracker is the crew type's
+`ExperienceTrigger` from `data/games/*-crews.json`
+(`CrewTypes[{Name, ExperienceTrigger}]`), matched by the crew's
+`crewTypeName`. The page reuses the F2v two-source lookup — the
+per-crew-type endpoint (`getCrewType`) is preferred, with the `CrewTypes`
+list (`getCrewTypes`, find-by-name) as the fallback. If neither source has
+the crew type (lookup fails), the criteria line is simply omitted — the
+tracker still renders and works (graceful degradation, same as the
+character sheet's `ExperienceCondition` line).
+
+## Page section
+
+A `crew-xp` section sits between Cohorts and Contacts & Factions with an
+`h2` heading "Crew XP":
+
+- a clickable box row (the F1 styleguide tracker idiom) — clicking box N
+  posts `crewXpAdd` with `delta = N − points`;
+- `points / max` readout straight from the DTO `experience { points, max }`;
+- **−** / **+** buttons → `crewXpAdd` with `delta −1` / `+1` (+ disabled at
+  `max`, − disabled at 0);
+- a **clear** button → `crewXpClear` (no body; disabled at 0);
+- beneath, the `ExperienceTrigger` criteria text ("Criteria: …") from the
+  crew game data, or nothing when the crew-type lookup fails.
+
+## Error notices
+
+- `VALIDATION` (bad delta) is passed through as returned by the server.
+- Any `StaleRevisionError` → render, refetch via `getCrew`, standard
+  "Sheet refreshed because it changed elsewhere" notice (F2h).
+- The ops are contract-correct today even though the Ada backend lands with
+  A11 in parallel — live failures surface as ordinary op-level notices and
+  the page takes over automatically once the backend ships.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — 6 tests, red-first per method
+
+- `describe("crewXpAdd")` — 3 tests (request shape `{ delta }` + decode,
+  `VALIDATION` op error, stale revision)
+- `describe("crewXpClear")` — 3 tests (empty body `{}` + decode, op error,
+  stale revision)
+
+Written red (6 failing tests, `(0 , crewXpAdd) is not a function` /
+`(0 , crewXpClear) is not a function`) before the implementations existed,
+then green via `crewMutate`.
+
+### Page tests (`src/pages/crew-detail.test.ts`) — 5 tests under
+`describe("F2x Crew XP")`
+
+- tracker renders with points/max from the DTO and the `ExperienceTrigger`
+  criteria text from crew game data
+- +/− post `crewXpAdd` with the right delta; clear posts `crewXpClear`
+  (no body)
+- op-level error notice (`VALIDATION`) when an XP op fails
+- `STALE_REVISION` refetch on an XP op
+- graceful degradation: crew-type game data unavailable → no criteria line,
+  no error, tracker still renders
+
+Full suite green (`npm test -- --run`, 366 tests) and `npm run build`
+(tsc + vite) green.
+
+> **Backend note:** the `xp.add` / `xp.clear` ops are contract-frozen but the
+> Ada server implementation lands with A11 in parallel. Live ops may fail
+> until then; the client and page are correct per the contract and take over
+> automatically once the backend ships.

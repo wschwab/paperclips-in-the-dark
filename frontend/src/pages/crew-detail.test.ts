@@ -1371,6 +1371,8 @@ describe("crew-detail page", () => {
         { timeout: 2000 },
       );
     });
+  });
+
   // -- F2w: Cohorts ----------------------------------------------------------
 
   describe("F2w Cohorts", () => {
@@ -1661,5 +1663,200 @@ describe("crew-detail page", () => {
     });
   });
 
+  describe("F2x Crew XP", () => {
+    /** Crew-type game data (the criteria-text source, never hardcoded). */
+    const CREW_TYPE_DATA = {
+      Name: "Assassins",
+      ExperienceTrigger: "Execute a successful murder, ransom, or assassination operation.",
+    };
+
+    const CREW_TYPES_DATA = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [CREW_TYPE_DATA],
+    };
+
+    const crewOpOk = (crew: unknown, opName: string) => ({
+      ok: true,
+      crew,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    const crewType404 = {
+      ok: false,
+      status: 404,
+      text: async () => "games.crew: NOT_FOUND",
+    };
+
+    it("renders the XP tracker (points/max from the DTO) and the ExperienceTrigger criteria text from crew game data", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA)) // per-crew-type endpoint preferred
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-xp")).not.toBeNull();
+      });
+
+      // points/max come from the DTO experience { points, max }
+      expect(root.querySelector(".crew-xp-count")?.textContent).toBe("2 / 8");
+      // criteria text from ExperienceTrigger in the crew game data
+      expect(root.querySelector(".crew-xp")?.textContent).toContain(
+        "Execute a successful murder, ransom, or assassination operation.",
+      );
+      // − / + / clear controls present
+      expect(root.querySelector('button[title="Add 1 crew XP"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Remove 1 crew XP"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Clear crew XP"]')).not.toBeNull();
+    });
+
+    it("+/− post crewXpAdd with the right delta and clear posts crewXpClear (no body)", async () => {
+      const gained = crewDTO({ revision: 6, experience: { points: 3, max: 8 } });
+      const back = crewDTO({ revision: 7, experience: { points: 2, max: 8 } });
+      const cleared = crewDTO({ revision: 8, experience: { points: 0, max: 8 } });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(crewType404) // fall back to the CrewTypes list
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewOpOk(gained, "xp.add")))
+        .mockResolvedValueOnce(ok(crewOpOk(back, "xp.add")))
+        .mockResolvedValueOnce(ok(crewOpOk(cleared, "xp.clear")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 crew XP"]')).not.toBeNull();
+      });
+
+      // +1 → xp.add { delta: 1 }
+      (root.querySelector('button[title="Add 1 crew XP"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-xp-count")?.textContent).toContain("3 / 8");
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/xp.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: 1 }) }),
+      );
+
+      // −1 → xp.add { delta: -1 }
+      (root.querySelector('button[title="Remove 1 crew XP"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-xp-count")?.textContent).toContain("2 / 8");
+      });
+      expect(global.fetch).toHaveBeenLastCalledWith(
+        `/api/crews/${CREW_ID}/ops/xp.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: -1 }) }),
+      );
+
+      // clear → xp.clear (no body)
+      (root.querySelector('button[title="Clear crew XP"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-xp-count")?.textContent).toContain("0 / 8");
+      });
+      expect(global.fetch).toHaveBeenLastCalledWith(
+        `/api/crews/${CREW_ID}/ops/xp.clear`,
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+
+    it("shows an op-level error notice when an XP op fails", async () => {
+      const errResp = {
+        ok: false,
+        applied: { op: "xp.add" },
+        sideEffects: [],
+        error: { code: "VALIDATION", message: "delta out of range" },
+        crew: crewDTO(),
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(crewType404)
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(errResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 crew XP"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Add 1 crew XP"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("VALIDATION");
+      });
+    });
+
+    it("refetches the sheet after a STALE_REVISION on an XP op", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "xp.add" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          message: "Crew revision mismatch",
+          details: { currentRevision: 7 },
+        },
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(crewType404)
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 409,
+          text: async () => JSON.stringify(staleResp),
+        })
+        .mockResolvedValueOnce(ok(crewDTO({ revision: 7 })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 crew XP"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Add 1 crew XP"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(
+        () => {
+          const notice = getNotice(root);
+          expect(notice?.textContent).toContain("Sheet refreshed");
+        },
+        { timeout: 2000 },
+      );
+    });
+
+    it("degrades gracefully when crew-type game data is unavailable (no criteria text, tracker still renders)", async () => {
+      // getCrewType + getCrewTypes both fail (backend not implemented yet) —
+      // the criteria line is omitted but the tracker still renders and works.
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" })
+        .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" });
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-xp")).not.toBeNull();
+      });
+      expect(root.querySelector(".crew-xp-count")?.textContent).toContain("2 / 8");
+      expect(root.querySelector('button[title="Clear crew XP"]')).not.toBeNull();
+      // no "Criteria:" label, and no error notice
+      expect(root.querySelector(".crew-xp")?.textContent).not.toContain("Criteria:");
+      expect(root.querySelector(".error")).toBeNull();
+    });
   });
+
 });

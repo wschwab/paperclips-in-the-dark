@@ -958,6 +958,30 @@ export function cohortUpdate(
   return crewMutate(id, "cohort.update", revision, body);
 }
 
+// ---------------------------------------------------------------------------
+// F2x crew operations — crewXpAdd, crewXpClear
+// ---------------------------------------------------------------------------
+
+/**
+ * Crew experience delta (xp.add). The server clamps points to
+ * experience.max (from the crew DTO / game data) — never hardcoded here.
+ */
+export function crewXpAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "xp.add", revision, { delta });
+}
+
+/** Clear all crew experience points (xp.clear — no request body). */
+export function crewXpClear(
+  id: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "xp.clear", revision);
+}
+
 /**
  * Full crew-type settings for one crew type (raw game-data object: Hook,
  * Description, ExperienceTrigger, SpecialAbilities, Upgrades,

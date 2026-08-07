@@ -25,6 +25,8 @@ import {
   cohortAdd,
   cohortRemove,
   cohortUpdate,
+  crewXpAdd,
+  crewXpClear,
   StaleRevisionError,
 } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
@@ -60,6 +62,7 @@ interface RenderState {
   isAbilityLoading: boolean;
   isUpgradeLoading: boolean;
   isCohortLoading: boolean;
+  isXpLoading: boolean;
   isContactLoading: boolean;
   isFactionLoading: boolean;
   isProfileLoading: boolean;
@@ -106,6 +109,9 @@ interface RenderState {
     onCohortUpdate: (cohortId: string, fields: Record<string, unknown>) => void;
     onCohortRemove: (cohortId: string) => void;
     onCohortCancel: () => void;
+    onXpDelta: (delta: number) => void;
+    onXpTrack: (next: number) => void;
+    onXpClear: () => void;
   };
 }
 
@@ -303,6 +309,32 @@ function upgradeDescription(upgrade: Record<string, unknown> | undefined, name: 
   return upgrade && typeof upgrade.Description === "string" && upgrade.Description.length > 0
     ? upgrade.Description
     : `No description available for ${name}.`;
+}
+
+/**
+ * The crew type's ExperienceTrigger (game data) — the criteria text shown
+ * beneath the XP tracker. Same source shape and find-by-name fallback as
+ * extractCrewAbilities: per-crew-type endpoint preferred, CrewTypes list
+ * otherwise. Returns null when neither source has it (graceful
+ * degradation — the criteria line is simply omitted).
+ */
+function extractExperienceTrigger(
+  crewTypeData: Record<string, unknown> | null,
+  crewTypesData: readonly Record<string, unknown>[] | null,
+  crewTypeName: string,
+): string | null {
+  if (crewTypeData && typeof crewTypeData.ExperienceTrigger === "string") {
+    return crewTypeData.ExperienceTrigger;
+  }
+  if (Array.isArray(crewTypesData)) {
+    const found = crewTypesData.find(
+      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
+    );
+    if (found && typeof found.ExperienceTrigger === "string") {
+      return found.ExperienceTrigger;
+    }
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -1031,6 +1063,65 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     ),
   );
 
+  // -- Crew XP (F2x) ----------------------------------------------------------
+  // Points/max come from the DTO (experience { points, max }) — the max is
+  // never hardcoded. +/− go through crewXpAdd (server clamps to max); clear
+  // through crewXpClear (no body). The criteria text is the crew type's
+  // ExperienceTrigger from crew game data (find-by-name; omitted when the
+  // crew-type lookup fails — graceful degradation).
+  const xp = c.experience;
+  const criteriaText = extractExperienceTrigger(
+    state.crewTypeData,
+    state.crewTypesData,
+    c.crewTypeName,
+  );
+  const xpMinusBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading || xp.points <= 0,
+    title: "Remove 1 crew XP",
+  }, "−");
+  xpMinusBtn.addEventListener("click", () => handlers.onXpDelta(-1));
+  const xpPlusBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading || xp.points >= xp.max,
+    title: "Add 1 crew XP",
+  }, state.isXpLoading ? "…" : "+");
+  xpPlusBtn.addEventListener("click", () => handlers.onXpDelta(1));
+  const xpClearBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading || xp.points === 0,
+    title: "Clear crew XP",
+  }, "clear");
+  xpClearBtn.addEventListener("click", handlers.onXpClear);
+
+  const xpSection = el(
+    "div",
+    { className: "crew-xp" },
+    el("h2", {}, "Crew XP"),
+    el("div", {
+      className: "crew-xp-tracker",
+      style: "display: flex; gap: 1em; align-items: center; flex-wrap: wrap; margin: 0.6em 0;",
+    },
+      boxTrack({
+        value: xp.points,
+        max: xp.max,
+        label: "Crew XP",
+        disabled: state.anyLoading,
+        onChange: handlers.onXpTrack,
+      }),
+      el("span", { className: "crew-xp-count" }, `${xp.points} / ${xp.max}`),
+      xpMinusBtn,
+      xpPlusBtn,
+      xpClearBtn,
+    ),
+    criteriaText
+      ? el("p", { className: "serif", style: "font-size: 0.95em; margin: 0.25em 0;" },
+          el("strong", {}, "Criteria: "),
+          criteriaText,
+        )
+      : null,
+  );
+
   return el(
     "section",
     { className: "crew-detail" },
@@ -1090,6 +1181,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     ),
     playbookSection,
     cohortsSection,
+    xpSection,
     el(
       "div",
       { className: "crew-contacts-factions" },
@@ -1175,6 +1267,7 @@ export function mountCrewDetailPage(
   let isAbilityLoading = false;
   let isUpgradeLoading = false;
   let isCohortLoading = false;
+  let isXpLoading = false;
   let crewTypeData: Record<string, unknown> | null = null;
   let crewTypesData: readonly Record<string, unknown>[] | null = null;
   let editingProfile: ProfileEditingState | null = null;
@@ -1286,7 +1379,8 @@ export function mountCrewDetailPage(
         isStashLoading ||
         isAbilityLoading ||
         isUpgradeLoading ||
-        isCohortLoading,
+        isCohortLoading ||
+        isXpLoading,
       isUndoLoading,
       isContactLoading,
       isFactionLoading,
@@ -1301,6 +1395,7 @@ export function mountCrewDetailPage(
       isAbilityLoading,
       isUpgradeLoading,
       isCohortLoading,
+      isXpLoading,
       crewTypeData,
       crewTypesData,
       editingProfile,
@@ -1700,6 +1795,25 @@ export function mountCrewDetailPage(
     onCohortCancel: () => {
       editingCohortId = null;
       renderDetail();
+    },
+
+    // -- F2x: Crew XP --------------------------------------------------------
+
+    onXpDelta: (delta: number) => {
+      if (!currentCrew || isXpLoading) return;
+      runCrewOp((v) => { isXpLoading = v; }, crewXpAdd(crewId, delta, currentCrew.revision));
+    },
+
+    onXpTrack: (next: number) => {
+      if (!currentCrew || isXpLoading) return;
+      const delta = next - currentCrew.experience.points;
+      if (delta === 0) return;
+      runCrewOp((v) => { isXpLoading = v; }, crewXpAdd(crewId, delta, currentCrew.revision));
+    },
+
+    onXpClear: () => {
+      if (!currentCrew || isXpLoading) return;
+      runCrewOp((v) => { isXpLoading = v; }, crewXpClear(crewId, currentCrew.revision));
     },
   };
 
