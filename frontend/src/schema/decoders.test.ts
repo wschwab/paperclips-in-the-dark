@@ -52,6 +52,12 @@ describe("schema decoders against golden fixtures", () => {
     expect(crew.cohorts[0]?.harm).toBe("healthy");
     expect(crew.specialAbilities[0]?.name).toBe("Predators");
     expect(crew.revision).toBe(5);
+    expect(crew.contacts).toHaveLength(1);
+    expect(crew.contacts?.[0]?.name).toBe("Rolan Wott");
+    expect(crew.contacts?.[0]?.profession).toBe("magistrate");
+    expect(crew.factions).toHaveLength(2);
+    expect(crew.factions?.[0]?.name).toBe("The Crows");
+    expect(crew.factions?.[0]?.status).toBe(-1);
   });
 
   it("decodes golden-clock.json", () => {

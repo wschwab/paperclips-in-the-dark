@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -2121,6 +2121,332 @@ describe("armorSet", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
       expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// F2y crew operations — crewContactAdd, crewContactRemove, factionSetStatus, factionRemove
+// ---------------------------------------------------------------------------
+
+function makeCrew(overrides: Record<string, unknown> = {}) {
+  return {
+    kind: "crew",
+    id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+    gameStem: "blades-in-the-dark",
+    gameName: "Blades in the Dark",
+    language: "en",
+    revision: 5,
+    formatVersion: 1,
+    createdAt: "2026-07-22T00:00:00.000Z",
+    updatedAt: "2026-07-22T00:00:00.000Z",
+    crewTypeName: "Assassins",
+    name: "The Red Sashes",
+    lair: "Northside safehouse",
+    reputation: "ruthless",
+    huntingGrounds: "The Docks",
+    tier: 1,
+    hold: "strong",
+    heat: { current: 4, max: 9 },
+    wanted: { current: 1, max: 4 },
+    rep: { current: 3, max: 12 },
+    experience: { points: 2, max: 8 },
+    specialAbilities: [],
+    upgrades: [],
+    cohorts: [],
+    coin: 0,
+    stash: 2,
+    notes: "Up-and-coming crew",
+    ...overrides,
+  };
+}
+
+function crewOpOk(crew: unknown, opName: string, appliedOverrides: Record<string, unknown> = {}) {
+  return {
+    ok: true,
+    crew,
+    applied: { op: opName, ...appliedOverrides },
+    sideEffects: [],
+    error: null,
+  };
+}
+
+function crewOpErr(opName: string, code: string, message: string, crew: unknown) {
+  return {
+    ok: false,
+    applied: { op: opName },
+    sideEffects: [],
+    error: { code, message },
+    crew,
+  };
+}
+
+const CREW_ID_F2Y = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
+
+describe("crewContactAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/contact.add with name, profession, and If-Match, decodes crew from OperationResult", async () => {
+    const withContact = makeCrew({
+      revision: 6,
+      contacts: [{ name: "Rolan Wott", profession: "magistrate" }],
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(withContact, "contact.add")),
+    });
+
+    const result = await Effect.runPromise(
+      crewContactAdd(CREW_ID_F2Y, "Rolan Wott", "magistrate", 5),
+    );
+    expect(result.contacts).toHaveLength(1);
+    expect(result.contacts?.[0]?.name).toBe("Rolan Wott");
+    expect(result.contacts?.[0]?.profession).toBe("magistrate");
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/contact.add`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "Rolan Wott", profession: "magistrate" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with DUPLICATE code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("contact.add", "DUPLICATE", "contact already exists", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(crewContactAdd(CREW_ID_F2Y, "Rolan Wott", "spy", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("DUPLICATE");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("contact.add", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(crewContactAdd(CREW_ID_F2Y, "Rolan Wott", "magistrate", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("crewContactRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/contact.remove with name and If-Match, decodes crew from OperationResult", async () => {
+    const removed = makeCrew({ revision: 6, contacts: [] });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(removed, "contact.remove")),
+    });
+
+    const result = await Effect.runPromise(
+      crewContactRemove(CREW_ID_F2Y, "Rolan Wott", 5),
+    );
+    expect(result.contacts).toHaveLength(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/contact.remove`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "Rolan Wott" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with NOT_FOUND code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("contact.remove", "NOT_FOUND", "contact not found", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(crewContactRemove(CREW_ID_F2Y, "Nobody", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("contact.remove", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(crewContactRemove(CREW_ID_F2Y, "Rolan Wott", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("factionSetStatus", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/faction.set-status with name, status, and If-Match, returns applied requested/effective", async () => {
+    const withFaction = makeCrew({
+      revision: 6,
+      factions: [{ name: "The Crows", status: 9 }],
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpOk(withFaction, "faction.set-status", { requested: 999, effective: 9 })),
+    });
+
+    const result = await Effect.runPromise(
+      factionSetStatus(CREW_ID_F2Y, "The Crows", 999, 5),
+    );
+    expect(result.crew.factions?.[0]?.status).toBe(9);
+    expect(result.requested).toBe(999);
+    expect(result.effective).toBe(9);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/faction.set-status`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "The Crows", status: 999 }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("faction.set-status", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(factionSetStatus(CREW_ID_F2Y, "The Crows", 3, 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "VALIDATION: invalid status",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(factionSetStatus(CREW_ID_F2Y, "The Crows", 3, 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+describe("factionRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/faction.remove with name and If-Match, decodes crew from OperationResult", async () => {
+    const removed = makeCrew({ revision: 6, factions: [] });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(removed, "faction.remove")),
+    });
+
+    const result = await Effect.runPromise(
+      factionRemove(CREW_ID_F2Y, "The Crows", 5),
+    );
+    expect(result.factions).toHaveLength(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/faction.remove`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "The Crows" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with NOT_FOUND code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("faction.remove", "NOT_FOUND", "faction not found", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(factionRemove(CREW_ID_F2Y, "Nobody", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("faction.remove", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(factionRemove(CREW_ID_F2Y, "The Crows", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
     }
   });
 });

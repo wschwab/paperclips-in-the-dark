@@ -1,0 +1,135 @@
+---
+title: F2y — Crew Sheet: Contacts & Factions
+---
+
+# F2y: Crew Sheet — Contacts & Factions
+
+Closes the loop on the C3 contract change (crew `contacts[]` / `factions[]`
+with add/remove/set-status ops) and its A6 Ada server implementation: the
+crew sheet now edits contacts and faction standing directly, following the
+same mutation-runner pattern as the character sheet (F2m/F2n). Test coverage
+is red-green on both the API client and page layers.
+
+## Lineage: C3 → A6 → F2y
+
+- **C3 (contract)**: added optional `contacts` (`{name, profession}`) and
+  `factions` (`{name, status}`) arrays to the crew DTO plus the four ops
+  below. Clients MUST tolerate absence of the arrays (older snapshots /
+  backends); servers implementing C3 MUST emit them (empty array when none).
+- **A6 (server)**: Ada implementation of the four ops, verified live —
+  `DUPLICATE` on duplicate contact name, `NOT_FOUND` for unknown
+  remove targets, and status clamping to the game-settings
+  `FactionStatus {Min, Max}` range with `applied.requested` / `applied.effective`
+  reporting.
+- **F2y (this slice)**: frontend client methods, the crew-sheet section, page
+  tests, and this page.
+
+## Client methods added
+
+| Method | Endpoint | If-Match | Body | Returns |
+|--------|----------|----------|------|---------|
+| `crewContactAdd` | `ops/contact.add` | ✓ | `{ name, profession }` | updated `Crew` |
+| `crewContactRemove` | `ops/contact.remove` | ✓ | `{ name }` | updated `Crew` |
+| `factionSetStatus` | `ops/faction.set-status` | ✓ | `{ name, status }` | `FactionSetStatusResult` — `{ crew, requested, effective }` |
+| `factionRemove` | `ops/faction.remove` | ✓ | `{ name }` | updated `Crew` |
+
+Three of the four go through a new `crewMutate` generic helper (the crew
+analogue of `characterMutate`): POST to `/api/crews/{id}/ops/{op}` with an
+`If-Match` header set to the crew's current revision, decode the
+`OperationResult`, and extract the updated `Crew` DTO. Stale-revision
+handling follows the F2h pattern: `409` + `STALE_REVISION` error code →
+`StaleRevisionError`. Op-level failures (`ok: false` in the result body, e.g.
+`DUPLICATE` / `NOT_FOUND`) surface as `ApiError`s whose body starts with the
+error code, so the page can render a specific notice.
+
+`factionSetStatus` is the exception: it needs the `applied` block of the
+`OperationResult` (the server-reported clamp) in addition to the updated
+crew, so it has its own fetch/parse path and returns
+`FactionSetStatusResult { crew, requested, effective }`, mirroring
+`harmAdd`'s `landedIntensity` shape.
+
+## Clamp semantics (no hardcoded range)
+
+Per the C3 contract, the faction-status range comes from **game-settings
+`FactionStatus {Min, Max}` only** — the server clamps the requested status to
+that range and reports `applied.requested` / `applied.effective` in the
+`OperationResult`. The frontend never hardcodes a status range: the set-status
+control is a plain numeric input with no `min`/`max` attributes, and the
+client trusts the server's reported `effective` value. When
+`effective !== requested` (the server clamped), the page shows a
+"Faction status clamped to {effective} (requested {requested})" notice for
+5 seconds. The updated status is also re-read from the returned crew DTO.
+
+## Page section
+
+A `crew-contacts-factions` section sits between Fund and Notes with an `h2`
+heading "Contacts & Factions" and two labelled sub-blocks:
+
+### Contacts
+
+- List of `{name, profession}` entries (profession may be absent in older
+  snapshots and renders as empty).
+- Per-entry ✕ remove button calling `onContactRemove(name)` →
+  `crewContactRemove` (disabled while any op is in flight).
+- Add form: "Contact name" and "Contact profession" text inputs plus an
+  "Add contact" button (`+`, showing `…` while in flight) →
+  `crewContactAdd`. Empty names are ignored client-side.
+
+### Factions
+
+- List of `{name, status}` entries showing the current status.
+- Per-entry numeric input (no min/max) + "Set status" button →
+  `factionSetStatus`; the clamp notice described above appears when the
+  server adjusted the value.
+- Per-entry ✕ remove button → `factionRemove`.
+
+### Error notices
+
+- `DUPLICATE` (contact.add with an existing name) →
+  "DUPLICATE: a contact with that name already exists".
+- `NOT_FOUND` (remove of an unknown name) →
+  "NOT_FOUND: not on this sheet (removed elsewhere?)".
+- Any `StaleRevisionError` → render, refetch the crew via `getCrew`, and show
+  the standard "Sheet refreshed because it changed elsewhere" notice (F2h).
+
+## Schema
+
+`Crew` gains `contacts` and `factions` as **optional** array fields using the
+schema file's existing `Schema.optional(...)` idiom (same as
+`OperationResult`'s optional entity fields), so decode tolerates their
+absence on older snapshots/backends. Item shapes mirror the contract:
+`{ name: string(minLength 1), profession?: string }` and
+`{ name: string(minLength 1), status: integer }` — status is a plain integer
+with no minimum (negative standing is legal) and, per the clamp rule above,
+no maximum.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`)
+
+- `describe("crewContactAdd")` — 3 tests (request shape + decode,
+  `DUPLICATE` op error, stale revision)
+- `describe("crewContactRemove")` — 3 tests (request shape + decode,
+  `NOT_FOUND` op error, stale revision)
+- `describe("factionSetStatus")` — 3 tests (request shape + `requested` /
+  `effective` extraction, stale revision, non-409 API error)
+- `describe("factionRemove")` — 3 tests (request shape + decode,
+  `NOT_FOUND` op error, stale revision)
+
+Each method was written red-first (failing test, `not a function`) and then
+implemented to green.
+
+### Page tests (`src/pages/crew-detail.test.ts`)
+
+- `describe("F2y Contacts & Factions")` — 9 tests: contacts render, add via
+  form, remove, `DUPLICATE` notice, factions render, set-status clamp shows
+  the effective value, faction remove, `NOT_FOUND` notice, and a
+  `STALE_REVISION` refetch on contact add.
+
+### Schema tests (`src/schema/decoders.test.ts`)
+
+- golden-crew decode asserts `contacts` and `factions` decode with their
+  names/profession/status (written red before the schema fields existed).
+
+Full suite green (`npm test -- --run`) and `npm run build` (tsc + vite)
+green.

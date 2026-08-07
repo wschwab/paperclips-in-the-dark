@@ -22,6 +22,16 @@ const Upgrade = Schema.Struct({
   boxesMarked: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1)),
 });
 
+const Contact = Schema.Struct({
+  name: Schema.String.pipe(Schema.minLength(1)),
+  profession: Schema.optional(Schema.String),
+});
+
+const Faction = Schema.Struct({
+  name: Schema.String.pipe(Schema.minLength(1)),
+  status: Schema.Number.pipe(Schema.int()),
+});
+
 const Cohort = Schema.Struct({
   id: Uuid,
   cohortKind: CohortType,
@@ -61,6 +71,8 @@ export const Crew = Schema.Struct({
   specialAbilities: Schema.Array(SpecialAbility),
   upgrades: Schema.Array(Upgrade),
   cohorts: Schema.Array(Cohort),
+  contacts: Schema.optional(Schema.Array(Contact)),
+  factions: Schema.optional(Schema.Array(Faction)),
   coin: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   stash: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   notes: Schema.String,

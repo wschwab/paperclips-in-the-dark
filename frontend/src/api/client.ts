@@ -590,3 +590,172 @@ export function stressAdd(id: string, delta: number, revision: number): Effect.E
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// F2y operations — crewContactAdd, crewContactRemove, factionSetStatus, factionRemove
+// ---------------------------------------------------------------------------
+
+/** Generic crew mutator helper: POST to /ops/{op}, parse OperationResult, extract crew. */
+function crewMutate(
+  id: string,
+  op: string,
+  revision: number,
+  body: unknown = {},
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(`/api/crews/${id}/ops/${op}`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "If-Match": String(revision),
+          },
+          body: JSON.stringify(body),
+        });
+        const text = await response.text();
+        return { response, text };
+      },
+      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+    });
+
+    if (!res.response.ok) {
+      if (res.response.status === 409) {
+        try {
+          const parsed = JSON.parse(res.text);
+          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
+          if (opResult.error?.code === "STALE_REVISION") {
+            const currentRevision = opResult.error.details?.currentRevision;
+            if (typeof currentRevision === "number") {
+              yield* Effect.fail(new StaleRevisionError(currentRevision));
+            }
+            yield* Effect.fail(new StaleRevisionError(0));
+          }
+        } catch {
+          // Malformed 409 body: fall through to ApiError
+        }
+      }
+      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    }
+
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.ok) {
+          if (opResult.error) {
+            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
+          }
+          throw new ApiError(res.response.status, "Operation failed");
+        }
+        if (!opResult.crew) {
+          throw new Error("Missing crew in OperationResult");
+        }
+        return opResult.crew;
+      },
+      catch: (cause) => {
+        if (cause instanceof ApiError) return cause;
+        return new DecodeError(cause);
+      },
+    });
+  });
+}
+
+export function crewContactAdd(
+  id: string,
+  name: string,
+  profession: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "contact.add", revision, { name, profession });
+}
+
+export function crewContactRemove(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "contact.remove", revision, { name });
+}
+
+/** Result of factionSetStatus: includes the updated crew and the server-reported applied requested/effective status (clamp). */
+export interface FactionSetStatusResult {
+  crew: Crew;
+  requested: number;
+  effective: number;
+}
+
+export function factionSetStatus(
+  id: string,
+  name: string,
+  status: number,
+  revision: number,
+): Effect.Effect<FactionSetStatusResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(`/api/crews/${id}/ops/faction.set-status`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "If-Match": String(revision),
+          },
+          body: JSON.stringify({ name, status }),
+        });
+        const text = await response.text();
+        return { response, text };
+      },
+      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+    });
+
+    if (!res.response.ok) {
+      if (res.response.status === 409) {
+        try {
+          const parsed = JSON.parse(res.text);
+          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
+          if (opResult.error?.code === "STALE_REVISION") {
+            const currentRevision = opResult.error.details?.currentRevision;
+            if (typeof currentRevision === "number") {
+              yield* Effect.fail(new StaleRevisionError(currentRevision));
+            }
+            yield* Effect.fail(new StaleRevisionError(0));
+          }
+        } catch {
+          // Malformed 409 body: fall through to ApiError
+        }
+      }
+      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    }
+
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.ok) {
+          if (opResult.error) {
+            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
+          }
+          throw new ApiError(res.response.status, "Operation failed");
+        }
+        if (!opResult.crew) {
+          throw new Error("Missing crew in OperationResult");
+        }
+        const requested = opResult.applied.requested ?? status;
+        const effective = opResult.applied.effective ?? requested;
+        return { crew: opResult.crew, requested, effective };
+      },
+      catch: (cause) => {
+        if (cause instanceof ApiError) return cause;
+        return new DecodeError(cause);
+      },
+    });
+  });
+}
+
+export function factionRemove(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "faction.remove", revision, { name });
+}

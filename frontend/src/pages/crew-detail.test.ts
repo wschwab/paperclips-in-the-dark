@@ -272,4 +272,294 @@ describe("crew-detail page", () => {
       );
     });
   });
+
+  // -- F2y: Contacts & Factions ---------------------------------------------
+
+  describe("F2y Contacts & Factions", () => {
+    it("renders contacts with name and profession", async () => {
+      global.fetch = vi.fn().mockResolvedValue(
+        ok(
+          crewDTO({
+            contacts: [{ name: "Rolan Wott", profession: "magistrate" }],
+          }),
+        ),
+      );
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Contacts & Factions");
+        expect(root.textContent).toContain("Rolan Wott");
+        expect(root.textContent).toContain("magistrate");
+      });
+    });
+
+    it("adds a contact via the add form", async () => {
+      const withContact = crewDTO({
+        revision: 6,
+        contacts: [{ name: "Rolan Wott", profession: "magistrate" }],
+      });
+      const addResp = {
+        ok: true,
+        crew: withContact,
+        applied: { op: "contact.add" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(addResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain(
+          "The Red Sashes",
+        );
+      });
+
+      const nameInput = root.querySelector(
+        'input[aria-label="Contact name"]',
+      ) as HTMLInputElement;
+      const profInput = root.querySelector(
+        'input[aria-label="Contact profession"]',
+      ) as HTMLInputElement;
+      nameInput.value = "Rolan Wott";
+      profInput.value = "magistrate";
+      (root.querySelector('button[title="Add contact"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Rolan Wott");
+        expect(root.textContent).toContain("magistrate");
+      });
+    });
+
+    it("removes a contact", async () => {
+      const without = crewDTO({ revision: 6, contacts: [] });
+      const removeResp = {
+        ok: true,
+        crew: without,
+        applied: { op: "contact.remove" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(
+          ok(crewDTO({ contacts: [{ name: "Rolan Wott", profession: "magistrate" }] })),
+        )
+        .mockResolvedValueOnce(ok(removeResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Rolan Wott");
+      });
+
+      (root.querySelector('button[title="Remove contact: Rolan Wott"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove contact: Rolan Wott"]')).toBeNull();
+      });
+    });
+
+    it("shows a DUPLICATE error notice when adding a duplicate contact", async () => {
+      const dupResp = {
+        ok: false,
+        applied: { op: "contact.add" },
+        sideEffects: [],
+        error: { code: "DUPLICATE", message: "contact already exists" },
+        crew: crewDTO({ contacts: [{ name: "Rolan Wott", profession: "magistrate" }] }),
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(dupResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain(
+          "The Red Sashes",
+        );
+      });
+
+      const nameInput = root.querySelector(
+        'input[aria-label="Contact name"]',
+      ) as HTMLInputElement;
+      nameInput.value = "Rolan Wott";
+      (root.querySelector('button[title="Add contact"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("DUPLICATE");
+      });
+    });
+
+    it("renders factions with name and status", async () => {
+      global.fetch = vi.fn().mockResolvedValue(
+        ok(
+          crewDTO({
+            factions: [
+              { name: "The Crows", status: 2 },
+              { name: "Ironhook Prison", status: -1 },
+            ],
+          }),
+        ),
+      );
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("The Crows");
+        expect(root.textContent).toContain("Ironhook Prison");
+      });
+    });
+
+    it("shows the applied.effective when set-status clamps", async () => {
+      const withClamp = crewDTO({
+        revision: 6,
+        factions: [{ name: "The Crows", status: 9 }],
+      });
+      const setResp = {
+        ok: true,
+        crew: withClamp,
+        applied: { op: "faction.set-status", requested: 999, effective: 9 },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(
+          ok(crewDTO({ factions: [{ name: "The Crows", status: 0 }] })),
+        )
+        .mockResolvedValueOnce(ok(setResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("The Crows");
+      });
+
+      const input = root.querySelector(
+        'input[aria-label="Set status for The Crows"]',
+      ) as HTMLInputElement;
+      input.value = "999";
+      (root.querySelector('button[title="Set status for The Crows"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("clamped to 9");
+      });
+    });
+
+    it("removes a faction", async () => {
+      const without = crewDTO({ revision: 6, factions: [] });
+      const removeResp = {
+        ok: true,
+        crew: without,
+        applied: { op: "faction.remove" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(
+          ok(crewDTO({ factions: [{ name: "The Crows", status: 1 }] })),
+        )
+        .mockResolvedValueOnce(ok(removeResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("The Crows");
+      });
+
+      (root.querySelector('button[title="Remove faction: The Crows"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove faction: The Crows"]')).toBeNull();
+      });
+    });
+
+    it("shows a NOT_FOUND error notice when removing an unknown faction", async () => {
+      const nfResp = {
+        ok: false,
+        applied: { op: "faction.remove" },
+        sideEffects: [],
+        error: { code: "NOT_FOUND", message: "faction not found" },
+        crew: crewDTO(),
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(
+          ok(crewDTO({ factions: [{ name: "The Crows", status: 1 }] })),
+        )
+        .mockResolvedValueOnce(ok(nfResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("The Crows");
+      });
+
+      (root.querySelector('button[title="Remove faction: The Crows"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("NOT_FOUND");
+      });
+    });
+
+    it("refetches the sheet after a STALE_REVISION on contact add", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "contact.add" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          message: "Crew revision mismatch",
+          details: { currentRevision: 7 },
+        },
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 409,
+          text: async () => JSON.stringify(staleResp),
+        })
+        .mockResolvedValueOnce(ok(crewDTO({ revision: 7 })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain(
+          "The Red Sashes",
+        );
+      });
+
+      const nameInput = root.querySelector(
+        'input[aria-label="Contact name"]',
+      ) as HTMLInputElement;
+      nameInput.value = "Rolan Wott";
+      (root.querySelector('button[title="Add contact"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(
+        () => {
+          const notice = getNotice(root);
+          expect(notice?.textContent).toContain("Sheet refreshed");
+        },
+        { timeout: 2000 },
+      );
+    });
+  });
 });
