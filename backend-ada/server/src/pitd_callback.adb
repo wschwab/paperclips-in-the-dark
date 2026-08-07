@@ -450,6 +450,39 @@ package body Pitd_Callback is
          declare X : constant JSON_Value := Get(E,"gear"); begin Set_Field(X,"commitment",Str_Field(B,"commitment")); end;
       elsif Op = "notebook.set" then Set_Field(E,"notebook",Str_Field(B,"text"));
       elsif Op = "hold.set" then Set_Field(E,"hold",Str_Field(B,"hold","weak"));
+      elsif Op = "session.set" then
+         declare
+            S : constant JSON_Value := Get (E, "session");
+            Max : constant Integer := Int_Field (S, "max", 3);
+            Allowed : Boolean := True;
+            procedure Check (Name : UTF8_String; Value : JSON_Value) is
+            begin
+               if Name /= "playbookExpressions" and then Name /= "characterExpressions"
+                 and then Name /= "struggleExpressions" then Allowed := False; end if;
+            end Check;
+         begin
+            Map_JSON_Object (B, Check'Access);
+            if not Allowed then return Error_Result (Op, "VALIDATION", "unknown field", E); end if;
+            if Has_Field (B, "playbookExpressions") then
+               Requested := Int_Field (B, "playbookExpressions");
+               Core_Clamp_Add (0, Natural (Max), Natural'Max (0, Requested), New_Value, Applied);
+               Set_Field (S, "playbookExpressions", Integer (New_Value));
+               Effective := Integer (Applied);
+            end if;
+            if Has_Field (B, "characterExpressions") then
+               Requested := Int_Field (B, "characterExpressions");
+               Core_Clamp_Add (0, Natural (Max), Natural'Max (0, Requested), New_Value, Applied);
+               Set_Field (S, "characterExpressions", Integer (New_Value));
+               Effective := Integer (Applied);
+            end if;
+            if Has_Field (B, "struggleExpressions") then
+               Requested := Int_Field (B, "struggleExpressions");
+               Core_Clamp_Add (0, Natural (Max), Natural'Max (0, Requested), New_Value, Applied);
+               Set_Field (S, "struggleExpressions", Integer (New_Value));
+               Effective := Integer (Applied);
+            end if;
+            return Success_Result (Op, E, Requested, Effective);
+         end;
       elsif Op="upgrade.mark" or else Op="upgrade.unmark" then declare A:constant JSON_Array:=Get(E,"upgrades");O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop declare X:constant JSON_Value:=Get(A,I);begin if Str_Field(X,"name")=Name then Found:=True;declare N:constant Integer:=Int_Field(X,"boxesMarked")+(if Op="upgrade.mark" then 1 else -1);begin if N>0 then Set_Field(X,"boxesMarked",N);Append(O,X);end if;end;else Append(O,X);end if;end;end loop;if Op="upgrade.mark" and then not Found then declare X:JSON_Value:=Create_Object;begin Set_Field(X,"name",Name);Set_Field(X,"boxesMarked",Integer'(1));Append(O,X);end;end if;Set_Field(E,"upgrades",O);end;
       elsif Op = "fields.update" then
          declare procedure Copy_Field (Name : UTF8_String; Value : JSON_Value) is begin if Has_Field(E,Name) then Set_Field(E,Name,Clone(Value)); end if; end; begin Map_JSON_Object(B,Copy_Field'Access); end;
