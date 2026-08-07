@@ -1,0 +1,18 @@
+{
+  "task": "A8",
+  "track": "ada",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, pre-digested findings. Report accurate; permissive fallback for unknown abilities is a sensible F2p-compatible choice.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Fourth shape-vs-semantics conformance blind spot closed (A4/A5/A7/A8). ability.remove now works for characters+crews; TimesTakeable enforced from game data."
+}

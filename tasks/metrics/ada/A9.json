@@ -1,0 +1,18 @@
+{
+  "task": "A9",
+  "track": "ada",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm), 2nd dispatch",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 2,
+  "iterationNotes": "Dispatch 1 (implement+test+probe) died silently at investigation, zero edits. Redispatch with orchestrator-written red test + server-only scope: complete and exact in one pass. Confirms the split-scope lesson for flash.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Fifth shape-vs-semantics gap closed (A4/A5/A7/A8/A9). Gear semantics from C# Gear.cs incl. precondition order; conformance 152\u2192156."
+}

@@ -1,0 +1,18 @@
+{
+  "task": "A10",
+  "track": "ada",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm) + orchestrator completion",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 2,
+  "iterationNotes": "Child implemented then died pre-reply (no report). Orchestrator verified build + tests, found precondition-order mismatch with contract, and an orchestrator-side edit broke the Ada else-chain (caught by gnat build) \u2014 both fixed. Conformance 160/160.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "conformance": 0,
+    "review": 1,
+    "human": 0
+  },
+  "notes": "6th shape-vs-semantics gap closed (A4/A5/A7/A8/A9/A10). fund.liquidate + spend stash-liquidation at 2:1 now live."
+}
