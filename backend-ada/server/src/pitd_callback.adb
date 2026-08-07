@@ -362,7 +362,7 @@ package body Pitd_Callback is
         & """,""isRetired"":false,""isDeadish"":false,""dossier"":{""name"":"""",""crewId"":"""",""alias"":"""",""look"":"""",""notes"":"""",""background"":{""name"":"""",""description"":""""},""heritage"":{""name"":"""",""description"":""""},""vice"":{""name"":"""",""description"":""""}},""monitor"":{""stress"":{""current"":0,""max"":9},""trauma"":{""traumas"":[],""max"":4},""harm"":{""lesser"":[],""moderate"":[],""severe"":[],""fatal"":[],""healingClock"":{""segments"":0,""size"":"
         & Trim_Image (Int_Field (G, "RecoveryClockSize", 4))
         & ",""rollover"":0}},""armor"":{""standardUsed"":false,""heavyUsed"":false,""specialUsed"":false,""hasStandard"":false,""hasHeavy"":false,""hasSpecial"":false}},""talent"":{""attributes"":[]},""playbook"":{""name"":"""
-        & Playbook & """,""experience"":{""points"":0,""max"":8},""abilities"":[]},""gear"":{""loadout"":[],""availableGear"":[],""commitment"":"""",""isCommitmentLocked"":false,""maxBulk"":9},""fund"":{""satchel"":{""coins"":2,""max"":4},""stash"":{""coins"":0,""max"":40}},""rolodex"":{""friends"":[]},""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":3},""notebook"":""""}";
+        & Playbook & """,""experience"":{""points"":0,""max"":8},""abilities"":[]},""gear"":{""loadout"":[],""availableGear"":[],""commitment"":""none"",""isCommitmentLocked"":false,""maxBulk"":9},""fund"":{""satchel"":{""coins"":2,""max"":4},""stash"":{""coins"":0,""max"":40}},""rolodex"":{""friends"":[]},""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":3},""notebook"":""""}";
    begin
       C := Read (Template);
       --  Build attributes/actions and playbook defaults from game-settings JSON.
@@ -585,7 +585,7 @@ package body Pitd_Callback is
                if Str_Field(Get(A,I),"name") = Name then Item := Get(A,I); exit; end if;
             end loop;
             if Item.Kind = JSON_Null_Type then return Error_Result(Op,"NOT_FOUND","item not available",E); end if;
-            if Str_Field(G,"commitment") = "" then return Error_Result(Op,"NO_COMMITMENT","no commitment set",E); end if;
+            if Str_Field(G,"commitment") = "" or else Str_Field(G,"commitment") = "none" then return Error_Result(Op,"NO_COMMITMENT","no commitment set",E); end if;
             for I in 1..Length(L) loop
                if Str_Field(Get(L,I),"name") = Name then return Error_Result(Op,"DUPLICATE","item already committed",E); end if;
             end loop;
@@ -612,7 +612,7 @@ package body Pitd_Callback is
       elsif Op = "gear.clear-commitments" then
          declare G : constant JSON_Value := Get(E,"gear"); begin
             if Bool_Field(G,"isCommitmentLocked") then return Error_Result(Op,"COMMITMENT_LOCKED","commitment is locked",E); end if;
-            Set_Field(G,"loadout",Empty_Array);Set_Field(G,"commitment","");
+            Set_Field(G,"loadout",Empty_Array);Set_Field(G,"commitment","none");
          end;
       elsif Op = "notebook.set" then Set_Field(E,"notebook",Str_Field(B,"text"));
       elsif Op = "hold.set" then Set_Field(E,"hold",Str_Field(B,"hold","weak"));

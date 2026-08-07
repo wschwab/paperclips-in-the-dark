@@ -83,7 +83,7 @@ describe("§5.1 gear ops add/remove/commit/uncommit/clear-commitments", () => {
     const cleared = await api.characterOp(character.id, "gear.clear-commitments");
     expect(cleared.ok).toBe(true);
     expect(cleared.character?.gear.loadout).toHaveLength(0);
-    expect(cleared.character?.gear.commitment).toBe("");
+    expect(cleared.character?.gear.commitment).toBe("none");
   });
 
   testCase("SEMANTICS-GEAR-OPS-004", "gear.remove drops from availableGear and loadout; unknown → NOT_FOUND", async () => {

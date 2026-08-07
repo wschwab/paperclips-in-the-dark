@@ -66,7 +66,7 @@ const Character = Schema.Struct({
   gear: Schema.Struct({
     loadout: Schema.Array(GearItem),
     availableGear: Schema.Array(GearItem),
-    commitment: Schema.String,
+    commitment: Schema.Literal("none", "light", "normal", "heavy", "encumbered"),
     isCommitmentLocked: Schema.Boolean,
     maxBulk: Schema.Number,
   }),
