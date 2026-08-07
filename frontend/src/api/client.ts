@@ -885,3 +885,74 @@ export function abilityRemove(
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return characterMutate(id, "ability.remove", revision, { name });
 }
+
+// ---------------------------------------------------------------------------
+// F2r operations — gearAdd, gearRemove, gearCommit, gearUncommit, gearLock,
+// gearUnlock, gearSetCommitment, gearClearCommitments
+// ---------------------------------------------------------------------------
+
+export function gearAdd(
+  id: string,
+  name: string,
+  bulk: number,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.add", revision, { name, bulk });
+}
+
+/** Removes the item from available gear (and the loadout as a side effect). */
+export function gearRemove(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.remove", revision, { name });
+}
+
+/** Moves an available item into the loadout (commitment must be set, bulk must fit). */
+export function gearCommit(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.commit", revision, { name });
+}
+
+/** Removes an item from the loadout, keeping it in available gear. */
+export function gearUncommit(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.uncommit", revision, { name });
+}
+
+export function gearLock(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.lock", revision);
+}
+
+export function gearUnlock(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.unlock", revision);
+}
+
+export function gearSetCommitment(
+  id: string,
+  commitment: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.set-commitment", revision, { commitment });
+}
+
+/** Clears the loadout and resets the commitment to "none". */
+export function gearClearCommitments(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.clear-commitments", revision);
+}

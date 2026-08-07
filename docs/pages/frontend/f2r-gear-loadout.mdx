@@ -1,0 +1,129 @@
+---
+title: F2r — Character Sheet: Gear / Loadout
+---
+
+# F2r: Character Sheet — Gear / Loadout
+
+Implemented per the [F2 sheet plan](/frontend/f2-sheet-plan) UI idioms and op
+mapping. All data flows through the frozen contract operations; test coverage
+is red-green on both the API client and page layers.
+
+## Client methods added
+
+| Method | Endpoint | If-Match | Body | Returns |
+|--------|----------|----------|------|---------|
+| `gearAdd` | `ops/gear.add` | ✓ | `{ name, bulk }` | updated `Character` |
+| `gearRemove` | `ops/gear.remove` | ✓ | `{ name }` | updated `Character` |
+| `gearCommit` | `ops/gear.commit` | ✓ | `{ name }` | updated `Character` |
+| `gearUncommit` | `ops/gear.uncommit` | ✓ | `{ name }` | updated `Character` |
+| `gearLock` | `ops/gear.lock` | ✓ | — (no body) | updated `Character` |
+| `gearUnlock` | `ops/gear.unlock` | ✓ | — (no body) | updated `Character` |
+| `gearSetCommitment` | `ops/gear.set-commitment` | ✓ | `{ commitment }` | updated `Character` |
+| `gearClearCommitments` | `ops/gear.clear-commitments` | ✓ | — (no body) | updated `Character` |
+
+All eight go through the existing `characterMutate` generic helper: POST to
+`/api/characters/{id}/ops/{op}` with an `If-Match` header set to the
+character's current revision, decode the `OperationResult`, and extract the
+updated `Character` DTO. Stale-revision handling follows the F2h rule: `409`
++ `STALE_REVISION` error code → `StaleRevisionError`, and the page refetches.
+
+> **Request bodies verified against the frozen contract.** The task brief
+> initially said `gear.remove`/`gear.commit`/`gear.uncommit` take no body, but
+> `contract/openapi.yaml` (authoritative) specifies a `Named` body
+> (`{ name }`) for all three, and the contract endpoint tests
+> (`conformance/suites/contract/endpoints.test.ts`) post them with
+> `{ name: "Test" }`. The client methods follow the contract.
+
+## Page section
+
+### Loadout list
+
+Renders the DTO's `gear.loadout`: each item's name and bulk, with a `✕`
+remove button per item calling `gearRemove(name)` — per the contract's
+`gear.remove` description, removing an item also drops it from the loadout as
+a side effect when it was committed. Above the list the summary shows the
+bulk sum and **headroom** (`maxBulk − sum`) — a derived, display-only value
+computed client-side from the DTO. `maxBulk` always comes from the DTO
+(current commitment's capacity); no maximum is hardcoded.
+
+### Add menu
+
+A native `<select>` inside a `<details>/<summary>` (the plan's collapsible
+menu idiom). Options come **from game data only**: the playbook's `Items`
+plus the game's `SharedItems`, deduped by name (playbook wins on a
+duplicate), each labelled with its bulk. If the playbook endpoint fetch
+fails, the page falls back to the `Playbooks[].Items` entry in the
+game-settings JSON (same graceful-degradation pattern as F2o/F2p). The add
+button posts `gearAdd(name, bulk)` with the bulk read from the game-data
+menu.
+
+### Commitment (load level)
+
+A selector over the contract's commitment options (`light` / `normal` /
+`heavy` / `encumbered`) with a **set** button posting
+`gearSetCommitment(commitment)`. The per-option maxima live server-side in
+game settings; the DTO carries only the current commitment's `maxBulk`, which
+the load summary reflects. The **lock** toggle posts `gearLock`/`gearUnlock`
+depending on the DTO's `isCommitmentLocked`. While locked, the server rejects
+`set-commitment` (and `commit`/`clear-commitments`) with
+`COMMITMENT_LOCKED`; the page surfaces that as an op-level error notice (see
+below) rather than silently swallowing it. **Clear commitments** posts
+`gearClearCommitments`, which clears the loadout and resets the commitment to
+`none`.
+
+### Loadout selector (commit / uncommit)
+
+A selector over the DTO's `availableGear` (all items the character owns;
+committed ones are marked "in loadout") with **commit** and **uncommit**
+buttons posting `gearCommit(name)` / `gearUncommit(name)`. Server
+preconditions (commitment set, bulk fits, item available, not already
+committed, not locked) are enforced server-side; failures surface as
+notices.
+
+### Op-level error notices
+
+Gear op failures come back as `200` responses whose `OperationResult` has
+`ok: false` (the op-level failure shape). These surface as `ApiError`s
+carrying the error code, and the page translates them into friendly notices:
+
+- `COMMITMENT_LOCKED` → "the commitment is locked — unlock it before changing it"
+- `NO_COMMITMENT` → "set a load commitment before committing gear"
+- `OVER_BULK` → "this item would exceed your load capacity"
+- `DUPLICATE` → "that item is already in your loadout"
+- `NOT_FOUND` → "not on this sheet (removed elsewhere?)"
+- anything else falls back to the raw `API error (status): body` message
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — red-green per method
+
+- `describe("gearAdd")` — 4 tests (request shape, op-level `ok:false` →
+  `ApiError`, stale revision, non-409 error)
+- `describe("gearRemove")` — 4 tests (same matrix)
+- `describe("gearCommit")` — 4 tests (same matrix)
+- `describe("gearUncommit")` — 4 tests (same matrix)
+- `describe("gearLock")` — 3 tests (no-body request shape, stale revision,
+  non-409 error)
+- `describe("gearUnlock")` — 3 tests (same matrix)
+- `describe("gearSetCommitment")` — 4 tests (same matrix)
+- `describe("gearClearCommitments")` — 4 tests (same matrix)
+
+Red phase: all 30 failed with `(0 , gearX) is not a function` (methods not
+yet exported); green after the client implementation. Verified by grep of the
+client test file.
+
+### Page tests (`src/pages/character-detail.test.ts`)
+
+- `describe("F2r Gear")` — 9 tests: loadout render from the DTO (name + bulk
+  per item, bulk sum, derived headroom, commitment + lock state); add menu
+  from playbook Items + SharedItems deduped by name inside
+  `<details>/<summary>` with bulk labels; add posts `gearAdd` with name+bulk
+  from game data; remove posts `gearRemove`; set-commitment posts
+  `gearSetCommitment` and reflects the updated `maxBulk` from the DTO;
+  commit/uncommit via the loadout selector posts `gearCommit`/`gearUncommit`;
+  lock/unlock posts `gearLock`/`gearUnlock`; a `COMMITMENT_LOCKED` op error
+  is surfaced as an error notice; clear posts `gearClearCommitments` and
+  resets the loadout + commitment.
+
+Full suite: 234 tests green (151 client + 50 character-detail + 15
+crew-detail + 18 schema), and `npm run build` (tsc + vite) is green.

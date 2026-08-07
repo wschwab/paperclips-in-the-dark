@@ -1925,4 +1925,477 @@ describe("character-detail page", () => {
       });
     });
   });
+describe("F2r Gear", () => {
+    /** Character DTO with a populated gear section. */
+    function gearDTO(overrides: Record<string, unknown> = {}) {
+      return characterDTO({
+        gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "none",
+          isCommitmentLocked: false,
+          maxBulk: 5,
+        },
+        ...overrides,
+      });
+    }
+
+    /** Game data with SharedItems (the add-menu source for shared gear). */
+    const GEAR_GAME_DATA = {
+      ...GAME_DATA,
+      SharedItems: [
+        { Name: "A Blade or Two", Bulk: 1 },
+        { Name: "Throwing Knives", Bulk: 1 },
+        { Name: "A Large Weapon", Bulk: 2 },
+      ],
+    };
+
+    /** Playbook settings with Items (the add-menu source for playbook gear). */
+    const GEAR_PLAYBOOK_DATA = {
+      ...PLAYBOOK_DATA,
+      Items: [
+        { Name: "Fine cover identity", Bulk: 0 },
+        { Name: "Concealed palm pistol", Bulk: 0 },
+        { Name: "A Blade or Two", Bulk: 1 }, // dup with SharedItems — must be deduped
+      ],
+    };
+
+    const charOpOk = (character: unknown, opName: string) => ({
+      ok: true,
+      character,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    it("renders the loadout from the DTO with bulk sum and derived headroom", async () => {
+      const dto = gearDTO({
+        gear: {
+          loadout: [
+            { name: "Fine cover identity", bulk: 0 },
+            { name: "A Blade or Two", bulk: 1 },
+            { name: "A Large Weapon", bulk: 2 },
+          ],
+          availableGear: [
+            { name: "Fine cover identity", bulk: 0 },
+            { name: "A Blade or Two", bulk: 1 },
+            { name: "A Large Weapon", bulk: 2 },
+          ],
+          commitment: "normal",
+          isCommitmentLocked: true,
+          maxBulk: 5,
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(dto))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".character-gear")).not.toBeNull();
+      });
+
+      // Each loadout item shows name + bulk
+      const entries = root.querySelectorAll(".gear-loadout-entry");
+      expect(entries.length).toBe(3);
+      const blade = root.querySelector('.gear-loadout-entry[data-gear-item="A Blade or Two"]');
+      expect(blade?.textContent).toContain("A Blade or Two");
+      expect(blade?.textContent).toContain("1");
+      const large = root.querySelector('.gear-loadout-entry[data-gear-item="A Large Weapon"]');
+      expect(large?.textContent).toContain("2");
+
+      // Bulk sum and derived headroom (maxBulk - sum, from the DTO — never hardcoded)
+      expect(root.querySelector(".gear-bulk-sum")?.textContent).toContain("3 / 5");
+      expect(root.querySelector(".gear-headroom")?.textContent).toContain("2");
+
+      // Commitment + lock state rendered
+      expect(root.querySelector('select[aria-label="Set commitment"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Unlock commitment"]')).not.toBeNull();
+    });
+
+    it("populates the add menu from playbook Items + SharedItems (deduped by name) inside details/summary", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(gearDTO()))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Add gear item"]')).not.toBeNull();
+      });
+
+      // Menu comes from game data only: playbook Items + SharedItems, deduped by name
+      const select = root.querySelector('select[aria-label="Add gear item"]') as HTMLSelectElement;
+      const options = Array.from(select.options).map((o) => o.value);
+      expect(options).toEqual(["", "Fine cover identity", "Concealed palm pistol", "A Blade or Two", "Throwing Knives", "A Large Weapon"]);
+      // Bulk shown per option
+      const large = Array.from(select.options).find((o) => o.value === "A Large Weapon");
+      expect(large?.textContent).toContain("2");
+
+      // Per the plan idiom the menu lives in a <details>/<summary>
+      const details = root.querySelector("details.gear-add-menu");
+      expect(details?.querySelector("summary")?.textContent).toContain("Add item");
+    });
+
+    it("adds an item from the menu via gearAdd with name + bulk from game data", async () => {
+      const added = gearDTO({
+        revision: 13,
+        gear: {
+          loadout: [],
+          availableGear: [{ name: "A Large Weapon", bulk: 2 }],
+          commitment: "none",
+          isCommitmentLocked: false,
+          maxBulk: 5,
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(gearDTO()))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(added, "gear.add")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add gear item"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Add gear item"]') as HTMLSelectElement;
+      select.value = "A Large Weapon";
+      (root.querySelector('button[title="Add gear item"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.add`,
+          expect.objectContaining({ body: JSON.stringify({ name: "A Large Weapon", bulk: 2 }) }),
+        );
+      });
+      // The new item appears in the loadout selector (availableGear from DTO)
+      await vi.waitFor(() => {
+        const gearSelect = root.querySelector('select[aria-label="Select gear item"]') as HTMLSelectElement;
+        expect(Array.from(gearSelect.options).map((o) => o.value)).toContain("A Large Weapon");
+      });
+    });
+
+    it("removes a loadout item via gearRemove with its name", async () => {
+      const dto = gearDTO({
+        gear: {
+          loadout: [{ name: "Fine cover identity", bulk: 0 }],
+          availableGear: [{ name: "Fine cover identity", bulk: 0 }],
+          commitment: "normal",
+          isCommitmentLocked: false,
+          maxBulk: 5,
+        },
+      });
+      const removed = gearDTO({
+        revision: 13,
+        gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "normal",
+          isCommitmentLocked: false,
+          maxBulk: 5,
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(dto))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(removed, "gear.remove")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove gear: Fine cover identity"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Remove gear: Fine cover identity"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.remove`,
+          expect.objectContaining({ body: JSON.stringify({ name: "Fine cover identity" }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('.gear-loadout-entry[data-gear-item="Fine cover identity"]')).toBeNull();
+      });
+    });
+
+    it("sets the commitment via gearSetCommitment and reflects maxBulk from the DTO", async () => {
+      const set = gearDTO({
+        revision: 13,
+        gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "heavy",
+          isCommitmentLocked: false,
+          maxBulk: 6,
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(gearDTO()))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(set, "gear.set-commitment")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Set commitment"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Set commitment"]') as HTMLSelectElement;
+      select.value = "heavy";
+      (root.querySelector('button[title="Set commitment"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.set-commitment`,
+          expect.objectContaining({ body: JSON.stringify({ commitment: "heavy" }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        // maxBulk comes from the updated DTO (6 for heavy) — never hardcoded
+        expect(root.querySelector(".gear-bulk-sum")?.textContent).toContain("0 / 6");
+      });
+    });
+
+    it("commits and uncommits items from the loadout selector via gearCommit/gearUncommit", async () => {
+      const committed = gearDTO({
+        revision: 13,
+        gear: {
+          loadout: [{ name: "A Blade or Two", bulk: 1 }],
+          availableGear: [{ name: "A Blade or Two", bulk: 1 }],
+          commitment: "normal",
+          isCommitmentLocked: true,
+          maxBulk: 5,
+        },
+      });
+      const uncommitted = gearDTO({
+        revision: 14,
+        gear: {
+          loadout: [],
+          availableGear: [{ name: "A Blade or Two", bulk: 1 }],
+          commitment: "normal",
+          isCommitmentLocked: true,
+          maxBulk: 5,
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(gearDTO({ gear: {
+          loadout: [],
+          availableGear: [{ name: "A Blade or Two", bulk: 1 }],
+          commitment: "normal",
+          isCommitmentLocked: true,
+          maxBulk: 5,
+        } })))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(committed, "gear.commit")))
+        .mockResolvedValueOnce(ok(charOpOk(uncommitted, "gear.uncommit")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Select gear item"]')).not.toBeNull();
+      });
+
+      // commit: select the item, click commit → gearCommit { name }
+      const gearSelect = root.querySelector('select[aria-label="Select gear item"]') as HTMLSelectElement;
+      gearSelect.value = "A Blade or Two";
+      (root.querySelector('button[title="Commit selected gear"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.commit`,
+          expect.objectContaining({ body: JSON.stringify({ name: "A Blade or Two" }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('.gear-loadout-entry[data-gear-item="A Blade or Two"]')).not.toBeNull();
+      });
+
+      // uncommit: re-select the item (the re-render resets the select), then
+      // click uncommit → gearUncommit { name }
+      const gearSelect2 = root.querySelector('select[aria-label="Select gear item"]') as HTMLSelectElement;
+      gearSelect2.value = "A Blade or Two";
+      (root.querySelector('button[title="Uncommit selected gear"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.uncommit`,
+          expect.objectContaining({ body: JSON.stringify({ name: "A Blade or Two" }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('.gear-loadout-entry[data-gear-item="A Blade or Two"]')).toBeNull();
+      });
+    });
+
+    it("locks/unlocks the commitment via gearLock/gearUnlock", async () => {
+      const locked = gearDTO({
+        revision: 13,
+        gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "normal",
+          isCommitmentLocked: true,
+          maxBulk: 5,
+        },
+      });
+      const unlocked = gearDTO({
+        revision: 14,
+        gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "normal",
+          isCommitmentLocked: false,
+          maxBulk: 5,
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(gearDTO({ gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "normal",
+          isCommitmentLocked: false,
+          maxBulk: 5,
+        } })))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(locked, "gear.lock")))
+        .mockResolvedValueOnce(ok(charOpOk(unlocked, "gear.unlock")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Lock commitment"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Lock commitment"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.lock`,
+          expect.objectContaining({ method: "POST" }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Unlock commitment"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Unlock commitment"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.unlock`,
+          expect.objectContaining({ method: "POST" }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Lock commitment"]')).not.toBeNull();
+      });
+    });
+
+    it("surfaces a COMMITMENT_LOCKED op error when set-commitment is rejected server-side", async () => {
+      const opErr = {
+        ok: false,
+        applied: { op: "gear.set-commitment" },
+        sideEffects: [],
+        error: { code: "COMMITMENT_LOCKED", message: "commitment is locked" },
+        character: gearDTO({ gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "normal",
+          isCommitmentLocked: true,
+          maxBulk: 5,
+        } }),
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(gearDTO({ gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "normal",
+          isCommitmentLocked: true,
+          maxBulk: 5,
+        } })))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(opErr));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Set commitment"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Set commitment"]') as HTMLSelectElement;
+      select.value = "heavy";
+      (root.querySelector('button[title="Set commitment"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("COMMITMENT_LOCKED");
+        expect(err?.textContent).toContain("commitment is locked");
+      });
+    });
+
+    it("clears commitments via gearClearCommitments (loadout + commitment reset)", async () => {
+      const cleared = gearDTO({
+        revision: 13,
+        gear: {
+          loadout: [],
+          availableGear: [],
+          commitment: "none",
+          isCommitmentLocked: false,
+          maxBulk: 0,
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(gearDTO({ gear: {
+          loadout: [{ name: "A Blade or Two", bulk: 1 }],
+          availableGear: [{ name: "A Blade or Two", bulk: 1 }],
+          commitment: "normal",
+          isCommitmentLocked: false,
+          maxBulk: 5,
+        } })))
+        .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(cleared, "gear.clear-commitments")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Clear commitments"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Clear commitments"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/gear.clear-commitments`,
+          expect.objectContaining({ method: "POST" }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('.gear-loadout-entry[data-gear-item="A Blade or Two"]')).toBeNull();
+        expect(root.querySelector(".gear-bulk-sum")?.textContent).toContain("0 / 0");
+      });
+    });
+  });
 });

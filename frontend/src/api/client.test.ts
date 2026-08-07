@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -3349,6 +3349,687 @@ describe("abilityRemove", () => {
 
     const result = await Effect.runPromise(
       Effect.either(abilityRemove("some-id", "Calculated", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.add with name+bulk and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [],
+        availableGear: [{ name: "A Blade or Two", bulk: 1 }],
+        commitment: "none",
+        isCommitmentLocked: false,
+        maxBulk: 8,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "A Blade or Two", 1, 12),
+    );
+    expect(result.gear.availableGear).toHaveLength(1);
+    expect(result.gear.availableGear[0]?.name).toBe("A Blade or Two");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.add",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ name: "A Blade or Two", bulk: 1 }),
+      },
+    );
+  });
+
+  it("exposes ApiError with VALIDATION code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("gear.add", "VALIDATION", "bulk must be >= 0", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Nope", -1, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.add", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearAdd("some-id", "A Blade or Two", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearAdd("some-id", "A Blade or Two", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.remove with name and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [],
+        availableGear: [],
+        commitment: "none",
+        isCommitmentLocked: false,
+        maxBulk: 8,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearRemove("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "A Blade or Two", 12),
+    );
+    expect(result.gear.availableGear).toHaveLength(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.remove",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ name: "A Blade or Two" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with NOT_FOUND code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("gear.remove", "NOT_FOUND", "no such item", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearRemove("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Nope", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.remove", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearRemove("some-id", "A Blade or Two", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearRemove("some-id", "A Blade or Two", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearCommit", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.commit with name and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [{ name: "A Blade or Two", bulk: 1 }],
+        availableGear: [{ name: "A Blade or Two", bulk: 1 }],
+        commitment: "normal",
+        isCommitmentLocked: true,
+        maxBulk: 5,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearCommit("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "A Blade or Two", 12),
+    );
+    expect(result.gear.loadout).toHaveLength(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.commit",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ name: "A Blade or Two" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with OVER_BULK code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("gear.commit", "OVER_BULK", "too heavy", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearCommit("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "A Large Weapon", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("OVER_BULK");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.commit", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearCommit("some-id", "A Blade or Two", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearCommit("some-id", "A Blade or Two", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearUncommit", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.uncommit with name and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [],
+        availableGear: [{ name: "A Blade or Two", bulk: 1 }],
+        commitment: "normal",
+        isCommitmentLocked: true,
+        maxBulk: 5,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearUncommit("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "A Blade or Two", 12),
+    );
+    expect(result.gear.loadout).toHaveLength(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.uncommit",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ name: "A Blade or Two" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with COMMITMENT_LOCKED code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("gear.uncommit", "COMMITMENT_LOCKED", "locked", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearUncommit("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "A Blade or Two", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("COMMITMENT_LOCKED");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.uncommit", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearUncommit("some-id", "A Blade or Two", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearUncommit("some-id", "A Blade or Two", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearLock", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.lock with no body and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [],
+        availableGear: [],
+        commitment: "normal",
+        isCommitmentLocked: true,
+        maxBulk: 5,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearLock("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+    );
+    expect(result.gear.isCommitmentLocked).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.lock",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.lock", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearLock("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearLock("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearUnlock", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.unlock with no body and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [],
+        availableGear: [],
+        commitment: "normal",
+        isCommitmentLocked: false,
+        maxBulk: 5,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearUnlock("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+    );
+    expect(result.gear.isCommitmentLocked).toBe(false);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.unlock",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.unlock", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearUnlock("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearUnlock("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearSetCommitment", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.set-commitment with commitment and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [],
+        availableGear: [],
+        commitment: "heavy",
+        isCommitmentLocked: false,
+        maxBulk: 6,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearSetCommitment("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "heavy", 12),
+    );
+    expect(result.gear.commitment).toBe("heavy");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.set-commitment",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ commitment: "heavy" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with COMMITMENT_LOCKED code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("gear.set-commitment", "COMMITMENT_LOCKED", "commitment is locked", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearSetCommitment("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "heavy", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("COMMITMENT_LOCKED");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.set-commitment", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearSetCommitment("some-id", "heavy", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearSetCommitment("some-id", "heavy", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("gearClearCommitments", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/gear.clear-commitments with no body and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      gear: {
+        loadout: [],
+        availableGear: [],
+        commitment: "none",
+        isCommitmentLocked: false,
+        maxBulk: 0,
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      gearClearCommitments("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+    );
+    expect(result.gear.commitment).toBe("none");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/gear.clear-commitments",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+  });
+
+  it("exposes ApiError with COMMITMENT_LOCKED code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("gear.clear-commitments", "COMMITMENT_LOCKED", "locked", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearClearCommitments("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("COMMITMENT_LOCKED");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("gear.clear-commitments", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearClearCommitments("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(gearClearCommitments("some-id", 1)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {

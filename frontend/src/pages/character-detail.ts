@@ -26,6 +26,14 @@ import {
   playbookXpClear,
   abilityTake,
   abilityRemove,
+  gearAdd,
+  gearRemove,
+  gearCommit,
+  gearUncommit,
+  gearLock,
+  gearUnlock,
+  gearSetCommitment,
+  gearClearCommitments,
   type SessionFields,
 } from "../api/client.js";
 import { stressTrack } from "../components/stress-track.js";
@@ -126,6 +134,71 @@ function playbookOpErrorText(err: ApiError): string {
   return `API error (${err.status}): ${body}`;
 }
 
+/** One entry of the gear add-menu (playbook Items + game SharedItems). */
+interface GearMenuItem {
+  name: string;
+  bulk: number;
+}
+
+/**
+ * Gear add-menu source: the playbook's Items plus the game's SharedItems,
+ * deduped by name (playbook wins on duplicates). Both come from game data —
+ * never a hardcoded list. Falls back to the game-data Playbooks entry when
+ * the playbook endpoint fetch failed (graceful degradation, like F2o/F2p).
+ */
+function extractGearMenu(
+  playbookData: Record<string, unknown> | null,
+  gameData: Record<string, unknown> | null,
+  playbookName: string,
+): GearMenuItem[] {
+  const byName = new Map<string, number>();
+  const collect = (items: unknown) => {
+    if (!Array.isArray(items)) return;
+    for (const entry of items) {
+      if (entry && typeof entry === "object" && typeof (entry as Record<string, unknown>).Name === "string") {
+        const name = String((entry as Record<string, unknown>).Name);
+        const bulk = typeof (entry as Record<string, unknown>).Bulk === "number"
+          ? (entry as Record<string, unknown>).Bulk as number
+          : 0;
+        if (!byName.has(name)) byName.set(name, bulk);
+      }
+    }
+  };
+  let playbookItems: unknown = null;
+  if (playbookData && Array.isArray(playbookData.Items)) {
+    playbookItems = playbookData.Items;
+  } else if (Array.isArray(gameData?.Playbooks)) {
+    const found = (gameData!.Playbooks as Array<Record<string, unknown>>).find(
+      (p) => p && typeof p === "object" && p.Name === playbookName,
+    );
+    if (found && Array.isArray(found.Items)) playbookItems = found.Items;
+  }
+  collect(playbookItems);
+  collect(gameData?.SharedItems);
+  return Array.from(byName, ([name, bulk]) => ({ name, bulk }));
+}
+
+/** Friendly text for gear op-level errors carried in ApiError bodies. */
+function gearOpErrorText(err: ApiError): string {
+  const body = err.body;
+  if (body.startsWith("COMMITMENT_LOCKED")) {
+    return "COMMITMENT_LOCKED: the commitment is locked — unlock it before changing it";
+  }
+  if (body.startsWith("NO_COMMITMENT")) {
+    return "NO_COMMITMENT: set a load commitment before committing gear";
+  }
+  if (body.startsWith("OVER_BULK")) {
+    return "OVER_BULK: this item would exceed your load capacity";
+  }
+  if (body.startsWith("DUPLICATE")) {
+    return "DUPLICATE: that item is already in your loadout";
+  }
+  if (body.startsWith("NOT_FOUND")) {
+    return "NOT_FOUND: not on this sheet (removed elsewhere?)";
+  }
+  return `API error (${err.status}): ${body}`;
+}
+
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
@@ -152,6 +225,10 @@ interface RenderState {
   // F2p Playbook state
   isPlaybookLoading: boolean;
   abilityNotice: string | null;
+  // F2r Gear state
+  isGearLoading: boolean;
+  isGearCommitmentLoading: boolean;
+  isGearLockLoading: boolean;
   // Error / notice
   errorMsg: string | null;
   noticeMsg: string | null;
@@ -186,6 +263,13 @@ interface RenderState {
     onPlaybookXpClear: () => void;
     onAbilityTake: () => void;
     onAbilityRemove: (name: string) => void;
+    onGearAdd: () => void;
+    onGearRemove: (name: string) => void;
+    onGearCommit: () => void;
+    onGearUncommit: () => void;
+    onGearSetCommitment: () => void;
+    onGearToggleLock: () => void;
+    onGearClearCommitments: () => void;
   };
 }
 
@@ -199,7 +283,8 @@ function renderDetail(state: RenderState): HTMLElement {
   const anyLoading = state.isStressLoading || state.isStressClearLoading ||
     state.isTraumaLoading || state.isDossierLoading || state.isUndoLoading ||
     state.isHarmLoading || state.isArmorLoading || state.isHealLoading || state.isClockLoading ||
-    state.isTalentsLoading || state.isSessionLoading || state.isPlaybookLoading;
+    state.isTalentsLoading || state.isSessionLoading || state.isPlaybookLoading ||
+    state.isGearLoading || state.isGearCommitmentLoading || state.isGearLockLoading;
 
   // -- Stress track ---------------------------------------------------------
 
@@ -862,6 +947,152 @@ function renderDetail(state: RenderState): HTMLElement {
       );
     })(),
 
+    // -- Gear (F2r) ---------------------------------------------------------
+
+    (() => {
+      const gear = c.gear;
+      const loadoutBulk = gear.loadout.reduce((sum, item) => sum + item.bulk, 0);
+      // Load headroom is derived, display-only: maxBulk (from the DTO) minus the
+      // bulk sum of committed items. Never hardcoded.
+      const headroom = gear.maxBulk - loadoutBulk;
+
+      // Loadout list: name + bulk per item, remove per item (gear.remove also
+      // drops it from available gear, per the contract's sideEffect).
+      const loadoutEntries = gear.loadout.map((item) =>
+        el("div", {
+          className: "gear-loadout-entry",
+          "data-gear-item": item.name,
+          style: "display: flex; align-items: center; gap: 0.5em; margin: 0.25em 0;",
+        },
+          el("span", { className: "lbl", style: "min-width: 8em;" }, item.name),
+          el("span", { className: "gear-item-bulk" }, `${item.bulk} bulk`),
+          el("button", {
+            type: "button",
+            disabled: anyLoading,
+            title: `Remove gear: ${item.name}`,
+          }, "✕"),
+        ),
+      );
+      loadoutEntries.forEach((entry, idx) => {
+        const btn = entry.querySelector("button");
+        if (btn) {
+          btn.addEventListener("click", () => handlers.onGearRemove(gear.loadout[idx]!.name));
+        }
+      });
+
+      // Add menu: native <select> from playbook Items + SharedItems (game data
+      // only, deduped by name), bulk shown, add button → gearAdd(name, bulk).
+      // Per the plan idiom the menu lives in a <details>/<summary>.
+      const gearMenu = extractGearMenu(playbookData, gameData, c.playbook.name);
+      const addSelect = el("select", {
+        "aria-label": "Add gear item",
+        disabled: anyLoading || gearMenu.length === 0,
+      },
+        el("option", { value: "" }, "--"),
+        ...gearMenu.map((m) => el("option", { value: m.name }, `${m.name} (bulk ${m.bulk})`)),
+      );
+      const addBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || gearMenu.length === 0,
+        title: "Add gear item",
+      }, state.isGearLoading ? "…" : "+");
+      addBtn.addEventListener("click", handlers.onGearAdd);
+      const addMenuDetails = el("details", { className: "gear-add-menu" },
+        el("summary", {}, "Add item…"),
+        el("div", { className: "gear-add-row", style: "display: flex; gap: 0.5em; align-items: center; margin-top: 0.35em;" },
+          addSelect,
+          addBtn,
+        ),
+      );
+
+      // Commitment (load level) selector: contract commitment options. The
+      // per-option maxima live server-side in game settings; the DTO carries
+      // only the current commitment's maxBulk, so the summary above shows it.
+      const commitmentOptions = ["light", "normal", "heavy", "encumbered"];
+      const commitmentSelect = el("select", {
+        "aria-label": "Set commitment",
+        disabled: anyLoading,
+      },
+        ...commitmentOptions.map((opt) => el("option", { value: opt }, opt)),
+      ) as HTMLSelectElement;
+      if (commitmentOptions.includes(gear.commitment)) {
+        commitmentSelect.value = gear.commitment;
+      }
+      const commitmentBtn = el("button", {
+        type: "button",
+        disabled: anyLoading,
+        title: "Set commitment",
+      }, state.isGearCommitmentLoading ? "…" : "set");
+      commitmentBtn.addEventListener("click", handlers.onGearSetCommitment);
+
+      // Lock toggle: gear.lock / gear.unlock. While locked the server rejects
+      // set-commitment / commit / clear-commitments with COMMITMENT_LOCKED,
+      // which surfaces through the op-error notice.
+      const lockBtn = el("button", {
+        type: "button",
+        disabled: anyLoading,
+        title: gear.isCommitmentLocked ? "Unlock commitment" : "Lock commitment",
+      }, state.isGearLockLoading ? "…" : gear.isCommitmentLocked ? "unlock" : "lock");
+      lockBtn.addEventListener("click", handlers.onGearToggleLock);
+
+      const clearBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || (gear.loadout.length === 0 && gear.commitment === "none"),
+        title: "Clear commitments",
+      }, state.isGearCommitmentLoading ? "…" : "clear");
+      clearBtn.addEventListener("click", handlers.onGearClearCommitments);
+
+      // Loadout selector: commit / uncommit buttons over available gear.
+      // Committed items are marked "(in loadout)".
+      const loadoutNames = new Set(gear.loadout.map((item) => item.name));
+      const gearSelect = el("select", {
+        "aria-label": "Select gear item",
+        disabled: anyLoading || gear.availableGear.length === 0,
+      },
+        el("option", { value: "" }, "--"),
+        ...gear.availableGear.map((item) =>
+          el("option", { value: item.name }, `${item.name} (bulk ${item.bulk})${loadoutNames.has(item.name) ? " — in loadout" : ""}`)),
+      );
+      const commitBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || gear.availableGear.length === 0,
+        title: "Commit selected gear",
+      }, state.isGearLoading ? "…" : "commit");
+      commitBtn.addEventListener("click", handlers.onGearCommit);
+      const uncommitBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || gear.availableGear.length === 0,
+        title: "Uncommit selected gear",
+      }, state.isGearLoading ? "…" : "uncommit");
+      uncommitBtn.addEventListener("click", handlers.onGearUncommit);
+
+      return el("div", { className: "character-gear" },
+        el("h2", {}, "Gear"),
+        el("div", { className: "gear-summary", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
+          el("span", { className: "lbl" }, "Load:"),
+          el("span", { className: "gear-bulk-sum" }, `${loadoutBulk} / ${gear.maxBulk}`),
+          el("span", { className: "gear-headroom" }, `headroom ${headroom}`),
+        ),
+        el("h3", { className: "lbl", style: "margin-top: 0.5em;" }, "Loadout"),
+        gear.loadout.length === 0
+          ? el("p", { className: "gear-empty" }, "(nothing committed)")
+          : el("div", { style: "display: flex; flex-direction: column;" }, ...loadoutEntries),
+        addMenuDetails,
+        el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Commitment"),
+        el("div", { className: "gear-commitment-row", style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin: 0.35em 0;" },
+          commitmentSelect,
+          commitmentBtn,
+          lockBtn,
+          clearBtn,
+        ),
+        el("div", { className: "gear-select-row", style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin: 0.35em 0;" },
+          gearSelect,
+          commitBtn,
+          uncommitBtn,
+        ),
+      );
+    })(),
+
     // Info
     el(
       "div",
@@ -961,6 +1192,11 @@ export function mountCharacterDetailPage(
   // F2p Playbook state
   let isPlaybookLoading = false;
   let abilityNotice: string | null = null;
+
+  // F2r Gear state
+  let isGearLoading = false;
+  let isGearCommitmentLoading = false;
+  let isGearLockLoading = false;
 
   const clearNotices = () => {
     errorMsg = null;
@@ -1731,6 +1967,150 @@ export function mountCharacterDetailPage(
         playbookOpErrorText,
       );
     },
+
+    onGearAdd: () => {
+      if (!currentCharacter || isGearLoading) return;
+      const sel = root.querySelector('select[aria-label="Add gear item"]') as HTMLSelectElement;
+      const name = sel?.value || null;
+      if (!name) return;
+      // Bulk comes from the game-data menu (never hardcoded); server validates.
+      const menu = extractGearMenu(playbookData, gameData, currentCharacter.playbook.name);
+      const item = menu.find((m) => m.name === name);
+      if (!item) return;
+      isGearLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = gearAdd(characterId, item.name, item.bulk, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGearLoading = false; },
+        gearOpErrorText,
+      );
+    },
+
+    onGearRemove: (name: string) => {
+      if (!currentCharacter || isGearLoading) return;
+      isGearLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = gearRemove(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGearLoading = false; },
+        gearOpErrorText,
+      );
+    },
+
+    onGearCommit: () => {
+      if (!currentCharacter || isGearLoading) return;
+      const sel = root.querySelector('select[aria-label="Select gear item"]') as HTMLSelectElement;
+      const name = sel?.value || null;
+      if (!name) return;
+      isGearLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = gearCommit(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGearLoading = false; },
+        gearOpErrorText,
+      );
+    },
+
+    onGearUncommit: () => {
+      if (!currentCharacter || isGearLoading) return;
+      const sel = root.querySelector('select[aria-label="Select gear item"]') as HTMLSelectElement;
+      const name = sel?.value || null;
+      if (!name) return;
+      isGearLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = gearUncommit(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGearLoading = false; },
+        gearOpErrorText,
+      );
+    },
+
+    onGearSetCommitment: () => {
+      if (!currentCharacter || isGearCommitmentLoading) return;
+      const sel = root.querySelector('select[aria-label="Set commitment"]') as HTMLSelectElement;
+      const commitment = sel?.value || null;
+      if (!commitment) return;
+      isGearCommitmentLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = gearSetCommitment(characterId, commitment, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGearCommitmentLoading = false; },
+        gearOpErrorText,
+      );
+    },
+
+    onGearToggleLock: () => {
+      if (!currentCharacter || isGearLockLoading) return;
+      isGearLockLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = currentCharacter.gear.isCommitmentLocked
+        ? gearUnlock(characterId, currentCharacter.revision)
+        : gearLock(characterId, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGearLockLoading = false; },
+        gearOpErrorText,
+      );
+    },
+
+    onGearClearCommitments: () => {
+      if (!currentCharacter || isGearCommitmentLoading) return;
+      isGearCommitmentLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = gearClearCommitments(characterId, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGearCommitmentLoading = false; },
+        gearOpErrorText,
+      );
+    },
   };
 
   const renderDetailWrapper = () => {
@@ -1754,6 +2134,9 @@ export function mountCharacterDetailPage(
       experienceCondition,
       isPlaybookLoading,
       abilityNotice,
+      isGearLoading,
+      isGearCommitmentLoading,
+      isGearLockLoading,
       errorMsg,
       noticeMsg,
       undoNotice,
