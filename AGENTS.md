@@ -18,7 +18,9 @@ VCS operations. Exception: pushing to the Radicle remote should use git.**
 - Bookmarks track branches: `jj bookmark set main -r @-` before pushing.
 
 **Exception: Pushing to Radicle**
-- Radicle’s remote helper does not support the dry-run required by `jj git push`. Until that incompatibility is fixed, push Radicle with: `SSH_AUTH_SOCK=~/.radicle/agent.sock git push rad main`
+- Radicle’s remote helper does not support the dry-run required by `jj git push`. Until that incompatibility is fixed, push Radicle with git:
+  - Human: `SSH_AUTH_SOCK=~/.radicle/agent.sock git push rad main`
+  - Agent/subagent: `env RAD_HOME=$HOME/.radicle-agents/paperclips SSH_AUTH_SOCK=$HOME/.radicle/agent.sock git push rad-agent main`
 - Afterward, reconcile jj’s remote state with: `jj git fetch --remote rad`
 - All other Git-side mutations remain prohibited.
 
@@ -29,7 +31,17 @@ Code is mirrored to both. Push to Github via jj:
 - Github: `jj git push --remote origin`
 - Radicle: instructions above
 
-  (the Radicle key lives in an ssh-agent on that socket; if the push prompts for a passphrase or the socket is missing, the agent died — ask the human to rerun `ssh-agent -a ~/.radicle/agent.sock; set -x SSH_AUTH_SOCK ~/.radicle/agent.sock; rad auth`).
+  The agent push uses a **per-repo delegate key** (`paperclips-bot`, see
+  `agent-docs/radicle-agent-keys.md`): agents can push in the human's name
+  without ever seeing the master passphrase. The bot key is a delegate of this
+  repo's identity; it can be revoked independently (never affects GitHub or
+  other repos).
+
+  If a push fails with a passphrase prompt or a missing-socket error, the
+  ssh-agent or a node is down (e.g. after a reboot) — ask the human to run the
+  once-per-boot ritual: `rad-radicle-up` (starts agent socket, registers both
+  keys, starts both nodes; master prompts are silent but accept input).
+
 - RID: `rad:z3bxKrbQdawdx41PrwtRF8X96w3sU`
 
 Push to **both** remotes at every push point, or note explicitly which one
