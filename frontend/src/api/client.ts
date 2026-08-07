@@ -897,6 +897,67 @@ export function upgradeUnmark(
   return crewMutate(id, "upgrade.unmark", revision, { name });
 }
 
+// ---------------------------------------------------------------------------
+// F2w crew operations — cohortAdd, cohortRemove, cohortUpdate
+// ---------------------------------------------------------------------------
+
+/** cohort.add request body — cohortKind required, everything else optional
+ * (server generates the cohort id). Mirrors contract openapi cohort.add. */
+export interface CohortAddBody {
+  cohortKind: "gang" | "expert";
+  gangType?: string;
+  expertType?: string;
+  quality?: number;
+  scale?: number;
+  hasArmor?: boolean;
+  edges?: string[];
+  flaws?: string[];
+  description?: string;
+}
+
+/** cohort.update request body — cohortId plus only the changed fields
+ * (contract requires minProperties 2: cohortId + at least one field). */
+export interface CohortUpdateBody {
+  cohortId: string;
+  gangType?: string;
+  expertType?: string;
+  quality?: number;
+  scale?: number;
+  hasArmor?: boolean;
+  edges?: string[];
+  flaws?: string[];
+  harm?: string;
+  description?: string;
+}
+
+/** Add a cohort (gang or expert). The server generates the id; optional
+ * fields are passed through. */
+export function cohortAdd(
+  id: string,
+  body: CohortAddBody,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "cohort.add", revision, body);
+}
+
+/** Remove a cohort entirely (whole-entry remove by id). */
+export function cohortRemove(
+  id: string,
+  cohortId: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "cohort.remove", revision, { cohortId });
+}
+
+/** Partial update of one cohort by id — send only the changed fields. */
+export function cohortUpdate(
+  id: string,
+  body: CohortUpdateBody,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "cohort.update", revision, body);
+}
+
 /**
  * Full crew-type settings for one crew type (raw game-data object: Hook,
  * Description, ExperienceTrigger, SpecialAbilities, Upgrades,

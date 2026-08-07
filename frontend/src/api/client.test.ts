@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, cohortAdd, cohortRemove, cohortUpdate, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -5546,6 +5546,263 @@ describe("deleteClock", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
       expect(result.left.status).toBe(404);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2w crew operations — cohortAdd, cohortRemove, cohortUpdate
+// ---------------------------------------------------------------------------
+
+describe("cohortAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/cohort.add with cohortKind and optional fields, decodes crew", async () => {
+    const withCohort = makeCrew({
+      revision: 6,
+      cohorts: [
+        {
+          id: "b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          cohortKind: "gang",
+          gangType: "Bravos",
+          expertType: "",
+          quality: 2,
+          scale: 1,
+          hasArmor: true,
+          edges: ["Tough", "Savage"],
+          flaws: ["Loud"],
+          harm: "healthy",
+          description: "Street toughs who love a fight",
+        },
+      ],
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(withCohort, "cohort.add")),
+    });
+
+    const result = await Effect.runPromise(
+      cohortAdd(CREW_ID_F2Y, {
+        cohortKind: "gang",
+        gangType: "Bravos",
+        quality: 2,
+        scale: 1,
+        hasArmor: true,
+        edges: ["Tough", "Savage"],
+        flaws: ["Loud"],
+        description: "Street toughs who love a fight",
+      }, 5),
+    );
+    expect(result.cohorts).toHaveLength(1);
+    expect(result.cohorts[0]?.cohortKind).toBe("gang");
+    expect(result.cohorts[0]?.gangType).toBe("Bravos");
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/cohort.add`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({
+          cohortKind: "gang",
+          gangType: "Bravos",
+          quality: 2,
+          scale: 1,
+          hasArmor: true,
+          edges: ["Tough", "Savage"],
+          flaws: ["Loud"],
+          description: "Street toughs who love a fight",
+        }),
+      },
+    );
+  });
+
+  it("exposes ApiError with VALIDATION code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("cohort.add", "VALIDATION", "bad cohortKind", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(cohortAdd(CREW_ID_F2Y, { cohortKind: "weird" as never }, 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("cohort.add", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(cohortAdd(CREW_ID_F2Y, { cohortKind: "gang" }, 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("cohortRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/cohort.remove with cohortId and If-Match, decodes crew", async () => {
+    const removed = makeCrew({ revision: 6, cohorts: [] });
+    const COHORT_ID = "b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(removed, "cohort.remove")),
+    });
+
+    const result = await Effect.runPromise(cohortRemove(CREW_ID_F2Y, COHORT_ID, 5));
+    expect(result.cohorts).toHaveLength(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/cohort.remove`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ cohortId: COHORT_ID }),
+      },
+    );
+  });
+
+  it("exposes ApiError with NOT_FOUND code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("cohort.remove", "NOT_FOUND", "cohort not found", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(cohortRemove(CREW_ID_F2Y, "missing-id", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("cohort.remove", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(cohortRemove(CREW_ID_F2Y, "some-id", 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("cohortUpdate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/cohort.update with cohortId and only the changed fields", async () => {
+    const COHORT_ID = "b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+    const updated = makeCrew({
+      revision: 6,
+      cohorts: [
+        {
+          id: COHORT_ID,
+          cohortKind: "gang",
+          gangType: "Bravos",
+          expertType: "",
+          quality: 3,
+          scale: 1,
+          hasArmor: true,
+          edges: ["Tough", "Savage"],
+          flaws: ["Loud"],
+          harm: "weakened",
+          description: "Street toughs who love a fight",
+        },
+      ],
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(updated, "cohort.update")),
+    });
+
+    const result = await Effect.runPromise(
+      cohortUpdate(CREW_ID_F2Y, {
+        cohortId: COHORT_ID,
+        quality: 3,
+        harm: "weakened",
+        hasArmor: true,
+      }, 5),
+    );
+    expect(result.cohorts[0]?.quality).toBe(3);
+    expect(result.cohorts[0]?.harm).toBe("weakened");
+    expect(result.cohorts[0]?.hasArmor).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/cohort.update`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ cohortId: COHORT_ID, quality: 3, harm: "weakened", hasArmor: true }),
+      },
+    );
+  });
+
+  it("exposes ApiError with VALIDATION code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("cohort.update", "VALIDATION", "unknown field", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(cohortUpdate(CREW_ID_F2Y, { cohortId: "some-id", quality: -1 }, 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("cohort.update", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(cohortUpdate(CREW_ID_F2Y, { cohortId: "some-id", quality: 2 }, 5)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
     }
   });
 });

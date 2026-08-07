@@ -1,0 +1,129 @@
+---
+title: F2w — Crew Sheet: Cohorts
+---
+
+# F2w: Crew Sheet — Cohorts
+
+Adds the Cohorts section to the crew sheet: cohort cards (kind, type,
+quality/scale, armor, edges/flaws, harm, description) with per-card edit
+controls and remove, plus an add form whose kind menu comes from the
+contract enum. The three client ops go through the existing `crewMutate`
+helper. Per `f2-sheet-plan.mdx` decision 3, **vehicles are cohorts**: a
+vehicle is modeled as a cohort whose description carries the edges/flaws
+text — no separate vehicle entity in the frozen schema.
+
+## Client methods added
+
+All three ops go through the existing `crewMutate` helper (POST
+`/api/crews/{id}/ops/{op}` with `If-Match`, decode `OperationResult`,
+extract the updated `Crew`). Stale-revision handling follows F2h/F2y/F2v:
+`409` + `STALE_REVISION` → `StaleRevisionError` → re-render, refetch via
+`getCrew`, "Sheet refreshed" notice.
+
+| Method | Endpoint | Body | Returns |
+|--------|----------|------|---------|
+| `cohortAdd` | `ops/cohort.add` | `{ cohortKind, gangType?, expertType?, quality?, scale?, hasArmor?, edges?, flaws?, description? }` | updated `Crew` |
+| `cohortRemove` | `ops/cohort.remove` | `{ cohortId }` | updated `Crew` |
+| `cohortUpdate` | `ops/cohort.update` | `{ cohortId, gangType?, expertType?, quality?, scale?, hasArmor?, edges?, flaws?, harm?, description? }` | updated `Crew` |
+
+`cohort.add` requires only `cohortKind` (`gang` \| `expert`); the **server
+generates the cohort id** and fills defaults for the omitted fields.
+`cohort.update` is a partial update keyed by `cohortId` — the contract
+requires `minProperties: 2`, so the client sends `cohortId` plus **only the
+fields that actually changed** (the page diffs the edit form against the
+DTO before saving). `cohort.remove` is a whole-entry remove by id.
+
+Server semantics (contract-frozen, A11 implements server-side in parallel):
+unknown cohort ids → `NOT_FOUND`, invalid payloads → `VALIDATION`, revision
+conflicts → `STALE_REVISION`. The frontend is correct against the frozen
+contract even before the server ops land live.
+
+## Kind and harm values come from the contract
+
+Nothing is hardcoded:
+
+- The add form's kind `<select>` is populated from `CohortType` (the schema
+  literal mirroring `contract/schemas/common.json#/$defs/cohortType`):
+  `gang`, `expert`.
+- Each card's harm `<select>` (edit mode) is populated from `CohortHarm`
+  (mirrors `$defs/cohortHarm`): `healthy`, `weakened`, `impaired`,
+  `broken`, `dead`.
+
+The crew DTO (`frontend/src/schema/crew.ts`) already encodes both:
+`cohorts[{id, cohortKind, gangType, expertType, quality, scale, hasArmor,
+edges, flaws, harm, description}]`.
+
+## Page section
+
+A `crew-cohorts` section sits between Playbook and Contacts & Factions with
+an `h2` heading "Cohorts".
+
+### Cohort cards
+
+One card per DTO cohort (`data-cohort-id`, `data-cohort-kind` attrs):
+kind badge (Gang/Expert), the kind-relevant type (`gangType` for gangs,
+`expertType` for experts), `Quality n` / `Scale n`, armor state (Armored /
+No armor), `Edges:` / `Flaws:` comma lists ("(none)" when empty), `Harm:`
+text, and the description. Cards get a ✎ edit button and a ✕ remove
+button → `cohortRemove`.
+
+Edit mode replaces the card with a form (same pattern as the Profile
+section's per-field edit): type text input, quality/scale number inputs,
+an armor checkbox (the "armor toggle"), edges/flaws text inputs that are
+comma-split into arrays, a harm `<select>` from the contract enum, and a
+description input. ✓ Save diffs every field against the DTO and posts
+`cohortUpdate` with `cohortId` + only the changed fields; ✕ Cancel exits
+without saving.
+
+### Add form
+
+Kind `<select>` (contract enum, defaults to `gang`), gang-type / expert-type
+text inputs, quality/scale number inputs, armor checkbox, edges/flaws
+comma-separated text inputs, description input, and an "+ Add cohort"
+button → `cohortAdd`. Only filled fields are sent: the kind-relevant type,
+parsed quality/scale when non-empty, `hasArmor` (always, explicit
+true/false), edges/flaws when non-empty, description when non-empty.
+
+## Error notices
+
+- `NOT_FOUND` (remove/update of an unknown cohort id) →
+  "NOT_FOUND: not on this sheet (removed elsewhere?)".
+- `VALIDATION` is passed through as returned by the server.
+- Any `StaleRevisionError` → render, refetch via `getCrew`, standard
+  "Sheet refreshed because it changed elsewhere" notice (F2h).
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — 9 tests, red-first per method
+
+- `describe("cohortAdd")` — 3 tests (request shape + decode incl. optional
+  fields, `VALIDATION` op error, stale revision)
+- `describe("cohortRemove")` — 3 tests (request shape + decode, `NOT_FOUND`
+  op error, stale revision)
+- `describe("cohortUpdate")` — 3 tests (partial body with only changed
+  fields, `VALIDATION` op error, stale revision)
+
+Each method was written red-first (9 failing tests, `(0, cohortXxx) is not
+a function`) and then implemented to green via `crewMutate`.
+
+### Page tests (`src/pages/crew-detail.test.ts`) — 6 tests under
+`describe("F2w Cohorts")`
+
+- cards render from the DTO (kind badges from the enum, gang/expert types,
+  quality/scale, armor state, edges/flaws lists, harm values, description)
+- add via the form posts `cohort.add` with only the filled fields (empty
+  scale/flaws/expertType omitted)
+- edit-form update changes quality + harm + armor and posts
+  `cohort.update` with exactly `{ cohortId, quality, hasArmor, harm }`
+  (unchanged fields omitted)
+- remove posts `cohort.remove` and renders "(no cohorts)"
+- `NOT_FOUND` notice on remove of an unknown cohort
+- `STALE_REVISION` refetch on a cohort op
+
+Full suite green (`npm test -- --run`, 355 tests) and `npm run build`
+(tsc + vite) green.
+
+> **Backend note:** the `cohort.add` / `cohort.remove` / `cohort.update` ops
+> are contract-frozen but the Ada server implementation lands with A11 in
+> parallel. Live ops may 404 until then; the client and page are correct per
+> the contract and take over automatically once the backend ships.

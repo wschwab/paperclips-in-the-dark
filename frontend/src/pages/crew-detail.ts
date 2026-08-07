@@ -22,11 +22,14 @@ import {
   upgradeUnmark,
   getCrewType,
   getCrewTypes,
+  cohortAdd,
+  cohortRemove,
+  cohortUpdate,
   StaleRevisionError,
 } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Crew } from "../schema/crew.js";
-import { Hold } from "../schema/common.js";
+import { CohortHarm, CohortType, Hold } from "../schema/common.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,6 +59,7 @@ interface RenderState {
   isUndoLoading: boolean;
   isAbilityLoading: boolean;
   isUpgradeLoading: boolean;
+  isCohortLoading: boolean;
   isContactLoading: boolean;
   isFactionLoading: boolean;
   isProfileLoading: boolean;
@@ -67,6 +71,7 @@ interface RenderState {
   isCoinLoading: boolean;
   isStashLoading: boolean;
   editingProfile: ProfileEditingState | null;
+  editingCohortId: string | null;
   errorMsg: string | null;
   noticeMsg: string | null;
   undoNotice: string | null;
@@ -96,6 +101,11 @@ interface RenderState {
     onUpgradeMarkMenu: () => void;
     onUpgradeUnmark: (name: string) => void;
     onChartBox: (name: string, index: number) => void;
+    onCohortAdd: () => void;
+    onCohortEdit: (cohortId: string) => void;
+    onCohortUpdate: (cohortId: string, fields: Record<string, unknown>) => void;
+    onCohortRemove: (cohortId: string) => void;
+    onCohortCancel: () => void;
   };
 }
 
@@ -212,6 +222,19 @@ function renderTracker(
       ? el("div", { className: "lbl", style: "margin-top: 0.35em;" }, opts.note)
       : null,
   );
+}
+
+/** Split a comma-separated input into trimmed non-empty items (edges/flaws). */
+function splitList(value: string): string[] {
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/** Order-sensitive array equality for the cohort edges/flaws diff. */
+function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
 // ---------------------------------------------------------------------------
@@ -772,6 +795,242 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     );
   })();
 
+  // -- Cohorts (F2w) ---------------------------------------------------------
+  // Vehicles are cohorts (sheet plan decision 3): a vehicle is a cohort whose
+  // description carries the edges/flaws text. Kind (gang|expert) and harm
+  // values come from the contract enums (schema literals CohortType /
+  // CohortHarm mirror contract/schemas/common.json $defs — never hardcoded).
+
+  const cohortEntries = c.cohorts.map((cohort) => {
+    const isEditing = state.editingCohortId === cohort.id;
+    const kindLabel = cohort.cohortKind === "gang" ? "Gang" : "Expert";
+    const typeField = cohort.cohortKind === "gang" ? "gangType" : "expertType";
+    const typeValue = cohort[typeField] || "(no type)";
+    const title = `cohort: ${typeValue}`;
+    const shown = (values: readonly string[]) =>
+      values.length === 0 ? "(none)" : values.join(", ");
+
+    if (isEditing) {
+      const typeInput = el("input", {
+        type: "text",
+        value: cohort[typeField],
+        "aria-label": `Edit ${typeField}`,
+        disabled: state.anyLoading,
+      });
+      const qualityInput = el("input", {
+        type: "number",
+        value: String(cohort.quality),
+        "aria-label": "Edit quality",
+        disabled: state.anyLoading,
+      });
+      const scaleInput = el("input", {
+        type: "number",
+        value: String(cohort.scale),
+        "aria-label": "Edit scale",
+        disabled: state.anyLoading,
+      });
+      const armorInput = el("input", {
+        type: "checkbox",
+        "aria-label": "Edit armor",
+        checked: cohort.hasArmor,
+        disabled: state.anyLoading,
+      });
+      const edgesInput = el("input", {
+        type: "text",
+        value: cohort.edges.join(", "),
+        "aria-label": "Edit edges",
+        disabled: state.anyLoading,
+      });
+      const flawsInput = el("input", {
+        type: "text",
+        value: cohort.flaws.join(", "),
+        "aria-label": "Edit flaws",
+        disabled: state.anyLoading,
+      });
+      const harmSelect = el("select", {
+        "aria-label": "Edit harm",
+        disabled: state.anyLoading,
+      }) as HTMLSelectElement;
+      for (const value of CohortHarm.literals) {
+        const option = el("option", { value }, value) as HTMLOptionElement;
+        if (value === cohort.harm) option.selected = true;
+        harmSelect.append(option);
+      }
+      const descInput = el("input", {
+        type: "text",
+        value: cohort.description,
+        "aria-label": "Edit description",
+        disabled: state.anyLoading,
+      });
+
+      const saveBtn = el("button", {
+        type: "button",
+        disabled: state.anyLoading,
+        title: `Save ${title}`,
+      }, state.isCohortLoading ? "…" : "✓");
+      // cohort.update sends only the fields that actually changed.
+      saveBtn.addEventListener("click", () => {
+        const fields: Record<string, unknown> = {};
+        if (typeInput.value !== cohort[typeField]) fields[typeField] = typeInput.value;
+        const quality = Number.parseInt(qualityInput.value, 10);
+        if (!Number.isNaN(quality) && quality !== cohort.quality) fields.quality = quality;
+        const scale = Number.parseInt(scaleInput.value, 10);
+        if (!Number.isNaN(scale) && scale !== cohort.scale) fields.scale = scale;
+        if (armorInput.checked !== cohort.hasArmor) fields.hasArmor = armorInput.checked;
+        const edges = splitList(edgesInput.value);
+        if (!arraysEqual(edges, cohort.edges)) fields.edges = edges;
+        const flaws = splitList(flawsInput.value);
+        if (!arraysEqual(flaws, cohort.flaws)) fields.flaws = flaws;
+        if (harmSelect.value !== cohort.harm) fields.harm = harmSelect.value;
+        if (descInput.value !== cohort.description) fields.description = descInput.value;
+        if (Object.keys(fields).length > 0) {
+          handlers.onCohortUpdate(cohort.id, fields);
+        } else {
+          handlers.onCohortCancel();
+        }
+      });
+      const cancelBtn = el("button", {
+        type: "button",
+        disabled: state.anyLoading,
+        title: "Cancel",
+      }, "✕");
+      cancelBtn.addEventListener("click", handlers.onCohortCancel);
+
+      return el(
+        "div",
+        { className: "cohort-entry editing", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind },
+        el("span", { className: "cohort-kind-badge" }, kindLabel),
+        el("div", { className: "cohort-edit-fields", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
+          el("label", { className: "lbl" }, `${kindLabel} type:`, typeInput),
+          el("label", { className: "lbl" }, "Quality:", qualityInput),
+          el("label", { className: "lbl" }, "Scale:", scaleInput),
+          el("label", { className: "lbl" }, "Armor:", armorInput),
+          el("label", { className: "lbl" }, "Edges:", edgesInput),
+          el("label", { className: "lbl" }, "Flaws:", flawsInput),
+          el("label", { className: "lbl" }, "Harm:", harmSelect),
+          el("label", { className: "lbl" }, "Description:", descInput),
+        ),
+        el("div", { style: "display: flex; gap: 0.5em;" }, saveBtn, cancelBtn),
+      );
+    }
+
+    const editBtn = el("button", {
+      type: "button",
+      disabled: state.anyLoading || state.editingCohortId !== null,
+      title: `Edit ${title}`,
+    }, "✎");
+    editBtn.addEventListener("click", () => handlers.onCohortEdit(cohort.id));
+    const removeBtn = el("button", {
+      type: "button",
+      disabled: state.anyLoading,
+      title: `Remove ${title}`,
+    }, "✕");
+    removeBtn.addEventListener("click", () => handlers.onCohortRemove(cohort.id));
+
+    return el(
+      "div",
+      { className: "cohort-entry", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind },
+      el("span", { className: "cohort-kind-badge" }, kindLabel),
+      el("span", { className: "cohort-type" }, typeValue),
+      el("span", { className: "cohort-quality" }, `Quality ${cohort.quality}`),
+      el("span", { className: "cohort-scale" }, `Scale ${cohort.scale}`),
+      el("span", { className: "cohort-armor" }, cohort.hasArmor ? "Armored" : "No armor"),
+      el("span", { className: "cohort-edges" }, `Edges: ${shown(cohort.edges)}`),
+      el("span", { className: "cohort-flaws" }, `Flaws: ${shown(cohort.flaws)}`),
+      el("span", { className: "cohort-harm" }, `Harm: ${cohort.harm}`),
+      el("span", { className: "cohort-description" }, cohort.description || "(no description)"),
+      editBtn,
+      removeBtn,
+    );
+  });
+
+  // Add form: cohort kind from the contract enum (CohortType literal mirrors
+  // cohortType $defs). Optional fields are sent only when filled.
+  const cohortKindSelect = el("select", {
+    "aria-label": "Cohort kind",
+    disabled: state.anyLoading,
+  }) as HTMLSelectElement;
+  for (const value of CohortType.literals) {
+    const option = el("option", { value }, value) as HTMLOptionElement;
+    if (value === "gang") option.selected = true;
+    cohortKindSelect.append(option);
+  }
+  const gangTypeInput = el("input", {
+    type: "text",
+    "aria-label": "Cohort gang type",
+    disabled: state.anyLoading,
+    placeholder: "gang type",
+  });
+  const expertTypeInput = el("input", {
+    type: "text",
+    "aria-label": "Cohort expert type",
+    disabled: state.anyLoading,
+    placeholder: "expert type",
+  });
+  const qualityInput = el("input", {
+    type: "number",
+    "aria-label": "Cohort quality",
+    disabled: state.anyLoading,
+    placeholder: "quality",
+  });
+  const scaleInput = el("input", {
+    type: "number",
+    "aria-label": "Cohort scale",
+    disabled: state.anyLoading,
+    placeholder: "scale",
+  });
+  const armorInput = el("input", {
+    type: "checkbox",
+    "aria-label": "Cohort armor",
+    disabled: state.anyLoading,
+  });
+  const edgesInput = el("input", {
+    type: "text",
+    "aria-label": "Cohort edges",
+    disabled: state.anyLoading,
+    placeholder: "edges (comma-separated)",
+  });
+  const flawsInput = el("input", {
+    type: "text",
+    "aria-label": "Cohort flaws",
+    disabled: state.anyLoading,
+    placeholder: "flaws (comma-separated)",
+  });
+  const descInput = el("input", {
+    type: "text",
+    "aria-label": "Cohort description",
+    disabled: state.anyLoading,
+    placeholder: "description",
+  });
+  const addCohortBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading,
+    title: "Add cohort",
+  }, state.isCohortLoading ? "…" : "+");
+  addCohortBtn.addEventListener("click", handlers.onCohortAdd);
+
+  const cohortsSection = el(
+    "div",
+    { className: "crew-cohorts" },
+    el("h2", {}, "Cohorts"),
+    c.cohorts.length === 0
+      ? el("p", {}, "(no cohorts)")
+      : el("div", { className: "cohort-list" }, ...cohortEntries),
+    el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Add Cohort"),
+    el("div", { className: "cohort-add", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
+      el("label", { className: "lbl" }, "Kind:", cohortKindSelect),
+      gangTypeInput,
+      expertTypeInput,
+      qualityInput,
+      scaleInput,
+      el("label", { className: "lbl" }, "Armor:", armorInput),
+      edgesInput,
+      flawsInput,
+      descInput,
+      addCohortBtn,
+    ),
+  );
+
   return el(
     "section",
     { className: "crew-detail" },
@@ -830,6 +1089,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       ),
     ),
     playbookSection,
+    cohortsSection,
     el(
       "div",
       { className: "crew-contacts-factions" },
@@ -914,9 +1174,11 @@ export function mountCrewDetailPage(
   let isStashLoading = false;
   let isAbilityLoading = false;
   let isUpgradeLoading = false;
+  let isCohortLoading = false;
   let crewTypeData: Record<string, unknown> | null = null;
   let crewTypesData: readonly Record<string, unknown>[] | null = null;
   let editingProfile: ProfileEditingState | null = null;
+  let editingCohortId: string | null = null;
   let errorMsg: string | null = null;
   let noticeMsg: string | null = null;
   let undoNotice: string | null = null;
@@ -1023,7 +1285,8 @@ export function mountCrewDetailPage(
         isCoinLoading ||
         isStashLoading ||
         isAbilityLoading ||
-        isUpgradeLoading,
+        isUpgradeLoading ||
+        isCohortLoading,
       isUndoLoading,
       isContactLoading,
       isFactionLoading,
@@ -1037,9 +1300,11 @@ export function mountCrewDetailPage(
       isStashLoading,
       isAbilityLoading,
       isUpgradeLoading,
+      isCohortLoading,
       crewTypeData,
       crewTypesData,
       editingProfile,
+      editingCohortId,
       errorMsg,
       noticeMsg,
       undoNotice,
@@ -1332,6 +1597,109 @@ export function mountCrewDetailPage(
       } else {
         runCrewOp((v) => { isUpgradeLoading = v; }, upgradeUnmark(crewId, name, currentCrew.revision));
       }
+    },
+
+    // -- F2w: Cohorts --------------------------------------------------------
+
+    onCohortAdd: () => {
+      if (!currentCrew || isCohortLoading) return;
+      const kindSelect = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement | null;
+      const cohortKind = kindSelect?.value ?? "";
+      if (cohortKind !== "gang" && cohortKind !== "expert") return;
+      const gangInput = root.querySelector('input[aria-label="Cohort gang type"]') as HTMLInputElement | null;
+      const expertInput = root.querySelector('input[aria-label="Cohort expert type"]') as HTMLInputElement | null;
+      const qualityInput = root.querySelector('input[aria-label="Cohort quality"]') as HTMLInputElement | null;
+      const scaleInput = root.querySelector('input[aria-label="Cohort scale"]') as HTMLInputElement | null;
+      const armorInput = root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement | null;
+      const edgesInput = root.querySelector('input[aria-label="Cohort edges"]') as HTMLInputElement | null;
+      const flawsInput = root.querySelector('input[aria-label="Cohort flaws"]') as HTMLInputElement | null;
+      const descInput = root.querySelector('input[aria-label="Cohort description"]') as HTMLInputElement | null;
+
+      const body: Parameters<typeof cohortAdd>[1] = { cohortKind };
+      const gangType = gangInput?.value?.trim() ?? "";
+      const expertType = expertInput?.value?.trim() ?? "";
+      if (cohortKind === "gang" && gangType) body.gangType = gangType;
+      if (cohortKind === "expert" && expertType) body.expertType = expertType;
+      const quality = qualityInput ? Number.parseInt(qualityInput.value, 10) : Number.NaN;
+      if (!Number.isNaN(quality)) body.quality = quality;
+      const scale = scaleInput ? Number.parseInt(scaleInput.value, 10) : Number.NaN;
+      if (!Number.isNaN(scale)) body.scale = scale;
+      body.hasArmor = armorInput?.checked ?? false;
+      const edges = splitList(edgesInput?.value ?? "");
+      if (edges.length > 0) body.edges = edges;
+      const flaws = splitList(flawsInput?.value ?? "");
+      if (flaws.length > 0) body.flaws = flaws;
+      const description = descInput?.value?.trim() ?? "";
+      if (description) body.description = description;
+
+      isCohortLoading = true;
+      clearNotices();
+      renderDetail();
+
+      const program = cohortAdd(crewId, body, currentCrew.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => onOpFailure(err, () => { isCohortLoading = false; }),
+          onSuccess: (crew) => {
+            if (cancelled) return;
+            isCohortLoading = false;
+            currentCrew = crew;
+            renderDetail();
+          },
+        }),
+      );
+    },
+
+    onCohortEdit: (cohortId: string) => {
+      if (!currentCrew || editingCohortId !== null) return;
+      editingCohortId = cohortId;
+      renderDetail();
+    },
+
+    onCohortUpdate: (cohortId: string, fields: Record<string, unknown>) => {
+      if (!currentCrew || isCohortLoading) return;
+      isCohortLoading = true;
+      editingCohortId = null;
+      clearNotices();
+      renderDetail();
+
+      const program = cohortUpdate(crewId, { cohortId, ...fields }, currentCrew.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => onOpFailure(err, () => { isCohortLoading = false; }),
+          onSuccess: (crew) => {
+            if (cancelled) return;
+            isCohortLoading = false;
+            currentCrew = crew;
+            renderDetail();
+          },
+        }),
+      );
+    },
+
+    onCohortRemove: (cohortId: string) => {
+      if (!currentCrew || isCohortLoading) return;
+      isCohortLoading = true;
+      clearNotices();
+      renderDetail();
+
+      const program = cohortRemove(crewId, cohortId, currentCrew.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => onOpFailure(err, () => { isCohortLoading = false; }),
+          onSuccess: (crew) => {
+            if (cancelled) return;
+            isCohortLoading = false;
+            currentCrew = crew;
+            renderDetail();
+          },
+        }),
+      );
+    },
+
+    onCohortCancel: () => {
+      editingCohortId = null;
+      renderDetail();
     },
   };
 

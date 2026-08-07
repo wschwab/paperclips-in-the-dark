@@ -1,0 +1,18 @@
+{
+  "task": "F2w",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch; report accurate (355 = 340+15 verified).",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "UI follows contract enums (cohortType gang|expert, cohortHarm healthy..dead). Live cohort paths pending A11."
+}

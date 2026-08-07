@@ -1371,5 +1371,295 @@ describe("crew-detail page", () => {
         { timeout: 2000 },
       );
     });
+  // -- F2w: Cohorts ----------------------------------------------------------
+
+  describe("F2w Cohorts", () => {
+    const COHORT_ID = "b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
+    function cohortDTO(overrides: Record<string, unknown> = {}) {
+      return {
+        id: COHORT_ID,
+        cohortKind: "gang",
+        gangType: "Bravos",
+        expertType: "",
+        quality: 2,
+        scale: 1,
+        hasArmor: true,
+        edges: ["Tough", "Savage"],
+        flaws: ["Loud"],
+        harm: "healthy",
+        description: "Street toughs who love a fight",
+        ...overrides,
+      };
+    }
+
+    const cohortOpOk = (crew: unknown, opName: string) => ({
+      ok: true,
+      crew,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    it("renders cohort cards from the DTO (kind badge, type, quality/scale, armor, edges/flaws, harm, description)", async () => {
+      global.fetch = vi.fn().mockResolvedValue(
+        ok(
+          crewDTO({
+            cohorts: [
+              cohortDTO(),
+              cohortDTO({
+                id: "c2d3e4f5-a6b7-4c8d-9e0f-1a2b3c4d5e6f",
+                cohortKind: "expert",
+                gangType: "",
+                expertType: "Doctor",
+                quality: 3,
+                scale: 0,
+                hasArmor: false,
+                edges: [],
+                flaws: ["Frail"],
+                harm: "impaired",
+                description: "A capable sawbones",
+              }),
+            ],
+          }),
+        ),
+      );
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-cohorts")).not.toBeNull();
+      });
+
+      const badges = [...root.querySelectorAll(".cohort-kind-badge")].map((b) => b.textContent);
+      expect(badges).toEqual(["Gang", "Expert"]);
+
+      const gangCard = root.querySelector(`.cohort-entry[data-cohort-id="${COHORT_ID}"]`);
+      expect(gangCard?.querySelector(".cohort-type")?.textContent).toBe("Bravos");
+      expect(gangCard?.textContent).toContain("Quality 2");
+      expect(gangCard?.textContent).toContain("Scale 1");
+      expect(gangCard?.textContent).toContain("Armored");
+      expect(gangCard?.textContent).toContain("Edges: Tough, Savage");
+      expect(gangCard?.textContent).toContain("Flaws: Loud");
+      expect(gangCard?.textContent).toContain("Harm: healthy");
+      expect(gangCard?.textContent).toContain("Street toughs who love a fight");
+
+      // expert cohort renders its expertType and no armor
+      const expertCard = root.querySelector('.cohort-entry[data-cohort-kind="expert"]');
+      expect(expertCard?.querySelector(".cohort-type")?.textContent).toBe("Doctor");
+      expect(expertCard?.textContent).toContain("No armor");
+      expect(expertCard?.textContent).toContain("Harm: impaired");
+      // empty edges render as "(none)"
+      expect(expertCard?.textContent).toContain("Edges: (none)");
+    });
+
+    it("adds a gang cohort via the add form and posts cohort.add with only the filled fields", async () => {
+      const added = crewDTO({ revision: 6, cohorts: [cohortDTO()] });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(cohortOpOk(added, "cohort.add")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add cohort"]')).not.toBeNull();
+      });
+
+      // kind select comes from the contract enum (CohortType literal)
+      const kindSelect = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement;
+      expect([...kindSelect.options].map((o) => o.value)).toEqual(["gang", "expert"]);
+      expect(kindSelect.value).toBe("gang");
+
+      const gangInput = root.querySelector('input[aria-label="Cohort gang type"]') as HTMLInputElement;
+      gangInput.value = "Bravos";
+      const qualityInput = root.querySelector('input[aria-label="Cohort quality"]') as HTMLInputElement;
+      qualityInput.value = "2";
+      const armorInput = root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement;
+      armorInput.checked = true;
+      const edgesInput = root.querySelector('input[aria-label="Cohort edges"]') as HTMLInputElement;
+      edgesInput.value = "Tough, Savage";
+      const descInput = root.querySelector('input[aria-label="Cohort description"]') as HTMLInputElement;
+      descInput.value = "Street toughs who love a fight";
+
+      (root.querySelector('button[title="Add cohort"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(`.cohort-entry[data-cohort-id="${COHORT_ID}"]`)).not.toBeNull();
+      });
+      // Only filled fields are sent: scale/flaws/expertType omitted
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/cohort.add`,
+        expect.objectContaining({
+          body: JSON.stringify({
+            cohortKind: "gang",
+            gangType: "Bravos",
+            quality: 2,
+            hasArmor: true,
+            edges: ["Tough", "Savage"],
+            description: "Street toughs who love a fight",
+          }),
+        }),
+      );
+    });
+
+    it("updates quality, harm, and armor through the edit form, posting only the changed fields", async () => {
+      const updated = crewDTO({
+        revision: 6,
+        cohorts: [cohortDTO({ quality: 3, hasArmor: false, harm: "weakened" })],
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(cohortOpOk(updated, "cohort.update")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit cohort: Bravos"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Edit cohort: Bravos"]') as HTMLButtonElement).click();
+
+      const qualityInput = root.querySelector('input[aria-label="Edit quality"]') as HTMLInputElement;
+      expect(qualityInput.value).toBe("2");
+      qualityInput.value = "3";
+      const armorInput = root.querySelector('input[aria-label="Edit armor"]') as HTMLInputElement;
+      expect(armorInput.checked).toBe(true);
+      armorInput.checked = false;
+      const harmSelect = root.querySelector('select[aria-label="Edit harm"]') as HTMLSelectElement;
+      // harm values come from the contract cohortHarm enum, never hardcoded
+      expect([...harmSelect.options].map((o) => o.value)).toEqual([
+        "healthy",
+        "weakened",
+        "impaired",
+        "broken",
+        "dead",
+      ]);
+      expect(harmSelect.value).toBe("healthy");
+      harmSelect.value = "weakened";
+
+      (root.querySelector('button[title="Save cohort: Bravos"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Harm: weakened");
+        expect(root.textContent).toContain("No armor");
+        expect(root.textContent).toContain("Quality 3");
+      });
+      // cohort.update sends only the changed fields (type/scale/edges/flaws/description untouched)
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/cohort.update`,
+        expect.objectContaining({
+          body: JSON.stringify({ cohortId: COHORT_ID, quality: 3, hasArmor: false, harm: "weakened" }),
+        }),
+      );
+    });
+
+    it("removes a cohort via cohort.remove", async () => {
+      const removed = crewDTO({ revision: 6, cohorts: [] });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(cohortOpOk(removed, "cohort.remove")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove cohort: Bravos"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Remove cohort: Bravos"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove cohort: Bravos"]')).toBeNull();
+        expect(root.textContent).toContain("(no cohorts)");
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/cohort.remove`,
+        expect.objectContaining({ body: JSON.stringify({ cohortId: COHORT_ID }) }),
+      );
+    });
+
+    it("shows a NOT_FOUND error notice when removing an unknown cohort", async () => {
+      const nfResp = {
+        ok: false,
+        applied: { op: "cohort.remove" },
+        sideEffects: [],
+        error: { code: "NOT_FOUND", message: "cohort not found" },
+        crew: crewDTO({ cohorts: [cohortDTO()] }),
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(nfResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove cohort: Bravos"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Remove cohort: Bravos"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("NOT_FOUND");
+      });
+    });
+
+    it("refetches the sheet after a STALE_REVISION on cohort add", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "cohort.add" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          message: "Crew revision mismatch",
+          details: { currentRevision: 7 },
+        },
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 409,
+          text: async () => JSON.stringify(staleResp),
+        })
+        .mockResolvedValueOnce(ok(crewDTO({ revision: 7 })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add cohort"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Add cohort"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(
+        () => {
+          const notice = getNotice(root);
+          expect(notice?.textContent).toContain("Sheet refreshed");
+        },
+        { timeout: 2000 },
+      );
+    });
+  });
+
   });
 });
