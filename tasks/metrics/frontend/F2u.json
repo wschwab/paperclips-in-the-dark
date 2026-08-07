@@ -1,0 +1,18 @@
+{
+  "task": "F2u",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm), 2nd dispatch",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 2,
+  "iterationNotes": "Dispatch 1 died silently mid-research (SRD rep/turf) with zero edits; dispatch 2 with the plan's decision 5 pre-answered landed clean. Report accurate (counts 313 = 278+35 verified).",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "7th shape-vs-semantics gap (A11 filed): crew tier.add/coin.add/stash.add unimplemented (also cohorts + crew XP + rolodex.remove). Frontend accepted; live paths deferred."
+}

@@ -1,0 +1,118 @@
+---
+title: F2u — Crew Sheet: Profile + Trackers
+---
+
+# F2u: Crew Sheet — Profile + Trackers
+
+Turns the read-only crew sheet (F2c) into an editable one: the Profile block
+(name / lair / hunting grounds / reputation / notes) gets inline editing via
+`fields.update`, the Status block becomes clickable trackers (rep — with turf
+rendered inside it — heat, wanted), tier and hold get direct controls, and the
+Fund block gets coin/stash +/−. Everything follows the F2m/F2y mutation-runner
+pattern and reuses the F2y `crewMutate` helper.
+
+## Section → op mapping (per the sheet plan)
+
+| Section | Control | Op | Body |
+|---------|---------|----|------|
+| Profile | inline edit per field | `fields.update` | `{name?}` / `{lair?}` / `{huntingGrounds?}` / `{reputation?}` / `{notes?}` — only the changed field is sent (contract `minProperties: 1`; server merges) |
+| Rep & Turf | box row + −/+ | `rep.add` | `{delta}` |
+| Heat | box row + −/+ | `heat.add` | `{delta}` |
+| Wanted | box row + −/+ | `wanted.add` | `{delta}` |
+| Tier | −/+ | `tier.add` | `{delta}` |
+| Hold | native `<select>` + Set | `hold.set` | `{hold}` |
+| Coin | −/+ | `coin.add` | `{delta}` |
+| Stash | −/+ | `stash.add` | `{delta}` |
+
+## Turf: display-only inside the rep tracker
+
+Sheet-plan decision 5: **turf is not a stored track and has no op**. There is
+no turf field in the crew DTO and no turf endpoint — the rep tracker IS the
+turf rendering (per the SRD, turf fills rep boxes). The rep tracker therefore
+carries a display-only caption noting this; the crew sheet never fabricates
+turf state.
+
+## No hardcoded lists or maxima
+
+- **Hold** is a native `<select>` populated from the contract enum: the
+  frontend schema's `Hold` literal (`frontend/src/schema/common.ts`) mirrors
+  `contract/schemas/common.json#/$defs/hold` (`strong` / `weak`), and the
+  page renders one `<option>` per `Hold.literals` — the same values the
+  server validates against. If the enum ever grows, the schema and the menu
+  grow together.
+- **Rep / heat / wanted** box counts come from the DTO's
+  `{current, max}` — never hardcoded.
+- **Coin / stash** have no maximum in the crew DTO (unlike the character's
+  bounded satchel/stash), so the Fund block shows the raw value plus −/+;
+  both ops are bounded below at 0 server-side.
+
+## Page structure
+
+- `crew-profile` — one inline-editable field row per free-text field: read
+  mode shows the value with a ✎ button; edit mode swaps in a text input with
+  ✓ save / ✕ cancel. Save sends only the edited field to `fields.update`.
+  The history link lives here too.
+- `crew-trackers` — "Rep & Turf" (box row + `current / max` + −/+ with the
+  turf caption), "Heat", "Wanted" (same idiom), "Tier" (value + −/+, −
+  disabled at 0), "Hold" (`<select>` + Set).
+- `crew-fund` — Coin row and Stash row, each a value + −/+ pair (− disabled
+  at 0).
+- Box clicks follow the F1 styleguide idiom (clickable heavy boxes): clicking
+  box N asks to set the value to N; the page computes `delta = N − current`
+  and issues the same op the buttons use. The −/+ buttons remain the precise
+  accessibility path.
+
+## Client methods added
+
+All eight go through the existing `crewMutate` helper (POST
+`/api/crews/{id}/ops/{op}` with `If-Match`, decode `OperationResult`, extract
+the updated `Crew`). Stale-revision handling follows F2h: `409` +
+`STALE_REVISION` → `StaleRevisionError` → the page re-renders, refetches via
+`getCrew`, and shows the "Sheet refreshed because it changed elsewhere"
+notice.
+
+| Method | Endpoint | Body | Returns |
+|--------|----------|------|---------|
+| `crewFieldsUpdate` | `ops/fields.update` | partial fields object | updated `Crew` |
+| `crewRepAdd` | `ops/rep.add` | `{ delta }` | updated `Crew` |
+| `crewHeatAdd` | `ops/heat.add` | `{ delta }` | updated `Crew` |
+| `crewWantedAdd` | `ops/wanted.add` | `{ delta }` | updated `Crew` |
+| `crewTierAdd` | `ops/tier.add` | `{ delta }` | updated `Crew` |
+| `crewHoldSet` | `ops/hold.set` | `{ hold }` | updated `Crew` |
+| `crewCoinAdd` | `ops/coin.add` | `{ delta }` | updated `Crew` |
+| `crewStashAdd` | `ops/stash.add` | `{ delta }` | updated `Crew` |
+
+## Error notices
+
+- `StaleRevisionError` from any op → render, refetch, "Sheet refreshed"
+  notice (shared `onOpFailure` path, same as F2y).
+- Op-level failures surface as `ApiError`s whose body starts with the error
+  code: `DUPLICATE` / `NOT_FOUND` get the friendly F2y text, `VALIDATION`
+  passes the server message through, anything else falls back to
+  `API error (status): body`. The notice renders in a page-level
+  `crew-notices` block.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — 24 tests, red-first per method
+
+Each of the eight methods: request shape + decode, op-level error, stale
+revision. Written red (all failing with `(0, crewXxx) is not a function`)
+before the implementations existed, then implemented to green via
+`crewMutate`.
+
+### Page tests (`src/pages/crew-detail.test.ts`) — 11 tests under
+`describe("F2u Profile & Trackers")`
+
+- profile fields + tracker rendering (box counts from DTO maxima, hold
+  select options exactly `["strong", "weak"]`, coin/stash values)
+- profile edit round-trip (asserts the `fields.update` payload contains only
+  the changed field) and cancel
+- rep / heat / wanted: +/− and box-click (delta computed from the DTO
+  current) each issue the right op
+- tier +/−, hold select + Set, coin +/−, stash +/−
+- op-level `VALIDATION` error notice
+- `STALE_REVISION` refetch notice on a tracker op
+
+Full suite green (`npm test -- --run`, 313 tests) and `npm run build`
+(tsc + vite) green.

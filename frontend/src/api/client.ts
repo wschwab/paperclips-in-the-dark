@@ -771,6 +771,87 @@ export function factionRemove(
 }
 
 // ---------------------------------------------------------------------------
+// F2u crew operations — crewFieldsUpdate, crewRepAdd, crewHeatAdd,
+// crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd
+// ---------------------------------------------------------------------------
+
+/**
+ * Partial update of the crew's free-text fields (name, lair, reputation,
+ * huntingGrounds, notes). Only the provided fields are sent — the contract
+ * requires minProperties 1 and the server merges.
+ */
+export function crewFieldsUpdate(
+  id: string,
+  fields: Record<string, unknown>,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "fields.update", revision, fields);
+}
+
+/** Crew reputation delta (bounded 0..max server-side). */
+export function crewRepAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "rep.add", revision, { delta });
+}
+
+/** Crew heat delta (bounded 0..max server-side). */
+export function crewHeatAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "heat.add", revision, { delta });
+}
+
+/** Crew wanted-level delta (bounded 0..max server-side). */
+export function crewWantedAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "wanted.add", revision, { delta });
+}
+
+/** Crew tier delta (bounded below at 0 server-side). */
+export function crewTierAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "tier.add", revision, { delta });
+}
+
+/** Set crew hold to one of the contract enum values ("strong" | "weak"). */
+export function crewHoldSet(
+  id: string,
+  hold: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "hold.set", revision, { hold });
+}
+
+/** Crew coin (loose funds) delta — bounded below at 0 server-side. */
+export function crewCoinAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "coin.add", revision, { delta });
+}
+
+/** Crew stash (vaults) delta — bounded below at 0 server-side. */
+export function crewStashAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "stash.add", revision, { delta });
+}
+
+// ---------------------------------------------------------------------------
 // F2o operations — actionSetRating, attributeXpAdd, attributeXpClear,
 // attributeLevelup, sessionSet, getPlaybook
 // ---------------------------------------------------------------------------

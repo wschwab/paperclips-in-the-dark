@@ -562,4 +562,412 @@ describe("crew-detail page", () => {
       );
     });
   });
+
+  // -- F2u: Profile & Trackers ----------------------------------------------
+
+  describe("F2u Profile & Trackers", () => {
+    it("renders profile fields and trackers (rep/heat/wanted boxes, tier, hold select, coin, stash)", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        // Profile fields
+        expect(root.textContent).toContain("Northside safehouse");
+        expect(root.textContent).toContain("The Docks");
+        expect(root.textContent).toContain("ruthless");
+        expect(root.textContent).toContain("Up-and-coming crew");
+        // Trackers — box counts come from the DTO maxima, never hardcoded
+        expect(root.querySelectorAll(".crew-rep .stress-box").length).toBe(12);
+        expect(root.querySelectorAll(".crew-heat .stress-box").length).toBe(9);
+        expect(root.querySelectorAll(".crew-wanted .stress-box").length).toBe(4);
+        // Rep boxes filled per current
+        expect(root.querySelectorAll('.crew-rep [data-stress="1"]').length).toBe(3);
+        expect(root.textContent).toContain("Turf fills rep boxes");
+        // Tier value + hold select from contract enum values
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
+        const holdSelect = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
+        expect(holdSelect).not.toBeNull();
+        expect([...holdSelect.options].map((o) => o.value)).toEqual(["strong", "weak"]);
+        expect(holdSelect.value).toBe("strong");
+        // Coin & stash values
+        expect(root.textContent).toContain("Coin:");
+        expect(root.textContent).toContain("Stash:");
+      });
+    });
+
+    it("edits and saves a profile field via crewFieldsUpdate", async () => {
+      const updated = crewDTO({ revision: 6, name: "Renamed Crew" });
+      const fieldsOk = {
+        ok: true,
+        crew: updated,
+        applied: { op: "fields.update" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(fieldsOk));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("The Red Sashes");
+      });
+
+      (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+
+      const input = root.querySelector('input[aria-label="Name"]') as HTMLInputElement;
+      expect(input).not.toBeNull();
+      input.value = "Renamed Crew";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+
+      (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("Renamed Crew");
+      });
+      // fields.update sends only the changed field
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/fields.update"));
+      expect(updateCall).toBeTruthy();
+      expect(updateCall![1].body).toBe(JSON.stringify({ name: "Renamed Crew" }));
+      expect(updateCall![1].headers["If-Match"]).toBe("5");
+    });
+
+    it("cancels a profile edit without saving", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("The Red Sashes");
+      });
+
+      (root.querySelector('button[title="Edit Lair"]') as HTMLButtonElement).click();
+      const input = root.querySelector('input[aria-label="Lair"]') as HTMLInputElement;
+      input.value = "changed but cancelled";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      (root.querySelector('button[title="Cancel"]') as HTMLButtonElement).click();
+
+      expect(root.querySelector('input[aria-label="Lair"]')).toBeNull();
+      expect(root.textContent).toContain("Northside safehouse");
+    });
+
+    it("rep +/− and box click issue rep.add with the right delta", async () => {
+      const repResp = {
+        ok: true,
+        crew: crewDTO({ revision: 6, rep: { current: 4, max: 12 } }),
+        applied: { op: "rep.add" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(repResp))
+        .mockResolvedValueOnce(ok({
+        ok: true,
+        crew: crewDTO({ revision: 7, rep: { current: 5, max: 12 } }),
+        applied: { op: "rep.add" },
+        sideEffects: [],
+        error: null,
+      }))
+        .mockResolvedValueOnce(ok({
+        ok: true,
+        crew: crewDTO({ revision: 8, rep: { current: 4, max: 12 } }),
+        applied: { op: "rep.add" },
+        sideEffects: [],
+        error: null,
+      }));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelectorAll(".crew-rep .stress-box").length).toBe(12);
+      });
+
+      // + button → delta +1 (3 → 4)
+      (root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("4 of 12");
+      });
+
+      // Box 5 click → delta = 5 - 4 = +1 (4 → 5)
+      const boxes = root.querySelectorAll<HTMLButtonElement>(".crew-rep .stress-box");
+      boxes[4]?.click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("5 of 12");
+      });
+
+      // − button → delta -1 (5 → 4)
+      (root.querySelector('button[title="Remove 1 rep"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("4 of 12");
+      });
+    });
+
+    it("heat +/− and box click issue heat.add with the right delta", async () => {
+      const heatResp = {
+        ok: true,
+        crew: crewDTO({ revision: 6, heat: { current: 5, max: 9 } }),
+        applied: { op: "heat.add" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(heatResp))
+        .mockResolvedValueOnce(ok({
+        ok: true,
+        crew: crewDTO({ revision: 7, heat: { current: 6, max: 9 } }),
+        applied: { op: "heat.add" },
+        sideEffects: [],
+        error: null,
+      }));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelectorAll(".crew-heat .stress-box").length).toBe(9);
+      });
+
+      (root.querySelector('button[title="Add 1 heat"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-heat .stress-track")?.getAttribute("aria-label")).toContain("5 of 9");
+      });
+
+      // Box 6 click → delta = 6 - 5 = +1 (5 → 6)
+      const boxes = root.querySelectorAll<HTMLButtonElement>(".crew-heat .stress-box");
+      boxes[5]?.click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-heat .stress-track")?.getAttribute("aria-label")).toContain("6 of 9");
+      });
+    });
+
+    it("wanted +/− and box click issue wanted.add with the right delta", async () => {
+      const wantedResp = {
+        ok: true,
+        crew: crewDTO({ revision: 6, wanted: { current: 0, max: 4 } }),
+        applied: { op: "wanted.add" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(wantedResp))
+        .mockResolvedValueOnce(ok({
+        ok: true,
+        crew: crewDTO({ revision: 7, wanted: { current: 3, max: 4 } }),
+        applied: { op: "wanted.add" },
+        sideEffects: [],
+        error: null,
+      }));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelectorAll(".crew-wanted .stress-box").length).toBe(4);
+      });
+
+      // − button → delta -1 (1 → 0)
+      (root.querySelector('button[title="Remove 1 wanted"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-wanted .stress-track")?.getAttribute("aria-label")).toContain("0 of 4");
+      });
+
+      // Box 3 click → delta = 3 - 0 = +3 (0 → 3)
+      const boxes = root.querySelectorAll<HTMLButtonElement>(".crew-wanted .stress-box");
+      boxes[2]?.click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-wanted .stress-track")?.getAttribute("aria-label")).toContain("3 of 4");
+      });
+    });
+
+    it("tier +/− issues tier.add with the right delta", async () => {
+      const tierResp = {
+        ok: true,
+        crew: crewDTO({ revision: 6, tier: 2 }),
+        applied: { op: "tier.add" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(tierResp))
+        .mockResolvedValueOnce(ok({
+        ok: true,
+        crew: crewDTO({ revision: 7, tier: 1 }),
+        applied: { op: "tier.add" },
+        sideEffects: [],
+        error: null,
+      }));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
+      });
+
+      (root.querySelector('button[title="Add 1 tier"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("2");
+      });
+
+      (root.querySelector('button[title="Remove 1 tier"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
+      });
+    });
+
+    it("sets hold via the contract-enum select and hold.set", async () => {
+      const holdResp = {
+        ok: true,
+        crew: crewDTO({ revision: 6, hold: "weak" }),
+        applied: { op: "hold.set" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(holdResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Hold"]')).not.toBeNull();
+      });
+
+      const holdSelect = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
+      holdSelect.value = "weak";
+      (root.querySelector('button[title="Set hold"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const sel = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
+        expect(sel.value).toBe("weak");
+      });
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const holdCall = calls.find((c) => String(c[0]).endsWith("/ops/hold.set"));
+      expect(holdCall).toBeTruthy();
+      expect(holdCall![1].body).toBe(JSON.stringify({ hold: "weak" }));
+    });
+
+    it("coin and stash +/− issue coin.add and stash.add", async () => {
+      const coinResp = {
+        ok: true,
+        crew: crewDTO({ revision: 6, coin: 1 }),
+        applied: { op: "coin.add" },
+        sideEffects: [],
+        error: null,
+      };
+      const stashResp = {
+        ok: true,
+        crew: crewDTO({ revision: 7, stash: 3 }),
+        applied: { op: "stash.add" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(coinResp))
+        .mockResolvedValueOnce(ok(stashResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("0");
+        expect(root.querySelector(".crew-stash-count")?.textContent).toBe("2");
+      });
+
+      (root.querySelector('button[title="Add 1 coin"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("1");
+      });
+
+      (root.querySelector('button[title="Add 1 stash"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-stash-count")?.textContent).toBe("3");
+      });
+    });
+
+    it("shows an op-level error notice when a tracker op fails", async () => {
+      const errResp = {
+        ok: false,
+        applied: { op: "heat.add" },
+        sideEffects: [],
+        error: { code: "VALIDATION", message: "bad delta" },
+        crew: crewDTO(),
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(errResp));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 heat"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Add 1 heat"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("VALIDATION");
+      });
+    });
+
+    it("refetches the sheet after a STALE_REVISION on a tracker op", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "rep.add" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          message: "Crew revision mismatch",
+          details: { currentRevision: 7 },
+        },
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 409,
+          text: async () => JSON.stringify(staleResp),
+        })
+        .mockResolvedValueOnce(ok(crewDTO({ revision: 7 })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 rep"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(
+        () => {
+          const notice = getNotice(root);
+          expect(notice?.textContent).toContain("Sheet refreshed");
+        },
+        { timeout: 2000 },
+      );
+    });
+  });
 });
