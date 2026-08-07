@@ -34,3 +34,14 @@ black-box blind spot caught only by live probing.
 
 ## Log
 - 2026-08-07: task created from F2n probe findings.
+- 2026-08-07: DONE. Implemented by deepseek-v4-flash-0731 (prime-agent child
+  a5-ada-fixer2; first attempt died silently on investigation — redispatch with
+  pre-digested findings succeeded). Orchestrator acceptance (all independent):
+  alr build green; heal downshift verified line-for-line against core Heal
+  (monitors.adb 104-119, proven Post); live probe port 9679: clock overflow →
+  rollover 2, heal (severe→moderate→lesser shift, clock := rollover), GET/rev
+  agree; CANNOT_HEAL, ARMOR_NOT_AVAILABLE, and unknown-op failures no longer
+  wedge the entity (same If-Match succeeds after each) while stale If-Match
+  still 409s. Full conformance vs Ada: 138/11 — red set unchanged (C3 pending
+  server support only), zero regressions. Item 3 (hardcoded harm caps) remains
+  open, noted for a future task.

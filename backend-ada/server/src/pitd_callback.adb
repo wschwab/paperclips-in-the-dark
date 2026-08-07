@@ -34,6 +34,7 @@ package body Pitd_Callback is
    Last_Idempotency_Response : Unbounded_String;
    protected Revision_Gate is
       procedure Claim (Id : String; Revision : Integer; Granted : out Boolean);
+      procedure Release (Id : String; Revision : Integer);
    private
       Last_Id : Unbounded_String;
       Last_Revision : Integer := -1;
@@ -44,6 +45,12 @@ package body Pitd_Callback is
          Granted := not (To_String(Last_Id)=Id and then Last_Revision=Revision);
          if Granted then Last_Id:=To_Unbounded_String(Id);Last_Revision:=Revision;end if;
       end Claim;
+      procedure Release (Id : String; Revision : Integer) is
+      begin
+         if To_String(Last_Id)=Id and then Last_Revision=Revision then
+            Last_Id:=Null_Unbounded_String;Last_Revision:=-1;
+         end if;
+      end Release;
    end Revision_Gate;
 
    Max_Import  : constant := 1_024 * 1_024;
@@ -442,6 +449,28 @@ package body Pitd_Callback is
       elsif Op="upgrade.mark" or else Op="upgrade.unmark" then declare A:constant JSON_Array:=Get(E,"upgrades");O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop declare X:constant JSON_Value:=Get(A,I);begin if Str_Field(X,"name")=Name then Found:=True;declare N:constant Integer:=Int_Field(X,"boxesMarked")+(if Op="upgrade.mark" then 1 else -1);begin if N>0 then Set_Field(X,"boxesMarked",N);Append(O,X);end if;end;else Append(O,X);end if;end;end loop;if Op="upgrade.mark" and then not Found then declare X:JSON_Value:=Create_Object;begin Set_Field(X,"name",Name);Set_Field(X,"boxesMarked",Integer'(1));Append(O,X);end;end if;Set_Field(E,"upgrades",O);end;
       elsif Op = "fields.update" then
          declare procedure Copy_Field (Name : UTF8_String; Value : JSON_Value) is begin if Has_Field(E,Name) then Set_Field(E,Name,Clone(Value)); end if; end; begin Map_JSON_Object(B,Copy_Field'Access); end;
+      elsif Op = "harm.healing-clock" then
+         declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm");C:constant JSON_Value:=Get(H,"healingClock");begin
+            Requested:=Int_Field(B,"segments");
+            Core_Clamp_Add(Natural(Int_Field(C,"segments")),Natural(Int_Field(C,"size")),Natural'Max(0,Requested),New_Value,Applied);
+            Set_Field(C,"segments",Integer(New_Value));
+            Set_Field(C,"rollover",Integer((if Applied<Natural'Max(0,Requested) then Natural'Max(0,Requested)-Applied else 0)));
+            return Success_Result(Op,E);
+         end;
+      elsif Op = "harm.heal" then
+         declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm");C:constant JSON_Value:=Get(H,"healingClock");begin
+            if Int_Field(C,"segments")<Int_Field(C,"size") then return Error_Result(Op,"CANNOT_HEAL","healing clock is not full",E);end if;
+            declare M:constant JSON_Array:=Get(H,"moderate");S:constant JSON_Array:=Get(H,"severe");L:JSON_Array:=Empty_Array;O:JSON_Array:=Empty_Array;begin
+               for I in 1..Integer'Min(Length(M),2) loop Append(L,Get(M,I));end loop;
+               for I in 1..Integer'Min(Length(S),2) loop Append(O,Get(S,I));end loop;
+               Set_Field(H,"lesser",L);Set_Field(H,"moderate",O);Set_Field(H,"severe",Empty_Array);
+            end;
+            declare R:constant Integer:=Int_Field(C,"rollover");begin
+               Set_Field(C,"segments",Integer'Min(R,Int_Field(C,"size")));
+               Set_Field(C,"rollover",(if R>Int_Field(C,"size") then R-Int_Field(C,"size") else 0));
+            end;
+            Set_Field(E,"isDeadish",Array_Length(H,"fatal")>0);return Success_Result(Op,E);
+         end;
       else return Error_Result (Op,"VALIDATION","unknown operation",E);
       end if;
       return Success_Result (Op,E,Requested,Effective);
@@ -471,6 +500,7 @@ package body Pitd_Callback is
       Plural : constant String:=Part(Path,2);Kind:constant String:=(if Plural="characters" then "character" elsif Plural="crews" then "crew" else "clock");
       Id:constant String:=Part(Path,3);Suffix:constant String:=Part(Path,4)&(if Part(Path,5)/="" then "/"&Part(Path,5) else "");
       Is_Post:constant Boolean:=AWS.Status.Method(Request)=AWS.Status.POST;B,E,R:JSON_Value;
+      Gate_Claimed : Boolean := False;
    begin
       if Id="" then
          if not Is_Post then return Json_Response(Create(All_Entities(Kind)));end if;
@@ -488,12 +518,12 @@ package body Pitd_Callback is
       B:=Parse_Body(Request);
       if Header(Request,"Idempotency-Key")/="" and then Header(Request,"Idempotency-Key")=To_String(Last_Idempotency_Key) then return Json_Text(To_String(Last_Idempotency_Response));end if;
       if Header(Request,"If-Match")/="" and then Header(Request,"If-Match")/=Trim_Image(Int_Field(E,"revision")) then return Fail(AWS.Messages.S409,Suffix,"STALE_REVISION",E,"current revision is "&Trim_Image(Int_Field(E,"revision")));end if;
-      if Header(Request,"If-Match")/="" then declare Granted:Boolean;begin Revision_Gate.Claim(Id,Int_Field(E,"revision"),Granted);if not Granted then return Fail(AWS.Messages.S409,Suffix,"STALE_REVISION",E,"current revision is "&Trim_Image(Int_Field(E,"revision")+1));end if;end;end if;
-      if Suffix="delete" then if not Bool_Field(B,"confirm") then return Json_Response(Error_Result("delete","CONFIRM_REQUIRED","confirm must be true",E));end if;if Kind="crew" then declare A:constant JSON_Array:=All_Entities("character");begin for I in 1..Length(A) loop declare C:constant JSON_Value:=Get(A,I);D:constant JSON_Value:=Get(C,"dossier");begin if Str_Field(D,"crewId")=Id then Set_Field(D,"crewId","");Stamp(C);Write_Entity("character",Str_Field(C,"id"),C);end if;end;end loop;end;end if;Ada.Directories.Delete_Tree(Entity_Dir(Kind,Id));return Json_Response(Success_Result("delete",E));end if;
-      if Suffix="undo" then declare Base:constant String:=Entity_Dir(Kind,Id)&"/history";Search:Ada.Directories.Search_Type;Ent:Ada.Directories.Directory_Entry_Type;Name:Unbounded_String;begin if Ada.Directories.Exists(Base) then Ada.Directories.Start_Search(Search,Base,"*.json",(Ada.Directories.Ordinary_File=>True,others=>False));while Ada.Directories.More_Entries(Search) loop Ada.Directories.Get_Next_Entry(Search,Ent);Name:=To_Unbounded_String(Ada.Directories.Full_Name(Ent));end loop;Ada.Directories.End_Search(Search);end if;if Length(Name)=0 then return Json_Response(Error_Result("undo","NO_HISTORY","no history",E));end if;declare V:constant JSON_Value:=Read(Read_File(To_String(Name)));Restored:constant JSON_Value:=Get(V,"entity");begin Set_Field(Restored,"revision",Int_Field(E,"revision")+1);Set_Field(Restored,"updatedAt",Now);Write_Entity(Kind,Id,Restored);Ada.Directories.Delete_File(To_String(Name));return Json_Response(Success_Result("undo",Restored));end;end;end if;
-      if Suffix="import" then if Str_Field(B,"kind")/=Kind or else Str_Field(B,"id")/=Id then return Fail(AWS.Messages.S400,"import","VALIDATION",E,"kind/id mismatch");end if;Set_Field(B,"revision",Int_Field(E,"revision")+1);Set_Field(B,"updatedAt",Now);Write_Entity(Kind,Id,B);return Json_Response(Success_Result("import",B));end if;
-      declare Op:constant String:=(if Suffix'Length>4 and then Suffix(Suffix'First..Suffix'First+3)="ops/" then Suffix(Suffix'First+4..Suffix'Last) else Suffix);X:AWS.Response.Data;Before:constant JSON_Value:=Clone(E);begin R:=Mutate(Kind,Op,E,B);if Bool_Field(R,"ok") then Snapshot(Kind,Id,Op,Before);Stamp(E);Write_Entity(Kind,Id,E);Set_Field(R,Kind,E);end if;X:=Json_Response(R);if Header(Request,"Idempotency-Key")/="" then Last_Idempotency_Key:=To_Unbounded_String(Header(Request,"Idempotency-Key"));Last_Idempotency_Response:=To_Unbounded_String(String'(Write(R,Compact=>False))&ASCII.LF);end if;return X;end;
-   exception when Constraint_Error => return Fail(AWS.Messages.S413,"import","VALIDATION",Message=>"request exceeds 1 MiB");
+      if Header(Request,"If-Match")/="" then declare Granted:Boolean;begin Revision_Gate.Claim(Id,Int_Field(E,"revision"),Granted);if not Granted then return Fail(AWS.Messages.S409,Suffix,"STALE_REVISION",E,"current revision is "&Trim_Image(Int_Field(E,"revision")+1));end if;Gate_Claimed:=True;end;end if;
+      if Suffix="delete" then if not Bool_Field(B,"confirm") then if Gate_Claimed then Revision_Gate.Release(Id,Int_Field(E,"revision"));end if;return Json_Response(Error_Result("delete","CONFIRM_REQUIRED","confirm must be true",E));end if;if Kind="crew" then declare A:constant JSON_Array:=All_Entities("character");begin for I in 1..Length(A) loop declare C:constant JSON_Value:=Get(A,I);D:constant JSON_Value:=Get(C,"dossier");begin if Str_Field(D,"crewId")=Id then Set_Field(D,"crewId","");Stamp(C);Write_Entity("character",Str_Field(C,"id"),C);end if;end;end loop;end;end if;Ada.Directories.Delete_Tree(Entity_Dir(Kind,Id));return Json_Response(Success_Result("delete",E));end if;
+      if Suffix="undo" then declare Base:constant String:=Entity_Dir(Kind,Id)&"/history";Search:Ada.Directories.Search_Type;Ent:Ada.Directories.Directory_Entry_Type;Name:Unbounded_String;begin if Ada.Directories.Exists(Base) then Ada.Directories.Start_Search(Search,Base,"*.json",(Ada.Directories.Ordinary_File=>True,others=>False));while Ada.Directories.More_Entries(Search) loop Ada.Directories.Get_Next_Entry(Search,Ent);Name:=To_Unbounded_String(Ada.Directories.Full_Name(Ent));end loop;Ada.Directories.End_Search(Search);end if;if Length(Name)=0 then if Gate_Claimed then Revision_Gate.Release(Id,Int_Field(E,"revision"));end if;return Json_Response(Error_Result("undo","NO_HISTORY","no history",E));end if;declare V:constant JSON_Value:=Read(Read_File(To_String(Name)));Restored:constant JSON_Value:=Get(V,"entity");begin Set_Field(Restored,"revision",Int_Field(E,"revision")+1);Set_Field(Restored,"updatedAt",Now);Write_Entity(Kind,Id,Restored);Ada.Directories.Delete_File(To_String(Name));return Json_Response(Success_Result("undo",Restored));end;end;end if;
+      if Suffix="import" then if Str_Field(B,"kind")/=Kind or else Str_Field(B,"id")/=Id then if Gate_Claimed then Revision_Gate.Release(Id,Int_Field(E,"revision"));end if;return Fail(AWS.Messages.S400,"import","VALIDATION",E,"kind/id mismatch");end if;Set_Field(B,"revision",Int_Field(E,"revision")+1);Set_Field(B,"updatedAt",Now);Write_Entity(Kind,Id,B);return Json_Response(Success_Result("import",B));end if;
+      declare Op:constant String:=(if Suffix'Length>4 and then Suffix(Suffix'First..Suffix'First+3)="ops/" then Suffix(Suffix'First+4..Suffix'Last) else Suffix);X:AWS.Response.Data;Before:constant JSON_Value:=Clone(E);begin R:=Mutate(Kind,Op,E,B);if Bool_Field(R,"ok") then Snapshot(Kind,Id,Op,Before);Stamp(E);Write_Entity(Kind,Id,E);Set_Field(R,Kind,E);else if Gate_Claimed then Revision_Gate.Release(Id,Int_Field(E,"revision"));end if;end if;X:=Json_Response(R);if Header(Request,"Idempotency-Key")/="" then Last_Idempotency_Key:=To_Unbounded_String(Header(Request,"Idempotency-Key"));Last_Idempotency_Response:=To_Unbounded_String(String'(Write(R,Compact=>False))&ASCII.LF);end if;return X;end;
+   exception when Constraint_Error => if Gate_Claimed then Revision_Gate.Release(Id,Int_Field(E,"revision"));end if;return Fail(AWS.Messages.S413,"import","VALIDATION",Message=>"request exceeds 1 MiB");
    end Handle_Entity;
 
    procedure Configure (Static_Directory, Data_Directory, Games_Directory : String; Test_Hooks : Boolean) is

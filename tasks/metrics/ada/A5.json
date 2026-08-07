@@ -1,0 +1,18 @@
+{
+  "task": "A5",
+  "track": "ada",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm), 2nd dispatch; 1st dispatch died silently pre-edit",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 2,
+  "iterationNotes": "Dispatch 1: pure investigation, zero edits, silent termination. Dispatch 2 with pre-digested code locations + semantics in prompt: complete, exact, one file changed. Lesson: flash needs the investigation front-loaded for dense/unfamiliar code.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Revision_Gate.Release is match-guarded (stale release can't clear newer claim) and called on every failure path incl. Constraint_Error handler. Heal semantics replicate core's proven implementation exactly. Verified by orchestrator probe + full conformance rerun (138/11, red set unchanged)."
+}
