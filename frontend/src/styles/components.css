@@ -58,8 +58,10 @@
 /* ── Stress track (heavy boxes) ──────────────────────────────── */
 
 .stress-track {
-  display: inline-grid;
-  grid-auto-flow: row;
+  /* heavy boxes flow left-to-right (F2z); wrap keeps wide tracks
+   * (e.g. a 12-box rep track) inside narrow cards */
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 6px;
   border: var(--border-thick) solid var(--rule-heavy);
@@ -67,8 +69,11 @@
   background: var(--surface-sunk);
 }
 .stress-track.rows {
-  grid-auto-flow: column;
-  grid-template-rows: repeat(3, 1fr);
+  /* variant: boxes stack into columns of three */
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  height: calc(38px * 3 + 6px * 2 + 12px);
 }
 .stress-box {
   width: 38px;
@@ -379,6 +384,67 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
+}
+
+/* ── Sheet pages: themed container + card grid (F2z) ───────────
+ * The roster and character/crew detail pages get the same centered,
+ * capped, gutter-padded shell the styleguide and health page already
+ * had. Detail pages lay their sections out as sheet boxes that pack
+ * side-by-side on wide screens and stack on narrow ones, like the
+ * styleguide's .sg-grid. */
+
+.roster,
+.roster-error,
+.roster-loading,
+.character-detail,
+.character-detail-error,
+.character-detail-loading,
+.crew-detail,
+.crew-detail-error,
+.crew-detail-loading {
+  max-width: var(--sheet-width);
+  margin: 0 auto;
+  padding: var(--gutter);
+}
+
+/* detail pages carry more furniture — a wider sheet */
+.character-detail,
+.crew-detail {
+  max-width: var(--sheet-width-wide);
+}
+
+.roster,
+.character-detail,
+.crew-detail {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+}
+
+/* every section reads as a box on the printed sheet */
+.roster > *,
+.character-detail > *,
+.crew-detail > * {
+  padding: 14px 16px;
+  border: var(--border-thin) solid var(--rule);
+  background: var(--surface-raised);
+  border-radius: var(--radius);
+}
+
+/* full-width sheet furniture: titles, footer strips, notices,
+ * closing actions — span both columns so the card grid never
+ * strands a half-empty row */
+.character-detail > .character-header,
+.character-detail > .character-info,
+.character-detail > .character-actions,
+.character-detail > .character-notes,
+.character-detail > .error,
+.character-detail > .notice,
+.crew-detail > .crew-header,
+.crew-detail > .crew-actions,
+.crew-detail > .crew-notices,
+.crew-detail > .crew-contacts-factions {
+  grid-column: 1 / -1;
 }
 
 /* ── Theme controls (the manual toggle) ─────────────────────── */

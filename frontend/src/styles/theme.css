@@ -54,6 +54,7 @@
 
   /* layout */
   --sheet-width: 920px;
+  --sheet-width-wide: 1120px;
   --gutter: 24px;
 
   color-scheme: light;

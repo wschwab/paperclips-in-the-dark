@@ -1,0 +1,83 @@
+---
+title: F2z — Sheet Page Layout: Padding, Horizontal Trackers, Card Grid
+---
+
+# F2z: Sheet Page Layout — Padding, Horizontal Trackers, Card Grid
+
+Fixes the human's 2026-08-08 report: pages rendered flush against the left
+edge with no padding or width cap, and trackers (rep, turf, heat, wanted,
+stress) stacked vertically instead of running horizontally.
+
+## Themed page container
+
+`/roster`, `/character/{id}`, and `/crew/{id}` (plus their loading/error
+states) previously had no container CSS, so they ran full-width and flush
+left. They now get the same themed shell the styleguide (`.styleguide`) and
+health page (`.health`) already had: centered with `margin: 0 auto`, capped
+at `max-width`, padded with `var(--gutter)`.
+
+- Roster uses the standard sheet width `--sheet-width` (920px).
+- The detail pages carry more furniture, so they use the new
+  `--sheet-width-wide` token (1120px) added to `theme.css`.
+
+## Horizontal trackers
+
+`.stress-track` (the heavy-box idiom shared by the character stress track,
+the crew rep/heat/wanted trackers, the crew XP boxes, and the character's
+session-expression tracks) used `display: inline-grid; grid-auto-flow: row;`
+— boxes stacked vertically. It is now a horizontal flex row that wraps:
+
+```css
+.stress-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  /* …padding/border/background unchanged… */
+}
+```
+
+`flex-wrap` matters: the rep track can carry 12 boxes (534px laid out), wider
+than a half-column card; wrapping keeps it inside the card while still
+reading left-to-right. The `.stress-track.rows` variant (three-per-column
+stacking) was redefined against the flex base for anyone who opts in.
+
+The other tracker components were already horizontal: `.action-dots`
+(`inline-flex`), `.trauma-stamps` (`flex-wrap`), the SVG `.clock`, and the
+lair-chart `.chart-boxes` rows. No changes needed there.
+
+## Detail pages use horizontal space
+
+`.character-detail` and `.crew-detail` are now a responsive card grid, same
+idiom as `.styleguide .sg-grid`:
+
+```css
+.character-detail, .crew-detail {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+}
+```
+
+Sections pack side-by-side on wide screens (two columns on the wide sheet)
+and stack into one column on narrow ones. Every section reads as a box on
+the printed sheet (surface-raised card, faint rule, radius), and the
+header / footer-strip / notice / closing-action sections span both columns
+so the grid never strands a half-empty row:
+
+- **Character**: header (full width); personal+vice, stress+traumas,
+  health+talents, playbook+gear, coin+projects pairs; info, notices,
+  actions, notes span both columns.
+- **Crew**: header (full width); profile+trackers, fund+playbook,
+  cohorts+xp pairs; contacts & factions, actions, notices span both columns.
+- **Roster**: the two lists sit side-by-side on wide screens (two-column
+  grid), stacked on narrow.
+
+## Acceptance
+
+- Pages render padded and centered with the themed container. ✔
+- Trackers render horizontally (rep/turf/heat/wanted/stress/xp). ✔
+- Detail pages use horizontal space (side-by-side cards on wide screens,
+  stacked on narrow). ✔
+- `npm test -- --run` (366 tests) and `npm run build` green. ✔
+- No page TS restructure was needed — the layout is CSS-only, so no test
+  selectors changed.
