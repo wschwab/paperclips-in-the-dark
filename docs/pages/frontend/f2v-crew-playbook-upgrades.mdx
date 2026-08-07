@@ -1,0 +1,140 @@
+---
+title: F2v — Crew Sheet: Playbook Abilities + Upgrades + Lair Chart
+---
+
+# F2v: Crew Sheet — Playbook Abilities + Upgrades + Lair Chart
+
+Adds the Playbook section to the crew sheet: crew special abilities with
+take/remove, the upgrades list with mark/unmark, and the **lair advancement
+chart** — which, per `f2-sheet-plan.mdx`, is a *rendering* of the same
+playbook-specific `Upgrades` data, not a new domain concept. Training,
+mastery, quality items and the lair upgrades all live in one game-data
+`Upgrades` array; the page never hardcodes a list or a maximum.
+
+## Client methods added
+
+All four ops go through the existing `crewMutate` helper (POST
+`/api/crews/{id}/ops/{op}` with `If-Match`, decode `OperationResult`,
+extract the updated `Crew`). Stale-revision handling follows F2h/F2y:
+`409` + `STALE_REVISION` → `StaleRevisionError` → re-render, refetch via
+`getCrew`, "Sheet refreshed" notice.
+
+| Method | Endpoint | Body | Returns |
+|--------|----------|------|---------|
+| `crewAbilityTake` | `ops/ability.take` | `{ name }` | updated `Crew` |
+| `crewAbilityRemove` | `ops/ability.remove` | `{ name }` | updated `Crew` |
+| `upgradeMark` | `ops/upgrade.mark` | `{ name }` | updated `Crew` |
+| `upgradeUnmark` | `ops/upgrade.unmark` | `{ name }` | updated `Crew` |
+| `getCrewType` | `GET /api/games/{stem}/crews/{crewType}` | — | raw crew-type settings object |
+| `getCrewTypes` | `GET /api/games/{stem}/crews` | — | `CrewTypes` array of settings objects |
+
+Server semantics (contract-frozen, A8/A11): `ability.take` enforces
+`TimesTakeable` → `ABILITY_MAXED` and rejects unknown names with
+`NOT_FOUND`; `ability.remove` removes the whole entry; `upgrade.mark`
+upserts the upgrade (`boxesMarked` +1), `upgrade.unmark` decrements and
+**removes the entry at 0**; `upgrade.mark` on a full track →
+`UPGRADE_MAXED` (`TotalBoxes` from the crew-type game data).
+
+## Crew-type game data source
+
+The ability/upgrade menus and descriptions come from
+`data/games/*-crews.json` (`CrewTypes[{Name, SpecialAbilities[{Name,
+TimesTakeable, Description}], Upgrades[{Name, TotalBoxes, Description}],
+StartingUpgrades[...]}]`). The page prefers the per-crew-type endpoint
+(`getCrewType`, mirroring the character sheet's `getPlaybook`) and falls
+back to the `CrewTypes` list (`getCrewTypes`, find-by-name) — the same
+two-source pattern the character sheet uses for playbook settings.
+
+> **Backend note (verified 2026-08-07):** the contract defines
+> `GET /api/games/{stem}/crews/{crewType}` but the current Ada backend
+> answers `404` for a non-empty crewType segment (its conformance case
+> accepts `[200, 404]`). The page therefore always fetches both sources in
+> parallel via `Effect.either` and degrades gracefully: the live crew sheet
+> renders its menus from the list endpoint until the single-type endpoint
+> is implemented. `getCrewType` is client-tested and wired as the
+> preferred source, so it takes over automatically once the backend grows
+> the endpoint.
+
+## Page section
+
+A `crew-playbook` section sits between Fund and Contacts & Factions with an
+`h2` heading "Playbook" and three labelled sub-blocks:
+
+### Special Abilities
+
+- Taken abilities come from the DTO (`specialAbilities[{name,
+  timesTaken}]`); descriptions come from game data (the DTO carries no
+  description). Each entry shows the name (`×timesTaken` when > 1), the
+  description, and a ✕ remove button → `crewAbilityRemove` (whole-entry
+  remove).
+- Take menu: native `<select>` populated from game-data `SpecialAbilities`
+  entries that are not taken yet or taken fewer than `TimesTakeable` (the
+  server enforces the limit), with a `<details>/<summary>` showing the
+  selected ability's description (mirrors F2p's character section). Take
+  button → `crewAbilityTake`.
+
+### Upgrades
+
+- List rows come from the DTO (`upgrades[{name, boxesMarked}]`); `TotalBoxes`
+  and the description come from the crew-type game data — never hardcoded.
+  Each row shows `boxesMarked / TotalBoxes`, the description, a − unmark
+  button (disabled at 0) → `upgradeUnmark`, and a + mark button (disabled at
+  the total) → `upgradeMark`.
+- Mark menu: native `<select>` of game-data `Upgrades` not yet full (the way
+  to start a new upgrade, since the DTO list only shows already-marked
+  entries) + a mark button.
+
+### Lair Chart
+
+The lair advancement chart is a **compact chart view of the same Upgrades
+data** — no separate domain concept. One row per crew-type upgrade (game-data
+order, DTO-only upgrades from older snapshots appended), each row a row of
+small boxes (`TotalBoxes` boxes, `boxesMarked` filled, `marked / total`
+count). Clicking an empty box marks one box; clicking a filled box unmarks
+one — the chart boxes are sugar over the same `upgrade.mark` /
+`upgrade.unmark` ops (there is no set-to-N op for upgrades, so each click
+moves one box).
+
+## Error notices
+
+- `ABILITY_MAXED` (ability.take at its TimesTakeable limit) →
+  "ABILITY_MAXED: that ability is already taken to its limit".
+- `UPGRADE_MAXED` (upgrade.mark on a full track) →
+  "UPGRADE_MAXED: all of that upgrade's boxes are already marked".
+- `NOT_FOUND` (remove/unmark of an unknown name) →
+  "NOT_FOUND: not on this sheet (removed elsewhere?)".
+- Any `StaleRevisionError` → render, refetch via `getCrew`, standard
+  "Sheet refreshed because it changed elsewhere" notice (F2h).
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — 17 tests, red-first per method
+
+Each op method: request shape + decode, op-level error (`ABILITY_MAXED` /
+`UPGRADE_MAXED` / `NOT_FOUND`), stale revision. `getCrewType` (2 tests) and
+`getCrewTypes` (3 tests) cover fetch + decode and failure paths. Written red
+(all failing with `(0, crewXxx) is not a function`) before the
+implementations existed, then green via `crewMutate`.
+
+### Page tests (`src/pages/crew-detail.test.ts`) — 10 tests under
+`describe("F2v Playbook & Upgrades")`
+
+- abilities render from DTO with game-data descriptions; take select from
+  game-data `SpecialAbilities` excluding maxed takes; `<details>/<summary>`
+  description
+- take posts `crewAbilityTake` and renders the new entry; remove posts
+  `crewAbilityRemove`
+- `ABILITY_MAXED` notice
+- upgrades render (boxes/total + description from game data, mark/unmark
+  buttons); mark menu lists eligible upgrades and posts `upgradeMark`;
+  row mark/unmark post the right ops; `UPGRADE_MAXED` notice
+- lair chart renders one row per upgrade with boxes filled from the DTO, and
+  a chart-box click posts `upgrade.mark`
+- `STALE_REVISION` refetch on an ability op
+
+Existing F2y/F2u page tests were updated for the two extra load fetches (the
+page now fetches the crew-type settings sources alongside the crew, mirroring
+the character sheet's parallel game-data load).
+
+Full suite green (`npm test -- --run`, 340 tests) and `npm run build`
+(tsc + vite) green.

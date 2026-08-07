@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -2933,6 +2933,352 @@ describe("crewStashAdd", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2v crew operations — crewAbilityTake, crewAbilityRemove, upgradeMark,
+// upgradeUnmark, getCrewType, getCrewTypes
+// ---------------------------------------------------------------------------
+
+describe("crewAbilityTake", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/ability.take with name and If-Match, decodes crew from OperationResult", async () => {
+    const withAbility = makeCrew({
+      revision: 6,
+      specialAbilities: [
+        { name: "Predators", timesTaken: 1 },
+      ],
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(withAbility, "ability.take")),
+    });
+
+    const result = await Effect.runPromise(crewAbilityTake(CREW_ID_F2Y, "Predators", 5));
+    expect(result.specialAbilities).toEqual([{ name: "Predators", timesTaken: 1 }]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/ability.take`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "Predators" }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the op result is ok:false (ABILITY_MAXED)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("ability.take", "ABILITY_MAXED", "already at limit", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewAbilityTake(CREW_ID_F2Y, "Predators", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("ABILITY_MAXED");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("ability.take", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewAbilityTake(CREW_ID_F2Y, "Predators", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("crewAbilityRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/ability.remove with name and If-Match, decodes crew from OperationResult", async () => {
+    const withoutAbility = makeCrew({ revision: 6, specialAbilities: [] });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(withoutAbility, "ability.remove")),
+    });
+
+    const result = await Effect.runPromise(crewAbilityRemove(CREW_ID_F2Y, "Predators", 5));
+    expect(result.specialAbilities).toEqual([]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/ability.remove`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "Predators" }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the op result is ok:false (NOT_FOUND)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("ability.remove", "NOT_FOUND", "not on sheet", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewAbilityRemove(CREW_ID_F2Y, "Predators", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("ability.remove", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewAbilityRemove(CREW_ID_F2Y, "Predators", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("upgradeMark", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/upgrade.mark with name and If-Match, decodes crew from OperationResult", async () => {
+    const withMark = makeCrew({
+      revision: 6,
+      upgrades: [{ name: "Secure Lair", boxesMarked: 1 }],
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(withMark, "upgrade.mark")),
+    });
+
+    const result = await Effect.runPromise(upgradeMark(CREW_ID_F2Y, "Secure Lair", 5));
+    expect(result.upgrades).toEqual([{ name: "Secure Lair", boxesMarked: 1 }]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/upgrade.mark`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "Secure Lair" }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the op result is ok:false (UPGRADE_MAXED)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("upgrade.mark", "UPGRADE_MAXED", "all boxes marked", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(upgradeMark(CREW_ID_F2Y, "Secure Lair", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("UPGRADE_MAXED");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("upgrade.mark", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(upgradeMark(CREW_ID_F2Y, "Secure Lair", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("upgradeUnmark", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/upgrade.unmark with name and If-Match, decodes crew from OperationResult", async () => {
+    const withUnmark = makeCrew({ revision: 6, upgrades: [] });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(withUnmark, "upgrade.unmark")),
+    });
+
+    const result = await Effect.runPromise(upgradeUnmark(CREW_ID_F2Y, "Secure Lair", 5));
+    expect(result.upgrades).toEqual([]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/upgrade.unmark`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ name: "Secure Lair" }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the op result is ok:false (NOT_FOUND)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("upgrade.unmark", "NOT_FOUND", "not on sheet", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(upgradeUnmark(CREW_ID_F2Y, "Secure Lair", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("upgrade.unmark", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(upgradeUnmark(CREW_ID_F2Y, "Secure Lair", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("getCrewType", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/games/{stem}/crews/{crewType} and returns the raw crew type settings object", async () => {
+    const crewTypeData = {
+      Name: "Assassins",
+      Hook: "You're professional murderers.",
+      SpecialAbilities: [{ Name: "Predators", TimesTakeable: 1, Description: "take +1d" }],
+      Upgrades: [{ Name: "Secure Lair", TotalBoxes: 2, Description: "locks" }],
+      StartingUpgrades: [],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewTypeData),
+    });
+
+    const result = await Effect.runPromise(getCrewType("blades-in-the-dark", "Assassins"));
+    expect(result.SpecialAbilities).toHaveLength(1);
+    expect(result.Upgrades).toHaveLength(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/games/blades-in-the-dark/crews/Assassins",
+      { headers: { Accept: "application/json" } },
+    );
+  });
+
+  it("exposes ApiError when fetch fails (e.g. 404 from backend without per-crew-type GET)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "games.crew: NOT_FOUND",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(getCrewType("blades-in-the-dark", "Ghosts")),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+});
+
+describe("getCrewTypes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/games/{stem}/crews and decodes the CrewTypes array of settings objects", async () => {
+    const crewsData = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [
+        { Name: "Assassins", SpecialAbilities: [], Upgrades: [], StartingUpgrades: [] },
+        { Name: "Bravos", SpecialAbilities: [], Upgrades: [], StartingUpgrades: [] },
+      ],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewsData),
+    });
+
+    const result = await Effect.runPromise(getCrewTypes("blades-in-the-dark"));
+    expect(result.map((ct) => ct.Name)).toEqual(["Assassins", "Bravos"]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/games/blades-in-the-dark/crews",
+      { headers: { Accept: "application/json" } },
+    );
+  });
+
+  it("exposes ApiError when fetch fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(Effect.either(getCrewTypes("nonexistent-game")));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when response lacks a CrewTypes array", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(Effect.either(getCrewTypes("blades-in-the-dark")));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
     }
   });
 });

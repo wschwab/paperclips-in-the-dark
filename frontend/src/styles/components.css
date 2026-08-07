@@ -96,6 +96,31 @@
   color: var(--text-muted);
 }
 
+/* ── Lair chart boxes (F2v) ────────────────────────────────────
+ * Small compact boxes rendering the crew-type Upgrades data — the
+ * same heavy-box idiom as the stress track, shrunk for the chart. */
+
+.chart-box {
+  width: 18px;
+  height: 18px;
+  border: var(--border-medium) solid var(--fill-border);
+  background: var(--empty);
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: background var(--transition-fast);
+}
+.chart-box[data-stress="1"] {
+  background: var(--fill);
+}
+.chart-box:focus-visible {
+  outline-color: var(--accent);
+}
+.chart-box:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
 /* ── Trauma stamps ───────────────────────────────────────────── */
 
 .trauma-stamps {

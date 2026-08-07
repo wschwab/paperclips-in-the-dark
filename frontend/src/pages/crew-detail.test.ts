@@ -145,6 +145,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(undoSuccessResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -179,6 +181,8 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(noHistoryResp));
 
@@ -219,6 +223,8 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce({
           ok: false,
@@ -310,6 +316,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(addResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -351,6 +359,8 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(
           ok(crewDTO({ contacts: [{ name: "Rolan Wott", profession: "magistrate" }] })),
         )
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(removeResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -377,6 +387,8 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(dupResp));
 
@@ -438,6 +450,8 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(
           ok(crewDTO({ factions: [{ name: "The Crows", status: 0 }] })),
         )
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(setResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -472,6 +486,8 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(
           ok(crewDTO({ factions: [{ name: "The Crows", status: 1 }] })),
         )
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(removeResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -501,6 +517,8 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(
           ok(crewDTO({ factions: [{ name: "The Crows", status: 1 }] })),
         )
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(nfResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -531,6 +549,8 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce({
           ok: false,
@@ -609,6 +629,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(fieldsOk));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -668,6 +690,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(repResp))
         .mockResolvedValueOnce(ok({
         ok: true,
@@ -722,6 +746,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(heatResp))
         .mockResolvedValueOnce(ok({
         ok: true,
@@ -761,6 +787,8 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(wantedResp))
         .mockResolvedValueOnce(ok({
@@ -803,6 +831,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(tierResp))
         .mockResolvedValueOnce(ok({
         ok: true,
@@ -840,6 +870,8 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(holdResp));
 
@@ -882,6 +914,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(coinResp))
         .mockResolvedValueOnce(ok(stashResp));
 
@@ -915,6 +949,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(errResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -946,6 +982,8 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
@@ -960,6 +998,370 @@ describe("crew-detail page", () => {
       });
 
       (root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(
+        () => {
+          const notice = getNotice(root);
+          expect(notice?.textContent).toContain("Sheet refreshed");
+        },
+        { timeout: 2000 },
+      );
+    });
+  });
+
+  // -- F2v: Playbook (abilities) + Upgrades + Lair chart ----------------------
+
+  describe("F2v Playbook & Upgrades", () => {
+    /** Crew DTO with a populated playbook section. */
+    function playbookDTO(overrides: Record<string, unknown> = {}) {
+      return crewDTO({
+        specialAbilities: [
+          { name: "Predators", timesTaken: 1 },
+          { name: "Patron", timesTaken: 1 },
+        ],
+        upgrades: [{ name: "Secure Lair", boxesMarked: 1 }],
+        ...overrides,
+      });
+    }
+
+    /** Crew-type game data (the menu + description source, never hardcoded). */
+    const CREW_TYPE_DATA = {
+      Name: "Assassins",
+      Hook: "You're professional murderers.",
+      SpecialAbilities: [
+        { Name: "Predators", TimesTakeable: 1, Description: "When you use a stealth or deception plan to commit murder, take +1d to the engagement roll." },
+        { Name: "Deadly", TimesTakeable: 1, Description: "Each PC may add +1 action rating to Hunt, Prowl, or Skirmish." },
+        { Name: "Patron", TimesTakeable: 2, Description: "When you advance your Tier, it costs half the coin it normally would." },
+      ],
+      Upgrades: [
+        { Name: "Training", TotalBoxes: 1, Description: "Earn 2 xp instead of 1 when you train a given xp track during downtime." },
+        { Name: "Secure Lair", TotalBoxes: 2, Description: "Your lair has locks, alarms, and traps to thwart intruders." },
+        { Name: "Vault", TotalBoxes: 2, Description: "Your lair has a secure vault." },
+        { Name: "Quality: Weapons", TotalBoxes: 2, Description: "Each upgrade improves the quality rating of all the PCs' weapons." },
+      ],
+      StartingUpgrades: [],
+    };
+
+    const CREW_TYPES_DATA = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [CREW_TYPE_DATA],
+    };
+
+    const crewOpOk = (crew: unknown, opName: string) => ({
+      ok: true,
+      crew,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    const crewOpErr = (opName: string, code: string, message: string, crew: unknown) => ({
+      ok: false,
+      applied: { op: opName },
+      sideEffects: [],
+      error: { code, message },
+      crew,
+    });
+
+    it("renders taken abilities from DTO and the take select from game-data SpecialAbilities", async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce(ok(playbookDTO())).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        text: async () => "games.crew: NOT_FOUND",
+      }).mockResolvedValueOnce(ok(CREW_TYPES_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-playbook")).not.toBeNull();
+      });
+
+      // Taken abilities come from the DTO, descriptions from game data
+      const entries = root.querySelectorAll(".ability-entry");
+      expect(entries.length).toBe(2);
+      const predators = root.querySelector('.ability-entry[data-ability="Predators"]');
+      expect(predators?.textContent).toContain("take +1d to the engagement roll");
+      const patron = root.querySelector('.ability-entry[data-ability="Patron"]');
+      expect(patron?.textContent).toContain("half the coin");
+
+      // Take select: from game-data SpecialAbilities, excluding maxed takes
+      // (Predators taken 1 == TimesTakeable 1; Patron taken 1 < 2 stays)
+      const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+      const options = Array.from(select.options).map((o) => o.value);
+      expect(options).toEqual(["", "Deadly", "Patron"]);
+
+      // <details>/<summary> shows the description of the pre-selected ability
+      const details = root.querySelector(".ability-description");
+      expect(details?.querySelector("summary")?.textContent).toBe("Deadly");
+      expect(details?.textContent).toContain("Each PC may add +1 action rating");
+    });
+
+    it("take posts crewAbilityTake with the selected ability and renders the new entry", async () => {
+      const taken = playbookDTO({
+        revision: 6,
+        specialAbilities: [
+          { name: "Predators", timesTaken: 1 },
+          { name: "Patron", timesTaken: 1 },
+          { name: "Deadly", timesTaken: 1 },
+        ],
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewOpOk(taken, "ability.take")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Take ability"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+      select.value = "Deadly";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.ability-entry[data-ability="Deadly"]')).not.toBeNull();
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/ability.take`,
+        expect.objectContaining({ body: JSON.stringify({ name: "Deadly" }) }),
+      );
+    });
+
+    it("remove posts crewAbilityRemove with the ability name", async () => {
+      const removed = playbookDTO({ revision: 6, specialAbilities: [{ name: "Patron", timesTaken: 1 }] });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewOpOk(removed, "ability.remove")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove ability: Predators"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Remove ability: Predators"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove ability: Predators"]')).toBeNull();
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/ability.remove`,
+        expect.objectContaining({ body: JSON.stringify({ name: "Predators" }) }),
+      );
+    });
+
+    it("shows an ABILITY_MAXED notice when take hits the server limit", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewOpErr("ability.take", "ABILITY_MAXED", "already at limit", playbookDTO())));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Take ability"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("ABILITY_MAXED");
+      });
+    });
+
+    it("renders upgrades from DTO with boxes/total from game data and mark/unmark buttons", async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce(ok(playbookDTO())).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        text: async () => "games.crew: NOT_FOUND",
+      }).mockResolvedValueOnce(ok(CREW_TYPES_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-upgrades")).not.toBeNull();
+      });
+
+      const entry = root.querySelector('.upgrade-entry[data-upgrade="Secure Lair"]');
+      expect(entry).not.toBeNull();
+      // boxesMarked from DTO, total + description from game data
+      expect(entry?.textContent).toContain("1 / 2");
+      expect(entry?.textContent).toContain("locks, alarms, and traps");
+      // mark button enabled (1 < 2), unmark enabled (1 > 0)
+      expect(root.querySelector('button[title="Mark upgrade: Secure Lair"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).not.toBeNull();
+    });
+
+    it("mark menu lists eligible upgrades from game data and posts upgradeMark", async () => {
+      const marked = playbookDTO({
+        revision: 6,
+        upgrades: [
+          { name: "Secure Lair", boxesMarked: 1 },
+          { name: "Training", boxesMarked: 1 },
+        ],
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewOpOk(marked, "upgrade.mark")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Mark upgrade"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Mark upgrade"]') as HTMLSelectElement;
+      const options = Array.from(select.options).map((o) => o.value);
+      expect(options).toEqual(["", "Training", "Secure Lair", "Vault", "Quality: Weapons"]);
+      select.value = "Training";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      (root.querySelector('button[title="Mark selected upgrade"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.upgrade-entry[data-upgrade="Training"]')).not.toBeNull();
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/upgrade.mark`,
+        expect.objectContaining({ body: JSON.stringify({ name: "Training" }) }),
+      );
+    });
+
+    it("row mark and unmark buttons post upgradeMark / upgradeUnmark", async () => {
+      const unmarked = playbookDTO({ revision: 6, upgrades: [] });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewOpOk(unmarked, "upgrade.unmark")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Unmark upgrade: Secure Lair"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.upgrade-entry[data-upgrade="Secure Lair"]')).toBeNull();
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/upgrade.unmark`,
+        expect.objectContaining({ body: JSON.stringify({ name: "Secure Lair" }) }),
+      );
+    });
+
+    it("shows an UPGRADE_MAXED notice when mark hits the server limit", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewOpErr("upgrade.mark", "UPGRADE_MAXED", "all boxes marked", playbookDTO())));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Mark upgrade: Secure Lair"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Mark upgrade: Secure Lair"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("UPGRADE_MAXED");
+      });
+    });
+
+    it("renders the lair chart as a compact chart view of the same upgrades data", async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce(ok(playbookDTO())).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        text: async () => "games.crew: NOT_FOUND",
+      }).mockResolvedValueOnce(ok(CREW_TYPES_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".lair-chart")).not.toBeNull();
+      });
+
+      // One chart row per upgrade in game-data order, boxes from TotalBoxes
+      const rows = root.querySelectorAll<HTMLElement>(".lair-chart [data-upgrade]");
+      expect(rows.length).toBe(4);
+      expect(rows[0]?.getAttribute("data-upgrade")).toBe("Training");
+      expect(rows[1]?.getAttribute("data-upgrade")).toBe("Secure Lair");
+
+      // Secure Lair: 2 boxes, 1 filled (DTO boxesMarked); Training: 1 box, 0 filled
+      const secureRow = root.querySelector<HTMLElement>('.lair-chart [data-upgrade="Secure Lair"]');
+      expect(secureRow?.querySelectorAll(".chart-box").length).toBe(2);
+      expect(secureRow?.querySelectorAll('.chart-box[data-stress="1"]').length).toBe(1);
+      expect(secureRow?.textContent).toContain("1 / 2");
+      const trainingRow = root.querySelector<HTMLElement>('.lair-chart [data-upgrade="Training"]');
+      expect(trainingRow?.querySelectorAll('.chart-box[data-stress="1"]').length).toBe(0);
+
+      // Chart box click posts a single mark step (no set op exists)
+      const emptyBox = secureRow?.querySelectorAll<HTMLButtonElement>(".chart-box")[1];
+      emptyBox?.click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/crews/${CREW_ID}/ops/upgrade.mark`,
+          expect.objectContaining({ body: JSON.stringify({ name: "Secure Lair" }) }),
+        );
+      });
+    });
+
+    it("refetches the sheet after a STALE_REVISION on an ability op", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "ability.take" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          message: "Crew revision mismatch",
+          details: { currentRevision: 7 },
+        },
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 409,
+          text: async () => JSON.stringify(staleResp),
+        })
+        .mockResolvedValueOnce(ok(playbookDTO({ revision: 7 })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Take ability"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
 
       await vi.waitFor(
         () => {

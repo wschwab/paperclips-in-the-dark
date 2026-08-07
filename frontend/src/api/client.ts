@@ -852,6 +852,106 @@ export function crewStashAdd(
 }
 
 // ---------------------------------------------------------------------------
+// F2v crew operations — crewAbilityTake, crewAbilityRemove, upgradeMark,
+// upgradeUnmark, getCrewType, getCrewTypes
+// ---------------------------------------------------------------------------
+
+/** Take (or re-take) a crew special ability. Server enforces TimesTakeable →
+ * ABILITY_MAXED (A8) and rejects unknown names with NOT_FOUND. */
+export function crewAbilityTake(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "ability.take", revision, { name });
+}
+
+/** Remove a crew special ability entirely (whole-entry remove). */
+export function crewAbilityRemove(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "ability.remove", revision, { name });
+}
+
+/**
+ * Mark one box of a crew upgrade. The server upserts the upgrade entry and
+ * rejects a full track with UPGRADE_MAXED (TotalBoxes from crew game
+ * settings). Unmarking at 0 removes the entry server-side.
+ */
+export function upgradeMark(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "upgrade.mark", revision, { name });
+}
+
+/** Unmark one box of a crew upgrade (entry removed at 0). */
+export function upgradeUnmark(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "upgrade.unmark", revision, { name });
+}
+
+/**
+ * Full crew-type settings for one crew type (raw game-data object: Hook,
+ * Description, ExperienceTrigger, SpecialAbilities, Upgrades,
+ * StartingUpgrades, …). Mirrors getPlaybook.
+ *
+ * Note: the contract defines this endpoint, but the current Ada backend
+ * answers 404 for a non-empty crewType segment (its conformance case
+ * accepts [200, 404]); the crew page therefore falls back to getCrewTypes
+ * and finds the crew type by name.
+ */
+export function getCrewType(
+  gameStem: string,
+  crewType: string,
+): Effect.Effect<Record<string, unknown>, ApiError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/games/${gameStem}/crews/${crewType}`);
+    if (typeof raw !== "object" || raw === null) {
+      yield* Effect.fail(new ApiError(0, "Expected object"));
+    }
+    return raw as Record<string, unknown>;
+  });
+}
+
+/**
+ * All crew types of a game (the `CrewTypes` array of the {stem}-crews.json
+ * game-data file via /api/games/{stem}/crews) as raw settings objects —
+ * the fallback source for per-crew-type settings when the single-type
+ * endpoint is unavailable (see getCrewType).
+ */
+export function getCrewTypes(
+  gameStem: string,
+): Effect.Effect<readonly Record<string, unknown>[], ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/games/${gameStem}/crews`);
+    return yield* Effect.try({
+      try: () => {
+        if (typeof raw !== "object" || raw === null || !("CrewTypes" in raw)) {
+          throw new Error("Expected crews object with CrewTypes array");
+        }
+        const crewTypes = (raw as { CrewTypes?: unknown }).CrewTypes;
+        if (!Array.isArray(crewTypes)) {
+          throw new Error("CrewTypes is not an array");
+        }
+        return crewTypes
+          .filter((ct): ct is Record<string, unknown> =>
+            typeof ct === "object" && ct !== null,
+          )
+          .map((ct) => ct as Record<string, unknown>);
+      },
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
 // F2o operations — actionSetRating, attributeXpAdd, attributeXpClear,
 // attributeLevelup, sessionSet, getPlaybook
 // ---------------------------------------------------------------------------

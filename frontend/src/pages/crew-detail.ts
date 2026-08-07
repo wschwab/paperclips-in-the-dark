@@ -16,6 +16,12 @@ import {
   crewHoldSet,
   crewCoinAdd,
   crewStashAdd,
+  crewAbilityTake,
+  crewAbilityRemove,
+  upgradeMark,
+  upgradeUnmark,
+  getCrewType,
+  getCrewTypes,
   StaleRevisionError,
 } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
@@ -45,7 +51,11 @@ interface ProfileEditingState {
 interface RenderState {
   c: Crew;
   anyLoading: boolean;
+  crewTypeData: Record<string, unknown> | null;
+  crewTypesData: readonly Record<string, unknown>[] | null;
   isUndoLoading: boolean;
+  isAbilityLoading: boolean;
+  isUpgradeLoading: boolean;
   isContactLoading: boolean;
   isFactionLoading: boolean;
   isProfileLoading: boolean;
@@ -80,6 +90,12 @@ interface RenderState {
     onHoldSet: () => void;
     onCoinDelta: (delta: number) => void;
     onStashDelta: (delta: number) => void;
+    onAbilityTake: () => void;
+    onAbilityRemove: (name: string) => void;
+    onUpgradeMark: (name: string) => void;
+    onUpgradeMarkMenu: () => void;
+    onUpgradeUnmark: (name: string) => void;
+    onChartBox: (name: string, index: number) => void;
   };
 }
 
@@ -87,7 +103,8 @@ interface RenderState {
 // Render helpers
 // ---------------------------------------------------------------------------
 
-/** Friendly text for op-level errors (DUPLICATE / NOT_FOUND / VALIDATION) carried in ApiError bodies. */
+/** Friendly text for op-level errors (DUPLICATE / NOT_FOUND / ABILITY_MAXED /
+ * UPGRADE_MAXED / VALIDATION) carried in ApiError bodies. */
 function opErrorText(err: ApiError): string {
   const body = err.body;
   if (body.startsWith("DUPLICATE")) {
@@ -95,6 +112,12 @@ function opErrorText(err: ApiError): string {
   }
   if (body.startsWith("NOT_FOUND")) {
     return "NOT_FOUND: not on this sheet (removed elsewhere?)";
+  }
+  if (body.startsWith("ABILITY_MAXED")) {
+    return "ABILITY_MAXED: that ability is already taken to its limit";
+  }
+  if (body.startsWith("UPGRADE_MAXED")) {
+    return "UPGRADE_MAXED: all of that upgrade's boxes are already marked";
   }
   if (body.startsWith("VALIDATION")) {
     return body;
@@ -189,6 +212,74 @@ function renderTracker(
       ? el("div", { className: "lbl", style: "margin-top: 0.35em;" }, opts.note)
       : null,
   );
+}
+
+// ---------------------------------------------------------------------------
+// F2v: crew-type game data extraction
+// ---------------------------------------------------------------------------
+
+/**
+ * The crew type's SpecialAbilities (game data): from the per-crew-type
+ * endpoint response or (fallback) the CrewTypes list from
+ * /api/games/{stem}/crews. Each entry carries { Name, TimesTakeable,
+ * Description }. Returns [] when neither source has it (graceful
+ * degradation). The current Ada backend answers 404 for the per-crew-type
+ * GET (its conformance case accepts [200, 404]), so the fallback is the
+ * path the live probe exercises.
+ */
+function extractCrewAbilities(
+  crewTypeData: Record<string, unknown> | null,
+  crewTypesData: readonly Record<string, unknown>[] | null,
+  crewTypeName: string,
+): Array<Record<string, unknown>> {
+  if (crewTypeData && Array.isArray(crewTypeData.SpecialAbilities)) {
+    return crewTypeData.SpecialAbilities as Array<Record<string, unknown>>;
+  }
+  if (Array.isArray(crewTypesData)) {
+    const found = crewTypesData.find(
+      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
+    );
+    if (found && Array.isArray(found.SpecialAbilities)) {
+      return found.SpecialAbilities as Array<Record<string, unknown>>;
+    }
+  }
+  return [];
+}
+
+/**
+ * The crew type's Upgrades (game data) — same source shape and fallback
+ * logic as extractCrewAbilities. Each entry carries { Name, TotalBoxes,
+ * Description }.
+ */
+function extractCrewUpgrades(
+  crewTypeData: Record<string, unknown> | null,
+  crewTypesData: readonly Record<string, unknown>[] | null,
+  crewTypeName: string,
+): Array<Record<string, unknown>> {
+  if (crewTypeData && Array.isArray(crewTypeData.Upgrades)) {
+    return crewTypeData.Upgrades as Array<Record<string, unknown>>;
+  }
+  if (Array.isArray(crewTypesData)) {
+    const found = crewTypesData.find(
+      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
+    );
+    if (found && Array.isArray(found.Upgrades)) {
+      return found.Upgrades as Array<Record<string, unknown>>;
+    }
+  }
+  return [];
+}
+
+/** TotalBoxes from game data (never hardcoded); defaults to 1 when absent. */
+function upgradeTotalBoxes(upgrade: Record<string, unknown> | undefined): number {
+  return upgrade && typeof upgrade.TotalBoxes === "number" ? upgrade.TotalBoxes : 1;
+}
+
+/** Description from game data, with a fallback for unknown upgrades. */
+function upgradeDescription(upgrade: Record<string, unknown> | undefined, name: string): string {
+  return upgrade && typeof upgrade.Description === "string" && upgrade.Description.length > 0
+    ? upgrade.Description
+    : `No description available for ${name}.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -438,6 +529,249 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     );
   });
 
+  // -- Playbook (F2v) --------------------------------------------------------
+
+  const playbookSection = (() => {
+    const { anyLoading } = state;
+
+    // Game-data sources: per-crew-type endpoint preferred, CrewTypes list
+    // fallback (both fetched in parallel on load; see mountCrewDetailPage).
+    const specialAbilities = extractCrewAbilities(
+      state.crewTypeData,
+      state.crewTypesData,
+      c.crewTypeName,
+    );
+    const upgradesData = extractCrewUpgrades(
+      state.crewTypeData,
+      state.crewTypesData,
+      c.crewTypeName,
+    );
+
+    // -- Special abilities --------------------------------------------------
+
+    const takenByName = new Map(c.specialAbilities.map((a) => [a.name, a]));
+    const abilityTimesTakeable = (sa: Record<string, unknown>) =>
+      typeof sa.TimesTakeable === "number" ? sa.TimesTakeable : 1;
+    const abilityDescription = (name: string) => {
+      const sa = specialAbilities.find((x) => String(x.Name) === name);
+      return sa && typeof sa.Description === "string" && sa.Description.length > 0
+        ? sa.Description
+        : "No description available.";
+    };
+
+    // Eligible = in the game-data SpecialAbilities and either not taken yet
+    // or taken fewer than TimesTakeable (the server enforces the limit).
+    const eligible = specialAbilities.filter((sa) => {
+      const name = String(sa.Name);
+      const taken = takenByName.get(name);
+      return !taken || taken.timesTaken < abilityTimesTakeable(sa);
+    });
+
+    const abilityEntries = c.specialAbilities.map((a) =>
+      el("div", {
+        className: "ability-entry",
+        "data-ability": a.name,
+        style: "display: flex; align-items: flex-start; gap: 0.5em; margin: 0.35em 0;",
+      },
+        el("span", { className: "lbl", style: "min-width: 8em;" },
+          a.name,
+          a.timesTaken > 1
+            ? el("span", { className: "ability-times" }, ` ×${a.timesTaken}`)
+            : null,
+        ),
+        el("p", { className: "serif", style: "flex: 1; margin: 0; font-size: 0.95em;" },
+          abilityDescription(a.name),
+        ),
+        el("button", {
+          type: "button",
+          disabled: anyLoading,
+          title: `Remove ability: ${a.name}`,
+        }, "✕"),
+      ),
+    );
+    abilityEntries.forEach((entry, idx) => {
+      const btn = entry.querySelector("button");
+      if (btn) {
+        btn.addEventListener("click", () =>
+          handlers.onAbilityRemove(c.specialAbilities[idx]!.name),
+        );
+      }
+    });
+
+    // Take menu: native <select> from game data + <details>/<summary>
+    // description (mirrors F2p's character section).
+    const abilitySelect = el("select", {
+      "aria-label": "Take ability",
+      disabled: anyLoading || eligible.length === 0,
+    },
+      el("option", { value: "" }, "--"),
+      ...eligible.map((sa) => el("option", { value: String(sa.Name) }, String(sa.Name))),
+    ) as HTMLSelectElement;
+
+    const abilityDetails = el("details", { className: "ability-description" },
+      el("summary", {}, ""),
+      el("p", {}, ""),
+    );
+    const detailsSummary = abilityDetails.querySelector("summary") as HTMLElement;
+    const detailsBody = abilityDetails.querySelector("p") as HTMLElement;
+    const showAbilityDescription = (name: string) => {
+      detailsSummary.textContent = name || "—";
+      detailsBody.textContent = abilityDescription(name) || "No description available.";
+      abilityDetails.hidden = name === "";
+    };
+    abilitySelect.addEventListener("change", () => showAbilityDescription(abilitySelect.value));
+    if (eligible.length > 0) {
+      abilitySelect.value = String(eligible[0]!.Name);
+    }
+    showAbilityDescription(abilitySelect.value);
+
+    const takeBtn = el("button", {
+      type: "button",
+      disabled: anyLoading || eligible.length === 0,
+      title: "Take ability",
+    }, state.isAbilityLoading ? "…" : "+");
+    takeBtn.addEventListener("click", handlers.onAbilityTake);
+
+    // -- Upgrades ------------------------------------------------------------
+
+    const markedByName = new Map(c.upgrades.map((u) => [u.name, u.boxesMarked]));
+    const findUpgrade = (name: string) =>
+      upgradesData.find((u) => String(u.Name) === name);
+
+    // List rows come from the DTO (name + boxesMarked); total and description
+    // come from the crew-type game data — never hardcoded.
+    const upgradeEntries = c.upgrades.map((u) => {
+      const game = findUpgrade(u.name);
+      const total = upgradeTotalBoxes(game);
+      const atMax = u.boxesMarked >= total;
+      const unmarkBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || u.boxesMarked <= 0,
+        title: `Unmark upgrade: ${u.name}`,
+      }, "−");
+      unmarkBtn.addEventListener("click", () => handlers.onUpgradeUnmark(u.name));
+      const markBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || atMax,
+        title: `Mark upgrade: ${u.name}`,
+      }, state.isUpgradeLoading ? "…" : "+");
+      markBtn.addEventListener("click", () => handlers.onUpgradeMark(u.name));
+      return el("div", {
+        className: "upgrade-entry",
+        "data-upgrade": u.name,
+        style: "display: flex; align-items: flex-start; gap: 0.5em; margin: 0.35em 0;",
+      },
+        el("span", { className: "lbl", style: "min-width: 8em;" }, u.name),
+        el("span", { className: "upgrade-count" }, `${u.boxesMarked} / ${total}`),
+        el("p", { className: "serif", style: "flex: 1; margin: 0; font-size: 0.95em;" },
+          upgradeDescription(game, u.name),
+        ),
+        unmarkBtn,
+        markBtn,
+      );
+    });
+
+    // Mark menu: native <select> of game-data Upgrades not yet full — the way
+    // to start a new upgrade (the DTO list only shows already-marked ones).
+    const markable = upgradesData.filter(
+      (u) => (markedByName.get(String(u.Name)) ?? 0) < upgradeTotalBoxes(u),
+    );
+    const markSelect = el("select", {
+      "aria-label": "Mark upgrade",
+      disabled: anyLoading || markable.length === 0,
+    },
+      el("option", { value: "" }, "--"),
+      ...markable.map((u) => el("option", { value: String(u.Name) }, String(u.Name))),
+    ) as HTMLSelectElement;
+    const markBtn = el("button", {
+      type: "button",
+      disabled: anyLoading || markable.length === 0,
+      title: "Mark selected upgrade",
+    }, state.isUpgradeLoading ? "…" : "+");
+    markBtn.addEventListener("click", handlers.onUpgradeMarkMenu);
+
+    // -- Lair chart ----------------------------------------------------------
+    //
+    // Per f2-sheet-plan.mdx the lair advancement chart is a RENDERING of the
+    // same playbook-specific Upgrades data — no separate domain concept, no
+    // hardcoded upgrade names. Rows: every game-data upgrade (in data order)
+    // plus any DTO-only upgrades (older snapshots) appended. Clicking a box
+    // marks/unmarks one box (upgrade.mark/upgrade.unmark are +1/−1 ops; there
+    // is no set-to-N op).
+    const chartRows = [
+      ...upgradesData.map((u) => ({
+        name: String(u.Name),
+        total: upgradeTotalBoxes(u),
+        marked: markedByName.get(String(u.Name)) ?? 0,
+      })),
+      ...c.upgrades
+        .filter((u) => !upgradesData.some((g) => String(g.Name) === u.name))
+        .map((u) => ({
+          name: u.name,
+          total: Math.max(u.boxesMarked, 1),
+          marked: u.boxesMarked,
+        })),
+    ];
+
+    const chartRowsEl = chartRows.map((row) => {
+      const boxes = [];
+      for (let i = 1; i <= row.total; i++) {
+        const filled = i <= row.marked;
+        const box = el("button", {
+          type: "button",
+          className: "chart-box",
+          "data-stress": filled ? "1" : "0",
+          "data-index": String(i),
+          "aria-label": `${row.name} box ${i}`,
+          "aria-pressed": filled ? "true" : "false",
+          disabled: anyLoading,
+          title: filled ? `Unmark ${row.name}` : `Mark ${row.name}`,
+        });
+        box.addEventListener("click", () => handlers.onChartBox(row.name, i));
+        boxes.push(box);
+      }
+      return el("div", {
+        className: "chart-row",
+        "data-upgrade": row.name,
+        style: "display: flex; align-items: center; gap: 0.6em; margin: 0.25em 0;",
+      },
+        el("span", { className: "lbl", style: "min-width: 8em;" }, row.name),
+        el("span", { className: "chart-boxes", style: "display: inline-flex; gap: 4px;" }, ...boxes),
+        el("span", { className: "chart-count" }, `${row.marked} / ${row.total}`),
+      );
+    });
+
+    return el("div", { className: "crew-playbook" },
+      el("h2", {}, "Playbook"),
+      el("h3", { className: "lbl", style: "margin-top: 0.5em;" }, "Special Abilities"),
+      c.specialAbilities.length === 0
+        ? el("p", {}, "(none)")
+        : el("div", { style: "display: flex; flex-direction: column;" }, ...abilityEntries),
+      el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
+        abilitySelect,
+        takeBtn,
+        abilityDetails,
+      ),
+      el("div", { className: "crew-upgrades" },
+        el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Upgrades"),
+        c.upgrades.length === 0
+          ? el("p", {}, "(none)")
+          : el("div", { style: "display: flex; flex-direction: column;" }, ...upgradeEntries),
+        el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
+          markSelect,
+          markBtn,
+        ),
+      ),
+      el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Lair Chart"),
+      el("p", { className: "lbl", style: "font-size: 0.85em;" },
+        "The lair chart is a rendering of the crew type's Upgrades data (mark/unmark one box per click).",
+      ),
+      el("div", { className: "lair-chart", style: "display: flex; flex-direction: column;" },
+        ...chartRowsEl,
+      ),
+    );
+  })();
+
   return el(
     "section",
     { className: "crew-detail" },
@@ -495,6 +829,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         stashPlusBtn,
       ),
     ),
+    playbookSection,
     el(
       "div",
       { className: "crew-contacts-factions" },
@@ -577,6 +912,10 @@ export function mountCrewDetailPage(
   let isHoldLoading = false;
   let isCoinLoading = false;
   let isStashLoading = false;
+  let isAbilityLoading = false;
+  let isUpgradeLoading = false;
+  let crewTypeData: Record<string, unknown> | null = null;
+  let crewTypesData: readonly Record<string, unknown>[] | null = null;
   let editingProfile: ProfileEditingState | null = null;
   let errorMsg: string | null = null;
   let noticeMsg: string | null = null;
@@ -682,7 +1021,9 @@ export function mountCrewDetailPage(
         isTierLoading ||
         isHoldLoading ||
         isCoinLoading ||
-        isStashLoading,
+        isStashLoading ||
+        isAbilityLoading ||
+        isUpgradeLoading,
       isUndoLoading,
       isContactLoading,
       isFactionLoading,
@@ -694,6 +1035,10 @@ export function mountCrewDetailPage(
       isHoldLoading,
       isCoinLoading,
       isStashLoading,
+      isAbilityLoading,
+      isUpgradeLoading,
+      crewTypeData,
+      crewTypesData,
       editingProfile,
       errorMsg,
       noticeMsg,
@@ -943,6 +1288,51 @@ export function mountCrewDetailPage(
       if (!currentCrew || isStashLoading) return;
       runCrewOp((v) => { isStashLoading = v; }, crewStashAdd(crewId, delta, currentCrew.revision));
     },
+
+    // -- F2v: Playbook (abilities + upgrades + lair chart) -------------------
+
+    onAbilityTake: () => {
+      if (!currentCrew || isAbilityLoading) return;
+      const sel = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement | null;
+      const name = sel?.value || null;
+      if (!name) return;
+      runCrewOp((v) => { isAbilityLoading = v; }, crewAbilityTake(crewId, name, currentCrew.revision));
+    },
+
+    onAbilityRemove: (name: string) => {
+      if (!currentCrew || isAbilityLoading) return;
+      runCrewOp((v) => { isAbilityLoading = v; }, crewAbilityRemove(crewId, name, currentCrew.revision));
+    },
+
+    onUpgradeMark: (name: string) => {
+      if (!currentCrew || isUpgradeLoading) return;
+      runCrewOp((v) => { isUpgradeLoading = v; }, upgradeMark(crewId, name, currentCrew.revision));
+    },
+
+    onUpgradeMarkMenu: () => {
+      if (!currentCrew || isUpgradeLoading) return;
+      const sel = root.querySelector('select[aria-label="Mark upgrade"]') as HTMLSelectElement | null;
+      const name = sel?.value || null;
+      if (!name) return;
+      runCrewOp((v) => { isUpgradeLoading = v; }, upgradeMark(crewId, name, currentCrew.revision));
+    },
+
+    onUpgradeUnmark: (name: string) => {
+      if (!currentCrew || isUpgradeLoading) return;
+      runCrewOp((v) => { isUpgradeLoading = v; }, upgradeUnmark(crewId, name, currentCrew.revision));
+    },
+
+    // Chart boxes are sugar over the same +1/−1 ops (no set-to-N op exists):
+    // clicking an empty box marks one box, clicking a filled box unmarks one.
+    onChartBox: (name: string, index: number) => {
+      if (!currentCrew || isUpgradeLoading) return;
+      const marked = currentCrew.upgrades.find((u) => u.name === name)?.boxesMarked ?? 0;
+      if (index > marked) {
+        runCrewOp((v) => { isUpgradeLoading = v; }, upgradeMark(crewId, name, currentCrew.revision));
+      } else {
+        runCrewOp((v) => { isUpgradeLoading = v; }, upgradeUnmark(crewId, name, currentCrew.revision));
+      }
+    },
   };
 
   root.setAttribute("aria-live", "polite");
@@ -951,7 +1341,15 @@ export function mountCrewDetailPage(
 
   const program = Effect.gen(function* () {
     const crew = yield* getCrew(crewId);
-    return crew;
+    // Crew-type game data drives the Playbook menus + descriptions. The
+    // per-crew-type endpoint is preferred; failures degrade gracefully to
+    // the CrewTypes list (find-by-name), mirroring the character sheet's
+    // getPlaybook + game-data fallback. No hardcoded lists either way.
+    const crewType = yield* Effect.either(
+      getCrewType(crew.gameStem, crew.crewTypeName),
+    );
+    const crewTypes = yield* Effect.either(getCrewTypes(crew.gameStem));
+    return { crew, crewType, crewTypes };
   });
 
   void Effect.runPromise(
@@ -967,10 +1365,16 @@ export function mountCrewDetailPage(
               : String(err);
         setChildren(root, renderError(msg));
       },
-      onSuccess: (crew) => {
+      onSuccess: ({ crew, crewType, crewTypes }) => {
         if (cancelled) return;
         root.setAttribute("aria-busy", "false");
         currentCrew = crew;
+        if (crewType._tag === "Right") {
+          crewTypeData = crewType.right;
+        }
+        if (crewTypes._tag === "Right") {
+          crewTypesData = crewTypes.right;
+        }
         renderDetail();
       },
     }),

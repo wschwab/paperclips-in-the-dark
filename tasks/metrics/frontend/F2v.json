@@ -1,0 +1,18 @@
+{
+  "task": "F2v",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch. Report accurate (340 = 313+27 verified). Child found + gracefully worked around the unimplemented single-crew-type endpoint.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "crew-type detail endpoint (contract-defined) 404s on Ada \u2014 worked around with a list-fallback; worth implementing in a future A-task. Ability/upgrade ops verified live (ABILITY_MAXED, mark/unmark incl. upsert)."
+}
