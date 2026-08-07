@@ -3,6 +3,7 @@ import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchem
 import { type Character, Character as CharacterSchema } from "../schema/character.js";
 import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
 import { OperationResult as OperationResultSchema } from "../schema/operation-result.js";
+import { type Clock, Clock as ClockSchema } from "../schema/clock.js";
 
 /**
  * Same-origin API client. Always uses relative `/api/*` paths so the
@@ -955,4 +956,269 @@ export function gearClearCommitments(
   revision: number,
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return characterMutate(id, "gear.clear-commitments", revision);
+}
+
+// ---------------------------------------------------------------------------
+// F2s operations — fundGain, fundSpend, fundLiquidate
+// coin/stash) and the clock lifecycle: listClocks, createClock, clockProgress,
+// clockReset, deleteClock
+// ---------------------------------------------------------------------------
+
+/** Result of a character fund/stash op: the updated character plus the server's requested/effective counts (clamp reporting). */
+export interface FundOpResult {
+  character: Character;
+  requested: number;
+  effective: number;
+}
+
+/**
+ * Generic fund mutator helper: POST to /api/characters/{id}/ops/{op}, parse
+ * OperationResult, extract the updated character plus applied.requested /
+ * applied.effective so the page can report server-side clamping (e.g. satchel
+ * overflow on fund.gain). Same stale-revision path as characterMutate.
+ */
+function fundMutate(
+  id: string,
+  op: string,
+  revision: number,
+  body: unknown = {},
+): Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(`/api/characters/${id}/ops/${op}`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "If-Match": String(revision),
+          },
+          body: JSON.stringify(body),
+        });
+        const text = await response.text();
+        return { response, text };
+      },
+      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+    });
+
+    if (!res.response.ok) {
+      if (res.response.status === 409) {
+        try {
+          const parsed = JSON.parse(res.text);
+          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
+          if (opResult.error?.code === "STALE_REVISION") {
+            const currentRevision = opResult.error.details?.currentRevision;
+            if (typeof currentRevision === "number") {
+              yield* Effect.fail(new StaleRevisionError(currentRevision));
+            }
+            yield* Effect.fail(new StaleRevisionError(0));
+          }
+        } catch {
+          // Malformed 409 body: fall through to ApiError
+        }
+      }
+      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    }
+
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.ok) {
+          if (opResult.error) {
+            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
+          }
+          throw new ApiError(res.response.status, "Operation failed");
+        }
+        if (!opResult.character) {
+          throw new Error("Missing character in OperationResult");
+        }
+        const requested = opResult.applied.requested ?? 0;
+        const effective = opResult.applied.effective ?? requested;
+        return { character: opResult.character, requested, effective };
+      },
+      catch: (cause) => {
+        if (cause instanceof ApiError) return cause;
+        return new DecodeError(cause);
+      },
+    });
+  });
+}
+
+/** Satchel fills first, overflow to stash; coins that fit nowhere are reported via applied.effective. */
+export function fundGain(
+  id: string,
+  coins: number,
+  revision: number,
+): Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return fundMutate(id, "fund.gain", revision, { coins });
+}
+
+/** Satchel first, then stash liquidation; insufficient funds → INSUFFICIENT_FUNDS (op-level error). */
+export function fundSpend(
+  id: string,
+  coins: number,
+  revision: number,
+): Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return fundMutate(id, "fund.spend", revision, { coins });
+}
+
+/** Stash → satchel at 2 stash per 1 coin; satchel full → SATCHEL_FULL, stash short → INSUFFICIENT_FUNDS. */
+export function fundLiquidate(
+  id: string,
+  coins: number,
+  revision: number,
+): Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return fundMutate(id, "fund.liquidate", revision, { coins });
+}
+
+/** Stash deposit/withdrawal by delta; bounded below at 0 server-side. */
+/** GET /api/clocks — all campaign clocks (project + rollover). */
+export function listClocks(): Effect.Effect<readonly Clock[], ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson("/api/clocks");
+    return yield* Effect.try({
+      try: () => Schema.decodeUnknownSync(Schema.Array(ClockSchema))(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+/**
+ * Generic clock mutator helper: POST to /api/clocks/{id}/{subpath} with an
+ * If-Match header carrying the clock's own revision (clock ops take If-Match
+ * like character ops do). Decodes the OperationResult and extracts the Clock
+ * DTO. Stale-revision handling follows the F2h rule.
+ */
+function clockMutate(
+  id: string,
+  subpath: string,
+  revision: number,
+  body: unknown = {},
+): Effect.Effect<Clock | null, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        const response = await fetch(`/api/clocks/${id}/${subpath}`, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "If-Match": String(revision),
+          },
+          body: JSON.stringify(body),
+        });
+        const text = await response.text();
+        return { response, text };
+      },
+      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+    });
+
+    if (!res.response.ok) {
+      if (res.response.status === 409) {
+        try {
+          const parsed = JSON.parse(res.text);
+          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
+          if (opResult.error?.code === "STALE_REVISION") {
+            const currentRevision = opResult.error.details?.currentRevision;
+            if (typeof currentRevision === "number") {
+              yield* Effect.fail(new StaleRevisionError(currentRevision));
+            }
+            yield* Effect.fail(new StaleRevisionError(0));
+          }
+        } catch {
+          // Malformed 409 body: fall through to ApiError
+        }
+      }
+      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    }
+
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
+        if (!opResult.ok) {
+          if (opResult.error) {
+            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
+          }
+          throw new ApiError(res.response.status, "Operation failed");
+        }
+        // delete ops may omit the entity in some implementations; callers treat null as "gone"
+        return opResult.clock ?? null;
+      },
+      catch: (cause) => {
+        if (cause instanceof ApiError) return cause;
+        return new DecodeError(cause);
+      },
+    });
+  });
+}
+
+/** POST /api/clocks — create a project or rollover clock (no revision precondition on a new entity). */
+export function createClock(
+  name: string,
+  clockKind: "project" | "rollover",
+  size: number,
+): Effect.Effect<Clock, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson("/api/clocks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, clockKind, size }),
+    });
+    return yield* Effect.try({
+      try: () => {
+        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(raw);
+        if (!opResult.ok) {
+          if (opResult.error) {
+            throw new ApiError(200, opResult.error.code + ": " + opResult.error.message);
+          }
+          throw new ApiError(200, "Operation failed");
+        }
+        if (!opResult.clock) {
+          throw new Error("Missing clock in OperationResult");
+        }
+        return opResult.clock;
+      },
+      catch: (cause) => {
+        if (cause instanceof ApiError) return cause;
+        return new DecodeError(cause);
+      },
+    });
+  });
+}
+
+/** Progress a clock by a segment delta; project clocks clamp at full, rollover clocks carry overflow (applied on reset). */
+export function clockProgress(
+  id: string,
+  segments: number,
+  revision: number,
+): Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const maybe = yield* clockMutate(id, "ops/clock.progress", revision, { segments });
+    if (maybe === null) {
+      return yield* Effect.fail(new ApiError(200, "Missing clock in OperationResult"));
+    }
+    return maybe;
+  });
+}
+
+/** Reset a clock to zero; rollover clocks re-apply carried overflow after reset. */
+export function clockReset(
+  id: string,
+  revision: number,
+): Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const maybe = yield* clockMutate(id, "ops/clock.reset", revision);
+    if (maybe === null) {
+      return yield* Effect.fail(new ApiError(200, "Missing clock in OperationResult"));
+    }
+    return maybe;
+  });
+}
+
+/** Delete a clock (confirm required per the contract); returns the deleted clock when the response includes it, else null. */
+export function deleteClock(
+  id: string,
+  revision: number,
+): Effect.Effect<Clock | null, ApiError | DecodeError | StaleRevisionError> {
+  return clockMutate(id, "delete", revision, { confirm: true });
 }

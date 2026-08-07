@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -4034,6 +4034,696 @@ describe("gearClearCommitments", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
       expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2s operations — fundGain, fundSpend, fundLiquidate, listClocks,
+// createClock, clockProgress, clockReset, deleteClock
+// ---------------------------------------------------------------------------
+
+/** A minimal valid Clock DTO (mirrors the frozen contract clock.json). */
+function makeClock(overrides: Record<string, unknown> = {}) {
+  return {
+    kind: "clock",
+    id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+    revision: 2,
+    formatVersion: 1,
+    createdAt: "2026-07-24T00:00:00.000Z",
+    updatedAt: "2026-07-24T00:00:00.000Z",
+    name: "Infiltrate the Bluecoats",
+    clockKind: "project",
+    segments: 2,
+    size: 6,
+    rollover: 0,
+    ...overrides,
+  };
+}
+
+function clockOpOk(clock: unknown, opName: string) {
+  return {
+    ok: true,
+    clock,
+    applied: { op: opName },
+    sideEffects: [],
+    error: null,
+  };
+}
+
+function clockOpErr(opName: string, code: string, message: string, clock?: unknown) {
+  return {
+    ok: false,
+    ...(clock ? { clock } : {}),
+    applied: { op: opName },
+    sideEffects: [],
+    error: { code, message },
+  };
+}
+
+function fundOpOk(character: unknown, opName: string, requested: number, effective: number) {
+  return {
+    ok: true,
+    character,
+    applied: { op: opName, requested, effective },
+    sideEffects: [],
+    error: null,
+  };
+}
+
+describe("fundGain", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/fund.gain with coins + If-Match and decodes requested/effective", async () => {
+    const updated = makeChar({
+      revision: 13,
+      fund: { satchel: { coins: 2, max: 2 }, stash: { coins: 1, max: 8 } },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(fundOpOk(updated, "fund.gain", 3, 3)),
+    });
+
+    const result = await Effect.runPromise(
+      fundGain("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 3, 12),
+    );
+    expect(result.character.fund.satchel.coins).toBe(2);
+    expect(result.requested).toBe(3);
+    expect(result.effective).toBe(3);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/fund.gain",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ coins: 3 }),
+      },
+    );
+  });
+
+  it("reports clamped overflow via applied.effective when the server stored fewer coins", async () => {
+    const updated = makeChar({
+      revision: 13,
+      fund: { satchel: { coins: 2, max: 2 }, stash: { coins: 8, max: 8 } },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(fundOpOk(updated, "fund.gain", 5, 2)),
+    });
+
+    const result = await Effect.runPromise(
+      fundGain("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 5, 12),
+    );
+    expect(result.effective).toBe(2);
+    expect(result.effective).toBeLessThan(result.requested);
+  });
+
+  it("exposes ApiError with VALIDATION code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(clockOpErr("fund.gain", "VALIDATION", "coins required", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundGain("some-id", -1, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("fund.gain", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundGain("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundGain("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("fundSpend", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/fund.spend with coins + If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      fund: { satchel: { coins: 1, max: 2 }, stash: { coins: 0, max: 8 } },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(fundOpOk(updated, "fund.spend", 1, 1)),
+    });
+
+    const result = await Effect.runPromise(
+      fundSpend("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 1, 12),
+    );
+    expect(result.character.fund.satchel.coins).toBe(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/fund.spend",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ coins: 1 }),
+      },
+    );
+  });
+
+  it("exposes ApiError with INSUFFICIENT_FUNDS code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(clockOpErr("fund.spend", "INSUFFICIENT_FUNDS", "not enough coins", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundSpend("some-id", 99, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("INSUFFICIENT_FUNDS");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("fund.spend", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundSpend("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundSpend("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("fundLiquidate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/fund.liquidate with coins + If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      fund: { satchel: { coins: 1, max: 2 }, stash: { coins: 6, max: 8 } },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(fundOpOk(updated, "fund.liquidate", 1, 1)),
+    });
+
+    const result = await Effect.runPromise(
+      fundLiquidate("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 1, 12),
+    );
+    expect(result.character.fund.stash.coins).toBe(6);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/fund.liquidate",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ coins: 1 }),
+      },
+    );
+  });
+
+  it("exposes ApiError with SATCHEL_FULL code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(clockOpErr("fund.liquidate", "SATCHEL_FULL", "satchel is full", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundLiquidate("some-id", 1, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("SATCHEL_FULL");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("fund.liquidate", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundLiquidate("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(fundLiquidate("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+
+
+describe("listClocks", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/clocks and decodes an array of Clock DTOs", async () => {
+    const clocks = [
+      makeClock({ id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", name: "Infiltrate the Bluecoats", clockKind: "project", segments: 3, size: 8 }),
+      makeClock({ id: "c0c1d2e3-4f5a-4b6c-9d8e-7f0a1b2c3d4e", name: "Tempest Approaches", clockKind: "rollover", segments: 4, size: 4, rollover: 2 }),
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(clocks),
+    });
+
+    const result = await Effect.runPromise(listClocks());
+    expect(result).toHaveLength(2);
+    expect(result[0]?.name).toBe("Infiltrate the Bluecoats");
+    expect(result[0]?.clockKind).toBe("project");
+    expect(result[1]?.clockKind).toBe("rollover");
+    expect(global.fetch).toHaveBeenCalledWith("/api/clocks", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes ApiError when the fetch fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "boom",
+    });
+
+    const result = await Effect.runPromise(Effect.either(listClocks()));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(500);
+    }
+  });
+
+  it("exposes DecodeError when the response is not a Clock array", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ clocks: [] }),
+    });
+
+    const result = await Effect.runPromise(Effect.either(listClocks()));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("createClock", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/clocks with name/clockKind/size and decodes the clock from OperationResult", async () => {
+    const created = makeClock({
+      id: "d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f",
+      name: "Secure the Docks",
+      clockKind: "rollover",
+      segments: 0,
+      size: 6,
+      revision: 1,
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(clockOpOk(created, "clock.create")),
+    });
+
+    const result = await Effect.runPromise(
+      createClock("Secure the Docks", "rollover", 6),
+    );
+    expect(result.id).toBe("d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f");
+    expect(result.clockKind).toBe("rollover");
+    expect(result.size).toBe(6);
+    // create has no If-Match: no revision precondition on a new entity
+    expect(global.fetch).toHaveBeenCalledWith("/api/clocks", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: "Secure the Docks", clockKind: "rollover", size: 6 }),
+    });
+  });
+
+  it("exposes ApiError with VALIDATION code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(clockOpErr("clock.create", "VALIDATION", "name is required")),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createClock("", "project", 4)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes ApiError when the POST fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createClock("X", "project", 4)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+
+  it("exposes DecodeError when the response is not a valid OperationResult", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ invalid: "data" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createClock("X", "project", 4)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("clockProgress", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/clocks/{id}/ops/clock.progress with segments + If-Match and decodes the clock", async () => {
+    const progressed = makeClock({ revision: 3, segments: 3 });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(clockOpOk(progressed, "clock.progress")),
+    });
+
+    const result = await Effect.runPromise(
+      clockProgress("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 1, 2),
+    );
+    expect(result.segments).toBe(3);
+    expect(result.revision).toBe(3);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "2",
+        },
+        body: JSON.stringify({ segments: 1 }),
+      },
+    );
+  });
+
+  it("exposes ApiError with VALIDATION code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(clockOpErr("clock.progress", "VALIDATION", "segments required", makeClock())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(clockProgress("some-id", NaN, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("clock.progress", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(clockProgress("some-id", 1, 2)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(clockProgress("some-id", 1, 2)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("clockReset", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/clocks/{id}/ops/clock.reset with If-Match and no body, decodes the clock", async () => {
+    const reset = makeClock({ revision: 3, segments: 0, rollover: 0 });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(clockOpOk(reset, "clock.reset")),
+    });
+
+    const result = await Effect.runPromise(
+      clockReset("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 2),
+    );
+    expect(result.segments).toBe(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.reset",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "2",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("clock.reset", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(clockReset("some-id", 2)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => "not found",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(clockReset("some-id", 2)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+});
+
+describe("deleteClock", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/clocks/{id}/delete with confirm + If-Match and decodes the deleted clock", async () => {
+    const deleted = makeClock({ revision: 3 });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(clockOpOk(deleted, "delete")),
+    });
+
+    const result = await Effect.runPromise(
+      deleteClock("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 2),
+    );
+    expect(result).not.toBeNull();
+    expect(result?.id).toBe("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/delete",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "2",
+        },
+        body: JSON.stringify({ confirm: true }),
+      },
+    );
+  });
+
+  it("returns null when the OperationResult omits the clock", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        ok: true,
+        applied: { op: "delete" },
+        sideEffects: [],
+        error: null,
+      }),
+    });
+
+    const result = await Effect.runPromise(
+      deleteClock("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 2),
+    );
+    expect(result).toBeNull();
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("delete", 7)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(deleteClock("some-id", 2)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => "not found",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(deleteClock("some-id", 2)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
     }
   });
 });

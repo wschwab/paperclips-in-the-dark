@@ -152,7 +152,8 @@ describe("character-detail page", () => {
       .fn()
       .mockResolvedValueOnce(ok(characterDTO()))
       .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -227,6 +228,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(stressSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -254,6 +256,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce({
           ok: false,
           status: 422,
@@ -315,6 +318,7 @@ describe("character-detail page", () => {
         // 2) game data → 200
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         // 3) stressAdd POST → 409 STALE_REVISION
         .mockResolvedValueOnce({
           ok: false,
@@ -432,6 +436,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(undoSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -469,6 +474,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(noHistoryResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -513,6 +519,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
@@ -583,7 +590,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -624,6 +632,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -646,7 +655,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -679,6 +689,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(stressResp3));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -703,7 +714,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -724,7 +736,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -740,7 +753,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -779,6 +793,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(traumaAddOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -819,7 +834,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(dto))
         .mockResolvedValueOnce(ok(GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -835,7 +851,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -877,6 +894,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(harmAddResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -908,7 +926,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -948,6 +967,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(armorSetResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -972,7 +992,7 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         // After toggle to true, the character should be updated
-        expect(global.fetch).toHaveBeenCalledTimes(4); // getChar, getGame, getPlaybook, armorSet
+        expect(global.fetch).toHaveBeenCalledTimes(5); // getChar, getGame, getPlaybook, listClocks, armorSet
       });
     });
 
@@ -1004,6 +1024,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(clockAddResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1019,7 +1040,7 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         // After add, the character updates
-        expect(global.fetch).toHaveBeenCalledTimes(4); // + getPlaybook on mount
+        expect(global.fetch).toHaveBeenCalledTimes(5); // + listClocks on mount
       });
     });
 
@@ -1064,6 +1085,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(dto))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(removeResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1077,7 +1099,7 @@ describe("character-detail page", () => {
       removeBtn.click();
 
       await vi.waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(4); // + getPlaybook on mount
+        expect(global.fetch).toHaveBeenCalledTimes(5); // + listClocks on mount
       });
     });
   });
@@ -1090,7 +1112,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1121,6 +1144,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(characterDTO()))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(clearOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1233,7 +1257,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1294,6 +1319,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(raised, "action.set-rating")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1362,6 +1388,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(plusResp, "action.set-rating")))
         .mockResolvedValueOnce(ok(charOpOk(minusResp, "action.set-rating")));
 
@@ -1422,6 +1449,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(clamped, "action.set-rating")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1479,6 +1507,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(added, "attribute-xp.add")))
         .mockResolvedValueOnce(ok(charOpOk(cleared, "attribute-xp.clear")));
 
@@ -1537,6 +1566,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(leveled, "attribute.levelup")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1566,7 +1596,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1597,6 +1628,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(pbUpdated, "session.set")))
         .mockResolvedValueOnce(ok(charOpOk(stUpdated, "session.set")));
 
@@ -1646,6 +1678,7 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(talentDTO()))
         .mockResolvedValueOnce(ok(gameWithPlaybooks))
+        .mockResolvedValueOnce(ok([]))
         // no playbook mock: the /playbooks/{name} fetch fails and degrades gracefully
         .mockResolvedValueOnce(ok(charOpOk(talentDTO(), "action.set-rating")));
 
@@ -1701,7 +1734,8 @@ describe("character-detail page", () => {
         .fn()
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA));
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1747,6 +1781,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(added, "playbook-xp.add")))
         .mockResolvedValueOnce(ok(charOpOk(playbookDTO(), "playbook-xp.add")))
         .mockResolvedValueOnce(ok(charOpOk(cleared, "playbook-xp.clear")));
@@ -1813,6 +1848,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(taken, "ability.take")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1849,6 +1885,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(removed, "ability.remove")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1883,6 +1920,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(opErr));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1915,7 +1953,8 @@ describe("character-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(playbookDTO({ playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] } })))
-        .mockResolvedValueOnce(ok(gameWithPlaybooks));
+        .mockResolvedValueOnce(ok(gameWithPlaybooks))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1991,7 +2030,8 @@ describe("F2r Gear", () => {
         .fn()
         .mockResolvedValueOnce(ok(dto))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
-        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2022,7 +2062,8 @@ describe("F2r Gear", () => {
         .fn()
         .mockResolvedValueOnce(ok(gearDTO()))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
-        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA));
+        .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2060,6 +2101,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(gearDTO()))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(added, "gear.add")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2111,6 +2153,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(dto))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(removed, "gear.remove")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2148,6 +2191,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(gearDTO()))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(set, "gear.set-commitment")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2205,6 +2249,7 @@ describe("F2r Gear", () => {
         } })))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(committed, "gear.commit")))
         .mockResolvedValueOnce(ok(charOpOk(uncommitted, "gear.uncommit")));
 
@@ -2277,6 +2322,7 @@ describe("F2r Gear", () => {
         } })))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(locked, "gear.lock")))
         .mockResolvedValueOnce(ok(charOpOk(unlocked, "gear.unlock")));
 
@@ -2335,6 +2381,7 @@ describe("F2r Gear", () => {
         } })))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(opErr));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2377,6 +2424,7 @@ describe("F2r Gear", () => {
         } })))
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(charOpOk(cleared, "gear.clear-commitments")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2398,4 +2446,429 @@ describe("F2r Gear", () => {
       });
     });
   });
+
+
+// ---------------------------------------------------------------------------
+// F2s Coin + Projects
+// ---------------------------------------------------------------------------
+
+describe("F2s Coin", () => {
+  /** Character DTO with a populated fund section. */
+  function fundDTO(overrides: Record<string, unknown> = {}) {
+    return characterDTO({
+      fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
+      ...overrides,
+    });
+  }
+
+  /** OperationResult for a fund/stash op with requested/effective clamp reporting. */
+  const fundOk = (character: unknown, op: string, requested: number, effective: number) => ({
+    ok: true,
+    character,
+    applied: { op, requested, effective },
+    sideEffects: [],
+    error: null,
+  });
+
+  const mountWithFund = (dto: unknown) => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]));
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  };
+
+  it("renders satchel + stash with current/max and derived Lifestyle (stash ÷ 10) from the DTO", async () => {
+    mountWithFund(fundDTO({ fund: { satchel: { coins: 2, max: 2 }, stash: { coins: 25, max: 40 } } }));
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".character-coin")).not.toBeNull();
+    });
+    expect(root.querySelector(".coin-satchel-count")?.textContent).toContain("2 / 2");
+    expect(root.querySelector(".coin-stash-count")?.textContent).toContain("25 / 40");
+    // Lifestyle is derived, display-only: stash ÷ 10 (never stored, never hardcoded)
+    expect(root.querySelector(".coin-lifestyle")?.textContent).toContain("Lifestyle 2");
+  });
+
+  it("gain + posts fund.gain with 1 coin and updates the satchel from the returned DTO", async () => {
+    const updated = fundDTO({
+      revision: 13,
+      fund: { satchel: { coins: 1, max: 2 }, stash: { coins: 0, max: 8 } },
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(fundDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(fundOk(updated, "fund.gain", 1, 1)));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Gain 1 coin"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Gain 1 coin"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/characters/${CHARACTER_ID}/ops/fund.gain`,
+        expect.objectContaining({ body: JSON.stringify({ coins: 1 }) }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".coin-satchel-count")?.textContent).toContain("1 / 2");
+    });
+  });
+
+  it("spend − posts fund.spend with 1 coin and updates the satchel from the returned DTO", async () => {
+    const dto = fundDTO({ fund: { satchel: { coins: 2, max: 2 }, stash: { coins: 0, max: 8 } } });
+    const updated = fundDTO({
+      revision: 13,
+      fund: { satchel: { coins: 1, max: 2 }, stash: { coins: 0, max: 8 } },
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(fundOk(updated, "fund.spend", 1, 1)));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Spend 1 coin"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Spend 1 coin"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/characters/${CHARACTER_ID}/ops/fund.spend`,
+        expect.objectContaining({ body: JSON.stringify({ coins: 1 }) }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".coin-satchel-count")?.textContent).toContain("1 / 2");
+    });
+  });
+
+  ;
+
+  it("liquidate posts fund.liquidate with the entered coins", async () => {
+    const dto = fundDTO({ fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 6, max: 8 } } });
+    const updated = fundDTO({
+      revision: 13,
+      fund: { satchel: { coins: 1, max: 2 }, stash: { coins: 4, max: 8 } },
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(fundOk(updated, "fund.liquidate", 1, 1)));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('input[aria-label="Coins to liquidate"]')).not.toBeNull();
+    });
+
+    const coinInput = root.querySelector('input[aria-label="Coins to liquidate"]') as HTMLInputElement;
+    coinInput.value = "1";
+    (root.querySelector('button[title="Liquidate stash to coins"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/characters/${CHARACTER_ID}/ops/fund.liquidate`,
+        expect.objectContaining({ body: JSON.stringify({ coins: 1 }) }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".coin-satchel-count")?.textContent).toContain("1 / 2");
+      expect(root.querySelector(".coin-stash-count")?.textContent).toContain("4 / 8");
+    });
+  });
+
+  it("shows a clamp notice when fund.gain stores fewer coins than requested (satchel + stash full)", async () => {
+    const full = fundDTO({ fund: { satchel: { coins: 2, max: 2 }, stash: { coins: 8, max: 8 } } });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(full))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(fundOk(full, "fund.gain", 3, 0)));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Gain 1 coin"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Gain 1 coin"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      const notice = root.querySelector(".character-coin .notice");
+      expect(notice?.textContent).toContain("Stored 0 of 3 coins");
+    });
+  });
+
+  it("surfaces an INSUFFICIENT_FUNDS op error when spend is rejected server-side", async () => {
+    const opErr = {
+      ok: false,
+      character: fundDTO(),
+      applied: { op: "fund.spend" },
+      sideEffects: [],
+      error: { code: "INSUFFICIENT_FUNDS", message: "not enough coins" },
+    };
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(fundDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(opErr));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Spend 1 coin"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Spend 1 coin"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      const err = root.querySelector(".error");
+      expect(err?.textContent).toContain("INSUFFICIENT_FUNDS");
+    });
+  });
 });
+
+describe("F2s Projects", () => {
+  /** Minimal valid Clock DTO. */
+  function clockDTO(overrides: Record<string, unknown> = {}) {
+    return {
+      kind: "clock",
+      id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      revision: 2,
+      formatVersion: 1,
+      createdAt: "2026-07-24T00:00:00.000Z",
+      updatedAt: "2026-07-24T00:00:00.000Z",
+      name: "Infiltrate the Bluecoats",
+      clockKind: "project",
+      segments: 2,
+      size: 6,
+      rollover: 0,
+      ...overrides,
+    };
+  }
+
+  /** OperationResult wrapping a clock entity. */
+  const clockOk = (clock: unknown, op: string) => ({
+    ok: true,
+    clock,
+    applied: { op },
+    sideEffects: [],
+    error: null,
+  });
+
+  const mountWithClocks = (clocks: unknown[], dto = characterDTO()) => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok(clocks));
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  };
+
+  it("renders the clock list from GET /clocks: name, kind, segments/size and an SVG dial", async () => {
+    mountWithClocks([clockDTO()]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".character-projects")).not.toBeNull();
+    });
+    const row = root.querySelector('.project-clock[data-clock-id="b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d"]');
+    expect(row).not.toBeNull();
+    expect(row?.querySelector(".project-clock-name")?.textContent).toContain("Infiltrate the Bluecoats");
+    expect(row?.querySelector(".project-clock-kind")?.textContent).toContain("project");
+    // segments / size come from the clock's own DTO — never hardcoded
+    expect(row?.querySelector(".project-clock-progress")?.textContent).toContain("2 / 6");
+    expect(row?.querySelector("svg.clock")).not.toBeNull();
+  });
+
+  it("shows an empty state when there are no clocks", async () => {
+    mountWithClocks([]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".character-projects")).not.toBeNull();
+    });
+    expect(root.querySelector(".project-empty")?.textContent).toContain("no clocks");
+  });
+
+  it("creates a clock via createClock with name/kind/size from the form and appends it", async () => {
+    const created = clockDTO({
+      id: "d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f",
+      name: "Secure the Docks",
+      clockKind: "rollover",
+      segments: 0,
+      size: 8,
+      revision: 1,
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(clockOk(created, "clock.create")));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Create clock"]')).not.toBeNull();
+    });
+
+    (root.querySelector('input[aria-label="Clock name"]') as HTMLInputElement).value = "Secure the Docks";
+    const kindSelect = root.querySelector('select[aria-label="Clock kind"]') as HTMLSelectElement;
+    expect(Array.from(kindSelect.options).map((o) => o.value)).toEqual(["project", "rollover"]);
+    kindSelect.value = "rollover";
+    (root.querySelector('input[aria-label="Clock size"]') as HTMLInputElement).value = "8";
+    (root.querySelector('button[title="Create clock"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks",
+        expect.objectContaining({
+          body: JSON.stringify({ name: "Secure the Docks", clockKind: "rollover", size: 8 }),
+        }),
+      );
+    });
+    await vi.waitFor(() => {
+      const row = root.querySelector('.project-clock[data-clock-id="d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f"]');
+      expect(row?.querySelector(".project-clock-name")?.textContent).toContain("Secure the Docks");
+      expect(row?.querySelector(".project-clock-progress")?.textContent).toContain("0 / 8");
+    });
+  });
+
+  it("progress + posts clock.progress with the clock's revision (If-Match) and updates segments", async () => {
+    const progressed = clockDTO({ revision: 3, segments: 3 });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok(clockOk(progressed, "clock.progress")));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Add 1 segment: Infiltrate the Bluecoats"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Add 1 segment: Infiltrate the Bluecoats"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
+        expect.objectContaining({
+          body: JSON.stringify({ segments: 1 }),
+          headers: expect.objectContaining({ "If-Match": "2" }),
+        }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".project-clock-progress")?.textContent).toContain("3 / 6");
+    });
+  });
+
+  it("reset posts clock.reset with the clock's revision and zeroes the clock", async () => {
+    const reset = clockDTO({ revision: 3, segments: 0 });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok(clockOk(reset, "clock.reset")));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Reset clock: Infiltrate the Bluecoats"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Reset clock: Infiltrate the Bluecoats"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.reset",
+        expect.objectContaining({
+          body: JSON.stringify({}),
+          headers: expect.objectContaining({ "If-Match": "2" }),
+        }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".project-clock-progress")?.textContent).toContain("0 / 6");
+    });
+  });
+
+  it("delete posts /delete with confirm and the clock's revision, then removes the clock", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok(clockOk(clockDTO(), "delete")));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/delete",
+        expect.objectContaining({
+          body: JSON.stringify({ confirm: true }),
+          headers: expect.objectContaining({ "If-Match": "2" }),
+        }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".project-clock")).toBeNull();
+      expect(root.querySelector(".project-empty")?.textContent).toContain("no clocks");
+    });
+  });
+
+  it("surfaces a VALIDATION op error when clock creation is rejected server-side", async () => {
+    const opErr = {
+      ok: false,
+      applied: { op: "clock.create" },
+      sideEffects: [],
+      error: { code: "VALIDATION", message: "name is required" },
+    };
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(opErr));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Create clock"]')).not.toBeNull();
+    });
+
+    (root.querySelector('input[aria-label="Clock name"]') as HTMLInputElement).value = "";
+    (root.querySelector('input[aria-label="Clock size"]') as HTMLInputElement).value = "4";
+    (root.querySelector('button[title="Create clock"]') as HTMLButtonElement).click();
+    // Empty name is ignored client-side (minLength 1), so force a server-side rejection:
+    // the handler only fires with a non-empty name — set one and let the mock reject.
+    (root.querySelector('input[aria-label="Clock name"]') as HTMLInputElement).value = "Bad";
+    (root.querySelector('button[title="Create clock"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const err = root.querySelector(".error");
+      expect(err?.textContent).toContain("VALIDATION");
+    });
+  });
+});
+});
+

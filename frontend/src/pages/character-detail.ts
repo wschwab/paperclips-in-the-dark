@@ -34,13 +34,23 @@ import {
   gearUnlock,
   gearSetCommitment,
   gearClearCommitments,
+  fundGain,
+  fundSpend,
+  fundLiquidate,
+  listClocks,
+  createClock,
+  clockProgress,
+  clockReset,
+  deleteClock,
   type SessionFields,
+  type FundOpResult,
 } from "../api/client.js";
 import { stressTrack } from "../components/stress-track.js";
 import { actionDots } from "../components/action-dots.js";
 import { clock } from "../components/clock.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
+import type { Clock } from "../schema/clock.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -199,6 +209,33 @@ function gearOpErrorText(err: ApiError): string {
   return `API error (${err.status}): ${body}`;
 }
 
+/** Friendly text for fund/stash op-level errors carried in ApiError bodies. */
+function coinOpErrorText(err: ApiError): string {
+  const body = err.body;
+  if (body.startsWith("INSUFFICIENT_FUNDS")) {
+    return "INSUFFICIENT_FUNDS: not enough coins to cover that (spend draws from the satchel first, then liquidates stash at 2:1)";
+  }
+  if (body.startsWith("SATCHEL_FULL")) {
+    return "SATCHEL_FULL: the satchel can't hold that many coins — spend or stash some first";
+  }
+  if (body.startsWith("VALIDATION")) {
+    return body;
+  }
+  return `API error (${err.status}): ${body}`;
+}
+
+/** Friendly text for clock op-level errors carried in ApiError bodies. */
+function clockOpErrorText(err: ApiError): string {
+  const body = err.body;
+  if (body.startsWith("VALIDATION")) {
+    return body;
+  }
+  if (body.startsWith("NOT_FOUND")) {
+    return "NOT_FOUND: clock gone (deleted elsewhere?)";
+  }
+  return `API error (${err.status}): ${body}`;
+}
+
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
@@ -229,6 +266,12 @@ interface RenderState {
   isGearLoading: boolean;
   isGearCommitmentLoading: boolean;
   isGearLockLoading: boolean;
+  // F2s Coin + Projects state
+  clocks: readonly Clock[] | null;
+  isCoinLoading: boolean;
+  isClocksLoading: boolean;
+  coinNotice: string | null;
+  clocksNotice: string | null;
   // Error / notice
   errorMsg: string | null;
   noticeMsg: string | null;
@@ -270,6 +313,12 @@ interface RenderState {
     onGearSetCommitment: () => void;
     onGearToggleLock: () => void;
     onGearClearCommitments: () => void;
+    onFundDelta: (delta: number) => void;
+    onFundLiquidate: () => void;
+    onCreateClock: () => void;
+    onClockProgress: (clockId: string, segments: number) => void;
+    onClockReset: (clockId: string) => void;
+    onClockDelete: (clockId: string) => void;
   };
 }
 
@@ -284,7 +333,8 @@ function renderDetail(state: RenderState): HTMLElement {
     state.isTraumaLoading || state.isDossierLoading || state.isUndoLoading ||
     state.isHarmLoading || state.isArmorLoading || state.isHealLoading || state.isClockLoading ||
     state.isTalentsLoading || state.isSessionLoading || state.isPlaybookLoading ||
-    state.isGearLoading || state.isGearCommitmentLoading || state.isGearLockLoading;
+    state.isGearLoading || state.isGearCommitmentLoading || state.isGearLockLoading ||
+    state.isCoinLoading || state.isClocksLoading;
 
   // -- Stress track ---------------------------------------------------------
 
@@ -1093,6 +1143,189 @@ function renderDetail(state: RenderState): HTMLElement {
       );
     })(),
 
+    // -- Coin (F2s) --------------------------------------------------------
+
+    (() => {
+      const satchel = c.fund.satchel;
+      const stash = c.fund.stash;
+      // Lifestyle is derived, display-only: stash ÷ 10 (sheet plan decision 4).
+      const lifestyle = Math.floor(stash.coins / 10);
+
+      const spendBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || state.isCoinLoading,
+        title: "Spend 1 coin",
+      }, state.isCoinLoading ? "…" : "−");
+      spendBtn.addEventListener("click", () => handlers.onFundDelta(-1));
+
+      const gainBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || state.isCoinLoading,
+        title: "Gain 1 coin",
+      }, state.isCoinLoading ? "…" : "+");
+      gainBtn.addEventListener("click", () => handlers.onFundDelta(1));
+
+
+
+      const liquidateInput = el("input", {
+        type: "number",
+        "aria-label": "Coins to liquidate",
+        disabled: anyLoading || state.isCoinLoading,
+        value: "1",
+        min: "1",
+      }) as HTMLInputElement;
+      const liquidateBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || state.isCoinLoading,
+        title: "Liquidate stash to coins",
+      }, state.isCoinLoading ? "…" : "liquidate");
+      liquidateBtn.addEventListener("click", handlers.onFundLiquidate);
+
+      return el("div", { className: "character-coin" },
+        el("h2", {}, "Coin"),
+        el("div", { className: "coin-satchel", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
+          el("span", { className: "lbl" }, "Satchel:"),
+          el("span", { className: "coin-satchel-count" }, `${satchel.coins} / ${satchel.max}`),
+          spendBtn,
+          gainBtn,
+        ),
+        el("div", { className: "coin-stash", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
+          el("span", { className: "lbl" }, "Stash:"),
+          el("span", { className: "coin-stash-count" }, `${stash.coins} / ${stash.max}`),
+          el("span", { className: "coin-lifestyle" }, `Lifestyle ${lifestyle}`),
+        ),
+        el("div", { className: "coin-liquidate", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
+          el("span", { className: "lbl" }, "Liquidate:"),
+          liquidateInput,
+          liquidateBtn,
+        ),
+        state.coinNotice
+          ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.coinNotice)
+          : null,
+      );
+    })(),
+
+    // -- Projects (F2s) ----------------------------------------------------
+
+    (() => {
+      const clocks = state.clocks ?? [];
+      // Clock kinds come from the frozen contract enum (project | rollover) —
+      // game data has no clock-kind settings.
+      const kindOptions: Array<{ value: "project" | "rollover"; label: string }> = [
+        { value: "project", label: "project" },
+        { value: "rollover", label: "rollover" },
+      ];
+
+      const clockEntries = clocks.map((clk) => {
+        // Rendering size derived from the clock's own DTO size — the SVG clock
+        // supports any segment count; no game maximum is hardcoded.
+        const dialSize = Math.min(140, 60 + clk.size * 8);
+        const dial = clock({
+          segments: clk.size,
+          value: clk.segments,
+          label: clk.name,
+          size: dialSize,
+          // Clicking segment N sets progress to N (delta vs. current); the
+          // server clamps progress at full / ignores negative deltas.
+          onChange: (next) => handlers.onClockProgress(clk.id, next - clk.segments),
+        });
+
+        const minusBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || state.isClocksLoading || clk.segments <= 0,
+          title: `Remove 1 segment: ${clk.name}`,
+        }, "−");
+        minusBtn.addEventListener("click", () => handlers.onClockProgress(clk.id, -1));
+
+        const plusBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || state.isClocksLoading,
+          title: `Add 1 segment: ${clk.name}`,
+        }, state.isClocksLoading ? "…" : "+");
+        plusBtn.addEventListener("click", () => handlers.onClockProgress(clk.id, 1));
+
+        const resetBtn = el("button", {
+          type: "button",
+          // enabled for rollover clocks carrying overflow even at 0 segments
+          disabled: anyLoading || state.isClocksLoading || (clk.segments === 0 && clk.rollover === 0),
+          title: `Reset clock: ${clk.name}`,
+        }, state.isClocksLoading ? "…" : "reset");
+        resetBtn.addEventListener("click", () => handlers.onClockReset(clk.id));
+
+        const deleteBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || state.isClocksLoading,
+          title: `Delete clock: ${clk.name}`,
+        }, "✕");
+        deleteBtn.addEventListener("click", () => handlers.onClockDelete(clk.id));
+
+        return el("div", {
+          className: "project-clock",
+          "data-clock-id": clk.id,
+          "data-clock-kind": clk.clockKind,
+          style: "display: flex; align-items: center; gap: 0.75em; flex-wrap: wrap; margin: 0.5em 0;",
+        },
+          dial,
+          el("div", { style: "display: flex; flex-direction: column; gap: 0.25em;" },
+            el("span", { className: "project-clock-name" }, clk.name),
+            el("span", { className: "project-clock-kind lbl" }, clk.clockKind),
+            el("span", { className: "project-clock-progress" },
+              `${clk.segments} / ${clk.size}${clk.rollover > 0 ? ` (rollover ${clk.rollover})` : ""}`),
+            el("div", { style: "display: flex; gap: 0.5em;" },
+              minusBtn,
+              plusBtn,
+              resetBtn,
+              deleteBtn,
+            ),
+          ),
+        );
+      });
+
+      const nameInput = el("input", {
+        type: "text",
+        "aria-label": "Clock name",
+        disabled: anyLoading || state.isClocksLoading,
+        placeholder: "project name",
+      }) as HTMLInputElement;
+      const kindSelect = el("select", {
+        "aria-label": "Clock kind",
+        disabled: anyLoading || state.isClocksLoading,
+      },
+        ...kindOptions.map((k) => el("option", { value: k.value }, k.label)),
+      ) as HTMLSelectElement;
+      const sizeInput = el("input", {
+        type: "number",
+        "aria-label": "Clock size",
+        disabled: anyLoading || state.isClocksLoading,
+        min: "1",
+        placeholder: "4",
+      }) as HTMLInputElement;
+      const createBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || state.isClocksLoading,
+        title: "Create clock",
+      }, state.isClocksLoading ? "…" : "+");
+      createBtn.addEventListener("click", handlers.onCreateClock);
+
+      return el("div", { className: "character-projects" },
+        el("h2", {}, "Projects"),
+        clocks.length === 0
+          ? el("p", { className: "project-empty" }, "(no clocks)")
+          : el("div", { style: "display: flex; flex-direction: column;" }, ...clockEntries),
+        el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "New clock"),
+        el("div", { className: "clock-create-form", style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin-top: 0.35em;" },
+          nameInput,
+          kindSelect,
+          el("span", { className: "lbl" }, "size"),
+          sizeInput,
+          createBtn,
+        ),
+        state.clocksNotice
+          ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.clocksNotice)
+          : null,
+      );
+    })(),
+
     // Info
     el(
       "div",
@@ -1198,6 +1431,13 @@ export function mountCharacterDetailPage(
   let isGearCommitmentLoading = false;
   let isGearLockLoading = false;
 
+  // F2s Coin + Projects state
+  let clocks: readonly Clock[] | null = null;
+  let isCoinLoading = false;
+  let isClocksLoading = false;
+  let coinNotice: string | null = null;
+  let clocksNotice: string | null = null;
+
   const clearNotices = () => {
     errorMsg = null;
     noticeMsg = null;
@@ -1205,6 +1445,8 @@ export function mountCharacterDetailPage(
     harmSpillNotice = null;
     clampNotice = null;
     abilityNotice = null;
+    coinNotice = null;
+    clocksNotice = null;
   };
 
   const refreshAndShowNotice = () => {
@@ -1272,6 +1514,116 @@ export function mountCharacterDetailPage(
         },
       }),
     );
+  };
+
+  /** F2s fund/stash mutation runner: same standard error paths + stale-revision recovery, FundOpResult payload. */
+  const runFundMutate = (
+    program: Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError>,
+    onSuccess: (result: FundOpResult) => void,
+    clearLoading: () => void,
+    onApiError?: (err: ApiError) => string,
+  ) => {
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          clearLoading();
+          if (err instanceof StaleRevisionError) {
+            renderDetailWrapper();
+            refreshAndShowNotice();
+          } else if (err instanceof ApiError) {
+            errorMsg = onApiError ? onApiError(err) : `API error (${err.status}): ${err.body}`;
+            renderDetailWrapper();
+          } else if (err instanceof DecodeError) {
+            errorMsg = `Invalid response: ${err.message}`;
+            renderDetailWrapper();
+          } else {
+            errorMsg = String(err);
+            renderDetailWrapper();
+          }
+        },
+        onSuccess: (result) => {
+          if (cancelled) return;
+          clearLoading();
+          onSuccess(result);
+        },
+      }),
+    );
+  };
+
+  /** F2s clock mutation runner: same standard error paths + stale-revision recovery (refetches the clock list). */
+  const runClockMutate = (
+    program: Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError>,
+    onSuccess: (clock: Clock) => void,
+    clearLoading: () => void,
+    onApiError?: (err: ApiError) => string,
+  ) => {
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          clearLoading();
+          if (err instanceof StaleRevisionError) {
+            renderDetailWrapper();
+            refreshClocksAndNotice();
+          } else if (err instanceof ApiError) {
+            errorMsg = onApiError ? onApiError(err) : `API error (${err.status}): ${err.body}`;
+            renderDetailWrapper();
+          } else if (err instanceof DecodeError) {
+            errorMsg = `Invalid response: ${err.message}`;
+            renderDetailWrapper();
+          } else {
+            errorMsg = String(err);
+            renderDetailWrapper();
+          }
+        },
+        onSuccess: (clock) => {
+          if (cancelled) return;
+          clearLoading();
+          onSuccess(clock);
+        },
+      }),
+    );
+  };
+
+  /** Refetch the campaign clock list (clock state lives server-side, not in the character DTO). */
+  const refreshClocksAndNotice = () => {
+    void Effect.runPromise(
+      Effect.match(listClocks(), {
+        onFailure: (err) => {
+          if (cancelled) return;
+          if (err instanceof ApiError) {
+            clocksNotice = `Clock refresh failed (${err.status}): ${err.body}`;
+          } else if (err instanceof DecodeError) {
+            clocksNotice = `Clock refresh failed (invalid response): ${err.message}`;
+          } else {
+            clocksNotice = `Clock refresh failed: ${String(err)}`;
+          }
+          renderDetailWrapper();
+        },
+        onSuccess: (list) => {
+          if (cancelled) return;
+          clocks = list;
+          clocksNotice = "Clocks refreshed because they changed elsewhere";
+          renderDetailWrapper();
+          setTimeout(() => {
+            if (!cancelled) {
+              clocksNotice = null;
+              renderDetailWrapper();
+            }
+          }, 3000);
+        },
+      }),
+    );
+  };
+
+  /** Insert or replace a clock in the local list by id. */
+  const upsertClock = (updated: Clock) => {
+    const list = clocks ?? [];
+    const idx = list.findIndex((x) => x.id === updated.id);
+    clocks = idx >= 0
+      ? list.map((x, i) => (i === idx ? updated : x))
+      : [...list, updated];
   };
 
   const handlers = {
@@ -2111,6 +2463,185 @@ export function mountCharacterDetailPage(
         gearOpErrorText,
       );
     },
+
+    // -- F2s: Coin handlers ------------------------------------------------
+
+    onFundDelta: (delta: number) => {
+      if (!currentCharacter || isCoinLoading || delta === 0) return;
+      // Spend is always attempted: the server draws from the satchel first,
+      // liquidates stash at 2:1 as needed, and rejects with INSUFFICIENT_FUNDS
+      // when nothing can cover it (surfaced as an op-level notice).
+      isCoinLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      // − spends from the satchel (server liquidates stash at 2:1 when needed),
+      // + gains into the satchel with overflow to stash.
+      const program = delta > 0
+        ? fundGain(characterId, delta, currentCharacter.revision)
+        : fundSpend(characterId, -delta, currentCharacter.revision);
+      runFundMutate(
+        program,
+        (result) => {
+          currentCharacter = result.character;
+          // gain overflow: server stores what fits and reports applied.effective
+          if (delta > 0 && result.effective < result.requested) {
+            coinNotice = `Stored ${result.effective} of ${result.requested} coins — satchel and stash are full`;
+            setTimeout(() => {
+              if (!cancelled) {
+                coinNotice = null;
+                renderDetailWrapper();
+              }
+            }, 5000);
+          }
+          renderDetailWrapper();
+        },
+        () => { isCoinLoading = false; },
+        coinOpErrorText,
+      );
+    },
+
+
+
+    onFundLiquidate: () => {
+      if (!currentCharacter || isCoinLoading) return;
+      const input = root.querySelector('input[aria-label="Coins to liquidate"]') as HTMLInputElement;
+      const coins = input ? Number(input.value) : NaN;
+      if (!Number.isFinite(coins) || coins < 1) return;
+      isCoinLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = fundLiquidate(characterId, coins, currentCharacter.revision);
+      runFundMutate(
+        program,
+        (result) => {
+          currentCharacter = result.character;
+          renderDetailWrapper();
+        },
+        () => { isCoinLoading = false; },
+        coinOpErrorText,
+      );
+    },
+
+    // -- F2s: Projects (clocks) handlers -----------------------------------
+
+    onCreateClock: () => {
+      if (isClocksLoading) return;
+      const nameInput = root.querySelector('input[aria-label="Clock name"]') as HTMLInputElement;
+      const kindSelect = root.querySelector('select[aria-label="Clock kind"]') as HTMLSelectElement;
+      const sizeInput = root.querySelector('input[aria-label="Clock size"]') as HTMLInputElement;
+      const name = nameInput?.value?.trim() || null;
+      const kind = kindSelect?.value as "project" | "rollover" | undefined;
+      const size = sizeInput ? Number(sizeInput.value) : NaN;
+      // name minLength 1 and size >= 1 per the frozen contract; kind is the contract enum
+      if (!name || !kind || !Number.isInteger(size) || size < 1) return;
+      isClocksLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = createClock(name, kind, size);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isClocksLoading = false;
+            if (err instanceof ApiError) {
+              errorMsg = clockOpErrorText(err);
+            } else if (err instanceof DecodeError) {
+              errorMsg = `Invalid response: ${err.message}`;
+            } else {
+              errorMsg = String(err);
+            }
+            renderDetailWrapper();
+          },
+          onSuccess: (created) => {
+            if (cancelled) return;
+            isClocksLoading = false;
+            upsertClock(created);
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
+
+    onClockProgress: (clockId: string, segments: number) => {
+      if (isClocksLoading) return;
+      const clk = (clocks ?? []).find((x) => x.id === clockId);
+      if (!clk) return;
+      isClocksLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = clockProgress(clockId, segments, clk.revision);
+      runClockMutate(
+        program,
+        (updated) => {
+          upsertClock(updated);
+          renderDetailWrapper();
+        },
+        () => { isClocksLoading = false; },
+        clockOpErrorText,
+      );
+    },
+
+    onClockReset: (clockId: string) => {
+      if (isClocksLoading) return;
+      const clk = (clocks ?? []).find((x) => x.id === clockId);
+      if (!clk) return;
+      isClocksLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = clockReset(clockId, clk.revision);
+      runClockMutate(
+        program,
+        (updated) => {
+          upsertClock(updated);
+          renderDetailWrapper();
+        },
+        () => { isClocksLoading = false; },
+        clockOpErrorText,
+      );
+    },
+
+    onClockDelete: (clockId: string) => {
+      if (isClocksLoading) return;
+      const clk = (clocks ?? []).find((x) => x.id === clockId);
+      if (!clk) return;
+      isClocksLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = deleteClock(clockId, clk.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isClocksLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshClocksAndNotice();
+            } else if (err instanceof ApiError) {
+              errorMsg = clockOpErrorText(err);
+              renderDetailWrapper();
+            } else if (err instanceof DecodeError) {
+              errorMsg = `Invalid response: ${err.message}`;
+              renderDetailWrapper();
+            } else {
+              errorMsg = String(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: () => {
+            if (cancelled) return;
+            isClocksLoading = false;
+            clocks = (clocks ?? []).filter((x) => x.id !== clockId);
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
   };
 
   const renderDetailWrapper = () => {
@@ -2137,6 +2668,11 @@ export function mountCharacterDetailPage(
       isGearLoading,
       isGearCommitmentLoading,
       isGearLockLoading,
+      clocks,
+      isCoinLoading,
+      isClocksLoading,
+      coinNotice,
+      clocksNotice,
       errorMsg,
       noticeMsg,
       undoNotice,
@@ -2159,7 +2695,10 @@ export function mountCharacterDetailPage(
     const playbook = yield* Effect.either(
       getPlaybook(character.gameStem, character.playbook.name),
     );
-    return { character, game, playbook };
+    // Campaign clocks for the Projects section; failures degrade gracefully
+    // (the section renders "(no clocks)" until a successful fetch).
+    const clockList = yield* Effect.either(listClocks());
+    return { character, game, playbook, clockList };
   });
 
   void Effect.runPromise(
@@ -2175,7 +2714,7 @@ export function mountCharacterDetailPage(
               : String(err);
         setChildren(root, renderError(msg));
       },
-      onSuccess: ({ character, game, playbook }) => {
+      onSuccess: ({ character, game, playbook, clockList }) => {
         if (cancelled) return;
         root.setAttribute("aria-busy", "false");
         currentCharacter = character;
@@ -2184,6 +2723,9 @@ export function mountCharacterDetailPage(
         }
         if (playbook._tag === "Right") {
           playbookData = playbook.right;
+        }
+        if (clockList._tag === "Right") {
+          clocks = clockList.right;
         }
         experienceCondition = extractExperienceCondition(playbookData, gameData, character.playbook.name);
         renderDetailWrapper();

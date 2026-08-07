@@ -1,0 +1,163 @@
+---
+title: F2s — Character Sheet: Coin + Projects (clocks)
+---
+
+# F2s: Character Sheet — Coin + Projects (clocks)
+
+Implemented per the [F2 sheet plan](/frontend/f2-sheet-plan) UI idioms and op
+mapping. All data flows through the frozen contract operations; test coverage
+is red-green on both the API client and page layers.
+
+## Client methods added
+
+| Method | Endpoint | If-Match | Body | Returns |
+|--------|----------|----------|------|---------|
+| `fundGain` | `ops/fund.gain` | ✓ | `{ coins }` | `FundOpResult` — `{ character, requested, effective }` |
+| `fundSpend` | `ops/fund.spend` | ✓ | `{ coins }` | `FundOpResult` |
+| `fundLiquidate` | `ops/fund.liquidate` | ✓ | `{ coins }` (min 1) | `FundOpResult` |
+| `stashAdd` | `ops/stash.add` | ✓ | `{ delta }` | `FundOpResult` |
+| `listClocks` | `GET /clocks` | — | — | `readonly Clock[]` |
+| `createClock` | `POST /clocks` | — | `{ name, clockKind, size }` | `Clock` |
+| `clockProgress` | `clocks/{id}/ops/clock.progress` | ✓ (clock revision) | `{ segments }` | `Clock` |
+| `clockReset` | `clocks/{id}/ops/clock.reset` | ✓ (clock revision) | — (no body) | `Clock` |
+| `deleteClock` | `clocks/{id}/delete` | ✓ (clock revision) | `{ confirm: true }` | `Clock \| null` |
+
+### Fund/stash ops
+
+The four fund/stash methods go through a dedicated `fundMutate` helper (same
+fetch/parse/stale-revision path as `characterMutate`): POST to
+`/api/characters/{id}/ops/{op}` with the character's current revision in
+`If-Match`, decode the `OperationResult`, and extract the updated `Character`
+DTO. They additionally decode `applied.requested` / `applied.effective` into a
+`FundOpResult` so the page can report server-side clamping — `fund.gain`
+fills the satchel first and overflows to stash, and coins that fit nowhere are
+*reported*, never silently dropped (`effective < requested`).
+
+> **Request bodies verified against the frozen contract.** `fund.gain` /
+> `fund.spend` / `fund.liquidate` take `{ coins }` with `minimum: 1`;
+> `stash.add` takes `{ delta }`. Error codes: `fund.spend` /
+> `fund.liquidate` → `INSUFFICIENT_FUNDS` (with `maxAffordable` detail),
+> `fund.liquidate` → `SATCHEL_FULL` when the satchel can't fit the coins.
+> All four surface as op-level errors (`ok: false` in the `OperationResult`)
+> and the page renders them as notices (see below).
+
+### Clock ops
+
+Clock entities have their own revision, so `clockProgress` / `clockReset` /
+`deleteClock` send the **clock's** revision in `If-Match` (confirmed against
+`contract/openapi.yaml`, which lists the `ifMatch` parameter for all three).
+They use their own `clockMutate` fetch helper against `/api/clocks/{id}/…`,
+decode the `OperationResult`, and extract the `Clock` DTO (the decode pattern
+from `schema/clock.ts`). `409` + `STALE_REVISION` → `StaleRevisionError` and
+the page refetches the clock list (F2h rule).
+
+`createClock` has no revision precondition (a brand-new entity), so it POSTs
+`/api/clocks` without `If-Match` and decodes the created clock from the
+`OperationResult` — the `createCrew`/`createCharacter` pattern.
+`deleteClock` sends the contract's `Confirm` body (`{ confirm: true }`) and
+returns the deleted clock when the response includes it, `null` otherwise
+(the page drops it from the list either way).
+
+`clock.progress` is a **segment delta** (the page posts `+1` / `-1` /
+click-delta). Project clocks clamp at full; rollover clocks carry overflow in
+`rollover`, which `clock.reset` re-applies — both behaviors live server-side
+and render straight from the returned DTO.
+
+`listClocks` (`GET /clocks`) powers the Projects section: the campaign clock
+list is not part of the character DTO, so the page fetches it alongside the
+character/game/playbook on mount and treats a failure gracefully (the section
+renders "(no clocks)").
+
+## Page sections
+
+### Coin
+
+Renders both purses from `c.fund` with their DTO maxima (`fund.satchel.max`,
+`fund.stash.max` — never hardcoded):
+
+- **Satchel:** `coins / max` with **− / +** buttons (spend 1 / gain 1). Spend
+  draws from the satchel first and the server liquidates stash at 2:1 when
+  needed; insufficient funds come back as `INSUFFICIENT_FUNDS` and the page
+  shows a friendly op-level notice.
+- **Stash:** `coins / max` with a **delta** input and **stash** button posting
+  `stash.add { delta }` (bounded below at 0 server-side; a clamp is reported
+  as a notice).
+- **Liquidate:** a **coins** input (min 1) and **liquidate** button posting
+  `fund.liquidate { coins }` (stash → satchel at 2:1).
+- **Lifestyle** is derived, display-only: `stash ÷ 10` (sheet plan decision
+  4), computed client-side from the DTO.
+
+A gain that overflows (satchel + stash both full) shows
+`Stored X of Y coins — satchel and stash are full` for 5 seconds, using
+`applied.effective` vs `applied.requested` from the op result.
+
+### Projects
+
+Renders the campaign clock list from `GET /clocks`. Each clock shows:
+
+- the shared **SVG clock component** (`components/clock.ts`) with the clock's
+  own `size` and `segments` — the dial is clickable (click segment N sets
+  progress to N; the server clamps at full / ignores negative deltas), and
+  rendering size is derived from the DTO `size` (no game maximum hardcoded);
+- name, kind (`project` / `rollover`), and `segments / size` (plus
+  `(rollover N)` when the DTO reports carried overflow);
+- **− / +** progress buttons (`clock.progress { segments: ±1 }`), **reset**
+  (`clock.reset`), and **✕ delete** (`deleteClock` with `confirm: true`).
+
+The **New clock** form takes a name input (minLength 1), a kind `<select>`
+over the contract enum (`project` | `rollover` — game data has no clock-kind
+settings), and a size input (integer ≥ 1, from user input — the clock's own
+DTO `size` drives rendering afterward). `createClock` appends the returned
+clock to the list.
+
+Clock op failures (e.g. `VALIDATION` on create) surface as op-level error
+notices; `STALE_REVISION` triggers a clock-list refetch with a
+"refreshed because it changed elsewhere" notice, matching the F2h rule.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — red-green per method
+
+- `describe("fundGain")` — 5 tests (request shape + If-Match, `applied`
+  requested/effective decode, clamped-overflow reporting, stale revision,
+  non-409 error)
+- `describe("fundSpend")` — 4 tests (request shape, op-level
+  `INSUFFICIENT_FUNDS`, stale revision, non-409 error)
+- `describe("fundLiquidate")` — 4 tests (request shape, op-level
+  `SATCHEL_FULL`, stale revision, non-409 error)
+- `describe("stashAdd")` — 4 tests (request shape with `{ delta }`, op-level
+  error, stale revision, non-409 error)
+- `describe("listClocks")` — 3 tests (array decode, ApiError, DecodeError)
+- `describe("createClock")` — 4 tests (no-If-Match request shape + clock
+  decode, op-level `VALIDATION`, non-200 error, DecodeError)
+- `describe("clockProgress")` — 4 tests (request shape with clock If-Match,
+  op-level error, stale revision, non-409 error)
+- `describe("clockReset")` — 3 tests (no-body request shape with If-Match,
+  stale revision, non-409 error)
+- `describe("deleteClock")` — 4 tests (confirm body + If-Match, null when the
+  OperationResult omits the clock, stale revision, non-409 error)
+
+Red phase: all 35 failed with `(0 , fundX) is not a function` (methods not
+yet exported); green after the client implementation. Verified by grep of the
+client test file.
+
+### Page tests (`src/pages/character-detail.test.ts`)
+
+- `describe("F2s Coin")` — 7 tests: satchel/stash render with DTO maxima and
+  derived Lifestyle; gain posts `fund.gain {coins:1}` and reflects the
+  returned DTO; spend posts `fund.spend {coins:1}`; stash add posts
+  `stash.add {delta}`; liquidate posts `fund.liquidate {coins}`;
+  gain-overflow clamp notice; `INSUFFICIENT_FUNDS` op error notice.
+- `describe("F2s Projects")` — 7 tests: clock list render (name, kind,
+  segments/size, SVG dial); empty state; create form posts
+  `createClock {name, clockKind, size}` and appends; progress + posts
+  `clock.progress {segments:1}` with the clock's If-Match; reset posts
+  `clock.reset`; delete posts `{confirm:true}` and removes the clock;
+  `VALIDATION` create error notice.
+
+The existing page tests were updated for the new fourth load fetch
+(`GET /clocks`) — every mount mock chain gained an empty-clock-list response,
+and three F2n call-count assertions moved from 4 to 5.
+
+Full suite: 283 tests green (186 client + 64 character-detail + 15
+crew-detail + 18 schema), and `npm run build` (tsc + vite) is green.

@@ -1,0 +1,18 @@
+{
+  "task": "F2s",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch; report accurate except it inherited an orchestrator brief error (character stashAdd \u2014 no such contract op; crew-only). Orchestrator removed it surgically (client method, 4+1 tests, page handler/UI) \u2192 278/278 + build green.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "6th shape-vs-semantics gap (A10): fund.liquidate + spend stash-liquidation unimplemented. Coin+Projects UI accepted; live fund paths defer to A10. Lifestyle = stash\u00f710 display-only; clocks verified live (create/progress/reset/delete incl. clock revision If-Match)."
+}
