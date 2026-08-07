@@ -406,6 +406,22 @@
 				},
 				"additionalProperties": false
 			}
+		},
+		"FactionStatusSetting": {
+			"type": "object",
+			"properties": {
+				"Min": {
+					"type": "integer"
+				},
+				"Max": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Min",
+				"Max"
+			]
 		}
 	},
 	"type": "object",
@@ -490,6 +506,9 @@
 		"ActionPointMaximum": {
 			"type": "integer"
 		},
+		"FactionStatus": {
+			"$ref": "#/definitions/FactionStatusSetting"
+		},
 		"StartingAbility": {
 			"type": [
 				"object"
@@ -514,6 +533,7 @@
 		"Backgrounds",
 		"SharedItems",
 		"RecoveryClockSize",
-		"ActionPointMaximum"
+		"ActionPointMaximum",
+		"FactionStatus"
 	]
 }

@@ -952,6 +952,10 @@
 	},
 	"RecoveryClockSize": 6,
 	"ActionPointMaximum": 3,
+	"FactionStatus": {
+		"Min": -3,
+		"Max": 3
+	},
 	"StartingAbility": {
 		"AbilitiesByHeritage": {
 			"Xeno": {

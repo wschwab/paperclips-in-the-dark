@@ -1024,6 +1024,10 @@
 	},
 	"RecoveryClockSize": 4,
 	"ActionPointMaximum": 4,
+	"FactionStatus": {
+		"Min": -3,
+		"Max": 3
+	},
 	"ExtraDescription": {
 		"GearDescriptions": [
 			{
