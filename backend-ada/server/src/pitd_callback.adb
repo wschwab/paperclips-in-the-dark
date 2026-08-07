@@ -314,6 +314,40 @@ package body Pitd_Callback is
       return Read (Read_File (Name));
    end Game;
 
+   --  A8: ability.take is validated against the playbook/crew-type
+   --  SpecialAbilities game data (TimesTakeable).  Unknown ability or
+   --  missing game data keeps the historical permissive behavior.
+   function Can_Take_More (Kind, Name : String; E : JSON_Value; Times_Taken : Integer) return Boolean is
+      Group : constant String := (if Kind = "crew" then "CrewTypes" else "Playbooks");
+      Type_Name : constant String :=
+        (if Kind = "crew" then Str_Field (E, "crewTypeName")
+         else Str_Field (Get (E, "playbook"), "name"));
+      G : constant JSON_Value :=
+        Game (Str_Field (E, "gameStem") & (if Kind = "crew" then "-crews" else ""));
+   begin
+      if G.Kind /= JSON_Object_Type or else not Has_Field (G, Group) then return True; end if;
+      declare
+         Types : constant JSON_Array := Get (G, Group);
+      begin
+         for I in 1 .. Length (Types) loop
+            declare T : constant JSON_Value := Get (Types, I); begin
+               if Str_Field (T, "Name") = Type_Name and then Has_Field (T, "SpecialAbilities") then
+                  declare
+                     Ab : constant JSON_Array := Get (T, "SpecialAbilities");
+                  begin
+                     for J in 1 .. Length (Ab) loop
+                        if Str_Field (Get (Ab, J), "Name") = Name then
+                           return Times_Taken < Int_Field (Get (Ab, J), "TimesTakeable", Integer'Last);
+                        end if;
+                     end loop;
+                  end;
+               end if;
+            end;
+         end loop;
+      end;
+      return True;
+   end Can_Take_More;
+
    function New_Character (Stem, Playbook : String) return JSON_Value is
       G : constant JSON_Value := Game (Stem);
       Id : constant String := New_Id;
@@ -423,7 +457,43 @@ package body Pitd_Callback is
          declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"action");Rating:constant Integer:=Int_Field(B,"rating");Found:Boolean:=False;begin if Rating<0 then return Error_Result(Op,"VALIDATION","invalid action rating",E);end if;for I in 1..Length(Attrs) loop declare Acts:constant JSON_Array:=Get(Get(Attrs,I),"actions");begin for J in 1..Length(Acts) loop declare X:constant JSON_Value:=Get(Acts,J);begin if Str_Field(X,"name")=Name then Set_Field(X,"rating",Integer'Min(Rating,Int_Field(X,"maxRating")));Found:=True;end if;end;end loop;end;end loop;if not Found then return Error_Result(Op,"VALIDATION","unknown action",E);end if;end;
       elsif Op = "attribute-xp.add" or else Op = "attribute-xp.clear" or else Op="attribute.levelup" then
          declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"attribute");Found:Boolean:=False;begin for I in 1..Length(Attrs) loop declare A:constant JSON_Value:=Get(Attrs,I);X:constant JSON_Value:=Get(A,"experience");begin if Str_Field(A,"name")=Name then Found:=True;if Op="attribute-xp.clear" then Set_Field(X,"points",Integer'(0));elsif Op="attribute-xp.add" then Requested:=Int_Field(B,"delta");Core_Clamp_Add(Natural(Int_Field(X,"points")),Natural(Int_Field(X,"max")),Natural'Max(0,Requested),New_Value,Applied);Set_Field(X,"points",Integer(New_Value));Effective:=Integer(Applied);else declare Acts:constant JSON_Array:=Get(A,"actions");begin for J in 1..Length(Acts) loop declare Z:constant JSON_Value:=Get(Acts,J);begin if Str_Field(Z,"name")=Str_Field(B,"action") then Set_Field(Z,"rating",Integer'Min(Int_Field(Z,"maxRating"),Int_Field(Z,"rating")+1));end if;end;end loop;Set_Field(X,"points",Integer'(0));end;end if;end if;end;end loop;if not Found then return Error_Result(Op,"VALIDATION","unknown attribute",E);end if;end;
-      elsif Op="ability.take" then declare P:constant JSON_Value:=(if Kind="character" then Get(E,"playbook") else E);Field:constant String:=(if Kind="character" then "abilities" else "specialAbilities");A:constant JSON_Array:=Get(P,Field);O:JSON_Array:=A;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Set_Field(Get(A,I),"timesTaken",Int_Field(Get(A,I),"timesTaken")+1);Found:=True;end if;end loop;if not Found then declare X:JSON_Value:=Create_Object;begin Set_Field(X,"name",Name);if Kind="character" then Set_Field(X,"description","");end if;Set_Field(X,"timesTaken",Integer'(1));Append(O,X);Set_Field(P,Field,O);end;end if;end;
+      elsif Op="ability.take" then
+         declare
+            P:constant JSON_Value:=(if Kind="character" then Get(E,"playbook") else E);
+            Field:constant String:=(if Kind="character" then "abilities" else "specialAbilities");
+            A:constant JSON_Array:=Get(P,Field);O:JSON_Array:=A;
+            Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;
+         begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name")=Name then
+                  Found:=True;
+                  if not Can_Take_More(Kind,Name,E,Int_Field(Get(A,I),"timesTaken")) then
+                     return Error_Result(Op,"ABILITY_MAXED","ability is already taken to its limit",E);
+                  end if;
+                  Set_Field(Get(A,I),"timesTaken",Int_Field(Get(A,I),"timesTaken")+1);
+               end if;
+            end loop;
+            if not Found then declare X:JSON_Value:=Create_Object;begin
+               Set_Field(X,"name",Name);
+               if Kind="character" then Set_Field(X,"description","");end if;
+               Set_Field(X,"timesTaken",Integer'(1));
+               Append(O,X);Set_Field(P,Field,O);
+            end;end if;
+         end;
+      elsif Op="ability.remove" then
+         declare
+            P:constant JSON_Value:=(if Kind="character" then Get(E,"playbook") else E);
+            Field:constant String:=(if Kind="character" then "abilities" else "specialAbilities");
+            A:constant JSON_Array:=(if Has_Field(P,Field) then Get(P,Field) else Empty_Array);
+            O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;
+         begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name")=Name then Found:=True;
+               else Append(O,Get(A,I));end if;
+            end loop;
+            if not Found then return Error_Result(Op,"NOT_FOUND","ability not found",E);end if;
+            Set_Field(P,Field,O);
+         end;
       elsif Op="fund.gain" or else Op="fund.spend" then declare F:constant JSON_Value:=Get(E,"fund");S:constant JSON_Value:=Get(F,"satchel");Z:constant JSON_Value:=Get(F,"stash");Req:constant Integer:=Int_Field(B,"coins");A1,A2:Integer:=0;begin Requested:=Req;if Op="fund.gain" then A1:=Integer'Min(Req,Int_Field(S,"max")-Int_Field(S,"coins"));Set_Field(S,"coins",Int_Field(S,"coins")+A1);A2:=Integer'Min(Req-A1,Int_Field(Z,"max")-Int_Field(Z,"coins"));Set_Field(Z,"coins",Int_Field(Z,"coins")+A2);Effective:=A1+A2;return Success_Result(Op,E,Requested,Effective,Side=>(if Effective<Requested then Trim_Image(Requested-Effective)&" coin could not be stored" else ""));else Effective:=Integer'Min(Req,Int_Field(S,"coins"));Set_Field(S,"coins",Int_Field(S,"coins")-Effective);return Success_Result(Op,E,Requested,Effective);end if;end;
       elsif Op="rolodex.add" then declare R:constant JSON_Value:=Get(E,"rolodex");A:constant JSON_Array:=Get(R,"friends");O:JSON_Array:=A;X:JSON_Value:=Create_Object;begin Set_Field(X,"entry",Str_Field(B,"entry"));Set_Field(X,"closeness","friend");Append(O,X);Set_Field(R,"friends",O);end;
       elsif Op="rolodex.set-closeness" then declare A:constant JSON_Array:=Get(Get(E,"rolodex"),"friends");begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Str_Field(B,"entry") then Set_Field(Get(A,I),"closeness",Str_Field(B,"closeness","friend"));end if;end loop;end;
