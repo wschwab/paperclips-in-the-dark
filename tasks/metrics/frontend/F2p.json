@@ -1,0 +1,18 @@
+{
+  "task": "F2p",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm)",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-07",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch; report accurate (counts 195 = 144+21 verified; red-green evidence plausible: missing-function refs before impl).",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Live probe caught TWO server gaps the green suite missed: ability.remove unimplemented and TimesTakeable not enforced (ABILITY_MAXED never emitted) \u2014 filed A8. Frontend accepted; live paths deferred."
+}

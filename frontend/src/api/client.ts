@@ -850,3 +850,38 @@ export function getPlaybook(
     return raw as Record<string, unknown>;
   });
 }
+
+// ---------------------------------------------------------------------------
+// F2p operations — playbookXpAdd, playbookXpClear, abilityTake, abilityRemove
+// ---------------------------------------------------------------------------
+
+export function playbookXpAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "playbook-xp.add", revision, { delta });
+}
+
+export function playbookXpClear(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "playbook-xp.clear", revision);
+}
+
+export function abilityTake(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "ability.take", revision, { name });
+}
+
+export function abilityRemove(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "ability.remove", revision, { name });
+}

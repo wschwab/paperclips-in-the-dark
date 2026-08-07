@@ -1,0 +1,95 @@
+---
+title: F2p — Character Sheet: Playbook Abilities + Playbook XP
+---
+
+# F2p: Character Sheet — Playbook Abilities + Playbook XP
+
+Implemented per the [F2 sheet plan](/frontend/f2-sheet-plan) UI idioms and op
+mapping. All data flows through the frozen contract operations; test coverage
+is red-green on both the API client and page layers.
+
+## Client methods added
+
+| Method | Endpoint | If-Match | Body | Returns |
+|--------|----------|----------|------|---------|
+| `playbookXpAdd` | `ops/playbook-xp.add` | ✓ | `{ delta }` | updated `Character` |
+| `playbookXpClear` | `ops/playbook-xp.clear` | ✓ | — (no body) | updated `Character` |
+| `abilityTake` | `ops/ability.take` | ✓ | `{ name }` | updated `Character` |
+| `abilityRemove` | `ops/ability.remove` | ✓ | `{ name }` | updated `Character` |
+
+All four go through the existing `characterMutate` generic helper: POST to
+`/api/characters/{id}/ops/{op}` with an `If-Match` header set to the
+character's current revision, decode the `OperationResult`, and extract the
+updated `Character` DTO. Stale-revision handling follows the F2h rule: `409`
++ `STALE_REVISION` error code → `StaleRevisionError`, and the page refetches.
+
+## Page section
+
+### Playbook XP tracker
+
+Shows `points / max` from the DTO's `playbook.experience` (never a hardcoded
+maximum — the max comes from the server) with `−` (disabled at 0), `+`
+(disabled at max), and a `clear` button. `+`/`−` call `playbookXpAdd(±1)`;
+`clear` calls `playbookXpClear`. Per the contract, `ability.take` does **not**
+spend playbook XP — clearing after spending a playbook advance is an explicit
+user action.
+
+### Special abilities
+
+- **Taken abilities** render from the DTO's `playbook.abilities`: name,
+  `timesTaken` (shown as `×N` when stacked more than once), and the
+  description carried by the DTO, each with a `✕` remove button calling
+  `abilityRemove(name)`.
+- **Take menu**: a native `<select>` populated **from game data only** — the
+  playbook's `SpecialAbilities` array fetched via `getPlaybook(gameStem,
+  playbookName)` (already added in F2o). If that fetch fails, the page falls
+  back to the `Playbooks[].SpecialAbilities` entry already present in the
+  game-settings JSON (same graceful-degradation pattern as F2o's
+  `ExperienceCondition`); if neither source has it, the menu is empty and the
+  take button is disabled.
+- An ability is listed as eligible when it is either not taken yet or taken
+  fewer than `TimesTakeable` times (taken counts come from the DTO; the
+  server independently enforces the limit with `ABILITY_MAXED`). The select
+  thus lists exactly the abilities the server will accept.
+- Per the plan's idiom, the selected ability's `Description` shows in a
+  collapsible `<details>/<summary>` beside the menu; changing the selection
+  updates it in place.
+
+### Op-level error notices
+
+`ability.take` / `ability.remove` failures come back as `200` responses whose
+`OperationResult` has `ok: false` (the op-level failure shape). These surface
+as `ApiError`s carrying the error code, and the page translates them into
+friendly notices (mirroring the F2y `DUPLICATE`/`NOT_FOUND` handling on the
+crew sheet):
+
+- `ABILITY_MAXED` → "that ability is already taken to its limit"
+- `NOT_FOUND` → "not on this sheet (removed elsewhere?)"
+- anything else falls back to the raw `API error (status): body` message.
+
+## Test coverage
+
+### Client tests (`src/api/client.test.ts`) — red-green per method
+
+- `describe("playbookXpAdd")` — 4 tests (request shape, op-level `ok:false`
+  → `ApiError`, stale revision, non-409 error)
+- `describe("playbookXpClear")` — 3 tests (no-body request shape, stale
+  revision, non-409 error)
+- `describe("abilityTake")` — 4 tests (request shape, `ABILITY_MAXED` op
+  error, stale revision, non-409 error)
+- `describe("abilityRemove")` — 4 tests (request shape, `NOT_FOUND` op
+  error, stale revision, non-409 error)
+
+### Page tests (`src/pages/character-detail.test.ts`)
+
+- `describe("F2p Playbook")` — 6 tests: XP tracker + taken abilities render
+  from the DTO with the take select populated from game-data
+  `SpecialAbilities` (excluding maxed takes, `×N` for stacked takes,
+  `<details>/<summary>` description); XP `+`/`−` post `playbookXpAdd` and
+  `clear` posts `playbookXpClear`; take posts `abilityTake` with the selected
+  ability and renders the new entry; remove posts `abilityRemove`; a friendly
+  `ABILITY_MAXED` notice on op-level error; fallback to the game-data
+  `Playbooks` `SpecialAbilities` when the playbook fetch fails.
+
+Full suite: 195 tests green (121 client + 41 character-detail + 15
+crew-detail + 18 schema), and `npm run build` (tsc + vite) is green.

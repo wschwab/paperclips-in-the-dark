@@ -22,6 +22,10 @@ import {
   attributeXpClear,
   attributeLevelup,
   sessionSet,
+  playbookXpAdd,
+  playbookXpClear,
+  abilityTake,
+  abilityRemove,
   type SessionFields,
 } from "../api/client.js";
 import { stressTrack } from "../components/stress-track.js";
@@ -85,6 +89,43 @@ function extractExperienceCondition(
   return null;
 }
 
+/**
+ * Playbook SpecialAbilities for the character's playbook: from the playbook
+ * endpoint response or (fallback) the game-data Playbooks list. Each entry
+ * carries { Name, Description, TimesTakeable }. Returns [] when neither
+ * source has it (graceful degradation).
+ */
+function extractSpecialAbilities(
+  playbookData: Record<string, unknown> | null,
+  gameData: Record<string, unknown> | null,
+  playbookName: string,
+): Array<Record<string, unknown>> {
+  if (playbookData && Array.isArray(playbookData.SpecialAbilities)) {
+    return playbookData.SpecialAbilities as Array<Record<string, unknown>>;
+  }
+  if (Array.isArray(gameData?.Playbooks)) {
+    const found = (gameData!.Playbooks as Array<Record<string, unknown>>).find(
+      (p) => p && typeof p === "object" && p.Name === playbookName,
+    );
+    if (found && Array.isArray(found.SpecialAbilities)) {
+      return found.SpecialAbilities as Array<Record<string, unknown>>;
+    }
+  }
+  return [];
+}
+
+/** Friendly text for playbook op-level errors (ABILITY_MAXED / NOT_FOUND) carried in ApiError bodies. */
+function playbookOpErrorText(err: ApiError): string {
+  const body = err.body;
+  if (body.startsWith("ABILITY_MAXED")) {
+    return "ABILITY_MAXED: that ability is already taken to its limit";
+  }
+  if (body.startsWith("NOT_FOUND")) {
+    return "NOT_FOUND: not on this sheet (removed elsewhere?)";
+  }
+  return `API error (${err.status}): ${body}`;
+}
+
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
@@ -92,6 +133,7 @@ function extractExperienceCondition(
 interface RenderState {
   c: Character;
   gameData: Record<string, unknown> | null;
+  playbookData: Record<string, unknown> | null;
   // Loading flags
   isStressLoading: boolean;
   isStressClearLoading: boolean;
@@ -107,6 +149,9 @@ interface RenderState {
   isSessionLoading: boolean;
   clampNotice: string | null;
   experienceCondition: string | null;
+  // F2p Playbook state
+  isPlaybookLoading: boolean;
+  abilityNotice: string | null;
   // Error / notice
   errorMsg: string | null;
   noticeMsg: string | null;
@@ -137,11 +182,15 @@ interface RenderState {
     onAttributeLevelup: (attribute: string) => void;
     onSessionTrack: (field: keyof SessionFields, next: number) => void;
     onSessionDelta: (field: keyof SessionFields, delta: number) => void;
+    onPlaybookXpDelta: (delta: number) => void;
+    onPlaybookXpClear: () => void;
+    onAbilityTake: () => void;
+    onAbilityRemove: (name: string) => void;
   };
 }
 
 function renderDetail(state: RenderState): HTMLElement {
-  const { c, gameData, handlers, editing } = state;
+  const { c, gameData, playbookData, handlers, editing } = state;
   const status = c.isRetired ? " (retired)" : c.isDeadish ? " (deadish)" : "";
   const traumaList: string[] = Array.isArray(gameData?.Traumas) ? gameData.Traumas as string[] : [];
   const currentTraumas = new Set(c.monitor.trauma.traumas);
@@ -149,7 +198,8 @@ function renderDetail(state: RenderState): HTMLElement {
 
   const anyLoading = state.isStressLoading || state.isStressClearLoading ||
     state.isTraumaLoading || state.isDossierLoading || state.isUndoLoading ||
-    state.isHarmLoading || state.isArmorLoading || state.isHealLoading || state.isClockLoading;
+    state.isHarmLoading || state.isArmorLoading || state.isHealLoading || state.isClockLoading ||
+    state.isTalentsLoading || state.isSessionLoading || state.isPlaybookLoading;
 
   // -- Stress track ---------------------------------------------------------
 
@@ -686,6 +736,132 @@ function renderDetail(state: RenderState): HTMLElement {
       );
     })(),
 
+    // -- Playbook (F2p) -----------------------------------------------------
+
+    (() => {
+      const xp = c.playbook.experience;
+      const takenByName = new Map(
+        c.playbook.abilities.map((a) => [a.name, a]),
+      );
+      const specialAbilities = extractSpecialAbilities(playbookData, gameData, c.playbook.name);
+
+      // Eligible = in the playbook's SpecialAbilities (game data) and either
+      // not taken yet or taken fewer than TimesTakeable (server enforces).
+      const eligible = specialAbilities.filter((sa) => {
+        const name = String(sa.Name);
+        const timesTakeable = typeof sa.TimesTakeable === "number" ? sa.TimesTakeable : 1;
+        const taken = takenByName.get(name);
+        return !taken || taken.timesTaken < timesTakeable;
+      });
+
+      // Playbook XP tracker: points/max with +/− and clear
+      const xpMinusBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || xp.points <= 0,
+        title: "Remove 1 playbook XP",
+      }, "−");
+      xpMinusBtn.addEventListener("click", () => handlers.onPlaybookXpDelta(-1));
+      const xpPlusBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || xp.points >= xp.max,
+        title: "Add 1 playbook XP",
+      }, "+");
+      xpPlusBtn.addEventListener("click", () => handlers.onPlaybookXpDelta(1));
+      const xpClearBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || xp.points === 0,
+        title: "Clear playbook XP",
+      }, "clear");
+      xpClearBtn.addEventListener("click", handlers.onPlaybookXpClear);
+
+      // Taken abilities from the DTO: name, timesTaken, description, remove
+      const abilityEntries = c.playbook.abilities.map((a) =>
+        el("div", {
+          className: "ability-entry",
+          "data-ability": a.name,
+          style: "display: flex; align-items: flex-start; gap: 0.5em; margin: 0.35em 0;",
+        },
+          el("span", { className: "lbl", style: "min-width: 8em;" },
+            a.name,
+            a.timesTaken > 1 ? el("span", { className: "ability-times" }, ` ×${a.timesTaken}`) : null,
+          ),
+          el("p", { className: "serif", style: "flex: 1; margin: 0; font-size: 0.95em;" }, a.description),
+          el("button", {
+            type: "button",
+            disabled: anyLoading,
+            title: `Remove ability: ${a.name}`,
+          }, "✕"),
+        ),
+      );
+      abilityEntries.forEach((entry, idx) => {
+        const btn = entry.querySelector("button");
+        if (btn) {
+          btn.addEventListener("click", () => handlers.onAbilityRemove(c.playbook.abilities[idx]!.name));
+        }
+      });
+
+      // Take menu: native select from game data + <details>/<summary> description
+      const abilitySelect = el("select", {
+        "aria-label": "Take ability",
+        disabled: anyLoading || eligible.length === 0,
+      },
+        el("option", { value: "" }, "--"),
+        ...eligible.map((sa) => el("option", { value: String(sa.Name) }, String(sa.Name))),
+      ) as HTMLSelectElement;
+
+      const abilityDetails = el("details", { className: "ability-description" },
+        el("summary", {}, ""),
+        el("p", {}, ""),
+      );
+      const detailsSummary = abilityDetails.querySelector("summary") as HTMLElement;
+      const detailsBody = abilityDetails.querySelector("p") as HTMLElement;
+      const showAbilityDescription = (name: string) => {
+        const sa = specialAbilities.find((x) => String(x.Name) === name);
+        const desc = sa && typeof sa.Description === "string" ? sa.Description : "";
+        detailsSummary.textContent = name || "—";
+        detailsBody.textContent = desc || "No description available.";
+        abilityDetails.hidden = name === "";
+      };
+      abilitySelect.addEventListener("change", () => showAbilityDescription(abilitySelect.value));
+      if (eligible.length > 0) {
+        abilitySelect.value = String(eligible[0]!.Name);
+      }
+      showAbilityDescription(abilitySelect.value);
+
+      const takeBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || eligible.length === 0,
+        title: "Take ability",
+      }, state.isPlaybookLoading ? "…" : "+");
+      takeBtn.addEventListener("click", handlers.onAbilityTake);
+
+      return el("div", { className: "character-playbook" },
+        el("h2", {}, "Playbook"),
+        el("div", {
+          className: "playbook-xp",
+          style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap;",
+        },
+          el("span", { className: "lbl" }, "Playbook XP:"),
+          el("span", {}, `${xp.points} / ${xp.max}`),
+          xpMinusBtn,
+          xpPlusBtn,
+          xpClearBtn,
+        ),
+        el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Special Abilities"),
+        c.playbook.abilities.length === 0
+          ? el("p", {}, "(none)")
+          : el("div", { style: "display: flex; flex-direction: column;" }, ...abilityEntries),
+        el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
+          abilitySelect,
+          takeBtn,
+          abilityDetails,
+        ),
+        state.abilityNotice
+          ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.abilityNotice)
+          : null,
+      );
+    })(),
+
     // Info
     el(
       "div",
@@ -782,12 +958,17 @@ export function mountCharacterDetailPage(
   let experienceCondition: string | null = null;
   let playbookData: Record<string, unknown> | null = null;
 
+  // F2p Playbook state
+  let isPlaybookLoading = false;
+  let abilityNotice: string | null = null;
+
   const clearNotices = () => {
     errorMsg = null;
     noticeMsg = null;
     undoNotice = null;
     harmSpillNotice = null;
     clampNotice = null;
+    abilityNotice = null;
   };
 
   const refreshAndShowNotice = () => {
@@ -827,6 +1008,7 @@ export function mountCharacterDetailPage(
     program: Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError>,
     onSuccess: (character: Character) => void,
     clearLoading: () => void,
+    onApiError?: (err: ApiError) => string,
   ) => {
     void Effect.runPromise(
       Effect.match(program, {
@@ -837,7 +1019,7 @@ export function mountCharacterDetailPage(
             renderDetailWrapper();
             refreshAndShowNotice();
           } else if (err instanceof ApiError) {
-            errorMsg = `API error (${err.status}): ${err.body}`;
+            errorMsg = onApiError ? onApiError(err) : `API error (${err.status}): ${err.body}`;
             renderDetailWrapper();
           } else if (err instanceof DecodeError) {
             errorMsg = `Invalid response: ${err.message}`;
@@ -1471,6 +1653,84 @@ export function mountCharacterDetailPage(
       if (next < 0 || next > currentCharacter.session.max) return;
       handlers.onSessionTrack(field, next);
     },
+
+    // -- F2p: Playbook handlers --------------------------------------------
+
+    onPlaybookXpDelta: (delta: number) => {
+      if (!currentCharacter || isPlaybookLoading) return;
+      const next = currentCharacter.playbook.experience.points + delta;
+      if (next < 0 || next > currentCharacter.playbook.experience.max) return;
+      isPlaybookLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = playbookXpAdd(characterId, delta, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isPlaybookLoading = false; },
+      );
+    },
+
+    onPlaybookXpClear: () => {
+      if (!currentCharacter || isPlaybookLoading) return;
+      if (currentCharacter.playbook.experience.points === 0) return;
+      isPlaybookLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = playbookXpClear(characterId, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isPlaybookLoading = false; },
+      );
+    },
+
+    onAbilityTake: () => {
+      if (!currentCharacter || isPlaybookLoading) return;
+      const sel = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+      const name = sel?.value || null;
+      if (!name) return;
+      isPlaybookLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = abilityTake(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isPlaybookLoading = false; },
+        playbookOpErrorText,
+      );
+    },
+
+    onAbilityRemove: (name: string) => {
+      if (!currentCharacter || isPlaybookLoading) return;
+      isPlaybookLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = abilityRemove(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isPlaybookLoading = false; },
+        playbookOpErrorText,
+      );
+    },
   };
 
   const renderDetailWrapper = () => {
@@ -1478,6 +1738,7 @@ export function mountCharacterDetailPage(
     setChildren(root, renderDetail({
       c: currentCharacter,
       gameData,
+      playbookData,
       isStressLoading,
       isStressClearLoading,
       isTraumaLoading,
@@ -1491,6 +1752,8 @@ export function mountCharacterDetailPage(
       isSessionLoading,
       clampNotice,
       experienceCondition,
+      isPlaybookLoading,
+      abilityNotice,
       errorMsg,
       noticeMsg,
       undoNotice,

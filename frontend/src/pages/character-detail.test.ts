@@ -1656,4 +1656,273 @@ describe("character-detail page", () => {
       });
     });
   });
+
+  describe("F2p Playbook", () => {
+    /** Character DTO with a populated playbook section. */
+    function playbookDTO(overrides: Record<string, unknown> = {}) {
+      return characterDTO({
+        playbook: {
+          name: "Spider",
+          experience: { points: 4, max: 8 },
+          abilities: [
+            { name: "Battleborn", description: "You may expend your special armor.", timesTaken: 1 },
+            { name: "Veteran", description: "Choose a special ability from another source.", timesTaken: 2 },
+          ],
+        },
+        ...overrides,
+      });
+    }
+
+    /** Playbook settings with SpecialAbilities (game data — the take-menu source). */
+    const PLAYBOOK_ABILITIES_DATA = {
+      Name: "Spider",
+      Hook: "Spiders are good at masterminding maneuvers.",
+      ExperienceCondition: "You addressed a challenge with calculation or conspiracy",
+      SpecialAbilities: [
+        { Name: "Battleborn", TimesTakeable: 1, Description: "You may expend your special armor." },
+        { Name: "Bodyguard", TimesTakeable: 1, Description: "When you protect a teammate, take +1d." },
+        { Name: "Veteran", TimesTakeable: 99, Description: "Choose a special ability from another source." },
+      ],
+      Items: [],
+      Rolodex: { Name: "Shrewd Friends", Friends: [] },
+      DefaultActionPoints: [],
+    };
+
+    const charOpOk = (character: unknown, opName: string) => ({
+      ok: true,
+      character,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    it("renders XP tracker, taken abilities from DTO, and take select from game-data SpecialAbilities", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".character-playbook")).not.toBeNull();
+      });
+
+      // XP tracker shows points/max from the DTO
+      expect(root.querySelector(".playbook-xp")?.textContent).toContain("4 / 8");
+
+      // Taken abilities come from the DTO with description + timesTaken
+      const entries = root.querySelectorAll(".ability-entry");
+      expect(entries.length).toBe(2);
+      const battleborn = root.querySelector('.ability-entry[data-ability="Battleborn"]');
+      expect(battleborn?.textContent).toContain("You may expend your special armor.");
+      const veteran = root.querySelector('.ability-entry[data-ability="Veteran"]');
+      expect(veteran?.textContent).toContain("×2");
+      expect(veteran?.textContent).toContain("Choose a special ability from another source.");
+
+      // Take select: from game-data SpecialAbilities, excluding maxed takes
+      const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+      const options = Array.from(select.options).map((o) => o.value);
+      expect(options).toEqual(["", "Bodyguard", "Veteran"]); // Battleborn excluded (taken == TimesTakeable)
+
+      // <details>/<summary> shows the description of the pre-selected ability
+      const details = root.querySelector(".ability-description");
+      expect(details?.querySelector("summary")?.textContent).toBe("Bodyguard");
+      expect(details?.textContent).toContain("When you protect a teammate, take +1d.");
+    });
+
+    it("XP tracker +/− posts playbookXpAdd and clear posts playbookXpClear", async () => {
+      const added = playbookDTO({
+        revision: 13,
+        playbook: { name: "Spider", experience: { points: 5, max: 8 }, abilities: [] },
+      });
+      const cleared = playbookDTO({
+        revision: 14,
+        playbook: { name: "Spider", experience: { points: 0, max: 8 }, abilities: [] },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(added, "playbook-xp.add")))
+        .mockResolvedValueOnce(ok(charOpOk(playbookDTO(), "playbook-xp.add")))
+        .mockResolvedValueOnce(ok(charOpOk(cleared, "playbook-xp.clear")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 playbook XP"]')).not.toBeNull();
+      });
+
+      // +1 → playbook-xp.add { delta: 1 }
+      (root.querySelector('button[title="Add 1 playbook XP"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/playbook-xp.add`,
+          expect.objectContaining({ body: JSON.stringify({ delta: 1 }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector(".playbook-xp")?.textContent).toContain("5 / 8");
+      });
+
+      // −1 → playbook-xp.add { delta: -1 }
+      (root.querySelector('button[title="Remove 1 playbook XP"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/playbook-xp.add`,
+          expect.objectContaining({ body: JSON.stringify({ delta: -1 }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector(".playbook-xp")?.textContent).toContain("4 / 8");
+      });
+
+      // clear → playbook-xp.clear (no body)
+      (root.querySelector('button[title="Clear playbook XP"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenLastCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/playbook-xp.clear`,
+          expect.objectContaining({ method: "POST" }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector(".playbook-xp")?.textContent).toContain("0 / 8");
+      });
+    });
+
+    it("take posts abilityTake with the selected ability and renders the new entry", async () => {
+      const taken = playbookDTO({
+        revision: 13,
+        playbook: {
+          name: "Spider",
+          experience: { points: 4, max: 8 },
+          abilities: [
+            { name: "Battleborn", description: "You may expend your special armor.", timesTaken: 1 },
+            { name: "Bodyguard", description: "When you protect a teammate, take +1d.", timesTaken: 1 },
+            { name: "Veteran", description: "Choose a special ability from another source.", timesTaken: 2 },
+          ],
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(taken, "ability.take")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Take ability"]')).not.toBeNull();
+      });
+
+      // Select Bodyguard (pre-selected) and take it
+      (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/ability.take`,
+          expect.objectContaining({ body: JSON.stringify({ name: "Bodyguard" }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('.ability-entry[data-ability="Bodyguard"]')).not.toBeNull();
+      });
+    });
+
+    it("remove posts abilityRemove with the ability name", async () => {
+      const removed = playbookDTO({
+        revision: 13,
+        playbook: {
+          name: "Spider",
+          experience: { points: 4, max: 8 },
+          abilities: [{ name: "Veteran", description: "Choose a special ability from another source.", timesTaken: 1 }],
+        },
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok(charOpOk(removed, "ability.remove")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove ability: Battleborn"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Remove ability: Battleborn"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/ability.remove`,
+          expect.objectContaining({ body: JSON.stringify({ name: "Battleborn" }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('.ability-entry[data-ability="Battleborn"]')).toBeNull();
+      });
+    });
+
+    it("shows a friendly notice when abilityTake returns an op-level ABILITY_MAXED error", async () => {
+      const opErr = {
+        ok: false,
+        applied: { op: "ability.take" },
+        sideEffects: [],
+        error: { code: "ABILITY_MAXED", message: "already taken to its limit" },
+        character: playbookDTO(),
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok(opErr));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Take ability"]')).not.toBeNull();
+      });
+
+      (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        const err = root.querySelector(".error");
+        expect(err?.textContent).toContain("ABILITY_MAXED");
+        expect(err?.textContent).toContain("already taken to its limit");
+      });
+    });
+
+    it("falls back to game-data Playbooks SpecialAbilities when the playbook fetch fails", async () => {
+      const gameWithPlaybooks = {
+        ...GAME_DATA,
+        Playbooks: [
+          {
+            Name: "Spider",
+            SpecialAbilities: [
+              { Name: "Bodyguard", TimesTakeable: 1, Description: "When you protect a teammate, take +1d." },
+            ],
+          },
+        ],
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO({ playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] } })))
+        .mockResolvedValueOnce(ok(gameWithPlaybooks));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+        expect(Array.from(select.options).map((o) => o.value)).toEqual(["", "Bodyguard"]);
+      });
+    });
+  });
 });

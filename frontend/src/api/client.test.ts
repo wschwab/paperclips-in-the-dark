@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -3014,6 +3014,345 @@ describe("getPlaybook", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
       expect(result.left.status).toBe(404);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2p operations — playbookXpAdd, playbookXpClear, abilityTake, abilityRemove
+// ---------------------------------------------------------------------------
+
+describe("playbookXpAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/playbook-xp.add with delta and If-Match, decodes character from OperationResult", async () => {
+    const updated = makeChar({
+      revision: 13,
+      playbook: {
+        name: "Spider",
+        experience: { points: 5, max: 8 },
+        abilities: [],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      playbookXpAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 1, 12),
+    );
+    expect(result.playbook.experience.points).toBe(5);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/playbook-xp.add",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ delta: 1 }),
+      },
+    );
+  });
+
+  it("exposes ApiError with the error code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("playbook-xp.add", "VALIDATION", "delta out of range", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(playbookXpAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", -5, 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("playbook-xp.add", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(playbookXpAdd("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(playbookXpAdd("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("playbookXpClear", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/playbook-xp.clear with no body and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      playbook: {
+        name: "Spider",
+        experience: { points: 0, max: 8 },
+        abilities: [],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      playbookXpClear("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+    );
+    expect(result.playbook.experience.points).toBe(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/playbook-xp.clear",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("playbook-xp.clear", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(playbookXpClear("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      text: async () => "VALIDATION",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(playbookXpClear("some-id", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+describe("abilityTake", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/ability.take with name and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      playbook: {
+        name: "Spider",
+        experience: { points: 4, max: 8 },
+        abilities: [
+          { name: "Calculated", description: "When you calculate.", timesTaken: 1 },
+        ],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      abilityTake("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Calculated", 12),
+    );
+    expect(result.playbook.abilities).toHaveLength(1);
+    expect(result.playbook.abilities[0]?.name).toBe("Calculated");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/ability.take",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ name: "Calculated" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with ABILITY_MAXED code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("ability.take", "ABILITY_MAXED", "already taken to its limit", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(abilityTake("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Veteran", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("ABILITY_MAXED");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("ability.take", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(abilityTake("some-id", "Veteran", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(abilityTake("some-id", "Veteran", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
+    }
+  });
+});
+
+describe("abilityRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/ability.remove with name and If-Match", async () => {
+    const updated = makeChar({
+      revision: 13,
+      playbook: {
+        name: "Spider",
+        experience: { points: 4, max: 8 },
+        abilities: [],
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(opOk(updated)),
+    });
+
+    const result = await Effect.runPromise(
+      abilityRemove("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Calculated", 12),
+    );
+    expect(result.playbook.abilities).toHaveLength(0);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/ability.remove",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ name: "Calculated" }),
+      },
+    );
+  });
+
+  it("exposes ApiError with NOT_FOUND code when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(charOpErr("ability.remove", "NOT_FOUND", "no such ability", makeChar())),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(abilityRemove("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Nope", 12)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("ability.remove", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(abilityRemove("some-id", "Calculated", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+
+  it("exposes ApiError on non-409 failure", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () => "bad request",
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(abilityRemove("some-id", "Calculated", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(400);
     }
   });
 });
