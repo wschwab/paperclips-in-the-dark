@@ -348,6 +348,42 @@ package body Pitd_Callback is
       return True;
    end Can_Take_More;
 
+
+   --  A13: description for an ability from game data (used on new append).
+   --  Character: Game(stem) Playbooks[].SpecialAbilities[].Description where
+   --  Name matches; crew: Game(stem & "-crews") CrewTypes[].SpecialAbilities[].
+   --  Missing game data / unknown ability keeps the historical empty string.
+   function Ability_Description (Kind, Name : String; E : JSON_Value) return String is
+      Group : constant String := (if Kind = "crew" then "CrewTypes" else "Playbooks");
+      Type_Name : constant String :=
+        (if Kind = "crew" then Str_Field (E, "crewTypeName")
+         else Str_Field (Get (E, "playbook"), "name"));
+      G : constant JSON_Value :=
+        Game (Str_Field (E, "gameStem") & (if Kind = "crew" then "-crews" else ""));
+   begin
+      if G.Kind /= JSON_Object_Type or else not Has_Field (G, Group) then return ""; end if;
+      declare
+         Types : constant JSON_Array := Get (G, Group);
+      begin
+         for I in 1 .. Length (Types) loop
+            declare T : constant JSON_Value := Get (Types, I); begin
+               if Str_Field (T, "Name") = Type_Name and then Has_Field (T, "SpecialAbilities") then
+                  declare
+                     Ab : constant JSON_Array := Get (T, "SpecialAbilities");
+                  begin
+                     for J in 1 .. Length (Ab) loop
+                        if Str_Field (Get (Ab, J), "Name") = Name then
+                           return Str_Field (Get (Ab, J), "Description");
+                        end if;
+                     end loop;
+                  end;
+               end if;
+            end;
+         end loop;
+      end;
+      return "";
+   end Ability_Description;
+
    function New_Character (Stem, Playbook : String) return JSON_Value is
       G : constant JSON_Value := Game (Stem);
       Id : constant String := New_Id;
@@ -359,9 +395,9 @@ package body Pitd_Callback is
         & """,""gameName"":""" & Str_Field (G, "Name") & """,""language"":"""
         & Str_Field (G, "Language", "English") & """,""revision"":1,""formatVersion"":1,""createdAt"":"""
         & T & """,""updatedAt"":""" & T
-        & """,""isRetired"":false,""isDeadish"":false,""dossier"":{""name"":"""",""crewId"":"""",""alias"":"""",""look"":"""",""notes"":"""",""background"":{""name"":"""",""description"":""""},""heritage"":{""name"":"""",""description"":""""},""vice"":{""name"":"""",""description"":""""}},""monitor"":{""stress"":{""current"":0,""max"":9},""trauma"":{""traumas"":[],""max"":4},""harm"":{""lesser"":[],""moderate"":[],""severe"":[],""fatal"":[],""healingClock"":{""segments"":0,""size"":"
+        & """,""isRetired"":false,""isDeadish"":false,""dossier"":{""name"":"""",""crewId"":"""",""alias"":"""",""look"":"""",""notes"":[],""background"":{""name"":"""",""description"":""""},""heritage"":{""name"":"""",""description"":""""},""vice"":{""name"":"""",""description"":"""",""purveyor"":{""name"":"""",""description"":""""}}},""monitor"":{""stress"":{""current"":0,""max"":9},""trauma"":{""traumas"":[],""max"":4},""harm"":{""lesser"":[],""moderate"":[],""severe"":[],""fatal"":[],""healingClock"":{""segments"":0,""size"":"
         & Trim_Image (Int_Field (G, "RecoveryClockSize", 4))
-        & ",""rollover"":0}},""armor"":{""standardUsed"":false,""heavyUsed"":false,""specialUsed"":false,""hasStandard"":false,""hasHeavy"":false,""hasSpecial"":false}},""talent"":{""attributes"":[]},""playbook"":{""name"":"""
+        & ",""rollover"":0}},""armor"":{""standardUsed"":false,""heavyUsed"":false,""specialUsed"":false,""hasStandard"":true,""hasHeavy"":true,""hasSpecial"":false}},""talent"":{""attributes"":[]},""playbook"":{""name"":"""
         & Playbook & """,""experience"":{""points"":0,""max"":8},""abilities"":[]},""gear"":{""loadout"":[],""availableGear"":[],""commitment"":""none"",""isCommitmentLocked"":false,""maxBulk"":9},""fund"":{""satchel"":{""coins"":2,""max"":4},""stash"":{""coins"":0,""max"":40}},""rolodex"":{""friends"":[]},""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":3},""notebook"":""""}";
    begin
       C := Read (Template);
@@ -398,7 +434,7 @@ package body Pitd_Callback is
       return Read ("{""kind"":""crew"",""id"":""" & Id & """,""gameStem"":""" & Stem
         & """,""gameName"":""" & Str_Field (G,"Name") & """,""language"":""" & Str_Field (G,"Language","English")
         & """,""revision"":1,""formatVersion"":1,""createdAt"":""" & T & """,""updatedAt"":""" & T
-        & """,""crewTypeName"":""" & Crew_Type & """,""name"":"""",""lair"":"""",""reputation"":"""",""huntingGrounds"":"""",""tier"":0,""hold"":""weak"",""heat"":{""current"":0,""max"":9},""wanted"":{""current"":0,""max"":4},""rep"":{""current"":0,""max"":12},""experience"":{""points"":0,""max"":10},""specialAbilities"":[],""upgrades"":[],""cohorts"":[],""contacts"":[],""factions"":[],""coin"":0,""stash"":0,""notes"":""""}");
+        & """,""crewTypeName"":""" & Crew_Type & """,""name"":"""",""lair"":"""",""reputation"":"""",""huntingGrounds"":"""",""tier"":0,""hold"":""weak"",""heat"":{""current"":0,""max"":9},""wanted"":{""current"":0,""max"":4},""rep"":{""current"":0,""max"":12},""experience"":{""points"":0,""max"":10},""specialAbilities"":[],""upgrades"":[],""cohorts"":[],""contacts"":[],""factions"":[],""coin"":0,""stash"":0,""turf"":0,""notes"":[]}");
    end New_Crew;
 
    function New_Clock (B : JSON_Value) return JSON_Value is
@@ -426,9 +462,10 @@ package body Pitd_Callback is
 
       if Op = "stress.add" then
          Target := Get (Get (E,"monitor"),"stress"); Requested := Int_Field (B,"delta");
-         Core_Clamp_Add (Natural (Int_Field (Target,"current")), Natural (Int_Field (Target,"max")), Natural'Max (0, Requested), New_Value, Applied);
-         Set_Field (Target,"current",Integer (New_Value)); Effective := Integer (Applied);
-         return Success_Result (Op,E,Requested,Effective, Side => (if New_Value = Natural (Int_Field (Target,"max")) then "stress full — consider trauma" else ""));
+         if Requested >= 0 then Core_Clamp_Add (Natural (Int_Field (Target,"current")), Natural (Int_Field (Target,"max")), Natural (Requested), New_Value, Applied);
+         else Core_Clamp_Subtract (Natural (Int_Field (Target,"current")), Natural (Int_Field (Target,"max")), Natural (-Requested), New_Value, Applied); end if;
+         Set_Field (Target,"current",Integer (New_Value)); Effective := (if Requested >= 0 then Integer (Applied) else -Integer (Applied));
+         return Success_Result (Op,E,Requested,Effective, Side => (if Requested >= 0 and then New_Value = Natural (Int_Field (Target,"max")) then "stress full — consider trauma" else ""));
       elsif Op = "stress.clear" then declare X : constant JSON_Value := Get (Get (E,"monitor"),"stress"); begin Set_Field (X,"current",Integer'(0)); end;
       elsif Op = "trauma.add" or else Op = "trauma.remove" then
          declare T : constant JSON_Value := Get(Get(E,"monitor"),"trauma"); A : constant JSON_Array := Get(T,"traumas"); O : JSON_Array:=Empty_Array; Name:constant String:=Str_Field(B,"trauma"); Found:Boolean:=False; begin
@@ -475,7 +512,7 @@ package body Pitd_Callback is
             end loop;
             if not Found then declare X:JSON_Value:=Create_Object;begin
                Set_Field(X,"name",Name);
-               if Kind="character" then Set_Field(X,"description","");end if;
+               Set_Field(X,"description",Ability_Description(Kind,Name,E));
                Set_Field(X,"timesTaken",Integer'(1));
                Append(O,X);Set_Field(P,Field,O);
             end;end if;
@@ -511,6 +548,22 @@ package body Pitd_Callback is
       elsif Op="faction.set-status" then declare G:constant JSON_Value:=Game(Str_Field(E,"gameStem"));Lo:Integer:=Integer'First;Hi:Integer:=Integer'Last;begin if G.Kind=JSON_Object_Type and then Has_Field(G,"FactionStatus") then declare FS:constant JSON_Value:=Get(G,"FactionStatus");begin Lo:=Int_Field(FS,"Min",Integer'First);Hi:=Int_Field(FS,"Max",Integer'Last);end;end if;declare A:constant JSON_Array:=(if Has_Field(E,"factions") then Get(E,"factions") else Empty_Array);Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin Requested:=Int_Field(B,"status");Effective:=Integer'Min(Integer'Max(Requested,Lo),Hi);for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Set_Field(Get(A,I),"status",Effective);Found:=True;end if;end loop;if not Found then declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin Set_Field(X,"name",Name);Set_Field(X,"status",Effective);Append(O,X);Set_Field(E,"factions",O);end;end if;end;return Success_Result(Op,E,Requested,Effective);end;
       elsif Op="faction.remove" then declare A:constant JSON_Array:=(if Has_Field(E,"factions") then Get(E,"factions") else Empty_Array);O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Error_Result(Op,"NOT_FOUND","faction not found",E);end if;Set_Field(E,"factions",O);end;
       elsif Op="dossier.update" then declare D:constant JSON_Value:=Get(E,"dossier");procedure Copy(Name:UTF8_String;Value:JSON_Value)is begin if Has_Field(D,Name) then Set_Field(D,Name,Clone(Value));end if;end;begin if Str_Field(B,"crewId")/="" and then Read_Entity("crew",Str_Field(B,"crewId")).Kind/=JSON_Object_Type then return Error_Result(Op,"VALIDATION","unknown crew",E);end if;Map_JSON_Object(B,Copy'Access);end;
+      elsif Op = "note.add" or else Op = "note.remove" then
+         declare
+            P : constant JSON_Value := (if Kind = "character" then Get (E,"dossier") else E);
+            A : constant JSON_Array := (if Has_Field (P,"notes") then Get (P,"notes") else Empty_Array);
+            O : JSON_Array := Empty_Array; Idx : Natural := 0; Found : Boolean := False;
+         begin
+            if Op = "note.add" then O := A; Append (O, Create (Str_Field (B,"text")));
+            else
+               Idx := Natural (Int_Field (B,"index"));
+               for I in 1 .. Length (A) loop
+                  if I - 1 = Idx then Found := True; else Append (O, Get (A,I)); end if;
+               end loop;
+               if not Found then return Error_Result (Op,"NOT_FOUND","note index out of range",E); end if;
+            end if;
+            Set_Field (P,"notes",O);
+         end;
       elsif Op = "heat.add" or else Op = "wanted.add" or else Op = "rep.add" then
          declare Name : constant String := (if Op="heat.add" then "heat" elsif Op="wanted.add" then "wanted" else "rep"); begin
             Target:=Get(E,Name);Requested:=Int_Field(B,"delta");
@@ -532,6 +585,13 @@ package body Pitd_Callback is
                Effective := Integer(New_Value) - Cur;
             end if;
             Set_Field(E,Name,Integer(New_Value));return Success_Result(Op,E,Requested,Effective);
+         end;
+      elsif Op = "turf.add" then
+         if Kind /= "crew" then return Error_Result (Op,"VALIDATION","crew-only operation",E); end if;
+         declare Cur : constant Integer := Int_Field (E,"turf"); Req : constant Integer := Int_Field (B,"delta"); begin
+            Requested := Req;
+            Effective := Integer'Min (Integer'Max (Req, -Cur), 6 - Cur);
+            Set_Field (E,"turf",Cur + Effective); return Success_Result (Op,E,Requested,Effective);
          end;
       elsif Op = "xp.add" then
          if Kind /= "crew" then return Error_Result(Op,"VALIDATION","crew-only operation",E); end if;
