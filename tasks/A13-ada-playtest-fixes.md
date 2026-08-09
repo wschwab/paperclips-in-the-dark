@@ -21,3 +21,12 @@ C# refs: Armor.cs (standard/heavy available by default), DossierVice.cs
 
 ## Log
 - 2026-08-09: filed from playtest round 1 plan.
+- 2026-08-09/10: DONE in three narrow dispatches (A13a stress/armor/desc,
+  A13b notes/turf/vice DTO+ops, A13c heal-targeting + Mastery gating) — the
+  broad single-prompt A13 died silently mid-implementation, so it was split.
+  Orchestrator verified each part (build + own probes + full conformance):
+  stress -2 reduces (floor 0, signed effective), armor standard/heavy
+  available, ability.take description from game data, notes[] add/remove
+  (NOT_FOUND), turf.add clamp 0..6 crew-only, harm.heal strict targeting
+  (NOT_FOUND, no shifting, clock reset), Mastery cap 3→4 (RATING_MAXED).
+  Conformance 176/176 green (8 new cases).

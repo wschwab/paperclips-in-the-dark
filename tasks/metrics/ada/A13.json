@@ -1,0 +1,18 @@
+{
+  "task": "A13",
+  "track": "ada",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous via prime-agent rlm), 3 narrow dispatches",
+  "reviewAgent": "claude-opus (prime-agent orchestrator)",
+  "date": "2026-08-10",
+  "iterationsToGreen": 3,
+  "iterationNotes": "Broad A13 prompt died silently (7 changes too many); split into A13a/A13b/A13c each verified independently. All claims reproduced by orchestrator probes + conformance.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "Conformance 168->176 (8 new: 4 C4 + 4 A13). Mastery gating reads crew Mastery boxesMarked vs game-data TotalBoxes; heal no longer auto-shifts."
+}
