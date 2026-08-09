@@ -73,7 +73,12 @@ function getNamedValue(c: Character, key: "background" | "heritage" | "vice", fi
 }
 
 function getDossierValue(c: Character, field: DossierField): string {
-  if (typeof field === "string") return c.dossier[field];
+  if (typeof field === "string") {
+    const v = c.dossier[field];
+    // notes is string[] per C4 (legacy single string still decodes)
+    if (typeof v === "string") return v;
+    return v.join(", ");
+  }
   return getNamedValue(c, field.key, field.field);
 }
 
@@ -438,9 +443,20 @@ function renderDetail(state: RenderState): HTMLElement {
         value: editing!.value,
         "aria-label": label,
       }) as HTMLInputElement;
+      // F2aa: keep the typed text in the editing state, and let ENTER save /
+      // ESC cancel without a form-submit reload. TAB flows naturally through
+      // input → ✓ → ✕ in document order (no form wrapper to trap it).
       input.addEventListener("input", () => {
-        // Update the editing state inline
-        (input as HTMLElement & { _field?: DossierField })._field = field;
+        editing!.value = input.value;
+      });
+      input.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          handlers.onDossierSave();
+        } else if (ev.key === "Escape") {
+          ev.preventDefault();
+          handlers.onDossierCancel();
+        }
       });
 
       const saveBtn = el("button", { type: "button", title: "Save" }, "✓");
@@ -564,7 +580,10 @@ function renderDetail(state: RenderState): HTMLElement {
                   ? el("button", {
                     type: "button",
                     disabled: anyLoading,
-                    title: `Remove harm: ${text}`,
+                    // F2aa: harm removal is a clerical-error correction, not
+                    // the normal healing path — the button reads as a subtle
+                    // ghost icon (see .harm-remove-btn in components.css).
+                    title: "Remove (clerical error)",
                     className: "harm-remove-btn",
                   }, "✕")
                   : null,
@@ -726,6 +745,7 @@ function renderDetail(state: RenderState): HTMLElement {
               name: action.name,
               value: action.rating,
               max: action.maxRating,
+              title: desc ?? undefined,
               onChange: (next) => handlers.onActionSetRating(attr.name, action.name, next),
             });
             const minusBtn = el("button", {
@@ -748,11 +768,8 @@ function renderDetail(state: RenderState): HTMLElement {
               "data-action": action.name,
               style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.25em 0;",
             },
-              el("span", {
-                className: "lbl",
-                style: "min-width: 6em;",
-                title: desc ?? undefined,
-              }, action.name),
+              // F2aa: one clean name per action — the underlined .action-name
+              // inside the dots component carries the tooltip now.
               dots,
               minusBtn,
               plusBtn,
@@ -1353,13 +1370,21 @@ function renderDetail(state: RenderState): HTMLElement {
       undoBtn,
     ),
 
-    // Notes
-    el(
-      "div",
-      { className: "character-notes" },
-      el("h2", {}, "Notes"),
-      el("p", {}, c.dossier.notes || "(no notes)"),
-    ),
+    // Notes (C4: an array of entries; legacy single string still decodes)
+    (() => {
+      const notes = c.dossier.notes;
+      const entries = Array.isArray(notes) ? notes : notes ? [notes] : [];
+      const notesBody = entries.length > 0
+        ? el("ul", { className: "note-list" },
+            ...entries.map((n) => el("li", {}, n)))
+        : el("p", {}, "(no notes)");
+      return el(
+        "div",
+        { className: "character-notes" },
+        el("h2", {}, "Notes"),
+        notesBody,
+      );
+    })(),
   );
 }
 
@@ -1828,7 +1853,7 @@ export function mountCharacterDetailPage(
       isDossierLoading = true;
       clearNotices();
       const field = editing.field;
-      const value = getDossierValue(currentCharacter, field);
+      const value = editing.value;
       editing = null;
       renderDetailWrapper();
 

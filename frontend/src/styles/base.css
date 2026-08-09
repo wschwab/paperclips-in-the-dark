@@ -160,6 +160,53 @@ button:active {
   background: var(--surface-sunk);
 }
 
+/* ── Form controls (F2aa) ─────────────────────────────────
+ * Native <select>, <input>, <textarea> share the sheet furniture language:
+ * Oswald labels are the page's job — the controls themselves inherit the
+ * body font, sit on raised paper, and draw a blood ring on focus like every
+ * other interactive element. Selects keep the native arrow (accessibility /
+ * OS behavior); the frame and type match the theme tokens. */
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: var(--border-thin) solid var(--rule-heavy);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  transition: border-color var(--transition-fast),
+              background var(--transition-fast);
+}
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--rule-heavy);
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: var(--border-thick) solid var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: calc(var(--radius) + 1px);
+}
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: default;
+  opacity: 0.55;
+  background: var(--surface-sunk);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+select option {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
 /* health page (F0) keeps working under the themed shell */
 .health,
 .health-error,

@@ -678,6 +678,72 @@ describe("crew-detail page", () => {
       expect(root.textContent).toContain("Northside safehouse");
     });
 
+    it("ENTER in a profile input saves the typed value via crewFieldsUpdate — F2aa", async () => {
+      const updated = crewDTO({ revision: 6, name: "Renamed Crew" });
+      const fieldsOk = {
+        ok: true,
+        crew: updated,
+        applied: { op: "fields.update" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(fieldsOk));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("The Red Sashes");
+      });
+
+      (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+
+      const input = root.querySelector('input[aria-label="Name"]') as HTMLInputElement;
+      expect(input).not.toBeNull();
+      input.value = "Renamed Crew";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+      );
+
+      await vi.waitFor(() => {
+        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/fields.update"));
+        expect(updateCall).toBeTruthy();
+        expect(updateCall![1].body).toBe(JSON.stringify({ name: "Renamed Crew" }));
+        expect(updateCall![1].headers["If-Match"]).toBe("5");
+      });
+    });
+
+    it("TAB order in a profile edit is input → save → cancel (natural document order) — F2aa", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("The Red Sashes");
+      });
+
+      (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+
+      const input = root.querySelector('input[aria-label="Name"]') as HTMLInputElement;
+      const saveBtn = root.querySelector('button[title="Save"]') as HTMLButtonElement;
+      const cancelBtn = root.querySelector('button[title="Cancel"]') as HTMLButtonElement;
+      expect(input).not.toBeNull();
+      expect(saveBtn).not.toBeNull();
+      expect(cancelBtn).not.toBeNull();
+
+      const following = (a: Element, b: Element) =>
+        (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+      expect(following(input, saveBtn)).toBe(true);
+      expect(following(saveBtn, cancelBtn)).toBe(true);
+    });
+
     it("rep +/− and box click issue rep.add with the right delta", async () => {
       const repResp = {
         ok: true,

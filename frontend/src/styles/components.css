@@ -213,6 +213,33 @@
   background: var(--accent);
   font-weight: 700;
 }
+/* F2aa: harm-table remove is a subtle ghost icon — low-contrast, small,
+ * hover-only emphasis. Healing clocks are the normal removal path; this
+ * button exists only to correct clerical errors. */
+.harm-remove-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color var(--transition-fast),
+              background var(--transition-fast);
+}
+.harm-remove-btn:hover {
+  color: var(--accent);
+  background: var(--surface-sunk);
+}
+.harm-remove-btn:focus-visible {
+  outline-color: var(--accent);
+}
+.harm-remove-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
 .harm-slot {
   display: inline-block;
   width: 1.4em;

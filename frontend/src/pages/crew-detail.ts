@@ -179,6 +179,15 @@ function boxTrack(opts: {
   return row;
 }
 
+/**
+ * Normalize the C4 notes field (string[] or legacy single string) to plain
+ * display text. Notes are not in the free-text profile-edit payload path.
+ */
+function notesToText(value: string | readonly string[]): string {
+  if (typeof value === "string") return value;
+  return value.length > 0 ? value.join(", ") : "";
+}
+
 /** One bounded tracker: box row + current/max + -/+ buttons. */
 function renderTracker(
   state: RenderState,
@@ -361,7 +370,10 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   const profileFields = (["name", "lair", "huntingGrounds", "reputation", "notes"] as const)
     .map((field) => {
       const label = CREW_FIELD_LABELS[field];
-      const displayValue = c[field] || "(not set)";
+      // notes is string[] per C4 (legacy single string still decodes);
+      // flatten to text for the read row and the inline editor.
+      const displayValue =
+        field === "notes" ? notesToText(c.notes) || "(not set)" : c[field] || "(not set)";
       const isEditing = state.editingProfile?.field === field;
       if (isEditing) {
         const input = el("input", {
@@ -372,6 +384,17 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         }) as HTMLInputElement;
         input.addEventListener("input", () => {
           if (state.editingProfile) state.editingProfile.value = input.value;
+        });
+        // F2aa: ENTER saves (same as the checkmark), ESC cancels, TAB moves
+        // through input → ✓ → ✕ in natural document order.
+        input.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") {
+            ev.preventDefault();
+            handlers.onProfileSave();
+          } else if (ev.key === "Escape") {
+            ev.preventDefault();
+            handlers.onProfileCancel();
+          }
         });
         const saveBtn = el("button", {
           type: "button",
@@ -1555,7 +1578,10 @@ export function mountCrewDetailPage(
 
     onProfileEdit: (field: CrewField) => {
       if (!currentCrew || editingProfile !== null) return;
-      editingProfile = { field, value: currentCrew[field] };
+      editingProfile = {
+        field,
+        value: field === "notes" ? notesToText(currentCrew.notes) : currentCrew[field],
+      };
       renderDetail();
     },
 

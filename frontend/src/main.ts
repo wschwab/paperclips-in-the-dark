@@ -44,7 +44,13 @@ function render(): void {
   disposePage?.();
   disposePage = undefined;
 
-  const path = currentPath();
+  let path = currentPath();
+  // F2aa: the default route lands on the roster. "/" (the old F0 health
+  // landing) redirects to /roster so the app opens on the campaign roster.
+  if (path === "/") {
+    window.history.replaceState({}, "", "/roster");
+    path = "/roster";
+  }
   const { shell, outlet } = renderShell({ currentPath: path });
   setChildren(app, shell);
 
@@ -158,7 +164,8 @@ function render(): void {
     return;
   }
 
-  // default: health (F0)
+  // unknown-path default: health page (F0). The app's real landing route is
+  // "/roster" (F2aa: "/" redirects above).
   document.title = "Paperclips in the Dark";
   const intro = el(
     "div",

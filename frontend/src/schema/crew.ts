@@ -5,6 +5,7 @@ import {
   CohortType,
   Experience,
   FormatVersion,
+  Notes,
   GameStem,
   Hold,
   Revision,
@@ -75,7 +76,7 @@ export const Crew = Schema.Struct({
   factions: Schema.optional(Schema.Array(Faction)),
   coin: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   stash: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
-  notes: Schema.String,
+  notes: Notes,
 }).pipe(Schema.annotations({ identifier: "Crew" }));
 
 export type Crew = typeof Crew.Type;

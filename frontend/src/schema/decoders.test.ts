@@ -3,7 +3,13 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Either } from "effect";
 import { describe, expect, it } from "vitest";
-import { decodeHealth, decodeHealthEither, decodeRoster } from "./campaign.js";
+import {
+  decodeHealth,
+  decodeHealthEither,
+  decodeHistoryEntry,
+  decodeHistoryEntryEither,
+  decodeRoster,
+} from "./campaign.js";
 import { decodeCharacter, decodeCharacterEither } from "./character.js";
 import { decodeClock, decodeClockEither } from "./clock.js";
 import { decodeCrew, decodeCrewEither } from "./crew.js";
@@ -267,3 +273,34 @@ describe("OperationResult decoder", () => {
     expect(Either.isLeft(result)).toBe(true);
   });
 });
+
+describe("HistoryEntry decoder (F2aa)", () => {
+  it("decodes a snapshotId emitted by the Ada server (UUID)", () => {
+    const entry = decodeHistoryEntry({
+      snapshotId: "22a96212-1d82-45c5-8116-245196a8150b",
+      takenAt: "2026-08-09T12:00:00.000Z",
+      op: "stress.add",
+    });
+    expect(entry.snapshotId).toBe("22a96212-1d82-45c5-8116-245196a8150b");
+    expect(entry.op).toBe("stress.add");
+  });
+
+  it("still decodes a legacy C#-era snapshot id", () => {
+    const entry = decodeHistoryEntry({
+      snapshotId: "638355680000000000-abc123",
+      takenAt: "2026-08-09T12:00:00.000Z",
+      op: "crew.undo",
+    });
+    expect(entry.snapshotId).toBe("638355680000000000-abc123");
+  });
+
+  it("rejects an empty snapshotId", () => {
+    const result = decodeHistoryEntryEither({
+      snapshotId: "",
+      takenAt: "2026-08-09T12:00:00.000Z",
+      op: "stress.add",
+    });
+    expect(Either.isLeft(result)).toBe(true);
+  });
+});
+

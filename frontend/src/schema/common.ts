@@ -53,6 +53,16 @@ export const NamedDescription = Schema.Struct({
 }).pipe(Schema.annotations({ identifier: "NamedDescription" }));
 export type NamedDescription = typeof NamedDescription.Type;
 
+/**
+ * Free-text notes (C4 playtest change): an array of string entries.
+ * Accepts a legacy single string too, so older payloads keep decoding.
+ */
+export const Notes = Schema.Union(
+  Schema.Array(Schema.String),
+  Schema.String,
+).pipe(Schema.annotations({ identifier: "Notes" }));
+export type Notes = typeof Notes.Type;
+
 export const HarmIntensity = Schema.Literal(
   "lesser",
   "moderate",

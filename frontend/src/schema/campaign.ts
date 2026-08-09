@@ -78,9 +78,14 @@ export const decodeRoster = Schema.decodeUnknownSync(Roster);
 export const decodeRosterEither = Schema.decodeUnknownEither(Roster);
 
 export const HistoryEntry = Schema.Struct({
-  snapshotId: Schema.String.pipe(Schema.pattern(/^[0-9]{17}-[A-Za-z0-9]+$/)),
+  // C#-era snapshots were "<17-digit-ticks>-<id>"; the Ada server emits UUIDs
+  // (e.g. 22a96212-1d82-45c5-8116-245196a8150b). Accept any non-empty string.
+  snapshotId: Schema.String.pipe(Schema.minLength(1)),
   takenAt: Timestamp,
   op: Schema.String,
 }).pipe(Schema.annotations({ identifier: "HistoryEntry" }));
 
 export type HistoryEntry = typeof HistoryEntry.Type;
+
+export const decodeHistoryEntry = Schema.decodeUnknownSync(HistoryEntry);
+export const decodeHistoryEntryEither = Schema.decodeUnknownEither(HistoryEntry);

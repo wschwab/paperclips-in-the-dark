@@ -14,10 +14,11 @@ export function renderShell(opts: ShellOptions): {
   shell: HTMLElement;
   outlet: HTMLElement;
 } {
+  // F2aa: "/" redirects to /roster (the app's landing page), so the nav
+  // leads with Roster instead of the F0 health check.
   const nav = el(
     "nav",
     { "aria-label": "Primary" },
-    navLink("/", "Health", opts.currentPath),
     navLink("/roster", "Roster", opts.currentPath),
     navLink("/styleguide", "Style guide", opts.currentPath),
     mountThemeControls(),
