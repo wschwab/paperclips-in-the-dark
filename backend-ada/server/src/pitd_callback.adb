@@ -384,6 +384,56 @@ package body Pitd_Callback is
       return "";
    end Ability_Description;
 
+   --  A13c: Mastery-gated cap for action ratings.  The cap is 4 when the
+   --  character's crew has the Mastery upgrade fully marked (boxesMarked >=
+   --  TotalBoxes); otherwise 3.  TotalBoxes comes from the crew-type game
+   --  data (Game(stem & "-crews") CrewTypes[].Upgrades[] where Name="Mastery"),
+   --  falling back to 4 when the game data lookup fails.  Characters with no
+   --  crew (or an unreadable crew) cap at 3.
+   function Rating_Cap (E : JSON_Value) return Integer is
+      Crew_Id : constant String := Str_Field (Get (E, "dossier"), "crewId");
+   begin
+      if Crew_Id = "" then return 3; end if;
+      declare
+         Crew : constant JSON_Value := Read_Entity ("crew", Crew_Id);
+      begin
+         if Crew.Kind /= JSON_Object_Type then return 3; end if;
+         declare
+            G : constant JSON_Value := Game (Str_Field (Crew, "gameStem") & "-crews");
+            Marked : Integer := 0; Total : Integer := 4;
+         begin
+            if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes") then
+               declare Types : constant JSON_Array := Get (G, "CrewTypes"); begin
+                  for I in 1 .. Length (Types) loop
+                     declare T : constant JSON_Value := Get (Types, I); begin
+                        if Str_Field (T, "Name") = Str_Field (Crew, "crewTypeName")
+                          and then Has_Field (T, "Upgrades") then
+                           declare Up : constant JSON_Array := Get (T, "Upgrades"); begin
+                              for J in 1 .. Length (Up) loop
+                                 if Str_Field (Get (Up, J), "Name") = "Mastery" then
+                                    Total := Int_Field (Get (Up, J), "TotalBoxes", 4);
+                                 end if;
+                              end loop;
+                           end;
+                        end if;
+                     end;
+                  end loop;
+               end;
+            end if;
+            if Has_Field (Crew, "upgrades") then
+               declare Up : constant JSON_Array := Get (Crew, "upgrades"); begin
+                  for I in 1 .. Length (Up) loop
+                     if Str_Field (Get (Up, I), "name") = "Mastery" then
+                        Marked := Int_Field (Get (Up, I), "boxesMarked", 0);
+                     end if;
+                  end loop;
+               end;
+            end if;
+            return (if Marked >= Total then 4 else 3);
+         end;
+      end;
+   end Rating_Cap;
+
    function New_Character (Stem, Playbook : String) return JSON_Value is
       G : constant JSON_Value := Game (Stem);
       Id : constant String := New_Id;
@@ -491,9 +541,9 @@ package body Pitd_Callback is
          Set_Field(Target,"points",Integer(New_Value)); Effective:=Integer(Applied); return Success_Result(Op,E,Requested,Effective);
       elsif Op = "playbook-xp.clear" then declare X : constant JSON_Value := Get(Get(E,"playbook"),"experience"); begin Set_Field(X,"points",Integer'(0)); end;
       elsif Op = "action.set-rating" then
-         declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"action");Rating:constant Integer:=Int_Field(B,"rating");Found:Boolean:=False;begin if Rating<0 then return Error_Result(Op,"VALIDATION","invalid action rating",E);end if;for I in 1..Length(Attrs) loop declare Acts:constant JSON_Array:=Get(Get(Attrs,I),"actions");begin for J in 1..Length(Acts) loop declare X:constant JSON_Value:=Get(Acts,J);begin if Str_Field(X,"name")=Name then Set_Field(X,"rating",Integer'Min(Rating,Int_Field(X,"maxRating")));Found:=True;end if;end;end loop;end;end loop;if not Found then return Error_Result(Op,"VALIDATION","unknown action",E);end if;end;
+         declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"action");Rating:constant Integer:=Int_Field(B,"rating");Found:Boolean:=False;begin if Rating<0 then return Error_Result(Op,"VALIDATION","invalid action rating",E);end if;if Rating>Rating_Cap(E) then return Error_Result(Op,"RATING_MAXED","action rating capped by Mastery",E);end if;for I in 1..Length(Attrs) loop declare Acts:constant JSON_Array:=Get(Get(Attrs,I),"actions");begin for J in 1..Length(Acts) loop declare X:constant JSON_Value:=Get(Acts,J);begin if Str_Field(X,"name")=Name then Set_Field(X,"rating",Integer'Min(Rating,Int_Field(X,"maxRating")));Found:=True;end if;end;end loop;end;end loop;if not Found then return Error_Result(Op,"VALIDATION","unknown action",E);end if;end;
       elsif Op = "attribute-xp.add" or else Op = "attribute-xp.clear" or else Op="attribute.levelup" then
-         declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"attribute");Found:Boolean:=False;begin for I in 1..Length(Attrs) loop declare A:constant JSON_Value:=Get(Attrs,I);X:constant JSON_Value:=Get(A,"experience");begin if Str_Field(A,"name")=Name then Found:=True;if Op="attribute-xp.clear" then Set_Field(X,"points",Integer'(0));elsif Op="attribute-xp.add" then Requested:=Int_Field(B,"delta");Core_Clamp_Add(Natural(Int_Field(X,"points")),Natural(Int_Field(X,"max")),Natural'Max(0,Requested),New_Value,Applied);Set_Field(X,"points",Integer(New_Value));Effective:=Integer(Applied);else declare Acts:constant JSON_Array:=Get(A,"actions");begin for J in 1..Length(Acts) loop declare Z:constant JSON_Value:=Get(Acts,J);begin if Str_Field(Z,"name")=Str_Field(B,"action") then Set_Field(Z,"rating",Integer'Min(Int_Field(Z,"maxRating"),Int_Field(Z,"rating")+1));end if;end;end loop;Set_Field(X,"points",Integer'(0));end;end if;end if;end;end loop;if not Found then return Error_Result(Op,"VALIDATION","unknown attribute",E);end if;end;
+         declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"attribute");Found:Boolean:=False;begin for I in 1..Length(Attrs) loop declare A:constant JSON_Value:=Get(Attrs,I);X:constant JSON_Value:=Get(A,"experience");begin if Str_Field(A,"name")=Name then Found:=True;if Op="attribute-xp.clear" then Set_Field(X,"points",Integer'(0));elsif Op="attribute-xp.add" then Requested:=Int_Field(B,"delta");Core_Clamp_Add(Natural(Int_Field(X,"points")),Natural(Int_Field(X,"max")),Natural'Max(0,Requested),New_Value,Applied);Set_Field(X,"points",Integer(New_Value));Effective:=Integer(Applied);else declare Acts:constant JSON_Array:=Get(A,"actions");Cap:constant Integer:=Rating_Cap(E);Blocked:Boolean:=False;begin for J in 1..Length(Acts) loop declare Z:constant JSON_Value:=Get(Acts,J);begin if Str_Field(Z,"name")=Str_Field(B,"action") then if Int_Field(Z,"rating")+1>Cap then Blocked:=True;else Set_Field(Z,"rating",Integer'Min(Int_Field(Z,"maxRating"),Int_Field(Z,"rating")+1));end if;end if;end;end loop;if Blocked then return Error_Result(Op,"RATING_MAXED","action rating capped by Mastery",E);end if;Set_Field(X,"points",Integer'(0));end;end if;end if;end;end loop;if not Found then return Error_Result(Op,"VALIDATION","unknown attribute",E);end if;end;
       elsif Op="ability.take" then
          declare
             P:constant JSON_Value:=(if Kind="character" then Get(E,"playbook") else E);
@@ -765,12 +815,14 @@ package body Pitd_Callback is
             return Success_Result(Op,E);
          end;
       elsif Op = "harm.heal" then
-         declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm");C:constant JSON_Value:=Get(H,"healingClock");begin
+         declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm");C:constant JSON_Value:=Get(H,"healingClock");Level:constant String:=Str_Field(B,"intensity");Desc:constant String:=Str_Field(B,"description");begin
             if Int_Field(C,"segments")<Int_Field(C,"size") then return Error_Result(Op,"CANNOT_HEAL","healing clock is not full",E);end if;
-            declare M:constant JSON_Array:=Get(H,"moderate");S:constant JSON_Array:=Get(H,"severe");L:JSON_Array:=Empty_Array;O:JSON_Array:=Empty_Array;begin
-               for I in 1..Integer'Min(Length(M),2) loop Append(L,Get(M,I));end loop;
-               for I in 1..Integer'Min(Length(S),2) loop Append(O,Get(S,I));end loop;
-               Set_Field(H,"lesser",L);Set_Field(H,"moderate",O);Set_Field(H,"severe",Empty_Array);
+            declare A:constant JSON_Array:=Get(H,Level);O:JSON_Array:=Empty_Array;Skipped:Boolean:=False;begin
+               for I in 1..Length(A) loop
+                  if not Skipped and then String'(Get(Get(A,I)))=Desc then Skipped:=True;else Append(O,Get(A,I));end if;
+               end loop;
+               if not Skipped then return Error_Result(Op,"NOT_FOUND","harm not found",E);end if;
+               Set_Field(H,Level,O);
             end;
             declare R:constant Integer:=Int_Field(C,"rollover");begin
                Set_Field(C,"segments",Integer'Min(R,Int_Field(C,"size")));
