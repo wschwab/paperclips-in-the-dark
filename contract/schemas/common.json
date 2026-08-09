@@ -11,59 +11,180 @@
       "format": "date-time",
       "description": "ISO-8601 UTC"
     },
-    "revision": { "type": "integer", "minimum": 1 },
-    "formatVersion": { "type": "integer", "minimum": 1 },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "formatVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
     "boundedInteger": {
       "type": "object",
-      "required": ["current", "max"],
+      "required": [
+        "current",
+        "max"
+      ],
       "additionalProperties": false,
       "properties": {
-        "current": { "type": "integer", "minimum": 0 },
-        "max": { "type": "integer", "minimum": 0 }
+        "current": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "experience": {
       "type": "object",
-      "required": ["points", "max"],
+      "required": [
+        "points",
+        "max"
+      ],
       "additionalProperties": false,
       "properties": {
-        "points": { "type": "integer", "minimum": 0 },
-        "max": { "type": "integer", "minimum": 0 }
+        "points": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "clockState": {
       "type": "object",
-      "required": ["segments", "size"],
+      "required": [
+        "segments",
+        "size"
+      ],
       "additionalProperties": false,
       "properties": {
-        "segments": { "type": "integer", "minimum": 0 },
-        "size": { "type": "integer", "minimum": 1 }
+        "segments": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1
+        }
       }
     },
     "namedDescription": {
       "type": "object",
-      "required": ["name", "description"],
+      "required": [
+        "name",
+        "description"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string" },
-        "description": { "type": "string" }
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
       }
     },
-    "harmIntensity": { "enum": ["lesser", "moderate", "severe", "fatal"] },
-    "closeness": { "enum": ["friend", "close-friend", "rival"] },
-    "commitment": { "enum": ["none", "light", "normal", "heavy", "encumbered"] },
-    "hold": { "enum": ["strong", "weak"] },
-    "cohortType": { "enum": ["gang", "expert"] },
-    "cohortHarm": { "enum": ["healthy", "weakened", "impaired", "broken", "dead"] },
+    "harmIntensity": {
+      "enum": [
+        "lesser",
+        "moderate",
+        "severe",
+        "fatal"
+      ]
+    },
+    "closeness": {
+      "enum": [
+        "friend",
+        "close-friend",
+        "rival"
+      ]
+    },
+    "commitment": {
+      "enum": [
+        "none",
+        "light",
+        "normal",
+        "heavy",
+        "encumbered"
+      ]
+    },
+    "hold": {
+      "enum": [
+        "strong",
+        "weak"
+      ]
+    },
+    "cohortType": {
+      "enum": [
+        "gang",
+        "expert"
+      ]
+    },
+    "cohortHarm": {
+      "enum": [
+        "healthy",
+        "weakened",
+        "impaired",
+        "broken",
+        "dead"
+      ]
+    },
     "errorCode": {
       "enum": [
-        "NOT_FOUND", "VALIDATION", "STALE_REVISION", "RETIRED",
-        "CONFIRM_REQUIRED", "DUPLICATE", "SLOT_FULL_FATAL", "CANNOT_HEAL",
-        "ARMOR_NOT_AVAILABLE", "ABILITY_MAXED", "CANNOT_LEVEL_UP",
-        "RATING_MAXED", "UPGRADE_MAXED", "INSUFFICIENT_FUNDS", "SATCHEL_FULL",
-        "OVER_BULK", "NO_COMMITMENT", "COMMITMENT_LOCKED", "NO_HISTORY",
-        "GAME_NOT_FOUND", "PAYLOAD_TOO_LARGE"
+        "NOT_FOUND",
+        "VALIDATION",
+        "STALE_REVISION",
+        "RETIRED",
+        "CONFIRM_REQUIRED",
+        "DUPLICATE",
+        "SLOT_FULL_FATAL",
+        "CANNOT_HEAL",
+        "ARMOR_NOT_AVAILABLE",
+        "ABILITY_MAXED",
+        "CANNOT_LEVEL_UP",
+        "RATING_MAXED",
+        "UPGRADE_MAXED",
+        "INSUFFICIENT_FUNDS",
+        "SATCHEL_FULL",
+        "OVER_BULK",
+        "NO_COMMITMENT",
+        "COMMITMENT_LOCKED",
+        "NO_HISTORY",
+        "GAME_NOT_FOUND",
+        "PAYLOAD_TOO_LARGE"
       ]
+    },
+    "vice": {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "purveyor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "purveyor": {
+          "$ref": "#/$defs/namedDescription"
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "C4 playtest change (2026-08-09): notes are a list of free-text entries (multiple notes per sheet)."
     }
   }
 }

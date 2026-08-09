@@ -32,10 +32,14 @@ const Character = Schema.Struct({
     crewId: Schema.String,
     alias: Schema.String,
     look: Schema.String,
-    notes: Schema.String,
+    notes: Schema.Array(Schema.String),
     background: NamedDescription,
     heritage: NamedDescription,
-    vice: NamedDescription,
+    vice: Schema.Struct({
+      name: Schema.String,
+      description: Schema.String,
+      purveyor: Schema.Struct({ name: Schema.String, description: Schema.String }),
+    }),
   }),
   monitor: Schema.Struct({
     stress: BoundedInteger,
@@ -126,7 +130,8 @@ const Crew = Schema.Struct({
   ),
   coin: Schema.Number,
   stash: Schema.Number,
-  notes: Schema.String,
+  notes: Schema.Array(Schema.String),
+  turf: Schema.Number,
   // C3 contract change (2026-07-29): optional until formatVersion bump —
   // servers implementing C3 MUST emit them (empty array when none); clients
   // MUST tolerate absence, so existing backends still decode.

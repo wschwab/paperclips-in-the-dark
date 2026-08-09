@@ -456,8 +456,19 @@ paths:
     post:
       operationId: harmHeal
       x-snapshot: true
-      description: "Requires healing clock full (else CANNOT_HEAL). Resets clock (rollover applied), shifts moderate→lesser and severe→moderate; fatal never shifts or clears."
+      description: "C4 playtest change (2026-08-09): healing a Harm means picking a specific currently-active Harm. Requires healing clock full (else CANNOT_HEAL). Removes the listed harm (exact intensity + description); resets the clock (rollover applied). Unknown harm → NOT_FOUND. No automatic shifting."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intensity, description]
+              additionalProperties: false
+              properties:
+                intensity: { $ref: "./schemas/common.json#/$defs/harmIntensity" }
+                description: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
@@ -960,6 +971,46 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/note.add:
+    post:
+      operationId: noteAdd
+      x-snapshot: true
+      description: "C4 playtest change (2026-08-09): append a note to dossier.notes (string[])."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              additionalProperties: false
+              properties:
+                text: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/note.remove:
+    post:
+      operationId: noteRemove
+      x-snapshot: true
+      description: "C4 playtest change (2026-08-09): remove the note at 0-based index. Index out of range → NOT_FOUND."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [index]
+              additionalProperties: false
+              properties:
+                index: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/end-downtime:
     post:
       operationId: endDowntime
@@ -1175,6 +1226,66 @@ paths:
         content:
           application/json:
             schema: { $ref: "#/components/schemas/Delta" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/note.add:
+    post:
+      operationId: crewNoteAdd
+      x-snapshot: true
+      description: "C4 playtest change (2026-08-09): append a note to crew.notes (string[])."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              additionalProperties: false
+              properties:
+                text: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/note.remove:
+    post:
+      operationId: crewNoteRemove
+      x-snapshot: true
+      description: "C4 playtest change (2026-08-09): remove the note at 0-based index. Index out of range → NOT_FOUND."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [index]
+              additionalProperties: false
+              properties:
+                index: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/turf.add:
+    post:
+      operationId: turfAdd
+      x-snapshot: true
+      description: "C4 playtest change (2026-08-09): add (or remove, negative delta) turf, clamped 0..6. Each turf reduces the rep cost to develop by one (SRD Development)."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [delta]
+              additionalProperties: false
+              properties:
+                delta: { type: integer }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }

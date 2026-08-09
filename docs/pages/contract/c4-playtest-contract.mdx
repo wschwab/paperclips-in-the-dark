@@ -1,0 +1,47 @@
+# C4 — Playtest contract changes (notes[], turf, heal targeting, vice purveyor)
+
+Authorized by the human 2026-08-09 from playtest round 1 (see
+agent-docs/playtest-round1-plan.md). This is a sanctioned breach of the contract
+freeze via the dedicated contract-change task (tasks/C4-playtest-contract.md).
+
+## Changes
+
+1. **Multiple notes** — `character.dossier.notes` and `crew.notes` are now
+   `string[]`. Ops `note.add {text}` and `note.remove {index}` exist for both
+   characters and crews (NOT_FOUND for out-of-range index). Rationale: the
+   human asked for several notes per sheet, functionally identical on both.
+2. **Crew turf** — crew DTO gains `turf` (int 0..6, required). Op
+   `turf.add {delta}` (signed; clamped 0..6; applied delta reported). Per SRD
+   Development, each turf reduces the rep cost to develop by one (threshold
+   12 − turf); turf marks are kept when rep resets.
+3. **Heal targeting** — `harm.heal` now requires a body `{intensity,
+   description}`: healing removes that specific active harm (exact match),
+   consumes the healing clock, and performs NO automatic shifting. Unknown
+   harm → NOT_FOUND. Per SRD, healing a Harm means picking which one.
+4. **Vice purveyor** — `dossier.vice` gains `purveyor {name, description}`
+   (new `vice` $def in common.json). Game data `Vices[].Sources` feed the
+   purveyor menu.
+5. **Mastery gating** — action ratings cap at 3 unless the character's crew
+   (by `dossier.crewId`) has the Mastery upgrade fully marked (boxesMarked ==
+   TotalBoxes); then the cap is 4. Applies to action.set-rating and
+   attribute.levelup; error RATING_MAXED (already in the errorCode enum).
+   Characters with no crew are capped at 3. Per SRD: "When you unlock the
+   Mastery advance for your crew, you can advance actions up to rating 4."
+6. **Cohort types (game data, not contract)** — `CohortGangTypes` (Adepts,
+   Rooks, Rovers, Skulls, Thugs) and `CohortExpertTypes` (Doctor, Investigator,
+   Occultist, Assassin, Spy, Custom) added to data/games/*.json for dropdowns.
+
+## Conformance
+
+- golden-character.json / golden-crew.json extended (notes arrays, turf,
+  vice purveyor) — ajv-valid.
+- conformance/src/schemas.ts mirrors the new shapes.
+- suites/semantics/c4-playtest.test.ts (4 cases) and
+  suites/semantics/a13-playtest.test.ts (4 cases) are red against the current
+  backend; A13 implements them.
+
+## Follow-ups
+
+- A13 (server): implement all of the above + stress reduce, armor defaults,
+  ability descriptions.
+- F2ab / F2ac (frontend): sheets expose the new features.

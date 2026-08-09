@@ -68,7 +68,7 @@
   ],
   "coin": 4,
   "stash": 0,
-  "notes": "",
+  "notes": [],
   "contacts": [
     {
       "name": "Rolan Wott",
@@ -84,5 +84,6 @@
       "name": "Ironhook Prison",
       "status": 2
     }
-  ]
+  ],
+  "turf": 2
 }
