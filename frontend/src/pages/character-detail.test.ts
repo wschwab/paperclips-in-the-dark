@@ -645,6 +645,84 @@ describe("character-detail page", () => {
       const editBtns = root.querySelectorAll('button[title^="Edit"]');
       expect(editBtns.length).toBeGreaterThan(0);
     });
+
+    it("ENTER in a dossier input saves the typed value (same as the checkmark) — F2aa", async () => {
+      const updated = characterDTO({
+        revision: 13,
+        dossier: {
+          ...characterDTO().dossier,
+          name: "Renamed",
+        },
+      });
+      const dossierOk = {
+        ok: true,
+        character: updated,
+        applied: { op: "dossier.update" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(dossierOk));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
+      });
+
+      (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+
+      const input = root.querySelector('input[aria-label="Name"]') as HTMLInputElement;
+      expect(input).not.toBeNull();
+      input.value = "Renamed";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+      );
+
+      await vi.waitFor(() => {
+        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
+        expect(updateCall).toBeTruthy();
+        expect(updateCall![1].body).toBe(JSON.stringify({ name: "Renamed" }));
+        expect(updateCall![1].headers["If-Match"]).toBe("12");
+      });
+    });
+
+    it("TAB order in a dossier edit is input → save → cancel (natural document order) — F2aa", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
+      });
+
+      (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+
+      const input = root.querySelector('input[aria-label="Name"]') as HTMLInputElement;
+      const saveBtn = root.querySelector('button[title="Save"]') as HTMLButtonElement;
+      const cancelBtn = root.querySelector('button[title="Cancel"]') as HTMLButtonElement;
+      expect(input).not.toBeNull();
+      expect(saveBtn).not.toBeNull();
+      expect(cancelBtn).not.toBeNull();
+
+      const following = (a: Element, b: Element) =>
+        (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+      expect(following(input, saveBtn)).toBe(true);
+      expect(following(saveBtn, cancelBtn)).toBe(true);
+    });
   });
 
   // -- F2m: Stress section -------------------------------------------------
@@ -1094,8 +1172,11 @@ describe("character-detail page", () => {
         expect(root.textContent).toContain("Battered");
       });
 
-      const removeBtn = root.querySelector('button[title^="Remove harm"]') as HTMLButtonElement;
+      const removeBtn = root.querySelector("button.harm-remove-btn") as HTMLButtonElement;
       expect(removeBtn).not.toBeNull();
+      // F2aa: the harm-table remove button is a subtle ghost icon — tooltip
+      // marks it as a clerical-error correction, not the healing path.
+      expect(removeBtn.title).toBe("Remove (clerical error)");
       removeBtn.click();
 
       await vi.waitFor(() => {
@@ -1290,9 +1371,14 @@ describe("character-detail page", () => {
       expect(root.textContent).toContain("You addressed a challenge with calculation or conspiracy");
       expect(root.textContent).toContain("Desperate action XP is marked on the attribute XP tracks");
 
-      // Tooltips come from game data Attributes
-      const huntLabel = huntRow!.querySelector(".lbl") as HTMLElement | null;
-      expect(huntLabel?.title).toContain("When you Hunt");
+      // F2aa: one clean name per action — the underlined .action-name from
+      // the dots component. The duplicate dot-row label is gone.
+      const nameEls = huntRow!.querySelectorAll(".action-name");
+      expect(nameEls.length).toBe(1);
+      expect(nameEls[0]?.textContent).toBe("Hunt");
+      expect(huntRow!.querySelectorAll(".lbl").length).toBe(0);
+      // Tooltips come from game data Attributes, on the action-name
+      expect(nameEls[0]?.getAttribute("title")).toContain("When you Hunt");
     });
 
     it("clicking an action dot issues actionSetRating with the dot index", async () => {
@@ -2773,6 +2859,44 @@ describe("F2s Projects", () => {
     });
     await vi.waitFor(() => {
       expect(root.querySelector(".project-clock-progress")?.textContent).toContain("3 / 6");
+    });
+  });
+
+  it("clicking a dial segment posts clock.progress with the right delta — F2aa", async () => {
+    // clockDTO has segments: 2 / size 6. Clicking segment 4 → next = 4,
+    // delta = 4 - 2 = +2.
+    const progressed = clockDTO({ revision: 3, segments: 4 });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok(clockOk(progressed, "clock.progress")));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('svg.clock')).not.toBeNull();
+    });
+
+    const row = root.querySelector('.project-clock[data-clock-id="b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d"]')!;
+    const segs = row.querySelectorAll<SVGPathElement>(".clock-segment");
+    expect(segs.length).toBe(6);
+    const click = (seg: SVGPathElement) =>
+      seg.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    click(segs[3]!); // segment 4
+
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
+        expect.objectContaining({
+          body: JSON.stringify({ segments: 2 }),
+          headers: expect.objectContaining({ "If-Match": "2" }),
+        }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".project-clock-progress")?.textContent).toContain("4 / 6");
     });
   });
 

@@ -19,6 +19,8 @@ export interface ActionDotsOptions {
   onChange?: (next: number) => void;
   /** Optional id prefix for a11y. */
   id?: string;
+  /** Optional tooltip on the action-name label (e.g. a short description). */
+  title?: string;
 }
 
 export function actionDots(opts: ActionDotsOptions): HTMLElement {
@@ -74,7 +76,11 @@ export function actionDots(opts: ActionDotsOptions): HTMLElement {
       className: "action",
       id: opts.id,
     },
-    el("span", { className: "action-name" }, opts.name),
+    el(
+      "span",
+      { className: "action-name", title: opts.title },
+      opts.name,
+    ),
     dots,
   );
 }

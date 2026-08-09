@@ -1,0 +1,109 @@
+---
+title: F2aa — Frontend bugs from playtest round 1
+---
+
+# F2aa: Frontend bug fixes (playtest round 1)
+
+Red-green fixes for the first playtest round, all diagnosed by the
+orchestrator from `tasks/F2aa-frontend-bugs.md`. Every fix shipped with a
+failing test first, then the implementation, and the whole suite plus the
+production build stay green.
+
+## 1. The app launches on the roster
+
+`/` (the old F0 health landing) now redirects to `/roster` via
+`history.replaceState` inside `render()` (`frontend/src/main.ts`). The app
+bar nav leads with **Roster** instead of **Health** (`pages/shell.ts`). The
+health page remains the unknown-path fallback.
+
+- Router tests in `src/main.test.ts`: `"/"` → `/roster` + roster mounted,
+  direct `/roster` renders.
+- Browser check (built app, live Ada backend): `localhost:4173/` lands on
+  `/roster` with the roster mounted.
+
+## 2. History snapshots decode again
+
+`HistoryEntry.snapshotId` used a C#-era pattern
+(`^[0-9]{17}-[A-Za-z0-9]+$`); the Ada server emits UUIDs
+(`22a96212-…`), so every history page failed to decode. The schema now
+accepts any non-empty string (`Schema.String.pipe(Schema.minLength(1))` in
+`schema/campaign.ts`).
+
+- Decoder tests: UUID snapshotId decodes, legacy C#-era id still decodes,
+  empty snapshotId rejected.
+- New page tests for `character-history.ts` and `crew-history.ts` render
+  UUID-snapshot entries and the empty state.
+- Browser check: `/character/{id}/history` rendered 57 entries, first
+  snapshot `aab7a12b-9201-41b6-888d-3d188a552d24`.
+
+## 3. One action name per talent row
+
+Each talent action rendered its name twice ("HUNT|HUNT") — once as the
+dot-row label and once as the underlined `.action-name` inside the dots
+component. The duplicate label is removed; the underlined `.action-name`
+keeps the game-data tooltip (new optional `title` on `actionDots` in
+`components/action-dots.ts`).
+
+- Page test asserts exactly one `.action-name` per row, no `.lbl` remnants,
+  and the tooltip on the name.
+- Browser check: 12 talent rows, 0 duplicate-name rows.
+
+## 4. ENTER saves, TAB navigates in inline edits
+
+Dossier edits (character sheet) and profile edits (crew sheet) now handle
+keydown on the text input: **Enter** saves (same as the ✓), **Escape**
+cancels, both `preventDefault()` so nothing reloads, and **Tab** flows
+naturally input → ✓ → ✕ in document order (no `<form>` wrapper exists to
+trap it). The character dossier input also syncs its value into the editing
+state (it previously only remembered the field, so the checkmark saved the
+stale value).
+
+- Page tests: ENTER posts `dossier.update` / `fields.update` with the typed
+  value; document order of input/save/cancel is asserted.
+
+## 5. Project clock clicks verified
+
+The SVG clock component already supported segment clicks
+(`onChange`); the character-sheet project clocks already wired
+`click segment N → clockProgress(delta)`. Verified with new tests and a
+built-app browser check — no code change needed:
+
+- `components/clock.test.ts`: segment click → `onChange(N)`, terminal-click
+  clears, Enter activates, non-interactive clocks render inert.
+- Page test: clicking a project-clock dial segment posts
+  `clock.progress` with the right delta.
+- Browser check (styleguide, built app): clicking segment 3 filled it
+  (`data-filled` 0 → 1).
+
+## 6. Harm-table ✕ is a subtle ghost button
+
+The harm remove button is now `button.harm-remove-btn` with tooltip
+**"Remove (clerical error)"** — it corrects clerical errors, not the normal
+removal path (healing clocks are). CSS (`components.css`): low-contrast
+`--text-faint` glyph, small, borderless, hover-only emphasis, disabled
+fade.
+
+## 7. Dropdowns and text inputs match the theme
+
+`base.css` gains a coherent form-control layer: `input`, `select`,
+`textarea` inherit the body font, sit on `--surface-raised`, draw the
+`--rule-heavy` frame with `--radius` corners, and get the blood focus ring
+and disabled/placeholder treatments. This also gives F2ab/F2ac's new
+dropdowns a home. Browser check confirmed computed styles (Alegreya Sans,
+themed background/border) on a live select.
+
+## Bonus: C4 notes[] schema alignment
+
+The C4 contract changed `notes` to a string array; the golden fixtures
+broke the decoder suite (5 red tests). `schema/common.ts` adds a tolerant
+`Notes` (string[] per C4, legacy single string accepted); character and
+crew schemas use it, and both sheets render entries (character notes as a
+`ul.note-list`, crew notes flattened for the read row/inline editor). This
+unblocks the whole suite; the full multi-note UI ships in F2ab/F2ac.
+
+## Evidence
+
+- `npm test -- --run`: **384 passed** (366 baseline + 18 new).
+- `npm run build`: clean (`tsc --noEmit` + vite build).
+- Browser checks against the built app + live Ada backend: landing route,
+  history decode, single-name talent rows, clock clicks, themed selects.
