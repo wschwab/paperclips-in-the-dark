@@ -24,7 +24,7 @@ const characterDTO = {
     notes: [],
     background: { name: "Urchin", description: "" },
     heritage: { name: "Akorosi", description: "" },
-    vice: { name: "Gambling", description: "" },
+    vice: { name: "Gambling", description: "", purveyor: { name: "Mother Narya", description: "House of the Weeping Lady, Six Towers" } },
   },
   monitor: {
     stress: { current: 3, max: 9 },

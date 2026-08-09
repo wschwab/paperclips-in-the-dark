@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -115,7 +115,7 @@ describe("getCharacter", () => {
         notes: "Spider operative",
         background: { name: "Urchin", description: "" },
         heritage: { name: "Akorosi", description: "" },
-        vice: { name: "Gambling", description: "" },
+        vice: { name: "Gambling", description: "", purveyor: { name: "Mother Narya", description: "House of the Weeping Lady, Six Towers" } },
       },
       monitor: {
         stress: { current: 3, max: 9 },
@@ -503,7 +503,7 @@ describe("createCharacter", () => {
         notes: "",
         background: { name: "Dock Worker", description: "" },
         heritage: { name: "Duskborn", description: "" },
-        vice: { name: "Gambling", description: "" },
+        vice: { name: "Gambling", description: "", purveyor: { name: "Mother Narya", description: "House of the Weeping Lady, Six Towers" } },
       },
       monitor: {
         stress: { current: 0, max: 9 },
@@ -777,7 +777,7 @@ describe("stressAdd", () => {
         notes: "Spider operative",
         background: { name: "Urchin", description: "" },
         heritage: { name: "Akorosi", description: "" },
-        vice: { name: "Gambling", description: "" },
+        vice: { name: "Gambling", description: "", purveyor: { name: "Mother Narya", description: "House of the Weeping Lady, Six Towers" } },
       },
       monitor: {
         stress: { current: 4, max: 9 },
@@ -1125,7 +1125,7 @@ function makeChar(overrides: Record<string, unknown> = {}) {
       notes: "Spider operative",
       background: { name: "Urchin", description: "" },
       heritage: { name: "Akorosi", description: "" },
-      vice: { name: "Gambling", description: "" },
+      vice: { name: "Gambling", description: "", purveyor: { name: "Mother Narya", description: "House of the Weeping Lady, Six Towers" } },
     },
     monitor: {
       stress: { current: 3, max: 9 },
@@ -1202,7 +1202,7 @@ describe("dossierUpdate", () => {
         notes: "",
         background: { name: "Labor", description: "" },
         heritage: { name: "Tycherosi", description: "" },
-        vice: { name: "Gambling", description: "" },
+        vice: { name: "Gambling", description: "", purveyor: { name: "Mother Narya", description: "House of the Weeping Lady, Six Towers" } },
       },
     });
 
@@ -1529,7 +1529,7 @@ describe("undoCharacter", () => {
         notes: "Spider operative",
         background: { name: "Urchin", description: "" },
         heritage: { name: "Akorosi", description: "" },
-        vice: { name: "Gambling", description: "" },
+        vice: { name: "Gambling", description: "", purveyor: { name: "Mother Narya", description: "House of the Weeping Lady, Six Towers" } },
       },
       monitor: {
         stress: { current: 2, max: 9 },
@@ -1830,13 +1830,13 @@ describe("harmHeal", () => {
     vi.clearAllMocks();
   });
 
-  it("posts to /api/characters/{id}/ops/harm.heal with no body and If-Match", async () => {
+  it("posts to /api/characters/{id}/ops/harm.heal with intensity + description and If-Match", async () => {
     const healed = makeChar({
       revision: 13,
       monitor: {
         ...makeChar().monitor,
         harm: {
-          lesser: ["Battered"],
+          lesser: [],
           moderate: [],
           severe: [],
           fatal: [],
@@ -1851,9 +1851,9 @@ describe("harmHeal", () => {
     });
 
     const result = await Effect.runPromise(
-      harmHeal("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+      harmHeal("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "lesser", "Battered", 12),
     );
-    expect(result.monitor.harm.lesser).toContain("Battered");
+    expect(result.monitor.harm.lesser).not.toContain("Battered");
     expect(global.fetch).toHaveBeenCalledWith(
       "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/harm.heal",
       {
@@ -1863,7 +1863,7 @@ describe("harmHeal", () => {
           "Content-Type": "application/json",
           "If-Match": "12",
         },
-        body: "{}",
+        body: JSON.stringify({ intensity: "lesser", description: "Battered" }),
       },
     );
   });
@@ -1876,7 +1876,7 @@ describe("harmHeal", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(harmHeal("some-id", 1)),
+      Effect.either(harmHeal("some-id", "lesser", "Battered", 1)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1892,11 +1892,173 @@ describe("harmHeal", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(harmHeal("some-id", 1)),
+      Effect.either(harmHeal("some-id", "lesser", "Battered", 1)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
       expect(result.left.status).toBe(422);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2ab client methods — noteAdd, noteRemove, listCrews
+// ---------------------------------------------------------------------------
+
+describe("noteAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/note.add with text and If-Match", async () => {
+    const withNotes = makeChar({
+      revision: 13,
+      dossier: { ...makeChar().dossier, notes: ["Spider operative", "Watch the Lamplighters"] },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(withNotes, "note.add")),
+    });
+
+    const result = await Effect.runPromise(
+      noteAdd("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "Watch the Lamplighters", 12),
+    );
+    expect(result.dossier.notes).toHaveLength(2);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/note.add",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ text: "Watch the Lamplighters" }),
+      },
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("note.add", 15)),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(noteAdd("some-id", "hello", 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("noteRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/note.remove with the 0-based index and If-Match", async () => {
+    const afterRemove = makeChar({
+      revision: 13,
+      dossier: { ...makeChar().dossier, notes: ["Second note"] },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(afterRemove, "note.remove")),
+    });
+
+    const result = await Effect.runPromise(
+      noteRemove("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 0, 12),
+    );
+    expect(result.dossier.notes).toEqual(["Second note"]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/note.remove",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ index: 0 }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the server reports NOT_FOUND", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        ok: false,
+        applied: { op: "note.remove" },
+        sideEffects: [],
+        error: { code: "NOT_FOUND", message: "no note at index 99" },
+      }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(noteRemove("some-id", 99, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+});
+
+describe("listCrews", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/crews and decodes crew summaries", async () => {
+    const crewsData = [
+      {
+        id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+        name: "The Red Sashes",
+        crewType: "Assassins",
+        gameStem: "blades-in-the-dark",
+        tier: 0,
+        heat: 4,
+        wanted: 1,
+        rep: 3,
+        hold: "strong",
+        memberCount: 1,
+        revision: 5,
+      },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewsData),
+    });
+
+    const result = await Effect.runPromise(listCrews());
+    expect(result).toHaveLength(1);
+    expect(result[0]?.name).toBe("The Red Sashes");
+    expect(global.fetch).toHaveBeenCalledWith("/api/crews", {
+      headers: { Accept: "application/json" },
+    });
+  });
+
+  it("exposes DecodeError when the response is not crew summaries", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ not: "a list" }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(listCrews()),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
     }
   });
 });

@@ -1,0 +1,124 @@
+---
+title: F2ab — Character Sheet: Playtest Features (heritage/background dropdowns, vice in stress, trauma-on-full, heal picker, ability descriptions, notes, crew membership)
+---
+
+# F2ab: Character Sheet — Playtest Features
+
+Playtest round 1 fixes (#4, #5, #8, #9, #13, #16, #17, #18) on the character
+sheet, per [C4 playtest contract](/contract/c4) and [F2 sheet plan](/frontend/f2-sheet-plan).
+Built on the A13 server (conformance 176/176): `stress.add` handles negative
+deltas, `harm.heal` requires `{intensity, description}` targeting, `note.add` /
+`note.remove` exist, and `dossier.update` round-trips `vice.purveyor`.
+
+All eight features are red-green tested at both the API client and page layer.
+
+## Client methods added / changed (`src/api/client.ts`)
+
+| Method | Endpoint | If-Match | Notes |
+|--------|----------|----------|-------|
+| `harmHeal` (changed) | `ops/harm.heal` | ✓ | Now takes `(id, intensity, description, revision)`; body `{intensity, description}` per C4 targeting |
+| `noteAdd` | `ops/note.add` | ✓ | `{ text }` — append to `dossier.notes[]` |
+| `noteRemove` | `ops/note.remove` | ✓ | `{ index }` — 0-based; out of range → `NOT_FOUND` |
+| `listCrews` | `GET /crews` | — | Decodes `CrewSummary[]` for the membership selector |
+
+Schema: `dossier.vice` gains `purveyor {name, description}` (matches the
+frozen contract; the server always emits it).
+
+## Page features (`src/pages/character-detail.ts`)
+
+### 1. Heritage dropdown
+Free-text Heritage is replaced by a `<select>` populated from
+`getGame(gameStem).Heritages` (`[{Name, Description, BlurbFlavor}]`). Read
+mode shows the name plus the game-data Description when the name matches.
+Edit mode offers every heritage plus a **Custom…** option that reveals a text
+input. Save posts `dossierUpdate {heritage: {name, description}}` — the
+description is the game-data Description for known options, `""` for custom.
+
+### 2. Background dropdown
+Identical pattern from `Backgrounds [{Name, Example, BlurbFlavor}]`. Save
+posts `{background: {name, description: Example}}` for known options, `""`
+for custom.
+
+### 3. Vice into the Stress box + purveyor
+The standalone Vice section is gone; the vice block now renders inside the
+Stress section (stress track with vice below it, per bladesintheday.com).
+Read mode shows name, description and purveyor. Edit mode:
+- **Type**: `<select>` from game data `Vices` (plus Custom… with free-text
+  name and description).
+- **Purveyor**: `<select>` fed from the selected vice's `Vices[].Sources`,
+  a free-text purveyor name (filled when a source is picked), and an editable
+  purveyor description.
+Save posts `dossierUpdate {vice: {name, description, purveyor: {name,
+description}}}`. `Indulge Vice` (stress.clear) stays in the vice block.
+
+### 4. Stress full → trauma picker
+When stress reaches max (via the track or the + button — the picker is shown
+whenever `stress.current >= stress.max`), the Stress section shows a
+"Take trauma" picker of unstamped traumas from game data. Picking one posts
+`trauma.add` and, on success, chains `stress.clear` with the updated
+revision — the trauma is stamped and the track empties. The picker hides
+again once stress drops below max.
+
+### 5. Heal picker
+The Health section's **Heal** button now acts on a picker of currently active
+harms (flattened from lesser/moderate/severe/fatal, shown as
+`intensity: description`). Selecting one posts
+`harm.heal {intensity, description}` — exactly that harm is removed and the
+healing clock is consumed. `CANNOT_HEAL` surfaces as "the healing clock isn't
+full yet" and `NOT_FOUND` as "that harm is no longer there", via the op-error
+path. When the clock is full but no harms are active, the sheet shows
+"(no harms to heal)" and disables Heal.
+
+### 6. Ability descriptions
+Taken playbook abilities now display their description: the DTO's stored
+`description` first, falling back to the game-data `SpecialAbilities` entry
+(via `getPlaybook`, or the `Playbooks` list from `getGame`), degrading to
+"No description available." when neither is present.
+
+### 7. Multiple notes
+The Notes section renders `dossier.notes[]` (legacy single string still
+decodes) as a list with a per-note remove button (`note.remove {index}`) and
+an add row (`note.add {text}`, ENTER or + Add). This is the reference UX the
+crew sheet mirrors in F2ac.
+
+### 8. Crew membership
+The Personal section shows the current crew name (resolved from
+`GET /api/crews`) or "(none)", with a crew `<select>`, **Join**
+(`dossierUpdate {crewId}`), **Leave** (`dossierUpdate {crewId: ""}`), and a
+**+ New crew** link to `/crew/create`. The crew list fetch degrades
+gracefully — the selector renders disabled until it succeeds.
+
+## Data flow notes
+
+- All mutations go through the frozen contract ops with `If-Match` revision
+  headers; stale revisions recover by refetching the sheet (F2h rule).
+- `getGame`, `getPlaybook`, `listCrews` and `listClocks` all degrade
+  gracefully: a failed fetch leaves the related control empty/disabled
+  without breaking the rest of the sheet.
+- Game data lookups are never hardcoded: heritage/background/vice/trauma
+  options all come from `getGame(gameStem)`.
+
+## Test coverage
+
+Client (`src/api/client.test.ts`): `noteAdd` (2), `noteRemove` (2),
+`listCrews` (2), plus `harmHeal` updated to the targeted body.
+
+Page (`src/pages/character-detail.test.ts`):
+
+- `F2ab Heritage + Background dropdowns` — 5 tests (read mode with game-data
+  descriptions, heritage save, custom heritage, background save, custom-name
+  prefill)
+- `F2ab Vice in Stress + purveyor` — 3 tests (render in stress section,
+  purveyor save, custom vice)
+- `F2ab Stress-full trauma picker` — 2 tests (picker at max, + button →
+  trauma.add → stress.clear chain)
+- `F2ab Heal picker` — 5 tests (picker render, targeted harm.heal body,
+  CANNOT_HEAL / NOT_FOUND notices, no-harms state)
+- `F2ab Ability descriptions` — 2 tests (game-data fallback, DTO preference
+  + placeholder)
+- `F2ab Notes` — 3 tests (multi-note render + per-note remove, note.add,
+  note.remove by index)
+- `F2ab Crew membership` — 3 tests (current crew name + controls, join,
+  leave)
+
+`npm test -- --run`: 413 passed (384 baseline + 29 new). `npm run build` green.

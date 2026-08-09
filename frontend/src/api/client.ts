@@ -2,6 +2,7 @@ import { Effect, Schema } from "effect";
 import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema, type HistoryEntry, HistoryEntry as HistoryEntrySchema } from "../schema/campaign.js";
 import { type Character, Character as CharacterSchema } from "../schema/character.js";
 import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
+import { type CrewSummary, CrewSummary as CrewSummarySchema } from "../schema/campaign.js";
 import { OperationResult as OperationResultSchema } from "../schema/operation-result.js";
 import { type Clock, Clock as ClockSchema } from "../schema/clock.js";
 
@@ -93,6 +94,16 @@ export function getCharacter(id: string): Effect.Effect<Character, ApiError | De
     const raw = yield* fetchJson(`/api/characters/${id}`);
     return yield* Effect.try({
       try: () => Schema.decodeUnknownSync(CharacterSchema)(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+export function listCrews(): Effect.Effect<readonly CrewSummary[], ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson("/api/crews");
+    return yield* Effect.try({
+      try: () => Schema.decodeUnknownSync(Schema.Array(CrewSummarySchema))(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -509,9 +520,14 @@ export function harmAdd(
 
 export function harmHeal(
   id: string,
+  intensity: string,
+  description: string,
   revision: number,
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
-  return characterMutate(id, "harm.heal", revision);
+  // C4 playtest change (2026-08-09): healing means picking a specific
+  // currently-active harm; the clock is consumed and exactly that harm is
+  // removed (NOT_FOUND when absent, CANNOT_HEAL when the clock isn't full).
+  return characterMutate(id, "harm.heal", revision, { intensity, description });
 }
 
 export function harmRemove(
@@ -599,6 +615,26 @@ export function stressAdd(id: string, delta: number, revision: number): Effect.E
       catch: (cause) => new DecodeError(cause),
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// F2ab operations — noteAdd, noteRemove (C4: dossier.notes is a list)
+// ---------------------------------------------------------------------------
+
+export function noteAdd(
+  id: string,
+  text: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "note.add", revision, { text });
+}
+
+export function noteRemove(
+  id: string,
+  index: number,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "note.remove", revision, { index });
 }
 
 // ---------------------------------------------------------------------------

@@ -56,6 +56,20 @@ const Monitor = Schema.Struct({
   armor: Armor,
 });
 
+/**
+ * Vice (C4 playtest change): gains a purveyor { name, description }. The
+ * purveyor menu is fed from game data Vices[].Sources (bladesintheday.com:
+ * stress track with vice below it).
+ */
+const Vice = Schema.Struct({
+  name: Schema.String,
+  description: Schema.String,
+  purveyor: Schema.Struct({
+    name: Schema.String,
+    description: Schema.String,
+  }),
+});
+
 const Dossier = Schema.Struct({
   name: Schema.String,
   crewId: CrewIdRef,
@@ -64,7 +78,7 @@ const Dossier = Schema.Struct({
   notes: Notes,
   background: NamedDescription,
   heritage: NamedDescription,
-  vice: NamedDescription,
+  vice: Vice,
 });
 
 const Action = Schema.Struct({
