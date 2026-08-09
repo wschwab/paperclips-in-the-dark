@@ -42,6 +42,9 @@ import {
   clockProgress,
   clockReset,
   deleteClock,
+  noteAdd,
+  noteRemove,
+  listCrews,
   type SessionFields,
   type FundOpResult,
 } from "../api/client.js";
@@ -50,6 +53,7 @@ import { actionDots } from "../components/action-dots.js";
 import { clock } from "../components/clock.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
+import type { CrewSummary } from "../schema/campaign.js";
 import type { Clock } from "../schema/clock.js";
 
 // ---------------------------------------------------------------------------
@@ -62,6 +66,22 @@ type DossierField = "name" | "alias" | "look" | "notes" |
 interface EditingState {
   field: DossierField;
   value: string;
+}
+
+/**
+ * F2ab: editor state for the game-data dropdowns (heritage / background /
+ * vice). `option` is the selected game-data option name, or "__custom__" for
+ * the Custom… entry ("" when the current value matches nothing and the
+ * editor opened on the custom branch). customName/description carry the
+ * free-text values; purveyor fields apply to vice only.
+ */
+interface NamedEditorState {
+  key: "heritage" | "background" | "vice";
+  option: string;
+  customName: string;
+  customDesc: string;
+  purveyorName: string;
+  purveyorDesc: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -135,6 +155,80 @@ function extractSpecialAbilities(
     }
   }
   return [];
+}
+
+/** Game-data option lists for the heritage / background / vice dropdowns. */
+function gameDataOptions(
+  gameData: Record<string, unknown> | null,
+  key: "heritage" | "background" | "vice",
+): Array<Record<string, unknown>> {
+  if (!gameData) return [];
+  const list = key === "heritage"
+    ? gameData.Heritages
+    : key === "background"
+      ? gameData.Backgrounds
+      : gameData.Vices;
+  if (!Array.isArray(list)) return [];
+  return list.filter((x) => x && typeof x === "object") as Array<Record<string, unknown>>;
+}
+
+/** Game-data description for a named option (heritage Description / background Example). */
+function gameDataDescription(
+  gameData: Record<string, unknown> | null,
+  key: "heritage" | "background",
+  name: string,
+): string | null {
+  const entry = gameDataOptions(gameData, key).find((o) => o.Name === name);
+  if (!entry) return null;
+  const desc = key === "heritage" ? entry.Description : entry.Example;
+  return typeof desc === "string" ? desc : null;
+}
+
+/** Sources (purveyor strings) for a vice name, from game data Vices[].Sources. */
+function viceSources(
+  gameData: Record<string, unknown> | null,
+  viceName: string,
+): string[] {
+  const entry = gameDataOptions(gameData, "vice").find((o) => o.Name === viceName);
+  const sources = entry?.Sources;
+  if (!Array.isArray(sources)) return [];
+  return sources.filter((x): x is string => typeof x === "string");
+}
+
+/** Currently active harms flattened to { intensity, description } pairs (F2ab heal picker). */
+function activeHarms(c: Character): Array<{ intensity: string; description: string }> {
+  const out: Array<{ intensity: string; description: string }> = [];
+  for (const level of ["lesser", "moderate", "severe", "fatal"] as const) {
+    for (const desc of c.monitor.harm[level]) {
+      if (desc) out.push({ intensity: level, description: desc });
+    }
+  }
+  return out;
+}
+
+/**
+ * Display description for a taken ability: prefer the DTO's stored
+ * description, fall back to the game-data SpecialAbilities entry, and
+ * degrade to "" when neither is available.
+ */
+function abilityDescription(
+  ability: { name: string; description: string },
+  specialAbilities: Array<Record<string, unknown>>,
+): string {
+  if (ability.description) return ability.description;
+  const sa = specialAbilities.find((x) => String(x.Name) === ability.name);
+  return sa && typeof sa.Description === "string" ? sa.Description : "";
+}
+
+/** Friendly text for heal op-level errors (CANNOT_HEAL / NOT_FOUND). */
+function healOpErrorText(err: ApiError): string {
+  if (err.body.startsWith("CANNOT_HEAL")) {
+    return "Cannot heal — the healing clock isn't full yet";
+  }
+  if (err.body.startsWith("NOT_FOUND")) {
+    return "That harm is no longer there — the sheet refreshes with the server state";
+  }
+  return `API error (${err.status}): ${err.body}`;
 }
 
 /** Friendly text for playbook op-level errors (ABILITY_MAXED / NOT_FOUND) carried in ApiError bodies. */
@@ -277,6 +371,14 @@ interface RenderState {
   isClocksLoading: boolean;
   coinNotice: string | null;
   clocksNotice: string | null;
+  // F2ab state
+  crews: readonly CrewSummary[] | null;
+  isCrewsLoading: boolean;
+  crewNotice: string | null;
+  isNotesLoading: boolean;
+  notesNotice: string | null;
+  isTraumaPickerLoading: boolean;
+  healNotice: string | null;
   // Error / notice
   errorMsg: string | null;
   noticeMsg: string | null;
@@ -284,6 +386,9 @@ interface RenderState {
   harmSpillNotice: string | null;
   // Editing
   editing: EditingState | null;
+  namedEditor: NamedEditorState | null;
+  /** Re-render the page (used by nested editors after DOM-driven state changes). */
+  rerender: () => void;
   // Handlers
   handlers: {
     onStressTrack: (next: number) => void;
@@ -294,6 +399,14 @@ interface RenderState {
     onDossierEdit: (field: DossierField) => void;
     onDossierSave: () => void;
     onDossierCancel: () => void;
+    onNamedEdit: (key: "heritage" | "background" | "vice") => void;
+    onNamedSave: () => void;
+    onNamedCancel: () => void;
+    onTraumaFromStress: () => void;
+    onNoteAdd: () => void;
+    onNoteRemove: (index: number) => void;
+    onCrewJoin: () => void;
+    onCrewLeave: () => void;
     onUndo: () => void;
     onHarmAdd: () => void;
     onHarmRemove: (description: string, intensity: string) => void;
@@ -328,18 +441,23 @@ interface RenderState {
 }
 
 function renderDetail(state: RenderState): HTMLElement {
-  const { c, gameData, playbookData, handlers, editing } = state;
+  const { c, gameData, playbookData, handlers, editing, namedEditor } = state;
   const status = c.isRetired ? " (retired)" : c.isDeadish ? " (deadish)" : "";
   const traumaList: string[] = Array.isArray(gameData?.Traumas) ? gameData.Traumas as string[] : [];
   const currentTraumas = new Set(c.monitor.trauma.traumas);
   const availableTraumas = traumaList.filter((t) => !currentTraumas.has(t));
+
+  // F2ab: stress is full when the track is at capacity — the sheet then
+  // offers the trauma picker (trauma.add + stress.clear flow).
+  const stressFull = c.monitor.stress.current >= c.monitor.stress.max;
 
   const anyLoading = state.isStressLoading || state.isStressClearLoading ||
     state.isTraumaLoading || state.isDossierLoading || state.isUndoLoading ||
     state.isHarmLoading || state.isArmorLoading || state.isHealLoading || state.isClockLoading ||
     state.isTalentsLoading || state.isSessionLoading || state.isPlaybookLoading ||
     state.isGearLoading || state.isGearCommitmentLoading || state.isGearLockLoading ||
-    state.isCoinLoading || state.isClocksLoading;
+    state.isCoinLoading || state.isClocksLoading ||
+    state.isCrewsLoading || state.isNotesLoading || state.isTraumaPickerLoading;
 
   // -- Stress track ---------------------------------------------------------
 
@@ -481,6 +599,265 @@ function renderDetail(state: RenderState): HTMLElement {
     );
   }
 
+  /**
+   * F2ab: heritage / background rendered as a game-data dropdown. Read mode
+   * shows the name plus the game-data description (heritage Description,
+   * background Example) when the name matches; edit mode offers the options
+   * plus a "Custom…" branch with a free-text name.
+   */
+  function renderNamedField(label: string, key: "heritage" | "background") {
+    const name = c.dossier[key].name;
+    const dtoDesc = c.dossier[key].description;
+    const gameDesc = gameDataDescription(gameData, key, name);
+    const desc = gameDesc ?? dtoDesc;
+    const isEditing = namedEditor?.key === key;
+
+    if (isEditing) {
+      const editor = namedEditor!;
+      const optionNames = gameDataOptions(gameData, key).map((o) => String(o.Name));
+      const isCustom = editor.option === "__custom__" || !optionNames.includes(editor.option);
+      const select = el("select", {
+        "aria-label": `${label} (choose)`,
+        disabled: anyLoading,
+      },
+        ...optionNames.map((n) => el("option", { value: n }, n)),
+        el("option", { value: "__custom__" }, "Custom…"),
+      ) as HTMLSelectElement;
+      select.value = isCustom ? "__custom__" : editor.option;
+      select.addEventListener("change", () => {
+        editor.option = select.value;
+        state.rerender();
+      });
+
+      const customInput = el("input", {
+        type: "text",
+        "aria-label": `${label} custom name`,
+        value: editor.customName,
+      }) as HTMLInputElement;
+      customInput.addEventListener("input", () => {
+        editor.customName = customInput.value;
+      });
+
+      const saveBtn = el("button", { type: "button", title: "Save" }, "✓");
+      saveBtn.addEventListener("click", handlers.onNamedSave);
+      const cancelBtn = el("button", { type: "button", title: "Cancel" }, "✕");
+      cancelBtn.addEventListener("click", handlers.onNamedCancel);
+
+      const hint = isCustom
+        ? el("span", { className: "serif", style: "font-size: 0.9em;" },
+            "Custom — saved without a game description")
+        : gameDesc
+          ? el("span", { className: "serif", style: "font-size: 0.9em;" }, gameDesc)
+          : null;
+
+      return el("div", {
+        className: "field-editing",
+        style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
+      },
+        el("span", { className: "lbl" }, `${label}: `),
+        select,
+        isCustom ? customInput : null,
+        hint,
+        saveBtn,
+        cancelBtn,
+      );
+    }
+
+    const editBtn = el("button", {
+      type: "button",
+      disabled: anyLoading || editing !== null || namedEditor !== null,
+      title: `Edit ${label}`,
+    }, "✎");
+    editBtn.addEventListener("click", () => handlers.onNamedEdit(key));
+
+    return el("div", {
+      className: "field-read",
+      style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
+    },
+      el("span", { className: "lbl" }, `${label}: `),
+      el("span", {}, name || "(not set)"),
+      desc ? el("span", { className: "serif", style: "font-size: 0.9em;" }, desc) : null,
+      editBtn,
+    );
+  }
+
+  /**
+   * F2ab: trauma picker shown when the stress track is full. Picking a
+   * trauma posts trauma.add and then stress.clear (trauma on full stress).
+   */
+  function renderTraumaPicker() {
+    const pickerSelect = el("select", {
+      "aria-label": "Trauma when stressed",
+      disabled: anyLoading || availableTraumas.length === 0,
+    },
+      el("option", { value: "" }, "--"),
+      ...availableTraumas.map((t) => el("option", { value: t }, t)),
+    ) as HTMLSelectElement;
+    const takeBtn = el("button", {
+      type: "button",
+      disabled: anyLoading || availableTraumas.length === 0,
+      title: "Take trauma (clears stress)",
+    }, state.isTraumaPickerLoading ? "…" : "Take trauma");
+    takeBtn.addEventListener("click", handlers.onTraumaFromStress);
+
+    return el("div", {
+      className: "stress-trauma-picker",
+      style: "margin-top: 0.5em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
+    },
+      el("p", { className: "notice", style: "margin: 0;" },
+        "Stress is full — take a trauma to clear it."),
+      pickerSelect,
+      takeBtn,
+      availableTraumas.length === 0
+        ? el("p", { className: "lbl", style: "margin: 0;" }, "(all traumas taken)")
+        : null,
+    );
+  }
+
+  /**
+   * F2ab: the Vice block lives inside the Stress section. Read mode shows
+   * name, description and purveyor; edit mode picks the vice type from game
+   * data Vices (with a Custom… branch), the purveyor from Vices[].Sources,
+   * and lets the purveyor name/description be edited.
+   */
+  function renderViceBlock() {
+    const v = c.dossier.vice;
+    const isEditing = namedEditor?.key === "vice";
+
+    if (!isEditing) {
+      const editBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || editing !== null || namedEditor !== null,
+        title: "Edit Vice",
+      }, "✎");
+      editBtn.addEventListener("click", () => handlers.onNamedEdit("vice"));
+      return el("div", { className: "character-vice" },
+        el("h3", { className: "lbl" }, "Vice"),
+        el("p", {}, el("strong", {}, v.name || "(not set)")),
+        v.description ? el("p", { className: "serif" }, v.description) : null,
+        v.purveyor.name
+          ? el("p", { className: "vice-purveyor" },
+              el("span", { className: "lbl" }, "Purveyor: "),
+              el("span", {}, v.purveyor.name),
+              v.purveyor.description
+                ? el("span", { className: "serif" }, ` — ${v.purveyor.description}`)
+                : null,
+            )
+          : null,
+        el("div", { style: "display: flex; gap: 0.5em; align-items: center;" },
+          editBtn,
+          indulgeBtn,
+        ),
+      );
+    }
+
+    const editor = namedEditor!;
+    const optionNames = gameDataOptions(gameData, "vice").map((o) => String(o.Name));
+    const isCustom = editor.option === "__custom__" || !optionNames.includes(editor.option);
+    const sources = isCustom ? [] : viceSources(gameData, editor.option);
+
+    const viceSelect = el("select", {
+      "aria-label": "Vice (choose)",
+      disabled: anyLoading,
+    },
+      ...optionNames.map((n) => el("option", { value: n }, n)),
+      el("option", { value: "__custom__" }, "Custom…"),
+    ) as HTMLSelectElement;
+    viceSelect.value = isCustom ? "__custom__" : editor.option;
+    viceSelect.addEventListener("change", () => {
+      editor.option = viceSelect.value;
+      if (viceSelect.value !== "__custom__") {
+        const entry = gameDataOptions(gameData, "vice").find((o) => o.Name === viceSelect.value);
+        if (entry && typeof entry.Description === "string") {
+          editor.customDesc = entry.Description;
+        }
+      }
+      state.rerender();
+    });
+
+    const nameInput = el("input", {
+      type: "text",
+      "aria-label": "Vice custom name",
+      value: editor.customName,
+      placeholder: "custom vice name",
+    }) as HTMLInputElement;
+    nameInput.addEventListener("input", () => {
+      editor.customName = nameInput.value;
+    });
+    const descInput = el("input", {
+      type: "text",
+      "aria-label": "Vice custom description",
+      value: editor.customDesc,
+      placeholder: "vice description",
+    }) as HTMLInputElement;
+    descInput.addEventListener("input", () => {
+      editor.customDesc = descInput.value;
+    });
+
+    const purveyorSelect = el("select", {
+      "aria-label": "Vice purveyor (choose)",
+      disabled: anyLoading || sources.length === 0,
+    },
+      el("option", { value: "" }, "--"),
+      ...sources.map((src) => el("option", { value: src }, src)),
+    ) as HTMLSelectElement;
+    purveyorSelect.value = sources.includes(editor.purveyorName) ? editor.purveyorName : "";
+    purveyorSelect.addEventListener("change", () => {
+      if (purveyorSelect.value) {
+        editor.purveyorName = purveyorSelect.value;
+      }
+      state.rerender();
+    });
+    const purveyorNameInput = el("input", {
+      type: "text",
+      "aria-label": "Vice purveyor name",
+      value: editor.purveyorName,
+      placeholder: "purveyor name",
+    }) as HTMLInputElement;
+    purveyorNameInput.addEventListener("input", () => {
+      editor.purveyorName = purveyorNameInput.value;
+    });
+    const purveyorDescInput = el("input", {
+      type: "text",
+      "aria-label": "Vice purveyor description",
+      value: editor.purveyorDesc,
+      placeholder: "purveyor description",
+    }) as HTMLInputElement;
+    purveyorDescInput.addEventListener("input", () => {
+      editor.purveyorDesc = purveyorDescInput.value;
+    });
+
+    const saveBtn = el("button", { type: "button", title: "Save" }, "✓");
+    saveBtn.addEventListener("click", handlers.onNamedSave);
+    const cancelBtn = el("button", { type: "button", title: "Cancel" }, "✕");
+    cancelBtn.addEventListener("click", handlers.onNamedCancel);
+
+    return el("div", { className: "character-vice" },
+      el("h3", { className: "lbl" }, "Vice"),
+      el("div", { className: "vice-editor", style: "display: flex; flex-direction: column; gap: 0.4em;" },
+        el("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" },
+          el("span", { className: "lbl" }, "Type:"),
+          viceSelect,
+          isCustom ? nameInput : null,
+        ),
+        el("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" },
+          el("span", { className: "lbl" }, "Description:"),
+          descInput,
+        ),
+        el("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" },
+          el("span", { className: "lbl" }, "Purveyor:"),
+          purveyorSelect,
+          purveyorNameInput,
+        ),
+        el("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" },
+          el("span", { className: "lbl" }, "Purveyor desc:"),
+          purveyorDescInput,
+        ),
+        el("div", { style: "display: flex; gap: 0.5em;" }, saveBtn, cancelBtn),
+      ),
+    );
+  }
+
   // -- Assemble -------------------------------------------------------------
 
   return el(
@@ -507,24 +884,59 @@ function renderDetail(state: RenderState): HTMLElement {
       el("h2", {}, "Personal"),
       renderField("Name", "name", c.dossier.name),
       renderField("Alias", "alias", c.dossier.alias),
-      renderField("Background", { kind: "named", key: "background", field: "name" }, c.dossier.background.name),
-      renderField("Heritage", { kind: "named", key: "heritage", field: "name" }, c.dossier.heritage.name),
+      renderNamedField("Background", "background"),
+      renderNamedField("Heritage", "heritage"),
       renderField("Look", "look", c.dossier.look),
+      // Crew membership (F2ab): show the current crew, join/leave via
+      // dossierUpdate {crewId}, and link to the crew creation page.
+      (() => {
+        const crewId = c.dossier.crewId;
+        const crewsList = state.crews ?? [];
+        const currentCrew = crewsList.find((cr) => cr.id === crewId) ?? null;
+        const crewSelect = el("select", {
+          "aria-label": "Join crew",
+          disabled: anyLoading || state.crews === null || crewsList.length === 0,
+        },
+          el("option", { value: "" }, "--"),
+          ...crewsList.map((cr) => el("option", { value: cr.id }, cr.name)),
+        ) as HTMLSelectElement;
+        const joinBtn = el("button", {
+          type: "button",
+          disabled: anyLoading || state.crews === null || crewsList.length === 0,
+          title: "Join crew",
+        }, state.isCrewsLoading ? "…" : "Join");
+        joinBtn.addEventListener("click", handlers.onCrewJoin);
+        const leaveBtn = crewId
+          ? (() => {
+              const b = el("button", {
+                type: "button",
+                disabled: anyLoading,
+                title: "Leave crew",
+              }, "Leave");
+              b.addEventListener("click", handlers.onCrewLeave);
+              return b;
+            })()
+          : null;
+        return el("div", {
+          className: "crew-membership",
+          style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin-top: 0.35em;",
+        },
+          el("span", { className: "lbl" }, "Crew:"),
+          el("span", { className: "crew-name" },
+            currentCrew ? currentCrew.name : crewId ? "(unknown crew)" : "(none)"),
+          crewSelect,
+          joinBtn,
+          leaveBtn,
+          el("a", { href: "/crew/create", className: "crew-create-link" }, "+ New crew"),
+          state.crewNotice
+            ? el("p", { className: "notice", style: "margin: 0; width: 100%;" }, state.crewNotice)
+            : null,
+        );
+      })(),
     ),
 
-    // Vice
-    el(
-      "div",
-      { className: "character-vice" },
-      el("h2", {}, "Vice"),
-      el("p", {}, el("strong", {}, c.dossier.vice.name)),
-      c.dossier.vice.description
-        ? el("p", { className: "serif" }, c.dossier.vice.description)
-        : null,
-      indulgeBtn,
-    ),
-
-    // Stress
+    // Stress (F2ab: the vice block lives under the stress track, per
+    // bladesintheday.com — stress track with vice below it)
     el(
       "div",
       { className: "character-stress" },
@@ -535,6 +947,8 @@ function renderDetail(state: RenderState): HTMLElement {
         stressMinusBtn,
         stressPlusBtn,
       ),
+      stressFull ? renderTraumaPicker() : null,
+      renderViceBlock(),
     ),
 
     // Traumas
@@ -680,10 +1094,11 @@ function renderDetail(state: RenderState): HTMLElement {
         );
       })(),
 
-      // Healing clock
+      // Healing clock + heal picker (F2ab: harm.heal targets one specific harm)
       (() => {
         const hc = c.monitor.harm.healingClock;
         const clockFull = hc.segments >= hc.size;
+        const harms = activeHarms(c);
 
         const clockEl = clock({
           segments: hc.size,
@@ -699,9 +1114,18 @@ function renderDetail(state: RenderState): HTMLElement {
         }, state.isClockLoading ? "…" : "+1 segment");
         addSegmentBtn.addEventListener("click", handlers.onHarmHealingClock);
 
+        const healSelect = el("select", {
+          "aria-label": "Harm to heal",
+          disabled: anyLoading || harms.length === 0,
+        },
+          el("option", { value: "" }, "--"),
+          ...harms.map((h, idx) =>
+            el("option", { value: String(idx) }, `${h.intensity}: ${h.description}`)),
+        ) as HTMLSelectElement;
+
         const healBtn = el("button", {
           type: "button",
-          disabled: anyLoading || state.isHealLoading || !clockFull,
+          disabled: anyLoading || state.isHealLoading || !clockFull || harms.length === 0,
           title: "Heal harm (requires full clock)",
         }, state.isHealLoading ? "…" : "Heal");
         healBtn.addEventListener("click", handlers.onHarmHeal);
@@ -709,10 +1133,17 @@ function renderDetail(state: RenderState): HTMLElement {
         return el("div", { style: "margin-top: 1em;" },
           el("h3", { className: "lbl" }, "Healing Clock"),
           clockEl,
-          el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em;" },
+          el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
             addSegmentBtn,
+            healSelect,
             healBtn,
           ),
+          clockFull && harms.length === 0
+            ? el("p", { className: "lbl", style: "margin-top: 0.35em;" }, "(no harms to heal)")
+            : null,
+          state.healNotice
+            ? el("p", { className: "notice", style: "margin-top: 0.35em;" }, state.healNotice)
+            : null,
         );
       })(),
     ),
@@ -937,7 +1368,10 @@ function renderDetail(state: RenderState): HTMLElement {
             a.name,
             a.timesTaken > 1 ? el("span", { className: "ability-times" }, ` ×${a.timesTaken}`) : null,
           ),
-          el("p", { className: "serif", style: "flex: 1; margin: 0; font-size: 0.95em;" }, a.description),
+          // F2ab: taken abilities show their description — the DTO's stored
+          // text, falling back to the game-data SpecialAbilities entry.
+          el("p", { className: "serif", style: "flex: 1; margin: 0; font-size: 0.95em;" },
+            abilityDescription(a, specialAbilities) || "No description available."),
           el("button", {
             type: "button",
             disabled: anyLoading,
@@ -1370,19 +1804,64 @@ function renderDetail(state: RenderState): HTMLElement {
       undoBtn,
     ),
 
-    // Notes (C4: an array of entries; legacy single string still decodes)
+    // Notes (F2ab: C4 array of entries with per-note add/remove; legacy
+    // single string still decodes)
     (() => {
       const notes = c.dossier.notes;
       const entries = Array.isArray(notes) ? notes : notes ? [notes] : [];
-      const notesBody = entries.length > 0
-        ? el("ul", { className: "note-list" },
-            ...entries.map((n) => el("li", {}, n)))
-        : el("p", {}, "(no notes)");
+      const noteEntries = entries.map((n, idx) =>
+        el("li", {
+          className: "note-entry",
+          style: "display: flex; gap: 0.5em; align-items: center;",
+        },
+          el("span", { style: "flex: 1;" }, n),
+          (() => {
+            const rm = el("button", {
+              type: "button",
+              disabled: anyLoading,
+              title: `Remove note ${idx + 1}`,
+            }, "✕");
+            rm.addEventListener("click", () => handlers.onNoteRemove(idx));
+            return rm;
+          })(),
+        ),
+      );
+      const noteInput = el("input", {
+        type: "text",
+        "aria-label": "New note",
+        disabled: anyLoading,
+        placeholder: "add a note",
+      }) as HTMLInputElement;
+      noteInput.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          handlers.onNoteAdd();
+        }
+      });
+      const addBtn = el("button", {
+        type: "button",
+        disabled: anyLoading,
+        title: "Add note",
+      }, state.isNotesLoading ? "…" : "+ Add");
+      addBtn.addEventListener("click", handlers.onNoteAdd);
+
       return el(
         "div",
         { className: "character-notes" },
         el("h2", {}, "Notes"),
-        notesBody,
+        entries.length > 0
+          ? el("ul", { className: "note-list" }, ...noteEntries)
+          : el("p", {}, "(no notes)"),
+        el("div", {
+          className: "note-add-row",
+          style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;",
+        },
+          noteInput,
+          addBtn,
+        ),
+        state.notesNotice
+          ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.notesNotice)
+          : null,
       );
     })(),
   );
@@ -1463,6 +1942,16 @@ export function mountCharacterDetailPage(
   let coinNotice: string | null = null;
   let clocksNotice: string | null = null;
 
+  // F2ab state
+  let crews: readonly CrewSummary[] | null = null;
+  let isCrewsLoading = false;
+  let crewNotice: string | null = null;
+  let isNotesLoading = false;
+  let notesNotice: string | null = null;
+  let namedEditor: NamedEditorState | null = null;
+  let isTraumaPickerLoading = false;
+  let healNotice: string | null = null;
+
   const clearNotices = () => {
     errorMsg = null;
     noticeMsg = null;
@@ -1472,6 +1961,9 @@ export function mountCharacterDetailPage(
     abilityNotice = null;
     coinNotice = null;
     clocksNotice = null;
+    crewNotice = null;
+    notesNotice = null;
+    healNotice = null;
   };
 
   const refreshAndShowNotice = () => {
@@ -1539,6 +2031,29 @@ export function mountCharacterDetailPage(
         },
       }),
     );
+  };
+
+  /**
+   * Standard failure path for a character mutation: clears the loading flag,
+   * recovers from stale revisions, and surfaces API/decode errors. Used by
+   * the F2ab handlers (trauma-from-stress flow needs it twice in a chain).
+   */
+  const failMutate = (err: unknown, clearLoading: () => void) => {
+    if (cancelled) return;
+    clearLoading();
+    if (err instanceof StaleRevisionError) {
+      renderDetailWrapper();
+      refreshAndShowNotice();
+    } else if (err instanceof ApiError) {
+      errorMsg = `API error (${err.status}): ${err.body}`;
+      renderDetailWrapper();
+    } else if (err instanceof DecodeError) {
+      errorMsg = `Invalid response: ${err.message}`;
+      renderDetailWrapper();
+    } else {
+      errorMsg = String(err);
+      renderDetailWrapper();
+    }
   };
 
   /** F2s fund/stash mutation runner: same standard error paths + stale-revision recovery, FundOpResult payload. */
@@ -1893,6 +2408,219 @@ export function mountCharacterDetailPage(
       renderDetailWrapper();
     },
 
+    // -- F2ab: heritage/background/vice dropdowns --------------------------
+
+    onNamedEdit: (key: "heritage" | "background" | "vice") => {
+      if (!currentCharacter || editing !== null || namedEditor !== null) return;
+      const name = getNamedValue(currentCharacter, key, "name");
+      const optionNames = gameDataOptions(gameData, key).map((o) => String(o.Name));
+      const entry = gameDataOptions(gameData, key).find((o) => o.Name === name);
+      namedEditor = {
+        key,
+        option: optionNames.includes(name) ? name : "__custom__",
+        customName: name,
+        customDesc: key === "vice"
+          ? (entry && typeof entry.Description === "string"
+              ? entry.Description
+              : currentCharacter.dossier.vice.description)
+          : "",
+        purveyorName: key === "vice" ? currentCharacter.dossier.vice.purveyor.name : "",
+        purveyorDesc: key === "vice" ? currentCharacter.dossier.vice.purveyor.description : "",
+      };
+      renderDetailWrapper();
+    },
+
+    onNamedSave: () => {
+      if (!currentCharacter || !namedEditor || isDossierLoading) return;
+      const editor = namedEditor;
+      const key = editor.key;
+      // Read the current control values from the DOM so a direct select
+      // change (without an intermediate re-render) is still saved correctly.
+      const keyLabel = key === "heritage" ? "Heritage" : key === "background" ? "Background" : "Vice";
+      const select = root.querySelector(`select[aria-label="${keyLabel} (choose)"]`) as HTMLSelectElement | null;
+      const option = select?.value ?? editor.option;
+      const customName = (root.querySelector(`input[aria-label="${keyLabel} custom name"]`) as HTMLInputElement | null)
+        ?.value ?? editor.customName;
+      let payload: Record<string, unknown>;
+      if (key === "vice") {
+        const optionNames = gameDataOptions(gameData, "vice").map((o) => String(o.Name));
+        const isCustom = option === "__custom__" || !optionNames.includes(option);
+        const name = isCustom ? customName.trim() : option;
+        const entry = gameDataOptions(gameData, "vice").find((o) => o.Name === option);
+        const customDesc = (root.querySelector('input[aria-label="Vice custom description"]') as HTMLInputElement | null)
+          ?.value ?? editor.customDesc;
+        const description = isCustom
+          ? customDesc.trim()
+          : (entry && typeof entry.Description === "string"
+              ? entry.Description
+              : customDesc.trim());
+        const purveyorName = (root.querySelector('input[aria-label="Vice purveyor name"]') as HTMLInputElement | null)
+          ?.value ?? editor.purveyorName;
+        const purveyorDesc = (root.querySelector('input[aria-label="Vice purveyor description"]') as HTMLInputElement | null)
+          ?.value ?? editor.purveyorDesc;
+        payload = {
+          vice: {
+            name,
+            description,
+            purveyor: {
+              name: purveyorName.trim(),
+              description: purveyorDesc.trim(),
+            },
+          },
+        };
+      } else {
+        const optionNames = gameDataOptions(gameData, key).map((o) => String(o.Name));
+        const isCustom = option === "__custom__" || !optionNames.includes(option);
+        const name = isCustom ? customName.trim() : option;
+        const description = isCustom ? "" : (gameDataDescription(gameData, key, option) ?? "");
+        payload = { [key]: { name, description } };
+      }
+      isDossierLoading = true;
+      clearNotices();
+      namedEditor = null;
+      renderDetailWrapper();
+
+      const program = dossierUpdate(characterId, payload, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isDossierLoading = false; },
+      );
+    },
+
+    onNamedCancel: () => {
+      namedEditor = null;
+      renderDetailWrapper();
+    },
+
+    // -- F2ab: stress-full → trauma picker (trauma.add then stress.clear) --
+
+    onTraumaFromStress: () => {
+      if (!currentCharacter || isTraumaPickerLoading) return;
+      const sel = root.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
+      const trauma = sel?.value || null;
+      if (!trauma) return;
+      isTraumaPickerLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = traumaAdd(characterId, trauma, currentCharacter.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            failMutate(err, () => { isTraumaPickerLoading = false; });
+          },
+          onSuccess: (withTrauma) => {
+            if (cancelled) return;
+            // Chain stress.clear with the updated revision from trauma.add.
+            const clearProgram = stressClear(characterId, withTrauma.revision);
+            void Effect.runPromise(
+              Effect.match(clearProgram, {
+                onFailure: (err2) => {
+                  failMutate(err2, () => { isTraumaPickerLoading = false; });
+                },
+                onSuccess: (cleared) => {
+                  if (cancelled) return;
+                  isTraumaPickerLoading = false;
+                  currentCharacter = cleared;
+                  noticeMsg = `${trauma} taken — stress cleared`;
+                  setTimeout(() => {
+                    if (!cancelled) {
+                      noticeMsg = null;
+                      renderDetailWrapper();
+                    }
+                  }, 4000);
+                  renderDetailWrapper();
+                },
+              }),
+            );
+          },
+        }),
+      );
+    },
+
+    // -- F2ab: notes (C4 list) ---------------------------------------------
+
+    onNoteAdd: () => {
+      if (!currentCharacter || isNotesLoading) return;
+      const input = root.querySelector('input[aria-label="New note"]') as HTMLInputElement;
+      const text = input?.value?.trim() ?? "";
+      if (!text) return;
+      isNotesLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = noteAdd(characterId, text, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isNotesLoading = false; },
+      );
+    },
+
+    onNoteRemove: (index: number) => {
+      if (!currentCharacter || isNotesLoading) return;
+      isNotesLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = noteRemove(characterId, index, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isNotesLoading = false; },
+      );
+    },
+
+    // -- F2ab: crew membership ---------------------------------------------
+
+    onCrewJoin: () => {
+      if (!currentCharacter || isCrewsLoading) return;
+      const sel = root.querySelector('select[aria-label="Join crew"]') as HTMLSelectElement;
+      const crewId = sel?.value ?? "";
+      if (!crewId) return;
+      isCrewsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = dossierUpdate(characterId, { crewId }, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isCrewsLoading = false; },
+      );
+    },
+
+    onCrewLeave: () => {
+      if (!currentCharacter || isCrewsLoading) return;
+      if (!currentCharacter.dossier.crewId) return;
+      isCrewsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = dossierUpdate(characterId, { crewId: "" }, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isCrewsLoading = false; },
+      );
+    },
+
     onUndo: () => {
       if (!currentCharacter || isUndoLoading) return;
       isUndoLoading = true;
@@ -2028,44 +2756,32 @@ export function mountCharacterDetailPage(
     onHarmHeal: () => {
       if (!currentCharacter || isHealLoading) return;
       if (currentCharacter.monitor.harm.healingClock.segments < currentCharacter.monitor.harm.healingClock.size) return;
+      // F2ab: the heal picker targets one specific currently-active harm.
+      const sel = root.querySelector('select[aria-label="Harm to heal"]') as HTMLSelectElement;
+      const harms = activeHarms(currentCharacter);
+      const idx = sel ? Number(sel.value) : -1;
+      const harm = idx >= 0 ? harms[idx] : undefined;
+      if (!harm) return;
       isHealLoading = true;
       clearNotices();
       renderDetailWrapper();
 
-      const program = harmHeal(characterId, currentCharacter.revision);
-      void Effect.runPromise(
-        Effect.match(program, {
-          onFailure: (err) => {
-            if (cancelled) return;
-            isHealLoading = false;
-            if (err instanceof StaleRevisionError) {
-              renderDetailWrapper();
-              refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
-            } else {
-              errorMsg = String(err);
+      const program = harmHeal(characterId, harm.intensity, harm.description, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          healNotice = `Healed ${harm.intensity} — ${harm.description}; clock reset`;
+          setTimeout(() => {
+            if (!cancelled) {
+              healNotice = null;
               renderDetailWrapper();
             }
-          },
-          onSuccess: (character) => {
-            if (cancelled) return;
-            isHealLoading = false;
-            currentCharacter = character;
-            noticeMsg = "Harm healed — clock reset";
-            setTimeout(() => {
-              if (!cancelled) {
-                noticeMsg = null;
-                renderDetailWrapper();
-              }
-            }, 4000);
-            renderDetailWrapper();
-          },
-        }),
+          }, 4000);
+          renderDetailWrapper();
+        },
+        () => { isHealLoading = false; },
+        healOpErrorText,
       );
     },
 
@@ -2675,6 +3391,13 @@ export function mountCharacterDetailPage(
       c: currentCharacter,
       gameData,
       playbookData,
+      crews,
+      isCrewsLoading,
+      crewNotice,
+      isNotesLoading,
+      notesNotice,
+      isTraumaPickerLoading,
+      healNotice,
       isStressLoading,
       isStressClearLoading,
       isTraumaLoading,
@@ -2703,6 +3426,8 @@ export function mountCharacterDetailPage(
       undoNotice,
       harmSpillNotice,
       editing,
+      namedEditor,
+      rerender: renderDetailWrapper,
       handlers,
     }));
   };
@@ -2723,7 +3448,10 @@ export function mountCharacterDetailPage(
     // Campaign clocks for the Projects section; failures degrade gracefully
     // (the section renders "(no clocks)" until a successful fetch).
     const clockList = yield* Effect.either(listClocks());
-    return { character, game, playbook, clockList };
+    // Crew list for the membership selector; failures degrade gracefully
+    // (the selector renders disabled until a successful fetch).
+    const crewList = yield* Effect.either(listCrews());
+    return { character, game, playbook, clockList, crewList };
   });
 
   void Effect.runPromise(
@@ -2739,7 +3467,7 @@ export function mountCharacterDetailPage(
               : String(err);
         setChildren(root, renderError(msg));
       },
-      onSuccess: ({ character, game, playbook, clockList }) => {
+      onSuccess: ({ character, game, playbook, clockList, crewList }) => {
         if (cancelled) return;
         root.setAttribute("aria-busy", "false");
         currentCharacter = character;
@@ -2751,6 +3479,9 @@ export function mountCharacterDetailPage(
         }
         if (clockList._tag === "Right") {
           clocks = clockList.right;
+        }
+        if (crewList._tag === "Right") {
+          crews = crewList.right;
         }
         experienceCondition = extractExperienceCondition(playbookData, gameData, character.playbook.name);
         renderDetailWrapper();
