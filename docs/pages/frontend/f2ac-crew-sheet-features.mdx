@@ -1,0 +1,111 @@
+---
+title: F2ac — Crew Sheet: reputation dropdown, rep/turf tracker, multi-notes, cohort dropdowns
+---
+
+# F2ac: Crew Sheet — playtest features
+
+Playtest round 1 (#2, #19, #20, #21) rework of the crew sheet: the reputation
+field becomes a game-data dropdown, the rep tracker grows a real turf track
+and an SRD Develop action, notes become a multi-entry list with per-entry
+remove, and the cohort add/edit forms get kind-conditional type dropdowns.
+
+Part 1 (committed) added the client ops `crewNoteAdd` / `crewNoteRemove` /
+`crewTurfAdd` plus the `turf` field in the crew DTO and test-fixture prep.
+This page documents the UI work (part 2): everything lives in
+`frontend/src/pages/crew-detail.ts` + page tests + this doc.
+
+## Section → op mapping (F2ac deltas)
+
+| Section | Control | Op | Body |
+|---------|---------|----|------|
+| Profile | Reputation `<select>` + Set | `fields.update` | `{reputation}` — only when changed |
+| Rep & Turf | rep box row + −/+ | `rep.add` | `{delta}` |
+| Rep & Turf | turf slots + −/+ | `turf.add` | `{delta}` (clamped 0..6 server-side) |
+| Rep & Turf | Develop button | chained ops (below) | — |
+| Notes | textarea + Add note | `note.add` | `{text}` |
+| Notes | Remove note N | `note.remove` | `{index}` (0-based) |
+| Cohorts | gang/expert `<select>` (+ custom text) | `cohort.add` / `cohort.update` | kind-typed field |
+
+## 1. Reputation dropdown
+
+The profile block's free-text reputation edit is replaced by a native
+`<select>` populated from the crew type's `Reputations` game data (the 8
+values: Ambitious, Brutal, Daring, Honorable, Professional, Savvy, Subtle,
+Strange for BitD crews). Extraction follows the page's standard
+preferred/fallback shape: the per-crew-type endpoint
+(`getCrewType` → `Reputations`) wins when available; otherwise the crew type
+is found by name in the `CrewTypes` array of the whole game-data object
+(`getCrewGameData`). Setting the menu posts `crewFieldsUpdate { reputation }`
+— the same op the old free-text field used, and only when the value changed.
+Without game data the menu degrades to a read-only value row (the DTO value
+still displays).
+
+## 2. Rep & Turf tracker + Develop (the meaty one)
+
+Per the SRD Development + Turf rules:
+
+- **Rep tracker**: 12 heavy boxes, filled left→right via `rep.add` (+/− and
+  box clicks). Box count comes from the DTO `rep.max` (12 in the SRD).
+- **Turf row**: 6 slots rendered on the same tracker, **measured from the
+  right** — filled from the left per the turf count and grayed from the
+  right. Slots are non-interactive `<span>`s (never buttons): turf changes
+  only through the +/− controls posting `turf.add` (server clamps 0..6).
+- **Threshold**: each turf lowers the rep develop threshold by one —
+  `threshold = rep.max − turf`. A readout shows `develop at N rep
+  (12 − N turf)`.
+- **Develop button**: enabled when `rep.current >= threshold`:
+  - **Weak hold** → `hold.set strong` + `rep.add −current` (rep reset to 0).
+  - **Strong hold** → pay `coin.add −((tier+1)×8)`, `tier.add +1`, `rep.add
+    −current`, `hold.set weak`. When coin is short the flow stops before any
+    op with an `INSUFFICIENT_FUNDS` notice.
+
+The chained ops thread each returned crew's revision into the next call
+(standard `crewMutate` sequencing; a mid-chain failure goes through the usual
+STALE_REVISION / op-error path).
+
+## 3. Notes: multi-line box + per-note remove
+
+Notes move out of the free-text profile fields into their own section: the
+DTO `notes` string[] (legacy single string still decodes) renders as a
+`.note-list` of `.note-entry` rows, each with a `Remove note N` button
+(0-based index, matching the op). A multi-line `<textarea>` (`aria-label`
+"New note") plus an "Add note" button posts `note.add {text}`.
+
+## 4. Cohort conditional dropdowns
+
+In both the add form and the edit form the type field is now a
+kind-conditional `<select>`:
+
+- **Gang** → gang select only when `cohortKind=gang`, options from
+  game-data `CohortGangTypes` (Adepts, Rooks, Rovers, Skulls, Thugs).
+- **Expert** → expert select only when `cohortKind=expert`, options from
+  game-data `CohortExpertTypes` (Doctor, Investigator, Occultist, Assassin,
+  Spy, Custom); selecting **Custom** reveals a free-text input whose value is
+  sent as `expertType`.
+
+The Ada backend serves the raw `{stem}-crews.json` file, which carries the
+per-crew-type `Reputations` but not the top-level cohort lists, so the
+task-specified canonical lists are the fallback when the game-data keys are
+absent (the UI stays usable live). When a game *does* provide
+`CohortGangTypes` / `CohortExpertTypes` those arrays win. Existing cohort
+types outside the list are preserved: a gang type not in the data is appended
+as an extra option; an expert type not in the data maps onto the Custom path
+with the value pre-filled in the text input.
+
+## Game data loading
+
+The crew page now fetches `getCrewGameData` (the whole `{stem}-crews.json`
+object) instead of `getCrewTypes` (the `CrewTypes` array) so the top-level
+cohort lists are available alongside the per-crew-type data; the
+`CrewTypes` array is derived from it for the abilities/upgrades/XP/reputation
+lookups. Load stays three requests: `getCrew` + `getCrewType` (per-type,
+404-tolerant) + `getCrewGameData`.
+
+## Tests
+
+`frontend/src/pages/crew-detail.test.ts` (67 tests, happy-dom) covers each
+feature: reputation dropdown values/save/degradation; turf row rendering,
+0..6 bounds, `turf.add` deltas, threshold readout, and all three Develop
+paths (weak→strong, strong→tier with funds, insufficient funds); notes
+render/add/remove incl. legacy strings; and the cohort conditional selects
+(add + edit, Custom reveal, out-of-data types preserved).

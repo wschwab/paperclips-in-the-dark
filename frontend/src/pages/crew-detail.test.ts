@@ -37,6 +37,7 @@ function crewDTO(overrides: Record<string, unknown> = {}) {
     coin: 0,
     stash: 2,
     notes: "Up-and-coming crew",
+    turf: 0,
     ...overrides,
   };
 }
@@ -603,7 +604,15 @@ describe("crew-detail page", () => {
         expect(root.querySelectorAll(".crew-wanted .stress-box").length).toBe(4);
         // Rep boxes filled per current
         expect(root.querySelectorAll('.crew-rep [data-stress="1"]').length).toBe(3);
-        expect(root.textContent).toContain("Turf fills rep boxes");
+        // Turf row: 6 slots, filled from the left per turf count (0 here)
+        expect(root.querySelectorAll(".crew-turf .turf-slot").length).toBe(6);
+        expect(root.querySelectorAll('.crew-turf .turf-slot[data-stress="1"]').length).toBe(0);
+        // Threshold readout: develop at rep.max − turf = 12 − 0
+        expect(root.textContent).toContain("develop at 12 rep (12 − 0 turf)");
+        // Develop disabled below threshold (rep 3 < 12)
+        const developBtn = root.querySelector('button[title^="Develop"]') as HTMLButtonElement;
+        expect(developBtn).not.toBeNull();
+        expect(developBtn.disabled).toBe(true);
         // Tier value + hold select from contract enum values
         expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
         const holdSelect = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
@@ -1112,6 +1121,8 @@ describe("crew-detail page", () => {
       Name: "Blades in the Dark",
       Language: "en",
       CrewTypes: [CREW_TYPE_DATA],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
     };
 
     const crewOpOk = (crew: unknown, opName: string) => ({
@@ -1542,8 +1553,18 @@ describe("crew-detail page", () => {
       expect([...kindSelect.options].map((o) => o.value)).toEqual(["gang", "expert"]);
       expect(kindSelect.value).toBe("gang");
 
-      const gangInput = root.querySelector('input[aria-label="Cohort gang type"]') as HTMLInputElement;
-      gangInput.value = "Bravos";
+      // F2ac: the gang select shows only when kind=gang; options come from
+      // game-data CohortGangTypes (canonical fallback when absent)
+      const gangSelect = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement;
+      expect(gangSelect).not.toBeNull();
+      expect(gangSelect.hidden).toBe(false);
+      expect([...gangSelect.options].map((o) => o.value)).toEqual([
+        "", "Adepts", "Rooks", "Rovers", "Skulls", "Thugs",
+      ]);
+      const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement;
+      expect(expertSelect).not.toBeNull();
+      expect(expertSelect.hidden).toBe(true);
+      gangSelect.value = "Rooks";
       const qualityInput = root.querySelector('input[aria-label="Cohort quality"]') as HTMLInputElement;
       qualityInput.value = "2";
       const armorInput = root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement;
@@ -1564,7 +1585,7 @@ describe("crew-detail page", () => {
         expect.objectContaining({
           body: JSON.stringify({
             cohortKind: "gang",
-            gangType: "Bravos",
+            gangType: "Rooks",
             quality: 2,
             hasArmor: true,
             edges: ["Tough", "Savage"],
@@ -1740,6 +1761,8 @@ describe("crew-detail page", () => {
       Name: "Blades in the Dark",
       Language: "en",
       CrewTypes: [CREW_TYPE_DATA],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
     };
 
     const crewOpOk = (crew: unknown, opName: string) => ({
@@ -1922,6 +1945,631 @@ describe("crew-detail page", () => {
       // no "Criteria:" label, and no error notice
       expect(root.querySelector(".crew-xp")?.textContent).not.toContain("Criteria:");
       expect(root.querySelector(".error")).toBeNull();
+    });
+  });
+
+  // -- F2ac: Reputation dropdown ---------------------------------------------
+
+  describe("F2ac Reputation dropdown", () => {
+    const REPUTATIONS = [
+      "Ambitious", "Brutal", "Daring", "Honorable",
+      "Professional", "Savvy", "Subtle", "Strange",
+    ];
+    const GAME_DATA = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [{ Name: "Assassins", Reputations: REPUTATIONS }],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
+    };
+
+    it("renders the reputation dropdown from game-data Reputations (the 8 values) with the current value selected", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ reputation: "Savvy" })))
+        .mockResolvedValueOnce({ ok: false, status: 404, text: async () => "games.crew: NOT_FOUND" })
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Reputation"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Reputation"]') as HTMLSelectElement;
+      expect([...select.options].map((o) => o.value)).toEqual(REPUTATIONS);
+      expect(select.value).toBe("Savvy");
+      // the read row still shows the DTO reputation
+      expect(root.querySelector(".crew-reputation .field-value")?.textContent).toBe("Savvy");
+    });
+
+    it("prefers the per-crew-type endpoint Reputations when it is available", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Assassins", Reputations: REPUTATIONS }))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Reputation"]')).not.toBeNull();
+      });
+      const select = root.querySelector('select[aria-label="Reputation"]') as HTMLSelectElement;
+      expect([...select.options].map((o) => o.value)).toEqual(REPUTATIONS);
+    });
+
+    it("saves a reputation change via crewFieldsUpdate { reputation }", async () => {
+      const updated = crewDTO({ revision: 6, reputation: "Savvy" });
+      const fieldsOk = {
+        ok: true,
+        crew: updated,
+        applied: { op: "fields.update" },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce({ ok: false, status: 404, text: async () => "games.crew: NOT_FOUND" })
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(fieldsOk));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Set reputation"]')).not.toBeNull();
+      });
+
+      const select = root.querySelector('select[aria-label="Reputation"]') as HTMLSelectElement;
+      select.value = "Savvy";
+      (root.querySelector('button[title="Set reputation"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-reputation .field-value")?.textContent).toBe("Savvy");
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/fields.update`,
+        expect.objectContaining({ body: JSON.stringify({ reputation: "Savvy" }) }),
+      );
+    });
+
+    it("degrades to a read-only value row when game data has no Reputations", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ reputation: "ruthless" })))
+        .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" })
+        .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom" });
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-reputation")).not.toBeNull();
+      });
+      // current value still shown; menu disabled and empty
+      expect(root.querySelector(".crew-reputation .field-value")?.textContent).toBe("ruthless");
+      const select = root.querySelector('select[aria-label="Reputation"]') as HTMLSelectElement;
+      expect(select.disabled).toBe(true);
+      expect([...select.options].length).toBe(0);
+      expect((root.querySelector('button[title="Set reputation"]') as HTMLButtonElement).disabled).toBe(true);
+    });
+  });
+
+  // -- F2ac: Rep & Turf tracker + Develop ------------------------------------
+
+  describe("F2ac Rep & Turf tracker and Develop", () => {
+    const crewOpOk = (crew: unknown, opName: string) => ({
+      ok: true,
+      crew,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    it("renders the 6-slot turf row filled from the left (grayed from the right) with +/− controls", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ turf: 2 })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelectorAll(".crew-turf .turf-slot").length).toBe(6);
+      });
+
+      const slots = root.querySelectorAll<HTMLElement>(".crew-turf .turf-slot");
+      expect(slots.length).toBe(6);
+      expect(slots[0]?.getAttribute("data-stress")).toBe("1");
+      expect(slots[1]?.getAttribute("data-stress")).toBe("1");
+      expect(slots[2]?.getAttribute("data-stress")).toBe("0");
+      expect(slots[5]?.getAttribute("data-stress")).toBe("0");
+      expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 2 of 6");
+      // turf slots are NOT buttons (no box-click rep path)
+      expect(root.querySelectorAll(".crew-turf button.turf-slot").length).toBe(0);
+      // threshold readout: 12 − 2 turf = 10
+      expect(root.querySelector(".develop-threshold")?.textContent).toContain("develop at 10 rep (12 − 2 turf)");
+      // Develop enabled at rep 3 >= ... no: rep 3 < 10 → disabled
+      expect((root.querySelector('button[title^="Develop"]') as HTMLButtonElement).disabled).toBe(true);
+      // +/− present; − enabled at turf 2
+      expect((root.querySelector('button[title="Remove 1 turf"]') as HTMLButtonElement).disabled).toBe(false);
+      expect((root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement).disabled).toBe(false);
+    });
+
+    it("disables turf +/− at the 0..6 bounds", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ turf: 0 })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove 1 turf"]')).not.toBeNull();
+      });
+      expect((root.querySelector('button[title="Remove 1 turf"]') as HTMLButtonElement).disabled).toBe(true);
+
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ turf: 6 })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add 1 turf"]')).not.toBeNull();
+      });
+      expect((root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement).disabled).toBe(true);
+      expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 6 of 6");
+    });
+
+    it("turf +/− post turf.add with the right delta and re-render the turf row", async () => {
+      const lower = crewDTO({ revision: 6, turf: 1 });
+      const raised = crewDTO({ revision: 7, turf: 3 });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ turf: 2 })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewOpOk(lower, "turf.add")))
+        .mockResolvedValueOnce(ok(crewOpOk(raised, "turf.add")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 2 of 6");
+      });
+
+      (root.querySelector('button[title="Remove 1 turf"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 1 of 6");
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/turf.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: -1 }) }),
+      );
+
+      (root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 3 of 6");
+      });
+      expect(global.fetch).toHaveBeenLastCalledWith(
+        `/api/crews/${CREW_ID}/ops/turf.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: 1 }) }),
+      );
+    });
+
+    it("Develop with weak hold: hold.set strong + rep reset to 0 (rep.add −current)", async () => {
+      const strong = crewDTO({ revision: 6, hold: "strong", rep: { current: 12, max: 12 } });
+      const reset = crewDTO({ revision: 7, hold: "strong", rep: { current: 0, max: 12 } });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ hold: "weak", rep: { current: 12, max: 12 } })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewOpOk(strong, "hold.set")))
+        .mockResolvedValueOnce(ok(crewOpOk(reset, "rep.add")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title^="Develop"]')).not.toBeNull();
+      });
+      const developBtn = root.querySelector('button[title^="Develop"]') as HTMLButtonElement;
+      expect(developBtn.disabled).toBe(false);
+      developBtn.click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("0 of 12");
+      });
+      // hold select reflects strong
+      const holdSelect = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
+      expect(holdSelect.value).toBe("strong");
+      // two sequential ops with threaded revisions
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/hold.set`,
+        expect.objectContaining({ body: JSON.stringify({ hold: "strong" }) }),
+      );
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/rep.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: -12 }) }),
+      );
+    });
+
+    it("Develop with strong hold + funds: coin.add −(tier+1)*8, tier.add +1, rep reset, hold.set weak", async () => {
+      // tier 1 → cost (1+1)*8 = 16; coin 20
+      const paid = crewDTO({ revision: 6, hold: "strong", coin: 4, rep: { current: 12, max: 12 } });
+      const raised = crewDTO({ revision: 7, hold: "strong", tier: 2, coin: 4, rep: { current: 12, max: 12 } });
+      const reset = crewDTO({ revision: 8, hold: "strong", tier: 2, coin: 4, rep: { current: 0, max: 12 } });
+      const weakened = crewDTO({ revision: 9, hold: "weak", tier: 2, coin: 4, rep: { current: 0, max: 12 } });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ hold: "strong", tier: 1, coin: 20, rep: { current: 12, max: 12 } })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewOpOk(paid, "coin.add")))
+        .mockResolvedValueOnce(ok(crewOpOk(raised, "tier.add")))
+        .mockResolvedValueOnce(ok(crewOpOk(reset, "rep.add")))
+        .mockResolvedValueOnce(ok(crewOpOk(weakened, "hold.set")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title^="Develop"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title^="Develop"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("2");
+      });
+      expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("0 of 12");
+      expect((root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement).value).toBe("weak");
+      expect(root.querySelector(".crew-coin-count")?.textContent).toBe("4");
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/coin.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: -16 }) }),
+      );
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/tier.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: 1 }) }),
+      );
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/rep.add`,
+        expect.objectContaining({ body: JSON.stringify({ delta: -12 }) }),
+      );
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/hold.set`,
+        expect.objectContaining({ body: JSON.stringify({ hold: "weak" }) }),
+      );
+    });
+
+    it("Develop with strong hold + insufficient funds surfaces INSUFFICIENT_FUNDS and sends no ops", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ hold: "strong", tier: 2, coin: 5, rep: { current: 12, max: 12 } })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title^="Develop"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title^="Develop"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const err = root.querySelector(".notice");
+        expect(err?.textContent).toContain("INSUFFICIENT_FUNDS");
+      });
+      // tier 2 → cost (2+1)*8 = 24 > coin 5; nothing was posted
+      expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(3);
+    });
+  });
+
+  // -- F2ac: Notes -----------------------------------------------------------
+
+  describe("F2ac Notes", () => {
+    const crewOpOk = (crew: unknown, opName: string) => ({
+      ok: true,
+      crew,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+
+    it("renders the multi-note list and the new-note textarea", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(ok(crewDTO({ notes: ["First note", "Second note"] })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-notes")).not.toBeNull();
+      });
+      const entries = root.querySelectorAll<HTMLElement>(".note-list .note-entry");
+      expect(entries.length).toBe(2);
+      expect(entries[0]?.textContent).toContain("First note");
+      expect(entries[1]?.textContent).toContain("Second note");
+      expect(root.querySelector('textarea[aria-label="New note"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Add note"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Remove note 0"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Remove note 1"]')).not.toBeNull();
+    });
+
+    it("renders a legacy single-string notes field as one entry", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(ok(crewDTO({ notes: "Up-and-coming crew" })));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-notes")).not.toBeNull();
+      });
+      const entries = root.querySelectorAll<HTMLElement>(".note-list .note-entry");
+      expect(entries.length).toBe(1);
+      expect(entries[0]?.textContent).toContain("Up-and-coming crew");
+    });
+
+    it("adds a note via note.add and renders it", async () => {
+      const added = crewDTO({ revision: 6, notes: ["First note", "Second note"] });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ notes: ["First note"] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewOpOk(added, "note.add")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('textarea[aria-label="New note"]')).not.toBeNull();
+      });
+      const textarea = root.querySelector('textarea[aria-label="New note"]') as HTMLTextAreaElement;
+      textarea.value = "Second note";
+      (root.querySelector('button[title="Add note"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelectorAll(".note-list .note-entry").length).toBe(2);
+      });
+      expect(root.querySelectorAll<HTMLElement>(".note-list .note-entry")[1]?.textContent).toContain("Second note");
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/note.add`,
+        expect.objectContaining({ body: JSON.stringify({ text: "Second note" }) }),
+      );
+    });
+
+    it("removes a note by index via note.remove", async () => {
+      const removed = crewDTO({ revision: 6, notes: ["First note", "Third note"] });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ notes: ["First note", "Second note", "Third note"] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewOpOk(removed, "note.remove")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove note 1"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Remove note 1"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelectorAll(".note-list .note-entry").length).toBe(2);
+        expect(root.querySelector('button[title="Remove note 1"]')).not.toBeNull();
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/note.remove`,
+        expect.objectContaining({ body: JSON.stringify({ index: 1 }) }),
+      );
+    });
+  });
+
+  // -- F2ac: Cohort conditional dropdowns ------------------------------------
+
+  describe("F2ac Cohort conditional dropdowns", () => {
+    const COHORT_ID = "b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+    const GAME_DATA = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [{ Name: "Assassins" }],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
+    };
+    const crewOpOk = (crew: unknown, opName: string) => ({
+      ok: true,
+      crew,
+      applied: { op: opName },
+      sideEffects: [],
+      error: null,
+    });
+    function cohortDTO(overrides: Record<string, unknown> = {}) {
+      return {
+        id: COHORT_ID,
+        cohortKind: "gang",
+        gangType: "Bravos",
+        expertType: "",
+        quality: 2,
+        scale: 1,
+        hasArmor: true,
+        edges: [],
+        flaws: [],
+        harm: "healthy",
+        description: "",
+        ...overrides,
+      };
+    }
+
+    it("shows the gang select only when kind=gang and the expert select only when kind=expert, with Custom revealing a text input", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Cohort gang type"]')).not.toBeNull();
+      });
+      const kindSelect = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement;
+      const gangSelect = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement;
+      const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement;
+      const customInput = root.querySelector('input[aria-label="Cohort expert custom type"]') as HTMLInputElement;
+
+      // default kind=gang: gang select visible, expert hidden
+      expect(gangSelect.hidden).toBe(false);
+      expect(expertSelect.hidden).toBe(true);
+      // options come from game-data CohortGangTypes
+      expect([...gangSelect.options].map((o) => o.value)).toEqual([
+        "", "Adepts", "Rooks", "Rovers", "Skulls", "Thugs",
+      ]);
+
+      // switch to expert: gang hidden, expert visible
+      kindSelect.value = "expert";
+      kindSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      expect(gangSelect.hidden).toBe(true);
+      expect(expertSelect.hidden).toBe(false);
+      expect([...expertSelect.options].map((o) => o.value)).toEqual([
+        "", "Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom",
+      ]);
+
+      // Custom reveals the free-text input
+      expect(customInput.hidden).toBe(true);
+      expertSelect.value = "Custom";
+      expertSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      expect(customInput.hidden).toBe(false);
+    });
+
+    it("adds an expert cohort with a custom type (Custom → text input → expertType)", async () => {
+      const added = crewDTO({
+        revision: 6,
+        cohorts: [cohortDTO({ cohortKind: "expert", gangType: "", expertType: "Sage" })],
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(crewOpOk(added, "cohort.add")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add cohort"]')).not.toBeNull();
+      });
+      const kindSelect = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement;
+      kindSelect.value = "expert";
+      kindSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement;
+      expertSelect.value = "Custom";
+      expertSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      const customInput = root.querySelector('input[aria-label="Cohort expert custom type"]') as HTMLInputElement;
+      customInput.value = "Sage";
+
+      (root.querySelector('button[title="Add cohort"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(`.cohort-entry[data-cohort-id="${COHORT_ID}"]`)).not.toBeNull();
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/cohort.add`,
+        expect.objectContaining({
+          body: JSON.stringify({ cohortKind: "expert", expertType: "Sage", hasArmor: false }),
+        }),
+      );
+    });
+
+    it("edit form uses the gang select and preserves a gang type that is not in the game data", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit cohort: Bravos"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit cohort: Bravos"]') as HTMLButtonElement).click();
+
+      const gangSelect = root.querySelector('select[aria-label="Edit gang type"]') as HTMLSelectElement;
+      expect(gangSelect).not.toBeNull();
+      // current "Bravos" appended so it stays selectable
+      expect([...gangSelect.options].map((o) => o.value)).toEqual([
+        "Adepts", "Rooks", "Rovers", "Skulls", "Thugs", "Bravos",
+      ]);
+      expect(gangSelect.value).toBe("Bravos");
+      // expert controls are not rendered for a gang cohort
+      expect(root.querySelector('select[aria-label="Edit expert type"]')).toBeNull();
+
+      // change the type and save → cohort.update sends gangType
+      gangSelect.value = "Rooks";
+      const updated = crewDTO({
+        revision: 6,
+        cohorts: [cohortDTO({ gangType: "Rooks" })],
+      });
+      global.fetch = vi.fn().mockResolvedValue(ok(crewOpOk(updated, "cohort.update")));
+      (root.querySelector('button[title="Save cohort: Bravos"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".cohort-type")?.textContent).toBe("Rooks");
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/cohort.update`,
+        expect.objectContaining({
+          body: JSON.stringify({ cohortId: COHORT_ID, gangType: "Rooks" }),
+        }),
+      );
+    });
+
+    it("edit form maps a custom expert type onto the Custom input and saves it", async () => {
+      const expert = cohortDTO({
+        cohortKind: "expert",
+        gangType: "",
+        expertType: "Sage",
+        hasArmor: false,
+      });
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [expert] })))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit cohort: Sage"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit cohort: Sage"]') as HTMLButtonElement).click();
+
+      const expertSelect = root.querySelector('select[aria-label="Edit expert type"]') as HTMLSelectElement;
+      expect(expertSelect.value).toBe("Custom");
+      const customInput = root.querySelector('input[aria-label="Edit expert custom type"]') as HTMLInputElement;
+      expect(customInput.hidden).toBe(false);
+      expect(customInput.value).toBe("Sage");
+
+      // edit the custom text and save
+      customInput.value = "Mystic";
+      const updated = crewDTO({
+        revision: 6,
+        cohorts: [cohortDTO({
+          cohortKind: "expert",
+          gangType: "",
+          expertType: "Mystic",
+          hasArmor: false,
+        })],
+      });
+      global.fetch = vi.fn().mockResolvedValue(ok(crewOpOk(updated, "cohort.update")));
+      (root.querySelector('button[title="Save cohort: Sage"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".cohort-type")?.textContent).toBe("Mystic");
+      });
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/cohort.update`,
+        expect.objectContaining({
+          body: JSON.stringify({ cohortId: COHORT_ID, expertType: "Mystic" }),
+        }),
+      );
     });
   });
 

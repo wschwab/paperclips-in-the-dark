@@ -852,6 +852,40 @@ export function crewStashAdd(
 }
 
 // ---------------------------------------------------------------------------
+// F2ac crew operations — crewNoteAdd, crewNoteRemove, crewTurfAdd
+// (C4 playtest: notes[] via note.add/note.remove; turf 0..6 via turf.add)
+// ---------------------------------------------------------------------------
+
+/** Append a note to crew.notes (C4 string[]). The server rejects empty text
+ * with VALIDATION. */
+export function crewNoteAdd(
+  id: string,
+  text: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "note.add", revision, { text });
+}
+
+/** Remove the note at the 0-based index (out of range → NOT_FOUND). */
+export function crewNoteRemove(
+  id: string,
+  index: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "note.remove", revision, { index });
+}
+
+/** Crew turf delta (C4: clamped 0..6 server-side; each turf lowers the rep
+ * develop threshold by one). Negative deltas remove turf. */
+export function crewTurfAdd(
+  id: string,
+  delta: number,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "turf.add", revision, { delta });
+}
+
+// ---------------------------------------------------------------------------
 // F2v crew operations — crewAbilityTake, crewAbilityRemove, upgradeMark,
 // upgradeUnmark, getCrewType, getCrewTypes
 // ---------------------------------------------------------------------------
@@ -1033,6 +1067,25 @@ export function getCrewTypes(
       },
       catch: (cause) => new DecodeError(cause),
     });
+  });
+}
+
+/**
+ * The raw crew game-data file for a game (`{stem}-crews.json` via
+ * /api/games/{stem}/crews): `{ Name, Language, CrewTypes, CohortGangTypes?,
+ * CohortExpertTypes? }`. Unlike getCrewTypes this returns the whole object —
+ * the crew page needs the top-level cohort type lists (C4) in addition to
+ * the CrewTypes array.
+ */
+export function getCrewGameData(
+  gameStem: string,
+): Effect.Effect<Record<string, unknown>, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/games/${gameStem}/crews`);
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+      yield* Effect.fail(new DecodeError(new Error("Expected crews object")));
+    }
+    return raw as Record<string, unknown>;
   });
 }
 

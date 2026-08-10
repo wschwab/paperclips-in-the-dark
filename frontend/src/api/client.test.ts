@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -230,6 +230,7 @@ describe("getCrew", () => {
       coin: 0,
       stash: 2,
       notes: "Up-and-coming crew",
+    turf: 0,
     };
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -685,6 +686,7 @@ describe("createCrew", () => {
       coin: 0,
       stash: 0,
       notes: "",
+    turf: 0,
     };
 
     const opResult = {
@@ -958,6 +960,7 @@ describe("undoCrew", () => {
       coin: 0,
       stash: 2,
       notes: "Up-and-coming crew",
+    turf: 0,
     };
 
     const opResult = {
@@ -2158,6 +2161,7 @@ function makeCrew(overrides: Record<string, unknown> = {}) {
     coin: 0,
     stash: 2,
     notes: "Up-and-coming crew",
+    turf: 0,
     ...overrides,
   };
 }
@@ -5923,6 +5927,240 @@ describe("crewXpClear", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F2ac crew operations — crewNoteAdd, crewNoteRemove, crewTurfAdd,
+// getCrewGameData (raw crew game-data file for cohort type menus)
+// ---------------------------------------------------------------------------
+
+describe("crewNoteAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/note.add with text and If-Match, decodes crew", async () => {
+    const noted = makeCrew({ revision: 6, notes: ["first", "second"] });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(noted, "note.add")),
+    });
+
+    const result = await Effect.runPromise(crewNoteAdd(CREW_ID_F2Y, "second", 5));
+    expect(result.notes).toEqual(["first", "second"]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/note.add`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ text: "second" }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the op result is ok:false", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("note.add", "VALIDATION", "empty text", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewNoteAdd(CREW_ID_F2Y, "", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("VALIDATION");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("note.add", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewNoteAdd(CREW_ID_F2Y, "x", 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("crewNoteRemove", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/note.remove with the 0-based index", async () => {
+    const trimmed = makeCrew({ revision: 6, notes: ["second"] });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(trimmed, "note.remove")),
+    });
+
+    const result = await Effect.runPromise(crewNoteRemove(CREW_ID_F2Y, 0, 5));
+    expect(result.notes).toEqual(["second"]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/note.remove`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ index: 0 }),
+      },
+    );
+  });
+
+  it("exposes ApiError when the note index is out of range (NOT_FOUND)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpErr("note.remove", "NOT_FOUND", "note index out of range", makeCrew())),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewNoteRemove(CREW_ID_F2Y, 9, 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.body).toContain("NOT_FOUND");
+    }
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("note.remove", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewNoteRemove(CREW_ID_F2Y, 0, 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("crewTurfAdd", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/turf.add with delta and If-Match, decodes crew", async () => {
+    const withTurf = makeCrew({ revision: 6, turf: 3 });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(withTurf, "turf.add")),
+    });
+
+    const result = await Effect.runPromise(crewTurfAdd(CREW_ID_F2Y, 1, 5));
+    expect(result.turf).toBe(3);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/turf.add`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ delta: 1 }),
+      },
+    );
+  });
+
+  it("sends a negative delta to reduce turf", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(makeCrew({ revision: 6, turf: 1 }), "turf.add")),
+    });
+
+    await Effect.runPromise(crewTurfAdd(CREW_ID_F2Y, -1, 5));
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/turf.add`,
+      expect.objectContaining({ body: JSON.stringify({ delta: -1 }) }),
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("turf.add", 7)),
+    });
+
+    const result = await Effect.runPromise(Effect.either(crewTurfAdd(CREW_ID_F2Y, 1, 5)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
+    }
+  });
+});
+
+describe("getCrewGameData", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/games/{stem}/crews and returns the raw crews file object", async () => {
+    const crewsData = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [{ Name: "Assassins", SpecialAbilities: [] }],
+      CohortGangTypes: ["Adepts", "Rooks"],
+      CohortExpertTypes: ["Doctor", "Custom"],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewsData),
+    });
+
+    const result = await Effect.runPromise(getCrewGameData("blades-in-the-dark"));
+    expect(result.CohortGangTypes).toEqual(["Adepts", "Rooks"]);
+    expect(result.CohortExpertTypes).toEqual(["Doctor", "Custom"]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/games/blades-in-the-dark/crews",
+      { headers: { Accept: "application/json" } },
+    );
+  });
+
+  it("exposes ApiError when fetch fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: async () => "Not Found",
+      status: 404,
+    });
+
+    const result = await Effect.runPromise(Effect.either(getCrewGameData("nonexistent-game")));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(404);
+    }
+  });
+
+  it("exposes DecodeError when the response is not an object", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify([1, 2, 3]),
+    });
+
+    const result = await Effect.runPromise(Effect.either(getCrewGameData("blades-in-the-dark")));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
     }
   });
 });
