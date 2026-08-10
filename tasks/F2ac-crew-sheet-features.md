@@ -15,3 +15,10 @@ acceptance:
 
 ## Log
 - 2026-08-09: filed from playtest round 1 plan (#2, #19, #20, #21).
+- 2026-08-10: DONE (in two parts). Part 1 (client ops crewNoteAdd/crewNoteRemove/
+  crewTurfAdd + schema turf) was salvaged after the first dispatch died silently
+  11.5h in (client green at 396, page UI never started); part 2 (f2ac-crew-ui)
+  implemented the page UI. Orchestrator verification: 414/414 tests + build green
+  by rerun; probe port 9769 — reputation fields.update, turf.add, note.add,
+  full develop flow (rep 12 → hold.set strong + rep reset; coin −16 → tier +1 →
+  rep reset → hold weak), cohort.add with gangType — all correct.
