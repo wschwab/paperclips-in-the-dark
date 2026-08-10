@@ -4,7 +4,7 @@
 	"CrewTypes": [
 		{
 			"Name": "Assassins",
-			"Hook": "You're professional murderers—death is your business.",
+			"Hook": "You're professional murderers\u2014death is your business.",
 			"Description": "Assassins use murder, intimidation, and targeted violence to maintain control of their operations and earn coin.",
 			"ExperienceTrigger": "Execute a successful murder, ransom, or assassination operation.",
 			"SpecialAbilities": [
@@ -45,28 +45,95 @@
 				}
 			],
 			"Upgrades": [
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew." },
-				{ "Name": "Training", "TotalBoxes": 1, "Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime." },
-				{ "Name": "Secure Lair", "TotalBoxes": 2, "Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures." },
-				{ "Name": "Hidden Lair", "TotalBoxes": 1, "Description": "Your lair has a secret location and is disguised to hide it from view." },
-				{ "Name": "Vault", "TotalBoxes": 2, "Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16." },
-				{ "Name": "Quarters", "TotalBoxes": 1, "Description": "Your lair includes living quarters for the crew." },
-				{ "Name": "Workshop", "TotalBoxes": 1, "Description": "Your lair has a workshop appointed with tools for tinkering and alchemy." },
-				{ "Name": "Quality: Weapons", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' weapons." },
-				{ "Name": "Mastery", "TotalBoxes": 4, "Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4." },
-				{ "Name": "Hardened", "TotalBoxes": 3, "Description": "Each PC gets +1 trauma box." },
-				{ "Name": "Composed", "TotalBoxes": 3, "Description": "Each PC gets +1 stress box." }
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
+				},
+				{
+					"Name": "Training",
+					"TotalBoxes": 1,
+					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
+				},
+				{
+					"Name": "Secure Lair",
+					"TotalBoxes": 2,
+					"Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures."
+				},
+				{
+					"Name": "Hidden Lair",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a secret location and is disguised to hide it from view."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 2,
+					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
+				},
+				{
+					"Name": "Quarters",
+					"TotalBoxes": 1,
+					"Description": "Your lair includes living quarters for the crew."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a workshop appointed with tools for tinkering and alchemy."
+				},
+				{
+					"Name": "Quality: Weapons",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' weapons."
+				},
+				{
+					"Name": "Mastery",
+					"TotalBoxes": 4,
+					"Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4."
+				},
+				{
+					"Name": "Hardened",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box."
+				},
+				{
+					"Name": "Composed",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 stress box."
+				}
 			],
 			"StartingUpgrades": [
-				{ "Name": "Quality: Weapons", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' weapons." },
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew." }
+				{
+					"Name": "Quality: Weapons",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' weapons."
+				},
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
+				}
 			],
 			"Contacts": [
-				{ "Name": "Placeholder Contact 1", "Description": "[TODO: Fill in from core book — Assassin contacts]" },
-				{ "Name": "Placeholder Contact 2", "Description": "[TODO: Fill in from core book — Assassin contacts]" },
-				{ "Name": "Placeholder Contact 3", "Description": "[TODO: Fill in from core book — Assassin contacts]" },
-				{ "Name": "Placeholder Contact 4", "Description": "[TODO: Fill in from core book — Assassin contacts]" },
-				{ "Name": "Placeholder Contact 5", "Description": "[TODO: Fill in from core book — Assassin contacts]" }
+				{
+					"Name": "Placeholder Contact 1",
+					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 2",
+					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 3",
+					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 4",
+					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 5",
+					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
+				}
 			],
 			"FavoredOperations": [
 				"Murder",
@@ -83,11 +150,232 @@
 				"Savvy",
 				"Subtle",
 				"Strange"
-			]
+			],
+			"Claims": {
+				"Columns": 5,
+				"Rows": 3,
+				"Nodes": [
+					{
+						"Id": "training-rooms",
+						"Name": "Training Rooms",
+						"Description": "+1 scale for your Skulks cohorts",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "vice-den",
+						"Name": "Vice Den",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "fixer",
+						"Name": "Fixer",
+						"Description": "+2 coin for lower-class targets",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "informants",
+						"Name": "Informants",
+						"Description": "+1d gather info for scores",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "hagfish-farm",
+						"Name": "Hagfish Farm",
+						"Description": "Body disposal, +1d to reduce heat after killing",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "victim-trophies",
+						"Name": "Victim Trophies",
+						"Description": "+1 rep per score",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-1",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 2,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "lair",
+						"Name": "Lair",
+						"Description": "",
+						"Kind": "lair",
+						"Column": 3,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-2",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 4,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "cover-operation",
+						"Name": "Cover Operation",
+						"Description": "-2 heat per score",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "protection-racket",
+						"Name": "Protection Racket",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "infirmary",
+						"Name": "Infirmary",
+						"Description": "+1d to healing rolls",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "envoy",
+						"Name": "Envoy",
+						"Description": "+2 coin for high-class targets",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "cover-identities",
+						"Name": "Cover Identities",
+						"Description": "+1d engagement for deception and social plans",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "city-records",
+						"Name": "City Records",
+						"Description": "+1d engagement for stealth plans",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 3,
+						"Effects": []
+					}
+				],
+				"Edges": [
+					{
+						"From": "cover-identities",
+						"To": "city-records"
+					},
+					{
+						"From": "cover-operation",
+						"To": "city-records"
+					},
+					{
+						"From": "fixer",
+						"To": "lair"
+					},
+					{
+						"From": "hagfish-farm",
+						"To": "cover-operation"
+					},
+					{
+						"From": "informants",
+						"To": "hagfish-farm"
+					},
+					{
+						"From": "informants",
+						"To": "turf-2"
+					},
+					{
+						"From": "lair",
+						"To": "envoy"
+					},
+					{
+						"From": "lair",
+						"To": "turf-2"
+					},
+					{
+						"From": "protection-racket",
+						"To": "infirmary"
+					},
+					{
+						"From": "training-rooms",
+						"To": "vice-den"
+					},
+					{
+						"From": "training-rooms",
+						"To": "victim-trophies"
+					},
+					{
+						"From": "turf-1",
+						"To": "infirmary"
+					},
+					{
+						"From": "turf-1",
+						"To": "lair"
+					},
+					{
+						"From": "turf-2",
+						"To": "cover-operation"
+					},
+					{
+						"From": "vice-den",
+						"To": "turf-1"
+					},
+					{
+						"From": "victim-trophies",
+						"To": "protection-racket"
+					}
+				]
+			}
 		},
 		{
 			"Name": "Bravos",
-			"Hook": "You're violent thugs—muscle for hire in the underworld.",
+			"Hook": "You're violent thugs\u2014muscle for hire in the underworld.",
 			"Description": "Bravos use battle, extortion, and shows of force to protect their territory and earn coin.",
 			"ExperienceTrigger": "Execute a successful operation involving battle, extortion, or a show of force.",
 			"SpecialAbilities": [
@@ -109,7 +397,7 @@
 				{
 					"Name": "Fearsome",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book — Bravos special ability]"
+					"Description": "[TODO: Fill in from core book \u2014 Bravos special ability]"
 				},
 				{
 					"Name": "Patron",
@@ -128,29 +416,100 @@
 				}
 			],
 			"Upgrades": [
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew." },
-				{ "Name": "Training", "TotalBoxes": 1, "Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime." },
-				{ "Name": "Prowess Training", "TotalBoxes": 1, "Description": "If you have Prowess Training, when you train Prowess during downtime, you mark 2 xp on the Prowess track (instead of just 1)." },
-				{ "Name": "Secure Lair", "TotalBoxes": 2, "Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures." },
-				{ "Name": "Hidden Lair", "TotalBoxes": 1, "Description": "Your lair has a secret location and is disguised to hide it from view." },
-				{ "Name": "Vault", "TotalBoxes": 2, "Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16." },
-				{ "Name": "Quarters", "TotalBoxes": 1, "Description": "Your lair includes living quarters for the crew." },
-				{ "Name": "Workshop", "TotalBoxes": 1, "Description": "Your lair has a workshop appointed with tools for tinkering and alchemy." },
-				{ "Name": "Quality: Weapons", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' weapons." },
-				{ "Name": "Mastery", "TotalBoxes": 4, "Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4." },
-				{ "Name": "Hardened", "TotalBoxes": 3, "Description": "Each PC gets +1 trauma box." },
-				{ "Name": "Composed", "TotalBoxes": 3, "Description": "Each PC gets +1 stress box." }
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
+				},
+				{
+					"Name": "Training",
+					"TotalBoxes": 1,
+					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
+				},
+				{
+					"Name": "Prowess Training",
+					"TotalBoxes": 1,
+					"Description": "If you have Prowess Training, when you train Prowess during downtime, you mark 2 xp on the Prowess track (instead of just 1)."
+				},
+				{
+					"Name": "Secure Lair",
+					"TotalBoxes": 2,
+					"Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures."
+				},
+				{
+					"Name": "Hidden Lair",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a secret location and is disguised to hide it from view."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 2,
+					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
+				},
+				{
+					"Name": "Quarters",
+					"TotalBoxes": 1,
+					"Description": "Your lair includes living quarters for the crew."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a workshop appointed with tools for tinkering and alchemy."
+				},
+				{
+					"Name": "Quality: Weapons",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' weapons."
+				},
+				{
+					"Name": "Mastery",
+					"TotalBoxes": 4,
+					"Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4."
+				},
+				{
+					"Name": "Hardened",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box."
+				},
+				{
+					"Name": "Composed",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 stress box."
+				}
 			],
 			"StartingUpgrades": [
-				{ "Name": "Prowess Training", "TotalBoxes": 1, "Description": "If you have Prowess Training, when you train Prowess during downtime, you mark 2 xp on the Prowess track (instead of just 1)." },
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Thugs." }
+				{
+					"Name": "Prowess Training",
+					"TotalBoxes": 1,
+					"Description": "If you have Prowess Training, when you train Prowess during downtime, you mark 2 xp on the Prowess track (instead of just 1)."
+				},
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Thugs."
+				}
 			],
 			"Contacts": [
-				{ "Name": "Placeholder Contact 1", "Description": "[TODO: Fill in from core book — Bravos contacts]" },
-				{ "Name": "Placeholder Contact 2", "Description": "[TODO: Fill in from core book — Bravos contacts]" },
-				{ "Name": "Placeholder Contact 3", "Description": "[TODO: Fill in from core book — Bravos contacts]" },
-				{ "Name": "Placeholder Contact 4", "Description": "[TODO: Fill in from core book — Bravos contacts]" },
-				{ "Name": "Placeholder Contact 5", "Description": "[TODO: Fill in from core book — Bravos contacts]" }
+				{
+					"Name": "Placeholder Contact 1",
+					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 2",
+					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 3",
+					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 4",
+					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 5",
+					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
+				}
 			],
 			"FavoredOperations": [
 				"Battle",
@@ -167,11 +526,258 @@
 				"Savvy",
 				"Subtle",
 				"Strange"
-			]
+			],
+			"Claims": {
+				"Columns": 5,
+				"Rows": 3,
+				"Nodes": [
+					{
+						"Id": "barracks",
+						"Name": "Barracks",
+						"Description": "+1 scale for your Thug cohorts",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "turf-1",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 2,
+						"Row": 1,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "terrorized-citizens",
+						"Name": "Terrorized Citizens",
+						"Description": "+2 coin for battle or extortion",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "informants",
+						"Name": "Informants",
+						"Description": "+1d gather info for scores",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "protection-racket",
+						"Name": "Protection Racket",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "fighting-pits",
+						"Name": "Fighting Pits",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-2",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 2,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "lair",
+						"Name": "Lair",
+						"Description": "",
+						"Kind": "lair",
+						"Column": 3,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-3",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 4,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "turf-4",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 5,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "infirmary",
+						"Name": "Infirmary",
+						"Description": "+1d to healing rolls",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "bluecoat-intimidation",
+						"Name": "Bluecoat Intimidation",
+						"Description": "-2 heat per score",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "street-fence",
+						"Name": "Street Fence",
+						"Description": "+2 coin for lower-class targets",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "warehouses",
+						"Name": "Warehouses",
+						"Description": "Stockpiles give you +1d to acquire assets",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "bluecoat-confederates",
+						"Name": "Bluecoat Confederates",
+						"Description": "+1d engagement for assault plans",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 3,
+						"Effects": []
+					}
+				],
+				"Edges": [
+					{
+						"From": "barracks",
+						"To": "fighting-pits"
+					},
+					{
+						"From": "barracks",
+						"To": "turf-1"
+					},
+					{
+						"From": "fighting-pits",
+						"To": "infirmary"
+					},
+					{
+						"From": "fighting-pits",
+						"To": "turf-2"
+					},
+					{
+						"From": "infirmary",
+						"To": "bluecoat-intimidation"
+					},
+					{
+						"From": "informants",
+						"To": "protection-racket"
+					},
+					{
+						"From": "informants",
+						"To": "turf-3"
+					},
+					{
+						"From": "lair",
+						"To": "street-fence"
+					},
+					{
+						"From": "lair",
+						"To": "turf-3"
+					},
+					{
+						"From": "protection-racket",
+						"To": "turf-4"
+					},
+					{
+						"From": "street-fence",
+						"To": "warehouses"
+					},
+					{
+						"From": "terrorized-citizens",
+						"To": "lair"
+					},
+					{
+						"From": "turf-1",
+						"To": "terrorized-citizens"
+					},
+					{
+						"From": "turf-2",
+						"To": "bluecoat-intimidation"
+					},
+					{
+						"From": "turf-2",
+						"To": "lair"
+					},
+					{
+						"From": "turf-3",
+						"To": "turf-4"
+					},
+					{
+						"From": "turf-3",
+						"To": "warehouses"
+					},
+					{
+						"From": "turf-4",
+						"To": "bluecoat-confederates"
+					},
+					{
+						"From": "warehouses",
+						"To": "bluecoat-confederates"
+					}
+				]
+			}
 		},
 		{
 			"Name": "Cultists",
-			"Hook": "You're devoted to a strange power—occult secrets and forbidden rituals are your trade.",
+			"Hook": "You're devoted to a strange power\u2014occult secrets and forbidden rituals are your trade.",
 			"Description": "Cultists use occult rituals, dark blessings, and supernatural threats to advance their esoteric agenda.",
 			"ExperienceTrigger": "Execute a successful operation involving consecration, sacrifice, or occult power.",
 			"SpecialAbilities": [
@@ -198,42 +804,109 @@
 				{
 					"Name": "Temple",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book — Cultists special ability]"
+					"Description": "[TODO: Fill in from core book \u2014 Cultists special ability]"
 				},
 				{
 					"Name": "Dark Pact",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book — Cultists special ability]"
+					"Description": "[TODO: Fill in from core book \u2014 Cultists special ability]"
 				},
 				{
 					"Name": "Strange Sight",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book — Cultists special ability]"
+					"Description": "[TODO: Fill in from core book \u2014 Cultists special ability]"
 				}
 			],
 			"Upgrades": [
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew." },
-				{ "Name": "Training", "TotalBoxes": 1, "Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime." },
-				{ "Name": "Secure Lair", "TotalBoxes": 2, "Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures." },
-				{ "Name": "Hidden Lair", "TotalBoxes": 1, "Description": "Your lair has a secret location and is disguised to hide it from view." },
-				{ "Name": "Vault", "TotalBoxes": 2, "Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16." },
-				{ "Name": "Quarters", "TotalBoxes": 1, "Description": "Your lair includes living quarters for the crew." },
-				{ "Name": "Workshop", "TotalBoxes": 1, "Description": "Your lair has a workshop appointed with tools for tinkering and alchemy." },
-				{ "Name": "Quality: Implements (Arcane)", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' arcane implements." },
-				{ "Name": "Mastery", "TotalBoxes": 4, "Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4." },
-				{ "Name": "Hardened", "TotalBoxes": 3, "Description": "Each PC gets +1 trauma box." },
-				{ "Name": "Composed", "TotalBoxes": 3, "Description": "Each PC gets +1 stress box." }
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
+				},
+				{
+					"Name": "Training",
+					"TotalBoxes": 1,
+					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
+				},
+				{
+					"Name": "Secure Lair",
+					"TotalBoxes": 2,
+					"Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures."
+				},
+				{
+					"Name": "Hidden Lair",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a secret location and is disguised to hide it from view."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 2,
+					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
+				},
+				{
+					"Name": "Quarters",
+					"TotalBoxes": 1,
+					"Description": "Your lair includes living quarters for the crew."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a workshop appointed with tools for tinkering and alchemy."
+				},
+				{
+					"Name": "Quality: Implements (Arcane)",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' arcane implements."
+				},
+				{
+					"Name": "Mastery",
+					"TotalBoxes": 4,
+					"Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4."
+				},
+				{
+					"Name": "Hardened",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box."
+				},
+				{
+					"Name": "Composed",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 stress box."
+				}
 			],
 			"StartingUpgrades": [
-				{ "Name": "Quality: Implements (Arcane)", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' arcane implements." },
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Adepts." }
+				{
+					"Name": "Quality: Implements (Arcane)",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' arcane implements."
+				},
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Adepts."
+				}
 			],
 			"Contacts": [
-				{ "Name": "Placeholder Contact 1", "Description": "[TODO: Fill in from core book — Cultists contacts]" },
-				{ "Name": "Placeholder Contact 2", "Description": "[TODO: Fill in from core book — Cultists contacts]" },
-				{ "Name": "Placeholder Contact 3", "Description": "[TODO: Fill in from core book — Cultists contacts]" },
-				{ "Name": "Placeholder Contact 4", "Description": "[TODO: Fill in from core book — Cultists contacts]" },
-				{ "Name": "Placeholder Contact 5", "Description": "[TODO: Fill in from core book — Cultists contacts]" }
+				{
+					"Name": "Placeholder Contact 1",
+					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 2",
+					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 3",
+					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 4",
+					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 5",
+					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
+				}
 			],
 			"FavoredOperations": [
 				"Consecration",
@@ -250,11 +923,250 @@
 				"Savvy",
 				"Subtle",
 				"Strange"
-			]
+			],
+			"Claims": {
+				"Columns": 5,
+				"Rows": 3,
+				"Nodes": [
+					{
+						"Id": "cloister",
+						"Name": "Cloister",
+						"Description": "+1 scale for your Adept cohorts",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "vice-den",
+						"Name": "Vice Den",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "offertory",
+						"Name": "Offertory",
+						"Description": "+2 coin for occult operations",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "ancient-obelisk",
+						"Name": "Ancient Obelisk",
+						"Description": "-1 stress cost for all arcane powers and rituals",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "ancient-tower",
+						"Name": "Ancient Tower",
+						"Description": "+1d to Consort w/ arcane entities on site",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "turf-1",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 1,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "turf-2",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 2,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "lair",
+						"Name": "Lair",
+						"Description": "",
+						"Kind": "lair",
+						"Column": 3,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-3",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 4,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "turf-4",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 5,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "spirit-well",
+						"Name": "Spirit Well",
+						"Description": "+1d to Attune on site.",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "ancient-gate",
+						"Name": "Ancient Gate",
+						"Description": "Safe passage in the Deathlands",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "sanctuary",
+						"Name": "Sanctuary",
+						"Description": "+1d to Command and Sway on site",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "sacred-nexus",
+						"Name": "Sacred Nexus",
+						"Description": "+1d to healing rolls",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "ancient-altar",
+						"Name": "Ancient Altar",
+						"Description": "+1d engagement for occult plans",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 3,
+						"Effects": []
+					}
+				],
+				"Edges": [
+					{
+						"From": "ancient-obelisk",
+						"To": "ancient-tower"
+					},
+					{
+						"From": "ancient-tower",
+						"To": "turf-4"
+					},
+					{
+						"From": "cloister",
+						"To": "turf-1"
+					},
+					{
+						"From": "cloister",
+						"To": "vice-den"
+					},
+					{
+						"From": "lair",
+						"To": "sanctuary"
+					},
+					{
+						"From": "lair",
+						"To": "turf-3"
+					},
+					{
+						"From": "offertory",
+						"To": "lair"
+					},
+					{
+						"From": "sacred-nexus",
+						"To": "ancient-altar"
+					},
+					{
+						"From": "spirit-well",
+						"To": "ancient-gate"
+					},
+					{
+						"From": "turf-1",
+						"To": "turf-2"
+					},
+					{
+						"From": "turf-2",
+						"To": "ancient-gate"
+					},
+					{
+						"From": "turf-2",
+						"To": "lair"
+					},
+					{
+						"From": "turf-3",
+						"To": "sacred-nexus"
+					},
+					{
+						"From": "turf-3",
+						"To": "turf-4"
+					},
+					{
+						"From": "turf-4",
+						"To": "ancient-altar"
+					},
+					{
+						"From": "vice-den",
+						"To": "offertory"
+					},
+					{
+						"From": "vice-den",
+						"To": "turf-2"
+					}
+				]
+			}
 		},
 		{
 			"Name": "Hawkers",
-			"Hook": "You're dealers in vice—pleasure and addiction are your stock in trade.",
+			"Hook": "You're dealers in vice\u2014pleasure and addiction are your stock in trade.",
 			"Description": "Hawkers sell contraband, vices, and illicit goods to the citizens of Doskvol, using social connections and product quality to build their empire.",
 			"ExperienceTrigger": "Execute a successful operation involving product supply, sale, or acquisition of new clients or contraband sources.",
 			"SpecialAbilities": [
@@ -266,17 +1178,17 @@
 				{
 					"Name": "Pitch",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book — Hawkers special ability]"
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers special ability]"
 				},
 				{
 					"Name": "Renown",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book — Hawkers special ability]"
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers special ability]"
 				},
 				{
 					"Name": "Trust",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book — Hawkers special ability]"
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers special ability]"
 				},
 				{
 					"Name": "Patron",
@@ -295,29 +1207,100 @@
 				}
 			],
 			"Upgrades": [
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew." },
-				{ "Name": "Training", "TotalBoxes": 1, "Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime." },
-				{ "Name": "Secure Lair", "TotalBoxes": 2, "Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures." },
-				{ "Name": "Hidden Lair", "TotalBoxes": 1, "Description": "Your lair has a secret location and is disguised to hide it from view." },
-				{ "Name": "Vault", "TotalBoxes": 2, "Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16." },
-				{ "Name": "Quarters", "TotalBoxes": 1, "Description": "Your lair includes living quarters for the crew." },
-				{ "Name": "Workshop", "TotalBoxes": 1, "Description": "Your lair has a workshop appointed with tools for tinkering and alchemy." },
-				{ "Name": "Quality: Supplies (Subterfuge)", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' subterfuge supplies." },
-				{ "Name": "Mastery", "TotalBoxes": 4, "Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4." },
-				{ "Name": "Hardened", "TotalBoxes": 3, "Description": "Each PC gets +1 trauma box." },
-				{ "Name": "Composed", "TotalBoxes": 3, "Description": "Each PC gets +1 stress box." },
-				{ "Name": "Vice Den", "TotalBoxes": 1, "Description": "During downtime, roll dice equal to your Tier. You earn coin equal to the highest result, minus your heat." }
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
+				},
+				{
+					"Name": "Training",
+					"TotalBoxes": 1,
+					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
+				},
+				{
+					"Name": "Secure Lair",
+					"TotalBoxes": 2,
+					"Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures."
+				},
+				{
+					"Name": "Hidden Lair",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a secret location and is disguised to hide it from view."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 2,
+					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
+				},
+				{
+					"Name": "Quarters",
+					"TotalBoxes": 1,
+					"Description": "Your lair includes living quarters for the crew."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a workshop appointed with tools for tinkering and alchemy."
+				},
+				{
+					"Name": "Quality: Supplies (Subterfuge)",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' subterfuge supplies."
+				},
+				{
+					"Name": "Mastery",
+					"TotalBoxes": 4,
+					"Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4."
+				},
+				{
+					"Name": "Hardened",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box."
+				},
+				{
+					"Name": "Composed",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 stress box."
+				},
+				{
+					"Name": "Vice Den",
+					"TotalBoxes": 1,
+					"Description": "During downtime, roll dice equal to your Tier. You earn coin equal to the highest result, minus your heat."
+				}
 			],
 			"StartingUpgrades": [
-				{ "Name": "Vice Den", "TotalBoxes": 1, "Description": "During downtime, roll dice equal to your Tier. You earn coin equal to the highest result, minus your heat." },
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Rooks." }
+				{
+					"Name": "Vice Den",
+					"TotalBoxes": 1,
+					"Description": "During downtime, roll dice equal to your Tier. You earn coin equal to the highest result, minus your heat."
+				},
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Rooks."
+				}
 			],
 			"Contacts": [
-				{ "Name": "Placeholder Contact 1", "Description": "[TODO: Fill in from core book — Hawkers contacts]" },
-				{ "Name": "Placeholder Contact 2", "Description": "[TODO: Fill in from core book — Hawkers contacts]" },
-				{ "Name": "Placeholder Contact 3", "Description": "[TODO: Fill in from core book — Hawkers contacts]" },
-				{ "Name": "Placeholder Contact 4", "Description": "[TODO: Fill in from core book — Hawkers contacts]" },
-				{ "Name": "Placeholder Contact 5", "Description": "[TODO: Fill in from core book — Hawkers contacts]" }
+				{
+					"Name": "Placeholder Contact 1",
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 2",
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 3",
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 4",
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 5",
+					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
+				}
 			],
 			"FavoredOperations": [
 				"Sale",
@@ -334,11 +1317,246 @@
 				"Savvy",
 				"Subtle",
 				"Strange"
-			]
+			],
+			"Claims": {
+				"Columns": 5,
+				"Rows": 3,
+				"Nodes": [
+					{
+						"Id": "turf-1",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 1,
+						"Row": 1,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "personal-clothier",
+						"Name": "Personal Clothier",
+						"Description": "+1d engagement roll for social plans",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "local-graft",
+						"Name": "Local Graft",
+						"Description": "+2 coin for show of force or socialize",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "lookouts",
+						"Name": "Lookouts",
+						"Description": "+1d to Survey or Hunt on your turf",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "informants",
+						"Name": "Informants",
+						"Description": "+1d gather info for scores",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "turf-2",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 1,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "turf-3",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 2,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "lair",
+						"Name": "Lair",
+						"Description": "",
+						"Kind": "lair",
+						"Column": 3,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-4",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 4,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "luxury-venue",
+						"Name": "Luxury Venue",
+						"Description": "+1d to Consort and Sway on site",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "foreign-market",
+						"Name": "Foreign Market",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "vice-den",
+						"Name": "Vice Den",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "surplus-caches",
+						"Name": "Surplus Caches",
+						"Description": "+2 coin for product sale or supply",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "cover-operation",
+						"Name": "Cover Operation",
+						"Description": "-2 heat per score",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "cover-identities",
+						"Name": "Cover Identities",
+						"Description": "+1d engagement for deception and transport plans",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 3,
+						"Effects": []
+					}
+				],
+				"Edges": [
+					{
+						"From": "cover-operation",
+						"To": "cover-identities"
+					},
+					{
+						"From": "foreign-market",
+						"To": "vice-den"
+					},
+					{
+						"From": "informants",
+						"To": "luxury-venue"
+					},
+					{
+						"From": "lair",
+						"To": "surplus-caches"
+					},
+					{
+						"From": "lair",
+						"To": "turf-4"
+					},
+					{
+						"From": "local-graft",
+						"To": "lair"
+					},
+					{
+						"From": "lookouts",
+						"To": "informants"
+					},
+					{
+						"From": "lookouts",
+						"To": "turf-4"
+					},
+					{
+						"From": "personal-clothier",
+						"To": "turf-3"
+					},
+					{
+						"From": "turf-1",
+						"To": "personal-clothier"
+					},
+					{
+						"From": "turf-1",
+						"To": "turf-2"
+					},
+					{
+						"From": "turf-2",
+						"To": "foreign-market"
+					},
+					{
+						"From": "turf-3",
+						"To": "lair"
+					},
+					{
+						"From": "turf-3",
+						"To": "vice-den"
+					},
+					{
+						"From": "turf-4",
+						"To": "cover-operation"
+					},
+					{
+						"From": "turf-4",
+						"To": "luxury-venue"
+					}
+				]
+			}
 		},
 		{
 			"Name": "Shadows",
-			"Hook": "You're stealthy thieves—burglary and espionage are your stock in trade.",
+			"Hook": "You're stealthy thieves\u2014burglary and espionage are your stock in trade.",
 			"Description": "Shadows use stealth, infiltration, and burglary to steal secrets and treasure from the wealthy and powerful of Doskvol.",
 			"ExperienceTrigger": "Execute a successful burglary, robbery, or espionage operation.",
 			"SpecialAbilities": [
@@ -379,28 +1597,95 @@
 				}
 			],
 			"Upgrades": [
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew." },
-				{ "Name": "Training", "TotalBoxes": 1, "Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime." },
-				{ "Name": "Secure Lair", "TotalBoxes": 2, "Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures." },
-				{ "Name": "Hidden Lair", "TotalBoxes": 1, "Description": "Your lair has a secret location and is disguised to hide it from view." },
-				{ "Name": "Vault", "TotalBoxes": 2, "Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16." },
-				{ "Name": "Quarters", "TotalBoxes": 1, "Description": "Your lair includes living quarters for the crew." },
-				{ "Name": "Workshop", "TotalBoxes": 1, "Description": "Your lair has a workshop appointed with tools for tinkering and alchemy." },
-				{ "Name": "Quality: Gear (Burglary & Climbing)", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' burglary and climbing gear." },
-				{ "Name": "Mastery", "TotalBoxes": 4, "Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4." },
-				{ "Name": "Hardened", "TotalBoxes": 3, "Description": "Each PC gets +1 trauma box." },
-				{ "Name": "Composed", "TotalBoxes": 3, "Description": "Each PC gets +1 stress box." }
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
+				},
+				{
+					"Name": "Training",
+					"TotalBoxes": 1,
+					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
+				},
+				{
+					"Name": "Secure Lair",
+					"TotalBoxes": 2,
+					"Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures."
+				},
+				{
+					"Name": "Hidden Lair",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a secret location and is disguised to hide it from view."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 2,
+					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
+				},
+				{
+					"Name": "Quarters",
+					"TotalBoxes": 1,
+					"Description": "Your lair includes living quarters for the crew."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a workshop appointed with tools for tinkering and alchemy."
+				},
+				{
+					"Name": "Quality: Gear (Burglary & Climbing)",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' burglary and climbing gear."
+				},
+				{
+					"Name": "Mastery",
+					"TotalBoxes": 4,
+					"Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4."
+				},
+				{
+					"Name": "Hardened",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box."
+				},
+				{
+					"Name": "Composed",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 stress box."
+				}
 			],
 			"StartingUpgrades": [
-				{ "Name": "Quality: Gear (Burglary & Climbing)", "TotalBoxes": 2, "Description": "Each upgrade improves the quality rating of all the PCs' burglary and climbing gear." },
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Skulks." }
+				{
+					"Name": "Quality: Gear (Burglary & Climbing)",
+					"TotalBoxes": 2,
+					"Description": "Each upgrade improves the quality rating of all the PCs' burglary and climbing gear."
+				},
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Skulks."
+				}
 			],
 			"Contacts": [
-				{ "Name": "Placeholder Contact 1", "Description": "[TODO: Fill in from core book — Shadows contacts]" },
-				{ "Name": "Placeholder Contact 2", "Description": "[TODO: Fill in from core book — Shadows contacts]" },
-				{ "Name": "Placeholder Contact 3", "Description": "[TODO: Fill in from core book — Shadows contacts]" },
-				{ "Name": "Placeholder Contact 4", "Description": "[TODO: Fill in from core book — Shadows contacts]" },
-				{ "Name": "Placeholder Contact 5", "Description": "[TODO: Fill in from core book — Shadows contacts]" }
+				{
+					"Name": "Placeholder Contact 1",
+					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 2",
+					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 3",
+					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 4",
+					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 5",
+					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
+				}
 			],
 			"FavoredOperations": [
 				"Burglary",
@@ -417,11 +1702,247 @@
 				"Savvy",
 				"Subtle",
 				"Strange"
-			]
+			],
+			"Claims": {
+				"Columns": 5,
+				"Rows": 3,
+				"Nodes": [
+					{
+						"Id": "interrogation-chamber",
+						"Name": "Interrogation Chamber",
+						"Description": "+1d to Command and Sway on site",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "turf-1",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 2,
+						"Row": 1,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "loyal-fence",
+						"Name": "Loyal Fence",
+						"Description": "+2 coin for burglary or robbery",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "gambling-den",
+						"Name": "Gambling Den",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "tavern",
+						"Name": "Tavern",
+						"Description": "+1d to Consort and Sway on site",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "drug-den",
+						"Name": "Drug Den",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "informants",
+						"Name": "Informants",
+						"Description": "+1d gather info for scores",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "lair",
+						"Name": "Lair",
+						"Description": "",
+						"Kind": "lair",
+						"Column": 3,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-2",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 4,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "lookouts",
+						"Name": "Lookouts",
+						"Description": "+1d to Survey or Hunt on your turf",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "hagfish-farm",
+						"Name": "Hagfish Farm",
+						"Description": "Body disposal, +1d to reduce heat after killing",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "infirmary",
+						"Name": "Infirmary",
+						"Description": "+1d to healing rolls",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "covert-drops",
+						"Name": "Covert Drops",
+						"Description": "+2 coin for espionage or sabotage",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "turf-3",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 4,
+						"Row": 3,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "secret-pathways",
+						"Name": "Secret Pathways",
+						"Description": "+1d engagement for stealth plans",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 3,
+						"Effects": []
+					}
+				],
+				"Edges": [
+					{
+						"From": "covert-drops",
+						"To": "turf-3"
+					},
+					{
+						"From": "drug-den",
+						"To": "hagfish-farm"
+					},
+					{
+						"From": "drug-den",
+						"To": "informants"
+					},
+					{
+						"From": "gambling-den",
+						"To": "tavern"
+					},
+					{
+						"From": "gambling-den",
+						"To": "turf-2"
+					},
+					{
+						"From": "hagfish-farm",
+						"To": "infirmary"
+					},
+					{
+						"From": "informants",
+						"To": "infirmary"
+					},
+					{
+						"From": "informants",
+						"To": "lair"
+					},
+					{
+						"From": "interrogation-chamber",
+						"To": "drug-den"
+					},
+					{
+						"From": "interrogation-chamber",
+						"To": "turf-1"
+					},
+					{
+						"From": "lair",
+						"To": "covert-drops"
+					},
+					{
+						"From": "lair",
+						"To": "turf-2"
+					},
+					{
+						"From": "lookouts",
+						"To": "secret-pathways"
+					},
+					{
+						"From": "loyal-fence",
+						"To": "lair"
+					},
+					{
+						"From": "tavern",
+						"To": "lookouts"
+					},
+					{
+						"From": "turf-1",
+						"To": "loyal-fence"
+					},
+					{
+						"From": "turf-2",
+						"To": "lookouts"
+					},
+					{
+						"From": "turf-3",
+						"To": "secret-pathways"
+					}
+				]
+			}
 		},
 		{
 			"Name": "Smugglers",
-			"Hook": "You move contraband through the canals and back alleys—everyone needs something they can't get legally.",
+			"Hook": "You move contraband through the canals and back alleys\u2014everyone needs something they can't get legally.",
 			"Description": "Smugglers move contraband, passengers, and illicit goods through Doskvol's waterways and hidden routes.",
 			"ExperienceTrigger": "Execute a smuggling operation or acquire new clients or contraband sources.",
 			"SpecialAbilities": [
@@ -462,29 +1983,100 @@
 				}
 			],
 			"Upgrades": [
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew." },
-				{ "Name": "Training", "TotalBoxes": 1, "Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime." },
-				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "You have a boat, a dock on a waterway, and a small shack to store boating supplies. A second upgrade improves the boat with armor and more cargo capacity." },
-				{ "Name": "Carriage House", "TotalBoxes": 2, "Description": "You have a carriage, and draft animals to pull it, and a stable. A second upgrade improves the carriage with armor and larger, swifter steeds." },
-				{ "Name": "Secure Lair", "TotalBoxes": 2, "Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures." },
-				{ "Name": "Hidden Lair", "TotalBoxes": 1, "Description": "Your lair has a secret location and is disguised to hide it from view." },
-				{ "Name": "Vault", "TotalBoxes": 2, "Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16." },
-				{ "Name": "Quarters", "TotalBoxes": 1, "Description": "Your lair includes living quarters for the crew." },
-				{ "Name": "Workshop", "TotalBoxes": 1, "Description": "Your lair has a workshop appointed with tools for tinkering and alchemy." },
-				{ "Name": "Mastery", "TotalBoxes": 4, "Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4." },
-				{ "Name": "Hardened", "TotalBoxes": 3, "Description": "Each PC gets +1 trauma box." },
-				{ "Name": "Composed", "TotalBoxes": 3, "Description": "Each PC gets +1 stress box." }
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
+				},
+				{
+					"Name": "Training",
+					"TotalBoxes": 1,
+					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
+				},
+				{
+					"Name": "Boat House",
+					"TotalBoxes": 2,
+					"Description": "You have a boat, a dock on a waterway, and a small shack to store boating supplies. A second upgrade improves the boat with armor and more cargo capacity."
+				},
+				{
+					"Name": "Carriage House",
+					"TotalBoxes": 2,
+					"Description": "You have a carriage, and draft animals to pull it, and a stable. A second upgrade improves the carriage with armor and larger, swifter steeds."
+				},
+				{
+					"Name": "Secure Lair",
+					"TotalBoxes": 2,
+					"Description": "Your lair has locks, alarms, and traps to thwart intruders. A second upgrade improves the defenses to include arcane measures."
+				},
+				{
+					"Name": "Hidden Lair",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a secret location and is disguised to hide it from view."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 2,
+					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
+				},
+				{
+					"Name": "Quarters",
+					"TotalBoxes": 1,
+					"Description": "Your lair includes living quarters for the crew."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Your lair has a workshop appointed with tools for tinkering and alchemy."
+				},
+				{
+					"Name": "Mastery",
+					"TotalBoxes": 4,
+					"Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4."
+				},
+				{
+					"Name": "Hardened",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box."
+				},
+				{
+					"Name": "Composed",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 stress box."
+				}
 			],
 			"StartingUpgrades": [
-				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "You have a boat, a dock on a waterway, and a small shack to store boating supplies." },
-				{ "Name": "Cohort (Gang or Expert)", "TotalBoxes": 1, "Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Rovers." }
+				{
+					"Name": "Boat House",
+					"TotalBoxes": 2,
+					"Description": "You have a boat, a dock on a waterway, and a small shack to store boating supplies."
+				},
+				{
+					"Name": "Cohort (Gang or Expert)",
+					"TotalBoxes": 1,
+					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Rovers."
+				}
 			],
 			"Contacts": [
-				{ "Name": "Placeholder Contact 1", "Description": "[TODO: Fill in from core book — Smugglers contacts]" },
-				{ "Name": "Placeholder Contact 2", "Description": "[TODO: Fill in from core book — Smugglers contacts]" },
-				{ "Name": "Placeholder Contact 3", "Description": "[TODO: Fill in from core book — Smugglers contacts]" },
-				{ "Name": "Placeholder Contact 4", "Description": "[TODO: Fill in from core book — Smugglers contacts]" },
-				{ "Name": "Placeholder Contact 5", "Description": "[TODO: Fill in from core book — Smugglers contacts]" }
+				{
+					"Name": "Placeholder Contact 1",
+					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 2",
+					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 3",
+					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 4",
+					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
+				},
+				{
+					"Name": "Placeholder Contact 5",
+					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
+				}
 			],
 			"FavoredOperations": [
 				"Smuggling Arms",
@@ -501,7 +2093,246 @@
 				"Savvy",
 				"Subtle",
 				"Strange"
-			]
+			],
+			"Claims": {
+				"Columns": 5,
+				"Rows": 3,
+				"Nodes": [
+					{
+						"Id": "turf-1",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 1,
+						"Row": 1,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "side-business",
+						"Name": "Side Business",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "luxury-fence",
+						"Name": "Luxury Fence",
+						"Description": "+2 coin for high-class targets",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "vice-den",
+						"Name": "Vice Den",
+						"Description": "(Tier roll) - Heat = coin in downtime",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "tavern",
+						"Name": "Tavern",
+						"Description": "+1d to Consort and Sway on site",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 1,
+						"Effects": []
+					},
+					{
+						"Id": "ancient-gate",
+						"Name": "Ancient Gate",
+						"Description": "Safe passage in the Deathlands",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-2",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 2,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "lair",
+						"Name": "Lair",
+						"Description": "",
+						"Kind": "lair",
+						"Column": 3,
+						"Row": 2,
+						"Effects": []
+					},
+					{
+						"Id": "turf-3",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 4,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "turf-4",
+						"Name": "Turf",
+						"Description": "",
+						"Kind": "turf",
+						"Column": 5,
+						"Row": 2,
+						"Effects": [
+							{
+								"Id": "turf-delta",
+								"Kind": "derivedDelta",
+								"Target": "crew.turf",
+								"Delta": 1
+							}
+						]
+					},
+					{
+						"Id": "secret-routes",
+						"Name": "Secret Routes",
+						"Description": "+1d engagement for transport plans",
+						"Kind": "claim",
+						"Column": 1,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "informants",
+						"Name": "Informants",
+						"Description": "+1d gather info for scores",
+						"Kind": "claim",
+						"Column": 2,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "fleet",
+						"Name": "Fleet",
+						"Description": "Your cohorts have their own vehicles",
+						"Kind": "claim",
+						"Column": 3,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "cover-operation",
+						"Name": "Cover Operation",
+						"Description": "-2 heat per score",
+						"Kind": "claim",
+						"Column": 4,
+						"Row": 3,
+						"Effects": []
+					},
+					{
+						"Id": "warehouse",
+						"Name": "Warehouse",
+						"Description": "Stockpiles give you +1d to acquire assets",
+						"Kind": "claim",
+						"Column": 5,
+						"Row": 3,
+						"Effects": []
+					}
+				],
+				"Edges": [
+					{
+						"From": "ancient-gate",
+						"To": "secret-routes"
+					},
+					{
+						"From": "cover-operation",
+						"To": "warehouse"
+					},
+					{
+						"From": "lair",
+						"To": "fleet"
+					},
+					{
+						"From": "lair",
+						"To": "turf-3"
+					},
+					{
+						"From": "luxury-fence",
+						"To": "lair"
+					},
+					{
+						"From": "secret-routes",
+						"To": "informants"
+					},
+					{
+						"From": "side-business",
+						"To": "turf-2"
+					},
+					{
+						"From": "tavern",
+						"To": "turf-4"
+					},
+					{
+						"From": "turf-1",
+						"To": "ancient-gate"
+					},
+					{
+						"From": "turf-1",
+						"To": "side-business"
+					},
+					{
+						"From": "turf-2",
+						"To": "informants"
+					},
+					{
+						"From": "turf-2",
+						"To": "lair"
+					},
+					{
+						"From": "turf-3",
+						"To": "cover-operation"
+					},
+					{
+						"From": "turf-3",
+						"To": "turf-4"
+					},
+					{
+						"From": "turf-4",
+						"To": "warehouse"
+					},
+					{
+						"From": "vice-den",
+						"To": "tavern"
+					},
+					{
+						"From": "vice-den",
+						"To": "turf-3"
+					}
+				]
+			}
 		}
 	]
 }

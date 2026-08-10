@@ -85,5 +85,7 @@
       "status": 2
     }
   ],
-  "turf": 2
+  "turf": 2,
+  "claimedClaimIds": [],
+  "claimOverrides": []
 }

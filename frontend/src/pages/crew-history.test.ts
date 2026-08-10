@@ -32,6 +32,8 @@ const crewDTO = {
   stash: 2,
   notes: [],
   turf: 0,
+  claimedClaimIds: [],
+  claimOverrides: [],
 };
 
 const ok = (data: unknown) => ({

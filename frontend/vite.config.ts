@@ -16,7 +16,9 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    sourcemap: true,
+    // AUDIT-0 OPT-002: source maps are debug-only.  Production builds ship
+    // without them unless PITD_SOURCEMAPS=1 is explicitly set.
+    sourcemap: process.env.PITD_SOURCEMAPS === "1",
   },
   publicDir: "public",
 });

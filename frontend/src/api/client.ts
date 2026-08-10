@@ -707,6 +707,35 @@ function crewMutate(
   });
 }
 
+/** Crew Claims: acquire (claimed=true) or relinquish (claimed=false) a claim. */
+export function crewClaimSet(
+  id: string,
+  claimId: string,
+  claimed: boolean,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "claim.set", revision, { claimId, claimed });
+}
+
+/** Crew Claims: write/merge a per-crew override for a canonical claim. */
+export function crewClaimCustomize(
+  id: string,
+  claimId: string,
+  fields: { name?: string; description?: string; effects?: unknown[] },
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "claim.customize", revision, { claimId, ...fields });
+}
+
+/** Crew Claims: delete the override for a claim, restoring canonical defaults. */
+export function crewClaimReset(
+  id: string,
+  claimId: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "claim.reset", revision, { claimId });
+}
+
 export function crewContactAdd(
   id: string,
   name: string,

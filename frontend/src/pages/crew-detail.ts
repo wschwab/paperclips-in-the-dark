@@ -18,6 +18,9 @@ import {
   crewStashAdd,
   crewAbilityTake,
   crewAbilityRemove,
+  crewClaimSet,
+  crewClaimCustomize,
+  crewClaimReset,
   upgradeMark,
   upgradeUnmark,
   getCrewType,
@@ -124,6 +127,9 @@ interface RenderState {
     onXpDelta: (delta: number) => void;
     onXpTrack: (next: number) => void;
     onXpClear: () => void;
+    onClaimToggle: (claimId: string, claimed: boolean) => void;
+    onClaimCustomize: (claimId: string) => void;
+    onClaimReset: (claimId: string) => void;
   };
 }
 
@@ -399,6 +405,74 @@ function upgradeDescription(upgrade: Record<string, unknown> | undefined, name: 
     : `No description available for ${name}.`;
 }
 
+// ---------------------------------------------------------------------------
+// Crew Claims (2026-08-10): the canonical 5x3 claim map from game data.
+// ---------------------------------------------------------------------------
+
+/** Canonical Claims graph for the crew type: {Columns, Rows, Nodes, Edges}. */
+function extractCrewClaims(
+  crewTypeData: Record<string, unknown> | null,
+  crewTypesData: readonly Record<string, unknown>[] | null,
+  crewTypeName: string,
+): Record<string, unknown> | null {
+  if (crewTypeData && typeof crewTypeData.Claims === "object" && crewTypeData.Claims !== null) {
+    return crewTypeData.Claims as Record<string, unknown>;
+  }
+  if (Array.isArray(crewTypesData)) {
+    const found = crewTypesData.find(
+      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
+    );
+    if (found && typeof (found as Record<string, unknown>).Claims === "object") {
+      return (found as Record<string, unknown>).Claims as Record<string, unknown>;
+    }
+  }
+  return null;
+}
+
+interface ClaimNode {
+  id: string;
+  name: string;
+  description: string;
+  kind: "claim" | "turf" | "lair";
+  column: number;
+  row: number;
+}
+
+/** Normalize the PascalCase game-data Claims graph into frontend shapes. */
+function claimsGraph(claims: Record<string, unknown>): { nodes: ClaimNode[]; edges: Array<{ from: string; to: string }>; columns: number; rows: number } {
+  const nodes = Array.isArray(claims.Nodes) ? (claims.Nodes as Array<Record<string, unknown>>) : [];
+  const edges = Array.isArray(claims.Edges) ? (claims.Edges as Array<Record<string, unknown>>) : [];
+  return {
+    columns: typeof claims.Columns === "number" ? claims.Columns : 5,
+    rows: typeof claims.Rows === "number" ? claims.Rows : 3,
+    nodes: nodes.map((n) => ({
+      id: typeof n.Id === "string" ? n.Id : "",
+      name: typeof n.Name === "string" ? n.Name : "",
+      description: typeof n.Description === "string" ? n.Description : "",
+      kind: (n.Kind === "turf" || n.Kind === "lair" ? n.Kind : "claim") as ClaimNode["kind"],
+      column: typeof n.Column === "number" ? n.Column : 1,
+      row: typeof n.Row === "number" ? n.Row : 1,
+    })),
+    edges: edges
+      .filter((e) => typeof e.From === "string" && typeof e.To === "string")
+      .map((e) => ({ from: e.From as string, to: e.To as string })),
+  };
+}
+
+/** Effective claim display fields (canonical defaults merged with overrides). */
+function effectiveClaim(
+  node: ClaimNode,
+  overrides: ReadonlyArray<{ claimId: string; name?: string; description?: string; effects?: ReadonlyArray<Readonly<Record<string, unknown>>> }>,
+): { node: ClaimNode; name: string; description: string; customized: boolean } {
+  const ov = overrides.find((o) => o.claimId === node.id);
+  return {
+    node,
+    name: ov?.name ?? node.name,
+    description: ov?.description ?? node.description,
+    customized: !!ov,
+  };
+}
+
 /**
  * The crew type's ExperienceTrigger (game data) — the criteria text shown
  * beneath the XP tracker. Same source shape and find-by-name fallback as
@@ -624,6 +698,31 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     onDelta: handlers.onRepDelta,
     onTrack: handlers.onRepTrack,
   });
+
+  // Crew Claims (A15): effective turf = base + derivedDelta from controlled
+  // turf claims.  Recomputed from base state (no subtractive drift).
+  const claimsForEffects = extractCrewClaims(state.crewTypeData, state.crewTypesData, c.crewTypeName);
+  const effectiveTurf = (() => {
+    let delta = 0;
+    if (claimsForEffects) {
+      const g = claimsGraph(claimsForEffects);
+      const ownedSet = new Set(c.claimedClaimIds);
+      for (const n of g.nodes) {
+        if (!ownedSet.has(n.id)) continue;
+        // effects live on the PascalCase game data node
+        const raw = Array.isArray((claimsForEffects as Record<string, unknown>).Nodes)
+          ? ((claimsForEffects as Record<string, unknown>).Nodes as Array<Record<string, unknown>>).find((x) => x.Id === n.id)
+          : undefined;
+        const effects = raw && Array.isArray(raw.Effects) ? (raw.Effects as Array<Record<string, unknown>>) : [];
+        for (const fx of effects) {
+          if (fx.Kind === "derivedDelta" && fx.Target === "crew.turf" && typeof fx.Delta === "number") {
+            delta += fx.Delta;
+          }
+        }
+      }
+    }
+    return c.turf + delta;
+  })();
 
   // Turf row: 6 slots, filled from the left per turf count, grayed from the
   // right — a rendering, not a button track.
@@ -1449,6 +1548,143 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       : null,
   );
 
+  // -- Crew Claims (2026-08-10) ----------------------------------------------
+  // Renders the canonical 5x3 claim map from game data with acquire/
+  // relinquish toggles and per-claim customization (override merge + reset).
+  const claimsSection = (() => {
+    const claims = extractCrewClaims(state.crewTypeData, state.crewTypesData, c.crewTypeName);
+    if (!claims) {
+      return el(
+        "section",
+        { className: "crew-claims" },
+        el("h2", {}, "Claims"),
+        el("p", { className: "lbl" }, "No claims map available for this crew type."),
+      );
+    }
+    const graph = claimsGraph(claims);
+    const controlled = new Set(c.claimedClaimIds);
+    const overrides = c.claimOverrides;
+    const effective = graph.nodes.map((n) => effectiveClaim(n, overrides));
+    const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+
+    // adjacency: every node's neighbors (undirected, no degree cap)
+    const neighbors = new Map<string, Set<string>>();
+    for (const e of graph.edges) {
+      if (!neighbors.has(e.from)) neighbors.set(e.from, new Set());
+      if (!neighbors.has(e.to)) neighbors.set(e.to, new Set());
+      neighbors.get(e.from)!.add(e.to);
+      neighbors.get(e.to)!.add(e.from);
+    }
+    const anchored = new Set(["lair", ...controlled]);
+    const connected = new Set<string>();
+    for (const id of anchored) {
+      for (const n of neighbors.get(id) ?? []) connected.add(n);
+    }
+
+    // cell click: acquire/relinquish
+    const onToggle = (claimId: string, isClaimed: boolean) => {
+      if (state.anyLoading) return;
+      handlers.onClaimToggle(claimId, !isClaimed);
+    };
+    const onCustomize = (claimId: string) => {
+      if (state.anyLoading) return;
+      handlers.onClaimCustomize(claimId);
+    };
+    const onReset = (claimId: string) => {
+      if (state.anyLoading) return;
+      handlers.onClaimReset(claimId);
+    };
+
+    const cellStyle = (n: ClaimNode) =>
+      `grid-column: ${n.column}; grid-row: ${n.row};`;
+
+    const cells = effective.map(({ node, name, description, customized }) => {
+      const isClaimed = controlled.has(node.id);
+      const isLair = node.kind === "lair";
+      const isConnected = !isClaimed && !isLair && connected.has(node.id);
+      const classes = ["claim-cell", "claim-node"];
+      if (isLair) classes.push("claim-lair");
+      if (isClaimed) classes.push("claim-owned");
+      if (isConnected) classes.push("claim-connected");
+      if (customized) classes.push("claim-customized");
+      if (isLair) {
+        return el("div", { className: classes.join(" "), style: cellStyle(node) },
+          el("strong", {}, "Lair"),
+          el("span", {}, "Always controlled"),
+        );
+      }
+      const btn = el("button", {
+        className: classes.join(" "),
+        style: cellStyle(node),
+        "aria-pressed": isClaimed ? "true" : "false",
+        disabled: state.anyLoading,
+        title: isClaimed ? "Relinquish claim" : "Acquire claim",
+      },
+        el("strong", {}, name),
+        description ? el("span", {}, description) : null,
+        customized ? el("em", { className: "claim-custom-badge" }, "custom") : null,
+      );
+      btn.addEventListener("click", () => onToggle(node.id, isClaimed));
+      return btn;
+    });
+
+    // SVG edge layer behind the cells (one line per edge, no degree cap)
+    const edgeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    edgeSvg.setAttribute("class", "claim-edges");
+    edgeSvg.setAttribute("viewBox", "0 0 5 3");
+    edgeSvg.setAttribute("preserveAspectRatio", "none");
+    edgeSvg.setAttribute("aria-hidden", "true");
+    for (const e of graph.edges) {
+      const a = byId.get(e.from);
+      const b = byId.get(e.to);
+      if (!a || !b) continue;
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", String(a.column - 0.5));
+      line.setAttribute("y1", String(a.row - 0.5));
+      line.setAttribute("x2", String(b.column - 0.5));
+      line.setAttribute("y2", String(b.row - 0.5));
+      edgeSvg.appendChild(line);
+    }
+
+    const activeList = effective.filter((e) => controlled.has(e.node.id) && e.node.kind !== "lair");
+
+    return el(
+      "section",
+      { className: "crew-claims" },
+      el("h2", {}, "Claims"),
+      el("p", { className: "lbl", style: "font-size: 0.85em;" },
+        "Acquired claims are marked. Connected claims are highlighted; out-of-sequence acquisition remains allowed. The Lair is always controlled.",
+      ),
+      el("div", { className: "claims-map", style: "position: relative;" },
+        el("div", {
+          className: "claims-grid",
+          style: `display: grid; grid-template-columns: repeat(${graph.columns}, 1fr); grid-template-rows: repeat(${graph.rows}, 1fr); gap: 6px;`,
+        }, ...cells),
+        edgeSvg,
+      ),
+      el("div", { className: "active-claims" },
+        el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Active claim benefits"),
+        activeList.length === 0
+          ? el("p", {}, "(no claims acquired)")
+          : el("ul", { className: "active-claim-list" }, ...activeList.map((e) => {
+              const li = el("li", { key: e.node.id },
+                el("strong", {}, e.name),
+                e.description ? el("span", {}, ` — ${e.description}`) : null,
+              );
+              const customizeBtn = el("button", { disabled: state.anyLoading }, "Customize");
+              customizeBtn.addEventListener("click", () => onCustomize(e.node.id));
+              li.appendChild(customizeBtn);
+              if (overrides.some((o) => o.claimId === e.node.id)) {
+                const resetBtn = el("button", { disabled: state.anyLoading }, "Reset to default");
+                resetBtn.addEventListener("click", () => onReset(e.node.id));
+                li.appendChild(resetBtn);
+              }
+              return li;
+            })),
+      ),
+    );
+  })();
+
   return el(
     "section",
     { className: "crew-detail" },
@@ -1479,6 +1715,11 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         el("div", { style: "display: flex; gap: 1em; align-items: center; flex-wrap: wrap;" },
           turfRow,
           el("span", { className: "turf-count" }, `${c.turf} / 6`),
+          effectiveTurf > c.turf
+            ? el("span", { className: "lbl", style: "font-size: 0.85em;" },
+                `effective ${effectiveTurf} / 6 (claims add ${effectiveTurf - c.turf})`,
+              )
+            : null,
           turfMinusBtn,
           turfPlusBtn,
         ),
@@ -1523,6 +1764,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         stashPlusBtn,
       ),
     ),
+    claimsSection,
     playbookSection,
     cohortsSection,
     xpSection,
@@ -2136,6 +2378,30 @@ export function mountCrewDetailPage(
     onUpgradeUnmark: (name: string) => {
       if (!currentCrew || isUpgradeLoading) return;
       runCrewOp((v) => { isUpgradeLoading = v; }, upgradeUnmark(crewId, name, currentCrew.revision));
+    },
+
+    // Crew Claims: acquire/relinquish, customize, reset.
+    onClaimToggle: (claimId: string, claimed: boolean) => {
+      if (!currentCrew || isUpgradeLoading) return;
+      runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimSet(crewId, claimId, claimed, currentCrew.revision));
+    },
+    onClaimCustomize: (claimId: string) => {
+      if (!currentCrew || isUpgradeLoading) return;
+      const overrides = currentCrew.claimOverrides;
+      const existing = overrides.find((o) => o.claimId === claimId);
+      const name = window.prompt("Claim name (blank keeps the default):", existing?.name ?? "");
+      if (name === null) return;
+      const desc = window.prompt("Benefit text (blank keeps the default):", existing?.description ?? "");
+      if (desc === null) return;
+      const fields: { name?: string; description?: string } = {};
+      if (name.trim() !== "") fields.name = name.trim();
+      if (desc.trim() !== "") fields.description = desc.trim();
+      if (Object.keys(fields).length === 0) return;
+      runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimCustomize(crewId, claimId, fields, currentCrew.revision));
+    },
+    onClaimReset: (claimId: string) => {
+      if (!currentCrew || isUpgradeLoading) return;
+      runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimReset(crewId, claimId, currentCrew.revision));
     },
 
     // Chart boxes are sugar over the same +1/−1 ops (no set-to-N op exists):

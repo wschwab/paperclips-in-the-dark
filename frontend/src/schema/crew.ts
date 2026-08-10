@@ -47,6 +47,15 @@ const Cohort = Schema.Struct({
   description: Schema.String,
 });
 
+const ClaimId = Schema.String.pipe(Schema.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/));
+
+const ClaimOverride = Schema.Struct({
+  claimId: ClaimId,
+  name: Schema.optional(Schema.String.pipe(Schema.minLength(1))),
+  description: Schema.optional(Schema.String.pipe(Schema.minLength(1))),
+  effects: Schema.optional(Schema.Array(Schema.Record({ key: Schema.String, value: Schema.Unknown }))),
+});
+
 /** Full crew DTO — mirrors contract/schemas/crew.json */
 export const Crew = Schema.Struct({
   kind: Schema.Literal("crew"),
@@ -78,6 +87,8 @@ export const Crew = Schema.Struct({
   coin: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   stash: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   notes: Notes,
+  claimedClaimIds: Schema.Array(ClaimId),
+  claimOverrides: Schema.Array(ClaimOverride),
 }).pipe(Schema.annotations({ identifier: "Crew" }));
 
 export type Crew = typeof Crew.Type;

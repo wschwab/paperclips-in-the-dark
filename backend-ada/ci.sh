@@ -34,6 +34,12 @@ if [ "${RUN_CONFORMANCE:-0}" = "1" ]; then
    }
    trap stop_server EXIT INT TERM
 
+   # AUDIT-0 BUG-014: the SPA smoke needs a real frontend build.  Build it
+   # (source maps off by default) so a clean checkout has no ignored-dist gap.
+   echo "==> building frontend (SPA smoke prerequisite)"
+   (cd "$SCRIPT_DIR/../frontend" && npm ci && npm run build)
+
+   rm -rf /tmp/pitd-campaign-data
    "$SCRIPT_DIR/server/bin/pitd" --port 9657 --data /tmp/pitd-campaign-data \
       --static "$SCRIPT_DIR/../frontend/dist" \
       --games "$SCRIPT_DIR/../data/games" &
@@ -54,7 +60,8 @@ if [ "${RUN_CONFORMANCE:-0}" = "1" ]; then
       exit 1
    fi
 
+   # AUDIT-0 BUG-014: RUN_CONFORMANCE=1 must run the FULL conformance suite
+   # against fresh state, not a single smoke test.
    (cd "$SCRIPT_DIR/../conformance" && \
-      BASE_URL=http://localhost:9657 npx vitest run \
-         suites/contract/endpoints.test.ts -t CONTRACT-HEALTH-001)
+      BASE_URL=http://localhost:9657 npm test -- --run)
 fi

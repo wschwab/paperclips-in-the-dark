@@ -143,6 +143,117 @@
   opacity: 0.55;
 }
 
+/* ── Crew Claims map (2026-08-10) ──────────────────────────────
+ * The canonical 5x3 claim graph: CSS-grid cells over an SVG edge
+ * layer.  Cells are buttons (aria-pressed), the Lair is a static
+ * owned node. */
+
+.crew-claims {
+  border-top: var(--border-thick) solid var(--rule);
+  padding-top: 0.75em;
+  margin-top: 1em;
+}
+.claims-map {
+  position: relative;
+  overflow-x: auto;
+  padding-bottom: 0.5em;
+}
+.claims-grid {
+  min-width: 560px;
+  position: relative;
+  z-index: 1;
+}
+.claim-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+.claim-edges line {
+  stroke: var(--line-dark, var(--rule));
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.claim-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  min-height: 64px;
+  padding: 8px 6px;
+  border: var(--border-thick) solid var(--fill-border);
+  background: var(--surface);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.claim-cell strong {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.claim-cell span {
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+.claim-lair {
+  background: var(--fill);
+  color: var(--surface);
+  cursor: default;
+}
+.claim-lair span {
+  color: inherit;
+  opacity: 0.85;
+}
+.claim-owned {
+  background: var(--fill);
+  color: var(--surface);
+}
+.claim-owned span {
+  color: inherit;
+  opacity: 0.85;
+}
+.claim-connected {
+  border-color: var(--accent);
+}
+.claim-customized .claim-custom-badge {
+  font-size: 0.6rem;
+  font-style: normal;
+  color: var(--accent);
+}
+.claim-cell:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.claim-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.active-claim-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.4em 0;
+}
+.active-claim-list li {
+  display: flex;
+  gap: 0.5em;
+  align-items: baseline;
+  padding: 0.25em 0;
+  border-bottom: 1px solid var(--border-thin, var(--rule));
+}
+.active-claim-list span {
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+.active-claim-list button {
+  margin-left: auto;
+}
+
 /* ── Trauma stamps ───────────────────────────────────────────── */
 
 .trauma-stamps {

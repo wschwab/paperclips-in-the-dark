@@ -38,6 +38,8 @@ function crewDTO(overrides: Record<string, unknown> = {}) {
     stash: 2,
     notes: "Up-and-coming crew",
     turf: 0,
+    claimedClaimIds: [],
+    claimOverrides: [],
     ...overrides,
   };
 }

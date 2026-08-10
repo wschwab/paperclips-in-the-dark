@@ -24,11 +24,29 @@ describe("§5.1 playtest server fixes", () => {
     expect(floored.character?.monitor.stress.current).toBe(0);
   });
 
-  testCase("SEMANTICS-ARMOR-001", "standard and heavy armor are available by default; special is not", async () => {
+  testCase("SEMANTICS-ARMOR-001", "armor availability is derived from the loadout; special needs an ability", async () => {
+    // AUDIT-0 BUG-006: armor availability is NOT a creation default.  An
+    // empty loadout exposes no standard/heavy armor; committing "Armor"
+    // grants standard, "+Heavy" grants heavy; using unavailable armor is
+    // rejected with ARMOR_NOT_AVAILABLE (C# CharacterArmor.cs).
     const character = await newCharacter();
-    expect(character.monitor.armor.hasStandard).toBe(true);
-    expect(character.monitor.armor.hasHeavy).toBe(true);
+    expect(character.gear.loadout).toHaveLength(0);
+    expect(character.monitor.armor.hasStandard).toBe(false);
+    expect(character.monitor.armor.hasHeavy).toBe(false);
     expect(character.monitor.armor.hasSpecial).toBe(false);
+
+    const rejected = await api.characterOp(character.id, "armor.set", { armor: "standard", used: true });
+    expect(rejected.ok).toBe(false);
+    expect(rejected.error?.code).toBe("ARMOR_NOT_AVAILABLE");
+
+    // commit armor -> standard available
+    await api.characterOp(character.id, "gear.add", { name: "Armor", bulk: 2 });
+    await api.characterOp(character.id, "gear.set-commitment", { commitment: "light" });
+    const committed = await api.characterOp(character.id, "gear.commit", { name: "Armor" });
+    expect(committed.ok).toBe(true);
+    const withArmor = await api.character(character.id);
+    expect(withArmor.monitor.armor.hasStandard).toBe(true);
+    expect(withArmor.monitor.armor.hasHeavy).toBe(false);
 
     const used = await api.characterOp(character.id, "armor.set", { armor: "standard", used: true });
     expect(used.ok).toBe(true);

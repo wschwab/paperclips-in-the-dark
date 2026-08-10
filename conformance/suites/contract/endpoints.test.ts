@@ -4,17 +4,45 @@ import { decode, Schemas } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook } from "../../src/game-data.js";
 
+// AUDIT-0 BUG-007/011/012/013 hardening: known resources are seeded through
+// the public create APIs and every declared 200 path must return exactly the
+// declared schema. Unknown resources must still return a typed 404
+// (OperationResult with error.code NOT_FOUND). Invented IDs are never
+// accepted as success, and no response is decoded as a generic object where
+// the contract declares a specific schema.
+
+const BLADES = "blades-in-the-dark";
 const unknownId = "00000000-0000-4000-8000-000000000000";
 const unknownClock = "00000000-0000-4000-8000-000000000001";
 const unknownCrew = "00000000-0000-4000-8000-000000000002";
 
+type Seed = "character" | "crew" | "clock";
+
 type Case = {
   id: string;
   method: "GET" | "POST";
+  /** May contain {character} {crew} {clock} {snapshot} placeholders. */
   path: string;
   body?: unknown;
-  success: "health" | "character" | "crew" | "clock" | "array" | "object" | "operation";
-  statuses?: number[];
+  seeds?: Seed[];
+  success:
+    | "health"
+    | "campaign"
+    | "roster"
+    | "game-list"
+    | "character"
+    | "crew"
+    | "clock"
+    | "character-list"
+    | "crew-list"
+    | "clock-list"
+    | "history"
+    | "array"
+    | "object"
+    | "operation";
+  status?: number;
+  /** When set, the response must decode to an OperationResult with this code. */
+  errorCode?: string;
 };
 
 const operationBody = { delta: 1 };
@@ -94,57 +122,134 @@ const clockOpCases: Array<[string, unknown]> = [
 
 const cases: Case[] = [
   { id: "CONTRACT-HEALTH-001", method: "GET", path: "health", success: "health" },
-  { id: "CONTRACT-CAMPAIGN-001", method: "GET", path: "campaign", success: "object" },
-  { id: "CONTRACT-ROSTER-001", method: "GET", path: "campaign/roster", success: "object" },
-  { id: "CONTRACT-CREW-MEMBERS-001", method: "GET", path: `campaign/crew/${unknownCrew}/members`, success: "array", statuses: [200, 404] },
-  { id: "CONTRACT-BATCH-001", method: "POST", path: "campaign/batch", body: { ops: [{ entity: "character", id: unknownId, op: "stress.add", args: { delta: 1 } }] }, success: "operation" },
-  { id: "CONTRACT-GAMES-001", method: "GET", path: "games", success: "array" },
-  { id: "CONTRACT-GAME-001", method: "GET", path: "games/blades-in-the-dark", success: "object", statuses: [200, 404] },
-  { id: "CONTRACT-GAME-PLAYBOOKS-001", method: "GET", path: "games/blades-in-the-dark/playbooks", success: "array", statuses: [200, 404] },
-  { id: "CONTRACT-GAME-PLAYBOOK-001", method: "GET", path: "games/blades-in-the-dark/playbooks/Cutter", success: "object", statuses: [200, 404] },
-  { id: "CONTRACT-GAME-HERITAGES-001", method: "GET", path: "games/blades-in-the-dark/heritages", success: "array", statuses: [200, 404] },
-  { id: "CONTRACT-GAME-CREWS-001", method: "GET", path: "games/blades-in-the-dark/crews", success: "object", statuses: [200, 404] },
-  { id: "CONTRACT-GAME-CREW-TYPE-001", method: "GET", path: "games/blades-in-the-dark/crews/Assassins", success: "object", statuses: [200, 404] },
-  { id: "CONTRACT-CHARACTERS-LIST-001", method: "GET", path: "characters", success: "array" },
-  { id: "CONTRACT-CHARACTER-CREATE-001", method: "POST", path: "characters", body: { gameStem: "blades-in-the-dark", playbook: firstPlaybook("blades-in-the-dark") }, success: "operation" },
-  { id: "CONTRACT-CHARACTER-GET-001", method: "GET", path: `characters/${unknownId}`, success: "character", statuses: [200, 404] },
-  { id: "CONTRACT-CHARACTER-HISTORY-001", method: "GET", path: `characters/${unknownId}/history`, success: "array", statuses: [200, 404] },
-  { id: "CONTRACT-CHARACTER-SNAPSHOT-001", method: "GET", path: `characters/${unknownId}/history/20260719120000000-abc`, success: "character", statuses: [200, 404] },
-  { id: "CONTRACT-CHARACTER-END-SCORE-001", method: "POST", path: `characters/${unknownId}/end-score`, body: { clearArmorUsed: true, resetLoadoutCommitment: true }, success: "operation", statuses: [200, 400, 404, 409] },
-  { id: "CONTRACT-CHARACTER-END-DOWNTIME-001", method: "POST", path: `characters/${unknownId}/end-downtime`, body: { clearSessionExpressions: true, viceReliefStress: 1 }, success: "operation", statuses: [200, 400, 404, 409] },
-  { id: "CONTRACT-CREWS-LIST-001", method: "GET", path: "crews", success: "array" },
-  { id: "CONTRACT-CREW-CREATE-001", method: "POST", path: "crews", body: { gameStem: "blades-in-the-dark", crewType: "Assassins" }, success: "operation" },
-  { id: "CONTRACT-CREW-GET-001", method: "GET", path: `crews/${unknownCrew}`, success: "crew", statuses: [200, 404] },
-  { id: "CONTRACT-CREW-HISTORY-001", method: "GET", path: `crews/${unknownCrew}/history`, success: "array", statuses: [200, 404] },
-  { id: "CONTRACT-CREW-SNAPSHOT-001", method: "GET", path: `crews/${unknownCrew}/history/20260719120000000-abc`, success: "crew", statuses: [200, 404] },
-  { id: "CONTRACT-CLOCKS-LIST-001", method: "GET", path: "clocks", success: "array" },
+  { id: "CONTRACT-CAMPAIGN-001", method: "GET", path: "campaign", success: "campaign" },
+  { id: "CONTRACT-ROSTER-001", method: "GET", path: "campaign/roster", success: "roster" },
+  { id: "CONTRACT-CREW-MEMBERS-001", method: "GET", path: "campaign/crew/{crew}/members", seeds: ["crew"], success: "character-list" },
+  { id: "CONTRACT-BATCH-001", method: "POST", path: "campaign/batch", seeds: ["character"], body: { ops: [{ entity: "character", id: "{character}", op: "stress.add", args: { delta: 1 } }] }, success: "operation" },
+  { id: "CONTRACT-GAMES-001", method: "GET", path: "games", success: "game-list" },
+  { id: "CONTRACT-GAME-001", method: "GET", path: "games/blades-in-the-dark", success: "object" },
+  { id: "CONTRACT-GAME-PLAYBOOKS-001", method: "GET", path: "games/blades-in-the-dark/playbooks", success: "array" },
+  { id: "CONTRACT-GAME-PLAYBOOK-001", method: "GET", path: "games/blades-in-the-dark/playbooks/Cutter", success: "object" },
+  { id: "CONTRACT-GAME-HERITAGES-001", method: "GET", path: "games/blades-in-the-dark/heritages", success: "array" },
+  { id: "CONTRACT-GAME-CREWS-001", method: "GET", path: "games/blades-in-the-dark/crews", success: "object" },
+  { id: "CONTRACT-GAME-CREW-TYPE-001", method: "GET", path: "games/blades-in-the-dark/crews/Assassins", success: "object" },
+  { id: "CONTRACT-CHARACTERS-LIST-001", method: "GET", path: "characters", success: "character-list" },
+  { id: "CONTRACT-CHARACTER-CREATE-001", method: "POST", path: "characters", body: { gameStem: BLADES, playbook: firstPlaybook(BLADES) }, success: "operation" },
+  { id: "CONTRACT-CHARACTER-GET-001", method: "GET", path: "characters/{character}", seeds: ["character"], success: "character" },
+  { id: "CONTRACT-CHARACTER-HISTORY-001", method: "GET", path: "characters/{character}/history", seeds: ["character"], success: "history" },
+  { id: "CONTRACT-CHARACTER-SNAPSHOT-001", method: "GET", path: "characters/{character}/history/{snapshot}", seeds: ["character"], success: "character" },
+  { id: "CONTRACT-CHARACTER-END-SCORE-001", method: "POST", path: `characters/${unknownId}/end-score`, body: { clearArmorUsed: true, resetLoadoutCommitment: true }, success: "operation", status: 404, errorCode: "NOT_FOUND" },
+  { id: "CONTRACT-CHARACTER-END-DOWNTIME-001", method: "POST", path: `characters/${unknownId}/end-downtime`, body: { clearSessionExpressions: true, viceReliefStress: 1 }, success: "operation", status: 404, errorCode: "NOT_FOUND" },
+  { id: "CONTRACT-CREWS-LIST-001", method: "GET", path: "crews", success: "crew-list" },
+  { id: "CONTRACT-CREW-CREATE-001", method: "POST", path: "crews", body: { gameStem: BLADES, crewType: "Assassins" }, success: "operation" },
+  { id: "CONTRACT-CREW-GET-001", method: "GET", path: "crews/{crew}", seeds: ["crew"], success: "crew" },
+  { id: "CONTRACT-CREW-HISTORY-001", method: "GET", path: "crews/{crew}/history", seeds: ["crew"], success: "history" },
+  { id: "CONTRACT-CREW-SNAPSHOT-001", method: "GET", path: "crews/{crew}/history/{snapshot}", seeds: ["crew"], success: "crew" },
+  { id: "CONTRACT-CLOCKS-LIST-001", method: "GET", path: "clocks", success: "clock-list" },
   { id: "CONTRACT-CLOCK-CREATE-001", method: "POST", path: "clocks", body: { name: "Test", clockKind: "project", size: 4 }, success: "operation" },
-  { id: "CONTRACT-CLOCK-GET-001", method: "GET", path: `clocks/${unknownClock}`, success: "clock", statuses: [200, 404] },
+  { id: "CONTRACT-CLOCK-GET-001", method: "GET", path: "clocks/{clock}", seeds: ["clock"], success: "clock" },
 ];
 
 for (const [suffix, body] of characterOpCases) {
-  cases.push({ id: `CONTRACT-CHARACTER-${suffix.replaceAll("/", "-").replaceAll(".", "-").toUpperCase()}-001`, method: "POST", path: `characters/${unknownId}/${suffix}`, body, success: "operation", statuses: [200, 400, 404, 409, 413] });
+  cases.push({ id: `CONTRACT-CHARACTER-${suffix.replaceAll("/", "-").replaceAll(".", "-").toUpperCase()}-001`, method: "POST", path: `characters/${unknownId}/${suffix}`, body, success: "operation", status: 404, errorCode: "NOT_FOUND" });
 }
 for (const [suffix, body] of crewOpCases) {
-  cases.push({ id: `CONTRACT-CREW-${suffix.replaceAll("/", "-").replaceAll(".", "-").toUpperCase()}-001`, method: "POST", path: `crews/${unknownCrew}/${suffix}`, body, success: "operation", statuses: [200, 400, 404, 409, 413] });
+  cases.push({ id: `CONTRACT-CREW-${suffix.replaceAll("/", "-").replaceAll(".", "-").toUpperCase()}-001`, method: "POST", path: `crews/${unknownCrew}/${suffix}`, body, success: "operation", status: 404, errorCode: "NOT_FOUND" });
 }
 for (const [suffix, body] of clockOpCases) {
-  cases.push({ id: `CONTRACT-CLOCK-${suffix.replaceAll("/", "-").replaceAll(".", "-").toUpperCase()}-001`, method: "POST", path: `clocks/${unknownClock}/${suffix}`, body, success: "operation", statuses: [200, 400, 404, 409] });
+  cases.push({ id: `CONTRACT-CLOCK-${suffix.replaceAll("/", "-").replaceAll(".", "-").toUpperCase()}-001`, method: "POST", path: `clocks/${unknownClock}/${suffix}`, body, success: "operation", status: 404, errorCode: "NOT_FOUND" });
+}
+
+/** Creates a fresh entity through the public API without decoding its response. */
+async function seed(seed: Seed): Promise<string> {
+  if (seed === "character") {
+    const response = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
+    expect(response.status).toBe(200);
+    const body = response.body as { character?: { id?: string } };
+    if (!body.character?.id) throw new Error("character seeding returned no id");
+    return body.character.id;
+  }
+  if (seed === "crew") {
+    const response = await api.post("crews", { gameStem: BLADES, crewType: "Assassins" });
+    expect(response.status).toBe(200);
+    const body = response.body as { crew?: { id?: string } };
+    if (!body.crew?.id) throw new Error("crew seeding returned no id");
+    return body.crew.id;
+  }
+  const response = await api.post("clocks", { name: "Contract clock", clockKind: "project", size: 4 });
+  expect(response.status).toBe(200);
+  const body = response.body as { clock?: { id?: string } };
+  if (!body.clock?.id) throw new Error("clock seeding returned no id");
+  return body.clock.id;
+}
+
+/** Produces one snapshot-worthy mutation and returns the newest snapshotId. */
+async function snapshotIdOf(entityKind: "character" | "crew", entityId: string): Promise<string> {
+  const response = await api.post(`${entityKind}s/${entityId}/ops/note.add`, { text: "contract snapshot" });
+  expect(response.status).toBe(200);
+  const history = await api.get(`${entityKind}s/${entityId}/history`);
+  const entries = history.body as Array<{ snapshotId?: string }>;
+  if (!entries[0]?.snapshotId) throw new Error("history returned no snapshotId");
+  return entries[0].snapshotId;
+}
+
+function substitute(value: unknown, ids: Record<string, string>): unknown {
+  if (typeof value === "string") {
+    return value.replace(/\{(character|crew|clock|snapshot)\}/g, (_, key: string) => ids[key] ?? "");
+  }
+  if (Array.isArray(value)) return value.map((item) => substitute(item, ids));
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, substitute(item, ids)]),
+    );
+  }
+  return value;
 }
 
 describe("contract v1 endpoint coverage", () => {
   for (const test of cases) {
     testCase(test.id, `${test.method} /api/${test.path}`, async () => {
-      const response = await api.request(test.method, test.path, test.body);
-      expect(test.statuses ?? [200]).toContain(response.status);
-      if (test.success === "health" && response.status === 200) await decode(Schemas.Health, response.body);
-      if (test.success === "character" && response.status === 200) await decode(Schemas.Character, response.body);
-      if (test.success === "crew" && response.status === 200) await decode(Schemas.Crew, response.body);
-      if (test.success === "clock" && response.status === 200) await decode(Schemas.Clock, response.body);
-      if (test.success === "array" && response.status === 200) await decode(Schemas.JsonArray, response.body);
-      if (test.success === "object" && response.status === 200) await decode(Schemas.JsonObject, response.body);
+      const ids: Record<string, string> = {};
+      for (const seedName of test.seeds ?? []) ids[seedName] = await seed(seedName);
+      if (test.path.includes("{snapshot}")) {
+        const entityKind = test.seeds?.includes("crew") ? "crew" : "character";
+        const entityId = ids.crew ?? ids.character;
+        if (!entityId) throw new Error("snapshot placeholder requires a seeded entity");
+        ids.snapshot = await snapshotIdOf(entityKind, entityId);
+      } else if (test.success === "history") {
+        // Exercise the history list against real snapshot entries, not the
+        // empty list a freshly created entity has (BUG-013: snapshotId and
+        // takenAt must satisfy the frozen schema).
+        const entityKind = test.seeds?.includes("crew") ? "crew" : "character";
+        const entityId = ids.crew ?? ids.character;
+        if (entityId) {
+          const response = await api.post(`${entityKind}s/${entityId}/ops/note.add`, { text: "contract history" });
+          expect(response.status).toBe(200);
+        }
+      }
+      const path = substitute(test.path, ids) as string;
+      const body = test.body === undefined ? undefined : substitute(test.body, ids);
+      const response = await api.request(test.method, path, body);
+      expect(response.status).toBe(test.status ?? 200);
+      if (test.errorCode) {
+        const result = await decode(Schemas.OperationResult, response.body);
+        expect(result.error?.code).toBe(test.errorCode);
+        return;
+      }
+      if (test.success === "health") await decode(Schemas.Health, response.body);
+      if (test.success === "campaign") await decode(Schemas.Campaign, response.body);
+      if (test.success === "roster") await decode(Schemas.Roster, response.body);
+      if (test.success === "game-list") await decode(Schemas.GameList, response.body);
+      if (test.success === "character") await decode(Schemas.Character, response.body);
+      if (test.success === "crew") await decode(Schemas.Crew, response.body);
+      if (test.success === "clock") await decode(Schemas.Clock, response.body);
+      if (test.success === "character-list") await decode(Schemas.CharacterSummaryList, response.body);
+      if (test.success === "crew-list") await decode(Schemas.CrewSummaryList, response.body);
+      if (test.success === "clock-list") await decode(Schemas.ClockList, response.body);
+      if (test.success === "history") await decode(Schemas.History, response.body);
+      if (test.success === "array") await decode(Schemas.JsonArray, response.body);
+      if (test.success === "object") await decode(Schemas.JsonObject, response.body);
       if (test.success === "operation") await decode(Schemas.OperationResult, response.body);
-      if (response.status >= 400) await decode(Schemas.OperationResult, response.body);
     });
   }
 });

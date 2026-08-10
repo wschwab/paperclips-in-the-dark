@@ -231,6 +231,8 @@ describe("getCrew", () => {
       stash: 2,
       notes: "Up-and-coming crew",
     turf: 0,
+    claimedClaimIds: [],
+    claimOverrides: [],
     };
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -687,6 +689,8 @@ describe("createCrew", () => {
       stash: 0,
       notes: "",
     turf: 0,
+    claimedClaimIds: [],
+    claimOverrides: [],
     };
 
     const opResult = {
@@ -961,6 +965,8 @@ describe("undoCrew", () => {
       stash: 2,
       notes: "Up-and-coming crew",
     turf: 0,
+    claimedClaimIds: [],
+    claimOverrides: [],
     };
 
     const opResult = {
@@ -2324,6 +2330,8 @@ function makeCrew(overrides: Record<string, unknown> = {}) {
     stash: 2,
     notes: "Up-and-coming crew",
     turf: 0,
+    claimedClaimIds: [],
+    claimOverrides: [],
     ...overrides,
   };
 }
