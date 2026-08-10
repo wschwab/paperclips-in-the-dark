@@ -68,6 +68,7 @@ export const Crew = Schema.Struct({
   heat: BoundedInteger,
   wanted: BoundedInteger,
   rep: BoundedInteger,
+  turf: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0), Schema.lessThanOrEqualTo(6)),
   experience: Experience,
   specialAbilities: Schema.Array(SpecialAbility),
   upgrades: Schema.Array(Upgrade),

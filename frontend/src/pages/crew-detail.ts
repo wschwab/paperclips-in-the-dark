@@ -21,12 +21,15 @@ import {
   upgradeMark,
   upgradeUnmark,
   getCrewType,
-  getCrewTypes,
+  getCrewGameData,
   cohortAdd,
   cohortRemove,
   cohortUpdate,
   crewXpAdd,
   crewXpClear,
+  crewNoteAdd,
+  crewNoteRemove,
+  crewTurfAdd,
   StaleRevisionError,
 } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
@@ -37,15 +40,15 @@ import { CohortHarm, CohortType, Hold } from "../schema/common.js";
 // Types
 // ---------------------------------------------------------------------------
 
-/** Editable free-text crew fields (contract fields.update). */
-type CrewField = "name" | "lair" | "huntingGrounds" | "reputation" | "notes";
+/** Editable free-text crew fields (contract fields.update). Reputation is a
+ * game-data dropdown (F2ac) and notes are a dedicated multi-note section
+ * (C4/F2ac), so neither is a free-text profile field here. */
+type CrewField = "name" | "lair" | "huntingGrounds";
 
 const CREW_FIELD_LABELS: Record<CrewField, string> = {
   name: "Name",
   lair: "Lair",
   huntingGrounds: "Hunting grounds",
-  reputation: "Reputation",
-  notes: "Notes",
 };
 
 interface ProfileEditingState {
@@ -58,6 +61,7 @@ interface RenderState {
   anyLoading: boolean;
   crewTypeData: Record<string, unknown> | null;
   crewTypesData: readonly Record<string, unknown>[] | null;
+  crewGameData: Record<string, unknown> | null;
   isUndoLoading: boolean;
   isAbilityLoading: boolean;
   isUpgradeLoading: boolean;
@@ -73,6 +77,9 @@ interface RenderState {
   isHoldLoading: boolean;
   isCoinLoading: boolean;
   isStashLoading: boolean;
+  isTurfLoading: boolean;
+  isNoteLoading: boolean;
+  isDevelopLoading: boolean;
   editingProfile: ProfileEditingState | null;
   editingCohortId: string | null;
   errorMsg: string | null;
@@ -90,6 +97,11 @@ interface RenderState {
     onProfileCancel: () => void;
     onRepDelta: (delta: number) => void;
     onRepTrack: (next: number) => void;
+    onReputationSet: () => void;
+    onTurfDelta: (delta: number) => void;
+    onDevelop: () => void;
+    onNoteAdd: () => void;
+    onNoteRemove: (index: number) => void;
     onHeatDelta: (delta: number) => void;
     onHeatTrack: (next: number) => void;
     onWantedDelta: (delta: number) => void;
@@ -180,12 +192,79 @@ function boxTrack(opts: {
 }
 
 /**
- * Normalize the C4 notes field (string[] or legacy single string) to plain
- * display text. Notes are not in the free-text profile-edit payload path.
+ * The crew type's Reputations (game data) — the F2ac reputation dropdown
+ * source. Same preferred/fallback shape as extractCrewAbilities:
+ * per-crew-type endpoint first, CrewTypes list (find-by-name) otherwise.
+ * Returns [] when neither source has it (the dropdown degrades to a
+ * read-only value row).
  */
-function notesToText(value: string | readonly string[]): string {
-  if (typeof value === "string") return value;
-  return value.length > 0 ? value.join(", ") : "";
+function extractReputations(
+  crewTypeData: Record<string, unknown> | null,
+  crewTypesData: readonly Record<string, unknown>[] | null,
+  crewTypeName: string,
+): string[] {
+  if (crewTypeData && Array.isArray(crewTypeData.Reputations)) {
+    return (crewTypeData.Reputations as unknown[]).filter(
+      (r): r is string => typeof r === "string",
+    );
+  }
+  if (Array.isArray(crewTypesData)) {
+    const found = crewTypesData.find(
+      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
+    );
+    if (found && Array.isArray(found.Reputations)) {
+      return (found.Reputations as unknown[]).filter(
+        (r): r is string => typeof r === "string",
+      );
+    }
+  }
+  return [];
+}
+
+/**
+ * Canonical BitD cohort type lists. The Ada backend serves the raw
+ * {stem}-crews.json game-data file, which carries the per-crew-type
+ * Reputations but not the top-level cohort lists, so these task-specified
+ * values are the fallback when the game-data keys are absent (the UI must
+ * stay usable live). When a game provides CohortGangTypes / CohortExpertTypes
+ * the game-data arrays win.
+ */
+const COHORT_GANG_TYPES = ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"];
+const COHORT_EXPERT_TYPES = [
+  "Doctor",
+  "Investigator",
+  "Occultist",
+  "Assassin",
+  "Spy",
+  "Custom",
+];
+
+/** Cohort gang-type options: game-data CohortGangTypes, else the canonical
+ * list (never empty — the add/edit forms need a working menu). */
+function extractCohortGangTypes(
+  crewGameData: Record<string, unknown> | null,
+): string[] {
+  if (crewGameData && Array.isArray(crewGameData.CohortGangTypes)) {
+    const values = (crewGameData.CohortGangTypes as unknown[]).filter(
+      (v): v is string => typeof v === "string",
+    );
+    if (values.length > 0) return values;
+  }
+  return [...COHORT_GANG_TYPES];
+}
+
+/** Cohort expert-type options: game-data CohortExpertTypes, else the
+ * canonical list. */
+function extractCohortExpertTypes(
+  crewGameData: Record<string, unknown> | null,
+): string[] {
+  if (crewGameData && Array.isArray(crewGameData.CohortExpertTypes)) {
+    const values = (crewGameData.CohortExpertTypes as unknown[]).filter(
+      (v): v is string => typeof v === "string",
+    );
+    if (values.length > 0) return values;
+  }
+  return [...COHORT_EXPERT_TYPES];
 }
 
 /** One bounded tracker: box row + current/max + -/+ buttons. */
@@ -367,13 +446,13 @@ function renderCrewDetail(state: RenderState): HTMLElement {
 
   // -- Profile (F2u) --------------------------------------------------------
 
-  const profileFields = (["name", "lair", "huntingGrounds", "reputation", "notes"] as const)
+  const profileFields = (["name", "lair", "huntingGrounds"] as const)
     .map((field) => {
       const label = CREW_FIELD_LABELS[field];
-      // notes is string[] per C4 (legacy single string still decodes);
-      // flatten to text for the read row and the inline editor.
-      const displayValue =
-        field === "notes" ? notesToText(c.notes) || "(not set)" : c[field] || "(not set)";
+      // Reputation is a game-data dropdown (F2ac) and notes are a dedicated
+      // multi-note section, so the free-text fields are name/lair/hunting
+      // grounds only.
+      const displayValue = c[field] || "(not set)";
       const isEditing = state.editingProfile?.field === field;
       if (isEditing) {
         const input = el("input", {
@@ -432,11 +511,110 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       );
     });
 
-  // -- Trackers (F2u) -------------------------------------------------------
+  // -- Reputation dropdown (F2ac) ---------------------------------------------
+  //
+  // Reputation is one of the crew type's 8 Reputations from crew game data
+  // (per-crew-type endpoint preferred, CrewTypes find-by-name fallback).
+  // Save goes through fields.update { reputation } — the same op the old
+  // free-text field used. Without game data the menu degrades to a
+  // read-only value row (the current reputation still displays).
+  const reputationOptions = extractReputations(
+    state.crewTypeData,
+    state.crewTypesData,
+    c.crewTypeName,
+  );
+  const reputationSelect = el("select", {
+    "aria-label": "Reputation",
+    disabled: state.anyLoading || reputationOptions.length === 0,
+  }) as HTMLSelectElement;
+  for (const value of reputationOptions) {
+    reputationSelect.append(el("option", { value }, value) as HTMLOptionElement);
+  }
+  if (reputationOptions.includes(c.reputation)) {
+    reputationSelect.value = c.reputation;
+  }
+  const reputationSetBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading || reputationOptions.length === 0,
+    title: "Set reputation",
+  }, state.isProfileLoading ? "…" : "Set");
+  reputationSetBtn.addEventListener("click", handlers.onReputationSet);
+  const reputationRow = el(
+    "div",
+    { className: "field-read crew-reputation", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.25em 0;" },
+    el("span", { className: "lbl" }, "Reputation: "),
+    el("span", { className: "field-value" }, c.reputation || "(not set)"),
+    reputationSelect,
+    reputationSetBtn,
+  );
 
-  // Turf is display-only (sheet plan decision 5): no stored turf track, no
-  // turf op — turf is represented by these very rep boxes, so the rep tracker
-  // doubles as the turf rendering.
+  // -- Notes (C4 / F2ac) -------------------------------------------------------
+  //
+  // Notes are a string[] in the DTO (legacy single string still decodes).
+  // Multi-line textarea + per-entry remove; add/remove go through
+  // note.add / note.remove (index-based removal, 0-based to match the op).
+  const notesEntries = Array.isArray(c.notes)
+    ? c.notes
+    : c.notes
+      ? [c.notes]
+      : [];
+  const noteList = notesEntries.length > 0
+    ? el(
+        "ul",
+        { className: "note-list", style: "list-style: none; padding: 0; margin: 0 0 0.5em 0;" },
+        ...notesEntries.map((note, idx) => {
+          const removeBtn = el("button", {
+            type: "button",
+            disabled: state.anyLoading,
+            "aria-label": `Remove note ${idx}`,
+            title: `Remove note ${idx}`,
+          }, "✕");
+          removeBtn.addEventListener("click", () => handlers.onNoteRemove(idx));
+          return el(
+            "li",
+            { className: "note-entry", style: "display: flex; gap: 0.5em; align-items: flex-start; margin: 0.25em 0;" },
+            el("span", { className: "note-text", style: "flex: 1;" }, note),
+            removeBtn,
+          );
+        }),
+      )
+    : el("p", {}, "(no notes)");
+  const newNoteInput = el("textarea", {
+    "aria-label": "New note",
+    rows: 3,
+    disabled: state.anyLoading,
+    placeholder: "Write a new note…",
+  }) as HTMLTextAreaElement;
+  const addNoteBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading,
+    title: "Add note",
+  }, state.isNoteLoading ? "…" : "Add note");
+  addNoteBtn.addEventListener("click", handlers.onNoteAdd);
+
+  const notesSection = el(
+    "div",
+    { className: "crew-notes" },
+    el("h2", {}, "Notes"),
+    noteList,
+    el("div", { style: "display: flex; gap: 0.5em; align-items: flex-start;" },
+      newNoteInput,
+      addNoteBtn,
+    ),
+  );
+
+  // -- Trackers (F2u / F2ac) -------------------------------------------------
+
+  // Rep & Turf (F2ac): rep fills 12 boxes left→right; turf is measured on
+  // the right of the same tracker (max 6 slots, grayed from the right) and
+  // each turf lowers the develop threshold by one (threshold = rep.max −
+  // turf, i.e. 12 − turf in the SRD). Turf slots are NOT clickable — turf
+  // changes only through crewTurfAdd (+/−). Develop applies the SRD flow:
+  // rep >= threshold → weak hold: hold.set strong + rep reset; strong hold:
+  // pay (tier+1)×8 coin, tier.add +1, rep reset, hold.set weak.
+  const repThreshold = Math.max(0, c.rep.max - c.turf);
+  const canDevelop = c.rep.current >= repThreshold;
+
   const repTracker = renderTracker(state, {
     className: "crew-rep",
     label: "Rep",
@@ -445,8 +623,50 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     isLoading: state.isRepLoading,
     onDelta: handlers.onRepDelta,
     onTrack: handlers.onRepTrack,
-    note: "Turf fills rep boxes (display-only — no separate turf track)",
   });
+
+  // Turf row: 6 slots, filled from the left per turf count, grayed from the
+  // right — a rendering, not a button track.
+  const turfRow = el(
+    "div",
+    {
+      className: "turf-track",
+      role: "group",
+      "aria-label": `Turf: ${c.turf} of 6`,
+      style: "display: inline-flex; gap: 6px; padding: 6px;",
+    },
+    ...Array.from({ length: 6 }, (_, i) => {
+      const filled = i + 1 <= c.turf;
+      return el("span", {
+        className: "turf-slot",
+        "data-stress": filled ? "1" : "0",
+        "data-index": String(i + 1),
+        "aria-label": `Turf slot ${i + 1}`,
+        title: filled ? "Turf held" : "No turf",
+      });
+    }),
+  );
+  const turfMinusBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading || c.turf <= 0,
+    title: "Remove 1 turf",
+  }, "−");
+  turfMinusBtn.addEventListener("click", () => handlers.onTurfDelta(-1));
+  const turfPlusBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading || c.turf >= 6,
+    title: "Add 1 turf",
+  }, state.isTurfLoading ? "…" : "+");
+  turfPlusBtn.addEventListener("click", () => handlers.onTurfDelta(1));
+
+  const developBtn = el("button", {
+    type: "button",
+    disabled: state.anyLoading || !canDevelop,
+    title: canDevelop
+      ? `Develop (rep ${c.rep.current} >= threshold ${repThreshold})`
+      : `Develop (needs ${repThreshold} rep)`,
+  }, state.isDevelopLoading ? "…" : "Develop");
+  developBtn.addEventListener("click", handlers.onDevelop);
 
   const heatTracker = renderTracker(state, {
     className: "crew-heat",
@@ -866,12 +1086,66 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       values.length === 0 ? "(none)" : values.join(", ");
 
     if (isEditing) {
-      const typeInput = el("input", {
-        type: "text",
-        value: cohort[typeField],
-        "aria-label": `Edit ${typeField}`,
-        disabled: state.anyLoading,
-      });
+      // F2ac: kind-specific type dropdown from game data (canonical
+      // fallback). The current type is preserved even when it is not in the
+      // data lists (older snapshots / homebrew): gangs get the extra value
+      // appended as an option; experts map onto the Custom path (Custom
+      // reveals a free-text input).
+      const gangTypes = extractCohortGangTypes(state.crewGameData);
+      const expertTypes = extractCohortExpertTypes(state.crewGameData);
+      let typeControl: HTMLElement;
+      let readType: () => string;
+      if (cohort.cohortKind === "gang") {
+        const options = gangTypes.includes(cohort.gangType)
+          ? gangTypes
+          : [...gangTypes, cohort.gangType];
+        const gangSelect = el("select", {
+          "aria-label": "Edit gang type",
+          disabled: state.anyLoading,
+        }) as HTMLSelectElement;
+        for (const value of options) {
+          gangSelect.append(el("option", { value }, value) as HTMLOptionElement);
+        }
+        // Set via the select value after append: happy-dom does not honour
+        // option.selected set before the option is attached.
+        gangSelect.value = cohort.gangType;
+        typeControl = gangSelect;
+        readType = () => gangSelect.value;
+      } else {
+        const isCustom =
+          cohort.expertType === "Custom" || !expertTypes.includes(cohort.expertType);
+        const expertSelect = el("select", {
+          "aria-label": "Edit expert type",
+          disabled: state.anyLoading,
+        }) as HTMLSelectElement;
+        for (const value of expertTypes) {
+          expertSelect.append(el("option", { value }, value) as HTMLOptionElement);
+        }
+        expertSelect.value = isCustom ? "Custom" : cohort.expertType;
+        const customInput = el("input", {
+          type: "text",
+          "aria-label": "Edit expert custom type",
+          disabled: state.anyLoading,
+          placeholder: "custom type",
+        });
+        customInput.value =
+          isCustom && cohort.expertType !== "Custom" ? cohort.expertType : "";
+        const toggleCustom = () => {
+          customInput.hidden = expertSelect.value !== "Custom";
+        };
+        expertSelect.addEventListener("change", toggleCustom);
+        toggleCustom();
+        typeControl = el(
+          "span",
+          { style: "display: inline-flex; gap: 0.5em; align-items: center;" },
+          expertSelect,
+          customInput,
+        );
+        readType = () =>
+          expertSelect.value === "Custom"
+            ? customInput.value.trim() || "Custom"
+            : expertSelect.value;
+      }
       const qualityInput = el("input", {
         type: "number",
         value: String(cohort.quality),
@@ -926,7 +1200,8 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       // cohort.update sends only the fields that actually changed.
       saveBtn.addEventListener("click", () => {
         const fields: Record<string, unknown> = {};
-        if (typeInput.value !== cohort[typeField]) fields[typeField] = typeInput.value;
+        const typeValue = readType();
+        if (typeValue !== cohort[typeField]) fields[typeField] = typeValue;
         const quality = Number.parseInt(qualityInput.value, 10);
         if (!Number.isNaN(quality) && quality !== cohort.quality) fields.quality = quality;
         const scale = Number.parseInt(scaleInput.value, 10);
@@ -956,7 +1231,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         { className: "cohort-entry editing", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind },
         el("span", { className: "cohort-kind-badge" }, kindLabel),
         el("div", { className: "cohort-edit-fields", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
-          el("label", { className: "lbl" }, `${kindLabel} type:`, typeInput),
+          el("label", { className: "lbl" }, `${kindLabel} type:`, typeControl),
           el("label", { className: "lbl" }, "Quality:", qualityInput),
           el("label", { className: "lbl" }, "Scale:", scaleInput),
           el("label", { className: "lbl" }, "Armor:", armorInput),
@@ -1010,18 +1285,46 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     if (value === "gang") option.selected = true;
     cohortKindSelect.append(option);
   }
-  const gangTypeInput = el("input", {
-    type: "text",
+  // F2ac: kind-conditional type dropdowns from game data (canonical
+  // fallback). The gang select shows only when cohortKind=gang, the expert
+  // select only when cohortKind=expert — toggled locally so the rest of the
+  // form keeps its typed values. "Custom" (expert) reveals a free-text input.
+  const gangTypeSelect = el("select", {
     "aria-label": "Cohort gang type",
     disabled: state.anyLoading,
-    placeholder: "gang type",
-  });
-  const expertTypeInput = el("input", {
-    type: "text",
+  }, el("option", { value: "" }, "--")) as HTMLSelectElement;
+  for (const value of extractCohortGangTypes(state.crewGameData)) {
+    gangTypeSelect.append(el("option", { value }, value) as HTMLOptionElement);
+  }
+  gangTypeSelect.value = "";
+  const expertTypeSelect = el("select", {
     "aria-label": "Cohort expert type",
     disabled: state.anyLoading,
-    placeholder: "expert type",
+  }, el("option", { value: "" }, "--")) as HTMLSelectElement;
+  for (const value of extractCohortExpertTypes(state.crewGameData)) {
+    expertTypeSelect.append(el("option", { value }, value) as HTMLOptionElement);
+  }
+  expertTypeSelect.value = "";
+  const expertCustomInput = el("input", {
+    type: "text",
+    "aria-label": "Cohort expert custom type",
+    disabled: state.anyLoading,
+    placeholder: "custom type",
   });
+  const toggleCohortKindFields = () => {
+    const kind = cohortKindSelect.value;
+    gangTypeSelect.hidden = kind !== "gang";
+    expertTypeSelect.hidden = kind !== "expert";
+    expertCustomInput.hidden =
+      kind !== "expert" || expertTypeSelect.value !== "Custom";
+  };
+  cohortKindSelect.addEventListener("change", toggleCohortKindFields);
+  expertTypeSelect.addEventListener("change", () => {
+    if (cohortKindSelect.value === "expert") {
+      expertCustomInput.hidden = expertTypeSelect.value !== "Custom";
+    }
+  });
+  toggleCohortKindFields();
   const qualityInput = el("input", {
     type: "number",
     "aria-label": "Cohort quality",
@@ -1074,8 +1377,9 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Add Cohort"),
     el("div", { className: "cohort-add", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
       el("label", { className: "lbl" }, "Kind:", cohortKindSelect),
-      gangTypeInput,
-      expertTypeInput,
+      gangTypeSelect,
+      expertTypeSelect,
+      expertCustomInput,
       qualityInput,
       scaleInput,
       el("label", { className: "lbl" }, "Armor:", armorInput),
@@ -1159,16 +1463,33 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       { className: "crew-profile" },
       el("h2", {}, "Profile"),
       ...profileFields,
+      reputationRow,
       el("p", { style: "margin-top: 0.5em;" },
         el("a", { href: `/crew/${c.id}/history` }, "History"),
       ),
     ),
+    notesSection,
     el(
       "div",
       { className: "crew-trackers" },
       el("h2", {}, "Trackers"),
       el("h3", { className: "lbl" }, "Rep & Turf"),
       repTracker,
+      el("div", { className: "crew-turf", style: "margin: 0.6em 0;" },
+        el("div", { style: "display: flex; gap: 1em; align-items: center; flex-wrap: wrap;" },
+          turfRow,
+          el("span", { className: "turf-count" }, `${c.turf} / 6`),
+          turfMinusBtn,
+          turfPlusBtn,
+        ),
+        el("p", { className: "lbl", style: "margin-top: 0.35em; font-size: 0.85em;" },
+          "Turf is measured from the right: each turf lowers the rep develop threshold by one.",
+        ),
+      ),
+      el("div", { className: "crew-develop", style: "display: flex; gap: 0.75em; align-items: center; margin: 0.6em 0;" },
+        el("span", { className: "develop-threshold" }, `develop at ${repThreshold} rep (${c.rep.max} − ${c.turf} turf)`),
+        developBtn,
+      ),
       el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Heat"),
       heatTracker,
       el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Wanted"),
@@ -1291,8 +1612,12 @@ export function mountCrewDetailPage(
   let isUpgradeLoading = false;
   let isCohortLoading = false;
   let isXpLoading = false;
+  let isTurfLoading = false;
+  let isNoteLoading = false;
+  let isDevelopLoading = false;
   let crewTypeData: Record<string, unknown> | null = null;
   let crewTypesData: readonly Record<string, unknown>[] | null = null;
+  let crewGameData: Record<string, unknown> | null = null;
   let editingProfile: ProfileEditingState | null = null;
   let editingCohortId: string | null = null;
   let errorMsg: string | null = null;
@@ -1367,6 +1692,7 @@ export function mountCrewDetailPage(
   const runCrewOp = (
     setLoading: (v: boolean) => void,
     program: Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError>,
+    successNotice?: string,
   ) => {
     setLoading(true);
     clearNotices();
@@ -1378,6 +1704,7 @@ export function mountCrewDetailPage(
           if (cancelled) return;
           setLoading(false);
           currentCrew = crew;
+          if (successNotice) noticeMsg = successNotice;
           renderDetail();
         },
       }),
@@ -1403,7 +1730,10 @@ export function mountCrewDetailPage(
         isAbilityLoading ||
         isUpgradeLoading ||
         isCohortLoading ||
-        isXpLoading,
+        isXpLoading ||
+        isTurfLoading ||
+        isNoteLoading ||
+        isDevelopLoading,
       isUndoLoading,
       isContactLoading,
       isFactionLoading,
@@ -1419,8 +1749,12 @@ export function mountCrewDetailPage(
       isUpgradeLoading,
       isCohortLoading,
       isXpLoading,
+      isTurfLoading,
+      isNoteLoading,
+      isDevelopLoading,
       crewTypeData,
       crewTypesData,
+      crewGameData,
       editingProfile,
       editingCohortId,
       errorMsg,
@@ -1580,7 +1914,7 @@ export function mountCrewDetailPage(
       if (!currentCrew || editingProfile !== null) return;
       editingProfile = {
         field,
-        value: field === "notes" ? notesToText(currentCrew.notes) : currentCrew[field],
+        value: currentCrew[field],
       };
       renderDetail();
     },
@@ -1612,6 +1946,102 @@ export function mountCrewDetailPage(
     onProfileCancel: () => {
       editingProfile = null;
       renderDetail();
+    },
+
+    onReputationSet: () => {
+      if (!currentCrew || isProfileLoading) return;
+      const select = root.querySelector('select[aria-label="Reputation"]') as HTMLSelectElement | null;
+      const value = select?.value;
+      if (!value || value === currentCrew.reputation) return;
+      runCrewOp(
+        (v) => { isProfileLoading = v; },
+        crewFieldsUpdate(crewId, { reputation: value }, currentCrew.revision),
+      );
+    },
+
+    // -- F2ac: Notes ---------------------------------------------------------
+
+    onNoteAdd: () => {
+      if (!currentCrew || isNoteLoading) return;
+      const textarea = root.querySelector('textarea[aria-label="New note"]') as HTMLTextAreaElement | null;
+      const text = textarea?.value?.trim() ?? "";
+      if (!text) return;
+      runCrewOp(
+        (v) => { isNoteLoading = v; },
+        crewNoteAdd(crewId, text, currentCrew.revision),
+      );
+    },
+
+    onNoteRemove: (index: number) => {
+      if (!currentCrew || isNoteLoading) return;
+      runCrewOp(
+        (v) => { isNoteLoading = v; },
+        crewNoteRemove(crewId, index, currentCrew.revision),
+      );
+    },
+
+    // -- F2ac: Rep & Turf tracker + Develop -----------------------------------
+
+    onTurfDelta: (delta: number) => {
+      if (!currentCrew || isTurfLoading) return;
+      runCrewOp(
+        (v) => { isTurfLoading = v; },
+        crewTurfAdd(crewId, delta, currentCrew.revision),
+      );
+    },
+
+    // SRD develop flow: rep >= threshold (rep.max − turf) unlocks Develop.
+    // Weak hold → hold.set strong + rep reset. Strong hold → pay
+    // (tier+1)×8 coin, tier.add +1, rep reset, hold.set weak; when the coin
+    // is unaffordable the flow stops with an INSUFFICIENT_FUNDS notice
+    // before any op is sent.
+    onDevelop: () => {
+      if (!currentCrew || isDevelopLoading) return;
+      const crew = currentCrew;
+      const threshold = crew.rep.max - crew.turf;
+      if (crew.rep.current < threshold) return;
+
+      if (crew.hold === "weak") {
+        const program = Effect.gen(function* () {
+          const strong = yield* crewHoldSet(crewId, "strong", crew.revision);
+          const reset = yield* crewRepAdd(
+            crewId,
+            -strong.rep.current,
+            strong.revision,
+          );
+          return reset;
+        });
+        runCrewOp(
+          (v) => { isDevelopLoading = v; },
+          program,
+          "Hold strengthened — rep reset to 0",
+        );
+        return;
+      }
+
+      const cost = (crew.tier + 1) * 8;
+      if (crew.coin < cost) {
+        clearNotices();
+        noticeMsg = `INSUFFICIENT_FUNDS: developing to tier ${crew.tier + 1} costs ${cost} coin (have ${crew.coin})`;
+        renderDetail();
+        return;
+      }
+      const program = Effect.gen(function* () {
+        const paid = yield* crewCoinAdd(crewId, -cost, crew.revision);
+        const raised = yield* crewTierAdd(crewId, 1, paid.revision);
+        const reset = yield* crewRepAdd(
+          crewId,
+          -raised.rep.current,
+          raised.revision,
+        );
+        const weakened = yield* crewHoldSet(crewId, "weak", reset.revision);
+        return weakened;
+      });
+      runCrewOp(
+        (v) => { isDevelopLoading = v; },
+        program,
+        `Tier advanced to ${crew.tier + 1} — hold weakened, rep reset`,
+      );
     },
 
     // -- F2u: Trackers ------------------------------------------------------
@@ -1727,8 +2157,10 @@ export function mountCrewDetailPage(
       const kindSelect = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement | null;
       const cohortKind = kindSelect?.value ?? "";
       if (cohortKind !== "gang" && cohortKind !== "expert") return;
-      const gangInput = root.querySelector('input[aria-label="Cohort gang type"]') as HTMLInputElement | null;
-      const expertInput = root.querySelector('input[aria-label="Cohort expert type"]') as HTMLInputElement | null;
+      // F2ac: kind-conditional selects (game data + canonical fallback).
+      const gangSelect = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement | null;
+      const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement | null;
+      const expertCustom = root.querySelector('input[aria-label="Cohort expert custom type"]') as HTMLInputElement | null;
       const qualityInput = root.querySelector('input[aria-label="Cohort quality"]') as HTMLInputElement | null;
       const scaleInput = root.querySelector('input[aria-label="Cohort scale"]') as HTMLInputElement | null;
       const armorInput = root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement | null;
@@ -1737,10 +2169,18 @@ export function mountCrewDetailPage(
       const descInput = root.querySelector('input[aria-label="Cohort description"]') as HTMLInputElement | null;
 
       const body: Parameters<typeof cohortAdd>[1] = { cohortKind };
-      const gangType = gangInput?.value?.trim() ?? "";
-      const expertType = expertInput?.value?.trim() ?? "";
-      if (cohortKind === "gang" && gangType) body.gangType = gangType;
-      if (cohortKind === "expert" && expertType) body.expertType = expertType;
+      if (cohortKind === "gang") {
+        const gangType = gangSelect?.value?.trim() ?? "";
+        if (gangType) body.gangType = gangType;
+      } else {
+        const expertType = expertSelect?.value ?? "";
+        if (expertType) {
+          body.expertType =
+            expertType === "Custom"
+              ? expertCustom?.value?.trim() || "Custom"
+              : expertType;
+        }
+      }
       const quality = qualityInput ? Number.parseInt(qualityInput.value, 10) : Number.NaN;
       if (!Number.isNaN(quality)) body.quality = quality;
       const scale = scaleInput ? Number.parseInt(scaleInput.value, 10) : Number.NaN;
@@ -1849,15 +2289,18 @@ export function mountCrewDetailPage(
 
   const program = Effect.gen(function* () {
     const crew = yield* getCrew(crewId);
-    // Crew-type game data drives the Playbook menus + descriptions. The
-    // per-crew-type endpoint is preferred; failures degrade gracefully to
-    // the CrewTypes list (find-by-name), mirroring the character sheet's
-    // getPlaybook + game-data fallback. No hardcoded lists either way.
+    // Crew-type game data drives the Playbook menus, the reputation
+    // dropdown, and the cohort type lists. The per-crew-type endpoint is
+    // preferred; failures degrade gracefully to the whole game-data object
+    // (CrewTypes find-by-name), mirroring the character sheet's getPlaybook
+    // + game-data fallback. F2ac: getCrewGameData (the raw {stem}-crews.json
+    // object) replaces getCrewTypes so the top-level CohortGangTypes /
+    // CohortExpertTypes keys are available for the cohort dropdowns.
     const crewType = yield* Effect.either(
       getCrewType(crew.gameStem, crew.crewTypeName),
     );
-    const crewTypes = yield* Effect.either(getCrewTypes(crew.gameStem));
-    return { crew, crewType, crewTypes };
+    const gameData = yield* Effect.either(getCrewGameData(crew.gameStem));
+    return { crew, crewType, gameData };
   });
 
   void Effect.runPromise(
@@ -1873,15 +2316,22 @@ export function mountCrewDetailPage(
               : String(err);
         setChildren(root, renderError(msg));
       },
-      onSuccess: ({ crew, crewType, crewTypes }) => {
+      onSuccess: ({ crew, crewType, gameData }) => {
         if (cancelled) return;
         root.setAttribute("aria-busy", "false");
         currentCrew = crew;
         if (crewType._tag === "Right") {
           crewTypeData = crewType.right;
         }
-        if (crewTypes._tag === "Right") {
-          crewTypesData = crewTypes.right;
+        if (gameData._tag === "Right") {
+          crewGameData = gameData.right;
+          const crewTypes = gameData.right.CrewTypes;
+          if (Array.isArray(crewTypes)) {
+            crewTypesData = crewTypes.filter(
+              (ct): ct is Record<string, unknown> =>
+                typeof ct === "object" && ct !== null,
+            );
+          }
         }
         renderDetail();
       },

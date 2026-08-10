@@ -95,6 +95,23 @@
 .stress-box:focus-visible {
   outline-color: var(--accent);
 }
+
+/* ── Turf slots (F2ac) ─────────────────────────────────────────
+ * Non-interactive rendering on the right side of the rep tracker:
+ * turf fills from the LEFT (data-stress="1"); the remaining slots
+ * are grayed out from the RIGHT. Turf slots are spans, never
+ * buttons — turf changes only through the +/− crewTurfAdd controls.
+ */
+.turf-slot {
+  width: 26px;
+  height: 26px;
+  border: var(--border-thick) solid var(--fill-border);
+  background: var(--empty);
+  display: inline-block;
+}
+.turf-slot[data-stress="1"] {
+  background: var(--fill);
+}
 .stress-label {
   margin-top: 6px;
   text-align: center;
