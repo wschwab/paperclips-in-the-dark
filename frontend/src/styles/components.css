@@ -155,26 +155,45 @@
 }
 .claims-map {
   position: relative;
+  /* standard shrink fix: a grid item whose content is wider than its track
+   * must be allowed to shrink (min-width:0) and clip+scroll internally */
+  width: 100%;
+  min-width: 0;
   overflow-x: auto;
-  padding-bottom: 0.5em;
+  padding-bottom: 0.6em;
 }
-.claims-grid {
-  min-width: 560px;
-  position: relative;
-  z-index: 1;
-}
+/* SVG edge layer: a CHILD of .claims-grid, absolutely positioned to its
+ * padding box (the only stable containing block — the map can overflow),
+ * below the opaque cells so only the inter-cell gap segment shows. */
 .claim-edges {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
   z-index: 0;
   pointer-events: none;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
 }
 .claim-edges line {
-  stroke: var(--line-dark, var(--rule));
+  /* --rule is 25% opacity in dark — too faint to read as a connector.
+   * --rule-heavy (55%) stays subtle but clearly visible in the gaps. */
+  stroke: var(--rule-heavy);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
+}
+.claims-grid {
+  min-width: 560px;
+  width: fit-content;
+  position: relative;
+  z-index: 1;
+  /* wide gap so the connector segment between boxes is actually legible */
+  column-gap: 18px;
+  row-gap: 18px;
+}
+/* cells draw above the connector layer (opaque) so lines never cross text */
+.claim-node {
+  position: relative;
+  z-index: 1;
 }
 .claim-cell {
   display: flex;
@@ -342,12 +361,16 @@
   font-weight: 700;
 }
 /* F2aa: harm-table remove is a subtle ghost icon — low-contrast, small,
- * hover-only emphasis. Healing clocks are the normal removal path; this
- * button exists only to correct clerical errors. */
-.harm-remove-btn {
+ * borderless, and the only element in its row that is not a sheet control;
+ * the button exists only to correct clerical errors. The trauma-stamp
+ * remove uses the same treatment (Design Audit F-05 shared component). */
+.harm-remove-btn,
+.trauma-remove-btn {
   border: none;
   background: transparent;
-  color: var(--text-faint);
+  /* Design Audit F-19: interactive remove controls need ≥4.5:1 — faint
+   * was measured under the floor, muted passes in both themes. */
+  color: var(--text-muted);
   font-size: 0.72rem;
   line-height: 1;
   padding: 2px 4px;
@@ -356,14 +379,17 @@
   transition: color var(--transition-fast),
               background var(--transition-fast);
 }
-.harm-remove-btn:hover {
+.harm-remove-btn:hover,
+.trauma-remove-btn:hover {
   color: var(--accent);
   background: var(--surface-sunk);
 }
-.harm-remove-btn:focus-visible {
+.harm-remove-btn:focus-visible,
+.trauma-remove-btn:focus-visible {
   outline-color: var(--accent);
 }
-.harm-remove-btn:disabled {
+.harm-remove-btn:disabled,
+.trauma-remove-btn:disabled {
   cursor: default;
   opacity: 0.4;
 }
@@ -574,16 +600,108 @@
   display: grid;
   gap: 18px;
   grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  /* Cards size to their content instead of stretching to the tallest
+   * sibling (Design Audit F-06) — avoids stranding hundreds of px of
+   * empty bordered paper in short cards like Fund / Traumas. */
+  align-items: start;
 }
 
 /* every section reads as a box on the printed sheet */
-.roster > *,
+.roster > *:not(.page-title),
 .character-detail > *,
 .crew-detail > * {
   padding: 14px 16px;
   border: var(--border-thin) solid var(--rule);
   background: var(--surface-raised);
   border-radius: var(--radius);
+  /* a grid item must be allowed to shrink below its content width, or a wide
+   * child (the claims map's 560px grid) widens the card at 420px */
+  min-width: 0;
+}
+
+.roster > .page-title {
+  grid-column: 1 / -1;
+  /* page masthead, not a card — drop the generic box */
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+}
+
+/* sheet mastheads — name, alias, and a playbook/game kicker (F-23) */
+.character-header,
+.crew-header {
+  grid-column: 1 / -1;
+}
+.character-header h1,
+.crew-header h1 {
+  margin: 2px 0;
+}
+.character-kicker,
+.crew-kicker {
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+.character-header .alias {
+  font-family: var(--font-epigraph);
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 0;
+}
+.crew-header .crew-type {
+  font-family: var(--font-epigraph);
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0;
+}
+.crew-tier-badge {
+  display: inline-block;
+  width: fit-content;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  padding: 2px 10px;
+  margin-top: 6px;
+  border: var(--border-medium) solid var(--fill-border);
+  background: var(--fill);
+  color: var(--surface);
+}
+.crew-nav {
+  margin-top: 6px;
+}
+
+/* Hold — two-state segmented control (Design Audit F-11) */
+.hold-control {
+  display: inline-flex;
+  border: var(--border-medium) solid var(--fill-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.hold-option {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.35em 0.9em;
+  border: none;
+  border-right: var(--border-thin) solid var(--rule);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.hold-option:last-child {
+  border-right: none;
+}
+.hold-option[aria-pressed="true"] {
+  background: var(--fill);
+  color: var(--surface);
 }
 
 /* full-width sheet furniture: titles, footer strips, notices,
@@ -598,18 +716,358 @@
 .crew-detail > .crew-header,
 .crew-detail > .crew-actions,
 .crew-detail > .crew-notices,
-.crew-detail > .crew-contacts-factions {
+.crew-detail > .crew-contacts-factions,
+.crew-detail > .crew-claims {
   grid-column: 1 / -1;
 }
 
+/* Contact entry controls share one row on wide sheets, but native text inputs
+ * have an intrinsic min-content width. Let the two fields shrink around the
+ * add button on a narrow sheet instead of widening the page. */
+.contact-add-row {
+  min-width: 0;
+}
+.contact-add-row input {
+  min-width: 0;
+  flex: 1 1 10em;
+}
+
+/* ── Page primitives (Design Audit F-04 / F-28 / F-29) ────────
+ * The high-traffic orphaned class names get sheet language: ruled
+ * ledger lines instead of browser-default bullets, and form fields as
+ * ruled blanks rather than bare inputs. */
+
+/* roster lists — no bullets, hairline ledger rules between entries */
+.character-list,
+.crew-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.4em 0 0.8em;
+}
+.character-list li,
+.crew-list li {
+  border-top: var(--border-thin) solid var(--rule);
+  padding: 0.55em 0;
+}
+.character-list li:last-child,
+.crew-list li:last-child {
+  border-bottom: var(--border-thin) solid var(--rule);
+}
+.character-list a,
+.crew-list a {
+  text-decoration: none;
+  display: flex;
+  gap: 0.5em;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.character-list strong,
+.crew-list strong {
+  font-family: var(--font-label);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+/* F-12: a character created without a name — faint italic placeholder */
+.character-list .unnamed {
+  font-style: italic;
+  color: var(--text-faint);
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-serif);
+}
+.character-list a span,
+.crew-list a span {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+.character-list li:hover,
+.crew-list li:hover {
+  background: var(--surface-sunk);
+}
+.roster-characters,
+.roster-crews {
+  align-content: start;
+}
+
+/* empty state — a ruled blank rather than four plain words */
+.empty {
+  color: var(--text-muted);
+  font-family: var(--font-epigraph);
+  font-style: italic;
+  margin: 0.5em 0;
+}
+
+/* notices — the app's most interesting messages deserve a panel */
+.notice {
+  border: var(--border-thin) solid var(--rule);
+  border-left: var(--border-thick) solid var(--accent);
+  background: var(--surface-raised);
+  padding: 0.55em 0.7em;
+  font-size: 0.95rem;
+  margin: 0.5em 0;
+}
+
+/* history list — op name, timestamp, snapshot as ruled ledger rows */
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.history-entry {
+  border-top: var(--border-thin) solid var(--rule);
+  padding: 0.6em 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.history-entry:last-child {
+  border-bottom: var(--border-thin) solid var(--rule);
+}
+.history-metadata {
+  display: flex;
+  gap: 0.6em;
+  align-items: baseline;
+}
+.history-op {
+  font-family: var(--font-typewriter);
+  font-size: 0.85rem;
+  color: var(--text);
+}
+.history-timestamp {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.history-snapshotid {
+  font-family: var(--font-typewriter);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  word-break: break-all;
+}
+.no-history {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* form groups — Oswald labels above ruled blank fields */
+.form-group {
+  margin: 0 0 0.8em;
+}.form-group label {
+  display: block;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.3em;
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+}
+
+/* cohort add form — labelled mini-sheet (Design Audit F-10) */
+.cohort-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font: inherit;
+}
+.cohort-field input[type="checkbox"] {
+  align-self: flex-start;
+  margin-top: 0.4em;
+}
+
+/* rules explanations — body prose, not label furniture (Design Audit F-16) */
+.rules-note {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* cohort entries — a boxed mini-sheet, not a run-on string (F-09) */
+.cohort-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  margin: 0 0 8px;
+  border: var(--border-thin) solid var(--rule);
+  background: var(--surface-raised);
+  font-size: 0.92rem;
+}
+.cohort-kind-badge {
+  align-self: flex-start;
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 1px 7px;
+  border: var(--border-medium) solid var(--fill-border);
+  color: var(--text);
+}
+.cohort-entry .cohort-type,
+.cohort-entry .cohort-quality,
+.cohort-entry .cohort-scale,
+.cohort-entry .cohort-armor,
+.cohort-entry .cohort-edges,
+.cohort-entry .cohort-flaws,
+.cohort-entry .cohort-harm,
+.cohort-entry .cohort-description {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* ── Torn-edge & uneven-type ceremony (Design Audit Appendix A) ──
+ * The seam: an inked band whose underside tears into the paper via an
+ * inline SVG mask. Applied to exactly three surfaces (app bar, the two
+ * sheet mastheads, the two roster plates) — never more than two seams
+ * per screen. The uneven register is a typeface (IM Fell English), not a
+ * per-character transform (F-A3). */
+
+.torn-foot {
+  position: relative;
+}
+.torn-foot::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: var(--torn-depth);
+  background: var(--band-ink);
+  -webkit-mask-image: var(--torn-mask);
+  mask-image: var(--torn-mask);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 2;
+}
+/* high-contrast collapses --torn-depth to 0 → the seam is a straight rule */
+@supports not (mask-image: url("#x")) {
+  .torn-foot::after {
+    display: none;
+  }
+}
+.torn-foot-lg::after {
+  height: var(--torn-depth-lg);
+}
+
+/* inked band surfaces — the app bar and sheet mastheads become plates;
+ * the seam replaces the element's own bottom rule. */
+.app-bar.torn-foot,
+.character-header.torn-foot,
+.crew-header.torn-foot,
+.roster-characters.torn-foot,
+.roster-crews.torn-foot {
+  background: var(--band-ink);
+  color: var(--band-text);
+  border-bottom: none;
+}
+.character-header.torn-foot a,
+.crew-header.torn-foot a,
+.roster-characters.torn-foot a,
+.roster-crews.torn-foot a,
+.app-bar.torn-foot a {
+  color: var(--band-text);
+}
+/* Controls keep their own ink inside the band — the band link color must
+ * not override the .btn-primary/.btn-secondary fill pairing or the theme
+ * control text (regression fix: blank Create buttons / invisible theme
+ * toggles in the torn-foot plates). */
+.app-bar.torn-foot button,
+.character-header.torn-foot button,
+.crew-header.torn-foot button,
+.roster-characters.torn-foot button,
+.roster-crews.torn-foot button {
+  color: var(--text);
+}
+.roster-characters.torn-foot .btn-primary,
+.roster-crews.torn-foot .btn-primary {
+  color: var(--band-ink);
+  background: var(--band-text);
+  border-color: var(--band-text);
+}
+.roster-characters.torn-foot .btn-secondary,
+.roster-crews.torn-foot .btn-secondary {
+  color: var(--band-text);
+  background: transparent;
+  border-color: var(--band-text);
+}
+.roster-characters.torn-foot h2,
+.roster-crews.torn-foot h2,
+.roster-characters.torn-foot .empty,
+.roster-crews.torn-foot .empty,
+.roster-characters.torn-foot li,
+.roster-crews.torn-foot li,
+.roster-characters.torn-foot strong,
+.roster-crews.torn-foot span {
+  color: var(--band-text);
+}
+.roster-characters.torn-foot li:hover,
+.roster-crews.torn-foot li:hover {
+  background: var(--band-ink);
+  filter: brightness(1.15);
+}
+
+/* uneven register — worn-metal display type for aliases, plates, empties */
+.uneven {
+  font-family: var(--font-uneven);
+  text-transform: uppercase;
+  letter-spacing: var(--track-uneven);
+  font-size: max(1.05rem, 1em);
+}
+[data-contrast="high"] .uneven {
+  font-family: var(--font-label);
+  letter-spacing: 0.08em;
+}
+
 /* ── Theme controls (the manual toggle) ─────────────────────── */
+
+/* Primary / secondary actions (Design Audit F-07): inked sheet
+ * furniture instead of plain links. Both are the same rectangular
+ * shape; primary fills with ink, secondary stays transparent. Peer
+ * actions use one element type per the audit — <a class="btn-…">
+ * is fine and renders identically. */
+.btn-primary,
+.btn-secondary {
+  display: inline-block;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.45em 0.9em;
+  border: var(--border-medium) solid var(--fill-border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--fill);
+  color: var(--surface);
+}
+.btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--surface);
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--link);
+}
+.btn-secondary:hover {
+  background: var(--surface-sunk);
+  border-color: var(--fill-border);
+}
 
 .theme-controls {
   display: inline-flex;
   gap: 4px;
   padding: 3px;
   border: var(--border-thin) solid var(--rule);
-  border-radius: var(--radius-large);
+  border-radius: var(--radius);
   background: var(--surface-raised);
 }
 .theme-controls button {
@@ -622,6 +1080,9 @@
   font-size: 0.74rem;
   cursor: pointer;
   border-radius: 4px;
+  /* Explicit ink, not inherited — the app bar may be an inked band whose
+   * inherited color would otherwise make these invisible (F-A1 regressions). */
+  color: var(--text);
 }
 .theme-controls button:hover {
   background: var(--surface-sunk);
@@ -636,14 +1097,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px 16px;
+  /* Design Audit F-24: wrap so the title, nav, and theme controls don't
+   * compress against the right edge at narrow widths. */
+  flex-wrap: wrap;
   padding: 12px var(--gutter);
   border-bottom: var(--border-thick) solid var(--rule-heavy);
   background: var(--surface-raised);
 }
-.app-bar h1 {
+.app-bar .app-title {
   font-size: 1.4rem;
   margin: 0;
+  font-family: var(--font-head);
+  text-transform: uppercase;
+  letter-spacing: 0.012em;
 }
 .app-bar nav { display: flex; gap: 12px; align-items: center; }
 .app-bar nav a { text-decoration: none; }
@@ -651,12 +1118,23 @@
   color: var(--text);
   text-decoration: underline;
 }
+/* On the inked band, the active nav link must stay band-text (cream) or it
+ * becomes ink-on-ink and invisible (regression from F-A1 band recoloring). */
+.app-bar.torn-foot nav a[aria-current="page"] {
+  color: var(--band-text);
+}
 .app-bar a.app-title {
   color: inherit;
   text-decoration: none;
 }
 .app-bar a.app-title:hover {
   color: var(--accent);
+}
+/* on the inked band, the wordmark hover stays light (accent is too low
+ * contrast against band-ink in light mode) */
+.app-bar.torn-foot a.app-title:hover {
+  color: var(--band-text);
+  text-decoration: underline;
 }
 
 /* ── Layout helpers ─────────────────────────────────────────── */

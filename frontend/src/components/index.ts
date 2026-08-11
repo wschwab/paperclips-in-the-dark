@@ -20,3 +20,6 @@ export type { ClockOptions, ClockSize } from "./clock.js";
 
 export { inkedCheckbox } from "./checkbox.js";
 export type { InkedCheckboxOptions } from "./checkbox.js";
+
+export { errorCard } from "./error-card.js";
+export type { ErrorCardOptions } from "./error-card.js";

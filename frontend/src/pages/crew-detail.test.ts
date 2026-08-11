@@ -112,19 +112,24 @@ describe("crew-detail page", () => {
     expect(root.textContent).toContain("Loading…");
   });
 
-  it("shows an error message when the initial fetch fails", async () => {
+  it("renders a recoverable error card while keeping technical details collapsed", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      text: async () => "boom",
+      text: async () => "raw schema boom",
     });
 
     mountCrewDetailPage(root, CREW_ID);
 
     await vi.waitFor(() => {
-      const err = root.querySelector('[role="alert"]');
-      expect(err?.textContent).toContain("500");
-      expect(err?.textContent).toContain("boom");
+      const err = root.querySelector(".error-card-head");
+      expect(err?.textContent).toBe("This crew sheet could not be loaded.");
+      expect(root.querySelector("button")?.textContent).toBe("Retry");
+      expect(root.querySelector('a[href="/roster"]')?.textContent).toBe("Back to roster");
+      const details = root.querySelector("details");
+      expect(details?.open).toBe(false);
+      expect(details?.textContent).toContain("raw schema boom");
+      expect(err?.textContent).not.toContain("raw schema boom");
     });
   });
 
@@ -300,6 +305,18 @@ describe("crew-detail page", () => {
         expect(root.textContent).toContain("Contacts & Factions");
         expect(root.textContent).toContain("Rolan Wott");
         expect(root.textContent).toContain("magistrate");
+      });
+    });
+    it("marks the contact add row for narrow-sheet flex sizing", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        const row = root.querySelector(".contact-add-row");
+        expect(row).not.toBeNull();
+        expect(row?.querySelector('input[aria-label="Contact name"]')).not.toBeNull();
+        expect(row?.querySelector('input[aria-label="Contact profession"]')).not.toBeNull();
       });
     });
 
@@ -615,12 +632,12 @@ describe("crew-detail page", () => {
         const developBtn = root.querySelector('button[title^="Develop"]') as HTMLButtonElement;
         expect(developBtn).not.toBeNull();
         expect(developBtn.disabled).toBe(true);
-        // Tier value + hold select from contract enum values
+        // Tier value + hold segmented control from contract enum values
         expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
-        const holdSelect = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
-        expect(holdSelect).not.toBeNull();
-        expect([...holdSelect.options].map((o) => o.value)).toEqual(["strong", "weak"]);
-        expect(holdSelect.value).toBe("strong");
+        const holdButtons = [...root.querySelectorAll('button[data-hold]')] as HTMLButtonElement[];
+        expect(holdButtons.length).toBe(2);
+        expect(holdButtons.map((b) => b.getAttribute("data-hold"))).toEqual(["weak", "strong"]);
+        expect(holdButtons.find((b) => b.getAttribute("data-hold") === "strong")?.getAttribute("aria-pressed")).toBe("true");
         // Coin & stash values
         expect(root.textContent).toContain("Coin:");
         expect(root.textContent).toContain("Stash:");
@@ -955,16 +972,14 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector('select[aria-label="Hold"]')).not.toBeNull();
+        expect(root.querySelector('button[data-hold="weak"]')).not.toBeNull();
       });
 
-      const holdSelect = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
-      holdSelect.value = "weak";
-      (root.querySelector('button[title="Set hold"]') as HTMLButtonElement).click();
+      (root.querySelector('button[data-hold="weak"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        const sel = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
-        expect(sel.value).toBe("weak");
+        const weak = root.querySelector('button[data-hold="weak"]') as HTMLButtonElement;
+        expect(weak.getAttribute("aria-pressed")).toBe("true");
       });
       const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
       const holdCall = calls.find((c) => String(c[0]).endsWith("/ops/hold.set"));
@@ -1559,13 +1574,13 @@ describe("crew-detail page", () => {
       // game-data CohortGangTypes (canonical fallback when absent)
       const gangSelect = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement;
       expect(gangSelect).not.toBeNull();
-      expect(gangSelect.hidden).toBe(false);
+      expect((gangSelect.closest(".cohort-field") as HTMLElement | null)?.hidden ?? gangSelect.hidden).toBe(false);
       expect([...gangSelect.options].map((o) => o.value)).toEqual([
         "", "Adepts", "Rooks", "Rovers", "Skulls", "Thugs",
       ]);
       const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement;
       expect(expertSelect).not.toBeNull();
-      expect(expertSelect.hidden).toBe(true);
+      expect((expertSelect.closest(".cohort-field") as HTMLElement | null)?.hidden ?? expertSelect.hidden).toBe(true);
       gangSelect.value = "Rooks";
       const qualityInput = root.querySelector('input[aria-label="Cohort quality"]') as HTMLInputElement;
       qualityInput.value = "2";
@@ -2174,9 +2189,9 @@ describe("crew-detail page", () => {
       await vi.waitFor(() => {
         expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("0 of 12");
       });
-      // hold select reflects strong
-      const holdSelect = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement;
-      expect(holdSelect.value).toBe("strong");
+      // hold control reflects strong
+      const holdStrong = root.querySelector('button[data-hold="strong"]') as HTMLButtonElement;
+      expect(holdStrong.getAttribute("aria-pressed")).toBe("true");
       // two sequential ops with threaded revisions
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/hold.set`,
@@ -2216,7 +2231,7 @@ describe("crew-detail page", () => {
         expect(root.querySelector(".crew-tier-value")?.textContent).toBe("2");
       });
       expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("0 of 12");
-      expect((root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement).value).toBe("weak");
+      expect(root.querySelector('button[data-hold="weak"]')?.getAttribute("aria-pressed")).toBe("true");
       expect(root.querySelector(".crew-coin-count")?.textContent).toBe("4");
 
       expect(global.fetch).toHaveBeenCalledWith(
@@ -2414,10 +2429,12 @@ describe("crew-detail page", () => {
       const gangSelect = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement;
       const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement;
       const customInput = root.querySelector('input[aria-label="Cohort expert custom type"]') as HTMLInputElement;
+      // F-10: the label+control wrapper hides together, not the bare control.
+      const field = (control: HTMLElement) => control.closest(".cohort-field") as HTMLElement;
 
-      // default kind=gang: gang select visible, expert hidden
-      expect(gangSelect.hidden).toBe(false);
-      expect(expertSelect.hidden).toBe(true);
+      // default kind=gang: gang field visible, expert field hidden
+      expect(field(gangSelect).hidden).toBe(false);
+      expect(field(expertSelect).hidden).toBe(true);
       // options come from game-data CohortGangTypes
       expect([...gangSelect.options].map((o) => o.value)).toEqual([
         "", "Adepts", "Rooks", "Rovers", "Skulls", "Thugs",
@@ -2426,17 +2443,17 @@ describe("crew-detail page", () => {
       // switch to expert: gang hidden, expert visible
       kindSelect.value = "expert";
       kindSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      expect(gangSelect.hidden).toBe(true);
-      expect(expertSelect.hidden).toBe(false);
+      expect(field(gangSelect).hidden).toBe(true);
+      expect(field(expertSelect).hidden).toBe(false);
       expect([...expertSelect.options].map((o) => o.value)).toEqual([
         "", "Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom",
       ]);
 
       // Custom reveals the free-text input
-      expect(customInput.hidden).toBe(true);
+      expect(field(customInput).hidden).toBe(true);
       expertSelect.value = "Custom";
       expertSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      expect(customInput.hidden).toBe(false);
+      expect(field(customInput).hidden).toBe(false);
     });
 
     it("adds an expert cohort with a custom type (Custom → text input → expertType)", async () => {

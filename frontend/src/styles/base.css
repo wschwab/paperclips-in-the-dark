@@ -27,9 +27,6 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-
-  /* a faint margin rule on the page edge, like a printed card */
-  box-shadow: inset 4px 0 0 0 var(--rule-heavy);
   position: relative;
 }
 
@@ -126,13 +123,46 @@ h3 { font-size: 1.15rem; letter-spacing: 0.04em; }
 /* ── Links & inline rules ───────────────────────────────────── */
 
 a {
-  color: var(--accent);
+  color: var(--link);
   text-decoration: underline;
   text-decoration-thickness: var(--border-thin);
   text-underline-offset: 2px;
 }
 a:hover {
   text-decoration-thickness: var(--border-medium);
+}
+
+/* skip link — visually hidden until focused (Design Audit F-13) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+/* generic visually-hidden helper — content present for AT, hidden visually */
+.visually-hidden {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.skip-link:focus-visible {
+  left: var(--gutter);
+  top: var(--gutter);
+  width: auto;
+  height: auto;
+  clip-path: none;
+  background: var(--surface-raised);
+  border: var(--border-thick) solid var(--focus-ring);
+  padding: 0.5em 0.9em;
+  z-index: 100;
+  color: var(--link);
 }
 
 hr {
@@ -200,7 +230,11 @@ textarea:disabled {
 }
 input::placeholder,
 textarea::placeholder {
-  color: var(--text-faint);
+  /* Design Audit F-19: --text-faint measured 3.04:1 (light) / 3.49:1
+   * (dark), under the 4.5:1 normal-text floor. Placeholders carry real
+   * format instructions (e.g. "Fearsome, Independent"), so they use
+   * --text-muted (6.00:1 / 6.99:1). */
+  color: var(--text-muted);
 }
 select option {
   background: var(--surface-raised);

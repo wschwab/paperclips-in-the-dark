@@ -215,20 +215,24 @@ describe("character-detail page", () => {
     expect(root.textContent).toContain("Loading…");
   });
 
-  it("shows an error message when the initial fetch fails", async () => {
+  it("renders a recoverable error card while keeping technical details collapsed", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
-      text: async () => "boom",
+      text: async () => "raw schema boom",
     });
-    // The page loads character then game in parallel; game fails too but error is already set
 
     mountCharacterDetailPage(root, CHARACTER_ID);
 
     await vi.waitFor(() => {
-      const err = root.querySelector('[role="alert"]');
-      expect(err?.textContent).toContain("500");
-      expect(err?.textContent).toContain("boom");
+      const err = root.querySelector(".error-card-head");
+      expect(err?.textContent).toBe("This character sheet could not be loaded.");
+      expect(root.querySelector("button")?.textContent).toBe("Retry");
+      expect(root.querySelector('a[href="/roster"]')?.textContent).toBe("Back to roster");
+      const details = root.querySelector("details");
+      expect(details?.open).toBe(false);
+      expect(details?.textContent).toContain("raw schema boom");
+      expect(err?.textContent).not.toContain("raw schema boom");
     });
   });
 
@@ -2193,7 +2197,7 @@ describe("character-detail page", () => {
       });
     });
 
-    it("action +/− buttons adjust the rating via actionSetRating", async () => {
+    it("action dots adjust the rating via actionSetRating", async () => {
       const plusResp = talentDTO({
         revision: 13,
         talent: {
@@ -2242,10 +2246,11 @@ describe("character-detail page", () => {
       mountCharacterDetailPage(root, CHARACTER_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector('button[title="Increase Hunt rating"]')).not.toBeNull();
+        expect(root.querySelector('button[aria-label="Hunt 2"]')).not.toBeNull();
       });
 
-      (root.querySelector('button[title="Increase Hunt rating"]') as HTMLButtonElement).click();
+      // Click dot 2 → rating 2
+      (root.querySelector('button[aria-label="Hunt 2"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
           `/api/characters/${CHARACTER_ID}/ops/action.set-rating`,
@@ -2259,7 +2264,8 @@ describe("character-detail page", () => {
         expect(root.querySelector('.talent-action-row[data-action="Hunt"]')?.textContent).toContain("2/4");
       });
 
-      (root.querySelector('button[title="Decrease Hunt rating"]') as HTMLButtonElement).click();
+      // Click dot 2 again (filled terminal) → clears to 1
+      (root.querySelector('button[aria-label="Hunt 2"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
         expect(global.fetch).toHaveBeenLastCalledWith(
           `/api/characters/${CHARACTER_ID}/ops/action.set-rating`,

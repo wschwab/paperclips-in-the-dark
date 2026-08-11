@@ -123,4 +123,25 @@ describe("character-history page (F2aa)", () => {
       );
     });
   });
+
+  it("renders a recoverable error card with retry, back link, and collapsed detail", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "raw schema boom",
+    });
+
+    mountCharacterHistoryPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      const alert = root.querySelector(".error-card-head");
+      expect(alert?.textContent).toContain("This history could not be loaded.");
+      expect(root.querySelector("button")?.textContent).toBe("Retry");
+      expect(root.querySelector('a[href="/character/c46ba7cb-993b-4fc7-974d-fb95eacd5446"]')).not.toBeNull();
+      const details = root.querySelector("details");
+      expect(details?.open).toBe(false);
+      expect(details?.textContent).toContain("raw schema boom");
+      expect(alert?.textContent).not.toContain("raw schema boom");
+    });
+  });
 });

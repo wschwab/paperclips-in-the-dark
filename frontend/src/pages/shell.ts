@@ -24,15 +24,26 @@ export function renderShell(opts: ShellOptions): {
     mountThemeControls(),
   );
 
+  // Skip link: first tabbable element, jumps keyboard/AT users past the
+  // 150+ controls on a sheet to the <main> landmark (Design Audit F-13).
+  const skip = el(
+    "a",
+    { className: "skip-link", href: "#main" },
+    "Skip to sheet",
+  );
+
   const bar = el(
     "header",
-    { className: "app-bar" },
-    el("h1", {}, el("a", { href: "/", className: "app-title" }, "Paperclips in the Dark")),
+    { className: "app-bar torn-foot" },
+    el("p", { className: "app-title" }, el("a", { href: "/" }, "Paperclips in the Dark")),
     nav,
   );
 
   const outlet = el("div", { id: "outlet", className: "outlet" });
-  const shell = el("div", { id: "shell" }, bar, outlet);
+  // Single <main> landmark and single page-level <h1> (per-page), as the
+  // audit requires; each page owns its own <h1>.
+  const main = el("main", { id: "main", tabindex: -1 }, outlet);
+  const shell = el("div", { id: "shell" }, skip, bar, main);
   return { shell, outlet };
 }
 

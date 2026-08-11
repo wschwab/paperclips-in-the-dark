@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { createCharacter, ApiError, DecodeError } from "../api/client.js";
+import { createCharacter, dossierUpdate, ApiError, DecodeError } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
 
@@ -26,6 +26,18 @@ function renderForm(gameStem: string, playbooks: string[]): HTMLElement {
     el(
       "div",
       { className: "form-group" },
+      el("label", { htmlFor: "name" }, "Name"),
+      el("input", {
+        id: "name",
+        className: "form-input",
+        type: "text",
+        placeholder: "Optional — a new character starts Unnamed",
+        maxlength: 60,
+      }),
+    ),
+    el(
+      "div",
+      { className: "form-group" },
       el("label", { htmlFor: "playbook" }, "Playbook *"),
       el(
         "select",
@@ -45,7 +57,7 @@ function renderForm(gameStem: string, playbooks: string[]): HTMLElement {
   return el(
     "section",
     { className: "character-create" },
-    el("h2", {}, "Create Character"),
+    el("h1", {}, "Create Character"),
     form,
   );
 }
@@ -54,7 +66,7 @@ function renderError(message: string): HTMLElement {
   return el(
     "section",
     { className: "character-create-error" },
-    el("h2", {}, "Create Character"),
+    el("h1", {}, "Create Character"),
     el("p", { className: "error", role: "alert" }, message),
   );
 }
@@ -63,7 +75,7 @@ function renderLoading(): HTMLElement {
   return el(
     "section",
     { className: "character-create-loading" },
-    el("h2", {}, "Create Character"),
+    el("h1", {}, "Create Character"),
     el("p", {}, "Creating character…"),
   );
 }
@@ -109,12 +121,20 @@ export function mountCharacterCreatePage(
     if (!playbook) {
       return;
     }
+    const nameField = formEl.querySelector("#name") as HTMLInputElement;
+    const name = (nameField?.value ?? "").trim();
 
     root.setAttribute("aria-busy", "true");
     setChildren(root, renderLoading());
 
+    // Two-step create (Design Audit F-12): POST the character, then name it
+    // via dossier.update with the returned id+revision. A dossier.update
+    // failure must NOT re-POST the character on retry — it is recoverable,
+    // so we surface the error rather than risk a duplicate character.
     const program = Effect.gen(function* () {
-      return yield* createCharacter(gameStem, playbook);
+      const created = yield* createCharacter(gameStem, playbook);
+      if (!name) return created;
+      return yield* dossierUpdate(created.id, { name }, created.revision);
     });
 
     void Effect.runPromise(

@@ -66,6 +66,30 @@ Corollaries from the spec (§8, §13):
 - For Track A, gnatprove contracts count as tests: state the `Pre`/`Post`
   first, then make the proof go through.
 
+## Is the spec the problem?
+
+The contract is the source of truth, but it is not automatically right. When
+implementation keeps snagging, stop and ask whether the spec is the defect
+before writing more workarounds.
+
+Trigger this check when any of these appear:
+
+- Two or more findings share a root cause the contract does not describe.
+- A fix requires inventing behavior the contract cannot express (an undeclared
+  status code, an error with no code, a limit no DTO carries).
+- A worker must choose between violating the spec and shipping something wrong.
+- Effort is going into a scenario nobody actually needs — ask before building it.
+- A capability exists in the contract but no client surfaces it.
+
+Then produce a categorisation, not a patch list: group the findings by root
+cause, condense to the fewest underlying spec issues, and recommend contract
+changes. Record it as a vocs page under `docs/pages/contract/`. Two standing
+goals decide ties — an API an AI agent can drive without guessing, and a sheet a
+human can read and update quickly.
+
+Watch for audit blind spots: enumerating what exists cannot find what was never
+built. Check the contract for unimplemented capabilities explicitly.
+
 ## Documentation: vocs
 
 All project documentation lives in a [vocs](https://vocs.dev) site under
@@ -86,7 +110,7 @@ Primary implementation agents for task-graph work (§13):
 |---|---|---|---|---|
 | Haiku 4.5 | Claude subscription | Claude Code CLI | small bounded implementation slices | verify its claimed test counts by grep, not narrative; check docs page landed |
 | Sonnet 5 | Claude subscription | Claude Code CLI | skeptical review + acceptance | medium effort; high effort is disproportionate for narrow reviews |
-| GPT 5.6 Luna | — | Codex | narrow cleanup/escalation only | reasoning effort: xhigh; expensive — reserve for correctness-sensitive blockers |
+| GPT 5.6 Luna | openai-codex | Codex | narrow cleanup/escalation only | reasoning effort: xhigh; expensive — reserve for correctness-sensitive blockers |
 | Grok 4.5 | openrouter | pi | implementation (when provider healthy) | openrouter currently unfunded |
 | DeepSeek v4 Pro | opencode-go | pi | low-cost implementation | needs command-level supervision; never unattended |
 
@@ -105,6 +129,30 @@ off-by-one counts, dropped docs pages) — Sonnet review plus an
 orchestrator-owned live Ada probe are mandatory backstops, not formalities.
 
 Record per-task metrics per spec §11 (`tasks/metrics/{track}/{task}.json`).
+
+## Frontend work by models without vision
+
+A model that cannot inspect visual output MUST NOT mark a frontend/UI change
+done from unit tests, DOM structure, computed geometry, or its own screenshots
+alone.
+
+- Use a real Chromium viewport at every affected target size. CSS `max-width`
+  emulation is not viewport verification.
+- Prove responsive containment numerically with `window.innerWidth`,
+  `document.documentElement.scrollWidth`, container `clientWidth` /
+  `scrollWidth`, `getBoundingClientRect()`, and the relevant computed
+  `overflow`, `min-width`, grid, or flex properties.
+- Exercise every affected route in light and dark themes; include high contrast
+  when theme or contrast behavior can be affected. Capture screenshots of the
+  changed surfaces even though the implementing model cannot judge them.
+- Before completion, obtain an independent review from **GPT 5.6 Luna** through
+  the **openai-codex** provider at **xhigh** reasoning effort. The reviewer must
+  inspect the source, numeric browser evidence, and screenshots, independently
+  exercise the affected browser path, and return an explicit evidence-backed
+  PASS or FAIL.
+- A review from another model, provider, or effort level does not satisfy this
+  gate. Every FAIL finding must be fixed, applicable checks rerun, and the same
+  Luna/openai-codex/xhigh review repeated until PASS.
 
 ## General
 

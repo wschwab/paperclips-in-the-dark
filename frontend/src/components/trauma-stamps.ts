@@ -14,6 +14,10 @@ export interface TraumaStampsOptions {
   stamped?: readonly string[];
   /** When set, stamps toggle on click. */
   onToggle?: (name: string, next: boolean) => void;
+  /** When set, each stamped stamp shows a remove control. */
+  onRemove?: (name: string) => void;
+  /** Disables interactive controls while an op is in flight. */
+  disabled?: boolean;
   id?: string;
 }
 
@@ -40,6 +44,7 @@ export function traumaStamps(opts: TraumaStampsOptions): HTMLElement {
           "data-stamped": isOn ? "1" : "0",
           "aria-pressed": isOn ? "true" : "false",
           "aria-label": `Trauma: ${name}`,
+          disabled: opts.disabled,
         },
         name,
       );
@@ -51,17 +56,31 @@ export function traumaStamps(opts: TraumaStampsOptions): HTMLElement {
       });
       root.append(btn);
     } else {
-      root.append(
-        el(
-          "span",
-          {
-            className: "trauma-stamp",
-            role: "listitem",
-            "data-stamped": isOn ? "1" : "0",
-          },
-          name,
-        ),
+      const stamp = el(
+        "span",
+        {
+          className: "trauma-stamp",
+          role: "listitem",
+          "data-stamped": isOn ? "1" : "0",
+        },
+        name,
       );
+      if (isOn && opts.onRemove) {
+        const removeBtn = el(
+          "button",
+          {
+            type: "button",
+            className: "trauma-remove-btn",
+            disabled: opts.disabled,
+            "aria-label": `Remove trauma: ${name}`,
+            title: "Remove trauma",
+          },
+          "✕",
+        );
+        removeBtn.addEventListener("click", () => opts.onRemove?.(name));
+        stamp.append(removeBtn);
+      }
+      root.append(stamp);
     }
   }
 

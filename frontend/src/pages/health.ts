@@ -16,7 +16,7 @@ function renderHealth(h: Health): HTMLElement {
   return el(
     "section",
     { className: "health", "data-status": h.status },
-    el("h2", {}, "API health"),
+    el("h1", {}, "API health"),
     el(
       "table",
       {},
@@ -36,7 +36,7 @@ function renderError(message: string): HTMLElement {
   return el(
     "section",
     { className: "health-error" },
-    el("h2", {}, "API health"),
+    el("h1", {}, "API health"),
     el("p", { className: "error", role: "alert" }, message),
   );
 }
@@ -45,7 +45,7 @@ function renderLoading(): HTMLElement {
   return el(
     "section",
     { className: "health-loading" },
-    el("h2", {}, "API health"),
+    el("h1", {}, "API health"),
     el("p", {}, "Loading…"),
   );
 }

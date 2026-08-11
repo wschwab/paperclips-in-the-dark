@@ -51,7 +51,11 @@ import {
 import { stressTrack } from "../components/stress-track.js";
 import { actionDots } from "../components/action-dots.js";
 import { clock } from "../components/clock.js";
+import { harmTable } from "../components/harm-table.js";
+import type { HarmLevel } from "../components/harm-table.js";
+import { traumaStamps } from "../components/trauma-stamps.js";
 import { el, setChildren } from "../lib/dom.js";
+import { errorCard } from "../components/error-card.js";
 import type { Character } from "../schema/character.js";
 import type { CrewSummary } from "../schema/campaign.js";
 import type { Clock } from "../schema/clock.js";
@@ -414,7 +418,6 @@ interface RenderState {
     onHarmHealingClock: () => void;
     onArmorSet: (armor: string, used: boolean) => void;
     onActionSetRating: (attribute: string, action: string, next: number) => void;
-    onActionDelta: (attribute: string, action: string, delta: number) => void;
     onAttributeXpDelta: (attribute: string, delta: number) => void;
     onAttributeXpClear: (attribute: string) => void;
     onAttributeLevelup: (attribute: string) => void;
@@ -482,23 +485,14 @@ function renderDetail(state: RenderState): HTMLElement {
   stressPlusBtn.addEventListener("click", () => handlers.onStressDelta(1));
 
   // -- Trauma list ----------------------------------------------------------
-
-  const traumaEntries = c.monitor.trauma.traumas.map((t) =>
-    el("div", { className: "trauma-entry", style: "display: flex; align-items: center; gap: 0.5em;" },
-      el("span", { className: "trauma-stamp", "data-stamped": "1" }, t),
-      el("button", {
-        type: "button",
-        disabled: anyLoading,
-        title: `Remove trauma: ${t}`,
-      }, "✕"),
-    ),
-  );
-  // Wire up remove handlers after creating elements
-  traumaEntries.forEach((entry, idx) => {
-    const btn = entry.querySelector("button");
-    if (btn) {
-      btn.addEventListener("click", () => handlers.onTraumaRemove(c.monitor.trauma.traumas[idx]!));
-    }
+  // Routed through the shared component (Design Audit F-05) so the sheet and
+  // styleguide render identically. Remove controls are clerical-error
+  // corrections, not the healing path.
+  const traumaListEl = traumaStamps({
+    items: c.monitor.trauma.traumas,
+    stamped: c.monitor.trauma.traumas,
+    disabled: anyLoading,
+    onRemove: (name) => handlers.onTraumaRemove(name),
   });
 
   const traumaSelect = el("select", { "aria-label": "Add trauma", disabled: anyLoading || availableTraumas.length === 0 },
@@ -864,12 +858,15 @@ function renderDetail(state: RenderState): HTMLElement {
     "section",
     { className: "character-detail" },
 
-    // Header
+    // Header — masthead carries name, alias, and the playbook/game kicker
+    // (Design Audit F-23: identity metadata belongs with the name, not in
+    // an orphaned eleventh card).
     el(
       "div",
-      { className: "character-header" },
-      el("h1", {}, `${c.dossier.name}${status}`),
-      el("p", { className: "alias" }, c.dossier.alias),
+      { className: "character-header torn-foot torn-foot-lg" },
+      el("p", { className: "character-kicker" }, `${c.playbook.name} · ${c.gameName}`),
+      el("h1", {}, `${c.dossier.name || `Unnamed ${c.playbook.name}`}${status}`),
+      el("p", { className: "alias uneven" }, c.dossier.alias),
       el(
         "nav",
         { className: "character-nav" },
@@ -958,7 +955,7 @@ function renderDetail(state: RenderState): HTMLElement {
       el("h2", {}, "Traumas"),
       c.monitor.trauma.traumas.length === 0
         ? el("p", {}, "(none)")
-        : el("div", { style: "display: flex; flex-wrap: wrap; gap: 0.5em;" }, ...traumaEntries),
+        : traumaListEl,
       el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em;" },
         traumaSelect,
         traumaAddBtn,
@@ -972,68 +969,30 @@ function renderDetail(state: RenderState): HTMLElement {
       { className: "character-health" },
       el("h2", {}, "Health"),
 
-      // Harm table
+      // Harm table — routed through the shared component (Design Audit
+      // F-03 / F-05) so the sheet and styleguide render identically.
       (() => {
         const h = c.monitor.harm;
-        const harmLevels = [
-          { key: "lesser" as const, label: "Lesser", capacity: 2 },
-          { key: "moderate" as const, label: "Moderate", capacity: 2 },
-          { key: "severe" as const, label: "Severe", capacity: 1 },
-          { key: "fatal" as const, label: "Fatal", capacity: 1 },
-        ];
-
-        const rows = harmLevels.map((level) => {
-          const entries = h[level.key] as readonly string[];
-          const cells: HTMLElement[] = [];
-          for (let i = 0; i < level.capacity; i++) {
-            const text = entries[i] || "";
-            cells.push(
-              el("td", { className: "harm-cell" },
-                el("span", {}, text),
-                text
-                  ? el("button", {
-                    type: "button",
-                    disabled: anyLoading,
-                    // F2aa: harm removal is a clerical-error correction, not
-                    // the normal healing path — the button reads as a subtle
-                    // ghost icon (see .harm-remove-btn in components.css).
-                    title: "Remove (clerical error)",
-                    className: "harm-remove-btn",
-                  }, "✕")
-                  : null,
-              ),
-            );
-          }
-          return el("tr", { "data-level": level.key },
-            el("th", { scope: "row", className: "harm-level" }, level.label),
-            ...cells,
-          );
+        // Capacities come from the shared component's canonical fallback
+        // (lesser/moderate 2, severe/fatal 1) until BUG-015 parameterizes
+        // them from game settings — never hardcode maxima here.
+        const harmLevels: HarmLevel[] = ["lesser", "moderate", "severe", "fatal"];
+        return harmTable({
+          caption: "Harm",
+          disabled: anyLoading,
+          rows: harmLevels.map((level) => {
+            const entries = h[level] as readonly string[];
+            return {
+              level,
+              label: level[0]!.toUpperCase() + level.slice(1),
+              slots: entries,
+              onRemove: (slotIndex, text) => {
+                const desc = text || entries[slotIndex] || "";
+                if (desc) handlers.onHarmRemove(desc, level);
+              },
+            };
+          }),
         });
-
-        // Wire up remove handlers
-        rows.forEach((row, idx) => {
-          const level = harmLevels[idx]!;
-          const entries = h[level.key] as readonly string[];
-          const btns = row.querySelectorAll("button");
-          btns.forEach((btn, entryIdx) => {
-            const desc = entries[entryIdx];
-            if (desc) {
-              btn.addEventListener("click", () => handlers.onHarmRemove(desc, level.key));
-            }
-          });
-        });
-
-        return el("table", { className: "harm-table" },
-          el("caption", { className: "lbl" }, "Harm"),
-          el("thead", {},
-            el("tr", {},
-              el("th", { scope: "col" }, "Level"),
-              el("th", { scope: "col" }, "Injury"),
-              el("th", { scope: "col" }, "Injury"),
-            ),
-          ),
-          el("tbody", {}, ...rows),
-        );
       })(),
 
       // Harm spillover notice
@@ -1169,7 +1128,10 @@ function renderDetail(state: RenderState): HTMLElement {
         el("div", { className: "talent-attribute", "data-attribute": attr.name, style: "margin-bottom: 1em;" },
           el("h3", { className: "lbl" }, attr.name),
 
-          // Action rows: dot rows (click dot N → set rating N) + −/+ buttons
+          // Action rows: dot rows (click dot N → set rating N; click filled
+          // terminal → clear). The −/+ pair was redundant (F-30) — the dots
+          // already cover every value and clearing, and removing them cuts
+          // tab stops from the densest card on the sheet.
           ...attr.actions.map((action) => {
             const desc = actionDescription(attr.name, action.name);
             const dots = actionDots({
@@ -1179,19 +1141,6 @@ function renderDetail(state: RenderState): HTMLElement {
               title: desc ?? undefined,
               onChange: (next) => handlers.onActionSetRating(attr.name, action.name, next),
             });
-            const minusBtn = el("button", {
-              type: "button",
-              disabled: anyLoading || action.rating <= 0,
-              title: `Decrease ${action.name} rating`,
-            }, "−");
-            minusBtn.addEventListener("click", () => handlers.onActionDelta(attr.name, action.name, -1));
-            // + stays enabled at max: the server clamps and the page reports it
-            const plusBtn = el("button", {
-              type: "button",
-              disabled: anyLoading,
-              title: `Increase ${action.name} rating`,
-            }, "+");
-            plusBtn.addEventListener("click", () => handlers.onActionDelta(attr.name, action.name, 1));
 
             return el("div", {
               className: "talent-action-row",
@@ -1202,8 +1151,6 @@ function renderDetail(state: RenderState): HTMLElement {
               // F2aa: one clean name per action — the underlined .action-name
               // inside the dots component carries the tooltip now.
               dots,
-              minusBtn,
-              plusBtn,
               el("span", {}, `${action.rating}/${action.maxRating}`),
             );
           }),
@@ -1778,13 +1725,6 @@ function renderDetail(state: RenderState): HTMLElement {
     })(),
 
     // Info
-    el(
-      "div",
-      { className: "character-info" },
-      el("p", {}, `Playbook: ${c.playbook.name}`),
-      el("p", {}, `Game: ${c.gameName}`),
-    ),
-
     // Messages
     state.errorMsg
       ? el("p", { className: "error", style: "margin-top: 1em;" }, state.errorMsg)
@@ -1864,15 +1804,6 @@ function renderDetail(state: RenderState): HTMLElement {
           : null,
       );
     })(),
-  );
-}
-
-function renderError(message: string): HTMLElement {
-  return el(
-    "section",
-    { className: "character-detail-error" },
-    el("h1", {}, "Character"),
-    el("p", { className: "error", role: "alert" }, message),
   );
 }
 
@@ -2890,17 +2821,6 @@ export function mountCharacterDetailPage(
       );
     },
 
-    onActionDelta: (attribute: string, action: string, delta: number) => {
-      if (!currentCharacter || isTalentsLoading) return;
-      const attr = currentCharacter.talent.attributes.find((a) => a.name === attribute);
-      const act = attr?.actions.find((a) => a.name === action);
-      if (!act) return;
-      const next = act.rating + delta;
-      if (next < 0) return;
-      // next may exceed maxRating: the server clamps and the success path reports it.
-      handlers.onActionSetRating(attribute, action, next);
-    },
-
     onAttributeXpDelta: (attribute: string, delta: number) => {
       if (!currentCharacter || isTalentsLoading) return;
       isTalentsLoading = true;
@@ -3433,61 +3353,73 @@ export function mountCharacterDetailPage(
   };
 
   root.setAttribute("aria-live", "polite");
-  root.setAttribute("aria-busy", "true");
-  setChildren(root, renderLoading());
 
-  // Fetch character + game data + playbook settings in parallel
-  const loadProgram = Effect.gen(function* () {
-    const character = yield* getCharacter(characterId);
-    const game = yield* Effect.either(getGame(character.gameStem));
-    // Playbook settings carry the ExperienceCondition for the Score XP track;
-    // failures degrade gracefully (fall back to game-data Playbooks lookup).
-    const playbook = yield* Effect.either(
-      getPlaybook(character.gameStem, character.playbook.name),
+  const startLoad = () => {
+    root.setAttribute("aria-busy", "true");
+    setChildren(root, renderLoading());
+
+    // Fetch character + game data + playbook settings in parallel
+    const loadProgram = Effect.gen(function* () {
+      const character = yield* getCharacter(characterId);
+      const game = yield* Effect.either(getGame(character.gameStem));
+      // Playbook settings carry the ExperienceCondition for the Score XP track;
+      // failures degrade gracefully (fall back to game-data Playbooks lookup).
+      const playbook = yield* Effect.either(
+        getPlaybook(character.gameStem, character.playbook.name),
+      );
+      // Campaign clocks for the Projects section; failures degrade gracefully
+      // (the section renders "(no clocks)" until a successful fetch).
+      const clockList = yield* Effect.either(listClocks());
+      // Crew list for the membership selector; failures degrade gracefully
+      // (the selector renders disabled until a successful fetch).
+      const crewList = yield* Effect.either(listCrews());
+      return { character, game, playbook, clockList, crewList };
+    });
+
+    void Effect.runPromise(
+      Effect.match(loadProgram, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          const msg =
+            err instanceof ApiError
+              ? `Failed to reach /api/characters/${characterId} (${err.status}): ${err.body}`
+              : err instanceof DecodeError
+                ? `Invalid character response: ${err.message}`
+                : String(err);
+          setChildren(
+            root,
+            errorCard({
+              headline: "This character sheet could not be loaded.",
+              detail: msg,
+              onRetry: startLoad,
+            }),
+          );
+        },
+        onSuccess: ({ character, game, playbook, clockList, crewList }) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          currentCharacter = character;
+          if (game._tag === "Right") {
+            gameData = game.right;
+          }
+          if (playbook._tag === "Right") {
+            playbookData = playbook.right;
+          }
+          if (clockList._tag === "Right") {
+            clocks = clockList.right;
+          }
+          if (crewList._tag === "Right") {
+            crews = crewList.right;
+          }
+          experienceCondition = extractExperienceCondition(playbookData, gameData, character.playbook.name);
+          renderDetailWrapper();
+        },
+      }),
     );
-    // Campaign clocks for the Projects section; failures degrade gracefully
-    // (the section renders "(no clocks)" until a successful fetch).
-    const clockList = yield* Effect.either(listClocks());
-    // Crew list for the membership selector; failures degrade gracefully
-    // (the selector renders disabled until a successful fetch).
-    const crewList = yield* Effect.either(listCrews());
-    return { character, game, playbook, clockList, crewList };
-  });
+  };
 
-  void Effect.runPromise(
-    Effect.match(loadProgram, {
-      onFailure: (err) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        const msg =
-          err instanceof ApiError
-            ? `Failed to reach /api/characters/${characterId} (${err.status}): ${err.body}`
-            : err instanceof DecodeError
-              ? `Invalid character response: ${err.message}`
-              : String(err);
-        setChildren(root, renderError(msg));
-      },
-      onSuccess: ({ character, game, playbook, clockList, crewList }) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        currentCharacter = character;
-        if (game._tag === "Right") {
-          gameData = game.right;
-        }
-        if (playbook._tag === "Right") {
-          playbookData = playbook.right;
-        }
-        if (clockList._tag === "Right") {
-          clocks = clockList.right;
-        }
-        if (crewList._tag === "Right") {
-          crews = crewList.right;
-        }
-        experienceCondition = extractExperienceCondition(playbookData, gameData, character.playbook.name);
-        renderDetailWrapper();
-      },
-    }),
-  );
+  startLoad();
 
   return () => {
     cancelled = true;

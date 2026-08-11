@@ -94,4 +94,25 @@ describe("crew-history page (F2aa)", () => {
       );
     });
   });
+
+  it("renders a recoverable error card with retry, back link, and collapsed detail", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "raw schema boom",
+    });
+
+    mountCrewHistoryPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      const alert = root.querySelector(".error-card-head");
+      expect(alert?.textContent).toContain("This history could not be loaded.");
+      expect(root.querySelector("button")?.textContent).toBe("Retry");
+      expect(root.querySelector('a[href="/crew/8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2"]')).not.toBeNull();
+      const details = root.querySelector("details");
+      expect(details?.open).toBe(false);
+      expect(details?.textContent).toContain("raw schema boom");
+      expect(alert?.textContent).not.toContain("raw schema boom");
+    });
+  });
 });

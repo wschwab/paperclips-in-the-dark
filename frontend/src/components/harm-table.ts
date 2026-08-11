@@ -17,6 +17,10 @@ export interface HarmRow {
   slots: readonly string[];
   /** How many empty/filled slots to draw. Defaults to slots.length or 1. */
   capacity?: number;
+  /** Called when a filled slot's remove control is clicked. */
+  onRemove?: (slotIndex: number, text: string) => void;
+  /** Accessible name for the remove control; defaults to including the level and slot. */
+  removeLabel?: (text: string, slotIndex: number) => string;
 }
 
 export interface HarmTableOptions {
@@ -24,6 +28,8 @@ export interface HarmTableOptions {
   id?: string;
   /** Optional caption. */
   caption?: string;
+  /** Disables remove controls while an op is in flight. */
+  disabled?: boolean;
 }
 
 const DEFAULT_CAPACITY: Record<HarmLevel, number> = {
@@ -75,14 +81,51 @@ export function harmTable(opts: HarmTableOptions): HTMLElement {
       );
     }
 
-    const injuryText = row.slots.filter((s) => s.length > 0).join(" · ") || "—";
+    const injuryCell = el("td", { className: "harm-injury" });
+    // Iterate the original slots array so sparse rows keep their true slot
+    // indexes (removal targets must not be renumbered by filtering).
+    const filledIndexes: number[] = [];
+    row.slots.forEach((text, slotIndex) => {
+      if (text.length === 0) return;
+      filledIndexes.push(slotIndex);
+      injuryCell.append(document.createTextNode(text));
+      if (row.onRemove) {
+        injuryCell.append(
+          el(
+            "button",
+            {
+              type: "button",
+              className: "harm-remove-btn",
+              disabled: opts.disabled,
+              "aria-label":
+                row.removeLabel?.(text, slotIndex) ??
+                `Remove ${row.label} harm "${text}", slot ${slotIndex + 1}`,
+              title: "Remove (clerical error)",
+            },
+            "✕",
+          ),
+        );
+      }
+      injuryCell.append(document.createTextNode(" "));
+    });
+    if (filledIndexes.length === 0) {
+      injuryCell.append(document.createTextNode("—"));
+    }
+    // Wire remove handlers (el() cannot express onClick).
+    if (row.onRemove) {
+      injuryCell.querySelectorAll("button").forEach((btn, i) => {
+        const slotIndex = filledIndexes[i] ?? 0;
+        const text = row.slots[slotIndex] ?? "";
+        btn.addEventListener("click", () => row.onRemove?.(slotIndex, text));
+      });
+    }
 
     tbody.append(
       el(
         "tr",
         { "data-level": row.level },
         el("th", { scope: "row", className: "harm-level" }, row.label),
-        el("td", { className: "harm-injury" }, injuryText),
+        injuryCell,
         slotsCell,
       ),
     );

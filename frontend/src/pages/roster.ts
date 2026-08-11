@@ -1,17 +1,24 @@
 import { Effect } from "effect";
 import { ApiError, DecodeError, getRoster } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
+import { errorCard } from "../components/error-card.js";
 import type { Roster, CharacterSummary, CrewSummary } from "../schema/campaign.js";
 
 function renderCharacter(c: CharacterSummary): HTMLElement {
   const status = c.isRetired ? " (retired)" : c.isDeadish ? " (deadish)" : "";
+  // Design Audit F-12: a character created without a name must never render
+  // as an empty <strong> (a link whose text is punctuation). Fall back to an
+  // italic "Unnamed {playbook}" placeholder.
+  const nameEl = c.name
+    ? el("strong", {}, c.name)
+    : el("span", { className: "unnamed" }, `Unnamed ${c.playbook}`);
   return el(
     "li",
     { "data-character-id": c.id },
     el(
       "a",
       { href: `/character/${c.id}` },
-      el("strong", {}, c.name),
+      nameEl,
       el("span", {}, ` ${c.alias} • ${c.playbook}${status}`),
     ),
   );
@@ -37,7 +44,7 @@ function renderCrew(cr: CrewSummary): HTMLElement {
 function renderRoster(roster: Roster): HTMLElement {
   const charactersSection =
     roster.characters.length === 0
-      ? el("p", { className: "empty" }, "No characters yet.")
+      ? el("p", { className: "empty uneven" }, "No characters yet.")
       : el(
           "ul",
           { className: "character-list" },
@@ -46,7 +53,7 @@ function renderRoster(roster: Roster): HTMLElement {
 
   const crewsSection =
     roster.crews.length === 0
-      ? el("p", { className: "empty" }, "No crews yet.")
+      ? el("p", { className: "empty uneven" }, "No crews yet.")
       : el(
           "ul",
           { className: "crew-list" },
@@ -56,16 +63,17 @@ function renderRoster(roster: Roster): HTMLElement {
   return el(
     "section",
     { className: "roster" },
+    el("h1", { className: "page-title" }, "Roster"),
     el(
       "div",
-      { className: "roster-characters" },
+      { className: "roster-characters torn-foot" },
       el("h2", {}, `Characters (${roster.characters.length})`),
       charactersSection,
       el("a", { href: "/character/create", className: "btn-primary" }, "+ Create Character"),
     ),
     el(
       "div",
-      { className: "roster-crews" },
+      { className: "roster-crews torn-foot" },
       el("h2", {}, `Crews (${roster.crews.length})`),
       crewsSection,
       el("a", { href: "/crew/create", className: "btn-primary" }, "+ Create Crew"),
@@ -73,20 +81,11 @@ function renderRoster(roster: Roster): HTMLElement {
   );
 }
 
-function renderError(message: string): HTMLElement {
-  return el(
-    "section",
-    { className: "roster-error" },
-    el("h2", {}, "Roster"),
-    el("p", { className: "error", role: "alert" }, message),
-  );
-}
-
 function renderLoading(): HTMLElement {
   return el(
     "section",
     { className: "roster-loading" },
-    el("h2", {}, "Roster"),
+    el("h1", {}, "Roster"),
     el("p", {}, "Loading…"),
   );
 }
@@ -98,34 +97,47 @@ function renderLoading(): HTMLElement {
 export function mountRosterPage(root: HTMLElement): () => void {
   let cancelled = false;
   root.setAttribute("aria-live", "polite");
-  root.setAttribute("aria-busy", "true");
-  setChildren(root, renderLoading());
 
-  const program = Effect.gen(function* () {
-    const roster = yield* getRoster();
-    return roster;
-  });
+  const startLoad = () => {
+    root.setAttribute("aria-busy", "true");
+    setChildren(root, renderLoading());
 
-  void Effect.runPromise(
-    Effect.match(program, {
-      onFailure: (err) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        const msg =
-          err instanceof ApiError
-            ? `Failed to reach /api/campaign/roster (${err.status}): ${err.body}`
-            : err instanceof DecodeError
-              ? `Invalid roster response: ${err.message}`
-              : String(err);
-        setChildren(root, renderError(msg));
-      },
-      onSuccess: (roster) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        setChildren(root, renderRoster(roster));
-      },
-    }),
-  );
+    const program = Effect.gen(function* () {
+      const roster = yield* getRoster();
+      return roster;
+    });
+
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          const msg =
+            err instanceof ApiError
+              ? `Failed to reach /api/campaign/roster (${err.status}): ${err.body}`
+              : err instanceof DecodeError
+                ? `Invalid roster response: ${err.message}`
+                : String(err);
+          setChildren(
+            root,
+            errorCard({
+              headline: "This roster could not be loaded.",
+              backHref: "/roster",
+              detail: msg,
+              onRetry: startLoad,
+            }),
+          );
+        },
+        onSuccess: (roster) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          setChildren(root, renderRoster(roster));
+        },
+      }),
+    );
+  };
+
+  startLoad();
 
   return () => {
     cancelled = true;

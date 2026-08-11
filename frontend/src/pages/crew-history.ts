@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { ApiError, DecodeError, getCrew, getCrewHistory } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
+import { errorCard } from "../components/error-card.js";
 import type { HistoryEntry } from "../schema/campaign.js";
 import type { Crew } from "../schema/crew.js";
 
@@ -10,6 +11,9 @@ function formatDate(isoString: string): string {
 }
 
 function renderHistoryEntry(entry: HistoryEntry): HTMLElement {
+  // Design Audit F-20: show a shortened snapshot id; full id in title + a
+  // visually-hidden span for AT.
+  const short = entry.snapshotId.slice(0, 8);
   return el(
     "li",
     { className: "history-entry" },
@@ -17,7 +21,10 @@ function renderHistoryEntry(entry: HistoryEntry): HTMLElement {
       el("span", { className: "history-op" }, entry.op),
       el("span", { className: "history-timestamp" }, formatDate(entry.takenAt)),
     ),
-    el("div", { className: "history-snapshotid" }, `Snapshot: ${entry.snapshotId}`),
+    el("div", { className: "history-snapshotid", title: entry.snapshotId },
+      `Snapshot: ${short}…`,
+      el("span", { className: "visually-hidden" }, ` (${entry.snapshotId})`),
+    ),
   );
 }
 
@@ -44,15 +51,6 @@ function renderCrewHistory(crew: Crew, history: readonly HistoryEntry[]): HTMLEl
   );
 }
 
-function renderError(message: string): HTMLElement {
-  return el(
-    "section",
-    { className: "crew-history-error" },
-    el("h1", {}, "Crew History"),
-    el("p", { className: "error", role: "alert" }, message),
-  );
-}
-
 function renderLoading(): HTMLElement {
   return el(
     "section",
@@ -72,35 +70,49 @@ export function mountCrewHistoryPage(
 ): () => void {
   let cancelled = false;
   root.setAttribute("aria-live", "polite");
-  root.setAttribute("aria-busy", "true");
-  setChildren(root, renderLoading());
 
-  const program = Effect.gen(function* () {
-    const crew = yield* getCrew(crewId);
-    const history = yield* getCrewHistory(crewId);
-    return { crew, history };
-  });
+  const startLoad = () => {
+    root.setAttribute("aria-busy", "true");
+    setChildren(root, renderLoading());
 
-  void Effect.runPromise(
-    Effect.match(program, {
-      onFailure: (err) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        const msg =
-          err instanceof ApiError
-            ? `Failed to reach API for crew ${crewId} (${err.status}): ${err.body}`
-            : err instanceof DecodeError
-              ? `Invalid API response: ${err.message}`
-              : String(err);
-        setChildren(root, renderError(msg));
-      },
-      onSuccess: ({ crew, history }) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        setChildren(root, renderCrewHistory(crew, history));
-      },
-    }),
-  );
+    const program = Effect.gen(function* () {
+      const crew = yield* getCrew(crewId);
+      const history = yield* getCrewHistory(crewId);
+      return { crew, history };
+    });
+
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          const msg =
+            err instanceof ApiError
+              ? `Failed to reach API for crew ${crewId} (${err.status}): ${err.body}`
+              : err instanceof DecodeError
+                ? `Invalid API response: ${err.message}`
+                : String(err);
+          setChildren(
+            root,
+            errorCard({
+              headline: "This history could not be loaded.",
+              backHref: `/crew/${crewId}`,
+              backLabel: "Back to sheet",
+              detail: msg,
+              onRetry: startLoad,
+            }),
+          );
+        },
+        onSuccess: ({ crew, history }) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          setChildren(root, renderCrewHistory(crew, history));
+        },
+      }),
+    );
+  };
+
+  startLoad();
 
   return () => {
     cancelled = true;

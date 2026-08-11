@@ -1,0 +1,246 @@
+# Contract review — completeness, semantics, and lifecycle
+
+**Status:** decisions recorded 2026-08-12. Implementation not started.
+**Inputs:** `agent-docs/frontend-vetting/BUGS.json` (32 confirmed findings),
+`contract/openapi.yaml`, `contract/schemas/*.json`,
+`backend-ada/server/src/pitd_callback.adb`, `frontend/src/`, PAPERCLIPS.md §4–§7.
+
+## The question
+
+Implementation kept hitting cases the contract does not describe. Is the contract
+— as the declared source of truth — the thing that needs to change?
+
+## Finding
+
+Yes, in two opposite directions at once.
+
+1. **Over-strict where real use is incremental.** The contract admits only
+   fully-populated-and-valid or invalid. Sheets are filled in over time, so the
+   most common real state — partly filled — is treated as corruption.
+2. **Under-specified where behavior is numeric.** Shapes are frozen; transition
+   rules, deltas, and enforced limits are not. Each client re-derives them and
+   they diverge.
+
+Both move authority out of the contract and into two implementations that then
+disagree.
+
+## Classification of the 32 confirmed findings
+
+| Root issue | Findings | Count |
+|---|---|---|
+| **S1** Completeness is binary; no draft state | FV-001, FV-002, FV-003, FV-009, FV-010, FV-017, FV-018, FV-026, FV-027 | 9 |
+| **S2** Bounds and transition semantics absent from the contract | FV-004, FV-005, FV-006, FV-007, FV-011, FV-021, FV-022, FV-029 | 8 |
+| **S3** Error model not machine-actionable | FV-020, FV-023, FV-024 | 3 |
+| **S4** Lifecycle operations and client state not required | FV-019, FV-028 | 2 |
+| *Implementation craft, not contract* | FV-008, FV-012, FV-013, FV-014, FV-015, FV-016, FV-025, FV-030, FV-031, FV-032 | 10 |
+
+Two thirds trace to four contract issues. The other ten are layout, focus,
+labelling, and routing defects no contract change would prevent.
+
+### Gaps the audit method could not see
+
+Character and crew **deletion exists in the contract**
+(`POST /characters/{id}/delete`, `POST /crews/{id}/delete`) with confirmation and
+`If-Match`, and has **no client implementation** — `frontend/src/api/client.ts`
+exports only `deleteClock`. Retirement is likewise API-only. Neither appears among
+the 32 findings: the wave enumerated capabilities that exist rather than auditing
+the contract for capabilities never surfaced. Absent features are invisible to
+that method.
+
+## Decisions
+
+- **D1 — Stored campaign data is disposable.** No migration engine, no
+  human-approved migration strategy, no format-version bump is warranted for the
+  three existing records.
+- **D2 — Completeness is a storage invariant, enforced on write.** Rejected the
+  earlier proposal to normalize at response time; it would have broken
+  PAPERCLIPS.md §6 byte-identity. **§6 stands unchanged.**
+- **D3 — No `completeness` block on the entity response.** Replaced by a schema
+  declaration; see S1.
+- **D4 — Every enforced limit is published in the data.** Approved.
+- **D5 — Delete and retire must be human-reachable, confirmation-guarded.**
+  Approved.
+
+## S1 — Completeness as a storage invariant
+
+**Problem.** Nothing guarantees a stored record contains every declared key, and
+nothing distinguishes "empty because nobody filled it in" from "empty because
+that is the value." Both the backend's `Character_Required`/`Crew_Required` lists
+and the frontend's strict decoders then treat an absent key as corruption, so one
+missing field makes a sheet unopenable.
+
+**Design.** Two parts, and the first needs almost no contract change.
+
+### Part 1 — the canonical storage shape
+
+Every declared key is always present on disk. Unset values use canonical empties:
+
+| Type | Unset value |
+|---|---|
+| string | `""` |
+| number | `0` |
+| boolean | `false` |
+| array | `[]` |
+| object | present, with its own keys canonically empty |
+
+This is already expressible today, and the contract already uses the idiom:
+`dossier.crewId` is documented as *"UUID of linked crew, or empty string."* So
+this needs **no new nullable types and no schema rewrite** — only enforcement.
+
+Enforcement lives at the **backend write boundary**, not in the frontend. That
+distinction is load-bearing: an AI agent posting directly to the API is a
+first-class client, and if the frontend were responsible for filling gaps, any
+agent omitting a field would write a non-canonical record. Points to enforce:
+
+- `create` — already produces complete records; formalise it.
+- `import` — must canonicalise the accepted DTO before writing.
+- any operation writing a nested object — must write the whole canonical shape.
+- **non-canonical files** — rejected with `422`, never repaired and never written
+  to. Reads stay pure and no repair code exists, because a document that skipped
+  the write boundary did not come from this API. Safe only because such a record
+  stays listed in the roster and deletable; see below.
+
+### Part 2 — which empties mean "missing"
+
+An empty value cannot tell you whether it is outstanding. `tier: 0` is a real
+tier. `notes: []` is a complete, empty note list. `crewId: ""` is a legitimate
+"no crew." But `dossier.name: ""` plainly needs filling.
+
+That judgment cannot be derived from values, so it must be declared once. Add a
+schema-level list of JSON pointers that must be non-empty for a sheet to count as
+complete:
+
+```json
+"x-requiredWhenComplete": [
+  "/dossier/name",
+  "/dossier/vice/purveyor",
+  "/lair"
+]
+```
+
+Why the schema rather than a response block:
+
+- Static schema data never appears in a `GET` body, so §6 is untouched.
+- One declaration, read by both clients — no drift, which is the S2 disease.
+- The generated API reference documents it automatically.
+
+`GET /api/campaign/roster` returns a derived summary, not a file read, so it
+carries computed `isComplete` and `isReadable` values. That saves the landing page
+N fetches and costs nothing in fidelity. Both are derived at response time and
+never stored — a persisted flag goes stale as soon as another operation fills the
+last outstanding field.
+
+**Collections stay total.** A record the server cannot read is still listed, as a
+row with the same keys as every other row and `isReadable: false`. Hiding it would
+make it unreachable and therefore unremovable — the exact trap this review exists
+to close.
+
+### Three states, not two
+
+- **complete** — every `x-requiredWhenComplete` pointer is non-empty.
+- **incomplete** — a normal, openable, editable `200` sheet. A draft.
+- **unreadable** — unparseable bytes, non-object root, wrong `kind`, or unknown
+  keys. Rare, and the only case yielding `INVALID_ENTITY` (HTTP `422`).
+
+**What this closes.** Legacy records become drafts (FV-001, FV-002, FV-003,
+FV-009). The roster can always project a summary, so one bad record cannot take
+it down (FV-010). A failed create leaves a resumable draft, not an orphan
+(FV-017). The UI marks outstanding fields from the declared list instead of
+inventing its own rule (FV-018). Absent keys stop being errors, which shrinks
+FV-026 and FV-027 to their real cores.
+
+**Frontend consequence.** Strictness inverts on one axis: keep rejecting
+*unknown* keys, which catches typos and drift; stop rejecting *empty* values.
+
+## S2 — Publish every enforced limit; define every delta
+
+**Problem.** Caps and delta semantics exist only in server code. `maxRating`
+advertises 4 while the enforced cap is 3 (FV-021); `attribute.levelup` and
+`action.set-rating` enforce different caps (FV-022); `upgrade.mark` enforces none
+(FV-005); the healing clock payload is ambiguous between delta and absolute
+(FV-007); negative deltas are undefined (FV-011); rollover carry-over is
+undefined (FV-006).
+
+**Recommendation.**
+
+- **No client may compute a limit.** Every enforced bound appears in the DTO it
+  applies to. Where a settings cap and an effective cap differ, publish both.
+  Values continue to come from game-settings JSON, never hardcoded.
+- Every `*.add` operation states its delta semantics, including whether negative
+  values are accepted, and always returns `applied: { requested, effective }`.
+- Clock operations state delta-vs-absolute and rollover accumulation as normative
+  text.
+- Surfacing a clamp becomes a **client obligation**: when `requested` differs
+  from `effective`, both clients must say so (FV-029).
+
+Most values should fall straight out of the Blades in the Dark rules and the
+existing game-settings data.
+
+## S3 — Typed, actionable errors
+
+**Problem.** `error.details` is untyped, so clients dump raw JSON at users
+(FV-024) and conflate transport, decode, and domain failures (FV-023, FV-020).
+An agent cannot self-repair from a bare code.
+
+**Recommendation.**
+
+- Type `details` as a union discriminated by `code`: `VALIDATION` →
+  `{ pointer, expected, got }`; `*_MAXED` → `{ limit, current }`;
+  `INSUFFICIENT_FUNDS` → `{ maxAffordable }`; `INVALID_ENTITY` → `{ check, key }`.
+- Add `retryable: boolean`.
+- Require `message` to be presentable verbatim, removing any reason to render the
+  DTO.
+- Name the three failure classes — transport, decode, domain — so both clients
+  classify identically.
+
+## S4 — Require lifecycle affordances and expose client state
+
+**Recommendation.**
+
+- Publish derived state alongside the entity: `canUndo`, `historyCount`, plus the
+  existing `isRetired`/`isDeadish`.
+- Spec rule: every destructive or lifecycle operation in the contract must have a
+  confirmation-guarded human affordance and an agent-discoverable counterpart.
+  Delete and retire are the current violations.
+- Promote `If-Match` from optional to required for undo, delete, and import.
+- Add a **capability-parity conformance check**: enumerate contract operations
+  and assert each has a client path or a documented exemption. This is what would
+  have caught the missing delete UI.
+
+## Implementation path
+
+Ordered by dependency; each step is a separate change.
+
+1. **PAPERCLIPS.md** — add the canonical storage shape and the three entity
+   states; add the client-obligation rules (clamp surfacing, lifecycle
+   affordances). §6 is unchanged, which is the point.
+2. **Contract** — `x-requiredWhenComplete` on character/crew/clock schemas;
+   effective limits in DTOs; typed `error.details`; `INVALID_ENTITY` (`422`); `If-Match`
+   required on destructive ops; `canUndo`/`historyCount`; roster `isComplete`.
+3. **Conformance** — canonical-shape and read-purity cases; completeness
+   classification; published-limit assertions; typed-error assertions;
+   capability-parity check. Frozen before implementation, per project rule.
+4. **Backend** — write-boundary canonicalisation, rejection of non-canonical documents,
+   published limits, typed error details, cap unification.
+5. **Frontend** — tolerant decode for empty values with unknown-key strictness
+   retained; outstanding-field styling driven by `x-requiredWhenComplete`; delete
+   and retire UI; clamp notices; the ten craft defects.
+
+## Consequences for the fix wave
+
+`agent-docs/FRONTEND-FIX-WAVE-PLAN.md` shrinks:
+
+- `O-MIGRATION`'s four-option human gate is resolved by D1 and D2 and collapses
+  to the canonical-shape decision.
+- `P01`, `P02`, `P03`, `P09` collapse into one write-boundary card.
+- `O-EXTRA` and `P27A` narrow: absent keys are no longer errors, leaving unknown
+  keys and unparseable bytes.
+- `P27B` inverts on the empty-value axis, keeping unknown-key strictness.
+- The nested-schema residual risk largely dissolves.
+- New work: delete and retire UI, `x-requiredWhenComplete` plumbing, published
+  limits, typed errors, capability-parity check.
+
+## Deferred
+
+Retired-character memorial section on the landing page — see
+[Roadmap](/roadmap).

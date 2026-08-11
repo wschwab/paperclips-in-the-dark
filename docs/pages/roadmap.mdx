@@ -1,0 +1,47 @@
+# Roadmap — deferred and future work
+
+Durable home for ideas deliberately shelved rather than dropped. Anything here is
+explicitly *not* in flight. Plans in `agent-docs/` are gitignored and do not
+survive, so future work belongs on this page.
+
+## Deferred features
+
+### Retired-character memorial on the landing page
+
+**Raised:** 2026-08-12. **Status:** shelved by decision, to be explored later.
+
+Give retired characters a dedicated section on the landing page rather than
+leaving them mixed into the active roster or hidden behind a filter. The intent is
+commemorative, not administrative — a campaign accumulates casualties and
+retirements, and those characters are part of its story.
+
+Design notes to pick up later:
+
+- The backend already exposes what this needs: `isRetired` and `isDeadish` on both
+  the entity DTO and roster summaries. No contract change is obviously required,
+  though a retirement date or cause might be worth adding.
+- `isDeadish` and `isRetired` are distinct states and should probably read
+  differently in the memorial.
+- Aesthetically this is a natural home for the aged-print treatment already in the
+  design system — `IM Fell English` epigraphs and the trauma-stamp/typewriter
+  accents that are used sparingly elsewhere.
+- Retirement currently has no UI trigger at all; it is API-only. The
+  confirmation-guarded retire affordance decided in the
+  [contract review](/contract/completeness-and-lifecycle-review) is a prerequisite.
+
+## Known coverage gaps
+
+Carried from `agent-docs/frontend-vetting/residual-risk.md` so they survive the
+loss of gitignored evidence.
+
+- **Automated accessibility scanning** — no `axe-core`/Lighthouse run yet; the
+  vetting wave forbade dependency changes. Structural ARIA/DOM probes were used
+  instead.
+- **Real screen-reader passes** — Orca (L2) and NVDA (L3) still pending per
+  `agent-docs/accessibility-plan.md`.
+- **320 px viewports** — every route overflows at 320 px. 360 px is the practical
+  floor until the narrow-width defects are fixed.
+- **Slow-network behavior** — only a 1500 ms artificial delay was exercised; real
+  3G throttling untested.
+- **Batch/composite endpoints** — `end-score` and `end-downtime` have no UI and
+  were only probed via the API.

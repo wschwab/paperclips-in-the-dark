@@ -29,6 +29,7 @@
   --text-faint: #8a7e6a;
   --accent: var(--blood);
   --accent-strong: #7a1d1d;
+  --link: var(--accent);
   --rule: rgba(26, 26, 26, 0.35);
   --rule-heavy: rgba(26, 26, 26, 0.75);
   --grain-opacity: 0.22;
@@ -50,12 +51,24 @@
   --transition-fast: 120ms ease-out;
   --transition-med: 220ms ease-out;
   --radius: 2px;
-  --radius-large: 6px;
 
   /* layout */
   --sheet-width: 920px;
   --sheet-width-wide: 1120px;
   --gutter: 24px;
+
+  /* torn-edge / uneven-type ceremony (Design Audit Appendix A):
+   * --band-ink is the inked plate behind the seam; --torn-mask is an inline
+   * SVG noise mask so the seam needs no external asset. High-contrast
+   * collapses the depth to a straight rule and the uneven face to the label
+   * face (F-A5). */
+  --band-ink: #2f3238;
+  --band-text: var(--paper-raised);
+  --torn-depth: 14px;
+  --torn-depth-lg: 18px;
+  --torn-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='18' preserveAspectRatio='none'><path d='M0 18L1200 18L1200 9.6L1200 6.7L1194 6.5L1188 6.4L1182 6.5L1176 6.7L1170 7.0L1164 7.2L1158 7.3L1152 7.5L1146 7.8L1140 8.3L1134 8.8L1128 9.1L1122 9.2L1116 9.4L1110 9.7L1104 10.1L1098 10.6L1092 11.0L1086 11.1L1080 11.0L1074 10.7L1068 10.5L1062 10.2L1056 10.0L1050 9.6L1044 9.1L1038 8.7L1032 8.6L1026 8.8L1020 9.2L1014 9.6L1008 9.8L1002 9.8L996 9.7L990 9.7L984 8.8L978 7.9L972 9.5L966 9.3L960 9.1L954 9.1L948 9.3L942 9.7L936 10.0L930 10.2L924 10.1L918 10.0L912 10.0L906 10.2L900 10.3L894 10.3L888 10.1L882 9.8L876 9.7L870 9.6L864 9.6L858 9.5L852 9.2L846 8.8L840 8.5L834 8.5L828 8.8L822 9.2L816 9.6L810 10.0L804 10.3L798 10.7L792 11.2L786 11.6L780 11.7L774 11.6L768 11.2L762 10.9L756 10.7L750 10.8L744 11.0L738 11.1L732 11.1L726 11.1L720 11.0L714 11.1L708 11.1L702 10.9L696 10.4L690 9.8L684 9.3L678 8.9L672 8.7L666 8.5L660 8.2L654 7.9L648 7.4L642 5.4L636 6.2L630 7.1L624 7.2L618 7.1L612 7.1L606 7.1L600 7.4L594 7.8L588 8.1L582 8.1L576 7.9L570 7.4L564 7.0L558 6.7L552 6.5L546 6.3L540 6.1L534 5.9L528 5.8L522 6.1L516 6.5L510 6.8L504 7.0L498 6.9L492 6.6L486 6.5L480 6.4L474 6.5L468 6.6L462 6.6L456 6.7L450 6.9L444 7.3L438 7.9L432 8.5L426 8.9L420 9.2L414 9.3L408 9.6L402 10.0L396 10.5L390 10.8L384 11.0L378 10.9L372 10.8L366 10.7L360 10.6L354 10.5L348 10.1L342 9.6L336 9.2L330 9.0L324 9.1L318 9.4L312 9.7L306 9.9L300 7.3L294 9.8L288 9.8L282 9.8L276 9.8L270 9.5L264 9.2L258 8.9L252 8.8L246 9.0L240 9.4L234 9.8L228 10.1L222 10.2L216 10.3L210 10.4L204 10.5L198 10.6L192 10.5L186 10.2L180 9.8L174 9.6L168 9.6L162 9.6L156 9.5L150 9.3L144 9.0L138 8.7L132 8.6L126 8.8L120 9.1L114 9.3L108 9.5L102 9.8L96 10.1L90 10.6L84 11.1L78 11.3L72 11.2L66 11.0L60 10.7L54 10.5L48 10.6L42 10.8L36 10.9L30 10.9L24 11.0L18 11.1L12 11.3L6 11.5L0 11.4Z' fill='%23000'/></svg>");
+  --font-uneven: 'IM Fell English', Georgia, 'Iowan Old Style', serif;
+  --track-uneven: 0.085em;
 
   color-scheme: light;
 }
@@ -74,6 +87,8 @@
     --text-faint: #756958;
     --accent: #d24642;
     --accent-strong: #e85a4a;
+    --link: var(--accent-strong);
+    --focus-ring: var(--accent-strong);
     --rule: rgba(225, 216, 195, 0.25);
     --rule-heavy: rgba(225, 216, 195, 0.55);
     --grain-opacity: 0.08;
@@ -82,11 +97,17 @@
     --fill: var(--text);
     --fill-accent: var(--accent);
     --fill-border: var(--text);
+    --band-ink: #08070a;
+    --band-text: var(--text);
     color-scheme: dark;
   }
 }
 
-[data-theme="dark"] {
+/* Theme token blocks are scoped to :root — the theme-control buttons carry
+ * data-theme/data-contrast attributes for JS state, and an unscoped
+ * [data-theme="dark"] selector would re-theme those buttons' own tokens
+ * (e.g. a "Dark" button showing dark text in light mode). */
+:root[data-theme="dark"] {
   --surface: var(--lamplit);
   --surface-raised: #201a17;
   --surface-sunk: #100d0b;
@@ -95,6 +116,8 @@
   --text-faint: #756958;
   --accent: #d24642;
   --accent-strong: #e85a4a;
+  --link: var(--accent-strong);
+  --focus-ring: var(--accent-strong);
   --rule: rgba(225, 216, 195, 0.25);
   --rule-heavy: rgba(225, 216, 195, 0.55);
   --grain-opacity: 0.08;
@@ -103,10 +126,12 @@
   --fill: var(--text);
   --fill-accent: var(--accent);
   --fill-border: var(--text);
+  --band-ink: #08070a;
+  --band-text: var(--text);
   color-scheme: dark;
 }
 
-[data-theme="light"] {
+:root[data-theme="light"] {
   /* explicit light override */
   color-scheme: light;
 }
@@ -114,9 +139,14 @@
 /* ── High-contrast variant ──────────────────────────────────────
  * Composes with whatever theme is active. Boosts accent, kills faded
  * rules, thickens sheet-furniture borders for low-vision legibility. */
-[data-contrast="high"] {
+:root[data-contrast="high"] {
   --accent: #d10000;
   --accent-strong: #b00000;
+  --link: var(--accent);
+  --focus-ring: var(--text);
+  --torn-depth: 0px;
+  --torn-depth-lg: 0px;
+  --band-ink: var(--ink);
   --text: var(--ink);
   --text-muted: var(--ink);
   --text-faint: #2a2a2a;
@@ -129,7 +159,7 @@
   --border-thick: 4px;
 }
 
-[data-theme="dark"][data-contrast="high"] {
+:root[data-theme="dark"][data-contrast="high"] {
   --surface: #000000;
   --surface-raised: #080808;
   --surface-sunk: #000000;

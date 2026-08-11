@@ -36,6 +36,7 @@ import {
   StaleRevisionError,
 } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
+import { errorCard } from "../components/error-card.js";
 import type { Crew } from "../schema/crew.js";
 import { CohortHarm, CohortType, Hold } from "../schema/common.js";
 
@@ -110,7 +111,7 @@ interface RenderState {
     onWantedDelta: (delta: number) => void;
     onWantedTrack: (next: number) => void;
     onTierDelta: (delta: number) => void;
-    onHoldSet: () => void;
+    onHoldSet: (hold: string) => void;
     onCoinDelta: (delta: number) => void;
     onStashDelta: (delta: number) => void;
     onAbilityTake: () => void;
@@ -801,24 +802,29 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   }, state.isTierLoading ? "…" : "+");
   tierPlusBtn.addEventListener("click", () => handlers.onTierDelta(1));
 
-  // Hold: native <select> populated from the contract hold enum (schema
-  // literal mirrors contract/schemas/common.json $defs hold — never
-  // hardcoded here) + explicit Set button.
-  const holdSelect = el("select", {
-    "aria-label": "Hold",
-    disabled: state.anyLoading,
-  }) as HTMLSelectElement;
-  for (const value of Hold.literals) {
-    const option = el("option", { value }, value) as HTMLOptionElement;
-    if (value === c.hold) option.selected = true;
-    holdSelect.append(option);
-  }
-  const holdSetBtn = el("button", {
-    type: "button",
-    disabled: state.anyLoading,
-    title: "Set hold",
-  }, state.isHoldLoading ? "…" : "Set");
-  holdSetBtn.addEventListener("click", handlers.onHoldSet);
+  // Hold: two-state segmented control (WEAK / STRONG) committing on click
+  // (Design Audit F-11) — replaces the lowercase native <select> + Set
+  // button with the same one-click pattern every neighbouring tracker uses.
+  // Presentation order is weak→strong (the sheet's progression); wire values
+  // stay the lowercase contract enum.
+  const holdOptions = [...Hold.literals].reverse().map((value) => {
+    const label = value[0]!.toUpperCase() + value.slice(1);
+    const btn = el("button", {
+      type: "button",
+      className: "hold-option",
+      "data-hold": value,
+      "aria-pressed": c.hold === value ? "true" : "false",
+      disabled: state.anyLoading,
+      title: `Set hold: ${label}`,
+    }, label);
+    btn.addEventListener("click", () => handlers.onHoldSet(value));
+    return btn;
+  });
+  const holdControl = el(
+    "div",
+    { className: "hold-control", role: "group", "aria-label": "Hold" },
+    ...holdOptions,
+  );
 
   // -- Coin & Stash (F2u) ---------------------------------------------------
 
@@ -1160,7 +1166,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         ),
       ),
       el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Lair Chart"),
-      el("p", { className: "lbl", style: "font-size: 0.85em;" },
+      el("p", { className: "rules-note", style: "margin-top: 0.35em;" },
         "The lair chart is a rendering of the crew type's Upgrades data (mark/unmark one box per click).",
       ),
       el("div", { className: "lair-chart", style: "display: flex; flex-direction: column;" },
@@ -1408,33 +1414,16 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     type: "text",
     "aria-label": "Cohort expert custom type",
     disabled: state.anyLoading,
-    placeholder: "custom type",
   });
-  const toggleCohortKindFields = () => {
-    const kind = cohortKindSelect.value;
-    gangTypeSelect.hidden = kind !== "gang";
-    expertTypeSelect.hidden = kind !== "expert";
-    expertCustomInput.hidden =
-      kind !== "expert" || expertTypeSelect.value !== "Custom";
-  };
-  cohortKindSelect.addEventListener("change", toggleCohortKindFields);
-  expertTypeSelect.addEventListener("change", () => {
-    if (cohortKindSelect.value === "expert") {
-      expertCustomInput.hidden = expertTypeSelect.value !== "Custom";
-    }
-  });
-  toggleCohortKindFields();
   const qualityInput = el("input", {
     type: "number",
     "aria-label": "Cohort quality",
     disabled: state.anyLoading,
-    placeholder: "quality",
   });
   const scaleInput = el("input", {
     type: "number",
     "aria-label": "Cohort scale",
     disabled: state.anyLoading,
-    placeholder: "scale",
   });
   const armorInput = el("input", {
     type: "checkbox",
@@ -1445,19 +1434,45 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     type: "text",
     "aria-label": "Cohort edges",
     disabled: state.anyLoading,
-    placeholder: "edges (comma-separated)",
+    placeholder: "e.g. Fearsome, Independent",
   });
   const flawsInput = el("input", {
     type: "text",
     "aria-label": "Cohort flaws",
     disabled: state.anyLoading,
-    placeholder: "flaws (comma-separated)",
+    placeholder: "e.g. Wild, Overconfident",
   });
   const descInput = el("input", {
     type: "text",
     "aria-label": "Cohort description",
     disabled: state.anyLoading,
-    placeholder: "description",
+  });
+  // F-10: persistent labels over ruled blanks; placeholders kept only as
+  // genuine format examples. A label + control pair reads as sheet furniture.
+  const cohortField = (label: string, control: HTMLElement) =>
+    el(
+      "label",
+      { className: "cohort-field" },
+      el("span", { className: "lbl" }, label),
+      control,
+    );
+  // Kind-conditional fields: wrap each control with its label so the
+  // toggle hides label+control together (not a stray empty label).
+  const gangTypeField = cohortField("Type", gangTypeSelect);
+  const expertTypeField = cohortField("Type", expertTypeSelect);
+  const expertCustomField = cohortField("Custom type", expertCustomInput);
+  const toggleCohortKindFields = () => {
+    const kind = cohortKindSelect.value;
+    gangTypeField.hidden = kind !== "gang";
+    expertTypeField.hidden = kind !== "expert";
+    expertCustomField.hidden =
+      kind !== "expert" || expertTypeSelect.value !== "Custom";
+  };
+  cohortKindSelect.addEventListener("change", toggleCohortKindFields);
+  expertTypeSelect.addEventListener("change", () => {
+    if (cohortKindSelect.value === "expert") {
+      expertCustomField.hidden = expertTypeSelect.value !== "Custom";
+    }
   });
   const addCohortBtn = el("button", {
     type: "button",
@@ -1474,20 +1489,23 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       ? el("p", {}, "(no cohorts)")
       : el("div", { className: "cohort-list" }, ...cohortEntries),
     el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Add Cohort"),
-    el("div", { className: "cohort-add", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
-      el("label", { className: "lbl" }, "Kind:", cohortKindSelect),
-      gangTypeSelect,
-      expertTypeSelect,
-      expertCustomInput,
-      qualityInput,
-      scaleInput,
-      el("label", { className: "lbl" }, "Armor:", armorInput),
-      edgesInput,
-      flawsInput,
-      descInput,
+    el("div", { className: "cohort-add", style: "display: flex; flex-wrap: wrap; gap: 0.75em; align-items: flex-end;" },
+      cohortField("Kind", cohortKindSelect),
+      gangTypeField,
+      expertTypeField,
+      expertCustomField,
+      cohortField("Quality", qualityInput),
+      cohortField("Scale", scaleInput),
+      cohortField("Armor", armorInput),
+      cohortField("Edges", edgesInput),
+      cohortField("Flaws", flawsInput),
+      cohortField("Description", descInput),
       addCohortBtn,
     ),
   );
+  // Initial field visibility: run after the form is assembled so every
+  // label+control pair hides together.
+  toggleCohortKindFields();
 
   // -- Crew XP (F2x) ----------------------------------------------------------
   // Points/max come from the DTO (experience { points, max }) — the max is
@@ -1628,10 +1646,13 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       return btn;
     });
 
-    // SVG edge layer behind the cells (one line per edge, no degree cap)
+    // SVG edge layer (one line per edge, no degree cap). Rendered INSIDE the
+    // grid spanning all tracks so its box matches the uniform 1fr cells;
+    // viewBox is the grid's (cols×rows) so a node at (col,row) centers at
+    // (col-0.5, row-0.5) in viewBox units.
     const edgeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     edgeSvg.setAttribute("class", "claim-edges");
-    edgeSvg.setAttribute("viewBox", "0 0 5 3");
+    edgeSvg.setAttribute("viewBox", `0 0 ${graph.columns} ${graph.rows}`);
     edgeSvg.setAttribute("preserveAspectRatio", "none");
     edgeSvg.setAttribute("aria-hidden", "true");
     for (const e of graph.edges) {
@@ -1652,15 +1673,14 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       "section",
       { className: "crew-claims" },
       el("h2", {}, "Claims"),
-      el("p", { className: "lbl", style: "font-size: 0.85em;" },
+      el("p", { className: "rules-note", style: "margin-top: 0.35em;" },
         "Acquired claims are marked. Connected claims are highlighted; out-of-sequence acquisition remains allowed. The Lair is always controlled.",
       ),
       el("div", { className: "claims-map", style: "position: relative;" },
         el("div", {
           className: "claims-grid",
-          style: `display: grid; grid-template-columns: repeat(${graph.columns}, 1fr); grid-template-rows: repeat(${graph.rows}, 1fr); gap: 6px;`,
-        }, ...cells),
-        edgeSvg,
+          style: `display: grid; grid-template-columns: repeat(${graph.columns}, 1fr); grid-template-rows: repeat(${graph.rows}, 1fr); gap: 18px;`,
+        }, edgeSvg, ...cells),
       ),
       el("div", { className: "active-claims" },
         el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Active claim benefits"),
@@ -1690,9 +1710,16 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     { className: "crew-detail" },
     el(
       "div",
-      { className: "crew-header" },
-      el("h1", {}, c.name),
-      el("p", { className: "crew-type" }, c.crewTypeName),
+      { className: "crew-header torn-foot torn-foot-lg" },
+      el("p", { className: "crew-kicker" }, c.gameName),
+      el("h1", {}, c.name || `Unnamed ${c.crewTypeName}`),
+      el("p", { className: "crew-type uneven" }, c.crewTypeName),
+      el("p", { className: "crew-tier-badge", title: "Tier" }, `Tier ${c.tier}`),
+      el(
+        "nav",
+        { className: "crew-nav" },
+        el("a", { href: `/crew/${c.id}/history` }, "History"),
+      ),
     ),
     el(
       "div",
@@ -1700,9 +1727,6 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       el("h2", {}, "Profile"),
       ...profileFields,
       reputationRow,
-      el("p", { style: "margin-top: 0.5em;" },
-        el("a", { href: `/crew/${c.id}/history` }, "History"),
-      ),
     ),
     notesSection,
     el(
@@ -1723,7 +1747,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
           turfMinusBtn,
           turfPlusBtn,
         ),
-        el("p", { className: "lbl", style: "margin-top: 0.35em; font-size: 0.85em;" },
+        el("p", { className: "rules-note", style: "margin-top: 0.35em;" },
           "Turf is measured from the right: each turf lowers the rep develop threshold by one.",
         ),
       ),
@@ -1743,8 +1767,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       ),
       el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Hold"),
       el("div", { className: "crew-hold", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.6em 0;" },
-        holdSelect,
-        holdSetBtn,
+        holdControl,
       ),
     ),
     el(
@@ -1776,7 +1799,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       contacts.length === 0
         ? el("p", {}, "(no contacts)")
         : el("div", { className: "contact-list" }, ...contactEntries),
-      el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
+      el("div", { className: "contact-add-row", style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
         contactNameInput,
         contactProfessionInput,
         addContactBtn,
@@ -1808,15 +1831,6 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         ? el("p", { className: "notice", style: "margin-top: 1em;" }, state.noticeMsg)
         : null,
     ),
-  );
-}
-
-function renderError(message: string): HTMLElement {
-  return el(
-    "section",
-    { className: "crew-detail-error" },
-    el("h1", {}, "Crew"),
-    el("p", { className: "error", role: "alert" }, message),
   );
 }
 
@@ -2329,10 +2343,8 @@ export function mountCrewDetailPage(
       runCrewOp((v) => { isTierLoading = v; }, crewTierAdd(crewId, delta, currentCrew.revision));
     },
 
-    onHoldSet: () => {
+    onHoldSet: (hold: string) => {
       if (!currentCrew || isHoldLoading) return;
-      const select = root.querySelector('select[aria-label="Hold"]') as HTMLSelectElement | null;
-      const hold = select?.value;
       if (!hold) return;
       runCrewOp((v) => { isHoldLoading = v; }, crewHoldSet(crewId, hold, currentCrew.revision));
     },
@@ -2550,59 +2562,71 @@ export function mountCrewDetailPage(
   };
 
   root.setAttribute("aria-live", "polite");
-  root.setAttribute("aria-busy", "true");
-  setChildren(root, renderLoading());
 
-  const program = Effect.gen(function* () {
-    const crew = yield* getCrew(crewId);
-    // Crew-type game data drives the Playbook menus, the reputation
-    // dropdown, and the cohort type lists. The per-crew-type endpoint is
-    // preferred; failures degrade gracefully to the whole game-data object
-    // (CrewTypes find-by-name), mirroring the character sheet's getPlaybook
-    // + game-data fallback. F2ac: getCrewGameData (the raw {stem}-crews.json
-    // object) replaces getCrewTypes so the top-level CohortGangTypes /
-    // CohortExpertTypes keys are available for the cohort dropdowns.
-    const crewType = yield* Effect.either(
-      getCrewType(crew.gameStem, crew.crewTypeName),
-    );
-    const gameData = yield* Effect.either(getCrewGameData(crew.gameStem));
-    return { crew, crewType, gameData };
-  });
+  const startLoad = () => {
+    root.setAttribute("aria-busy", "true");
+    setChildren(root, renderLoading());
 
-  void Effect.runPromise(
-    Effect.match(program, {
-      onFailure: (err) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        const msg =
-          err instanceof ApiError
-            ? `Failed to reach /api/crews/${crewId} (${err.status}): ${err.body}`
-            : err instanceof DecodeError
-              ? `Invalid crew response: ${err.message}`
-              : String(err);
-        setChildren(root, renderError(msg));
-      },
-      onSuccess: ({ crew, crewType, gameData }) => {
-        if (cancelled) return;
-        root.setAttribute("aria-busy", "false");
-        currentCrew = crew;
-        if (crewType._tag === "Right") {
-          crewTypeData = crewType.right;
-        }
-        if (gameData._tag === "Right") {
-          crewGameData = gameData.right;
-          const crewTypes = gameData.right.CrewTypes;
-          if (Array.isArray(crewTypes)) {
-            crewTypesData = crewTypes.filter(
-              (ct): ct is Record<string, unknown> =>
-                typeof ct === "object" && ct !== null,
-            );
+    const program = Effect.gen(function* () {
+      const crew = yield* getCrew(crewId);
+      // Crew-type game data drives the Playbook menus, the reputation
+      // dropdown, and the cohort type lists. The per-crew-type endpoint is
+      // preferred; failures degrade gracefully to the whole game-data object
+      // (CrewTypes find-by-name), mirroring the character sheet's getPlaybook
+      // + game-data fallback. F2ac: getCrewGameData (the raw {stem}-crews.json
+      // object) replaces getCrewTypes so the top-level CohortGangTypes /
+      // CohortExpertTypes keys are available for the cohort dropdowns.
+      const crewType = yield* Effect.either(
+        getCrewType(crew.gameStem, crew.crewTypeName),
+      );
+      const gameData = yield* Effect.either(getCrewGameData(crew.gameStem));
+      return { crew, crewType, gameData };
+    });
+
+    void Effect.runPromise(
+      Effect.match(program, {
+        onFailure: (err) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          const msg =
+            err instanceof ApiError
+              ? `Failed to reach /api/crews/${crewId} (${err.status}): ${err.body}`
+              : err instanceof DecodeError
+                ? `Invalid crew response: ${err.message}`
+                : String(err);
+          setChildren(
+            root,
+            errorCard({
+              headline: "This crew sheet could not be loaded.",
+              detail: msg,
+              onRetry: startLoad,
+            }),
+          );
+        },
+        onSuccess: ({ crew, crewType, gameData }) => {
+          if (cancelled) return;
+          root.setAttribute("aria-busy", "false");
+          currentCrew = crew;
+          if (crewType._tag === "Right") {
+            crewTypeData = crewType.right;
           }
-        }
-        renderDetail();
-      },
-    }),
-  );
+          if (gameData._tag === "Right") {
+            crewGameData = gameData.right;
+            const crewTypes = gameData.right.CrewTypes;
+            if (Array.isArray(crewTypes)) {
+              crewTypesData = crewTypes.filter(
+                (ct): ct is Record<string, unknown> =>
+                  typeof ct === "object" && ct !== null,
+              );
+            }
+          }
+          renderDetail();
+        },
+      }),
+    );
+  };
+
+  startLoad();
 
   return () => {
     cancelled = true;
