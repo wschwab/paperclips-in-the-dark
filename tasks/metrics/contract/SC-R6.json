@@ -1,0 +1,13 @@
+{
+  "task": "SC-R6",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, 6m. 32 ledger rows (FV-001..FV-032) each with exactly one owning card, severity register P0=2/P1=8/P2=12/P3=10, 12 replaced blanket closures from draft Part 7, ten craft findings preserved with P-cards P08/P12-P16/P25/P30-P32, contract-only FV-026 (SC-C6), dual-card FV-027 (SC-A3 + SC-F1).",
+  "wallClockMinutes": 6,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "Ledger is authoritative for Wave 7 closure and SC-O8. BUGS.json ownership fields are suspected-surface labels, not fix owners; work-spec card text + fix-wave P-cards used as authoritative."
+}

@@ -855,6 +855,34 @@ question.
 | Q41 | Keep derived limits out of byte-identical storage and expose server-computed capability projections. | Limits and capabilities; SC-C3, SC-A5 |
 | Q42 | Trauma resolves immediately, but stress remains full until `end-score`; persist pending/out-of-action state. | Character lifecycle; SC-O6, SC-A8, SC-F4 |
 
+## Wave 0 outcomes (frozen research)
+
+Wave 0 landed on 2026-08-14. The seven matrices are authoritative detail; the
+rows below are the decisions they froze that extend or refine this page. When
+any row changes, the change-control rule applies.
+
+| # | Decision | Recorded disposition | Controlling work |
+|---|---|---|---|
+| W1 | Validation approach | **Schema-generated entity validators.** SC-R1 surveyed Alire, json-schema.org, and GitHub: no maintained Ada JSON Schema validator exists; the spike passes all eight exercised requirements with zero new dependencies. | SC-A1, SC-C5 |
+| W2 | Clock purposes | `ClockPurposes` settings field with exactly `progress, danger, racing, linked, mission, tug-of-war, long-term-project, faction, score, custom`; both supported games ship all ten; `custom` always available. | SC-C3, SC-C1, SC-A7 |
+| W3 | Clock legacy conversion | `clockKind: project\|rollover` → `behavior: bounded\|rollover`; migrated legacy standalone clocks gain `ownerKind: campaign`, `ownerId: ""`, `purpose: custom` (honest catch-all), `relatedClockIds: []`. | SC-C1, SC-A1 |
+| W4 | Related-clock deletion | **Unlink on delete**: deleting a clock removes its id from every remaining clock's `relatedClockIds` in the same atomic snapshot; no dangling references in readable state. | SC-C2, SC-O5, SC-A7 |
+| W5 | Owner deletion | Reassignment to campaign (default confirmed); each reassigned clock gets a new revision/`updatedAt` in the owner-deletion snapshot; delete result should report `reassignedClockIds`. | SC-C2, SC-O5, SC-A7 |
+| W6 | Tug-of-war progress | Signed `clock.progress` consumes rollover first when emptying, preserving the invariant `rollover > 0 ⇒ segments = size`. | SC-C2, SC-O5, SC-A7 |
+| W7 | Session expressions | `SessionExpressionMax = 2` per game (C# `Session.MaxExpressions`; Ada's hardcoded 3 at `pitd_callback.adb:1079` is a defect). | SC-C3, SC-A6, SC-O4 |
+| W8 | Armor availability | `monitor.armor.hasStandard/heavy/special` remain persisted canonical booleans, recomputed at every write boundary (write-derived state, not derived limits; Q41 does not cover them). | SC-C1, SC-A1 |
+| W9 | Idempotency replay window | Internal capacity, never an API promise; agent documentation must not promise durable replay. | SC-C5, SC-G1 |
+| W10 | Clock size restriction | Not adopted: standalone clock `size` stays `minimum: 1` with no per-game `AllowedClockSizes` list (no game defines one). | SC-C1 |
+| W11 | Develop cost | `DevelopCoinCostMultiplier = 8` game-settings field; the frontend's `(tier+1)×8` literal moves to settings. | SC-C3, SC-F3 |
+| W12 | S&V domain maxima | Where `scum-and-villainy.json` publishes no value, settings gain the current shipped defaults (stress 9, trauma 4, XP 8/6/10, satchel 4, stash 40, load 9, harm 2/2/1/1, session 2); published differences kept (action cap 3, recovery clock 6, faction −3..3, turf 6). | SC-C3, SC-O4 |
+| W13 | `OUT_OF_ACTION` | New error code added to the SC-C4 union: stress ops on an out-of-action character (detail: out of action until `end-score`). | SC-C4, SC-O6, SC-A8 |
+| W14 | Trauma resolution | `trauma.add` is resolution-only: requires `traumaPending`, else `VALIDATION`; supersedes `SEMANTICS-STRESS-OVERFLOW-002`; never recomputes `isRetired`; max-th resolution runs the shared retirement cleanup in the same transition. | SC-C2, SC-A8, SC-O6 |
+| W15 | End-score body | Request body becomes optional (stress clear + flag resets are inherent); one-snapshot atomicity kept. | SC-C2, SC-A8 |
+| W16 | Lifecycle flags | `isDeadish` is write-time derived from `monitor.harm.fatal` (never an input); `isRetired` once set is never recomputed from the trauma count; `traumaPending`/`isOutOfAction`/`stressClearPending` canonical booleans; retired allow-list (dossier, name, notes, notebook, trauma.remove, undo, delete, import, reads) and deny-list (gameplay → `RETIRED`) frozen. | SC-C1, SC-A8, SC-O6 |
+| W17 | SC-O6 case list | 25 named lifecycle cases frozen as the minimum (LIFECYCLE-STRESS/TRAUMA/ENDSCORE/RETIRE/DEADISH/DELETE/DERIVED/INVARIANTS-*). | SC-O6 |
+| W18 | Finding ownership | SC-R6 ledger maps FV-001…FV-032 to exactly one owning card each; FV-026 contract-only (SC-C6), FV-027 dual-card (SC-A3 + SC-F1); ten craft findings keep P-cards P08/P12–P16/P25/P30–P32. | Wave 7, SC-O8 |
+
 ## Change log
 
+- **2026-08-14:** Wave 0 landed. R0–R6 matrices frozen under `docs/pages/contract/wave0/`; decisions W1–W18 recorded above (validator generation, clock purposes/legacy mapping/unlink-on-delete, session max 2, armor write-derived, `OUT_OF_ACTION`, resolution-only trauma, optional end-score body, lifecycle flag derivation, SC-O6 case list, finding ownership).
 - **2026-08-14:** Created from the reviewed August 12 draft and decisions Q1–Q42. Replaced write-only normalization with explicit preview/repair, separated inbound `INVALID_ENTRY` from persisted `INVALID_ENTITY`, kept sparse claim overlays, added complete clock and lifecycle models, moved derived limits to capabilities, and split implementation into ordered waves.

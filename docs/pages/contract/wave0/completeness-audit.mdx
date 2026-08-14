@@ -1,0 +1,154 @@
+---
+title: Completeness field and predicate audit (SC-R2)
+description: Validates the locked character and crew completeness pointer lists against contract/schemas, defines canonical empties, produces the counterexample set for the completeness oracle, and approves the predicate vocabulary.
+---
+
+# Completeness field and predicate audit
+
+**Card:** SC-R2 · **Wave:** 0 (research and reconciliation) · **Date:** 2026-08-14
+
+**Scope.** Validate the locked completeness pointer lists (decision Q8, `spec-change-work-spec.mdx` § Completeness) against the current entity schemas in `contract/schemas/`, confirm every pointer resolves to the intended scalar, define the canonical empty for each, generate the counterexample set for SC-O3, confirm clocks carry no completeness list, and approve the predicate vocabulary (Q9). This is a read-only audit; the normative lists below are restated from the governing spec and are binding on SC-C1, SC-F1, and SC-O3.
+
+**Normative sources.**
+
+- `docs/pages/contract/spec-change-work-spec.mdx` — "Completeness" section and decision ledger Q8, Q9, Q10, Q12, Q30.
+- `contract/schemas/character.json` (v-current, 490 lines), `contract/schemas/crew.json` (266 lines), `contract/schemas/clock.json`, `contract/schemas/common.json`.
+- `data/games/blades-in-the-dark.json`, `data/games/scum-and-villainy.json`, `data/games/blades-in-the-dark-crews.json`.
+
+## Locked pointer lists (normative, from the governing spec)
+
+| Entity | Locked completeness pointers |
+|---|---|
+| Character (8) | `/dossier/name`, `/dossier/alias`, `/dossier/look`, `/dossier/heritage/name`, `/dossier/background/name`, `/dossier/vice/name`, `/dossier/vice/purveyor/name`, `/playbook/name` |
+| Crew (5) | `/name`, `/crewTypeName`, `/lair`, `/reputation`, `/huntingGrounds` |
+| Clock | none |
+
+## Pointer-resolution table
+
+Every locked pointer resolves today. All 13 resolve to a schema property of `"type": "string"` with **no `minLength`** (so `""` is schema-valid), all are members of a `required` list at every level of their path, and all sit under `additionalProperties: false` objects. Canonical empty is therefore `""` for all 13, and the assigned predicate is `nonBlankString` for all 13 (the only predicate the initial field set needs — Q9).
+
+| # | Locked pointer | Schema property | Schema location | Type | Required? | Canonical empty | Assigned predicate | Resolves? |
+|---|---|---|---|---|---|---|---|---|
+| C1 | `/dossier/name` | `character.dossier.name` | `character.json:78` | `string` | yes (`dossier` required list, `character.json:66-75`) | `""` | `nonBlankString` | ✅ |
+| C2 | `/dossier/alias` | `character.dossier.alias` | `character.json:86` | `string` | yes (`dossier` required list) | `""` | `nonBlankString` | ✅ |
+| C3 | `/dossier/look` | `character.dossier.look` | `character.json:89` | `string` | yes (`dossier` required list) | `""` | `nonBlankString` | ✅ |
+| C4 | `/dossier/heritage/name` | `character.dossier.heritage.name` — `heritage` is `$ref: common.json#/$defs/namedDescription` (`character.json:97-99`) | `common.json:80` (`namedDescription.name`) | `string` | yes (`namedDescription` requires `name`, `common.json:78-79`) | `""` | `nonBlankString` | ✅ |
+| C5 | `/dossier/background/name` | `character.dossier.background.name` — `background` is `$ref: common.json#/$defs/namedDescription` (`character.json:95-96`) | `common.json:80` | `string` | yes (`namedDescription` requires `name`) | `""` | `nonBlankString` | ✅ |
+| C6 | `/dossier/vice/name` | `character.dossier.vice.name` — `vice` is `$ref: common.json#/$defs/vice` (`character.json:101-103`) | `common.json:170` (`vice.name`) | `string` | yes (`vice` requires `name`, `common.json:164-166`) | `""` | `nonBlankString` | ✅ |
+| C7 | `/dossier/vice/purveyor/name` | `character.dossier.vice.purveyor.name` — `vice.purveyor` is `$ref: #/$defs/namedDescription` (`common.json:177-179`) | `common.json:80` | `string` | yes (`vice` requires `purveyor`; `namedDescription` requires `name`) | `""` | `nonBlankString` | ✅ |
+| C8 | `/playbook/name` | `character.playbook.name` | `character.json:299` | `string` | yes (`playbook` requires `name`, `character.json:292-294`) | `""` | `nonBlankString` | ✅ |
+| K1 | `/name` | `crew.name` | `crew.json:70` | `string` | yes (`crew.json:17`) | `""` | `nonBlankString` | ✅ |
+| K2 | `/crewTypeName` | `crew.crewTypeName` | `crew.json:67` | `string` | yes (`crew.json:16`) | `""` | `nonBlankString` | ✅ |
+| K3 | `/lair` | `crew.lair` | `crew.json:73` | `string` | yes (`crew.json:18`) | `""` | `nonBlankString` | ✅ |
+| K4 | `/reputation` | `crew.reputation` | `crew.json:76` | `string` | yes (`crew.json:19`) | `""` | `nonBlankString` | ✅ |
+| K5 | `/huntingGrounds` | `crew.huntingGrounds` | `crew.json:79` | `string` | yes (`crew.json:20`) | `""` | `nonBlankString` | ✅ |
+
+**13/13 pointers resolve.** None require an SC-C1 fix to point at a different property, a non-string coercion, or a newly added property.
+
+Pointer syntax notes for SC-C1: pointers are fragment-relative to the entity root document (no leading entity name, `id`, or `kind` prefix). Reference chains resolve through `$ref` (e.g. `/dossier/vice/purveyor/name` crosses `common.json#/$defs/vice` → `common.json#/$defs/namedDescription`), so the generated predicates must resolve `$ref`s before evaluation or apply against the canonical stored document where the chain is already materialized.
+
+## Counterexample set
+
+Four counterexample classes plus the canonical-empty baseline. All are **schema-valid** values (each is a valid instance of the property's declared type; the completeness predicates are deliberately orthogonal to schema validity, per Q10). Each value satisfies the schema (readable) while failing its predicate (incomplete), which is exactly the "canonical empty ⇒ readable and incomplete" rule from the governing spec.
+
+| # | Class | JSON snippet (value at a locked pointer) | Schema validity | Predicate | Expected predicate outcome | Classification |
+|---|---|---|---|---|---|---|
+| X0 | canonical empty (baseline) | `"name": ""` | valid | `nonBlankString` | **fail** (no non-whitespace characters) | readable + incomplete |
+| X1 | whitespace-only string | `"name": "   "` | valid | `nonBlankString` | **fail** (no non-whitespace characters) | readable + incomplete |
+| X2 | valid zero | `"size": 0` | valid (e.g. `clock.segments` `minimum: 0`; `crew.tier` `minimum: 0`) | `positiveInteger` | **fail** (not greater than zero) | readable + incomplete |
+| X3 | valid false | `"traumaPending": false` | valid (`"type": "boolean"`) | `true` | **fail** (not `true`) | readable + incomplete |
+| X4 | valid empty array | `"contacts": []` | valid (`"type": "array"`, no `minItems`) | `nonEmptyArray` | **fail** (zero entries) | readable + incomplete |
+
+Full fragments SC-O3 can use directly (each is a complete, schema-valid object containing the counterexample):
+
+```json
+{ "dossier": { "name": "" } }                       // X0 — canonical empty, readable + incomplete
+{ "dossier": { "name": "   " } }                    // X1 — whitespace-only, readable + incomplete
+{ "clock": { "segments": 0 } }                      // X2 — valid zero, readable + incomplete (positiveInteger)
+{ "character": { "traumaPending": false } }         // X3 — valid false, readable + incomplete (true)
+{ "crew": { "contacts": [] } }                      // X4 — valid empty array, readable + incomplete (nonEmptyArray)
+```
+
+Notes:
+
+- A satisfying value (any non-whitespace character for `nonBlankString`, `1+` for `positiveInteger`, `true`, any non-empty array) flips the same entity to readable + **complete** (all other pointers satisfied).
+- X2/X3/X4 exercise predicates the initial field set does not use; they exist so SC-O3 can pin the full vocabulary semantics now, and so adding a future completeness pointer that uses them cannot silently change behavior (new pointers using non-`nonBlankString` predicates require a contract change per the governing spec).
+- Retirement and deadish state do not change completeness: a retired or deadish entity with a canonical empty at a locked pointer remains readable + incomplete (locked in the governing spec; SC-O3 asserts the same computation across lifecycle states).
+
+## Clocks have no completeness list — confirmed
+
+`contract/schemas/clock.json` (all 30 lines read) declares `required: kind, id, revision, formatVersion, createdAt, updatedAt, name, clockKind, segments, size, rollover` and no `x-requiredWhenComplete` — in fact **no schema in `contract/schemas/` contains `x-requiredWhenComplete` yet** (grep across `contract/`: zero matches); SC-C1 introduces the extension on character and crew only.
+
+**Why:** a standalone clock's identifying configuration is mandatory at creation — `name` (string), `clockKind` (enum `project`/`rollover`), and `size` (`integer`, `minimum: 1`; a positive size is enforced by the schema itself). Successful creation therefore already guarantees the fields that would appear on a completeness list (decision Q12: "standalone clocks are canonical and complete after create"). A completeness list would be vacuous. Clocks still participate fully in canonical shape, recursive admission, import, repair, deletion, and total collection behavior (governing spec, § Completeness).
+
+## Predicate vocabulary
+
+Approved vocabulary (Q9). Semantics are defined against the value present at the pointer in the canonical stored document.
+
+| Predicate | Value type required | Passes when | Fails when | Used by initial field set? |
+|---|---|---|---|---|
+| `nonBlankString` | JSON string | at least one character is not Unicode whitespace | empty string, whitespace-only string, any non-string | **yes — all 13 pointers** |
+| `nonEmptyArray` | JSON array | array length ≥ 1 | empty array, any non-array | no |
+| `positiveInteger` | JSON integer | value ≥ 1 | 0, negative, non-integer, any non-number | no |
+| `true` | JSON boolean | value is `true` | `false`, any non-boolean | no |
+
+Only `nonBlankString` is needed by the initial field set (all 13 locked pointers are strings). The other three are reserved; using them on a new completeness pointer is a contract change requiring new conformance cases (SC-O3 counterexamples X2–X4 already pin their semantics). Type mismatch (e.g. `nonBlankString` applied to a number) is a predicate failure, not a schema violation — the document remains readable (schema-valid) and the pointer is incomplete; a genuinely absent or `null` property is not a completeness question at all but a canonicality question (non-canonical → repair/degraded handling, Q10).
+
+## Schema properties that look like completeness candidates but are intentionally NOT in the locked lists
+
+Decision Q8 fixed the lists at maximal inclusion: the pointers above are the **complete** initial sets. The following near-miss candidates were considered and excluded; they must not be silently added later:
+
+| Candidate (character) | Shape today | Why excluded |
+|---|---|---|
+| `/dossier/crewId` | `string`, pattern allows empty (`character.json:83-85`) | Empty string means "not linked to a crew" — a legitimate state; an unlinked character is still a complete sheet. |
+| `/dossier/notes` | `array` of strings (`common.json#/$defs/notes`, C4 change) | Free-text notes; zero notes is legitimate. |
+| `/playbook/abilities`, `/playbook/experience` | `array` / `experience` object | Zero abilities taken is a legitimate build; XP progress is not identity. |
+| `/monitor/*`, `/talent/*`, `/gear/*`, `/fund/*`, `/rolodex/*`, `/session/*` | various | Game state that starts at canonical zero/empty; completeness is about identity, not advancement. |
+| `/notebook` | `string` | Free-form; empty is legitimate. |
+
+| Candidate (crew) | Shape today | Why excluded |
+|---|---|---|
+| `/contacts`, `/factions` | `array` (C3 change; Q4 makes them required canonical arrays) | Empty means no entries by design (Q4); an empty roster is a complete crew. |
+| `/tier`, `/coin`, `/stash`, `/turf` | `integer`, `minimum: 0` | Zero is a valid game value (tier 0, no coin, no turf). |
+| `/heat`, `/wanted`, `/rep` | `boundedInteger` refs | Zero is the canonical starting value. |
+| `/experience` | `experience` ref | Progress, not identity. |
+| `/specialAbilities`, `/upgrades`, `/cohorts`, `/claimedClaimIds`, `/claimOverrides` | `array` | Empty is a legitimate build/ownership state. |
+| `/notes` | `array` of strings | Zero notes is legitimate. |
+
+Exclusion rationale in one line each case: the canonical empty of the candidate is a **legitimate permanent state**, whereas the canonical empty of a locked pointer is a **temporary "not yet filled in" state** the sheet UI must surface as incomplete.
+
+## SC-C1 fix flags
+
+**No locked pointer needs an SC-C1 fix.** All 13 resolve today to required, `additionalProperties: false`-scoped string properties whose empty string is schema-valid. SC-C1 is nevertheless asked to honor these guardrails while totalizing the schemas in Wave 2:
+
+1. **Do not add `minLength` (or a `pattern`) to any locked pointer property** — the canonical empty `""` must remain a schema-valid instance so "canonical empty ⇒ readable + incomplete" holds (Q10). Counterexample: `crew.specialAbilities[].name` already carries `minLength: 1`; if a locked name gained that constraint, `""` would become non-canonical and route to repair instead of readable-incomplete, contradicting the completeness model. (`contacts[].name`, `factions[].name`, `gearItems[].name`, `rolodex.friends[].entry` already have `minLength: 1` — none of those are locked pointers, and the distinction is intentional.)
+2. **Emit `x-requiredWhenComplete` exactly on the 13 pointers above** (8 character + 5 crew), as records `{pointer, predicate}` with predicate `nonBlankString`, in a stable order (list order above). SC-C5 generators and SC-O3 depend on byte-deterministic output.
+3. **Keep the pointer paths valid after totalization:** Wave 2 requires every ordinary property, but must not rename, re-nest, or re-type `dossier.name/alias/look`, `dossier.heritage/background` (`namedDescription`), `dossier.vice` (`vice`), `dossier.vice.purveyor` (`namedDescription`), `playbook.name`, or the five crew strings.
+4. **Do not add a completeness list to `clock.json`** (confirmed above; SC-C1 must leave clocks without one).
+5. **Watch the `/dossier/alias` special case:** alias is the one locked field that is flavor-optional in the paper game; it remains locked per Q8. No action — recorded so a future "optional alias" change is a deliberate contract decision.
+
+## Game-settings confirmation
+
+Field sets do **not** vary by game; only option lists vary:
+
+- `data/games/blades-in-the-dark.json` and `data/games/scum-and-villainy.json` contain only option lists and constants: `Playbooks`, `Heritages`, `Backgrounds`, `Vices` (each with `Name`/`Description`/`Sources` — e.g. vice "Faith" with purveyor source list), `Traumas`, `Attributes`, `SharedItems`, `Thesaurus`, `RecoveryClockSize`, `ActionPointMaximum`, `FactionStatus` (plus `StartingAbility` in S&V). No entity-field definitions.
+- `data/games/blades-in-the-dark-crews.json` provides `CrewTypes` with `Reputations`, `HuntingGrounds`, `Lairs`, `Upgrades`, etc. as option lists (`crew.CrewTypes[0].Reputations` is an array of names).
+- Entity field shape (including the 13 completeness properties) is fixed by `contract/schemas/`; settings only supply the values a complete sheet draws from. Translation files (`français-…`, `rus-…`) are option-list translations and do not alter the field sets.
+
+Consequence for SC-O3: one completeness case matrix serves both games; only the option lists fed into predicates differ, and the predicates themselves never consult the lists (a non-empty name is complete regardless of whether it matches a known option — the schema does not constrain locked names to option lists, e.g. `crew.reputation` is a plain string, not an enum of `Reputations`).
+
+## Evidence
+
+Schema excerpts supporting every resolution (current files, pre-Wave-2):
+
+- `contract/schemas/character.json:64-106` — `dossier` object: `required [name, crewId, alias, look, notes, background, heritage, vice]`, `additionalProperties: false`; `name`/`alias`/`look` all `{"type": "string"}`; `background`/`heritage` → `common.json#/$defs/namedDescription`; `vice` → `common.json#/$defs/vice`.
+- `contract/schemas/character.json:290-304` — `playbook` object: `required [name, experience, abilities]`; `name` `{"type": "string"}` (line 299).
+- `contract/schemas/common.json:76-86` — `namedDescription`: `required [name, description]`, `additionalProperties: false`, `name` `{"type": "string"}`.
+- `contract/schemas/common.json:162-180` — `vice`: `required [name, description, purveyor]`, `additionalProperties: false`, `name` `{"type": "string"}`, `purveyor` → `#/$defs/namedDescription`.
+- `contract/schemas/crew.json:15-21` — `required` list contains `crewTypeName, name, lair, reputation, huntingGrounds`; `crew.json:67-80` — each is `{"type": "string"}` with no `minLength`.
+- `contract/schemas/clock.json` — full file: no `x-requiredWhenComplete`; `required` includes `name, clockKind, segments, size, rollover`; `size` `minimum: 1`.
+- Grep `requiredWhenComplete` across `contract/` → zero matches (metadata does not exist yet anywhere; SC-C1 introduces it).
+
+## Change log
+
+- **2026-08-14:** Created. 13/13 locked pointers validated, counterexample set X0–X4 produced, clocks confirmed listless, predicate vocabulary approved, SC-C1 guardrails recorded.

@@ -1,0 +1,13 @@
+{
+  "task": "SC-R0",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, 10m3s. Independent orchestrator walker re-ran coverage: 265/265 normalized property paths (5 schemas, top-level + $defs + nested + array items) present in the matrix; subagent's own script reported 228/228 (subset methodology). No corrections needed.",
+  "wallClockMinutes": 10,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "10 defect classes x 6 columns, 8 legacy conversion rules (L1-L8), 4 normalizer outcomes, per-class fixture sketches F1-F10. Total summary fields and clock ownership fields correctly marked as SC-C1 additions."
+}

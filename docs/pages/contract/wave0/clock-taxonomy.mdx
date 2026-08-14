@@ -1,0 +1,374 @@
+---
+title: Clock taxonomy and ownership — reconciled model
+description: SC-R3 Wave 0 research — official Progress Clocks taxonomy reconciled with the C# reference models and the current contract; standalone-clock DTO sketch, game-setting purpose list, owner-deletion policy, related-clock integrity, rollover accumulation/reset semantics with SPARK Post sketch.
+---
+
+# Clock taxonomy and ownership (SC-R3)
+
+**Card:** `tasks/SC-R3.md` · **Status:** research complete, decisions frozen for downstream cards (SC-C1, SC-C2, SC-C3, SC-O5, SC-A7).
+
+## 1. Scope and sources
+
+| Source | What it provides |
+|---|---|
+| `docs/pages/contract/spec-change-work-spec.mdx` § "Clocks", Q12, Q23, Q24 | Governing decisions: three-concern model (storage ownership / narrative purpose / mechanical behavior), `ownerKind`/`ownerId`/`purpose`/`behavior`/`relatedClockIds`, purpose is descriptive (no auto-resolution), healing clocks not duplicated into `/api/clocks`, owner-deletion default (reassignment to campaign), rollover accumulation (Q24), clock progress result family (Q23) |
+| <https://bladesinthedark.com/progress-clocks> (fetched 2026-08-14) | Official taxonomy: progress umbrella, danger, racing, linked, mission, tug-of-war, long-term project, faction |
+| `blades-in-the-sheets/Models/` — `Game/ProjectClock.cs`, `Game/RolloverClock.cs`, `Characters/MonitorHarm.cs`, `Characters/Monitor.cs`, `Characters/Character.cs`, `Common/BoundedInteger.cs`, `Settings/GameSetting.cs` | Reference implementation: bounded primitive, rollover primitive, embedded healing clock, `RecoveryClockSize` settings field |
+| `contract/schemas/clock.json`, `contract/openapi.yaml` (clock ops, healing ops) | Current contract: campaign-only standalone clocks with `clockKind`, healing clock ops under `/characters/{id}/ops/` |
+| `data/games/blades-in-the-dark.json`, `scum-and-villainy.json`, `data/games/game-settings-schema.json` | Game settings: no clock-purpose list exists today (`RecoveryClockSize` only) |
+
+## 2. The three-concern model
+
+Every standalone clock is fully described by three orthogonal concerns. All official categories are representable as a combination of these; no category needs its own storage type or operation family.
+
+| Concern | Field(s) | Source of truth | Notes |
+|---|---|---|---|
+| Storage ownership | `ownerKind`, `ownerId` | contract | Where the clock lives and who may mutate it. `campaign` (ownerId empty), `character`, `crew`. Factions are **not** an owner kind: faction clocks are campaign-owned clocks with `purpose: faction`. |
+| Narrative purpose | `purpose` | game settings (`ClockPurposes` list, §7) | Descriptive only. Paperclips never auto-resolves races, activates linked clocks, or determines fictional consequences. |
+| Mechanical behavior | `behavior` | contract + settings (`RecoveryClockSize` for healing) | `bounded` (clamp at full, overflow discarded) or `rollover` (overflow carried and re-applied). |
+| Descriptive relationships | `relatedClockIds` | contract | Only for racing/linked categories; descriptive, integrity rules in §9. |
+
+## 3. Reconciled taxonomy
+
+The official page names the umbrella concept ("a progress clock") plus seven named categories. The governing spec's purpose list adds `score` and `custom`, which are **not** named on the official page (recorded in §12, conflict B). All ten values below are the exact contract purpose values.
+
+| # | Category | Purpose (exact value) | Ownership/kind (typical) | Mechanical behavior | Narrative behavior (official material) |
+|---|---|---|---|---|---|
+| 1 | Progress clock (umbrella) | `progress` | campaign, character, or crew | bounded or rollover | "Track ongoing effort against an obstacle or the approach of impending trouble." Sizes by complexity: 4 = complex, 6 = more complicated, 8 = daunting. Clock is about the obstacle, not the method. |
+| 2 | Danger clock | `danger` | campaign (GM) | bounded (commonly) | GM ticks 1–3 segments on complications; when full, the danger comes to fruition (guards hunt, alarm activates). |
+| 3 | Racing clock | `racing` | campaign (GM) | bounded (commonly) | Two opposed clocks; if the PCs finish first they get away, otherwise cornered; simultaneous completion resolved by fiction. Relationship is descriptive (`relatedClockIds`), never auto-resolved. |
+| 4 | Linked clock | `linked` | campaign (GM; any owner possible) | bounded (commonly) | One clock unlocks another once filled (e.g. "Defense" then "Vulnerable"). Unlocking is a fiction-time GM event; Paperclips records the relationship only. |
+| 5 | Mission clock | `mission` | campaign or crew (score context) | bounded (commonly) | Time-sensitive window; if the countdown runs out the mission is scrubbed or changes. |
+| 6 | Tug-of-war clock | `tug-of-war` | campaign (GM; also crew turf wars) | bounded (needs emptying) | Filled *and* emptied by events; back-and-forth situations (revolution brewing, turf war). Requires a decrement path — see §10 for signed progress. |
+| 7 | Long-term project | `long-term-project` | character (player project) or crew (crew project) | bounded (commonly); multi-phase = several clocks | Basic project is 8 segments; truly long-term projects span two, three, or four clocks (phases). Catch-all for unusual player goals. |
+| 8 | Faction clock | `faction` | campaign (factions are world-level; not an owner kind) | bounded (commonly) | Each faction has a long-term goal; the GM ticks faction clocks during downtime; PCs may aid or interfere. |
+| 9 | Score clock | `score` | crew (score ownership) | bounded or rollover | Product extension (governing spec; not named on the official page): clocks created for a score — engagement, countdowns, layered obstacles during the score. |
+| 10 | Custom clock | `custom` | any | bounded or rollover | Product catch-all for anything not covered above; always available in every game setting. |
+
+**Representability:** every category is `purpose × behavior × ownerKind/ownerId`. Racing and linked additionally use `relatedClockIds` (descriptive only). Tug-of-war needs a decrement path (signed `clock.progress`, §10) which the current API already accepts at the wire level (`segments: integer`). No category requires fictional automation or a purpose-specific operation.
+
+## 4. Reconciliation with the C# reference models
+
+### 4.1 What the reference models actually contain
+
+The C# reference (`blades-in-the-sheets`) contains exactly **one concrete clock instance** in the whole tree: the character healing clock, plus the two behavior primitives.
+
+- `ProjectClock` (bounded): `BoundedInteger` with `Min = 0`, `Max = size`; `Progress(segments)` → `ChangeUntilBound` (clamps, remainder discarded); `Ding` when full; `Reset()` → 0.
+- `RolloverClock : ProjectClock`: adds `Rollover`; `Progress` stores the overflow remainder; `Reset()` = zero, then re-apply carried overflow. See §10 for the exact divergence.
+- Healing clock: `Character.Monitor.MonitorHarm.HealingClock` — a `RolloverClock` embedded in character monitor state; size from `GameSetting.RecoveryClockSize` (`4` in blades-in-the-dark.json, `6` in scum-and-villainy.json); `MonitorHarm.CanHeal => HealingClock.Ding`; `Heal()` requires the clock full, resets it (rollover applied), and shifts harm intensities.
+- **No standalone clock storage, no purpose concept, no clock ownership, no faction/score/crew clock model exists in the reference.** Standalone clocks are a product-level extension already present in the current contract as campaign clocks.
+
+### 4.2 Mapping
+
+| Axis | C# reference | Current contract | Target (this document) |
+|---|---|---|---|
+| Mechanical behavior | `ProjectClock` / `RolloverClock` | `clockKind: project \| rollover` | `behavior: bounded \| rollover` (rename; `project → bounded`, `rollover → rollover`) |
+| Storage ownership | implicit (healing clock lives in the character monitor) | campaign only (`/clocks` = "all campaign clocks") | `ownerKind: campaign \| character \| crew` + `ownerId` |
+| Narrative purpose | none | none | `purpose` from settings list (§7) |
+| Relationships | none | none | `relatedClockIds` |
+
+### 4.3 Recorded conflicts with the C# model (card Log requirement)
+
+- **Conflict A (rollover accumulation):** `RolloverClock.Progress` *overwrites* `Rollover` with the new remainder instead of adding to it; the source carries the TODO *"edge case where calling Progress() while having Rollover could overwrite it"*. The locked decision Q24 mandates accumulation. The contract and SPARK semantics (§10) intentionally diverge from the current C# implementation; the reference's `Reset()` shape (re-apply carried overflow, at most one clock size) is preserved.
+- **Conflict B (official categories):** the official page names eight categories (umbrella + 7). `score` and `custom` are not on the page; they are mandated by the governing spec. Verified against both game settings: neither game defines any clock-purpose list today (only `RecoveryClockSize`), so there is no per-game restriction to reconcile.
+- **Conflict C (naming):** current contract field `clockKind` (`project`/`rollover`) is renamed to `behavior` (`bounded`/`rollover`); current `createClock` requires only `[name, clockKind, size]`. Migration mapping is explicit (§5, rule 0).
+
+## 5. Standalone clock DTO sketch — one schema for all kinds
+
+One schema covers campaign, character-project, crew/score, faction, and custom standalone clocks. Embedded healing clocks are **not** instances of this schema and never appear under `/api/clocks` (§6).
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/clock.json",
+  "title": "Clock",
+  "type": "object",
+  "required": [
+    "kind", "id", "revision", "formatVersion", "createdAt", "updatedAt",
+    "name", "ownerKind", "ownerId", "purpose", "behavior",
+    "segments", "size", "rollover", "relatedClockIds"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "clock" },
+    "id": { "$ref": "common.json#/$defs/uuid" },
+    "revision": { "$ref": "common.json#/$defs/revision" },
+    "formatVersion": { "$ref": "common.json#/$defs/formatVersion" },
+    "createdAt": { "$ref": "common.json#/$defs/timestamp" },
+    "updatedAt": { "$ref": "common.json#/$defs/timestamp" },
+    "name": { "type": "string", "minLength": 1 },
+    "ownerKind": { "enum": ["campaign", "character", "crew"] },
+    "ownerId": {
+      "type": "string",
+      "description": "empty string for campaign ownership; otherwise the UUID of an existing entity of ownerKind"
+    },
+    "purpose": {
+      "enum": ["progress", "danger", "racing", "linked", "mission", "tug-of-war", "long-term-project", "faction", "score", "custom"]
+    },
+    "behavior": { "enum": ["bounded", "rollover"] },
+    "segments": { "type": "integer", "minimum": 0 },
+    "size": { "type": "integer", "minimum": 1 },
+    "rollover": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "overflow segments carried past full; always 0 for bounded clocks"
+    },
+    "relatedClockIds": {
+      "type": "array",
+      "items": { "$ref": "common.json#/$defs/uuid" },
+      "uniqueItems": true,
+      "description": "standalone clock ids for descriptive linked/racing relationships; empty array means none"
+    }
+  }
+}
+```
+
+### Validation rules (admission; SC-C1 may encode with `if/then` where expressible)
+
+| # | Rule | Enforced by |
+|---|---|---|
+| 0 | Legacy `clockKind: project \| rollover` maps to `behavior: bounded \| rollover`; legacy campaign clocks gain `ownerKind: campaign`, `ownerId: ""`, `purpose: custom` (honest catch-all for unrecorded intent), `relatedClockIds: []` — explicit legacy conversion for SC-R0/SC-C1 | canonicalizer |
+| 1 | `behavior = bounded` ⇒ `rollover = 0` | admission |
+| 2 | `segments ≤ size` (both behaviors) | admission |
+| 3 | `ownerKind = campaign` ⇒ `ownerId = ""`; `ownerKind ∈ {character, crew}` ⇒ `ownerId` is the UUID of an existing entity of that kind (checked on create and update) | create/update ownership validation |
+| 4 | `purpose` ∈ game-setting `ClockPurposes` (the schema enum above is the canonical set; the settings list is authoritative per game — both supported games ship all 10) | server admission |
+| 5 | `relatedClockIds`: unique; never contains the clock's own id; every entry exists at write time and is a standalone clock id (healing clocks are not referenceable); cycles allowed (racing pairs are mutual); empty array = none | create/update validation + delete integrity (§9) |
+| 6 | Invariant (maintained by ops, not an input rule): `rollover > 0` ⇒ `segments = size` | progress/reset ops (§10) |
+
+Create request becomes `required: [name, ownerKind, ownerId, purpose, behavior, size]`, `relatedClockIds` optional (default `[]`). `/clocks` lists **all** standalone clocks (any owner); it remains the always-present total collection (Q12). Standalone clocks stay canonical and complete after create (no `x-requiredWhenComplete` list, per governing spec).
+
+## 6. Embedded healing clocks — why they are not `/api/clocks` rows
+
+| Aspect | Embedded healing clock | Standalone clock |
+|---|---|---|
+| Storage | Nested in character monitor state: `Character.Monitor.MonitorHarm.HealingClock` (`RolloverClock`) | Own document under `/api/clocks` |
+| Ownership | Implicit — the owning character; no `ownerId`, no ownership validation | Explicit `ownerKind`/`ownerId` |
+| Lifecycle | Created with the character; cleared on retirement cleanup; dies with the character; no own delete endpoint | Created/updated/deleted via `/clocks` operations |
+| Purpose | Recovery, implicit in the monitor — not a `purpose` value | Explicit `purpose` from the settings list |
+| Behavior | Always rollover (`RolloverClock`) | `bounded` or `rollover` |
+| Size | `RecoveryClockSize` from game settings (4 BitD, 6 S&V) | Any `size ≥ 1` at create |
+| Operations | `/characters/{id}/ops/harm.healing-clock` (progress), `/characters/{id}/ops/harm.heal` (consumes a full clock: `CANNOT_HEAL` otherwise; resets with rollover applied; removes the named harm) | `/clocks/{id}/ops/clock.progress`, `/clocks/{id}/ops/clock.reset`, delete |
+| In `/api/clocks`? | **Never.** Not listed by `listClocks`, not referenceable by `relatedClockIds`, not deletable | Yes |
+
+Rationale: the healing clock is monitor state with a single owner, a single consumer (`harm.heal`), a settings-derived size, and no independent identity. Duplicating it into `/api/clocks` would create two sources of truth for one state machine and a second mutation path for a character-owned value. The existing character-scoped ops remain the only way to touch it.
+
+## 7. Game-setting clock-purpose list (SC-C3 input)
+
+No clock-purpose field exists in `data/games/game-settings-schema.json` or either game file today (verified: only `RecoveryClockSize`). SC-C3 adds one:
+
+**Settings schema change** (`game-settings-schema.json`): add to `properties` and to `required`:
+
+```json
+"ClockPurposes": {
+  "type": "array",
+  "items": {
+    "type": "string",
+    "enum": ["progress", "danger", "racing", "linked", "mission", "tug-of-war", "long-term-project", "faction", "score", "custom"]
+  },
+  "uniqueItems": true
+}
+```
+
+**Exact value set (both `blades-in-the-dark.json` and `scum-and-villainy.json`):**
+
+```json
+"ClockPurposes": ["progress", "danger", "racing", "linked", "mission", "tug-of-war", "long-term-project", "faction", "score", "custom"]
+```
+
+- Field name follows the existing PascalCase top-level convention (`RecoveryClockSize`, `ActionPointMaximum`, `FactionStatus`).
+- The 10 values are the canonical contract enum (§5). Both supported games ship all 10; the settings list may be a subset for a future game, with `custom` the only value the contract treats as always required.
+- Translated settings files (`français-blades-in-the-dark.json`, `rus-blades-in-the-dark.json`) need the same list in SC-C3's sweep; no per-language difference is expected.
+- Server admission validates `purpose` against the loaded settings list (guards drift between schema and settings); clients must not hardcode purposes beyond the schema enum.
+
+## 8. Owner-deletion policy — **chosen: reassignment to campaign**
+
+**Decision (frozen here, per card contract):** deleting a character or crew **reassigns** its standalone clocks to campaign ownership. The confirmation-guarded cascade is rejected (below).
+
+### Observable behavior
+
+- `DELETE /characters/{id}` or `DELETE /crews/{id}` (with `If-Match`) atomically, in the same snapshot that removes the owner:
+  - every standalone clock with `ownerKind = character|crew` and `ownerId = <deleted id>` becomes `ownerKind: "campaign"`, `ownerId: ""`;
+  - each reassigned clock gets a new `revision` and bumped `updatedAt`; its `name`, `purpose`, `behavior`, `size`, `segments`, `rollover`, and `relatedClockIds` are unchanged; its history is preserved (the reassignment is a new snapshot).
+- A clock that is already campaign-owned is untouched by any owner deletion.
+- Clock deletion is never a side effect of character/crew deletion — no clock disappears from `/api/clocks` unless explicitly deleted there.
+- The delete `OpResult` SHOULD report the reassigned clock ids (e.g. `reassignedClockIds`) so clients can surface the change; exact result shape is SC-C2's decision.
+- Failure part-way through the delete+reassign transaction rolls back atomically (single snapshot).
+
+### Rationale
+
+Campaign clocks are the always-present collection (Q12) and the campaign is the persistent fiction container. Reassignment is **lossless** — the clock and its history survive, the GM can re-own it manually via update, and the campaign record keeps the score/faction/project story that the deleted character or crew participated in. It also keeps owner deletion free of confirmation coupling: deleting an owner never asks "and what about N clocks?", and the delete op's precondition set stays minimal.
+
+### Rejected alternative: confirmation-guarded cascade
+
+Deleting an owner would require the caller to confirm, then cascade-delete the owner's clocks. Rejected because: (a) it destroys campaign history and clock documents that may outlive their owner fictionally; (b) it couples every character/crew deletion to a clock inventory check and a second confirmation dialog, adding failure modes and concurrency surface for no data-safety gain; (c) it contradicts the "deleting an owner does not silently delete its clocks" direction in the governing spec, whose stated default is reassignment. A GM who truly wants clocks gone can delete them explicitly.
+
+## 9. Related-clock integrity — **chosen: cleanup (unlink on delete)**
+
+**Decision:** deleting a standalone clock removes its id from every remaining clock's `relatedClockIds` in the same atomic snapshot. No dangling references can exist in readable state.
+
+### Observable behavior
+
+- `DELETE /clocks/{id}` atomically removes `{id}` from `relatedClockIds` of all other standalone clocks; those clocks get new revisions/`updatedAt` in the same snapshot.
+- The delete never cascades to the related clocks themselves — a racing pair or linked chain is a *relationship*, not ownership; only the reference is removed.
+- Because `relatedClockIds` is the only place a clock can be referenced (no other entity type references clocks; healing clocks are unreferenceable), one scan of the clocks collection is a complete cleanup.
+
+### Rationale
+
+The codebase already establishes unlink-on-delete precedent (deleting an unreadable crew clears readable members' `dossier.crewId`), and canonical-shape philosophy favors referential cleanliness. Cleanup keeps every read path total: no client has to filter stale ids or render "deleted clock" placeholders, and the conformance oracle can assert a simple invariant — *every `relatedClockIds` entry resolves to an existing standalone clock* — after any sequence of create/delete operations.
+
+### Rejected alternative: documented dangling references
+
+Keeping deleted ids and documenting that clients must tolerate them was rejected because it pushes fiction-stale references into every rendering path, makes the integrity invariant unassertable, and saves only a bounded collection scan that the product already performs in an analogous case (crew unlinking).
+
+Validation on write (rule 5 of §5): existence of referenced clocks is checked at create/update; a referenced clock that is deleted afterwards is cleaned up by this rule; self-reference is rejected; cycles are legal (mutual racing clocks are the normal case).
+
+## 10. Rollover semantics — accumulation and reset (SPARK contract shape)
+
+### 10.1 State and invariants
+
+A standalone clock's mechanical state is `(segments, rollover)` with `0 ≤ segments ≤ size`, `rollover ≥ 0`, and the derived invariant:
+
+```
+rollover > 0  ⇒  segments = size
+```
+
+### 10.2 Rules
+
+- **Progress (positive delta, `clock.progress` with `segments > 0`):** fill visible segments; overflow adds **to existing** rollover (Q24):
+  - `segments' = min(segments + n, size)`
+  - `rollover' = rollover + max(segments + n − size, 0)`
+- **Progress (negative delta — tug-of-war emptying):** consume carried rollover **first**, then empty visible segments, never below 0:
+  - with `total = segments + rollover + n`: `segments' = min(max(total, 0), size)`, `rollover' = max(total − size, 0)`
+- **Reset (`clock.reset`, rollover clocks):** apply **at most one clock size** of overflow and retain the remainder:
+  - `applied = min(rollover, size)`; `segments' = applied`; `rollover' = rollover − applied`
+- **Reset (bounded clocks):** `segments' = 0`; `rollover` is always 0.
+
+The reset rule matches the C# reference exactly (`RolloverClock.Reset()` = zero, then `Progress(rollover)`, whose remainder becomes the new rollover). The progress rule deliberately diverges from the current C# implementation, which overwrites rollover (source TODO; Conflict A). Consequence: a healing clock with overflow larger than its size stays full (`CanHeal` true) after a heal, permitting an immediate further heal — same shape as the reference's acknowledged edge case, now well-defined.
+
+### 10.3 Worked example (size 6)
+
+| Step | Operation | Before | After | Notes |
+|---|---|---|---|---|
+| 1 | start | 4/6, r0 | — | |
+| 2 | progress +5 | 4/6, r0 | 6/6, r3 | 4+5=9 → visible 6, overflow 9−6=3 |
+| 3 | progress +2 | 6/6, r3 | 6/6, r5 | new overflow 2 **adds to** existing 3 (accumulation, Q24) |
+| 4 | reset | 6/6, r5 | 5/6, r0 | applies min(5,6)=5; nothing retained |
+| 5 | progress +3 | 5/6, r0 | 6/6, r2 | 5+3=8 → +2 |
+| 6 | progress +7 | 6/6, r2 | 6/6, r9 | overflow may exceed one clock size |
+| 7 | reset | 6/6, r9 | 6/6, r3 | applies at most one size (6); retains 9−6=3 |
+| 8 | reset | 6/6, r3 | 3/6, r0 | applies remaining 3 |
+
+API result reporting (Q23 family): `requested` = requested progress; `effective` = all accepted progress including rollover; `visibleApplied` and `overflowAdded` report the split when nonzero. Step 2: `requested 5, effective 5, visibleApplied 2, overflowAdded 3`. Step 6: `requested 7, effective 7, visibleApplied 0, overflowAdded 7`. Clear/reset ops omit numeric fields unless the contract reports the cleared amount (governing spec).
+
+> Note on the card's placeholder arithmetic ("reset → 1/6 remaining 4"): that shape violates the derived invariant (rollover > 0 while segments < size). The semantics above follow the C# reference's `Reset()` exactly and were chosen instead; the card explicitly allowed adjusting to the chosen semantics.
+
+### 10.4 SPARK `Post` sketch
+
+The sketch below is the contract shape SC-O5 freezes and SC-A7 proves. It covers the signed progress path (positive = accumulation, negative = tug-of-war emptying consuming rollover first) and reset. Proof obligations for SC-A7: integer bounds on `segments + rollover + delta` (a max-rollover bound or `Natural` arithmetic), and the invariant `rollover > 0 ⇒ segments = size` as a type invariant.
+
+```ada
+-- Standalone clock mechanical state: Segments (visible, 0..Size), Rollover (carried, >= 0).
+-- Type invariant: Rollover > 0 -> Segments = Size.
+
+procedure Progress (This : in out Clock; Delta : Integer)
+  with
+    Post =>
+      (if Delta > 0 then
+         -- positive: fill visible, accumulate new overflow onto existing rollover
+         (if This.Segments'Old + Delta <= This.Size then
+            This.Segments = This.Segments'Old + Delta
+              and This.Rollover = This.Rollover'Old
+          else
+            This.Segments = This.Size
+              and This.Rollover = This.Rollover'Old
+                  + This.Segments'Old + Delta - This.Size)
+       elsif Delta < 0 then
+         -- negative: consume rollover first, then empty visible, never below 0
+         (let Total = This.Segments'Old + This.Rollover'Old + Delta in
+          (if Total >= This.Size then
+             This.Segments = This.Size and This.Rollover = Total - This.Size
+           elsif Total > 0 then
+             This.Segments = Total and This.Rollover = 0
+           else
+             This.Segments = 0 and This.Rollover = 0))
+       else
+         This.Segments = This.Segments'Old and This.Rollover = This.Rollover'Old);
+
+procedure Reset (This : in out Clock)
+  with
+    Post =>
+      -- applies at most one clock size of overflow; retains the remainder
+      (if This.Rollover'Old <= This.Size then
+         This.Segments = This.Rollover'Old and This.Rollover = 0
+       else
+         This.Segments = This.Size
+           and This.Rollover = This.Rollover'Old - This.Size);
+```
+
+Bounded clocks are the same types with `Rollover` constant 0 and the positive branch's clamp (remainder discarded); the `behavior` discriminant or two types is an implementation detail for SC-A7.
+
+## 11. Evidence
+
+### Official material excerpt (bladesinthedark.com/progress-clocks, 2026-08-14)
+
+- "A **progress clock** is a circle divided into segments. Draw a progress clock when you need to track ongoing effort against an obstacle or the approach of impending trouble." / "A complex obstacle is a 4-segment clock. A more complicated obstacle is a 6-clock. A daunting obstacle is an 8-segment clock." / "When you create a clock, make it about the **obstacle,** not the method."
+- **Danger:** "the GM ticks one, two, or three segments on the clock, depending on the consequence level. When the clock is full, the danger comes to fruition."
+- **Racing:** "Create two opposed clocks to represent a race… If both complete at the same time, the PCs escape to their lair, but the hunting officers are outside!"
+- **Linked:** "You can make a clock that unlocks another clock once it's filled."
+- **Mission:** "a clock for a time-sensitive mission, to represent the window of opportunity you have to complete it. If the countdown runs out, the mission is scrubbed or changes."
+- **Tug-of-war:** "a clock that can be filled *and* emptied by events… perfect for an ongoing turf war between two crews or factions."
+- **Long-term project:** "A basic long-term project… is eight segments. Truly long-term projects… can be two, three, or even four clocks." / "A long-term project is a good catch-all for dealing with any unusual player goal."
+- **Faction:** "Each faction has a long-term goal. When the PCs have **downtime**, the GM ticks forward the faction clocks that they're interested in."
+- The page contains **no** "score clocks" or "custom clocks" section (full-page read; sections: Simple Obstacles → Danger/Racing/Linked/Mission/Tug-of-war, then Long-term Project, Faction Clocks).
+
+### C# model excerpts (`blades-in-the-sheets/Models/`)
+
+```csharp
+// Game/ProjectClock.cs
+protected readonly BoundedInteger clock;
+public int Size => this.clock.Max;
+public bool Ding => this.clock.Value == this.clock.Max;
+public virtual void Progress(int segments) => this.clock.ChangeUntilBound(segments);
+public virtual void Reset() => this.clock.Value = 0;
+```
+
+```csharp
+// Game/RolloverClock.cs  (abridged; the accumulation divergence is the TODO below)
+public int Rollover { get; private set; }
+// todo: edge case where calling Progress() while having Rollover could overwrite it
+public override void Progress(int segments) => Rollover = this.clock.ChangeUntilBound(segments);
+public override void Reset() { base.Reset(); Progress(Rollover); }
+```
+
+```csharp
+// Characters/MonitorHarm.cs (abridged)
+public RolloverClock HealingClock { get; private set; }
+public bool CanHeal => HealingClock.Ding;
+public bool Heal() { if (!CanHeal) return false; HealingClock.Reset(); /* shift harms */ }
+```
+
+```csharp
+// Characters/Character.cs / Settings/GameSetting.cs
+Monitor = new(game.RecoveryClockSize);      // RecoveryClockSize: 4 (BitD), 6 (S&V)
+```
+
+```csharp
+// Common/BoundedInteger.cs (abridged)
+public int Remainder(int delta) { /* delta beyond Max (or below Min) */ }
+public int ChangeUntilBound(int delta) { var r = Remainder(delta); Value += delta; return r; }
+```
+
+## 12. Reconciliation log
+
+- **2026-08-14:** Card dispatched; all sources read. Conflicts recorded: A — C# `RolloverClock.Progress` overwrites rollover vs Q24 accumulation (contract diverges deliberately; §4.3, §10); B — official page names 8 categories, spec adds `score`/`custom` (§3, §4.3); C — `clockKind` → `behavior` rename (§5). No other official-category conflict with the C# model: the reference simply has no purpose/ownership axis, so every official category maps onto the three-concern model without contradiction.
+- Decisions frozen: owner deletion = reassignment to campaign (§8); related-clock integrity = unlink on delete (§9); rollover = accumulation + at-most-one-size reset (§10); purpose list = the 10 exact values (§7).
+
+## 13. Downstream hand-offs
+
+| Card | What SC-R3 freezes for it |
+|---|---|
+| SC-C1 | DTO sketch (§5), validation rules, legacy conversion, `behavior` rename |
+| SC-C2 | Create request shape, signed `clock.progress` result family (`requested`/`effective`/`visibleApplied`/`overflowAdded`), delete-op `reassignedClockIds` recommendation (§8), tug-of-war emptying path (§10.2) |
+| SC-C3 | `ClockPurposes` settings field and exact value list (§7) |
+| SC-O5 | Owner-deletion oracle (§8), related-clock cleanup oracle (§9), rollover accumulation/reset cases (§10.3), SPARK `Post` (§10.4) |
+| SC-A7 | Proven rollover contract (§10.4), ownership validation, reassignment, embedded healing consistency (§6) |

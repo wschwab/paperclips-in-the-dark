@@ -1,0 +1,13 @@
+{
+  "task": "SC-R5",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, 7m25s. 8-transition table with preconditions/atomic changes/errors/allowed-next/undo/snapshot-worthy; retired allow/deny lists; shared retirement cleanup for both paths; deadish design; 25 frozen SC-O6 case names; 22 current-behavior conflicts with file:line (backend 12, superseded conformance 4, contract/schema 2, frontend 4).",
+  "wallClockMinutes": 7,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "Frozen decisions W13-W17. Frontend trauma-from-stress flow (character-detail.ts:2432-2460) contradicts Q42 - SC-F4 owner."
+}

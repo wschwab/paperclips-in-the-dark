@@ -1,0 +1,13 @@
+{
+  "task": "SC-R4",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, 8m54s. 56 classification rows (29 game-domain, 9 derived, 6 request, 4 service, 8 internal) with file:line citations; 16-row settings migration plan covering all 4 games; gaps found: upgrade.mark ignores TotalBoxes (pitd_callback.adb:1850 vs openapi.yaml:1398), per-commitment load unenforced, Idempotency-Key 128 unenforced, import bypasses settings maxima, missing scum-and-villainy-crews.json, levelup/set-rating cap mismatch, session 3-vs-2, armor has* persisted.",
+  "wallClockMinutes": 9,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "Open questions resolved by orchestrator at gate: session max = 2 (C# authoritative, W7); armor has* stay persisted write-derived (W8); idempotency LRU internal (W9); AllowedClockSizes rejected (W10); DevelopCoinCostMultiplier adopted (W11); S&V defaults = current shipped behavior (W12)."
+}

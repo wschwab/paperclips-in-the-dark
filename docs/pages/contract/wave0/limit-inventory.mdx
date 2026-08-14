@@ -1,0 +1,217 @@
+---
+title: Enforced-limit inventory (SC-R4)
+description: Every bound enforced by schema, SPARK core, Ada server, frontend, and game settings, classified as game-domain, derived, request, service, or internal, with migration plans
+---
+
+# Enforced-limit inventory
+
+**Card:** SC-R4 (Wave 0 research). **Date:** 2026-08-14.
+**Governing decisions:** [Ordered work specification](/contract/spec-change-work-spec), "Limits and capabilities" and "Numeric operation results".
+**Method:** grep-verified literals only; every file:line below was produced by actual search of the cited file. Sources surveyed: `contract/schemas/*.json`, `contract/openapi.yaml`, `backend-ada/core/src/`, `backend-ada/server/src/`, `frontend/src/`, `data/games/*.json`, and the authoritative reference `blades-in-the-sheets/Models/` (C#).
+
+## Summary
+
+Every client-visible bound enforced today falls into one of five classes:
+
+| Class | Meaning | Where published today | Count (rows below) |
+|---|---|---|---|
+| **game-domain** | Game rules maxima/lists; differ per supported game | Mostly **hardcoded in the Ada server**; a few already in settings | 29 |
+| **derived** | Server-computed from settings + cross-entity state; never persisted | Computed ad hoc in Ada server and frontend | 9 |
+| **request** | Inbound request body/header bounds | Already in OpenAPI/schemas (partially enforced by server) | 6 |
+| **service** | Payload/batch/history/idempotency operation limits | Hardcoded Ada constants; some mirrored in OpenAPI | 4 |
+| **internal** | Implementation capacities that cannot fail a client | Hardcoded Ada constants | 8 |
+
+**Bottom line:** the Ada server's *defaults* at entity creation are hardcoded game-domain literals (`pitd_callback.adb:1076,1079,1089,1115`); subsequent enforcement of most trackers reads the entity's own `max` field, so the literal only pins the initial value. Two OpenAPI promises are **not enforced by the server at all**: `upgrade.mark` → `UPGRADE_MAXED` (TotalBoxes) and per-commitment load max bulk. The frontend consciously parameterizes maxima (`stress-track.ts:24` "never hardcode a game maximum") but hardcodes the turf row (6) and the develop coin cost formula `(tier+1)×8`.
+
+---
+
+## 1. Complete classification table
+
+Columns: **Bound** · **Enforced today** · **Current literal or source** · **Class** · **Target authoritative source** · **Migration step**.
+
+### 1.1 Game-domain bounds
+
+| Bound | Enforced today | Current literal or source | Class | Target authoritative source | Migration step |
+|---|---|---|---|---|---|
+| Stress maximum | Ada server: creation template; then BoundedInteger clamp on `stress.add`/`end-downtime` against entity `stress.max` | `"max":9` hardcoded in `backend-ada/server/src/pitd_callback.adb:1076`; C# reference `MonitorStress.DefaultMaxStress = 9` (`blades-in-the-sheets/Models/Characters/MonitorStress.cs:20`) | game-domain | game-settings field `StressMax` | SC-C3 adds `StressMax` (int) to `game-settings-schema.json` + all 4 game files; SC-A6 reads it in `New_Character` (replaces literal at `pitd_callback.adb:1076`) and validates imported entities; SC-O4 conformance asserts clamp at settings value for two games |
+| Trauma maximum | Ada server: creation template; `trauma.add` enforces via proved core `Monitor.Add_Trauma` against entity `trauma.max`; retirement set at `traumas.length >= max` | `"max":4` hardcoded at `pitd_callback.adb:1076`; C# `MonitorTrauma.MaxTraumas => 4` (`blades-in-the-sheets/Models/Characters/MonitorTrauma.cs:12`) | game-domain | game-settings field `TraumaMax` | SC-C3 adds `TraumaMax`; SC-A6 uses it in `New_Character` (`pitd_callback.adb:1076`) and in trauma retirement equality; SC-O4 asserts `DUPLICATE` at max |
+| Harm slots — lesser | Ada server: `harm.add` spillover ladder slot check | `Cap := (if level = "lesser" or "moderate" then 2 else 1)` hardcoded at `pitd_callback.adb:1499`; C# `BoundedLesserHarms = new(2)` (`MonitorHarm.cs:9`) | game-domain | game-settings field `HarmCapacities.Lesser` | SC-C3 adds `HarmCapacities {Lesser, Moderate, Severe, Fatal}`; SC-A6 reads per-level caps in `harm.add` (`pitd_callback.adb:1499`), removing the inline `2 else 1`; SC-O4 covers slot-full spillover per game |
+| Harm slots — moderate | same | `2` at `pitd_callback.adb:1499`; C# `BoundedModerateHarms = new(2)` (`MonitorHarm.cs:10`) | game-domain | `HarmCapacities.Moderate` | as above |
+| Harm slots — severe | same | `1` at `pitd_callback.adb:1499`; C# `BoundedSevereHarms = new(1)` (`MonitorHarm.cs:11`) | game-domain | `HarmCapacities.Severe` | as above |
+| Harm slots — fatal | same | `1` at `pitd_callback.adb:1499`; C# `BoundedFatalHarms = new(1)` (`MonitorHarm.cs:12`) | game-domain | `HarmCapacities.Fatal` | as above |
+| Playbook XP track length | Ada server: creation template; `playbook-xp.add` clamps to entity `experience.max` | `"max":8` hardcoded at `pitd_callback.adb:1079`; C# `Playbook.Experience = new(8)` (`Playbook.cs:17`) | game-domain | game-settings field `XpTrackMaxima.Playbook` | SC-C3 adds `XpTrackMaxima {Playbook, Attribute, Crew}`; SC-A6 replaces literals at `pitd_callback.adb:1079,1089,1115` |
+| Attribute XP track length | Ada server: creation template; `attribute-xp.add`/`attribute.levelup` (must be full) clamp to entity `experience.max` | `"max":6` hardcoded at `pitd_callback.adb:1089`; C# `TalentAttribute.Experience = new(6)` (`TalentAttribute.cs:17`) | game-domain | `XpTrackMaxima.Attribute` | as above |
+| Crew XP track length | Ada server: creation template; `xp.add` clamps to entity `experience.max` | `"max":10` hardcoded at `pitd_callback.adb:1115`; C# `Crew.Experience = new(10)` (`Crew.cs:45`) | game-domain | `XpTrackMaxima.Crew` | as above |
+| Satchel (coin) capacity | Ada server: creation template; `fund.gain`/`fund.liquidate` check against entity `satchel.max` (`SATCHEL_FULL`) | `"max":4` hardcoded at `pitd_callback.adb:1079`; C# `FundSatchel` default 4 (`FundSatchel.cs:6`) | game-domain | game-settings field `FundMaxima.SatchelMax` | SC-C3 adds `FundMaxima {SatchelMax, StashMax, StashToCoinRate}`; SC-A6 replaces literal at `pitd_callback.adb:1079`; SC-O4 covers `SATCHEL_FULL`/overflow reporting |
+| Stash capacity | Ada server: creation template; `fund.gain` overflow into stash capped at entity `stash.max`; overflow reported in sideEffects | `"max":40` hardcoded at `pitd_callback.adb:1079`; C# `FundStash` default 40 (`FundStash.cs:6`) | game-domain | `FundMaxima.StashMax` | as above |
+| Stash → coin conversion rate (2:1) | Ada server: `fund.spend` (`stash/2` affordable) and `fund.liquidate` (`-Req*2`) | `pitd_callback.adb:1601-1606`; also encoded in SPARK `Paperclips_Core.Funds` (`Max_Affordable = Satchel + Stash/2`, `Liquidate` `2*Coins`; `paperclips_core-funds.ads:8,26`) | game-domain | `FundMaxima.StashToCoinRate` (int, default 2) | SC-C3 adds the rate; SC-A6 parametrizes the SPARK `Funds` package and the server handlers (`pitd_callback.adb:1601-1606`); SC-O4 asserts partial liquidation arithmetic |
+| Crew heat maximum | Ada server: creation template; `heat.add` BoundedInteger clamp to entity `heat.max` | `"max":9` hardcoded at `pitd_callback.adb:1115`; C# `Crew` heat `new BoundedInteger(0, 9)` (`Crew.cs:26`) | game-domain | game-settings field `CrewTrackerMaxima.HeatMax` | SC-C3 adds `CrewTrackerMaxima {HeatMax, WantedMax, RepMax}`; SC-A6 replaces literal at `pitd_callback.adb:1115` |
+| Crew wanted maximum | same | `"max":4` at `pitd_callback.adb:1115`; C# `wanted = new BoundedInteger(0, 4)` (`Crew.cs:32`) | game-domain | `CrewTrackerMaxima.WantedMax` | as above |
+| Crew rep maximum | same | `"max":12` at `pitd_callback.adb:1115`; C# `rep = new BoundedInteger(0, 12)` (`Crew.cs:38`) | game-domain | `CrewTrackerMaxima.RepMax` | as above |
+| Turf maximum (6) | Ada server: `turf.add` clamp; storage schema `maximum: 6`; OpenAPI description | `Integer'Min (Integer'Max (Req, -Cur), 6 - Cur)` at `pitd_callback.adb:1659`; `contract/schemas/crew.json:262` (`"maximum": 6`); `contract/openapi.yaml:1277` ("clamped 0..6"); frontend renders 6 slots (`frontend/src/pages/crew-detail.ts:738,757,1741,1744`) | game-domain | game-settings field `TurfMax` | SC-C3 adds `TurfMax` (all games; S&V has no turf system — value recommended 6, see §3); SC-A6 reads it at `pitd_callback.adb:1659`; SC-C1 removes the hardcoded `maximum: 6` from `crew.json:262` (schema becomes `minimum: 0` only); frontend reads the capability projection instead of the literal 6 |
+| Load commitment — flat ceiling (maxBulk 9) | Ada server: `gear.commit` checks `item.bulk > gear.maxBulk − committed` (`OVER_BULK`) | `"maxBulk":9` hardcoded at `pitd_callback.adb:1079`; enforcement at `pitd_callback.adb:1748` | game-domain | game-settings field `LoadMaxima.MaxBulk` | SC-C3 adds `LoadMaxima {MaxBulk, CommitmentMaxBulk{Light, Normal, Heavy, Encumbered}}`; SC-A6 replaces literal at `pitd_callback.adb:1079` |
+| Load commitment — per-option bulk (light 3 / normal 5 / heavy 6 / encumbered 9) | **Not enforced** (server only stores the commitment string at `pitd_callback.adb:1704-1706`; no per-option check); OpenAPI claims "MaxBulk per option comes from game settings" (`openapi.yaml:721`, `gear.set-commitment` description) but no such settings field exists | C# `LoadCommitmentOption` enum `None=0, Light=3, Normal=5, Heavy=6, Encumbered=9` (`blades-in-the-sheets/Models/Characters/GearCommitment.cs:46-49`); Mule ability text raises them (settings text only, `blades-in-the-dark.json:32`) | game-domain | `LoadMaxima.CommitmentMaxBulk` + per-character derived override (ability raises) | SC-C3 adds `CommitmentMaxBulk` map; SC-A6 enforces on `gear.set-commitment`/`gear.commit` (updating the OpenAPI promise to match reality); the derived per-character load limit (incl. Mule) becomes a character capability projection (SC-C3); SC-O4 asserts `OVER_BULK` per option |
+| Action rating — raw maximum (`maxRating`) | Ada server: creation from settings; `action.set-rating` clamps to `maxRating`; `attribute.levelup` rejects at `maxRating` (`RATING_MAXED`) | `maxRating := Int_Field (G, "ActionPointMaximum", 4)` at `pitd_callback.adb:1095`; settings `ActionPointMaximum` (blades `4` `blades-in-the-dark.json:1018`, S&V `3` `scum-and-villainy.json:954`, fr `4` `français-blades-in-the-dark.json:1026`, rus `4` `rus-blades-in-the-dark.json:1012`) | game-domain | **already published**: `ActionPointMaximum` (keep) | no migration needed for the raw cap; SC-C3 documents it as the raw maximum and SC-A6 unifies it with the effective cap (§1.2) per SC-C6 "action set and attribute level-up share the same effective cap" |
+| Action rating — effective cap (Mastery/crew-derived: 3 without, 4 with full Mastery) | Ada server: `action.set-rating` rejects `rating > Rating_Cap(E)` (`RATING_MAXED`) before clamping to `maxRating` | `Rating_Cap` at `pitd_callback.adb:1021-1063`: `if Crew_Id = "" then return 3` (`:1024`), `return (if Marked >= Total then 4 else 3)` (`:1060`); Mastery `TotalBoxes: 4` in crew data (`blades-in-the-dark-crews.json:90`) | game-domain (base caps) + **derived** (crew state) | game-settings fields `ActionCap {Base: 3, Mastery: 4}` + derived character capability `effectiveActionCap` | SC-C3 adds `ActionCap.Base`/`ActionCap.Mastery`; SC-C3 adds `effectiveActionCap` to character capabilities; SC-A6 replaces the literals at `pitd_callback.adb:1024,1060` and makes `attribute.levelup` use the same effective cap (SC-C6 correction); SC-O4 asserts 3 vs 4 across crew states |
+| Ability take counts | Ada server: `ability.take` validated via `Can_Take_More` against playbook/crew-type `TimesTakeable` (`ABILITY_MAXED`); frontend also disables at max | `Can_Take_More` at `pitd_callback.adb:894-923` (`return Times_Taken < Int_Field (…, "TimesTakeable", Integer'Last)` at `:914`); settings `TimesTakeable` per ability (e.g. `1`, `2`, `99` in `blades-in-the-dark.json`; S&V Veteran `3` `scum-and-villainy.json:50`) | game-domain | **already published**: `SpecialAbilitySetting.TimesTakeable` (keep) | none for the field; SC-A5 exposes remaining takes as crew/character capability projection; SC-A6 keeps enforcement; missing-game-data fallback (permissive `Integer'Last`, `pitd_callback.adb:914,922`) should become a documented capability gap |
+| Upgrade box counts (`TotalBoxes`) | **Declared but NOT enforced by the Ada server**: `upgrade.mark` simply increments `boxesMarked` (`pitd_callback.adb:1850`), even beyond `TotalBoxes`; OpenAPI promises `UPGRADE_MAXED` (`openapi.yaml:1398`); frontend disables marking at `boxesMarked >= total` using game data (`crew-detail.ts:1047-1049,1079-1081`); C# reference enforces (`CrewUpgrade.Mark`, `boxesMarked >= setting.TotalBoxes` → false, `CrewUpgrade.cs:19-22`) | `TotalBoxes` per upgrade in `data/games/blades-in-the-dark-crews.json` (e.g. Mastery `4` `:90`, Hardened `3` `:95`, Composed `3` `:100`, Vault `2` `:70`) | game-domain | **already published**: crew-file `Upgrade.TotalBoxes` (keep); no SC-C3 schema change needed for the value itself | SC-A6 implements the OpenAPI promise in `upgrade.mark` (read `TotalBoxes` from `Game(stem & "-crews")`, reject with `UPGRADE_MAXED`); SC-O4 adds a case; S&V needs a crew settings file (see §3 gap) or the capability must report "no catalog" |
+| Recovery (healing) clock size | Ada server: creation from settings; `harm.healing-clock` clamps to entity `healingClock.size`; `harm.heal` requires full | `Int_Field (G, "RecoveryClockSize", 4)` at `pitd_callback.adb:1077`; settings `RecoveryClockSize` (blades `4` `blades-in-the-dark.json:1017`, S&V `6` `scum-and-villainy.json:953`, fr/rus `4`) | game-domain | **already published**: `RecoveryClockSize` (keep) | none for the field; SC-C3 keeps it; SC-A6 removes the `4` fallback default at `pitd_callback.adb:1077` (must exist in every settings file) |
+| Session expression maximum | Ada server: creation template; `session.set` clamps each expression to entity `session.max` | `"max":3` hardcoded at `pitd_callback.adb:1079`; C# reference `Session.MaxExpressions = 2` (`Session.cs:4`) — **divergence** | game-domain | game-settings field `SessionExpressionMax` | SC-C3 adds `SessionExpressionMax` (value to confirm: Ada uses 3, C# uses 2 — see §5); SC-A6 replaces literal at `pitd_callback.adb:1079`; SC-O4 asserts clamp |
+| Faction status range | Ada server: `faction.set-status` clamps to settings `FactionStatus {Min, Max}`; schema intentionally has no bound (`crew.json:239` "never hardcoded here") | `Lo/Hi := Int_Field (FS, "Min"/"Max", …)` at `pitd_callback.adb:1614`; settings `FactionStatus` (blades `-3..3` `blades-in-the-dark.json:1019-1021`, S&V `-3..3` `scum-and-villainy.json:955-957`) | game-domain | **already published**: `FactionStatus` (keep) | none |
+| Clock sizes | Request schema: `size` `minimum: 1`, **no maximum** (`contract/schemas/clock.json` + `openapi.yaml` `createClock`); Ada core bounds via `Capacity` subtype (internal); frontend demos 4/6/8 (`frontend/src/components/clock.ts:9`) | no game-domain literal anywhere | game-domain (allowed sizes per game) | game-settings field `AllowedClockSizes` (int array) — recommended | SC-C3 adds `AllowedClockSizes` (blades `[4,6,8]`; S&V same per its book; `custom` permits any ≥1) if the contract wants a published max list; otherwise document "any positive integer" as the published bound. SC-R3's clock-purpose list is separate (below) |
+| Clock-purpose list | **Not present** — no purpose list exists in any settings file; standalone clocks have no purpose field today | — | game-domain | game-settings field `ClockPurposes` (string array) | SC-C3 adds `ClockPurposes` per governing spec ("progress, danger, racing, linked, mission, tug-of-war, long-term project, faction, score, custom"); SC-C1 adds `purpose` to the clock DTO; SC-A7 validates against the list (SC-R3 owns the taxonomy) |
+| Develop coin cost (tier+1)×8 | Frontend only (client-side affordability pre-check + notice); server has no develop op — the flow is client-composed (`hold.set`, `tier.add`, `rep` reset) | `(tier+1)×8` in `frontend/src/pages/crew-detail.ts:2251-2252,2279-2282`; SRD rule | game-domain | game-settings field `DevelopCoinCostMultiplier` (int, default 8) | SC-C3 adds the field; frontend reads it via crew capability/`getGame` instead of the literal; note the flow itself is client-composed — if it becomes server-owned, SC-A6 enforces it |
+| Crew type settings existence (upgrades/abilities catalog) | Server serves `Game(stem & "-crews")`; S&V has **no** crew file → `404` and permissive fallbacks (Rating_Cap default, ability unlimited) | `games.crews` route at `pitd_callback.adb:2068-2069`; glob of `data/games/` shows only `blades-in-the-dark-crews.json` | game-domain | crew-settings file per game + a JSON schema for it (none exists today) | SC-C3 adds `scum-and-villainy-crews.json` and a `crew-settings-schema.json` (or folds crew settings into the game schema); SC-A5 loads it for capabilities; the fallback literals at `pitd_callback.adb:1021-1063` disappear |
+
+### 1.2 Derived bounds (server-computed capability projections — never persisted)
+
+| Bound | Enforced today | Current literal or source | Class | Target authoritative source | Migration step |
+|---|---|---|---|---|---|
+| Effective action cap (raw max ∧ Mastery/crew-derived cap) | Ada server (`Rating_Cap`) + entity `maxRating` | `pitd_callback.adb:1021-1063,1520-1521,1540` | derived | **character capability** `effectiveActionCap` (+ per-action `maxRating`) | SC-C3 adds capability endpoint/fields; SC-A5 computes from settings + crew upgrades; SC-F3 consumes it; never persisted in the DTO |
+| Available upgrades (catalog with remaining boxes) | Frontend recomputes from crew game data + `upgrades` DTO state | `frontend/src/pages/crew-detail.ts:378-400,1047-1081` (`upgradeTotalBoxes` default 1 at `:398-400`) | derived | **crew capability** `upgrades[]` with `totalBoxes`, `marked`, `remaining` | SC-C3 adds crew capability projection; SC-A5 computes; SC-F3 renders from it; the frontend's local join (`crew-detail.ts:1079-1081`) is removed |
+| Available abilities (remaining takes) | Frontend + server each compute from game data + state | server `Can_Take_More` `pitd_callback.adb:894-923`; frontend `extractCrewAbilities` | derived | **crew/character capability** `abilities[]` with `timesTaken`/`maxTakes` | as above |
+| Harm capacities (per-level slots, remaining) | Server inline in `harm.add`; C# `AvailableIntensities` | `pitd_callback.adb:1499` | derived (from game-domain `HarmCapacities` + state) | **character capability** `harmCapacities` | SC-C3 capability field; SC-A6 computes; SC-O4 asserts spillover from projected capacities |
+| Load limits (per-commitment max bulk, incl. ability raises) | Not enforced server-side today; frontend shows server errors only | C# `GearCommitment.MaxBulkByCommitmentOption` (`GearCommitment.cs:13-19`); Mule text `blades-in-the-dark.json:32` | derived | **character capability** `loadLimits` (per commitment option) | SC-C3 capability field; SC-A6 enforces per option; SC-F3 displays projected limits |
+| Armor availability (`hasStandard/heavy/special`) | **Persisted today** in the DTO (`monitor.armor.has*`) and refreshed after gear/ability mutations | `Armor_Available` at `pitd_callback.adb:931-978`; refresh at `pitd_callback.adb:2038-2050`; schema `character.json` `has*` fields "derived from loadout" | derived | **character capability** `armorAvailability` (governing spec: derived limits are never persisted in byte-identical DTOs) | SC-C1/SC-C3 decide: move `has*` to capabilities (preferred per Q41) or obtain explicit contract-author exemption to keep them in the DTO; SC-A6 stops storing them |
+| Effective turf (base turf + claims `derivedDelta`) | Ada server `Turf_Effect_Delta` (used for crew summaries) and frontend recomputation | `Turf_Effect_Delta` at `pitd_callback.adb:1377-1432`; `frontend/src/pages/crew-detail.ts:703-726` | derived | **crew capability** `effectiveTurf` | SC-C3 capability field; SC-F3 consumes; frontend join removed |
+| Rep develop threshold (`rep.max − turf`) | Frontend computes from DTO | `frontend/src/pages/crew-detail.ts:690,1755` (`repThreshold = Math.max(0, c.rep.max − c.turf)`) | derived | **crew capability** `developThreshold` | SC-C3 capability field; SC-F3 consumes |
+| `canUndo` / `historyCount` | Not yet exposed (Wave 1 spec adds them as derived roster/detail fields) | — | derived | **derived response fields** `canUndo`, `historyCount` (spec §"Character lifecycle") | SC-C8/SC-A8 per Wave 1; never stored |
+
+### 1.3 Request bounds (OpenAPI/schema request bodies)
+
+| Bound | Enforced today | Current literal or source | Class | Target authoritative source | Migration step |
+|---|---|---|---|---|---|
+| Batch operation count 1..50 | OpenAPI `minItems: 1, maxItems: 50` + Ada server check | `contract/openapi.yaml:131-132`; `pitd_callback.adb:2489` ("ops must contain 1..50 operations") | request | **already published**: OpenAPI `batch.ops` bounds (keep) | none for the value; SC-C2 keeps; SC-O4 asserts rejection at 0 and 51 |
+| Idempotency-Key length ≤ 128 | Documented only — **not enforced by the Ada server** (header used verbatim, `pitd_callback.adb:2272-2276`) | `contract/openapi.yaml:33` (`maxLength: 128`) | request | **already published**: OpenAPI parameter (keep) | SC-A6 or SC-A3 enforces the documented bound server-side (reject >128 with `VALIDATION`) or the contract explicitly documents non-enforcement; SC-O7 covers it |
+| `Delta.delta`, `segments`, `status`, `rating`, `index`, `coins` request-field bounds | Mixed: `rating < 0 → VALIDATION` (`pitd_callback.adb:1520`), `coins minimum: 1` schema-side, negative deltas accepted by design (signed delta family) | `contract/openapi.yaml` (`Delta`, `rating: minimum 0`, `coins: minimum 1`, `index: minimum 0`, `segments: integer`) | request | **already published**: OpenAPI request schemas (keep) | none; SC-C2 keeps the numeric-family declarations ("Numeric operation results") |
+| Storage-schema minimums reused as request bounds (import) | Import validates full DTO against entity schema (`Import_Valid` at `pitd_callback.adb:844-862` + key lists `:796-831`) | `contract/schemas/common.json` (revision/formatVersion `minimum: 1`, `boundedInteger`/`experience` `current/points/max` `minimum: 0`, `clockState.size` `minimum: 1`), `character.json` (trauma.max `minimum: 1`, maxRating `minimum: 1`, timesTaken `minimum: 1`, gear/rolodex names `minLength: 1`), `crew.json` (quality/scale `minimum: 0`, claimId pattern, `uniqueItems`), `clock.json` (size `minimum: 1`) | request | **already published**: schema `$defs` (keep) | none; SC-C1 keeps bounds; SC-O1/O2 assert import rejection |
+| Path/id/snapshot/claimId patterns | Server matches routes; OpenAPI patterns | `uuid` pattern `common.json`; `snapshotId` pattern `^[0-9]{17}-[A-Za-z0-9]+$` (`campaign.json:86`); claimId pattern `^[a-z0-9]+(?:-[a-z0-9]+)*$` (`crew.json:267` + `openapi.yaml`) | request | **already published** (keep) | none |
+| Trauma choice / named strings `minLength: 1` | OpenAPI request schemas (e.g. `trauma.add` at `openapi.yaml:388`); server also validates via `Check_Fields` (`pitd_callback.adb:1251-1300`) | `openapi.yaml` request schemas | request | **already published** (keep) | none |
+
+### 1.4 Service limits
+
+| Bound | Enforced today | Current literal or source | Class | Target authoritative source | Migration step |
+|---|---|---|---|---|---|
+| Payload cap 1 MiB | Ada server: `Parse_Body` raises / import returns `413 PAYLOAD_TOO_LARGE`; OpenAPI documents on import | `Max_Import : constant := 1_024 * 1_024` at `pitd_callback.adb:226`; check at `:734-736`; import 413 at `:2444`; documented `openapi.yaml:299` | service | **service capability** `maxPayloadBytes: 1048576` | SC-C3 adds service-capability field; SC-A5 exposes it; SC-O4 asserts 413 just over the cap and 200 just under |
+| History snapshot retention 50 | Ada server: prune keeps newest 50; sidecar index capped; OpenAPI documents nothing (client sees `NO_HISTORY` after undo) | `Max_History_Snapshots : constant := 50` at `pitd_callback.adb:452`; prune at `:476-495`; sidecar cap `:533-534` | service | **service capability** `maxHistorySnapshots: 50` | SC-C3 adds service-capability field; SC-A5 exposes; SC-O4 asserts oldest snapshot disappears past 50 and undo still works |
+| Batch operation count (service mirror) | server array sizes | `Ents : array (1 .. 50)` at `pitd_callback.adb:2477-2482` | service (mirror of request bound) | service capability (optional, same `50`) | SC-C3 exposes if desired; otherwise keep as request-only |
+| Idempotency replay window (LRU 32) | Ada server: LRU eviction — an evicted key is **silently treated as a new operation** (no failure); not documented | `Max_Idempotency_Entries : constant := 32` at `pitd_callback.adb:116`; eviction `:172-183` | internal (see §1.5) | **never an API promise**; optionally documented as "replay best-effort" | no migration; SC-C5/SC-G1 documentation must not promise durable replay |
+
+### 1.5 Internal capacities (never client-visible)
+
+| Bound | Enforced today | Current literal or source | Class | Target authoritative source | Migration step |
+|---|---|---|---|---|---|
+| Idempotency LRU size 32 | Ada server (eviction, never a failure) | `pitd_callback.adb:116` | internal | — | none; never published |
+| Entity lock table 64 | Ada server: concurrent writers beyond 64 busy slots block-wait (bounded, no failure) | `Max_Entity_Locks : constant := 64` at `pitd_callback.adb:48` | internal | — | none |
+| SPARK `Capacity` subtype (`Positive'Last / 4`) | Ada core: every tracker/clock/gear max is a `Capacity` discriminant | `paperclips_core.ads:8` (`subtype Capacity is Positive range 1 .. Positive'Last / 4`) | internal | — | none; proven-arithmetic ceiling, cannot fail a client |
+| Snapshot id scheme (17-digit monotonic prefix + 32 random) | Ada server; also the history-entry `snapshotId` pattern (published shape) | `pitd_callback.adb:335-340`; `campaign.json:86` | internal (shape is published, generation is not) | keep published pattern | none |
+| History scan buffer (1..1024 names) | Ada server `Prune_History`/`Rebuild_Index` | `type Name_List is array (1 .. 1_024)` at `pitd_callback.adb:460,559` | internal | — | none (prune at 50 guarantees ≤ 50 files) |
+| Coin/stash/tier `Integer'Last` guards | Ada server `coin.add`/`stash.add`/`tier.add` | `if Cur > Integer'Last - Req then Integer'Last` at `pitd_callback.adb:1648-1650` | internal | — | none; arithmetic ceiling, not a game rule |
+| Revision arithmetic (min 1, +1 per write) | schema `minimum: 1` (`common.json`); server increments | `Set_Field (E, "revision", Int_Field (E, "revision") + 1)` at `pitd_callback.adb:1128`; undo `:2365`; import `:2395` | request (lower bound) + internal (arithmetic) | **already published**: revision `minimum: 1` | none; SC-C2 keeps `If-Match` semantics; overflow is internal |
+| Clock overflow accumulation (`rollover`) | Ada core SPARK `Clock_State` dynamic predicate (project clocks force `Overflow = 0`) | `paperclips_core-clocks.ads:8-11` | internal (mechanical semantics, published via result fields) | keep; published through `applied` families (SC-C2) | none; SC-O5 asserts |
+
+---
+
+## 2. Game-domain settings migration plan (exact fields for SC-C3)
+
+All fields below are new to `data/games/game-settings-schema.json` unless marked **(exists)**. Names follow the existing PascalCase convention; each new field is `required` in the schema once every game file carries it. SC-C3 adds the fields and SC-A5 validates every game file against the extended schema.
+
+| Settings field (proposed name) | Type | blades-in-the-dark.json | scum-and-villainy.json | français-blades-in-the-dark.json | rus-blades-in-the-dark.json | Source of value |
+|---|---|---|---|---|---|---|
+| `StressMax` | int | 9 | 9 | 9 | 9 | Ada literal `pitd_callback.adb:1076`; C# `MonitorStress.cs:20` |
+| `TraumaMax` | int | 4 | 4 | 4 | 4 | `pitd_callback.adb:1076`; C# `MonitorTrauma.cs:12` |
+| `HarmCapacities` | object `{Lesser, Moderate, Severe, Fatal: int}` | 2/2/1/1 | 2/2/1/1 | 2/2/1/1 | 2/2/1/1 | `pitd_callback.adb:1499`; C# `MonitorHarm.cs:9-12` |
+| `XpTrackMaxima` | object `{Playbook: int, Attribute: int, Crew: int}` | 8/6/10 | 8/6/10 | 8/6/10 | 8/6/10 | `pitd_callback.adb:1079,1089,1115`; C# `Playbook.cs:17`, `TalentAttribute.cs:17`, `Crew.cs:45` |
+| `FundMaxima` | object `{SatchelMax: int, StashMax: int, StashToCoinRate: int}` | 4/40/2 | 4/40/2 | 4/40/2 | 4/40/2 | `pitd_callback.adb:1079,1601-1606`; C# `FundSatchel.cs:6`, `FundStash.cs:6` |
+| `CrewTrackerMaxima` | object `{HeatMax: int, WantedMax: int, RepMax: int}` | 9/4/12 | 9/4/12 | 9/4/12 | 9/4/12 | `pitd_callback.adb:1115`; C# `Crew.cs:26,32,38` |
+| `TurfMax` | int | 6 | 6 (no turf system in S&V; schema still applies) | 6 | 6 | `pitd_callback.adb:1659`; `crew.json:262` |
+| `LoadMaxima` | object `{MaxBulk: int, CommitmentMaxBulk: {Light: int, Normal: int, Heavy: int, Encumbered: int}}` | 9 / 3,5,6,9 | 9 / 3,5,6,9 | 9 / 3,5,6,9 | 9 / 3,5,6,9 | `pitd_callback.adb:1079`; C# `GearCommitment.cs:46-49` |
+| `ActionCap` | object `{Base: int, Mastery: int}` | 3 / 4 | 3 / 3 (no crew file; cap equals raw max) | 3 / 4 | 3 / 4 | `pitd_callback.adb:1024,1060`; Mastery `TotalBoxes: 4` `blades-in-the-dark-crews.json:90` |
+| `SessionExpressionMax` | int | 3 **(confirm: C# uses 2)** | 3 (Ada default; confirm) | 3 | 3 | `pitd_callback.adb:1079`; C# `Session.cs:4` |
+| `AllowedClockSizes` | int array | [4, 6, 8] | [4, 6, 8] | [4, 6, 8] | [4, 6, 8] | SRD; frontend `clock.ts:9`; recommended — see §1.1 "Clock sizes" |
+| `ClockPurposes` | string array | progress, danger, racing, linked, mission, tug-of-war, long-term-project, faction, score, custom | same | same | same | governing spec "Clocks" section; SC-R3 taxonomy |
+| `DevelopCoinCostMultiplier` | int | 8 | 8 | 8 | 8 | `crew-detail.ts:2251-2252` |
+| `RecoveryClockSize` **(exists)** | int | 4 | 6 | 4 | 4 | keep; remove fallback default at `pitd_callback.adb:1077` |
+| `ActionPointMaximum` **(exists)** | int | 4 | 3 | 4 | 4 | keep |
+| `FactionStatus` **(exists)** | `{Min, Max}` | −3..3 | −3..3 | −3..3 | −3..3 | keep |
+
+Crew-catalog fields **(exists in `blades-in-the-dark-crews.json`, no schema yet)**: `CrewTypes[].Upgrades[].TotalBoxes`, `CrewTypes[].SpecialAbilities[].TimesTakeable`, claims map (`Kind: claim|turf|lair`). Migration: SC-C3 adds a crew-settings JSON schema and an `scum-and-villainy-crews.json` (S&V crew types with upgrades/abilities), otherwise S&V crew capabilities 404 and Rating_Cap falls back to hardcoded behavior.
+
+Rules for SC-A6 (per governing spec): Ada, frontend, and conformance expectations never embed a game-specific maximum; every value above is read from the validated settings file at entity creation **and** enforced against the settings value (not just the stored `max` field) on mutation and import.
+
+---
+
+## 3. Derived-limit list — capability projections, never persisted
+
+Per the governing "Limits and capabilities" decision and Q19/Q20/Q41, these become server-computed projections. None may be stored in byte-identical entity DTOs:
+
+1. **Character capabilities**: effective action caps (`effectiveActionCap` per action = `min(maxRating, crew-derived cap)`); harm capacities (per-level slots and remaining); load limits (per-commitment max bulk incl. ability raises); armor availability; available ability takes.
+2. **Crew capabilities**: full available upgrade catalog (`upgradeId`, `totalBoxes`, `marked`, `remaining`, coin affordability); full available ability catalog (`maxTakes`, `taken`); `effectiveTurf`; `developThreshold`.
+3. **Service capabilities**: `maxPayloadBytes`, `maxHistorySnapshots` (and batch bound if published).
+4. **Roster/detail derived state**: `canUndo`, `historyCount` (Wave 1 lifecycle decision).
+
+Today these are computed ad hoc: frontend joins game data + DTO state (`crew-detail.ts:378-400,690,703-726,1047-1081`), server recomputes (`Rating_Cap`, `Turf_Effect_Delta`, `Armor_Available`), and one derived value — armor `has*` — is persisted in the DTO today (`character.json` `monitor.armor.hasStandard/heavy/special`), which Q41 says must move to projections or gain an explicit exemption.
+
+---
+
+## 4. Service-limit list (service capabilities)
+
+| Limit | Current value | Source |
+|---|---|---|
+| `maxPayloadBytes` | 1_048_576 (1 MiB) | `pitd_callback.adb:226,734-736,2444`; `openapi.yaml:299` |
+| `maxHistorySnapshots` | 50 | `pitd_callback.adb:452,476-495,533-534` |
+| batch ops 1..50 | 50 | `openapi.yaml:132`; `pitd_callback.adb:2477-2491` |
+| Idempotency-Key max length | 128 (documented only) | `openapi.yaml:33` |
+
+SC-C3 defines the service-capability response schema; SC-A5 serves the values from one source (no Ada/frontend duplication).
+
+---
+
+## 5. Internal-capacity list — never an API promise
+
+- Idempotency LRU capacity 32 (`pitd_callback.adb:116`) — eviction silently narrows the replay window; the API must not promise durable replay. Exposed keys *are* scoped to method+route+entityId+key with SHA-256 body hash (`pitd_callback.adb:2272-2294`).
+- Entity lock table 64 (`pitd_callback.adb:48`) — bounded concurrency; wait, never fail.
+- SPARK `Capacity = Positive'Last / 4` (`paperclips_core.ads:8`) — proof-friendly ceiling for all trackers/clocks/gear; cannot be reached through the API.
+- Snapshot id generation (`pitd_callback.adb:335-340`) — the *shape* is published (`campaign.json:86` pattern), generation internals are not.
+- History scan buffers 1..1024 (`pitd_callback.adb:460,559`) — unreachable past 50 given pruning.
+- `Integer'Last` guards on coin/stash/tier deltas (`pitd_callback.adb:1648-1650`) — arithmetic ceiling.
+- Revision arithmetic (+1 per write; `pitd_callback.adb:1128,2365,2395`) — unbounded above `minimum: 1`; overflow is an internal concern.
+- Clock overflow/rollover mechanics (`paperclips_core-clocks.ads`) — published *results* via `applied`/`overflowAdded` (SC-C2), never a capacity promise.
+
+---
+
+## 6. Hardcoded literals today (grep-verified) and gaps
+
+**Ada server (all in `backend-ada/server/src/pitd_callback.adb`):**
+- Stress 9, trauma 4, playbook XP 8, maxBulk 9, satchel 4, stash 40, session 3 — `:1076,1079`
+- Attribute XP 6 — `:1089`
+- Crew heat 9 / wanted 4 / rep 12 / XP 10 — `:1115`
+- Harm slots 2/2/1/1 — `:1499`
+- Fund conversion 2:1 — `:1601-1606`
+- Turf cap 6 — `:1659`
+- Action rating effective cap 3/4 — `:1024,1060`
+- Payload 1 MiB — `:226`; history 50 — `:452`; batch 50 — `:2489`; LRU 32 — `:116`; locks 64 — `:48`
+
+**Ada core:** no game-domain literals (fully parameterized); only the internal `Capacity` ceiling (`paperclips_core.ads:8`) and the 2:1 fund conversion encoded in SPARK contracts (`paperclips_core-funds.ads:8,26`).
+
+**Frontend:** `stress-track.ts:24` default 9 (parameterized; comment "never hardcode a game maximum"); turf row 6 and `(tier+1)×8` develop cost hardcoded (`crew-detail.ts:738,757,1741,1744,2251-2252`); `upgradeTotalBoxes` default 1 (`crew-detail.ts:398-400`). Test fixtures hardcode 9/4/8/6/2/40/3/12 etc. (fixtures only, not enforcement).
+
+**Contract:** `crew.json:262` hardcodes turf `maximum: 6` (a game-domain literal in a storage schema — must move to settings); `openapi.yaml:1277` mirrors it.
+
+**Gaps (declared but unenforced):**
+1. `upgrade.mark` ignores `TotalBoxes` (`pitd_callback.adb:1850`) despite `openapi.yaml:1398` promising `UPGRADE_MAXED`.
+2. Per-commitment load max bulk never enforced (`pitd_callback.adb:1704-1706` stores the string only) despite the `gear.set-commitment` OpenAPI note.
+3. `Idempotency-Key` `maxLength: 128` not enforced server-side.
+4. Import accepts any schema-valid DTO, so `stress.max`/`trauma.max`/`session.max`/`maxBulk` can be set above settings values on import — the settings maxima currently bind only creation defaults.
+5. No `scum-and-villainy-crews.json` → S&V crew capabilities unavailable.
+6. `attribute.levelup` uses `maxRating` while `action.set-rating` uses `Rating_Cap` — the effective caps differ (SC-C6 unifies them).
+7. Session expression max: Ada 3 (`pitd_callback.adb:1079`) vs C# reference 2 (`Session.cs:4`).
+8. Armor availability `has*` persists derived state in the DTO (Q41).
+
+---
+
+## 7. Card questions
+
+1. **Contradictions found:** yes — (a) OpenAPI declares `upgrade.mark` enforces `TotalBoxes` → `UPGRADE_MAXED` (`openapi.yaml:1398`) but the server never checks it (`pitd_callback.adb:1850`); (b) `action.set-rating` is documented as clamped to `maxRating` (ActionPointMaximum) but the server actually enforces the Mastery-derived `Rating_Cap` first (`pitd_callback.adb:1520-1521`); (c) `gear.set-commitment` claims "MaxBulk per option comes from game settings" but no such settings field exists and nothing is enforced per option; (d) session max is 3 in Ada but 2 in the C# reference.
+2. **Guesses:** S&V values for stress/trauma/harm/XP/load/session (repo only publishes `RecoveryClockSize` 6 and `ActionPointMaximum` 3 for S&V; everything else defaults to the Ada literals); proposed settings field names (SC-C3 owns final naming); `AllowedClockSizes` inclusion (recommended, not required by any decision); develop-cost multiplier being a settings field vs staying frontend-only.
+3. **Not given:** an `scum-and-villainy-crews.json` (missing data, needed for S&V upgrade/ability caps); authoritative per-game values for S&V domain maxima; the session-max 3-vs-2 decision; whether armor `has*` flags stay stored or move to capabilities; a decision on whether the idempotency replay window (LRU 32) is published as best-effort or documented as non-guaranteed.

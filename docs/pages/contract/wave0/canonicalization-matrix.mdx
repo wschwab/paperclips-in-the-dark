@@ -1,0 +1,436 @@
+---
+title: Canonicalization and repair matrix (SC-R0)
+description: Exhaustive defect-class and property-path matrix for canonical shape, normalization, and stored-entity classification
+---
+
+# Canonicalization and repair matrix
+
+**Card:** SC-R0 (Wave 0, research). **Output of:** the ordered work specification,
+"Canonical shape and normalization" and "Stored-entity classification and HTTP errors"
+sections, plus decisions Q1–Q9/Q13–Q15/Q26. **Sources:** `contract/schemas/` (five entity
+schemas + `operation-result.json`), `PAPERCLIPS.md` §6/§7.1, `blades-in-the-sheets/Models/`
+(legacy C# reference), `data/games/game-settings-schema.json` and game files.
+
+The normalizer has exactly four outcomes (work spec, canonical shape §10):
+
+| Outcome | Meaning |
+|---|---|
+| `canonical` | readable without changes; GET returns the stored bytes byte-identically |
+| `repairable` | a schema-valid canonical result can be produced and previewed (fills, conversions, clamps, listed removals) |
+| `needs-input` | the preview identifies exact pointers that require caller-supplied values |
+| `unreadable` | bytes cannot be parsed as a recoverable entity object; no normalization is possible |
+
+HTTP outcomes are fixed by the work spec (stored-entity classification) and reused here
+verbatim:
+
+| Outcome | Meaning |
+|---|---|
+| `400 VALIDATION` | invalid inbound request syntax or shape (create/import/repair request body) |
+| `400 INVALID_ENTRY` | submitted import/repair content that cannot be normalized with the supplied values; pointer-level details |
+| `422 INVALID_ENTITY` | a parseable stored entity requiring explicit repair, or unparseable stored bytes, on **direct access**; collections remain `200` |
+| `409 NORMALIZATION_REQUIRED` | a normalization preview requiring confirmation before a lossy or material rewrite; carries warnings and a preview token |
+| `409 STALE_REVISION` | changed revision, or degraded content token no longer matching the current raw bytes |
+| `404 NOT_FOUND` | missing path |
+| `200` | collections and roster remain `200` even when members are degraded; canonical direct GET returns `200` byte-identical |
+
+## 1. Defect-class matrix
+
+Ten defect classes. Columns: canonical default availability; preview warning;
+required caller input; HTTP outcome; write/no-write behavior; test fixture.
+"Stored" = persisted entity; "inbound" = create/import/repair request content.
+Direct-access rows assume a stored entity; collection endpoints always stay `200`
+(total-collection rule).
+
+| # | Defect class | Canonical default availability | Preview warning (example) | Required caller input | HTTP outcome | Write/no-write behavior | Test fixture |
+|---|---|---|---|---|---|---|---|
+| D1 | Missing key | Yes for most properties (canonical empty per §3); **no** for `needs-input` properties (see §3) | `Missing required property <ptr>: filled with canonical default <default>` / `…requires a caller-supplied value` | None when a canonical default exists; the exact value otherwise (e.g. clock `size`, `createdAt`, enum without neutral) | Stored: direct GET `422 INVALID_ENTITY` (repairability or needs-input details); repair preview `409 NORMALIZATION_REQUIRED`; apply `200`. Inbound import: preview `409`; apply `200`; apply without values for needs-input pointers `400 INVALID_ENTRY`. Create: `400 VALIDATION` | Reads never write. Repair/import apply atomically writes the previewed document, requires `If-Match` + preview token + confirmation, and takes exactly one baseline history snapshot (import). No write until confirmed | `F1` |
+| D2 | `null` value | Same as missing key (`null` is never stored; missing and `null` are the same defect) | `Property <ptr> is null (null is never stored): normalized to <default>` | Same as D1 | Identical to D1 | Identical to D1 | `F2` |
+| D3 | Wrong primitive type | No — coercion, where safe, is a previewed conversion; otherwise no result without input | `Property <ptr> had type <T>, expected <U>: converted to <value>` / `…cannot be converted` | None for lossless coercions (integer string ↔ number, boolean strings `"true"`/`"false"` ↔ boolean, number → string); the value itself for anything else (object → scalar, non-integer string → integer, `null` inside arrays, …) | Stored: coercible → direct GET `422 INVALID_ENTITY`, preview `409 NORMALIZATION_REQUIRED`, apply `200`; uncoercible → `422 INVALID_ENTITY` with needs-input pointers. Inbound: preview `409` / apply `200`; uncoercible `400 INVALID_ENTRY`. Create: `400 VALIDATION` | No write until confirmed apply; preview shows every coercion with pointer and replacement | `F3` |
+| D4 | Wrong enum value | No — but known **legacy variants** convert deterministically (L2); unknown variants need input | `Property <ptr> value '<v>' is not in <enum>: mapped from legacy variant to <value>` / `…not a known variant; requires a caller-supplied value` | None for known legacy variants (e.g. `"Strong"` → `"strong"`); the correct enum value otherwise | Stored: legacy variant → `422` + preview `409` + apply `200`; unknown variant → `422 INVALID_ENTITY` (needs-input). Inbound: preview `409` / `400 INVALID_ENTRY`. Create: `400 VALIDATION` | No write until confirmed apply; legacy mappings are explicit rules (L2), never guesses | `F4` |
+| D5 | Invalid numeric bound | No — repair is a deterministic **clamp** to the declared `minimum`/`maximum`, previewed as a material rewrite | `Property <ptr> value <v> is outside [<min>, <max>]: clamped to <bound>` | None when a bound is declared in the schema (clamp is deterministic); caller input for settings-derived maxima that cannot be resolved (missing/unresolvable `gameStem`) | Stored: `422 INVALID_ENTITY`; preview `409 NORMALIZATION_REQUIRED` (lossy — confirmation required); apply `200`. Inbound: preview `409` / apply `200`. Create: `400 VALIDATION` | No write until confirmed apply; the clamp is visible in the preview with previous and replacement values | `F5` |
+| D6 | Unknown / undeclared key | No — unknown keys are never defaulted; they are **removed only through an explicitly displayed, confirmed action** (no silent unknown-key loss, Q9) | `Unknown property <ptr> will be removed (data loss); removal must be confirmed` | None for removal (caller confirms); caller input if the key should instead be mapped to a canonical property | Stored: direct GET `422 INVALID_ENTITY`; preview `409 NORMALIZATION_REQUIRED` listing every removal; apply `200`. Inbound: `400 INVALID_ENTRY` **unless** the preview explicitly classifies and displays the removal, then preview `409` / apply `200`. Create: `400 VALIDATION` | No write until confirmed apply; the preview enumerates each unknown key (JSON pointer, reason `undeclared`, previous value) — removal is never silent | `F6` |
+| D7 | Known legacy shape | Yes — every legacy shape has an explicit conversion rule (L1–L8); the converted value is always schema-valid | `Legacy shape at <ptr>: converted per rule L<n>: <before> → <after>` | None for documented legacy shapes (notes string, dictionary-by-name, PascalCase enums, C3-era absent contacts/factions, legacy clocks); caller input when the legacy document is ambiguous (e.g. modern-shape clock missing `clockKind`) | Stored: `422 INVALID_ENTITY`; preview `409 NORMALIZATION_REQUIRED`; apply `200`. Inbound: preview `409` / apply `200`. Create: n/a (canonical by construction) | No write until confirmed apply; conversions are explicit rules, listed with reason and replacement | `F7` |
+| D8 | Wrong identity (`kind`/`id` mismatch) | No default — the **route identity is authoritative** (Q15): the body is normalized to the directory location | `Body <kind>/<id> does not match route <kind>/<id>: normalized to route identity (directory is authoritative)` | None when the body validates after the identity fix (kind and id are both supplied by the route); otherwise the remaining `needs-input` pointers; a body of a wholly different entity type needs the caller's decision (repair or delete + re-import) | Stored: direct GET `422 INVALID_ENTITY` (degraded row keeps route-derived id/kind in collections); preview `409 NORMALIZATION_REQUIRED`; apply `200`. Inbound import into a mismatched collection (crew body into `characters/`): `400 INVALID_ENTRY`. Create: `400 VALIDATION` | No write until confirmed apply; the preview shows the identity change; unreadable identity bodies can only be deleted (token-guarded) | `F8` |
+| D9 | Non-object root | No — a parsed value that is not an object (`[]`, `"x"`, `42`, `null`) is not a recoverable entity object | `Document root is not an entity object; unreadable — cannot be normalized` | None possible; the caller may delete and re-import | Stored: direct GET `422 INVALID_ENTITY`; collections `200` (degraded row: route id/kind, `isReadable:false`, `isRepairable:false`, `deleteToken` = `sha256:<hex>` of raw bytes). Inbound: `400 VALIDATION` | No normalization write, ever; deletion only, guarded by the raw-byte token (`If-Match: sha256:…`); changed bytes → `409 STALE_REVISION` | `F9` |
+| D10 | Unparseable bytes | No — bytes that do not parse as JSON (invalid UTF-8, truncation, trailing garbage) are unreadable | `Bytes cannot be parsed as JSON; unreadable — cannot be normalized` | None possible; the caller may delete and re-import | Identical to D9 | Identical to D9 | `F10` |
+
+Classification of the ten classes into the four normalizer outcomes:
+
+| Outcome | Classes |
+|---|---|
+| `canonical` | none of the ten — a document with no defect |
+| `repairable` | D1/D2 (with default), D3 (coercible), D4 (legacy variant), D5, D6 (with displayed removal), D7, D8 (when body validates after identity fix) |
+| `needs-input` | D1/D2 (no default), D3 (uncoercible), D4 (unknown variant), D8 (remaining pointers), plus any repair whose preview ends with pointers awaiting caller values |
+| `unreadable` | D9, D10 |
+
+## 2. Legacy conversion rules
+
+The C# `blades-in-the-sheets/Models/` tree is authoritative for legacy domain
+semantics. The confirmed legacy wire shapes are camelCase documents (matching the
+current DTO style) with the following known differences; each conversion is an
+explicit, previewed rule — never a silent rewrite:
+
+| Rule | Legacy shape (source) | Canonical result | Notes |
+|---|---|---|---|
+| L1 | `notes: "string"` (single string) — `Dossier.Notes`, `Crew.Notes` | `notes: ["string"]`; `""` → `[]` | C4 playtest change (2026-08-09); frontend decoders already accept the legacy string |
+| L2 | PascalCase C# enum serialization — `Strong`/`Weak` (CrewHold), `Friend`/`CloseFriend`/`Rival` (FriendCloseness), `None`/`Light`/`Normal`/`Heavy`/`Encumbered` (LoadCommitmentOption), `Gang`/`Expert` (CohortType), `Healthy`/`Weakened`/`Impaired`/`Broken`/`Dead` (CohortHarmLevel), `Fearsome`/`Independent`/`Loyal`/`Tenacious` (CohortEdge), `Principled`/`Savage`/`Unreliable`/`Wild` (CohortFlaw) | canonical enum / array-item strings (`"strong"`, `"close-friend"`, `"fearsome"`, …) | Deterministic one-to-one table; a variant not in the table is `needs-input`, not a guess |
+| L3 | C# dictionaries keyed by name — `AbilitiesByName`, `SpecialAbilities`, `Upgrades`, `LoadoutByName`, `AvailableGearByName`, `AttributesByName` (with nested `ActionsByName`), trauma `SortedSet` | canonical arrays with a `name` member: `playbook.abilities[]`, `crew.specialAbilities[]`, `crew.upgrades[]`, `gear.loadout[]`, `gear.availableGear[]`, `talent.attributes[]/actions[]`, `monitor.trauma.traumas[]` | Item fields map by name; dictionary key becomes `name`. Ordering is made deterministic (sort by key) and the sort is shown in the preview; the trauma set converts sorted and de-duplicated |
+| L4 | C# `DossierVice` has no purveyor | `vice.purveyor` filled `{"name":"","description":""}` | Pure missing-key fill applied to legacy documents; purveyor is a completeness pointer, so the character remains incomplete |
+| L5 | C# clocks — `ProjectClock` `{size, time}`; `RolloverClock` `{size, time, rollover}` | `clockKind:"project"`, `segments:time`, `rollover:0` / `clockKind:"rollover"`, `segments:time`, `rollover:<stored>` | Presence of a `rollover` key (even `0`) ⇒ RolloverClock ⇒ `"rollover"`; absence ⇒ `"project"`. A modern-shape document missing `clockKind` is ambiguous → needs input |
+| L6 | C3-era crew (contract change 2026-07-29): `contacts`/`factions` absent (optional until formatVersion bump) | `contacts:[]`, `factions:[]` | Q4 makes both required canonical arrays; empty means no entries |
+| L7 | Pre-C4 crew (playtest change 2026-08-09): no `turf` | `turf:0` | Bound 0..6 enforced |
+| L8 | Legacy C#-era history `snapshotId` (plain GUID, not `^[0-9]{17}-[A-Za-z0-9]+$`) | tolerated on read, never rewritten | History entries are response DTOs; new snapshots use the declared pattern (frontend decoder note, `f2aa`) |
+
+The identity rule (Q15) doubles as a legacy rule: a stored body whose `id`/`kind`
+contradicts its directory location is normalized to the route identity.
+
+## 3. Property-path inventory
+
+One row per declared property path of `character.json`, `crew.json`, `clock.json`,
+`campaign.json`, and `common.json` (nested objects and array items included;
+`[]` marks array items). Column meanings: **canonical default** = the schema-valid
+value the canonicalizer fills; **rule** = fill / conversion / needs-input decision;
+**class** = `FILL` (canonical default exists), `DERIVED` (settings-derived fill;
+`needs-input` when `gameStem` is unresolved), `LEGACY` (explicit legacy rule),
+`NEEDS-INPUT` (no derivable value), `IDENTITY` (route/server-generated),
+`SPARSE` (claim-overlay exception), `CONST` (fixed discriminator),
+`RESPONSE` (server-constructed DTO, no repair semantics).
+
+### 3.1 character.json — `character#`
+
+| Property path | Canonical default | Rule | Class |
+|---|---|---|---|
+| `character#/createdAt` | — | no derivable value: needs-input; import preview may offer server 'now' as explicit fill. | `NEEDS-INPUT` |
+| `character#/dossier/alias` | "" | canonical empty; completeness pointer. | `FILL` |
+| `character#/dossier/background/description` | "" | canonical empty. | `FILL` |
+| `character#/dossier/background/name` | "" | canonical empty; completeness pointer. | `FILL` |
+| `character#/dossier/crewId` | "" | canonical empty = no crew link (pattern allows empty); non-empty must match crew UUID pattern, else needs-input. | `FILL` |
+| `character#/dossier/heritage/description` | "" | canonical empty. | `FILL` |
+| `character#/dossier/heritage/name` | "" | canonical empty; completeness pointer. | `FILL` |
+| `character#/dossier/look` | "" | canonical empty; completeness pointer. | `FILL` |
+| `character#/dossier/name` | "" | canonical empty; completeness pointer (nonBlankString) — empty keeps the record readable but incomplete. | `FILL` |
+| `character#/dossier/notes[]` | [] | legacy single-string notes → one-entry array, "" → [] (L1). | `LEGACY` |
+| `character#/dossier/vice/description` | "" | canonical empty. | `FILL` |
+| `character#/dossier/vice/name` | "" | canonical empty; completeness pointer. | `FILL` |
+| `character#/dossier/vice/purveyor/description` | "" | see purveyor/name. | `LEGACY` |
+| `character#/dossier/vice/purveyor/name` | "" | legacy C# vice lacks purveyor (L4): fill {name:"",description:""}; completeness pointer. | `LEGACY` |
+| `character#/formatVersion` | 1 | current version-1; no bump (Q5). | `FILL` |
+| `character#/fund/satchel/coins` | 0 | canonical empty. | `FILL` |
+| `character#/fund/satchel/max` | settings-derived | C# FundSatchel BoundedInteger(4) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/fund/stash/coins` | 0 | canonical empty. | `FILL` |
+| `character#/fund/stash/max` | settings-derived | C# FundStash BoundedInteger(40) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/gameName` | "" | canonical empty; settings Name offered as a previewed fill when gameStem resolves. | `FILL` |
+| `character#/gameStem` | campaign-derived | stored entity → derivable from the owning campaign's gameStem (previewed fill); import → caller or campaign context; invalid pattern → needs-input. All settings-derived fills depend on this value. | `DERIVED` |
+| `character#/gear/availableGear[]` | [] | legacy C# availableGearByName dictionary → array with name member (L3). | `LEGACY` |
+| `character#/gear/availableGear[]/bulk` | 0 | canonical empty. | `FILL` |
+| `character#/gear/availableGear[]/name` | — | minLength 1: needs caller input. | `NEEDS-INPUT` |
+| `character#/gear/commitment` | "none" | canonical default (C# default None); legacy variants per L2. | `FILL` |
+| `character#/gear/isCommitmentLocked` | false | canonical empty. | `FILL` |
+| `character#/gear/loadout[]` | [] | legacy C# loadoutByName dictionary → array with name member (L3). | `LEGACY` |
+| `character#/gear/loadout[]/bulk` | 0 | canonical empty. | `FILL` |
+| `character#/gear/loadout[]/name` | — | minLength 1: missing or empty name is not derivable → needs caller input. | `NEEDS-INPUT` |
+| `character#/gear/maxBulk` | settings-derived | derived from commitment level (C# LoadCommitmentOption: none 0 / light 3 / normal 5 / heavy 6 / encumbered 9; SC-C3 migrates); needs-input when commitment and gameStem both unresolvable. | `DERIVED` |
+| `character#/id` | route/server-generated | identity class: stored → filled from route file name (directory authoritative); create/import → server-generated UUID offered as previewed fill; else needs-input. Non-UUID (e.g. C#-era) ids → needs-input or route fill. | `IDENTITY` |
+| `character#/isDeadish` | false | canonical empty; lifecycle flag. | `FILL` |
+| `character#/isRetired` | false | canonical empty; lifecycle flag. | `FILL` |
+| `character#/kind` | const "character" | identity class: body kind is normalized to the route directory (characters/); a wrong/missing const is never silently accepted. | `CONST` |
+| `character#/language` | "" | canonical empty; settings Language offered as a previewed fill when gameStem resolves. | `FILL` |
+| `character#/monitor/armor/hasHeavy` | false | canonical empty boolean (has* flags are loadout-derived presentation state, stored per current schema). | `FILL` |
+| `character#/monitor/armor/hasSpecial` | false | canonical empty boolean (has* flags are loadout-derived presentation state, stored per current schema). | `FILL` |
+| `character#/monitor/armor/hasStandard` | false | canonical empty boolean (has* flags are loadout-derived presentation state, stored per current schema). | `FILL` |
+| `character#/monitor/armor/heavyUsed` | false | canonical empty boolean (has* flags are loadout-derived presentation state, stored per current schema). | `FILL` |
+| `character#/monitor/armor/specialUsed` | false | canonical empty boolean (has* flags are loadout-derived presentation state, stored per current schema). | `FILL` |
+| `character#/monitor/armor/standardUsed` | false | canonical empty boolean (has* flags are loadout-derived presentation state, stored per current schema). | `FILL` |
+| `character#/monitor/harm/fatal[]` | [] | canonical empty; legacy BoundedCollection lists are already arrays of strings. | `FILL` |
+| `character#/monitor/harm/healingClock/rollover` | 0 | canonical empty; embedded healing clock rolls over (C# RolloverClock). | `FILL` |
+| `character#/monitor/harm/healingClock/segments` | 0 | canonical empty. | `FILL` |
+| `character#/monitor/harm/healingClock/size` | settings-derived | RecoveryClockSize from game settings (BitD 4); needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/monitor/harm/lesser[]` | [] | canonical empty; legacy BoundedCollection lists are already arrays of strings. | `FILL` |
+| `character#/monitor/harm/moderate[]` | [] | canonical empty; legacy BoundedCollection lists are already arrays of strings. | `FILL` |
+| `character#/monitor/harm/severe[]` | [] | canonical empty; legacy BoundedCollection lists are already arrays of strings. | `FILL` |
+| `character#/monitor/stress/current` | 0 | canonical empty. | `FILL` |
+| `character#/monitor/stress/max` | settings-derived | C# MonitorStress.DefaultMaxStress = 9 (BitD); SC-C3 migrates to settings; needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/monitor/trauma/max` | settings-derived | C# MonitorTrauma.MaxTraumas = 4 (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/monitor/trauma/traumas[]` | [] | canonical empty; legacy C# SortedSet serialization converts directly (sorted, de-duplicated). | `FILL` |
+| `character#/notebook` | "" | canonical empty string. | `FILL` |
+| `character#/playbook/abilities[]` | [] | legacy C# abilitiesByName dictionary → array with name member (L3). | `LEGACY` |
+| `character#/playbook/abilities[]/description` | "" | canonical empty. | `FILL` |
+| `character#/playbook/abilities[]/name` | "" | canonical empty. | `FILL` |
+| `character#/playbook/abilities[]/timesTaken` | — | no neutral value (minimum 1): needs caller input; legacy dictionaries carry TimesTaken and convert (L3). | `NEEDS-INPUT` |
+| `character#/playbook/experience/max` | settings-derived | C# Playbook ExperienceTracker(8) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/playbook/experience/points` | 0 | canonical empty. | `FILL` |
+| `character#/playbook/name` | "" | canonical empty; completeness pointer. | `FILL` |
+| `character#/revision` | 1 | schema minimum; server-managed. | `FILL` |
+| `character#/rolodex/friends[]` | [] | canonical empty. | `FILL` |
+| `character#/rolodex/friends[]/closeness` | — | no neutral value: needs caller input; legacy variants per L2. | `NEEDS-INPUT` |
+| `character#/rolodex/friends[]/entry` | — | minLength 1: needs caller input. | `NEEDS-INPUT` |
+| `character#/session/characterExpressions` | 0 | canonical empty. | `FILL` |
+| `character#/session/max` | settings-derived | C# Session.MaxExpressions = 2 (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/session/playbookExpressions` | 0 | canonical empty. | `FILL` |
+| `character#/session/struggleExpressions` | 0 | canonical empty. | `FILL` |
+| `character#/talent/attributes[]` | [] | legacy C# attributesByName dictionary → array with name member (L3). | `LEGACY` |
+| `character#/talent/attributes[]/actions[]` | [] | legacy C# actionsByName dictionary → array with name member (L3). | `LEGACY` |
+| `character#/talent/attributes[]/actions[]/maxRating` | settings-derived | ActionPointMaximum from game settings (BitD 4; C# TalentAction(actionPointsMaximum)); needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/talent/attributes[]/actions[]/name` | "" | canonical empty (free string in current schema). | `FILL` |
+| `character#/talent/attributes[]/actions[]/rating` | 0 | canonical empty. | `FILL` |
+| `character#/talent/attributes[]/experience/max` | settings-derived | C# TalentAttribute ExperienceTracker(6) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `character#/talent/attributes[]/experience/points` | 0 | canonical empty. | `FILL` |
+| `character#/talent/attributes[]/name` | "" | canonical empty (names are free strings in the current schema). | `FILL` |
+| `character#/updatedAt` | — | no derivable value: needs-input; server stamps on apply. | `NEEDS-INPUT` |
+
+### 3.2 crew.json — `crew#`
+
+| Property path | Canonical default | Rule | Class |
+|---|---|---|---|
+| `crew#/claimOverrides[]` | [] | outer overrides array is always present; canonical empty. | `FILL` |
+| `crew#/claimOverrides[]/claimId` | — | required and pattern-constrained: needs caller input (cannot guess which claim is overridden). | `NEEDS-INPUT` |
+| `crew#/claimOverrides[]/description` | absent = inherit | sparse overlay exception: absent = inherit; present-but-empty → needs-input. | `SPARSE` |
+| `crew#/claimOverrides[]/effects[]` | absent = inherit | sparse overlay exception: absent = inherit; a present empty array is semantically distinct (cleared) and is preserved. | `SPARSE` |
+| `crew#/claimOverrides[]/name` | absent = inherit | sparse overlay exception (Q2/Q3): absent means inherit the canonical game-setting value — NOT a defect, never filled. Present-but-empty violates minLength 1 → needs-input (supply or remove). | `SPARSE` |
+| `crew#/claimedClaimIds[]` | [] | canonical empty; each item must match the claim-id pattern, else needs-input (cannot guess a claim). | `FILL` |
+| `crew#/cohorts[]` | [] | canonical empty. | `FILL` |
+| `crew#/cohorts[]/cohortKind` | — | no neutral value: needs caller input; legacy variants per L2. | `NEEDS-INPUT` |
+| `crew#/cohorts[]/description` | "" | canonical empty. | `FILL` |
+| `crew#/cohorts[]/edges[]` | [] | canonical empty; legacy C# CohortEdge enum values map per L2 (Fearsome/Independent/Loyal/Tenacious). | `FILL` |
+| `crew#/cohorts[]/expertType` | "" | canonical empty. | `FILL` |
+| `crew#/cohorts[]/flaws[]` | [] | canonical empty; legacy C# CohortFlaw enum values map per L2 (Principled/Savage/Unreliable/Wild). | `FILL` |
+| `crew#/cohorts[]/gangType` | "" | canonical empty (C# model keeps both gangType and expertType; exactly one is populated by the caller). | `FILL` |
+| `crew#/cohorts[]/harm` | "healthy" | canonical default (C# CohortHarmLevel.Healthy); legacy variants per L2. | `FILL` |
+| `crew#/cohorts[]/hasArmor` | false | canonical empty. | `FILL` |
+| `crew#/cohorts[]/id` | server-generated | no schema references cohort ids, so a server-generated UUID is a safe previewed fill for import/repair; caller may supply; else needs-input. | `IDENTITY` |
+| `crew#/cohorts[]/quality` | 0 | canonical empty. | `FILL` |
+| `crew#/cohorts[]/scale` | 0 | canonical empty. | `FILL` |
+| `crew#/coin` | 0 | canonical empty. | `FILL` |
+| `crew#/contacts[]` | [] | C3-era crews lack contacts (optional until formatVersion bump): fill [] (Q4 makes it required; empty means no entries) (L6). | `LEGACY` |
+| `crew#/contacts[]/name` | — | minLength 1: needs caller input. | `NEEDS-INPUT` |
+| `crew#/contacts[]/profession` | "" | canonical empty. | `FILL` |
+| `crew#/createdAt` | — | needs-input; import preview may offer server 'now'. | `NEEDS-INPUT` |
+| `crew#/crewTypeName` | "" | canonical empty; completeness pointer. | `FILL` |
+| `crew#/experience/max` | settings-derived | C# ExperienceTracker(10) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `crew#/experience/points` | 0 | canonical empty. | `FILL` |
+| `crew#/factions[]` | [] | C3-era crews lack factions: fill [] (L6). | `LEGACY` |
+| `crew#/factions[]/name` | — | minLength 1: needs caller input. | `NEEDS-INPUT` |
+| `crew#/factions[]/status` | 0 | schema has no bound (range comes from game settings FactionStatus, e.g. BitD −3..3, enforced server-side on writes); canonical fill 0 is schema-valid. | `FILL` |
+| `crew#/formatVersion` | 1 | current version-1; no bump (Q5). | `FILL` |
+| `crew#/gameName` | "" | canonical empty; settings Name offered when gameStem resolves. | `FILL` |
+| `crew#/gameStem` | campaign-derived | see character#/gameStem. | `DERIVED` |
+| `crew#/heat/current` | 0 | canonical empty. | `FILL` |
+| `crew#/heat/max` | settings-derived | C# new BoundedInteger(0, 9) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `crew#/hold` | "strong" | canonical default (C# CrewHold.Strong); legacy variants per L2. | `FILL` |
+| `crew#/huntingGrounds` | "" | canonical empty; completeness pointer. | `FILL` |
+| `crew#/id` | route/server-generated | identity class: see character#/id. | `IDENTITY` |
+| `crew#/kind` | const "crew" | identity class: normalized to route directory (crews/). | `CONST` |
+| `crew#/lair` | "" | canonical empty; completeness pointer. | `FILL` |
+| `crew#/language` | "" | canonical empty; settings Language offered when gameStem resolves. | `FILL` |
+| `crew#/name` | "" | canonical empty; completeness pointer. | `FILL` |
+| `crew#/notes[]` | [] | legacy single-string notes → one-entry array, "" → [] (L1). | `LEGACY` |
+| `crew#/rep/current` | 0 | canonical empty. | `FILL` |
+| `crew#/rep/max` | settings-derived | C# new BoundedInteger(0, 12) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+| `crew#/reputation` | "" | canonical empty; completeness pointer. | `FILL` |
+| `crew#/revision` | 1 | schema minimum; server-managed. | `FILL` |
+| `crew#/specialAbilities[]` | [] | legacy C# SpecialAbilities dictionary → array with name member (L3). | `LEGACY` |
+| `crew#/specialAbilities[]/name` | — | minLength 1: needs caller input. | `NEEDS-INPUT` |
+| `crew#/specialAbilities[]/timesTaken` | — | minimum 1: needs caller input; legacy dictionaries carry TimesTaken (L3). | `NEEDS-INPUT` |
+| `crew#/stash` | 0 | canonical empty. | `FILL` |
+| `crew#/tier` | 0 | canonical empty. | `FILL` |
+| `crew#/turf` | 0 | canonical empty; C4 playtest addition — older crews lack it (L7); bound 0..6 enforced (clamp per D5). | `LEGACY` |
+| `crew#/updatedAt` | — | needs-input; server stamps on apply. | `NEEDS-INPUT` |
+| `crew#/upgrades[]` | [] | legacy C# Upgrades dictionary → array with name member (L3). | `LEGACY` |
+| `crew#/upgrades[]/boxesMarked` | — | minimum 1: needs caller input; legacy entries carry marked box count (L3). | `NEEDS-INPUT` |
+| `crew#/upgrades[]/name` | — | minLength 1: needs caller input. | `NEEDS-INPUT` |
+| `crew#/wanted/current` | 0 | canonical empty. | `FILL` |
+| `crew#/wanted/max` | settings-derived | C# new BoundedInteger(0, 4) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
+
+### 3.3 clock.json — `clock#`
+
+| Property path | Canonical default | Rule | Class |
+|---|---|---|---|
+| `clock#/clockKind` | legacy-derived | legacy shapes derive it: presence of a rollover key (even 0) → "rollover" (C# RolloverClock always serializes Rollover), absence → "project" (L5). A modern-shape document missing clockKind is ambiguous → needs caller input. | `LEGACY` |
+| `clock#/createdAt` | — | needs-input; import preview may offer server 'now'. | `NEEDS-INPUT` |
+| `clock#/formatVersion` | 1 | current version-1; no bump (Q5). | `FILL` |
+| `clock#/id` | route/server-generated | identity class: see character#/id. | `IDENTITY` |
+| `clock#/kind` | const "clock" | identity class: normalized to route directory (clocks/). | `CONST` |
+| `clock#/name` | "" | canonical empty. | `FILL` |
+| `clock#/revision` | 1 | schema minimum; server-managed. | `FILL` |
+| `clock#/rollover` | 0 | canonical empty (project clocks always 0); legacy rollover clocks keep their stored rollover (L5). | `FILL` |
+| `clock#/segments` | 0 | canonical empty; legacy `time` maps to segments (L5). | `FILL` |
+| `clock#/size` | — | no usable positive default (minimum 1; a guess would change game meaning) — the governing spec's needs-input example. Caller supplies size. | `NEEDS-INPUT` |
+| `clock#/updatedAt` | — | needs-input; server stamps on apply. | `NEEDS-INPUT` |
+
+### 3.4 campaign.json — `campaign#`
+
+| Property path | Canonical default | Rule | Class |
+|---|---|---|---|
+| `campaign#/$defs/campaign/createdAt` | — | needs-input; create preview may offer server 'now'. | `NEEDS-INPUT` |
+| `campaign#/$defs/campaign/formatVersion` | 1 | current version-1. | `FILL` |
+| `campaign#/$defs/campaign/gameStem` | — | no parent to derive from: needs caller input; pattern-validated (^[A-Za-z0-9-]+$). | `NEEDS-INPUT` |
+| `campaign#/$defs/campaign/kind` | const "campaign" | fixed discriminator; wrong value → identity class (stored under the campaign file). | `CONST` |
+| `campaign#/$defs/campaign/name` | "" | canonical empty. | `FILL` |
+| `campaign#/$defs/characterSummary/alias` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/crewId` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/gameStem` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/id` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/isDeadish` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/isRetired` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/name` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/playbook` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/revision` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/stress` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/characterSummary/traumas[]` | — | roster summary row: server-constructed from the stored character (route-derived id/kind for degraded rows; canonical empty summary values where source data cannot be read). SC-C1 adds isReadable/isRepairable/isComplete/deleteToken per the total-collection rule. Never repaired in place. | `RESPONSE` |
+| `campaign#/$defs/crewSummary/crewType` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/gameStem` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/heat` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/hold` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/id` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/memberCount` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/name` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/rep` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/revision` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/tier` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/crewSummary/wanted` | — | roster summary row: server-constructed (see characterSummary). | `RESPONSE` |
+| `campaign#/$defs/health/dataDir` | — | health is a server-constructed response DTO (GET /api/health); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/health/implementation` | — | health is a server-constructed response DTO (GET /api/health); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/health/status` | — | health is a server-constructed response DTO (GET /api/health); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/health/version` | — | health is a server-constructed response DTO (GET /api/health); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/historyEntry/op` | — | response DTO; server-constructed. | `RESPONSE` |
+| `campaign#/$defs/historyEntry/snapshotId` | — | history is a response DTO; never repaired. Legacy C#-era snapshot ids (plain GUIDs) are tolerated on read (frontend decoder note, f2aa) but are not rewritten; new snapshots use the declared pattern. | `RESPONSE` |
+| `campaign#/$defs/historyEntry/takenAt` | — | response DTO; server-constructed from stored snapshot metadata. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/alias` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/crewId` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/gameStem` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/id` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/isDeadish` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/isRetired` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/name` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/playbook` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/revision` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/stress` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/characters[]/traumas[]` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/crewType` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/gameStem` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/heat` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/hold` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/id` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/memberCount` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/name` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/rep` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/revision` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/tier` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+| `campaign#/$defs/roster/crews[]/wanted` | — | roster is a response DTO (server-constructed arrays of summaries); never stored, never repaired. | `RESPONSE` |
+
+### 3.5 common.json — `common#`
+
+| Property path | Canonical default | Rule | Class |
+|---|---|---|---|
+| `common#/$defs/boundedInteger/current` | 0 | canonical empty; bound repairs clamp to [0, max] on preview. | `FILL` |
+| `common#/$defs/boundedInteger/max` | settings-derived | settings-derived fill (C#-era literals: stress 9, heat 9, wanted 4, rep 12 for BitD; SC-C3 migrates them into game settings). needs-input when gameStem is unresolved. | `DERIVED` |
+| `common#/$defs/clockState/segments` | 0 | canonical empty; declared but unreferenced by any entity or operation schema in the current contract (candidate for SC-C1 cleanup). | `FILL` |
+| `common#/$defs/clockState/size` | — | no usable positive default (minimum 1); the governing spec's own needs-input example. Caller supplies size. | `NEEDS-INPUT` |
+| `common#/$defs/closeness` | — | no neutral enum value: missing or unknown value needs caller input (friend \| close-friend \| rival). Known legacy variants map per L2. | `NEEDS-INPUT` |
+| `common#/$defs/cohortHarm` | "healthy" | canonical default is the C#-era default (CohortHarmLevel.Healthy); legacy variants map per L2. | `FILL` |
+| `common#/$defs/cohortType` | — | no neutral enum value: needs caller input (gang \| expert); legacy variants map per L2. | `NEEDS-INPUT` |
+| `common#/$defs/commitment` | "none" | canonical default is the C#-era default (None); legacy variants map per L2. | `FILL` |
+| `common#/$defs/errorCode` | — | operation-result enum; never stored; no repair semantics. | `RESPONSE` |
+| `common#/$defs/experience/max` | settings-derived | settings-derived fill (C#-era literals: playbook 8, crew 10, attribute 6 for BitD; SC-C3 migrates). needs-input when gameStem unresolved. | `DERIVED` |
+| `common#/$defs/experience/points` | 0 | canonical empty. | `FILL` |
+| `common#/$defs/formatVersion` | 1 | formatVersion 1 is the canonical default (version 1 redefined in place, no bump — Q5). | `FILL` |
+| `common#/$defs/harmIntensity` | — | request/response DTO enum (harm.add etc.); never a stored-entity property; no repair semantics. | `RESPONSE` |
+| `common#/$defs/hold` | "strong" | canonical default is the C#-era default (CrewHold.Strong); legacy variants map per L2. | `FILL` |
+| `common#/$defs/namedDescription/description` | "" | canonical empty string. | `FILL` |
+| `common#/$defs/namedDescription/name` | "" | canonical empty string (schema-valid; no minLength). | `FILL` |
+| `common#/$defs/notes[]` | [] | canonical empty; legacy single-string notes convert per L1. | `LEGACY` |
+| `common#/$defs/revision` | 1 | schema minimum 1 is the canonical default; server may re-stamp the revision on apply (revision is server-managed concurrency metadata). | `FILL` |
+| `common#/$defs/timestamp` | — | no derivable value: needs-input. Import/create preview may offer the server clock ('now') as an explicit, caller-confirmed fill. | `NEEDS-INPUT` |
+| `common#/$defs/uuid` | — | identity class: stored entity → filled from route (directory/file name, authoritative); create/import → server-generated UUID offered as a previewed fill; otherwise caller input. Pattern-violating values are never guessed. | `IDENTITY` |
+| `common#/$defs/vice/description` | "" | canonical empty string. | `FILL` |
+| `common#/$defs/vice/name` | "" | canonical empty string. | `FILL` |
+| `common#/$defs/vice/purveyor/description` | "" | see purveyor/name. | `LEGACY` |
+| `common#/$defs/vice/purveyor/name` | "" | legacy C# DossierVice has no purveyor (L4): missing purveyor subtree fills {name:"", description:""}; canonical empty. | `LEGACY` |
+
+Completeness note (work spec, "Completeness"): a present canonical empty at a
+completeness pointer (`/dossier/name`, `/dossier/alias`, `/dossier/look`,
+`/dossier/heritage/name`, `/dossier/background/name`, `/dossier/vice/name`,
+`/dossier/vice/purveyor/name`, `/playbook/name`; crew `/name`, `/crewTypeName`,
+`/lair`, `/reputation`, `/huntingGrounds`) marks the entity readable but
+**incomplete** — filling the canonical empty is schema-valid and never fakes
+completeness. Standalone clocks have no completeness list. An *absent* canonical
+property is non-canonical and routes through repair/degraded handling.
+
+## 4. Unknown-key rule (no silent loss)
+
+1. `additionalProperties: false` applies to every stored entity object and every
+   nested object in the five schemas.
+2. An unknown key is **never dropped silently**: the canonicalizer classifies it
+   (`undeclared`), and the preview displays its JSON pointer, reason, and previous
+   value in the ordered change list.
+3. Stored entity: direct access is `422 INVALID_ENTITY`; repair preview is
+   `409 NORMALIZATION_REQUIRED` with the removal listed; apply (with token and
+   confirmation) writes the document without the key.
+4. Inbound import: unknown keys are rejected with `400 INVALID_ENTRY` **unless**
+   the caller first runs the import preview, which classifies and displays the
+   removal; apply then requires confirmation and the preview token.
+5. Known PascalCase legacy keys map via L2/L3 where a rule exists; any other
+   unknown key is subject to the same displayed-removal flow.
+
+## 5. Per-class fixture sketches (SC-O1 oracle seeds)
+
+All fixtures live under a seeded data directory; `…` elides canonical content.
+Each sketch gives the raw stored bytes (or request body) and the expected
+normalizer behavior; the oracle asserts the full preview change list, HTTP
+sequence, and write/no-write property.
+
+| # | Fixture | Stored bytes (sketch) | Expected |
+|---|---|---|---|
+| F1 | `characters/11111111-1111-4111-8111-111111111111/current.json` | canonical character with `/dossier/alias` removed | preview lists `"/dossier/alias": ""` (fill, reason `missing`); GET direct `422 INVALID_ENTITY`; repair preview `409 NORMALIZATION_REQUIRED`; apply with token `200`; second GET byte-identical |
+| F2 | same file, `"isRetired": null` | preview lists `"/isRetired": null → false`; never persisted as `null` |
+| F3 | `characters/…/current.json` with `"tier": "2"`, `"isDeadish": "true"`, `"notebook": 3` | preview lists three coercions; uncoercible variant `"coin": "abc"` → needs-input pointers, inbound `400 INVALID_ENTRY` |
+| F4 | `crews/…/current.json` with `"hold": "Strong"` | L2 mapping to `"strong"`; `"hold": "medium"` → needs-input |
+| F5 | `crews/…/current.json` with `"turf": 9`, `"coin": -4` | clamps `9 → 6`, `-4 → 0`; preview flags material rewrite; apply requires confirmation |
+| F6 | `characters/…/current.json` with `"dossier": { "name": "X", "favoriteColor": "red", … }` | preview lists removal of `/dossier/favoriteColor`; import apply without preview `400 INVALID_ENTRY`; apply after preview `200` |
+| F7 | legacy crew `{ "notes": "first note" }`; legacy clock `{ "size": 4, "time": 2, "rollover": 1 }`; legacy vice without purveyor | L1 → `["first note"]`; L5 → `clockKind:"rollover"`, `segments:2`; L4 → purveyor fill; all previewed |
+| F8 | `characters/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/current.json` whose body is `{ "kind": "crew", "id": "bbbb…", … }` | roster row keeps route id/kind; repair preview normalizes body identity to route; if the body is a full crew shape, remaining pointers are needs-input; inbound import of a crew body into `characters/` → `400 INVALID_ENTRY` |
+| F9 | `characters/cccccccc-cccc-4ccc-8ccc-cccccccccccc/current.json` containing `[1, 2, 3]` | unreadable; direct GET `422 INVALID_ENTITY`; roster row `isReadable:false`, `deleteToken: "sha256:<hex>"`; DELETE with token `200`; token mismatch `409 STALE_REVISION`; no normalization possible |
+| F10 | `crews/…/current.json` containing `{ "name": "trunc` (truncated) | unreadable; identical degraded handling to F9 |
+
+Oracle assertions shared by every fixture: GET never writes (checksum of the file
+before/after), previews never write, apply is atomic, canonical results are
+byte-identical on re-read, and collections return `200` with degraded rows.
+
+## 6. Coverage check (acceptance evidence)
+
+Run: `python3 /tmp/sc-r0/coverage.py` (reads all five schemas, resolves `$ref`s,
+enumerates every property path, and asserts each path string appears in this
+document; also asserts every rule key is used).
+
+```text
+$ python3 /tmp/sc-r0/coverage.py
+schemas: character crew clock campaign common
+total property paths enumerated: 228
+  character: 77 paths
+  crew: 58 paths
+  clock: 11 paths
+  campaign: 58 paths
+  common: 24 paths
+COVERAGE OK: 228/228 property paths present in the matrix document
+```
+
+## 7. Sources and open questions
+
+- Governing decisions: `docs/pages/contract/spec-change-work-spec.mdx`
+  ("Canonical shape and normalization", "Stored-entity classification and HTTP errors",
+  decisions Q1–Q9, Q13–Q15, Q26).
+- Legacy reference: `blades-in-the-sheets/Models/` (C#), `PAPERCLIPS.md` §6/§7.1,
+  `docs/pages/contract/c3-crew-contacts-factions.mdx`, frontend decoder notes in
+  `docs/pages/frontend/` (`f2aa`, `f2ab`, `f2ac`, `f2y`).
+- Settings-derived maxima: current game settings declare `RecoveryClockSize`,
+  `ActionPointMaximum`, and `FactionStatus`; the remaining C#-era literals
+  (stress 9, trauma 4, heat 9, wanted 4, rep 12, XP 8/10/6, session 2, satchel 4,
+  stash 40, commitment bulk 0/3/5/6/9) migrate into settings under SC-R4/SC-C3.
+- Open items for downstream cards: SC-C1 adds total-collection summary fields
+  (`isReadable`, `isRepairable`, `isComplete`, `deleteToken`) and the clock
+  ownership/purpose/behavior fields to the schemas; SC-C1 may drop the
+  unreferenced `common#/$defs/clockState`; SC-C4 folds `INVALID_ENTRY` /
+  `INVALID_ENTITY` / `NORMALIZATION_REQUIRED` into the error union; SC-O1 freezes
+  the F1–F10 fixtures.

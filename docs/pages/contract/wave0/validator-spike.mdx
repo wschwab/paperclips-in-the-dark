@@ -1,0 +1,1993 @@
+---
+title: SC-R1 — Ada recursive validator spike
+description: Source-verified comparison of maintained Ada JSON Schema validation vs schema-generated entity validation for the GNAT 16.1 / GPRbuild 26.0.1 / Alire 2.1.1 toolchain; spike evidence, decision-rule verdict, and the generator approach for SC-C5/SC-A1.
+---
+
+# SC-R1 — Ada recursive validator spike
+
+**Verdict: schema-generated entity validators.** No maintained Ada library provides Draft 2020-12 JSON Schema validation (Alire catalog, json-schema.org implementations list, and GitHub all empty; every candidate source read and found to lack schema validation). The decision rule therefore selects generation: the generic-library path fails every exercised requirement, and the generated-validator path passes all of them in the spike. **Dependency impact: zero new dependencies** — the spike compiles against the already-pinned GNAT FSF 16.1.0 + GNATCOLL 26.0.0 core JSON.
+
+This document feeds SC-A1 (recursive validator and canonicalizer) and SC-C5 (schema-derived validator metadata). All commands are re-runnable from `/tmp`; the complete spike source is in [Appendix A](#appendix-a--spike-source-and-reproduction).
+
+## Decision rule applied
+
+Governing decision (`docs/pages/contract/spec-change-work-spec.mdx`, “Validation implementation”):
+
+> Wave 0 first tests whether a maintained Ada library can provide Draft 2020-12 validation, external `$ref` resolution, stable JSON pointers, and usable diagnostics in the current GNAT/Alire toolchain. If it passes the spike, use it. Otherwise generate or centrally define entity-specific recursive validators from the contract schemas. Do not hand-maintain a second unsynchronized set of `Character_Required`/`Allowed` lists.
+
+| Path | Result | Why |
+|---|---|---|
+| Generic maintained Ada validator | **FAIL** — 0/8 requirements | No such library exists (Section 1). Compile attempts against every candidate fail with `file "...-schema.ads" not found`. |
+| Schema-generated entity validators | **PASS** — 8/8 requirements | Spike (Section 2) enforces every required construct from `contract/schemas/*.json` with stable RFC 6901 pointers, on the pinned toolchain, with zero new dependencies. |
+| Hand-maintained lists | **REJECTED** | Explicitly forbidden by the governing decision; currently live in `backend-ada/server/src/pitd_callback.adb` lines 800–829 as `Character_Required`/`Crew_Required`/`Clock_Required` — the exact unsynchronized-set anti-pattern this wave removes. |
+
+## 1. Survey of maintained Ada JSON Schema validators
+
+### 1.1 Alire catalog (community index, branch `stable-1.4.0`)
+
+Commands and results (run 2026-08-14, Alire 2.1.1):
+
+```sh
+XDG_RUNTIME_DIR=/tmp alr search --crates json          # -> aor_jsona, json, jwt, yeison, yeison_12
+XDG_RUNTIME_DIR=/tmp alr search --crates schema        # -> No hits
+XDG_RUNTIME_DIR=/tmp alr search --crates validator     # -> spdx (license validator, not JSON)
+XDG_RUNTIME_DIR=/tmp alr search --crates json-schema   # -> No hits
+XDG_RUNTIME_DIR=/tmp alr search --crates jwx           # -> No hits
+XDG_RUNTIME_DIR=/tmp alr search --crates jsonschema    # -> No hits
+```
+
+The complete JSON-related crate inventory is: `aor_jsona` (typed path extraction), `json` (json-ada parser), `jwt` (JWT), `yeison`/`yeison_12` (JSON-like structures), plus `gnatcoll`/`aws` JSON parsing (already in use). **No JSON Schema validator exists in the catalog.**
+
+### 1.2 Upstream sources
+
+- **Official implementations list** (`json-schema-org.github.io/_data/validator-libraries-modern.yml`): no Ada entry among 20+ languages. (Verified by reading the raw file; Ada appears nowhere.)
+- **GitHub repository search API** (language:Ada), three query shapes, all `total_count: 0`:
+  - `https://api.github.com/search/repositories?q=jsonschema+language:ada`
+  - `…?q=%22json-schema%22+language:ada`
+  - `…?q=%22json+schema%22+in:name+language:ada`
+- **AdaCore documentation** for GNATCOLL.JSON states explicitly that it “doesn’t provide advanced features like validation” (GNATColl docs, JSON chapter); confirmed in source (below).
+
+### 1.3 Source verification of candidates (no README skims)
+
+Each candidate was fetched with `alr get` and its Ada sources read:
+
+| Crate (version) | Source read | What the source actually provides | Schema validation API? | License | Deps |
+|---|---|---|---|---|---|
+| `aor_jsona` 1.6.6 | `sources/jsona.ads`, `sources/jsona-resolution.ads/.adb` | Path-based **typed extraction** over GNATCOLL.JSON: `As_String`, `As_Array`, `Has_Field`, `Kind` at a path. No schema keywords in any source (`grep -ril schema` → no hits). | **No** | GPL-3.0-or-later WITH GCC-exception-3.1 | `aws ^25.2.0`, `gnatcoll ^25.0.0` |
+| `json` (json-ada) 6.0.0 | `json/src/json.ads`, `json-tokenizers.ads`, `json-parsers.ads`, `json-streams.ads` | RFC 8259 parser/streaming. `grep -ril "schema\|validate"` → no hits. | **No** | Apache-2.0 | none |
+| `yeison_12` 0.1.0-dev / `yeison` | `src/yeison_12.ads`, `src/yeison_generic.ads` | JSON-like data structure (Ada 2012/2022). No schema/validation code. | **No** | MIT | none |
+| `jwt` 1.0.0 | `source/jws.ads`, `jws.adb`, `jws-rs256.adb` | JWT/JWS; “validate” hits are **signature verification**, not schema validation. | **No** | MIT | matreshka_league 21.0.0 |
+| `gnatcoll` 26.0.0 (JSON) | `core/src/gnatcoll-json.ads` | DOM parse/read/write, `Map_JSON_Object`, typed getters. No schema types; no `$ref` handling. | **No** | Apache-2.0 (GNAT components) | gnatcoll_minimal (no libgpr) |
+| `matreshka` | catalog search | `matreshka_xml` is XML **Schema** — not JSON Schema; no JSON Schema module exists in the catalog. | **No** | — | — |
+
+**Compile-level confirmation** that no generic API exists (re-runnable):
+
+```sh
+# /tmp/sc-r1/generic-attempt: strongest “schema-like” candidate
+printf 'with Jsona.Schema;\nprocedure Generic_Attempt is begin null; end;\n' > generic_attempt.adb
+gnatmake -c -I/tmp/sc-r1/aor_jsona_1.6.6_b47690c0/sources generic_attempt.adb
+# -> generic_attempt.adb:1:06: error: file "jsona-schema.ads" not found
+
+# /tmp/sc-r1/generic_attempt2: the JSON library already pinned in this repo
+#   (alr init --bin generic_attempt2 && alr with gnatcoll=26.0.0, main = with GNATCOLL.JSON.Schema)
+XDG_RUNTIME_DIR=/tmp alr build
+# -> generic_attempt2.adb:1:06: error: file "gnatcoll-json-schema.ads" not found
+```
+
+Both errors are re-runnable from the scratch projects under `/tmp/sc-r1/`.
+
+## 2. Spike: generated-shape recursive validators
+
+### 2.1 Toolchain and setup (verified)
+
+| Fact | Verified value |
+|---|---|
+| Alire | `alr version` → 2.1.1, community index `stable-1.4.0` |
+| GNAT | `gnat --version` → GNAT 16.1.1 20260728 (alr toolchain `gnat_native=16.1.0`) |
+| GPRbuild | 26.0.1 (invoked by `alr build`; not on PATH) |
+| Runtime dir | `XDG_RUNTIME_DIR=/tmp` used for **every** `alr` call (matches `backend-ada/AGENTS.md`) |
+| Spike deps | `gnatcoll 26.0.0` + `gnatcoll_minimal 26.0.0` — resolves **without libgpr** (matches the AGENTS.md note) |
+
+Setup commands:
+
+```sh
+mkdir -p /tmp/sc-r1 && cd /tmp/sc-r1
+XDG_RUNTIME_DIR=/tmp alr --non-interactive init --bin spike
+cd spike
+XDG_RUNTIME_DIR=/tmp alr with gnatcoll=26.0.0
+# write src/spike.ads (main), src/spike_validators.ads, src/spike_validators.adb
+# and ../fixtures/*.json from Appendix A
+XDG_RUNTIME_DIR=/tmp alr build
+```
+
+The spike is a hand-written mirror of the code shape a schema generator (SC-C5) would emit: per-entity `Validate` procedures, required/allowed key constants, recursive item checkers, hand-rolled pattern matchers, and a pointer-accumulating error list. It proves the shape compiles and behaves on the pinned toolchain.
+
+### 2.2 Schema-construct inventory in `contract/schemas/*.json`
+
+| Construct | Where it appears | Spike handling |
+|---|---|---|
+| `$schema` / `$id` | every schema | ignored at runtime (generation-time metadata) |
+| external `$ref` (`common.json#/$defs/…`) | character, crew, clock, campaign | inlined as the referenced def’s checks |
+| internal `$ref`/`$defs` | character `#/$defs/gearItems`; campaign `#/$defs/characterSummary`, `#/$defs/crewSummary`, `#/$defs/health`, `#/$defs/historyEntry`; common `vice → #/$defs/namedDescription` | inlined recursive checks |
+| `required` (nested) | every object, 3–4 levels deep (e.g. `monitor.harm.healingClock`) | `Check_Object` + per-pointer missing reports |
+| `additionalProperties: false` (nested) | every object incl. array items | `Map_JSON_Object` vs allowed set |
+| `enum` | `clockKind`, `hold`, `closeness`, `commitment`, `cohortType`, `cohortHarm`, `harmIntensity`, `errorCode` | membership check per enum |
+| `const` | `kind` on all four entities | equality check |
+| `pattern` | `uuid`, `gameStem`, `crewId` (uuid-or-empty), `claimId`, `snapshotId` | hand-rolled matcher per regex |
+| numeric `minimum`/`maximum` | `segments ≥ 0`, `size ≥ 1`, `revision ≥ 1`, `turf 0..6`, `maxRating ≥ 1`, … | bounded integer check |
+| `minLength` | `rolodex.friends[].entry`, `specialAbilities[].name`, `upgrades[].name`, `claimOverrides[].name/description`, `contacts[].name`, `factions[].name`, `gearItems[].name` | length check |
+| `uniqueItems` | `claimedClaimIds` | duplicate detection |
+| `format: "date-time"` | `timestamp` def | **annotation only** (Draft 2020-12 default; assert-format is opt-in — the generator must not assert unless the contract opts in) |
+| `items: {"type": "object"}` | `claimOverrides[].effects` | container-type check only |
+| optional-but-allowed props | `crew.contacts`, `crew.factions` (C3) | in allowed set, not required |
+
+### 2.3 Exercised requirements — pass/fail
+
+Generic-library column: **FAIL for all** (no library exists; Section 1 evidence). Spike column per requirement below. All commands run from `/tmp/sc-r1/spike`; `exit 0` = valid, `exit 1` = invalid.
+
+#### R1. External `$ref` (cross-file) — spike **PASS**
+
+`character.json`, `clock.json`, `crew.json` reference `common.json#/$defs/uuid|revision|formatVersion|timestamp|boundedInteger|…`. The generator inlines the referenced def; the spike enforces `uuid` at `/id` and `revision ≥ 1` at `/revision`.
+
+```sh
+./bin/spike ../fixtures/clock-invalid.json
+```
+```
+ENTITY clock
+POINTER /id REASON pattern: "not-a-uuid" is not a v4 UUID
+POINTER /revision REASON range:  0 outside [ 1 ..  2147483647]
+```
+```sh
+./bin/spike ../fixtures/clock-valid.json     # -> ENTITY clock / VALID (exit 0)
+```
+
+#### R2. Internal `$ref`/`$defs` — spike **PASS**
+
+Character `gear.loadout`/`availableGear` → `#/$defs/gearItems`; campaign `roster.characters` → `#/$defs/characterSummary` → (external) `common.json uuid` (two-hop chain); `dossier.vice.purveyor` → common `#/$defs/vice` → `#/$defs/namedDescription`.
+
+```sh
+./bin/spike ../fixtures/character-invalid.json
+```
+```
+POINTER /gear/loadout/0/name REASON minLength: empty string
+POINTER /gear/loadout/0/bulk REASON range: -2 outside [ 0 ..  2147483647]
+```
+```sh
+./bin/spike ../fixtures/roster-invalid.json
+```
+```
+ENTITY roster
+POINTER /characters/0/stress REASON range: -1 outside [ 0 ..  2147483647]
+POINTER /characters/0/revision REASON range:  0 outside [ 1 ..  2147483647]
+```
+
+#### R3. Nested `required` — spike **PASS**
+
+Missing members are reported at their own pointer, at any depth:
+
+```sh
+./bin/spike ../fixtures/character-invalid.json
+```
+```
+POINTER /dossier/name REASON missing required property
+POINTER /monitor/harm/healingClock/rollover REASON missing required property
+POINTER /fund/satchel/max REASON missing required property
+```
+```sh
+./bin/spike ../fixtures/clock-invalid.json   # -> POINTER /segments REASON missing required property
+./bin/spike ../fixtures/history-invalid.json # -> POINTER /takenAt REASON missing required property
+```
+
+#### R4. Nested `additionalProperties: false` — spike **PASS**
+
+Unknown keys are rejected at any depth, including inside array items (the fixture places `bogusField` inside `dossier`):
+
+```sh
+./bin/spike ../fixtures/character-invalid.json
+```
+```
+POINTER /dossier/bogusField REASON unknown property (additionalProperties: false)
+```
+```sh
+./bin/spike ../fixtures/clock-invalid.json   # -> POINTER /bogus REASON unknown property ...
+./bin/spike ../fixtures/crew-invalid.json    # -> POINTER /bogus REASON unknown property ...
+```
+
+Caveat recorded: unknown-key detection walks GNATCOLL’s object map; iteration order for *multiple* unknown keys in one object is not contractually stable. The generator must impose an order (emit the allowed-set comparison in schema order, or sort reported keys) for full determinism. All spike fixtures use at most one unknown key per object.
+
+#### R5. Enums — spike **PASS**
+
+```sh
+./bin/spike ../fixtures/clock-invalid.json
+```
+```
+POINTER /clockKind REASON enum: "hourglass" not in |project|rollover|
+```
+```sh
+./bin/spike ../fixtures/crew-invalid.json
+```
+```
+POINTER /hold REASON enum: "medium" not in |strong|weak|
+POINTER /cohorts/0/cohortKind REASON enum: "bogus" not in |gang|expert|
+POINTER /cohorts/0/harm REASON enum: "mangled" not in |healthy|weakened|impaired|broken|dead|
+```
+```sh
+./bin/spike ../fixtures/character-invalid.json   # -> POINTER /rolodex/friends/0/closeness REASON enum: "bogus" ...
+./bin/spike ../fixtures/roster-invalid.json      # -> POINTER /crews/0/hold REASON enum: "medium" ...
+```
+
+#### R6. `pattern` — spike **PASS**
+
+```sh
+./bin/spike ../fixtures/character-invalid.json
+```
+```
+POINTER /id REASON pattern: "123e4567-e89b-42d3-z456-426614174000" is not a v4 UUID
+POINTER /gameStem REASON pattern: "blades_in_the_dark" is not ^[A-Za-z0-9-]+$
+```
+```sh
+./bin/spike ../fixtures/crew-invalid.json
+```
+```
+POINTER /claimedClaimIds/2 REASON pattern: not a claim id
+POINTER /claimOverrides/0/claimId REASON pattern: "Crows" is not ^[a-z0-9]+(?:-[a-z0-9]+)*$
+```
+```sh
+./bin/spike ../fixtures/history-invalid.json
+```
+```
+POINTER /snapshotId REASON pattern: "2026081412000000X-AbC123" is not ^[0-9]{17}-[A-Za-z0-9]+$
+```
+The optional `crewId` pattern (uuid-or-empty) accepts `""` in `character-valid.json` → `VALID`.
+
+#### R7. Numeric bounds — spike **PASS**
+
+```sh
+./bin/spike ../fixtures/crew-invalid.json
+```
+```
+POINTER /turf REASON range:  7 outside [ 0 ..  6]
+```
+```sh
+./bin/spike ../fixtures/clock-invalid.json
+```
+```
+POINTER /size REASON range:  0 outside [ 1 ..  2147483647]
+POINTER /rollover REASON range: -1 outside [ 0 ..  2147483647]
+```
+```sh
+./bin/spike ../fixtures/character-invalid.json
+```
+```
+POINTER /talent/attributes/0/actions/0/rating REASON range: -1 outside [ 0 ..  2147483647]
+POINTER /playbook/abilities/0/timesTaken REASON range:  0 outside [ 1 ..  2147483647]
+POINTER /gear/loadout/0/name REASON minLength: empty string
+```
+`minLength: 1` is exercised alongside (`/specialAbilities/0/name` in the crew fixture).
+
+#### R8. Stable error pointers — spike **PASS**
+
+Every violation carries an RFC 6901 JSON Pointer (0-based array indices — the initial 1-based draft was corrected during the spike; see Section 6). Pointers are stable across runs:
+
+```sh
+./bin/spike ../fixtures/character-invalid.json > /tmp/r1.txt
+./bin/spike ../fixtures/character-invalid.json > /tmp/r2.txt
+diff /tmp/r1.txt /tmp/r2.txt && echo STABLE
+# -> STABLE: identical output across runs
+```
+
+Emission order is deterministic: schema property order at each level, required-missing before unknown-key before property checks. (Generator must RFC 6901-escape `~0`/`~1` in tokens; no current property name contains `~` or `/`.)
+
+### 2.4 Requirement summary
+
+| # | Requirement | Generic maintained Ada library | Generated entity validators (spike) |
+|---|---|---|---|
+| R1 | External `$ref` (cross-file) | FAIL (no library) | PASS |
+| R2 | Internal `$ref`/`$defs` | FAIL | PASS |
+| R3 | Nested `required` | FAIL | PASS |
+| R4 | Nested `additionalProperties` | FAIL | PASS |
+| R5 | Enums | FAIL | PASS |
+| R6 | `pattern` | FAIL | PASS |
+| R7 | Numeric bounds (`minimum`/`maximum`/`minLength`) | FAIL | PASS |
+| R8 | Stable error pointers | FAIL | PASS |
+
+## 3. Verdict and dependency impact
+
+**Chosen approach: schema-generated entity validators**, per the decision rule — the generic option is unattainable (no maintained Ada JSON Schema validator exists anywhere surveyed), and generation demonstrably covers every construct the contract schemas use, on the pinned toolchain.
+
+**Dependency impact: none.**
+
+- No crate added to `backend-ada/core/alire.toml` or `backend-ada/server/alire.toml`. Validators compile against the already-pinned `gnatcoll 26.0.0` (core-only, no libgpr) and GNAT FSF 16.1.0.
+- `gnatprove 16.1.0` is unaffected: validators belong to the SPARK-off AWS server boundary (`server/`), consistent with the A2 architecture note in `backend-ada/AGENTS.md` (“The AWS server is an explicit SPARK_Mode (Off) boundary by design”).
+- Licensing: generated code is MIT (repo license), derived from MIT-licensed project schemas — no third-party obligations. The only GPL-licensed candidate (`aor_jsona`) is rejected for lack of a validator API regardless.
+- Proof/toolchain interaction: none — the generator runs as a build-time step; generated Ada needs only GNATCOLL.JSON.
+
+**Rejected alternatives:**
+
+| Alternative | Reason |
+|---|---|
+| `aor_jsona` 1.6.6 | Not a validator (typed extraction only); pulls `aws ^25.2.0` + `gnatcoll ^25.0.0` → `libgpr 25.0.0` stack, which `backend-ada/AGENTS.md` documents as failing on GNAT 16.1; GPL-3.0+exception license. |
+| `json` (json-ada) 6.0.0 | Parser only; no schema keywords in source. |
+| `yeison` / `yeison_12` | JSON-like structure only. |
+| `jwt` 1.0.0 | JWT/JWS signature validation only. |
+| `gnatcoll` / `aws` JSON | Parse/DOM only; AdaCore docs: no validation. |
+| `matreshka` | XML Schema is not JSON Schema; no JSON Schema module in catalog. |
+| C/C++ validator binding (e.g. valijson) | Not a maintained Ada library; no catalog entry; violates the spike question’s terms; would add FFI complexity at the SPARK boundary. |
+| Hand-maintained required/allowed lists | Forbidden by the governing decision; currently live in `pitd_callback.adb` (lines 800–829) and already drifting risk (e.g. C3 `contacts`/`factions` requiredness changes). |
+
+## 4. Generator approach sketch (consumed by SC-C5 and SC-A1)
+
+The spike’s validator body **is** the target emission shape. The generator (SC-C5) must be deterministic and idempotent:
+
+1. **Input:** `contract/schemas/{common,character,crew,clock,campaign}.json` — the single source of truth. The generator fails loudly on unsupported constructs instead of emitting a partial validator.
+2. **Resolution:** build a per-entity schema tree by inlining external `$ref`s (`common.json#/$defs/…`) and internal `$ref`/`$defs` (`#/$defs/…`), recording the pointer prefix of each inlined def so error pointers stay document-relative. Detect cycles (`$recursiveRef` would be rejected as unsupported; none exist in the schemas).
+3. **Emission:** per entity, one package (e.g. `Pitd_Validation.<Entity>`) containing:
+   - `Required_<Entity>` / `Allowed_<Entity>` string constants (as in the spike),
+   - one `Check_…` procedure per nested object/array item (recursion),
+   - one pattern matcher per distinct regex (deduplicated across schemas — the five regexes in the contract schemas),
+   - enum membership checks and numeric-bound checks as named procedures,
+   - a `Validate (V : JSON_Value) return Error_List` entry point whose `Error_List` carries `(Pointer, Reason)` pairs.
+4. **Determinism:** fixed emission order (entities sorted, properties in schema order), fixed traversal order (schema property order), RFC 6901 pointers with 0-based array indices, unknown-key reports ordered by the generator’s emitted allowed-set comparison (not by hash-map iteration). No timestamps or environment-dependent text in output.
+5. **Idempotence:** output is a pure function of (schema files, generator version). Generated files are committed; CI regenerates and diffs (`generated == regenerated`) so any schema edit without regeneration fails the gate.
+6. **Consumption:** SC-C5 consumes the generator for validator metadata (required/allowed lists, bounds, enum members, patterns) and emits the same lists into the conformance/frontend completeness metadata module; SC-A1 uses the generated `Validate` for inbound checks and the same required/allowed knowledge for canonicalizer fill decisions (spec decision: missing properties normalize to canonical defaults; unknown properties are rejected unless preview-classified). No code path may hand-copy a required list again.
+7. **Tooling:** a small dependency-free script (Python stdlib or the repo’s existing Node tooling) run by CI; it emits Ada into `server/src/` only. The spike proves the emitted Ada compiles under `alr build` with `gnatcoll=26.0.0`.
+
+## 5. Answers to the card’s three questions
+
+1. **Contradicted by the codebase?** Two minor toolchain deltas, not contradictions: `gnat --version` reports 16.1.1 (build 20260728) where the card says GNAT FSF 16.1.0 (the alr toolchain is `gnat_native=16.1.0`), and `gprbuild` is not on PATH (26.0.1 runs through `alr build`/`alr exec`). Substantively: `backend-ada/server/src/pitd_callback.adb` (lines 800–829) hand-maintains exactly the `Character_Required`/`Crew_Required`/`Clock_Required` sets the governing decision forbids — confirming the motivation; the schema and the hand lists are in sync today, but the C3 `contacts`/`factions` episode shows the drift risk.
+2. **What I had to guess at:** (a) the exact emitted-code shape of the generator (the spike fixes a concrete proposal — `Required_`/`Allowed_` constants plus `Check_` procedures — that SC-C5 may adopt or refine); (b) `format: "date-time"` is treated as an annotation (Draft 2020-12 default) — asserting it would require an explicit contract decision; (c) the spike’s `POINTER <p> REASON <r>` diagnostic format, since the Wave 1 error schema (pointer-level details vocabulary) is not yet frozen; (d) that `snapshotId`/`historyEntry` belongs in scope (it is a campaign `$defs` DTO shape) — harmless either way.
+3. **What I needed that wasn’t given:** the final error-message vocabulary and pointer-detail shape for `400 VALIDATION`/`INVALID_ENTRY` responses (the Wave 1 spec task owns it; the spike only proves pointer stability, not the wire format); and a decision on whether the generator should be a Python/Node script or an Ada program (recommended: script run by CI; SC-C5 to confirm). Nothing blocked the spike.
+
+## 6. Toolchain notes (crib notes for `backend-ada/AGENTS.md`)
+
+- `GNATCOLL.JSON.Get (V)` is overload-ambiguous between `UTF8_String`, `UTF8_Unbounded_String` and `XString` in String contexts; use `Ada.Strings.Unbounded.To_String (Get (V))` (the spike’s `S` helper) to disambiguate.
+- `GNATCOLL.JSON.JSON_Array` is 1-based; RFC 6901 error pointers require 0-based indices (`I - 1`).
+- `gnatcoll=26.0.0` resolves with `gnatcoll_minimal 26.0.0` and **no libgpr** — confirmed again in the spike, matching the existing note.
+- `alr --non-interactive init --bin <name>` is the supported non-interactive crate creation (matches the existing cheatsheet).
+- The default build profile’s style checks (`-gnatyM` line length, `-gnatww` warnings) emit warnings only; they do not fail `alr build`.
+- GNATCOLL object-map iteration order is not contractually stable; deterministic validators must not rely on it for ordering (generator emits ordered allowed-set checks instead).
+
+## Appendix A — Spike source and reproduction
+
+Reproduce from scratch in `/tmp`:
+
+```sh
+mkdir -p /tmp/sc-r1 && cd /tmp/sc-r1
+XDG_RUNTIME_DIR=/tmp alr --non-interactive init --bin spike
+cd spike
+XDG_RUNTIME_DIR=/tmp alr with gnatcoll=26.0.0
+# recreate the six files below (three Ada sources; fixtures under ../fixtures/)
+XDG_RUNTIME_DIR=/tmp alr build
+./bin/spike ../fixtures/character-invalid.json   # 13 errors, exit 1
+./bin/spike ../fixtures/character-valid.json     # VALID, exit 0
+```
+
+`src/spike_validators.ads`:
+
+```ada
+--  SC-R1 spike: generator-shaped recursive entity validators.
+--
+--  This package is a hand-written mirror of what a schema-derived generator
+--  (SC-C5) would emit for contract/schemas/{clock,character,crew,campaign,
+--  common}.json.  It proves the generated-code shape compiles under the
+--  pinned toolchain (GNAT FSF 16.1.0 + GNATCOLL 26 core JSON) and that every
+--  schema construct used by the contract DTOs is enforceable:
+--
+--    * external $ref        (common.json#/$defs/uuid, ... from all entities)
+--    * internal $ref/$defs  (character.json#/$defs/gearItems;
+--                            campaign.json#/$defs/characterSummary,
+--                            #/$defs/crewSummary; common.json vice ->
+--                            #/$defs/namedDescription)
+--    * nested required      (dossier, monitor.harm.healingClock,
+--                            talent.attributes[].actions[])
+--    * nested additionalProperties: false
+--    * enums                (clockKind, hold, closeness, commitment,
+--                            cohortType, cohortHarm)
+--    * pattern              (uuid, gameStem, crewId, claimId, snapshotId)
+--    * numeric bounds       (minimum/maximum, minLength)
+--    * stable error pointers (RFC 6901 JSON Pointer per violation)
+--
+--  Additional constructs found in the schemas and supported here:
+--    * const                (kind = "character"/"crew"/"clock"/"campaign")
+--    * uniqueItems          (crew.claimedClaimIds)
+--    * format               ("date-time" stays an annotation, Draft 2020-12
+--                            default; the generator should NOT assert it
+--                            unless the contract opts into assert-format)
+--    * items: {"type":"object"} (claimOverrides[].effects)
+--  * optional properties  (crew.contacts / crew.factions, C3)
+
+with GNATCOLL.JSON;
+
+package Spike_Validators is
+
+   procedure Reset;
+
+   function N_Errors return Natural;
+   function Valid return Boolean;
+   function Pointer (I : Positive) return String;
+   function Reason (I : Positive) return String;
+
+   procedure Validate_Clock (V : GNATCOLL.JSON.JSON_Value);
+   procedure Validate_Character (V : GNATCOLL.JSON.JSON_Value);
+   procedure Validate_Crew (V : GNATCOLL.JSON.JSON_Value);
+   procedure Validate_Roster (V : GNATCOLL.JSON.JSON_Value);
+   procedure Validate_Campaign (V : GNATCOLL.JSON.JSON_Value);
+   procedure Validate_History_Entry (V : GNATCOLL.JSON.JSON_Value);
+
+end Spike_Validators;
+```
+
+
+`src/spike_validators.adb`:
+
+```ada
+--  SC-R1 spike body: recursive validators derived from the contract schemas.
+--  Scratch code; lives in /tmp only. See spike_validators.ads header.
+
+with Ada.Strings.Fixed;
+with Ada.Strings.Unbounded;
+with GNATCOLL.JSON;
+
+package body Spike_Validators is
+
+   use Ada.Strings.Unbounded;
+   use GNATCOLL.JSON;
+
+   Max_Errors : constant := 1024;
+   type Entry_Rec is record
+      Ptr : Unbounded_String;
+      Msg : Unbounded_String;
+   end record;
+   Table : array (1 .. Max_Errors) of Entry_Rec;
+   N : Natural := 0;
+
+   procedure Reset is
+   begin
+      N := 0;
+   end Reset;
+
+   function N_Errors return Natural is (N);
+
+   function Valid return Boolean is (N = 0);
+
+   function Pointer (I : Positive) return String is
+     (To_String (Table (I).Ptr));
+
+   function Reason (I : Positive) return String is
+     (To_String (Table (I).Msg));
+
+   procedure Report (Ptr : String; Msg : String) is
+   begin
+      if N < Max_Errors then
+         N := N + 1;
+         Table (N) := (To_Unbounded_String (Ptr), To_Unbounded_String (Msg));
+      end if;
+   end Report;
+
+   function Kind_Name (K : JSON_Value_Type) return String is
+   begin
+      case K is
+         when JSON_Null_Type    => return "null";
+         when JSON_Boolean_Type => return "boolean";
+         when JSON_Int_Type     => return "integer";
+         when JSON_Float_Type   => return "number";
+         when JSON_String_Type  => return "string";
+         when JSON_Array_Type   => return "array";
+         when JSON_Object_Type  => return "object";
+      end case;
+   end Kind_Name;
+
+   --  Unambiguous string accessor (avoids UTF8_String/XString overload clash).
+   function S (V : JSON_Value) return String is
+     (Ada.Strings.Unbounded.To_String (Get (V)));
+
+   --  RFC 6901 array-index token: 0-based.
+   function Idx (I : Positive) return String is
+     (Ada.Strings.Fixed.Trim (Integer'Image (I - 1), Ada.Strings.Left));
+
+   --  Delimiter-list helpers: lists are "|a|b|c|".
+   function In_List (Item : String; List : String) return Boolean is
+     (Ada.Strings.Fixed.Index (List, "|" & Item & "|") /= 0);
+
+   --  Type + nested required + nested additionalProperties: false.
+   --  Each violation is reported at its own JSON pointer.
+   procedure Check_Object (V : JSON_Value; Ptr : String;
+                           Required : String; Allowed : String) is
+      Pos : Positive := 1;
+      J   : Natural;
+   begin
+      if V.Kind /= JSON_Object_Type then
+         Report (Ptr, "type: expected object, found " & Kind_Name (V.Kind));
+         return;
+      end if;
+
+      while Pos < Required'Length loop
+         J := Ada.Strings.Fixed.Index (Required, "|", Pos + 1);
+         exit when J = 0;
+         declare
+            F : constant String := Required (Pos + 1 .. J - 1);
+         begin
+            if not Has_Field (V, F) then
+               Report (Ptr & "/" & F, "missing required property");
+            end if;
+         end;
+         Pos := J;
+      end loop;
+
+      declare
+         Allowed_Passed : Boolean := True;
+         Bad_Name : Unbounded_String := Null_Unbounded_String;
+         procedure Check_Allowed (Name : UTF8_String; Value : JSON_Value) is
+         begin
+            if not In_List (Name, Allowed) then
+               Allowed_Passed := False;
+               Bad_Name := To_Unbounded_String (Name);
+            end if;
+         end Check_Allowed;
+      begin
+         Map_JSON_Object (V, Check_Allowed'Access);
+         if not Allowed_Passed then
+            Report (Ptr & "/" & To_String (Bad_Name),
+                    "unknown property (additionalProperties: false)");
+         end if;
+      end;
+   end Check_Object;
+
+   --  Leaf type checkers.
+   procedure Check_Str (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      end if;
+   end Check_Str;
+
+   procedure Check_Bool (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_Boolean_Type then
+         Report (Ptr, "type: expected boolean, found " & Kind_Name (V.Kind));
+      end if;
+   end Check_Bool;
+
+   procedure Check_Int (V : JSON_Value; Ptr : String;
+                        Min : Integer; Max : Integer) is
+   begin
+      if V.Kind /= JSON_Int_Type then
+         Report (Ptr, "type: expected integer, found " & Kind_Name (V.Kind));
+      elsif Get (V) < Min or else Get (V) > Max then
+         Report (Ptr, "range: " & Integer'Image (Get (V))
+                 & " outside [" & Integer'Image (Min)
+                 & " .. " & Integer'Image (Max) & "]");
+      end if;
+   end Check_Int;
+
+   procedure Check_Any_Int (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Int (V, Ptr, Integer'First, Integer'Last);
+   end Check_Any_Int;
+
+   procedure Check_Int_Min_0 (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Int (V, Ptr, 0, Integer'Last);
+   end Check_Int_Min_0;
+
+   procedure Check_Int_Min_1 (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Int (V, Ptr, 1, Integer'Last);
+   end Check_Int_Min_1;
+
+   --  crew.turf: minimum 0, maximum 6 (C4).
+   procedure Check_Turf (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Int (V, Ptr, 0, 6);
+   end Check_Turf;
+
+   --  Pattern matchers, hand-rolled per schema regex (the generator would
+   --  emit these, or a tiny embedded regex engine, for each `pattern`).
+   function Is_Uuid (S : String) return Boolean is
+      --  ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+      Hex : constant String := "0123456789abcdef";
+   begin
+      if S'Length /= 36 then
+         return False;
+      end if;
+      if S (9) /= '-' or else S (14) /= '-' or else S (19) /= '-'
+        or else S (24) /= '-' then
+         return False;
+      end if;
+      if S (15) /= '4' then
+         return False;
+      end if;
+      if S (20) /= '8' and then S (20) /= '9' and then S (20) /= 'a'
+        and then S (20) /= 'b' then
+         return False;
+      end if;
+      for I in S'Range loop
+         if I = 9 or else I = 14 or else I = 19 or else I = 24 then
+            null;
+         elsif Ada.Strings.Fixed.Index (Hex, S (I) & "") = 0 then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_Uuid;
+
+   function Is_Uuid_Or_Empty (S : String) return Boolean is
+     (S'Length = 0 or else Is_Uuid (S));
+
+   function Is_Game_Stem (S : String) return Boolean is
+      --  ^[A-Za-z0-9-]+$
+   begin
+      if S'Length = 0 then
+         return False;
+      end if;
+      for I in S'Range loop
+         case S (I) is
+            when 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '-' => null;
+            when others => return False;
+         end case;
+      end loop;
+      return True;
+   end Is_Game_Stem;
+
+   function Is_Claim_Id (S : String) return Boolean is
+      --  ^[a-z0-9]+(?:-[a-z0-9]+)*$  (no leading/trailing/doubled hyphens)
+   begin
+      if S'Length = 0 then
+         return False;
+      end if;
+      for I in S'Range loop
+         case S (I) is
+            when 'a' .. 'z' | '0' .. '9' | '-' => null;
+            when others => return False;
+         end case;
+      end loop;
+      if S (S'First) = '-' or else S (S'Last) = '-' then
+         return False;
+      end if;
+      for I in S'First + 1 .. S'Last loop
+         if S (I) = '-' and then S (I - 1) = '-' then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_Claim_Id;
+
+   function Is_Snapshot_Id (S : String) return Boolean is
+      --  ^[0-9]{17}-[A-Za-z0-9]+$
+   begin
+      if S'Length < 19 then
+         return False;
+      end if;
+      for I in S'First .. S'First + 16 loop
+         if S (I) not in '0' .. '9' then
+            return False;
+         end if;
+      end loop;
+      if S (S'First + 17) /= '-' then
+         return False;
+      end if;
+      for I in S'First + 18 .. S'Last loop
+         if S (I) not in 'a' .. 'z' and then S (I) not in 'A' .. 'Z'
+           and then S (I) not in '0' .. '9' then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Is_Snapshot_Id;
+
+   procedure Check_Uuid (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      elsif not Is_Uuid (S (V)) then
+         Report (Ptr, "pattern: """ & S (V) & """ is not a v4 UUID");
+      end if;
+   end Check_Uuid;
+
+   procedure Check_Crew_Id (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      elsif not Is_Uuid_Or_Empty (S (V)) then
+         Report (Ptr, "pattern: """ & S (V) & """ is not a v4 UUID or empty");
+      end if;
+   end Check_Crew_Id;
+
+   procedure Check_Game_Stem (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      elsif not Is_Game_Stem (S (V)) then
+         Report (Ptr, "pattern: """ & S (V) & """ is not ^[A-Za-z0-9-]+$");
+      end if;
+   end Check_Game_Stem;
+
+   procedure Check_Claim_Id (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      elsif not Is_Claim_Id (S (V)) then
+         Report (Ptr, "pattern: """ & S (V)
+                 & """ is not ^[a-z0-9]+(?:-[a-z0-9]+)*$");
+      end if;
+   end Check_Claim_Id;
+
+   procedure Check_Snapshot_Id (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      elsif not Is_Snapshot_Id (S (V)) then
+         Report (Ptr, "pattern: """ & S (V)
+                 & """ is not ^[0-9]{17}-[A-Za-z0-9]+$");
+      end if;
+   end Check_Snapshot_Id;
+
+   procedure Check_Enum (V : JSON_Value; Ptr : String; Members : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      elsif not In_List (S (V), Members) then
+         Report (Ptr, "enum: """ & S (V) & """ not in " & Members);
+      end if;
+   end Check_Enum;
+
+   procedure Check_Const (V : JSON_Value; Ptr : String; Expected : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string const """ & Expected
+                 & """, found " & Kind_Name (V.Kind));
+      elsif S (V) /= Expected then
+         Report (Ptr, "const: expected """ & Expected & """, found """
+                 & S (V) & """");
+      end if;
+   end Check_Const;
+
+   procedure Check_Min_Length_1 (V : JSON_Value; Ptr : String) is
+   begin
+      if V.Kind /= JSON_String_Type then
+         Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
+      elsif S (V)'Length < 1 then
+         Report (Ptr, "minLength: empty string");
+      end if;
+   end Check_Min_Length_1;
+
+   procedure Check_String_Array (V : JSON_Value; Ptr : String) is
+      A : JSON_Array;
+   begin
+      if V.Kind /= JSON_Array_Type then
+         Report (Ptr, "type: expected array, found " & Kind_Name (V.Kind));
+         return;
+      end if;
+      A := Get (V);
+      for I in 1 .. Length (A) loop
+         if Get (A, I).Kind /= JSON_String_Type then
+            Report (Ptr & "/" & Idx (I),
+                    "type: expected string, found " & Kind_Name (Get (A, I).Kind));
+         end if;
+      end loop;
+   end Check_String_Array;
+
+   type Item_Check is access procedure (Item : JSON_Value; Ptr : String);
+
+   procedure Check_Array (V : JSON_Value; Ptr : String; Check : Item_Check) is
+      A : JSON_Array;
+   begin
+      if V.Kind /= JSON_Array_Type then
+         Report (Ptr, "type: expected array, found " & Kind_Name (V.Kind));
+         return;
+      end if;
+      A := Get (V);
+      for I in 1 .. Length (A) loop
+         Check (Get (A, I), Ptr & "/" & Idx (I));
+      end loop;
+   end Check_Array;
+
+   procedure Check_Unique_Strings (V : JSON_Value; Ptr : String) is
+      A : JSON_Array;
+   begin
+      if V.Kind /= JSON_Array_Type then
+         Report (Ptr, "type: expected array, found " & Kind_Name (V.Kind));
+         return;
+      end if;
+      A := Get (V);
+      for I in 1 .. Length (A) loop
+         if Get (A, I).Kind /= JSON_String_Type then
+            Report (Ptr & "/" & Idx (I),
+                    "type: expected string, found " & Kind_Name (Get (A, I).Kind));
+         else
+            for J in I + 1 .. Length (A) loop
+               if Get (A, J).Kind = JSON_String_Type and then Get (A, J) = Get (A, I) then
+                  Report (Ptr & "/" & Idx (J),
+                          "uniqueItems: duplicate of item " & Idx (I));
+               end if;
+            end loop;
+         end if;
+      end loop;
+   end Check_Unique_Strings;
+
+   procedure Check_Prop (Obj : JSON_Value; Ptr : String; Name : String;
+                         Check : Item_Check) is
+   begin
+      if Has_Field (Obj, Name) then
+         Check (Get (Obj, Name), Ptr & "/" & Name);
+      end if;
+   end Check_Prop;
+
+   --  Shared $defs from common.json (external $ref targets).
+   procedure Check_Named_Description (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, "|name|description|", "|name|description|");
+      Check_Prop (V, Ptr, "name", Check_Str'Access);
+      Check_Prop (V, Ptr, "description", Check_Str'Access);
+   end Check_Named_Description;
+
+   procedure Check_Bounded_Integer (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, "|current|max|", "|current|max|");
+      Check_Prop (V, Ptr, "current", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "max", Check_Int_Min_0'Access);
+   end Check_Bounded_Integer;
+
+   procedure Check_Experience (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, "|points|max|", "|points|max|");
+      Check_Prop (V, Ptr, "points", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "max", Check_Int_Min_0'Access);
+   end Check_Experience;
+
+   procedure Check_Notes (V : JSON_Value; Ptr : String) is
+   begin
+      Check_String_Array (V, Ptr);
+   end Check_Notes;
+
+   procedure Check_Vice (V : JSON_Value; Ptr : String) is
+   begin
+      --  common.json#/$defs/vice -> #/$defs/namedDescription (internal ref)
+      Check_Object (V, Ptr, "|name|description|purveyor|",
+                    "|name|description|purveyor|");
+      Check_Prop (V, Ptr, "name", Check_Str'Access);
+      Check_Prop (V, Ptr, "description", Check_Str'Access);
+      Check_Prop (V, Ptr, "purveyor", Check_Named_Description'Access);
+   end Check_Vice;
+
+   --  Enum/const wrappers (named so their 'Access matches Item_Check).
+   procedure Check_Enum_Clock_Kind (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|project|rollover|");
+   end Check_Enum_Clock_Kind;
+
+   procedure Check_Enum_Hold (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|strong|weak|");
+   end Check_Enum_Hold;
+
+   procedure Check_Enum_Closeness (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|friend|close-friend|rival|");
+   end Check_Enum_Closeness;
+
+   procedure Check_Enum_Commitment (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|none|light|normal|heavy|encumbered|");
+   end Check_Enum_Commitment;
+
+   procedure Check_Enum_Cohort_Type (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|gang|expert|");
+   end Check_Enum_Cohort_Type;
+
+   procedure Check_Enum_Cohort_Harm (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|healthy|weakened|impaired|broken|dead|");
+   end Check_Enum_Cohort_Harm;
+
+   procedure Check_Const_Clock (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const (V, Ptr, "clock");
+   end Check_Const_Clock;
+
+   procedure Check_Const_Character (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const (V, Ptr, "character");
+   end Check_Const_Character;
+
+   procedure Check_Const_Crew (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const (V, Ptr, "crew");
+   end Check_Const_Crew;
+
+   procedure Check_Const_Campaign (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const (V, Ptr, "campaign");
+   end Check_Const_Campaign;
+
+   --  Required/allowed key lists transcribed from the schemas.
+   Required_Clock : constant String :=
+     "|kind|id|revision|formatVersion|createdAt|updatedAt|name|clockKind|segments|size|rollover|";
+   Allowed_Clock : constant String := Required_Clock;
+
+   Required_Character : constant String :=
+     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|dossier|monitor|talent|playbook|gear|fund|rolodex|session|notebook|isRetired|isDeadish|";
+   Allowed_Character : constant String := Required_Character;
+
+   Required_Dossier : constant String :=
+     "|name|crewId|alias|look|notes|background|heritage|vice|";
+   Allowed_Dossier : constant String := Required_Dossier;
+
+   Required_Monitor : constant String := "|stress|trauma|harm|armor|";
+   Allowed_Monitor : constant String := Required_Monitor;
+
+   Required_Trauma : constant String := "|traumas|max|";
+   Allowed_Trauma : constant String := Required_Trauma;
+
+   Required_Harm : constant String :=
+     "|lesser|moderate|severe|fatal|healingClock|";
+   Allowed_Harm : constant String := Required_Harm;
+
+   Required_Healing : constant String := "|segments|size|rollover|";
+   Allowed_Healing : constant String := Required_Healing;
+
+   Required_Armor : constant String :=
+     "|standardUsed|heavyUsed|specialUsed|hasStandard|hasHeavy|hasSpecial|";
+   Allowed_Armor : constant String := Required_Armor;
+
+   Required_Attributes : constant String := "|attributes|";
+   Allowed_Attributes : constant String := Required_Attributes;
+
+   Required_Attribute : constant String := "|name|experience|actions|";
+   Allowed_Attribute : constant String := Required_Attribute;
+
+   Required_Action : constant String := "|name|rating|maxRating|";
+   Allowed_Action : constant String := Required_Action;
+
+   Required_Playbook : constant String := "|name|experience|abilities|";
+   Allowed_Playbook : constant String := Required_Playbook;
+
+   Required_Ability : constant String := "|name|description|timesTaken|";
+   Allowed_Ability : constant String := Required_Ability;
+
+   Required_Gear : constant String :=
+     "|loadout|availableGear|commitment|isCommitmentLocked|maxBulk|";
+   Allowed_Gear : constant String := Required_Gear;
+
+   Required_Gear_Item : constant String := "|name|bulk|";
+   Allowed_Gear_Item : constant String := Required_Gear_Item;
+
+   Required_Fund : constant String := "|satchel|stash|";
+   Allowed_Fund : constant String := Required_Fund;
+
+   Required_Coins : constant String := "|coins|max|";
+   Allowed_Coins : constant String := Required_Coins;
+
+   Required_Rolodex : constant String := "|friends|";
+   Allowed_Rolodex : constant String := Required_Rolodex;
+
+   Required_Friend : constant String := "|entry|closeness|";
+   Allowed_Friend : constant String := Required_Friend;
+
+   Required_Session : constant String :=
+     "|playbookExpressions|characterExpressions|struggleExpressions|max|";
+   Allowed_Session : constant String := Required_Session;
+
+   Required_Crew : constant String :=
+     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|stash|notes|turf|claimedClaimIds|claimOverrides|";
+   Allowed_Crew : constant String :=
+     Required_Crew & "|contacts|factions|";  --  optional per C3, allowed
+
+   Required_Crew_Special : constant String := "|name|timesTaken|";
+   Required_Crew_Upgrade : constant String := "|name|boxesMarked|";
+   Required_Cohort : constant String :=
+     "|id|cohortKind|gangType|expertType|quality|scale|hasArmor|edges|flaws|harm|description|";
+   Required_Claim_Override : constant String := "|claimId|";
+   Allowed_Claim_Override : constant String := "|claimId|name|description|effects|";
+   Required_Contact : constant String := "|name|profession|";
+   Required_Faction : constant String := "|name|status|";
+
+   Required_Char_Summary : constant String :=
+     "|id|name|alias|playbook|gameStem|crewId|stress|traumas|isRetired|isDeadish|revision|";
+   Required_Crew_Summary : constant String :=
+     "|id|name|crewType|gameStem|tier|heat|wanted|rep|hold|memberCount|revision|";
+   Required_Roster : constant String := "|characters|crews|";
+   Required_Campaign : constant String := "|kind|name|gameStem|createdAt|formatVersion|";
+   Required_History : constant String := "|snapshotId|takenAt|op|";
+
+   --  Array item checkers (schema-deep recursion).
+   procedure Check_Gear_Item (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Gear_Item, Allowed_Gear_Item);
+      Check_Prop (Item, Ptr, "name", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "bulk", Check_Int_Min_0'Access);
+   end Check_Gear_Item;
+
+   procedure Check_Action (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Action, Allowed_Action);
+      Check_Prop (Item, Ptr, "name", Check_Str'Access);
+      Check_Prop (Item, Ptr, "rating", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "maxRating", Check_Int_Min_1'Access);
+   end Check_Action;
+
+   procedure Check_Actions (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Action'Access);
+   end Check_Actions;
+
+   procedure Check_Attribute (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Attribute, Allowed_Attribute);
+      Check_Prop (Item, Ptr, "name", Check_Str'Access);
+      Check_Prop (Item, Ptr, "experience", Check_Experience'Access);
+      Check_Prop (Item, Ptr, "actions", Check_Actions'Access);
+   end Check_Attribute;
+
+   procedure Check_Ability (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Ability, Allowed_Ability);
+      Check_Prop (Item, Ptr, "name", Check_Str'Access);
+      Check_Prop (Item, Ptr, "description", Check_Str'Access);
+      Check_Prop (Item, Ptr, "timesTaken", Check_Int_Min_1'Access);
+   end Check_Ability;
+
+   procedure Check_Friend (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Friend, Allowed_Friend);
+      Check_Prop (Item, Ptr, "entry", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "closeness", Check_Enum_Closeness'Access);
+   end Check_Friend;
+
+   procedure Check_Special_Ability (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Crew_Special, Required_Crew_Special);
+      Check_Prop (Item, Ptr, "name", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "timesTaken", Check_Int_Min_1'Access);
+   end Check_Special_Ability;
+
+   procedure Check_Upgrade (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Crew_Upgrade, Required_Crew_Upgrade);
+      Check_Prop (Item, Ptr, "name", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "boxesMarked", Check_Int_Min_1'Access);
+   end Check_Upgrade;
+
+   procedure Check_Cohort (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Cohort, Required_Cohort);
+      Check_Prop (Item, Ptr, "id", Check_Uuid'Access);
+      Check_Prop (Item, Ptr, "cohortKind", Check_Enum_Cohort_Type'Access);
+      Check_Prop (Item, Ptr, "gangType", Check_Str'Access);
+      Check_Prop (Item, Ptr, "expertType", Check_Str'Access);
+      Check_Prop (Item, Ptr, "quality", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "scale", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "hasArmor", Check_Bool'Access);
+      Check_Prop (Item, Ptr, "edges", Check_Notes'Access);
+      Check_Prop (Item, Ptr, "flaws", Check_Notes'Access);
+      Check_Prop (Item, Ptr, "harm", Check_Enum_Cohort_Harm'Access);
+      Check_Prop (Item, Ptr, "description", Check_Str'Access);
+   end Check_Cohort;
+
+   procedure Check_Effect_Array (V : JSON_Value; Ptr : String) is
+   begin
+      --  items: {"type": "object"} — container type only.
+      if V.Kind /= JSON_Array_Type then
+         Report (Ptr, "type: expected array, found " & Kind_Name (V.Kind));
+      end if;
+   end Check_Effect_Array;
+
+   procedure Check_Claim_Override (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Claim_Override, Allowed_Claim_Override);
+      Check_Prop (Item, Ptr, "claimId", Check_Claim_Id'Access);
+      Check_Prop (Item, Ptr, "name", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "description", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "effects", Check_Effect_Array'Access);
+   end Check_Claim_Override;
+
+   procedure Check_Contact (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Contact, Required_Contact);
+      Check_Prop (Item, Ptr, "name", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "profession", Check_Str'Access);
+   end Check_Contact;
+
+   procedure Check_Faction (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Faction, Required_Faction);
+      Check_Prop (Item, Ptr, "name", Check_Min_Length_1'Access);
+      Check_Prop (Item, Ptr, "status", Check_Any_Int'Access);
+   end Check_Faction;
+
+   procedure Check_Character_Summary (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Char_Summary, Required_Char_Summary);
+      Check_Prop (Item, Ptr, "id", Check_Uuid'Access);
+      Check_Prop (Item, Ptr, "name", Check_Str'Access);
+      Check_Prop (Item, Ptr, "alias", Check_Str'Access);
+      Check_Prop (Item, Ptr, "playbook", Check_Str'Access);
+      Check_Prop (Item, Ptr, "gameStem", Check_Str'Access);
+      Check_Prop (Item, Ptr, "crewId", Check_Str'Access);
+      Check_Prop (Item, Ptr, "stress", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "traumas", Check_Notes'Access);
+      Check_Prop (Item, Ptr, "isRetired", Check_Bool'Access);
+      Check_Prop (Item, Ptr, "isDeadish", Check_Bool'Access);
+      Check_Prop (Item, Ptr, "revision", Check_Int_Min_1'Access);
+   end Check_Character_Summary;
+
+   procedure Check_Crew_Summary (Item : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (Item, Ptr, Required_Crew_Summary, Required_Crew_Summary);
+      Check_Prop (Item, Ptr, "id", Check_Uuid'Access);
+      Check_Prop (Item, Ptr, "name", Check_Str'Access);
+      Check_Prop (Item, Ptr, "crewType", Check_Str'Access);
+      Check_Prop (Item, Ptr, "gameStem", Check_Str'Access);
+      Check_Prop (Item, Ptr, "tier", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "heat", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "wanted", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "rep", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "hold", Check_Enum_Hold'Access);
+      Check_Prop (Item, Ptr, "memberCount", Check_Int_Min_0'Access);
+      Check_Prop (Item, Ptr, "revision", Check_Int_Min_1'Access);
+   end Check_Crew_Summary;
+
+   procedure Check_Claimed_Ids (V : JSON_Value; Ptr : String) is
+      A : JSON_Array;
+   begin
+      Check_Unique_Strings (V, Ptr);
+      if V.Kind = JSON_Array_Type then
+         A := Get (V);
+         for I in 1 .. Length (A) loop
+            if Get (A, I).Kind = JSON_String_Type
+              and then not Is_Claim_Id (S (Get (A, I))) then
+               Report (Ptr & "/" & Idx (I),
+                       "pattern: not a claim id");
+            end if;
+         end loop;
+      end if;
+   end Check_Claimed_Ids;
+
+   procedure Check_Attributes (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Attribute'Access);
+   end Check_Attributes;
+
+   procedure Check_Abilities (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Ability'Access);
+   end Check_Abilities;
+
+   procedure Check_Gear_Items (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Gear_Item'Access);
+   end Check_Gear_Items;
+
+   procedure Check_Friends (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Friend'Access);
+   end Check_Friends;
+
+   procedure Check_Special_Abilities (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Special_Ability'Access);
+   end Check_Special_Abilities;
+
+   procedure Check_Upgrades (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Upgrade'Access);
+   end Check_Upgrades;
+
+   procedure Check_Cohorts (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Cohort'Access);
+   end Check_Cohorts;
+
+   procedure Check_Claim_Overrides (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Claim_Override'Access);
+   end Check_Claim_Overrides;
+
+   procedure Check_Contacts (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Contact'Access);
+   end Check_Contacts;
+
+   procedure Check_Factions (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Faction'Access);
+   end Check_Factions;
+
+   procedure Check_Character_Summaries (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Character_Summary'Access);
+   end Check_Character_Summaries;
+
+   procedure Check_Crew_Summaries (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Crew_Summary'Access);
+   end Check_Crew_Summaries;
+
+   --  Nested object validators.
+   procedure Check_Healing_Clock (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Healing, Allowed_Healing);
+      Check_Prop (V, Ptr, "segments", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "size", Check_Int_Min_1'Access);
+      Check_Prop (V, Ptr, "rollover", Check_Int_Min_0'Access);
+   end Check_Healing_Clock;
+
+   procedure Check_Harm (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Harm, Allowed_Harm);
+      Check_Prop (V, Ptr, "lesser", Check_Notes'Access);
+      Check_Prop (V, Ptr, "moderate", Check_Notes'Access);
+      Check_Prop (V, Ptr, "severe", Check_Notes'Access);
+      Check_Prop (V, Ptr, "fatal", Check_Notes'Access);
+      Check_Prop (V, Ptr, "healingClock", Check_Healing_Clock'Access);
+   end Check_Harm;
+
+   procedure Check_Trauma (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Trauma, Allowed_Trauma);
+      Check_Prop (V, Ptr, "traumas", Check_Notes'Access);
+      Check_Prop (V, Ptr, "max", Check_Int_Min_1'Access);
+   end Check_Trauma;
+
+   procedure Check_Armor (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Armor, Allowed_Armor);
+      Check_Prop (V, Ptr, "standardUsed", Check_Bool'Access);
+      Check_Prop (V, Ptr, "heavyUsed", Check_Bool'Access);
+      Check_Prop (V, Ptr, "specialUsed", Check_Bool'Access);
+      Check_Prop (V, Ptr, "hasStandard", Check_Bool'Access);
+      Check_Prop (V, Ptr, "hasHeavy", Check_Bool'Access);
+      Check_Prop (V, Ptr, "hasSpecial", Check_Bool'Access);
+   end Check_Armor;
+
+   procedure Check_Monitor (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Monitor, Allowed_Monitor);
+      Check_Prop (V, Ptr, "stress", Check_Bounded_Integer'Access);
+      Check_Prop (V, Ptr, "trauma", Check_Trauma'Access);
+      Check_Prop (V, Ptr, "harm", Check_Harm'Access);
+      Check_Prop (V, Ptr, "armor", Check_Armor'Access);
+   end Check_Monitor;
+
+   procedure Check_Dossier (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Dossier, Allowed_Dossier);
+      Check_Prop (V, Ptr, "name", Check_Str'Access);
+      Check_Prop (V, Ptr, "crewId", Check_Crew_Id'Access);
+      Check_Prop (V, Ptr, "alias", Check_Str'Access);
+      Check_Prop (V, Ptr, "look", Check_Str'Access);
+      Check_Prop (V, Ptr, "notes", Check_Notes'Access);
+      Check_Prop (V, Ptr, "background", Check_Named_Description'Access);
+      Check_Prop (V, Ptr, "heritage", Check_Named_Description'Access);
+      Check_Prop (V, Ptr, "vice", Check_Vice'Access);
+   end Check_Dossier;
+
+   procedure Check_Talent (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Attributes, Allowed_Attributes);
+      Check_Prop (V, Ptr, "attributes", Check_Attributes'Access);
+   end Check_Talent;
+
+   procedure Check_Playbook (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Playbook, Allowed_Playbook);
+      Check_Prop (V, Ptr, "name", Check_Str'Access);
+      Check_Prop (V, Ptr, "experience", Check_Experience'Access);
+      Check_Prop (V, Ptr, "abilities", Check_Abilities'Access);
+   end Check_Playbook;
+
+   procedure Check_Gear (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Gear, Allowed_Gear);
+      Check_Prop (V, Ptr, "loadout", Check_Gear_Items'Access);
+      Check_Prop (V, Ptr, "availableGear", Check_Gear_Items'Access);
+      Check_Prop (V, Ptr, "commitment", Check_Enum_Commitment'Access);
+      Check_Prop (V, Ptr, "isCommitmentLocked", Check_Bool'Access);
+      Check_Prop (V, Ptr, "maxBulk", Check_Int_Min_0'Access);
+   end Check_Gear;
+
+   procedure Check_Coins (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Coins, Allowed_Coins);
+      Check_Prop (V, Ptr, "coins", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "max", Check_Int_Min_0'Access);
+   end Check_Coins;
+
+   procedure Check_Fund (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Fund, Allowed_Fund);
+      Check_Prop (V, Ptr, "satchel", Check_Coins'Access);
+      Check_Prop (V, Ptr, "stash", Check_Coins'Access);
+   end Check_Fund;
+
+   procedure Check_Rolodex (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Rolodex, Allowed_Rolodex);
+      Check_Prop (V, Ptr, "friends", Check_Friends'Access);
+   end Check_Rolodex;
+
+   procedure Check_Session (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Session, Allowed_Session);
+      Check_Prop (V, Ptr, "playbookExpressions", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "characterExpressions", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "struggleExpressions", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "max", Check_Int_Min_0'Access);
+   end Check_Session;
+
+   --  Entity validators (schema entry points).
+   procedure Validate_Clock (V : JSON_Value) is
+   begin
+      Check_Object (V, "", Required_Clock, Allowed_Clock);
+      Check_Prop (V, "", "kind", Check_Const_Clock'Access);
+      Check_Prop (V, "", "id", Check_Uuid'Access);
+      Check_Prop (V, "", "revision", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "createdAt", Check_Str'Access);
+      Check_Prop (V, "", "updatedAt", Check_Str'Access);
+      Check_Prop (V, "", "name", Check_Str'Access);
+      Check_Prop (V, "", "clockKind", Check_Enum_Clock_Kind'Access);
+      Check_Prop (V, "", "segments", Check_Int_Min_0'Access);
+      Check_Prop (V, "", "size", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "rollover", Check_Int_Min_0'Access);
+   end Validate_Clock;
+
+   procedure Validate_Character (V : JSON_Value) is
+   begin
+      Check_Object (V, "", Required_Character, Allowed_Character);
+      Check_Prop (V, "", "kind", Check_Const_Character'Access);
+      Check_Prop (V, "", "id", Check_Uuid'Access);
+      Check_Prop (V, "", "gameStem", Check_Game_Stem'Access);
+      Check_Prop (V, "", "gameName", Check_Str'Access);
+      Check_Prop (V, "", "language", Check_Str'Access);
+      Check_Prop (V, "", "revision", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "createdAt", Check_Str'Access);
+      Check_Prop (V, "", "updatedAt", Check_Str'Access);
+      Check_Prop (V, "", "dossier", Check_Dossier'Access);
+      Check_Prop (V, "", "monitor", Check_Monitor'Access);
+      Check_Prop (V, "", "talent", Check_Talent'Access);
+      Check_Prop (V, "", "playbook", Check_Playbook'Access);
+      Check_Prop (V, "", "gear", Check_Gear'Access);
+      Check_Prop (V, "", "fund", Check_Fund'Access);
+      Check_Prop (V, "", "rolodex", Check_Rolodex'Access);
+      Check_Prop (V, "", "session", Check_Session'Access);
+      Check_Prop (V, "", "notebook", Check_Str'Access);
+      Check_Prop (V, "", "isRetired", Check_Bool'Access);
+      Check_Prop (V, "", "isDeadish", Check_Bool'Access);
+   end Validate_Character;
+
+   procedure Validate_Crew (V : JSON_Value) is
+   begin
+      Check_Object (V, "", Required_Crew, Allowed_Crew);
+      Check_Prop (V, "", "kind", Check_Const_Crew'Access);
+      Check_Prop (V, "", "id", Check_Uuid'Access);
+      Check_Prop (V, "", "gameStem", Check_Game_Stem'Access);
+      Check_Prop (V, "", "gameName", Check_Str'Access);
+      Check_Prop (V, "", "language", Check_Str'Access);
+      Check_Prop (V, "", "revision", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "createdAt", Check_Str'Access);
+      Check_Prop (V, "", "updatedAt", Check_Str'Access);
+      Check_Prop (V, "", "crewTypeName", Check_Str'Access);
+      Check_Prop (V, "", "name", Check_Str'Access);
+      Check_Prop (V, "", "lair", Check_Str'Access);
+      Check_Prop (V, "", "reputation", Check_Str'Access);
+      Check_Prop (V, "", "huntingGrounds", Check_Str'Access);
+      Check_Prop (V, "", "tier", Check_Int_Min_0'Access);
+      Check_Prop (V, "", "hold", Check_Enum_Hold'Access);
+      Check_Prop (V, "", "heat", Check_Bounded_Integer'Access);
+      Check_Prop (V, "", "wanted", Check_Bounded_Integer'Access);
+      Check_Prop (V, "", "rep", Check_Bounded_Integer'Access);
+      Check_Prop (V, "", "experience", Check_Experience'Access);
+      Check_Prop (V, "", "specialAbilities", Check_Special_Abilities'Access);
+      Check_Prop (V, "", "upgrades", Check_Upgrades'Access);
+      Check_Prop (V, "", "cohorts", Check_Cohorts'Access);
+      Check_Prop (V, "", "coin", Check_Int_Min_0'Access);
+      Check_Prop (V, "", "stash", Check_Int_Min_0'Access);
+      Check_Prop (V, "", "notes", Check_Notes'Access);
+      Check_Prop (V, "", "turf", Check_Turf'Access);
+      Check_Prop (V, "", "claimedClaimIds", Check_Claimed_Ids'Access);
+      Check_Prop (V, "", "claimOverrides", Check_Claim_Overrides'Access);
+      Check_Prop (V, "", "contacts", Check_Contacts'Access);
+      Check_Prop (V, "", "factions", Check_Factions'Access);
+   end Validate_Crew;
+
+   procedure Validate_Roster (V : JSON_Value) is
+   begin
+      Check_Object (V, "", Required_Roster, Required_Roster);
+      Check_Prop (V, "", "characters", Check_Character_Summaries'Access);
+      Check_Prop (V, "", "crews", Check_Crew_Summaries'Access);
+   end Validate_Roster;
+
+   procedure Validate_Campaign (V : JSON_Value) is
+   begin
+      Check_Object (V, "", Required_Campaign, Required_Campaign);
+      Check_Prop (V, "", "kind", Check_Const_Campaign'Access);
+      Check_Prop (V, "", "name", Check_Str'Access);
+      Check_Prop (V, "", "gameStem", Check_Game_Stem'Access);
+      Check_Prop (V, "", "createdAt", Check_Str'Access);
+      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+   end Validate_Campaign;
+
+   procedure Validate_History_Entry (V : JSON_Value) is
+   begin
+      --  campaign.json#/$defs/historyEntry
+      Check_Object (V, "", Required_History, Required_History);
+      Check_Prop (V, "", "snapshotId", Check_Snapshot_Id'Access);
+      Check_Prop (V, "", "takenAt", Check_Str'Access);
+      Check_Prop (V, "", "op", Check_Str'Access);
+   end Validate_History_Entry;
+
+end Spike_Validators;
+```
+
+
+`src/spike.adb`:
+
+```ada
+--  SC-R1 spike driver: validates one JSON document against the
+--  generator-shaped recursive validators; prints stable JSON-pointer
+--  diagnostics. Scratch code; lives in /tmp only.
+--
+--  usage: spike <document.json>
+--  exit:  0 = valid, 1 = invalid (violations printed), 2 = unreadable
+
+with Ada.Command_Line;
+with Ada.Text_IO;
+with GNAT.OS_Lib;
+with GNATCOLL.JSON;
+with Spike_Validators;
+
+procedure Spike is
+
+   use Ada.Text_IO;
+   use GNATCOLL.JSON;
+
+   function Read_File (Name : String) return String is
+      F    : GNAT.OS_Lib.File_Descriptor :=
+        GNAT.OS_Lib.Open_Read (Name, GNAT.OS_Lib.Binary);
+      Size : constant Long_Integer := GNAT.OS_Lib.File_Length (F);
+   begin
+      declare
+         Text : String (1 .. Integer (Size));
+         Last : Integer;
+      begin
+         Last := GNAT.OS_Lib.Read (F, Text'Address, Text'Length);
+         GNAT.OS_Lib.Close (F);
+         if Last /= Text'Length then
+            raise Ada.Text_IO.End_Error;
+         end if;
+         return Text;
+      end;
+   end Read_File;
+
+   V : JSON_Value;
+
+begin
+   if Ada.Command_Line.Argument_Count /= 1 then
+      Put_Line ("usage: spike <document.json>");
+      Ada.Command_Line.Set_Exit_Status (2);
+      return;
+   end if;
+
+   begin
+      V := Read (Read_File (Ada.Command_Line.Argument (1)));
+   exception
+      when others =>
+         Put_Line ("PARSE_ERROR");
+         Ada.Command_Line.Set_Exit_Status (2);
+         return;
+   end;
+
+   if V.Kind /= JSON_Object_Type then
+      Put_Line ("PARSE_ERROR not-an-object");
+      Ada.Command_Line.Set_Exit_Status (2);
+      return;
+   end if;
+
+   if Has_Field (V, "characters") and then Has_Field (V, "crews") then
+      Spike_Validators.Validate_Roster (V);
+      Put_Line ("ENTITY roster");
+   elsif Has_Field (V, "kind") and then Get (V, "kind") = "campaign" then
+      Spike_Validators.Validate_Campaign (V);
+      Put_Line ("ENTITY campaign");
+   elsif Has_Field (V, "kind") and then Get (V, "kind") = "clock" then
+      Spike_Validators.Validate_Clock (V);
+      Put_Line ("ENTITY clock");
+   elsif Has_Field (V, "kind") and then Get (V, "kind") = "character" then
+      Spike_Validators.Validate_Character (V);
+      Put_Line ("ENTITY character");
+   elsif Has_Field (V, "kind") and then Get (V, "kind") = "crew" then
+      Spike_Validators.Validate_Crew (V);
+      Put_Line ("ENTITY crew");
+   elsif Has_Field (V, "snapshotId") then
+      Spike_Validators.Validate_History_Entry (V);
+      Put_Line ("ENTITY historyEntry");
+   else
+      Put_Line ("UNKNOWN_KIND");
+      Ada.Command_Line.Set_Exit_Status (2);
+      return;
+   end if;
+
+   for I in 1 .. Spike_Validators.N_Errors loop
+      Put_Line ("POINTER " & Spike_Validators.Pointer (I)
+                & " REASON " & Spike_Validators.Reason (I));
+   end loop;
+
+   if Spike_Validators.Valid then
+      Put_Line ("VALID");
+      Ada.Command_Line.Set_Exit_Status (0);
+   else
+      Put_Line (Natural'Image (Spike_Validators.N_Errors) & " error(s)");
+      Ada.Command_Line.Set_Exit_Status (1);
+   end if;
+end Spike;
+```
+
+
+Fixtures (`../fixtures/*.json`), one block per file:
+
+#### `campaign-valid.json`
+
+```json
+{
+  "kind": "campaign",
+  "name": "Duskvol Nights",
+  "gameStem": "blades-in-the-dark",
+  "createdAt": "2026-08-14T12:00:00Z",
+  "formatVersion": 1
+}
+```
+
+#### `character-invalid.json`
+
+```json
+{
+  "kind": "character",
+  "id": "123e4567-e89b-42d3-z456-426614174000",
+  "gameStem": "blades_in_the_dark",
+  "gameName": "Blades in the Dark",
+  "language": "en",
+  "revision": 1,
+  "formatVersion": 1,
+  "createdAt": "2026-08-14T12:00:00Z",
+  "updatedAt": "2026-08-14T12:00:00Z",
+  "dossier": {
+    "crewId": "",
+    "alias": "Ash",
+    "look": "tall",
+    "notes": ["note one"],
+    "bogusField": 1,
+    "background": { "name": "Labor", "description": "dockworker" },
+    "heritage": { "name": "Iruvian", "description": "accent" },
+    "vice": {
+      "name": "Gambling",
+      "description": "dice",
+      "purveyor": { "name": "Sal", "description": "bookie" }
+    }
+  },
+  "monitor": {
+    "stress": { "current": 3, "max": 9 },
+    "trauma": { "traumas": [], "max": 4 },
+    "harm": {
+      "lesser": ["Bruised"],
+      "moderate": [],
+      "severe": [],
+      "fatal": [],
+      "healingClock": { "segments": 0, "size": 0 }
+    },
+    "armor": {
+      "standardUsed": false,
+      "heavyUsed": false,
+      "specialUsed": false,
+      "hasStandard": true,
+      "hasHeavy": false,
+      "hasSpecial": false
+    }
+  },
+  "talent": {
+    "attributes": [
+      {
+        "name": "Insight",
+        "experience": { "points": 0, "max": 6 },
+        "actions": [
+          { "name": "Hunt", "rating": -1, "maxRating": 4 }
+        ]
+      }
+    ]
+  },
+  "playbook": {
+    "name": "Cutter",
+    "experience": { "points": 0, "max": 8 },
+    "abilities": [
+      { "name": "Bodyguard", "description": "protect", "timesTaken": 0 }
+    ]
+  },
+  "gear": {
+    "loadout": [{ "name": "", "bulk": -2 }],
+    "availableGear": [{ "name": "pistol", "bulk": 1 }],
+    "commitment": "light",
+    "isCommitmentLocked": false,
+    "maxBulk": 6
+  },
+  "fund": {
+    "satchel": { "coins": 4 },
+    "stash": { "coins": 2, "max": 40 }
+  },
+  "rolodex": {
+    "friends": [{ "entry": "Mylo", "closeness": "bogus" }]
+  },
+  "session": {
+    "playbookExpressions": 0,
+    "characterExpressions": 0,
+    "struggleExpressions": 0,
+    "max": -1
+  },
+  "notebook": "",
+  "isRetired": false,
+  "isDeadish": false
+}
+```
+
+#### `character-valid.json`
+
+```json
+{
+  "kind": "character",
+  "id": "123e4567-e89b-42d3-a456-426614174000",
+  "gameStem": "blades-in-the-dark",
+  "gameName": "Blades in the Dark",
+  "language": "en",
+  "revision": 1,
+  "formatVersion": 1,
+  "createdAt": "2026-08-14T12:00:00Z",
+  "updatedAt": "2026-08-14T12:00:00Z",
+  "dossier": {
+    "name": "Cinder",
+    "crewId": "",
+    "alias": "Ash",
+    "look": "tall",
+    "notes": ["note one"],
+    "background": { "name": "Labor", "description": "dockworker" },
+    "heritage": { "name": "Iruvian", "description": "accent" },
+    "vice": {
+      "name": "Gambling",
+      "description": "dice",
+      "purveyor": { "name": "Sal", "description": "bookie" }
+    }
+  },
+  "monitor": {
+    "stress": { "current": 3, "max": 9 },
+    "trauma": { "traumas": [], "max": 4 },
+    "harm": {
+      "lesser": ["Bruised"],
+      "moderate": [],
+      "severe": [],
+      "fatal": [],
+      "healingClock": { "segments": 0, "size": 4, "rollover": 0 }
+    },
+    "armor": {
+      "standardUsed": false,
+      "heavyUsed": false,
+      "specialUsed": false,
+      "hasStandard": true,
+      "hasHeavy": false,
+      "hasSpecial": false
+    }
+  },
+  "talent": {
+    "attributes": [
+      {
+        "name": "Insight",
+        "experience": { "points": 0, "max": 6 },
+        "actions": [
+          { "name": "Hunt", "rating": 2, "maxRating": 4 },
+          { "name": "Study", "rating": 1, "maxRating": 4 }
+        ]
+      }
+    ]
+  },
+  "playbook": {
+    "name": "Cutter",
+    "experience": { "points": 0, "max": 8 },
+    "abilities": [
+      { "name": "Bodyguard", "description": "protect", "timesTaken": 1 }
+    ]
+  },
+  "gear": {
+    "loadout": [{ "name": "blade", "bulk": 1 }],
+    "availableGear": [{ "name": "pistol", "bulk": 1 }],
+    "commitment": "light",
+    "isCommitmentLocked": false,
+    "maxBulk": 6
+  },
+  "fund": {
+    "satchel": { "coins": 4, "max": 4 },
+    "stash": { "coins": 2, "max": 40 }
+  },
+  "rolodex": {
+    "friends": [{ "entry": "Mylo", "closeness": "friend" }]
+  },
+  "session": {
+    "playbookExpressions": 0,
+    "characterExpressions": 0,
+    "struggleExpressions": 0,
+    "max": 2
+  },
+  "notebook": "",
+  "isRetired": false,
+  "isDeadish": false
+}
+```
+
+#### `clock-invalid.json`
+
+```json
+{
+  "kind": "clock",
+  "id": "not-a-uuid",
+  "revision": 0,
+  "formatVersion": 1,
+  "createdAt": "2026-08-14T12:00:00Z",
+  "updatedAt": "2026-08-14T12:00:00Z",
+  "name": "Danger",
+  "clockKind": "hourglass",
+  "size": 0,
+  "rollover": -1,
+  "bogus": true
+}
+```
+
+#### `clock-valid.json`
+
+```json
+{
+  "kind": "clock",
+  "id": "123e4567-e89b-42d3-a456-426614174000",
+  "revision": 1,
+  "formatVersion": 1,
+  "createdAt": "2026-08-14T12:00:00Z",
+  "updatedAt": "2026-08-14T12:00:00Z",
+  "name": "Danger",
+  "clockKind": "project",
+  "segments": 2,
+  "size": 4,
+  "rollover": 0
+}
+```
+
+#### `crew-invalid.json`
+
+```json
+{
+  "kind": "crew",
+  "id": "123e4567-e89b-42d3-a456-426614174000",
+  "gameStem": "blades-in-the-dark",
+  "gameName": "Blades in the Dark",
+  "language": "en",
+  "revision": 1,
+  "formatVersion": 1,
+  "createdAt": "2026-08-14T12:00:00Z",
+  "updatedAt": "2026-08-14T12:00:00Z",
+  "crewTypeName": "Shadows",
+  "name": "The Unseen",
+  "lair": "Sewers",
+  "reputation": "dreaded",
+  "huntingGrounds": "Nightmarket",
+  "tier": 0,
+  "hold": "medium",
+  "heat": { "current": 0, "max": 9 },
+  "wanted": { "current": 0, "max": 4 },
+  "rep": { "current": 0, "max": 12 },
+  "experience": { "points": 0, "max": 8 },
+  "specialAbilities": [{ "name": "", "timesTaken": 1 }],
+  "upgrades": [{ "name": "Carriage", "boxesMarked": 1 }],
+  "cohorts": [
+    {
+      "id": "223e4567-e89b-42d3-a456-426614174000",
+      "cohortKind": "bogus",
+      "gangType": "thugs",
+      "expertType": "",
+      "quality": 1,
+      "scale": 1,
+      "hasArmor": false,
+      "edges": [],
+      "flaws": [],
+      "harm": "mangled",
+      "description": ""
+    }
+  ],
+  "coin": 4,
+  "stash": 2,
+  "notes": [],
+  "turf": 7,
+  "claimedClaimIds": ["crows", "crows", "Bad_Id!"],
+  "claimOverrides": [
+    { "claimId": "Crows", "name": "Crows Den", "description": "ours", "effects": [{}] }
+  ],
+  "bogus": 1
+}
+```
+
+#### `crew-valid.json`
+
+```json
+{
+  "kind": "crew",
+  "id": "123e4567-e89b-42d3-a456-426614174000",
+  "gameStem": "blades-in-the-dark",
+  "gameName": "Blades in the Dark",
+  "language": "en",
+  "revision": 1,
+  "formatVersion": 1,
+  "createdAt": "2026-08-14T12:00:00Z",
+  "updatedAt": "2026-08-14T12:00:00Z",
+  "crewTypeName": "Shadows",
+  "name": "The Unseen",
+  "lair": "Sewers",
+  "reputation": "dreaded",
+  "huntingGrounds": "Nightmarket",
+  "tier": 0,
+  "hold": "weak",
+  "heat": { "current": 0, "max": 9 },
+  "wanted": { "current": 0, "max": 4 },
+  "rep": { "current": 0, "max": 12 },
+  "experience": { "points": 0, "max": 8 },
+  "specialAbilities": [{ "name": "Foresight", "timesTaken": 1 }],
+  "upgrades": [{ "name": "Carriage", "boxesMarked": 1 }],
+  "cohorts": [
+    {
+      "id": "223e4567-e89b-42d3-a456-426614174000",
+      "cohortKind": "gang",
+      "gangType": "thugs",
+      "expertType": "",
+      "quality": 1,
+      "scale": 1,
+      "hasArmor": false,
+      "edges": [],
+      "flaws": [],
+      "harm": "healthy",
+      "description": ""
+    }
+  ],
+  "coin": 4,
+  "stash": 2,
+  "notes": [],
+  "turf": 2,
+  "claimedClaimIds": ["crows", "lampblack"],
+  "claimOverrides": [
+    { "claimId": "crows", "name": "Crows Den", "description": "ours", "effects": [{}] }
+  ],
+  "contacts": [{ "name": "Baszo", "profession": "Boss" }],
+  "factions": [{ "name": "The Bluecoats", "status": -1 }]
+}
+```
+
+#### `history-invalid.json`
+
+```json
+{
+  "snapshotId": "2026081412000000X-AbC123",
+  "op": "stress.add"
+}
+```
+
+#### `history-valid.json`
+
+```json
+{
+  "snapshotId": "20260814120000000-AbC123",
+  "takenAt": "2026-08-14T12:00:00Z",
+  "op": "stress.add"
+}
+```
+
+#### `roster-invalid.json`
+
+```json
+{
+  "characters": [
+    {
+      "id": "123e4567-e89b-42d3-a456-426614174000",
+      "name": "Cinder",
+      "alias": "Ash",
+      "playbook": "Cutter",
+      "gameStem": "blades-in-the-dark",
+      "crewId": "crew-1",
+      "stress": -1,
+      "traumas": [],
+      "isRetired": false,
+      "isDeadish": false,
+      "revision": 0
+    }
+  ],
+  "crews": [
+    {
+      "id": "123e4567-e89b-42d3-a456-426614174000",
+      "name": "The Unseen",
+      "crewType": "Shadows",
+      "gameStem": "blades-in-the-dark",
+      "tier": 0,
+      "heat": 0,
+      "wanted": 0,
+      "rep": 0,
+      "hold": "medium",
+      "memberCount": 0,
+      "revision": 1
+    }
+  ]
+}
+```
+
+
+Full transcript of the spike run (2026-08-14):
+
+```text
+== clock-invalid ==
+ENTITY clock
+POINTER /segments REASON missing required property
+POINTER /bogus REASON unknown property (additionalProperties: false)
+POINTER /id REASON pattern: "not-a-uuid" is not a v4 UUID
+POINTER /revision REASON range:  0 outside [ 1 ..  2147483647]
+POINTER /clockKind REASON enum: "hourglass" not in |project|rollover|
+POINTER /size REASON range:  0 outside [ 1 ..  2147483647]
+POINTER /rollover REASON range: -1 outside [ 0 ..  2147483647]
+ 7 error(s)
+== clock-valid ==
+ENTITY clock
+VALID
+== character-invalid ==
+ENTITY character
+POINTER /id REASON pattern: "123e4567-e89b-42d3-z456-426614174000" is not a v4 UUID
+POINTER /gameStem REASON pattern: "blades_in_the_dark" is not ^[A-Za-z0-9-]+$
+POINTER /dossier/name REASON missing required property
+POINTER /dossier/bogusField REASON unknown property (additionalProperties: false)
+POINTER /monitor/harm/healingClock/rollover REASON missing required property
+POINTER /monitor/harm/healingClock/size REASON range:  0 outside [ 1 ..  2147483647]
+POINTER /talent/attributes/0/actions/0/rating REASON range: -1 outside [ 0 ..  2147483647]
+POINTER /playbook/abilities/0/timesTaken REASON range:  0 outside [ 1 ..  2147483647]
+POINTER /gear/loadout/0/name REASON minLength: empty string
+POINTER /gear/loadout/0/bulk REASON range: -2 outside [ 0 ..  2147483647]
+POINTER /fund/satchel/max REASON missing required property
+POINTER /rolodex/friends/0/closeness REASON enum: "bogus" not in |friend|close-friend|rival|
+POINTER /session/max REASON range: -1 outside [ 0 ..  2147483647]
+ 13 error(s)
+== character-valid ==
+ENTITY character
+VALID
+== crew-invalid ==
+ENTITY crew
+POINTER /bogus REASON unknown property (additionalProperties: false)
+POINTER /hold REASON enum: "medium" not in |strong|weak|
+POINTER /specialAbilities/0/name REASON minLength: empty string
+POINTER /cohorts/0/cohortKind REASON enum: "bogus" not in |gang|expert|
+POINTER /cohorts/0/harm REASON enum: "mangled" not in |healthy|weakened|impaired|broken|dead|
+POINTER /turf REASON range:  7 outside [ 0 ..  6]
+POINTER /claimedClaimIds/1 REASON uniqueItems: duplicate of item 0
+POINTER /claimedClaimIds/2 REASON pattern: not a claim id
+POINTER /claimOverrides/0/claimId REASON pattern: "Crows" is not ^[a-z0-9]+(?:-[a-z0-9]+)*$
+ 9 error(s)
+== crew-valid ==
+ENTITY crew
+VALID
+== roster-invalid ==
+ENTITY roster
+POINTER /characters/0/stress REASON range: -1 outside [ 0 ..  2147483647]
+POINTER /characters/0/revision REASON range:  0 outside [ 1 ..  2147483647]
+POINTER /crews/0/hold REASON enum: "medium" not in |strong|weak|
+ 3 error(s)
+== campaign-valid ==
+ENTITY campaign
+VALID
+== history-invalid ==
+ENTITY historyEntry
+POINTER /takenAt REASON missing required property
+POINTER /snapshotId REASON pattern: "2026081412000000X-AbC123" is not ^[0-9]{17}-[A-Za-z0-9]+$
+ 2 error(s)
+== history-valid ==
+ENTITY historyEntry
+VALID
+```
+

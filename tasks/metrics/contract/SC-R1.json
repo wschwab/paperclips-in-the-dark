@@ -1,0 +1,13 @@
+{
+  "task": "SC-R1",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, 18m47s. Survey: Alire catalog stable-1.4.0 (zero hits), json-schema.org implementations list (no Ada), GitHub search API language:Ada (0 repos, 3 query shapes); candidates source-read (aor_jsona, json-ada, yeison, jwt, gnatcoll, matreshka). Spike in /tmp/sc-r1: generated-shape recursive validators pass 8/8 exercised requirements with re-runnable commands; zero new dependencies. Verdict: schema-generated entity validators.",
+  "wallClockMinutes": 19,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "Key findings: no maintained Ada JSON Schema validator exists anywhere; spike emission shape is the SC-C5 generator target; toolchain crib notes (GNATCOLL overloads, 0-based RFC 6901 pointers) reported for backend-ada/AGENTS.md (not edited by worker)."
+}

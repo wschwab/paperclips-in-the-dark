@@ -1,0 +1,264 @@
+---
+title: Lifecycle transition matrix
+description: Wave 0 (SC-R5) frozen state machine for stress overflow, trauma resolution, end-score, explicit and final-trauma retirement, deadish, fatal-harm removal, and deletion — with the retired allow/deny lists, the shared retirement cleanup, and the SC-O6 conformance case list
+---
+
+# Lifecycle transition matrix
+
+**Card:** SC-R5 · **Wave:** 0 · **Status:** frozen for SC-S1, SC-C2, SC-O6, SC-A8, SC-F4
+**Normative source:** `docs/pages/contract/spec-change-work-spec.mdx` § "Character lifecycle" (locked rules) and Q33/Q42 of its decision ledger. The C# reference (`blades-in-the-sheets/Models/`) remains authoritative for existing domain semantics; where it conflicts with a locked rule, the locked rule wins and the conflict is recorded in § 11.
+
+## 1. Scope
+
+This document freezes, for every lifecycle transition:
+
+- **preconditions** (including the four lifecycle flags);
+- **atomic state changes** (every field touched);
+- **errors** (`TRAUMA_REQUIRED`, `RETIRED`, `CONFIRM_REQUIRED`, `STALE_REVISION`, `OUT_OF_ACTION`, …);
+- **allowed next operations**;
+- **undo behavior** (complete prior-state restore? snapshot-worthy?);
+- **snapshot-worthy flag**.
+
+It also freezes the retired-operation allow-list and deny-list, the single shared cleanup function used by both retirement paths, the deadish transition design, end-score rules, the `canUndo`/`historyCount` derivation, the SC-O6 conformance case list, and the current-behavior conflicts SC-A8 must fix.
+
+**Transitions covered (8):** stress reaching maximum · trauma resolution · end-score (normal and with pending trauma) · explicit retirement (confirmed) · final-trauma retirement · fatal harm applied (deadish) · fatal harm removed (recovery) · deletion.
+
+## 2. State model
+
+### 2.1 Flags
+
+| Flag | Storage | Semantics |
+|---|---|---|
+| `isRetired` | stored canonical boolean | Set only by the shared retirement cleanup (explicit retire or final-trauma resolution). **Never recomputed from the trauma count.** |
+| `traumaPending` | stored canonical boolean (new) | True from the moment stress reaches maximum until the pending trauma is resolved. |
+| `isOutOfAction` | stored canonical boolean (new) | True from trauma resolution until `end-score` (or retirement/deadish cleanup). Character is out of action for the remainder of the score. |
+| `stressClearPending` | stored canonical boolean (new) | Set and cleared together with `isOutOfAction`; records that `end-score` owes a stress clear. |
+| `isDeadish` | stored canonical boolean, **write-time derived** | Recomputed from `monitor.harm.fatal` (non-empty) at the end of every transition that touches harm or lifecycle state. No operation accepts it as input; it is never a free-standing toggle (locked rule). Mirrors C# `IsDeadish => Monitor.Harm.IsFatal`. |
+| `canUndo`, `historyCount` | never stored | Derived at response time (§ 9). |
+
+### 2.2 Invariants (no transition may violate)
+
+- `¬(traumaPending ∧ isOutOfAction)` — pending and out-of-action never co-occur (pending is cleared by the same transition that sets out-of-action).
+- `stressClearPending ⟺ isOutOfAction` — the two flags are set and cleared together, by every transition that touches either.
+- `isDeadish ⟺ monitor.harm.fatal non-empty` — checked at the end of every transition.
+- `isRetired` once true stays true until an undo restores the prior snapshot (undo is the only recovery path; `trauma.remove` never clears it).
+- A transition sets `traumaPending` only when stress moves from below max to exactly max; it never auto-adds trauma.
+- Stress is kept full from trauma resolution until `end-score` (Q42); the only sanctioned clears in that window are `end-score`, the retirement/deadish cleanups, `end-downtime` vice relief (GM judgment), and undo.
+
+### 2.3 Gates (who is blocked when)
+
+| Condition | Blocked operations | Error |
+|---|---|---|
+| `isRetired` | All gameplay mutations (deny-list, § 6.2) | `RETIRED` |
+| `isRetired` | Allow-list ops (dossier/name/notes/notebook/trauma.remove/undo/delete/import/reads, § 6.1) | — allowed |
+| `traumaPending` | Gameplay mutations, `stress.add`, `stress.clear`, `end-score` | `TRAUMA_REQUIRED` (detail: resolve pending trauma first) |
+| `traumaPending` | `trauma.add` | — allowed (this is the resolution) |
+| `isOutOfAction` | `stress.add`, `stress.clear` | `OUT_OF_ACTION` (new code; detail: character is out of action until end-score) |
+| `isOutOfAction` | Everything else | — allowed (consequences, harm, and bookkeeping continue; the flag is a declared state, and the locked rule phrases the client obligation as explanation) |
+| `isRetired` or `traumaPending` | `retire` / `trauma.add` (respectively) | `RETIRED` / — retirement is allowed while pending; `trauma.add` while retired → `RETIRED` |
+
+`OUT_OF_ACTION` is a new error code: SC-C4 must add it to the typed error union (the SC-C4 list is "at least" those codes). The gate exists to keep Q42's "stress remains full until end-score" airtight and to make re-pending while out-of-action unreachable (§ 2.2).
+
+## 3. Transition table
+
+Legend: `+` = plus (adds), `−` = cleared/set false, `∪` = set union, `→` = becomes. "Snapshot-worthy" = the transition writes one history snapshot (one undo step). Undo restores the **complete** pre-transition document in every snapshot-worthy row; non-snapshot-worthy rows leave history untouched.
+
+| Transition | Preconditions | Atomic state changes | Errors | Allowed next operations | Undo behavior | Snapshot-worthy |
+|---|---|---|---|---|---|---|
+| **Stress reaching maximum** (`stress.add`) | Entity exists; `isRetired` false; `traumaPending` false (else `TRAUMA_REQUIRED`); `isOutOfAction` false (else `OUT_OF_ACTION`); `If-Match` current revision | `monitor.stress.current → min(max, current + delta)` (clamp semantics; `applied.effective` reports the clamp); **if `delta > 0 ∧ old < max ∧ new = max`: `traumaPending → true`** and sideEffects gains the typed attention token `"stress full — trauma pending"`; never auto-adds trauma; revision +1 | `404 NOT_FOUND` · `409 STALE_REVISION` · `400 VALIDATION` (body) · `RETIRED` · `TRAUMA_REQUIRED` · `OUT_OF_ACTION` | `trauma.add` (resolve), then `end-score`; allow-list ops; undo; delete | Restores prior stress value and prior `traumaPending` (undo consumes the snapshot; a pending set by this op is fully reverted) | **Yes** (`x-snapshot: true`, already today) |
+| **Trauma resolution** (`trauma.add`) | Entity exists; `isRetired` false (else `RETIRED`); `traumaPending` true (else `VALIDATION` — no pending trauma to resolve); trauma string non-empty (`VALIDATION`); not already present (`DUPLICATE`); `If-Match` current revision | `monitor.trauma.traumas ∪ {trauma}`; `traumaPending → false`; **stress stays at max, untouched**; `isOutOfAction → true`; `stressClearPending → true`; **if count now = `monitor.trauma.max` → run the shared retirement cleanup (§ 7.1) in the same transition** (then stress/out-of-action/armor/harm are the cleanup's values, and `isDeadish` recomputes false); revision +1 | `404` · `409 STALE_REVISION` · `400 VALIDATION` · `DUPLICATE` · `RETIRED` | If not final trauma: `end-score` (the release), allow-list ops, undo, delete; if final trauma: the retired allow-list (§ 6.1) | Restores the complete prior state (trauma list minus the new entry, `traumaPending` true again, stress full, both out-of-action flags false); for the final-trauma case this means **undo un-retires** (isRetired false, harm/armor restored) — the one sanctioned way back | **Yes** (`x-snapshot: true`, already today) |
+| **End-score** (`end-score`) | Entity exists; `isRetired` false (else `RETIRED`); `traumaPending` false (else `TRAUMA_REQUIRED` — locked rule 3); body optional (missing/`{}` valid); `If-Match` current revision | **Always:** `monitor.stress.current → 0`; `isOutOfAction → false`; `stressClearPending → false`. **Optional flags:** `clearArmorUsed: true` → `monitor.armor.standardUsed/heavyUsed/specialUsed → false`; `resetLoadoutCommitment: true` → `gear.loadout → []`, `gear.commitment → "none"` (blocked by `COMMITMENT_LOCKED` if locked). Nothing else changes — harm, trauma history, XP, fund, gear, dossier all untouched. revision +1; **one snapshot and exactly one history entry** for the whole composite | `404` · `409 STALE_REVISION` · `RETIRED` · `TRAUMA_REQUIRED` · `COMMITMENT_LOCKED` · `400 VALIDATION` (unknown fields) | `stress.add` cycle again next score; allow-list ops; undo; delete | Restores the complete prior state (stress, both flags, armor, loadout/commitment) from the single snapshot; history shows exactly one entry created | **Yes** (`x-snapshot: true`, already today) |
+| **Explicit retirement, confirmed** (`retire` — new operation) | Entity exists; `isRetired` false (else `RETIRED`); body `{confirm: true}` (else `CONFIRM_REQUIRED`); `If-Match` current revision. **Not restricted to max trauma** and legal in any state: stress full, `traumaPending`, `isOutOfAction`, deadish, harmed — the cleanup handles all | Run the shared retirement cleanup (§ 7.1) atomically: `isRetired → true`; `stress.current → 0`; `traumaPending → false`; `isOutOfAction → false`; `stressClearPending → false`; all harm → `[]`; healing clock segments + rollover → 0; armor usage → false; `isDeadish → false` (recomputed); preserve dossier/playbook/trauma history/notes/gear/fund/talent/rolodex/session/notebook (exact field effects in § 7.1); revision +1; one snapshot + one history entry | `404` · `409 STALE_REVISION` · `400 VALIDATION` (body) · `CONFIRM_REQUIRED` · `RETIRED` | Retired allow-list only (§ 6.1): dossier/name/note/notebook edits, `trauma.remove`, undo, delete, import, reads | Restores the complete pre-retirement state (isRetired false, stress/harm/armor/pending flags back) — undo is the locked recovery path for a mistaken retirement | **Yes** (new op declares `x-snapshot: true`) |
+| **Final-trauma retirement** (`trauma.add` bringing count to max) | Same as trauma resolution, plus `count + 1 = monitor.trauma.max` | Identical to the resolution transition, then **the same shared retirement cleanup (§ 7.1) runs in the same transition and same snapshot** — the locked rule: final trauma uses the same retirement transition, not a separate cleanup path. Observable post-state must be identical to explicit retirement's (cleanup equivalence), modulo the preserved trauma history which now contains the final trauma | `404` · `409` · `400 VALIDATION` · `DUPLICATE` · `RETIRED` | Retired allow-list only (§ 6.1) | Restores the complete prior state (trauma list minus final trauma, `traumaPending` true, stress full, isRetired false, harm/armor back) | **Yes** |
+| **Fatal harm applied → deadish** (`harm.add` landing at fatal) | Entity exists; `isRetired` false (else `RETIRED`); `traumaPending` false (else `TRAUMA_REQUIRED`); intensity ladder: lesser/moderate/severe slots full roll upward, all full at/above requested → `SLOT_FULL_FATAL`; `If-Match` current revision. `isOutOfAction` does **not** block (consequences still land) | Add harm at landing intensity (spillover sideEffect when it differs); **if the character just became deadish (fatal 0 → 1): run the deadish cleanup (§ 7.2) in the same transition** — `stress.current → 0`, `traumaPending → false`, `isOutOfAction → false`, `stressClearPending → false`; **all harm preserved including the fatal harm**; healing clock and armor usage untouched; `isDeadish → true` (recomputed); revision +1; one snapshot | `404` · `409` · `400 VALIDATION` · `SLOT_FULL_FATAL` · `RETIRED` · `TRAUMA_REQUIRED` | Anything (deadish is status, not a gate): harm removal/healing (recovery), allow-list ops, undo, delete; retirement is also available (its cleanup clears harm → deadish ends) | Restores the complete prior state (harm removed, stress and flags back, `isDeadish` recomputed false) | **Yes** (`x-snapshot: true`, already today) |
+| **Fatal harm removed → recovery** (`harm.remove` with intensity `fatal`) | Entity exists; `isRetired` false (else `RETIRED`); `traumaPending` false (else `TRAUMA_REQUIRED`); exact intensity + description match (else `NOT_FOUND`); exact-intensity removal, never cascades; `If-Match` current revision | Remove the matching fatal harm; `isDeadish` recomputed (false once `fatal` is empty); nothing else changes; revision +1 | `404` · `409` · `400 VALIDATION` · `NOT_FOUND` · `RETIRED` · `TRAUMA_REQUIRED` | Full normal gameplay (back in play); `harm.heal` is an equally valid removal path (requires full healing clock); allow-list ops; undo; delete | Restores the complete prior state (fatal harm back, `isDeadish` recomputed true) | **Yes** (`x-snapshot: true`, already today) |
+| **Deletion** (`delete`, confirm-guarded) | Entity exists in any state — retired, deadish, pending, out-of-action, degraded; body `{confirm: true}` (else `CONFIRM_REQUIRED`); `If-Match` current revision (degraded entities use the opaque `deleteToken`); idempotency key | Removes the entity directory including history and snapshots; entity is gone (subsequent reads → `404`); no revision bump is observable | `404` · `409 STALE_REVISION` · `CONFIRM_REQUIRED` · `400 VALIDATION` | None (entity no longer exists); recreation is a fresh `createCharacter` | **Not undoable** — history is destroyed with the entity; this is the locked "deletable" guarantee, and the delete endpoint itself is `x-snapshot: false` | **No** |
+| **Undo** (any snapshot-worthy transition) | Entity exists; at least one snapshot (else `NO_HISTORY`); `If-Match` current revision | Restores the newest snapshot as the full current document and deletes it; consecutive undos walk backwards; retention cap 50; revision +1; no new snapshot created | `404` · `409` · `NO_HISTORY` | Anything the restored state permits | The undo itself is not undoable | **No** (`x-snapshot: false`) |
+
+## 4. End-score rules (frozen)
+
+1. **`TRAUMA_REQUIRED` rejection:** while `traumaPending` is true, `end-score` fails with `TRAUMA_REQUIRED`; the pending trauma must be resolved first. End-score can never erase an unresolved trauma (card acceptance).
+2. **Inherent cleanup:** a successful `end-score` always clears `monitor.stress.current → 0` and resets both out-of-action flags (`isOutOfAction`, `stressClearPending`), regardless of the optional flags in the body.
+3. **One-snapshot atomicity:** the whole composite — stress clear, both flag resets, and every selected optional cleanup (`clearArmorUsed`, `resetLoadoutCommitment`) — lands in **one snapshot and exactly one history entry**. A mid-composite failure (e.g. `COMMITMENT_LOCKED` from `resetLoadoutCommitment`) fails the whole operation: nothing is applied, no snapshot is written.
+4. **Body optional:** the current "at least one flag" requirement (openapi.yaml:1305–1308, pitd_callback.adb:1306) is dropped; an omitted/empty body is a valid end-score (stress + flag cleanup only). SC-C2 updates the request schema (drop `minProperties: 1`, body no longer `required`).
+5. **Gates:** `isRetired` → `RETIRED`; `traumaPending` → `TRAUMA_REQUIRED`; `isOutOfAction`/deadish do not block (out-of-action is exactly what end-score releases).
+6. Undo of `end-score` restores the complete prior state from the single snapshot (locked rule: undo restores the complete prior state).
+
+## 5. Deadish design (frozen)
+
+- **Cause:** only fatal harm. `isDeadish` is never a free-standing toggle — no operation accepts it as input; it is recomputed from `monitor.harm.fatal` at the end of every transition (write-time derivation, as the Ada server already does for harm ops, pitd_callback.adb:1502/1505/1875).
+- **Distinct from retirement:** deadish preserves **all** harm (including fatal), the healing clock, and armor usage; retirement clears all of them. Deadish sets no gate of its own (no locked rule blocks deadish characters from operations; consequences and recovery must remain possible).
+- **Deadish cleanup (on becoming deadish, § 7.2):** clears stress and all pending/out-of-action state; preserves harm, healing clock, armor, and every other field.
+- **Fatal-harm removal (recovery):** `harm.remove` (exact intensity `fatal`) or `harm.heal` (requires full healing clock) removes the fatal harm; `isDeadish` recomputes false when the fatal array is empty. Deadish is a state, not a lock: recovery does not require any special operation.
+- **Retirement overrides deadish:** retirement cleanup clears harm, so a deadish character who retires ends the session non-deadish (recomputed). This is the locked "retirement clears harm" rule; it is not a contradiction.
+- **Coexistence:** a deadish character can still accrue stress (→ pending → resolution → out-of-action); the deadish cleanup only fires on the fatal transition itself.
+
+## 6. Retired-operation allow-list and deny-list (frozen)
+
+The `RETIRED` gate (currently pitd_callback.adb:1439–1441) must be replaced by these two explicit lists. Reads are always allowed.
+
+### 6.1 Allow-list (proceed normally on a retired character)
+
+| Operation | Rationale |
+|---|---|
+| `dossier.update` (name, alias, look, heritage, background, vice, crewId) | Locked rule — dossier and named-field edits remain allowed ("permit the non-mechanical dossier edits needed to finish their record"; completeness is unaffected by retirement) |
+| `note.add`, `note.remove` | Locked rule — note edits remain allowed |
+| `notebook.set` | Locked rule — notebook edits remain allowed |
+| `trauma.remove` | Locked rule — removing trauma must not silently reverse retirement; this is the trauma-history correction path. **Never recomputes or clears `isRetired`** |
+| `undoCharacter` | Locked rule — lifecycle recovery remains available; restores the complete prior state (this is the sanctioned way to reverse a retirement) |
+| `deleteCharacter` (confirm + If-Match) | Locked rule — retired characters remain deletable |
+| `importCharacter` | Data management, not gameplay (full-DTO replacement); the imported document is canonical and may deliberately change lifecycle flags; on import `isDeadish` is recomputed from the imported harm arrays (normalization rule, prevents contradictory imports); import clears history and takes one baseline snapshot (existing contract) |
+| All reads: `getCharacter`, `listCharacterHistory`, `getCharacterSnapshot`, roster/list | Locked rule — retired characters remain readable |
+
+### 6.2 Deny-list (→ `RETIRED` on a retired character)
+
+All gameplay mutations: `stress.add`, `stress.clear`, `trauma.add`, `harm.add`, `harm.remove`, `harm.heal`, `harm.healing-clock`, `armor.set`, `playbook-xp.add`, `playbook-xp.clear`, `attribute-xp.add`, `attribute-xp.clear`, `attribute.levelup`, `action.set-rating`, `ability.take`, `ability.remove`, `gear.add`, `gear.remove`, `gear.commit`, `gear.uncommit`, `gear.set-commitment`, `gear.clear-commitments`, `gear.lock`, `gear.unlock`, `fund.gain`, `fund.spend`, `fund.liquidate`, `rolodex.add`, `rolodex.remove`, `rolodex.set-closeness`, `session.set`, `end-score`, `end-downtime`.
+
+**Interpretation note (frozen):** the locked phrase "lifecycle cleanup and undo remain available" is realized as (a) undo and delete remain on the allow-list, (b) the shared retirement cleanup (§ 7.1) remains the single transition used by both retirement paths, and (c) `end-score`/`end-downtime` are denied because a retired character is out of the score/downtime loop. If a retirement was a mistake, undo — not a follow-up mutation — is the recovery path.
+
+## 7. Cleanup functions
+
+### 7.1 Shared retirement cleanup — ONE function used by BOTH retirement paths
+
+Frozen decision (card contract): explicit retirement (`retire`) and final-trauma retirement (`trauma.add` at max) call the **same** cleanup. Observable consequence for SC-O6: both paths produce identical post-cleanup state modulo the preserved trauma history.
+
+Exact field effects (applied atomically, one snapshot, revision +1):
+
+| Field | Effect |
+|---|---|
+| `isRetired` | → `true` |
+| `monitor.stress.current` | → `0` |
+| `traumaPending` | → `false` |
+| `isOutOfAction` | → `false` |
+| `stressClearPending` | → `false` |
+| `monitor.harm.lesser`, `.moderate`, `.severe`, `.fatal` | → `[]` (all harm cleared) |
+| `monitor.harm.healingClock.segments` | → `0` |
+| `monitor.harm.healingClock.rollover` | → `0` (reset discards overflow) |
+| `monitor.armor.standardUsed`, `.heavyUsed`, `.specialUsed` | → `false` |
+| `isDeadish` | → `false` (recomputed: fatal empty) |
+| `dossier` (name, crewId, alias, look, notes, background, heritage, vice) | preserved verbatim |
+| `playbook` (name, experience, abilities) | preserved verbatim |
+| `monitor.trauma` (traumas, max) | preserved verbatim (trauma history is kept) |
+| `talent` (attributes, XP tracks) | preserved verbatim |
+| `gear` (loadout, availableGear, commitment, isCommitmentLocked, maxBulk) | preserved verbatim — gear ownership kept |
+| `fund` (satchel, stash) | preserved verbatim — fund state kept |
+| `rolodex`, `session`, `notebook` | preserved verbatim |
+| `monitor.stress.max`, id/kind/gameStem/gameName/language, revision/formatVersion/createdAt/updatedAt | unchanged except `updatedAt`/revision per write policy |
+
+### 7.2 Deadish cleanup — distinct, NOT the retirement cleanup
+
+Runs only inside the fatal-harm transition (fatal 0 → 1). Exact field effects (one snapshot, revision +1):
+
+| Field | Effect |
+|---|---|
+| `monitor.stress.current` | → `0` |
+| `traumaPending` | → `false` |
+| `isOutOfAction` | → `false` |
+| `stressClearPending` | → `false` |
+| `monitor.harm` (all intensities, incl. the fatal harm just added) | **preserved** |
+| `monitor.harm.healingClock` (segments, rollover) | **preserved** |
+| `monitor.armor` (usage) | **preserved** |
+| `isDeadish` | → `true` (recomputed) |
+| Everything else | preserved verbatim |
+
+## 8. Stress/trauma sequence (locked, restated for SC-S1)
+
+1. `stress.add` landing at max → `traumaPending: true` + typed attention (sideEffect token `"stress full — trauma pending"`; SC-C2 freezes the exact string); never auto-trauma.
+2. `trauma.add` (resolution) → records the trauma, keeps stress **full**, clears `traumaPending`, sets `isOutOfAction` + `stressClearPending`. If it was the final trauma → shared retirement cleanup in the same transition.
+3. `end-score` while `traumaPending` → `TRAUMA_REQUIRED`.
+4. Successful `end-score` → stress → 0, both out-of-action flags reset, selected score cleanup, one snapshot.
+5. Clients explain that the character is out of action for the remainder of the score (SC-F4 obligation).
+
+## 9. `canUndo` / `historyCount` derivation (frozen)
+
+- **Never stored** (locked rule: "No stale derived flag is persisted"; Q34). Computed at response time for roster summaries and character detail responses.
+- `historyCount` = number of retained snapshot entries in the entity's history (0..50, retention cap per PERSISTENCE-SNAPSHOT-002); `canUndo = historyCount > 0`.
+- Snapshot-worthy transitions (all rows marked **Yes** in § 3, plus `importCharacter`) increment; `x-snapshot: false` micro-ops (`stress.clear`, `armor.set`, `harm.healing-clock`, `session.set`, `notebook.set`, undo, delete) do not. Undo consumes one snapshot → `historyCount` decrements. Delete removes the entity, projections gone.
+- Projection cost: derived from the existing history index; no history files are touched on read.
+
+## 10. SC-O6 conformance case list (test names, frozen)
+
+Every locked rule maps to at least one case. Names are the SC-O6 `testCase` IDs; SC-O6 may add cases but must not remove these.
+
+| ID | Test name | Locked rule / decision covered |
+|---|---|---|
+| `LIFECYCLE-STRESS-001` | stress reaching max sets traumaPending and returns typed attention | Sequence step 1; Q42 |
+| `LIFECYCLE-STRESS-002` | stress overflow never auto-adds trauma | Sequence step 1; current behavior preserved |
+| `LIFECYCLE-STRESS-003` | stress.add while trauma pending is rejected with TRAUMA_REQUIRED | Matrix gate (§ 2.3) |
+| `LIFECYCLE-STRESS-004` | stress.add and stress.clear while out of action are rejected with OUT_OF_ACTION | Matrix gate (§ 2.3); Q42 |
+| `LIFECYCLE-TRAUMA-001` | trauma resolution keeps stress full, clears pending, marks out-of-action and stressClearPending | Sequence step 2; Q42 |
+| `LIFECYCLE-TRAUMA-002` | trauma.add without pending trauma is rejected with VALIDATION | Matrix decision (resolution-only) |
+| `LIFECYCLE-TRAUMA-003` | duplicate trauma is rejected with DUPLICATE | Existing contract |
+| `LIFECYCLE-ENDSCORE-001` | end-score while trauma pending is rejected with TRAUMA_REQUIRED | Locked rule 3; "end-score cannot erase unresolved trauma" |
+| `LIFECYCLE-ENDSCORE-002` | end-score clears stress to zero and resets both out-of-action flags | Sequence step 4; Q42 |
+| `LIFECYCLE-ENDSCORE-003` | end-score performs all selected cleanup in exactly one snapshot (one history entry; undo restores prior state) | Locked rule 4 — one-snapshot atomicity |
+| `LIFECYCLE-RETIRE-001` | explicit retirement requires confirm:true (CONFIRM_REQUIRED otherwise) | Locked: explicit, confirmation-guarded (Q33) |
+| `LIFECYCLE-RETIRE-002` | explicit retirement succeeds below maximum trauma | Q33; stackexchange rule (retirement not restricted to max trauma) |
+| `LIFECYCLE-RETIRE-003` | retirement cleanup clears stress, harm, healing clock, armor and preserves dossier/playbook/trauma history/notes/gear/fund | Locked cleanup field effects (§ 7.1) |
+| `LIFECYCLE-RETIRE-004` | voluntary and final-trauma retirement produce identical post-cleanup state (shared cleanup) | Locked: same retirement transition; card contract: one cleanup |
+| `LIFECYCLE-RETIRE-005` | retired characters remain readable and deletable | Locked rule 1 |
+| `LIFECYCLE-RETIRE-006` | retired dossier, name, note and notebook edits remain allowed | Locked rule 2 |
+| `LIFECYCLE-RETIRE-007` | retired gameplay mutations return RETIRED | Locked rule 4 |
+| `LIFECYCLE-RETIRE-008` | trauma.remove after retirement does not clear isRetired | Locked rule 5 |
+| `LIFECYCLE-RETIRE-009` | undo restores the complete pre-retirement state (isRetired false again) | Locked rule 5 — undo is the recovery path; locked rule "lifecycle cleanup and undo remain available" |
+| `LIFECYCLE-DEADISH-001` | fatal harm triggers deadish cleanup: clears stress and pending state, preserves all harm | Locked deadish rule |
+| `LIFECYCLE-DEADISH-002` | deadish is caused only by fatal harm (no free-standing toggle; isDeadish derived from fatal array) | Locked deadish rule |
+| `LIFECYCLE-DEADISH-003` | removing the fatal harm ends deadish (recovery) | Matrix decision (§ 5) |
+| `LIFECYCLE-DELETE-001` | deletion requires confirmation and removes entity and history | Locked rule 1; existing contract |
+| `LIFECYCLE-DERIVED-001` | canUndo and historyCount are derived response-time fields that track snapshot consumption and are never persisted | Locked rule; Q34 |
+| `LIFECYCLE-INVARIANTS-001` | no reachable state has traumaPending and isOutOfAction both true; stressClearPending equals isOutOfAction | Card acceptance: no contradictory pending flags |
+
+Cross-references: completeness independence of retirement/deadish is SC-O3's case ("retired/deadish entities use the same completeness computation"); the explicit retire operation's OpenAPI surface is SC-C2's; the error-union membership of `OUT_OF_ACTION` is SC-C4's (`LIFECYCLE-STRESS-004` fails until it exists).
+
+## 11. Current-behavior conflicts SC-A8 must fix (file:line)
+
+Backend (SC-A8):
+
+1. `backend-ada/server/src/pitd_callback.adb:1439-1441` — the `RETIRED` gate denies **everything** except `trauma.add`/`trauma.remove`. Locked rules require `dossier.update`, `note.add/remove`, `notebook.set`, and `trauma.remove` to be allowed (allow-list § 6.1) and `trauma.add` to be denied.
+2. `backend-ada/server/src/pitd_callback.adb:1443-1448` — `stress.add` clamps and adds a sideEffect but never sets `traumaPending` (flag does not exist); must set it when landing at max from below and emit the typed attention (§ 8.1).
+3. `backend-ada/server/src/pitd_callback.adb:1449` — `stress.clear` unconditional; must be gated `TRAUMA_REQUIRED` (pending) / `OUT_OF_ACTION` (out-of-action).
+4. `backend-ada/server/src/pitd_callback.adb:1450-1494` — `trauma.add`/`trauma.remove` treat `isRetired` as a **recomputed count** (`:1482-1483` set it on add; `:1491-1492` recompute on remove, so removing trauma from a retired character un-retires it). Must become: `trauma.add` requires `traumaPending` (resolution), never recomputes `isRetired`; `trauma.remove` never clears `isRetired`; max-th resolution runs the shared cleanup.
+5. `backend-ada/server/src/pitd_callback.adb:1482-1483` — the max-th trauma only flips the flag; retirement cleanup (stress/harm/armor/clock clear, § 7.1) is absent.
+6. `backend-ada/server/src/pitd_callback.adb:1495-1503` — `harm.add` sets `isDeadish` but never runs the deadish cleanup (stress + pending/out-of-action clear, § 7.2).
+7. `backend-ada/server/src/pitd_callback.adb:1984-2017` — `end-score` is flags-only (`clearArmorUsed`, `resetLoadoutCommitment`); must add the inherent stress clear + both flag resets, `TRAUMA_REQUIRED` and `RETIRED` gates, and keep the single-snapshot property.
+8. `backend-ada/server/src/pitd_callback.adb:1305-1308` — `end-score` requires at least one flag; body becomes optional (§ 4.4).
+9. `backend-ada/server/src/pitd_callback.adb:2087-2102` — `Character_Summary` exposes neither the new flags nor `canUndo`/`historyCount`; add derived projections (§ 9).
+10. `backend-ada/core/src/paperclips_core-monitors.ads:20-22` — SPARK core derives `Is_Retired` from the trauma count; the proved core must gain the pending/out-of-action state and a retirement flag independent of the trauma count, plus the cleanup transitions, with updated `Post` contracts (SC-A8 owns the changed SPARK contract; SC-O5's proof obligation style applies).
+11. `contract/openapi.yaml` — no `/characters/{id}/retire` operation exists anywhere (grep: only the trauma.add description mentions retirement); SC-C2 adds it (confirm-guarded, `x-snapshot: true`, `If-Match`, idempotency key, `RETIRED`/`CONFIRM_REQUIRED`/`STALE_REVISION` statuses) and SC-A8 implements it.
+12. `contract/openapi.yaml:373-400` — `trauma.add`/`trauma.remove` contract text ("Adding the max-th trauma retires the character (sideEffect)", "Allowed even when retired") must be rewritten to the resolution semantics; SC-C2 owns the text, SC-A8 the behavior.
+
+Superseded pre-oracle conformance (SC-O6 replaces these; SC-A8 must make the new behavior pass):
+
+13. `conformance/suites/semantics/retired-deadish.test.ts:37-41` — expects `notebook.set` → `RETIRED`; locked rules require notebook edits allowed (→ `LIFECYCLE-RETIRE-006`).
+14. `conformance/suites/semantics/retired-deadish.test.ts:42-46` — expects `trauma.remove` OK while retired; kept, but today's implementation un-retires (`:1491-1492`) — must keep `isRetired` true (→ `LIFECYCLE-RETIRE-008`).
+15. `conformance/suites/semantics/stress-overflow.test.ts:34-40` — `SEMANTICS-STRESS-OVERFLOW-002` does direct `trauma.add` without pending state; superseded (→ `LIFECYCLE-TRAUMA-002`).
+16. `conformance/suites/lifecycle/retirement.test.ts:12-24` — `LIFECYCLE-RETIREMENT-001` retires by repeated `trauma.add` without the stress-max/pending flow and without cleanup assertions; superseded (→ `LIFECYCLE-RETIRE-004`).
+
+Contract/schema (SC-C1/C2/C4/C6):
+
+17. `contract/schemas/character.json:64-105` and `frontend/src/schema/character.ts:166-167` — only `isRetired`/`isDeadish` exist; add canonical `traumaPending`, `isOutOfAction`, `stressClearPending` (SC-C1), plus `canUndo`/`historyCount` as response projections (SC-C6); `frontend/src/schema/campaign.ts:45-49` summary likewise.
+18. `frontend/src/api/common.ts:104-106` — error union lacks `TRAUMA_REQUIRED` and `OUT_OF_ACTION`; SC-C4/C5 regenerate.
+
+Frontend (SC-F4, not SC-A8, but behavior currently contradicts the locked sequence):
+
+19. `frontend/src/pages/character-detail.ts:2432-2460` — trauma-from-stress chains `stress.clear` after `trauma.add` ("trauma taken — stress cleared"); violates "stress remains full until end-score" (Q42).
+20. `frontend/src/pages/character-detail.ts:678-709` — trauma picker copy "take a trauma to clear it"; must become the pending-trauma prompt with out-of-action explanation.
+21. `frontend/src/pages/character-detail.ts:522-524` — "Indulge Vice" (`stress.clear`) ungated; must honor `TRAUMA_REQUIRED`/`OUT_OF_ACTION`.
+22. `frontend/src/api/client.ts` — no `endScore`, `retireCharacter`, or `deleteCharacter` exports; SC-C5/SC-F4 add the controls (delete currently has no reachable human control, violating client-parity obligations).
+
+## 12. Decisions frozen for downstream cards
+
+- **SC-S1:** normative wording from § 3, § 4, § 5, § 7, § 8, § 9.
+- **SC-C2:** new `POST /characters/{id}/retire` (confirm-guarded, `x-snapshot: true`); end-score body optional; `trauma.add` resolution semantics; `stress.add` typed-attention sideEffect token; `trauma.remove` "never clears isRetired" contract text.
+- **SC-C4:** add `OUT_OF_ACTION` to the typed error union (with detail shape "character is out of action until end-score").
+- **SC-O6:** the 25-case list in § 10 is the minimum frozen set.
+- **SC-A8:** the conflicts in § 11; shared cleanup (§ 7.1) implemented once and called by both retirement paths.
+- **SC-F4:** pending-trauma prompt, out-of-action explanation, explicit retire confirmation, deadish/retired distinction, retired dossier editing, undo/history from `canUndo`/`historyCount`.
+
+## 13. Evidence
+
+- **C# reference** (`blades-in-the-sheets/Models/`): `Character.IsRetired => Monitor.Trauma.IsRetired` and `Character.IsDeadish => Monitor.Harm.IsFatal` (Characters/Character.cs); `MonitorTrauma.Add` refuses when retired, `Remove` always allowed, `IsRetired => Traumas.Count == MaxTraumas` (Characters/MonitorTrauma.cs); fatal harm slot bounded at 1, `MonitorHarm.IsFatal`, rollover `HealingClock` (Characters/MonitorHarm.cs); armor usage flags + `Restore*` (Characters/CharacterArmor.cs); stress bounded at `MaxStress` (Characters/MonitorStress.cs). The locked rules intentionally diverge: retirement becomes an explicit stored flag independent of trauma count, and cleanup is defined by § 7.1.
+- **Current conformance** (pre-oracle): `conformance/suites/semantics/retired-deadish.test.ts` (flag distinctness; notebook RETIRED; trauma.remove OK when retired), `conformance/suites/semantics/stress-overflow.test.ts` (no auto-trauma; separate explicit trauma op), `conformance/suites/lifecycle/retirement.test.ts` (retire-by-trauma; delete confirmation), `conformance/suites/persistence/history.test.ts` and `snapshot-policy.test.ts` (undo restores complete prior state and consumes the snapshot; `x-snapshot: false` micro-ops; retention 50).
+- **Ada server** (`backend-ada/server/src/pitd_callback.adb`): RETIRED gate (:1439-1441), stress clamp + sideEffect (:1443-1448), trauma count-derived isRetired (:1482-1483, :1491-1492), isDeadish recompute on harm ops (:1502, :1505, :1875), end-score composite (:1984-2017), delete confirm (:2303-2329), undo NO_HISTORY/consume (:2331-2375), snapshot-worthy op table (:761-790).
+- **Public rule:** [Can I retire without Trauma?](https://rpg.stackexchange.com/questions/148519/can-i-retire-without-trauma) — accepted answer (Glazius, 2019): retirement is not restricted to max trauma; a scoundrel may retire whenever (Blades in the Dark p. 207, "The Dark Future"). Basis for Q33 and the explicit retire operation.
+- **Governing spec:** `docs/pages/contract/spec-change-work-spec.mdx` § "Character lifecycle" and Q33/Q42 — normative for every locked rule restated above.

@@ -1,0 +1,13 @@
+{
+  "task": "SC-R2",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Single dispatch, 3m19s. 13/13 locked pointers resolve to required string properties with no minLength; canonical empty \"\" for all; predicate nonBlankString for all. Counterexample set X0-X4 (baseline, whitespace, zero, false, empty array). Clocks confirmed listless. 5 SC-C1 guardrails recorded (no minLength on locked strings; exact 13-pointer emission; path stability; no clock list; alias special case).",
+  "wallClockMinutes": 3,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "Confirmed demo-character.json is a legacy PascalCase fixture, not canonical shape."
+}
