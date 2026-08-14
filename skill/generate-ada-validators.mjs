@@ -191,6 +191,12 @@ function registerConst(key, value, pathTokens) {
   return registerNode(node);
 }
 
+function registerConstInt(key, value, pathTokens) {
+  const node = { key, kind: "constInt", value };
+  node.name = uniqueName(key, pathTokens.map(toAdaIdentifier).join("_"));
+  return registerNode(node);
+}
+
 function registerObject(key, schema, file, pathTokens) {
   if (nodeIndex.has(key)) return nodeIndex.get(key);
   if (schema.additionalProperties !== false) {
@@ -361,6 +367,13 @@ function checkerFor(schema, file, pathTokens) {
     case "boolean":
       return BUILTIN.boolean;
     case "integer": {
+      if (schema.const !== undefined) {
+        if (typeof schema.const !== "number" || !Number.isInteger(schema.const)) {
+          throw new Error(`${file}.json: unsupported non-integer const at ${pathTokens.join("/")}`);
+        }
+        const key = pathKey(file, pathTokens);
+        return registerConstInt(key, schema.const, pathTokens).key;
+      }
       if (schema.minimum !== undefined && schema.maximum !== undefined) {
         return registerBound(schema.minimum, schema.maximum);
       }
@@ -858,6 +871,17 @@ body.push(`
       end if;
    end Check_Const;
 
+   procedure Check_Const_Int (V : JSON_Value; Ptr : String; Expected : Integer) is
+   begin
+      if V.Kind /= JSON_Int_Type then
+         Report (Ptr, "type: expected integer const " & Integer'Image (Expected)
+                 & ", found " & Kind_Name (V.Kind));
+      elsif Get (V) /= Expected then
+         Report (Ptr, "const: expected " & Integer'Image (Expected)
+                 & ", found " & Integer'Image (Get (V)));
+      end if;
+   end Check_Const_Int;
+
    procedure Check_Min_Length_1 (V : JSON_Value; Ptr : String) is
    begin
       if V.Kind /= JSON_String_Type then
@@ -970,12 +994,19 @@ for (const node of nodes) {
 
 // Const wrappers (registration order).
 for (const node of nodes) {
-  if (node.kind !== "const") continue;
-  body.push(`
+  if (node.kind === "const") {
+    body.push(`
    procedure Check_Const_${node.name} (V : JSON_Value; Ptr : String) is
    begin
       Check_Const (V, Ptr, "${node.value}");
    end Check_Const_${node.name};`);
+  } else if (node.kind === "constInt") {
+    body.push(`
+   procedure Check_Const_Int_${node.name} (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const_Int (V, Ptr, ${node.value});
+   end Check_Const_Int_${node.name};`);
+  }
 }
 
 // Object/array checkers (topological order).
@@ -1061,6 +1092,8 @@ function checkerAccess(node) {
       return `Check_Enum_${node.name}'Access`;
     case "const":
       return `Check_Const_${node.name}'Access`;
+    case "constInt":
+      return `Check_Const_Int_${node.name}'Access`;
     default:
       throw new Error(`unexpected node kind ${node.kind}`);
   }

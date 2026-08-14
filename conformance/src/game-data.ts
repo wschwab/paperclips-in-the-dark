@@ -13,8 +13,10 @@ export interface GameSetting {
     DefaultActionPoints?: Array<{ Action: string; Points: number }>;
   }>;
   Traumas: string[];
+  TraumaMax: number;
   RecoveryClockSize: number;
   ActionPointMaximum: number;
+  FundMaxima: { SatchelMax: number; StashMax: number };
   Attributes: Array<{ Name: string; Actions: Array<{ Name: string }> }>;
 }
 

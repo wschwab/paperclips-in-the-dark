@@ -141,7 +141,7 @@
       "method": "POST",
       "path": "/characters/{id}/import",
       "agentReference": "api-reference/README.md#importcharacter",
-      "summary": "Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. Allowed on retired characters (data management, not gameplay). 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.",
+      "summary": "Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token; missing → 400 VALIDATION), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. If-Match is apply-only: preview mode never requires it. Allowed on retired characters (data management, not gameplay). 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.",
       "categories": [
         "data-management"
       ],
@@ -270,7 +270,7 @@
       "method": "POST",
       "path": "/characters/{id}/ops/harm.healing-clock",
       "agentReference": "api-reference/README.md#harmhealingclock",
-      "summary": "Rollover clock; overflow past full is carried and applied on reset."
+      "summary": "Clock-progress family: applied.requested is the requested progress, applied.effective all accepted progress including rollover, applied.visibleApplied and applied.overflowAdded report the split when nonzero. Rollover clock; overflow past full is carried and applied on reset."
     },
     "armorSet": {
       "disposition": "agent",
@@ -319,7 +319,7 @@
       "method": "POST",
       "path": "/characters/{id}/ops/action.set-rating",
       "agentReference": "api-reference/README.md#actionsetrating",
-      "summary": "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED."
+      "summary": "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED. Absolute-setter family: requested = the requested target rating; effective = the stored target rating; a clamp (requested ≠ effective) is reported in the result."
     },
     "abilityTake": {
       "disposition": "agent",
@@ -396,21 +396,21 @@
       "method": "POST",
       "path": "/characters/{id}/ops/fund.gain",
       "agentReference": "api-reference/README.md#fundgain",
-      "summary": "Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped."
+      "summary": "Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount actually placed. Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped."
     },
     "fundSpend": {
       "disposition": "agent",
       "method": "POST",
       "path": "/characters/{id}/ops/fund.spend",
       "agentReference": "api-reference/README.md#fundspend",
-      "summary": "Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with maxAffordable detail."
+      "summary": "Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount processed. Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with {available, needed} detail."
     },
     "fundLiquidate": {
       "disposition": "agent",
       "method": "POST",
       "path": "/characters/{id}/ops/fund.liquidate",
       "agentReference": "api-reference/README.md#fundliquidate",
-      "summary": "Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS."
+      "summary": "Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount processed. Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS."
     },
     "rolodexAdd": {
       "disposition": "agent",
@@ -449,7 +449,7 @@
       "method": "POST",
       "path": "/characters/{id}/ops/session.set",
       "agentReference": "api-reference/README.md#sessionset",
-      "summary": "Partial update; each value clamped 0..max (game settings)."
+      "summary": "Partial update; each value clamped 0..max (game settings). Absolute setter (absolute-setter result family): applied.requested is the requested target, applied.effective the stored (clamped) target."
     },
     "notebookSet": {
       "disposition": "human",
@@ -551,7 +551,7 @@
       "method": "POST",
       "path": "/crews/{id}/import",
       "agentReference": "api-reference/README.md#importcrew",
-      "summary": "Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.",
+      "summary": "Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token; missing → 400 VALIDATION), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. If-Match is apply-only: preview mode never requires it. 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.",
       "categories": [
         "data-management"
       ],
@@ -609,35 +609,35 @@
       "method": "POST",
       "path": "/crews/{id}/ops/heat.add",
       "agentReference": "api-reference/README.md#heatadd",
-      "summary": ""
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
     },
     "wantedAdd": {
       "disposition": "agent",
       "method": "POST",
       "path": "/crews/{id}/ops/wanted.add",
       "agentReference": "api-reference/README.md#wantedadd",
-      "summary": ""
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
     },
     "repAdd": {
       "disposition": "agent",
       "method": "POST",
       "path": "/crews/{id}/ops/rep.add",
       "agentReference": "api-reference/README.md#repadd",
-      "summary": ""
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
     },
     "tierAdd": {
       "disposition": "agent",
       "method": "POST",
       "path": "/crews/{id}/ops/tier.add",
       "agentReference": "api-reference/README.md#tieradd",
-      "summary": "Bounded below at 0; applied delta reported."
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported."
     },
     "holdSet": {
       "disposition": "agent",
       "method": "POST",
       "path": "/crews/{id}/ops/hold.set",
       "agentReference": "api-reference/README.md#holdset",
-      "summary": ""
+      "summary": "Absolute-setter family: requested = the requested target hold; effective = the stored target hold; a clamp (requested ≠ effective) is reported in the result."
     },
     "crewXpAdd": {
       "disposition": "agent",
@@ -673,7 +673,7 @@
       "method": "POST",
       "path": "/crews/{id}/ops/turf.add",
       "agentReference": "api-reference/README.md#turfadd",
-      "summary": "C4 playtest change (2026-08-09): add (or remove, negative delta) turf, clamped 0..6. Each turf reduces the rep cost to develop by one (SRD Development)."
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes. C4 playtest change (2026-08-09): add (or remove, negative delta) turf. The maximum is authoritative from game settings (TurfMax; R4 migration) — clamping applies at the settings-derived bound, not a hardcoded 6. Each turf reduces the rep cost to develop by one (SRD Development)."
     },
     "crewXpClear": {
       "disposition": "agent",
@@ -771,7 +771,7 @@
       "method": "POST",
       "path": "/crews/{id}/ops/faction.set-status",
       "agentReference": "api-reference/README.md#factionsetstatus",
-      "summary": "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract."
+      "summary": "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result."
     },
     "factionRemove": {
       "disposition": "agent",
@@ -785,14 +785,14 @@
       "method": "POST",
       "path": "/crews/{id}/ops/coin.add",
       "agentReference": "api-reference/README.md#coinadd",
-      "summary": "Bounded below at 0; applied delta reported."
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported."
     },
     "stashAdd": {
       "disposition": "agent",
       "method": "POST",
       "path": "/crews/{id}/ops/stash.add",
       "agentReference": "api-reference/README.md#stashadd",
-      "summary": "Bounded below at 0; applied delta reported."
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported."
     },
     "crewFieldsUpdate": {
       "disposition": "human",
@@ -810,7 +810,7 @@
       "method": "GET",
       "path": "/clocks",
       "agentReference": "api-reference/README.md#listclocks",
-      "summary": "all campaign clocks"
+      "summary": "all standalone clocks (campaign-, character-, and crew-owned)"
     },
     "createClock": {
       "disposition": "agent",

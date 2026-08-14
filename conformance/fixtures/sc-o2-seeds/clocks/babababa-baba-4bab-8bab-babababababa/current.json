@@ -1,0 +1,17 @@
+{
+  "kind": "clock",
+  "id": "babababa-baba-4bab-8bab-babababababa",
+  "revision": 2,
+  "formatVersion": 1,
+  "createdAt": "2026-07-19T12:05:00.000Z",
+  "updatedAt": "2026-07-19T13:00:00.000Z",
+  "name": "SC-O2 valid control clock",
+  "ownerKind": "campaign",
+  "ownerId": "",
+  "purpose": "mission",
+  "behavior": "bounded",
+  "segments": 3,
+  "size": 8,
+  "rollover": 0,
+  "relatedClockIds": []
+}

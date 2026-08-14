@@ -10,6 +10,15 @@
     "character": { "$ref": "character.json" },
     "crew": { "$ref": "crew.json" },
     "clock": { "$ref": "clock.json" },
+    "canUndo": {
+      "type": "boolean",
+      "description": "Entity-targeted operation results only: derived, never stored — true when the entity retains at least one snapshot (historyCount > 0)."
+    },
+    "historyCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Entity-targeted operation results only: derived, never stored — count of the entity's retained snapshots (retention cap 50), computed at response time."
+    },
     "applied": {
       "type": "object",
       "required": ["op"],
@@ -61,6 +70,71 @@
     }
   },
   "$defs": {
+    "previewResult": {
+      "type": "object",
+      "required": ["changes", "document"],
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "type": "array",
+          "description": "Ordered change list covering every fill, conversion, correction, clamp, and removal the canonicalizer would apply; empty when the document is already canonical.",
+          "items": {
+            "type": "object",
+            "required": ["pointer", "reason", "previous", "replacement"],
+            "additionalProperties": false,
+            "properties": {
+              "pointer": {
+                "type": "string",
+                "description": "JSON pointer of the changed property, e.g. /dossier/name."
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the change is applied: missing/null fill, type coercion, legacy conversion (L1-L8), clamp, unknown-key removal, identity normalization, or needs-input."
+              },
+              "previous": {
+                "description": "The stored or submitted value before normalization (any JSON value)."
+              },
+              "replacement": {
+                "description": "The canonical value that would be written (any JSON value)."
+              }
+            }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Human-readable normalization warnings (fills, conversions, clamps, listed removals); empty when the document is already canonical."
+        },
+        "needsInputPointers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Exact JSON pointers awaiting caller-supplied values; present only when the preview ends with needs-input pointers."
+        },
+        "previewToken": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque preview token that unlocks the confirming apply. Import preview: always issued. Repair preview: omitted when the stored entity is already canonical (nothing to confirm)."
+        },
+        "canonical": {
+          "type": "boolean",
+          "description": "true when the document is already canonical (no changes needed); false when normalization would be required."
+        },
+        "document": {
+          "oneOf": [
+            { "$ref": "character.json" },
+            { "$ref": "crew.json" },
+            { "$ref": "clock.json" }
+          ],
+          "description": "The previewed normalized document: the canonical result the confirming apply would persist (byte-for-byte the stored/imported shape after all changes)."
+        }
+      },
+      "if": {
+        "properties": { "canonical": { "const": false } },
+        "required": ["canonical"]
+      },
+      "then": { "required": ["previewToken"] },
+      "description": "Normalization preview shared by the import/repair preview responses and the NORMALIZATION_REQUIRED error's preview member: ordered change list, warnings, any needs-input pointers, preview token, canonical flag, and the previewed normalized document."
+    },
     "operationError": {
       "oneOf": [
         {
@@ -121,10 +195,7 @@
             "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
             "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
             "details": { "$ref": "common.json#/$defs/errorPreviewDetails" },
-            "preview": {
-              "type": "object",
-              "description": "The full normalization preview: ordered change list (pointer, reason, previous, replacement), warnings, and any needs-input pointers."
-            },
+            "preview": { "$ref": "#/$defs/previewResult" },
             "token": {
               "type": "string",
               "minLength": 1,
@@ -434,8 +505,8 @@
             "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
             "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
             "details": {
-              "$ref": "common.json#/$defs/errorLimitDetails",
-              "description": "limit = maximum affordable coins; current = requested coins."
+              "$ref": "common.json#/$defs/errorFundsDetails",
+              "description": "available = coins spendable now; needed = coins requested."
             },
             "entity": {
               "oneOf": [
@@ -658,5 +729,5 @@
       "description": "Whole-error discriminated union: one branch per errorCode, discriminated on code. Every branch declares code, status (the HTTP status the error is delivered with), message, retryable (the operation may succeed after the documented recovery action — never blind replay), recovery (instruction), and the typed per-code details; entity/preview/token accompany where applicable. Top-level error and batch[].error share this schema. Status values follow the locked table (spec-change-work-spec, stored-entity classification): VALIDATION 400, INVALID_ENTRY 400, INVALID_ENTITY 422, NORMALIZATION_REQUIRED 409, NOT_FOUND 404, STALE_REVISION 409, PAYLOAD_TOO_LARGE 413; all remaining codes are domain failures delivered with HTTP 200 and the typed error body."
     }
   },
-  "description": "Exactly one of character/crew/clock is present when ok=true and the op targets an entity; none on pure failures. On failure ok=false and error is a member of the typed whole-error union ($defs/operationError); batch[].error uses the same union."
+  "description": "Exactly one of character/crew/clock is present when ok=true and the op targets an entity; none on pure failures. Entity-targeted results additionally carry the derived canUndo/historyCount fields (never stored, computed at response time); batch items do not. On failure ok=false and error is a member of the typed whole-error union ($defs/operationError); batch[].error uses the same union."
 }

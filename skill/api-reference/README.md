@@ -79,7 +79,7 @@ Every failure carries the whole-error discriminated union (`operation-result.jso
 | `CANNOT_LEVEL_UP` | 200 | limit + current | The attribute XP track is not full: award XP first. |
 | `RATING_MAXED` | 200 | limit + current | The action is at its effective cap (published per action by the capabilities endpoint): cannot raise it. |
 | `UPGRADE_MAXED` | 200 | limit + current | The upgrade is at TotalBoxes: cannot mark more boxes. |
-| `INSUFFICIENT_FUNDS` | 200 | limit + current | Insufficient funds: details report the max affordable — earn or liquidate first. |
+| `INSUFFICIENT_FUNDS` | 200 | available + needed | Insufficient funds: details report available vs needed — earn or liquidate first. |
 | `SATCHEL_FULL` | 200 | limit + current | The satchel cannot hold the coins: spend or make room first. |
 | `OVER_BULK` | 200 | limit + current | The item bulk exceeds load capacity: uncommit or raise the commitment. |
 | `NO_COMMITMENT` | 200 | none | No commitment is set: set one first (gear.set-commitment). |
@@ -299,6 +299,7 @@ Responses:
 
 - `200`: characters linked to this crew
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## batch
 
@@ -511,6 +512,7 @@ Responses:
 
 - `200`: character DTO
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## getCharacterCapabilities
 
@@ -528,6 +530,7 @@ Responses:
 
 - `200`: character capabilities
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## deleteCharacter
 
@@ -556,9 +559,9 @@ Responses:
 
 `POST /characters/{id}/import`
 
-Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. Allowed on retired characters (data management, not gameplay). 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.
+Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token; missing → 400 VALIDATION), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. If-Match is apply-only: preview mode never requires it. Allowed on retired characters (data management, not gameplay). 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.
 
-Parameters: `id`, `ifMatchRequired`, `idempotencyKey`, `preview`
+Parameters: `id`, `ifMatch`, `idempotencyKey`, `preview`
 
 Snapshot: `true`
 
@@ -582,7 +585,7 @@ Responses:
 
 Repair preview for a degraded/repairable stored character: computes the normalized result and warnings WITHOUT writing. Optional body: caller-supplied values for needs-input pointers, keyed by JSON pointer into the stored document (e.g. {"/dossier/name": "..."}); keys that do not resolve to a needs-input pointer are ignored with a warning. Stored entity already canonical → 200 PreviewResult with no token (nothing to confirm). Repairable → 409 NORMALIZATION_REQUIRED with warnings, the previewed result, and the preview token; needs-input pointers still awaiting caller values are listed in the preview. Unparseable stored bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).
 
-Parameters: `id`, `ifMatchRequired`, `idempotencyKey`
+Parameters: `id`, `ifMatch`, `idempotencyKey`
 
 Snapshot: `false`
 
@@ -643,6 +646,7 @@ Responses:
 
 - `200`: snapshot list, newest first
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## getCharacterSnapshot
 
@@ -660,6 +664,7 @@ Responses:
 
 - `200`: snapshot DTO (read-only)
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## undoCharacter
 
@@ -899,7 +904,7 @@ Responses:
 
 `POST /characters/{id}/ops/harm.healing-clock`
 
-Rollover clock; overflow past full is carried and applied on reset.
+Clock-progress family: applied.requested is the requested progress, applied.effective all accepted progress including rollover, applied.visibleApplied and applied.overflowAdded report the split when nonzero. Rollover clock; overflow past full is carried and applied on reset.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1077,7 +1082,7 @@ Responses:
 
 `POST /characters/{id}/ops/action.set-rating`
 
-Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED.
+Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED. Absolute-setter family: requested = the requested target rating; effective = the stored target rating; a clamp (requested ≠ effective) is reported in the result.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1324,7 +1329,7 @@ Responses:
 
 `POST /characters/{id}/ops/fund.gain`
 
-Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped.
+Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount actually placed. Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1351,7 +1356,7 @@ Responses:
 
 `POST /characters/{id}/ops/fund.spend`
 
-Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with maxAffordable detail.
+Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount processed. Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with {available, needed} detail.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1378,7 +1383,7 @@ Responses:
 
 `POST /characters/{id}/ops/fund.liquidate`
 
-Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS.
+Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount processed. Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1519,7 +1524,7 @@ Responses:
 
 `POST /characters/{id}/ops/session.set`
 
-Partial update; each value clamped 0..max (game settings).
+Partial update; each value clamped 0..max (game settings). Absolute setter (absolute-setter result family): applied.requested is the requested target, applied.effective the stored (clamped) target.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1752,6 +1757,7 @@ Responses:
 
 - `200`: crew capabilities
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## deleteCrew
 
@@ -1780,9 +1786,9 @@ Responses:
 
 `POST /crews/{id}/import`
 
-Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.
+Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token; missing → 400 VALIDATION), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. If-Match is apply-only: preview mode never requires it. 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.
 
-Parameters: `id`, `ifMatchRequired`, `idempotencyKey`, `preview`
+Parameters: `id`, `ifMatch`, `idempotencyKey`, `preview`
 
 Snapshot: `true`
 
@@ -1806,7 +1812,7 @@ Responses:
 
 Repair preview for a degraded/repairable stored crew: computes the normalized result and warnings WITHOUT writing. Optional body: caller-supplied values for needs-input pointers, keyed by JSON pointer into the stored document (e.g. {"/name": "..."}); keys that do not resolve to a needs-input pointer are ignored with a warning. Stored entity already canonical → 200 PreviewResult with no token (nothing to confirm). Repairable → 409 NORMALIZATION_REQUIRED with warnings, the previewed result, and the preview token; needs-input pointers still awaiting caller values are listed in the preview. Unparseable stored bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).
 
-Parameters: `id`, `ifMatchRequired`, `idempotencyKey`
+Parameters: `id`, `ifMatch`, `idempotencyKey`
 
 Snapshot: `false`
 
@@ -1867,6 +1873,7 @@ Responses:
 
 - `200`: snapshot list, newest first
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## getCrewSnapshot
 
@@ -1884,6 +1891,7 @@ Responses:
 
 - `200`: snapshot DTO
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## undoCrew
 
@@ -1911,6 +1919,8 @@ Responses:
 
 `POST /crews/{id}/ops/heat.add`
 
+Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative).
+
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
 Snapshot: `true`
@@ -1930,6 +1940,8 @@ Responses:
 ## wantedAdd
 
 `POST /crews/{id}/ops/wanted.add`
+
+Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative).
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1951,6 +1963,8 @@ Responses:
 
 `POST /crews/{id}/ops/rep.add`
 
+Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative).
+
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
 Snapshot: `true`
@@ -1971,7 +1985,7 @@ Responses:
 
 `POST /crews/{id}/ops/tier.add`
 
-Bounded below at 0; applied delta reported.
+Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1992,6 +2006,8 @@ Responses:
 ## holdSet
 
 `POST /crews/{id}/ops/hold.set`
+
+Absolute-setter family: requested = the requested target hold; effective = the stored target hold; a clamp (requested ≠ effective) is reported in the result.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2094,7 +2110,7 @@ Responses:
 
 `POST /crews/{id}/ops/turf.add`
 
-C4 playtest change (2026-08-09): add (or remove, negative delta) turf, clamped 0..6. Each turf reduces the rep cost to develop by one (SRD Development).
+Signed delta (signed-delta result family): requested/effective are signed changes. C4 playtest change (2026-08-09): add (or remove, negative delta) turf. The maximum is authoritative from game settings (TurfMax; R4 migration) — clamping applies at the settings-derived bound, not a hardcoded 6. Each turf reduces the rep cost to develop by one (SRD Development).
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2460,7 +2476,7 @@ Responses:
 
 `POST /crews/{id}/ops/faction.set-status`
 
-C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract.
+C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2515,7 +2531,7 @@ Responses:
 
 `POST /crews/{id}/ops/coin.add`
 
-Bounded below at 0; applied delta reported.
+Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2537,7 +2553,7 @@ Responses:
 
 `POST /crews/{id}/ops/stash.add`
 
-Bounded below at 0; applied delta reported.
+Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2590,7 +2606,7 @@ Responses:
 
 `GET /clocks`
 
-all campaign clocks
+all standalone clocks (campaign-, character-, and crew-owned)
 
 Parameters: none
 
@@ -2600,7 +2616,7 @@ None
 
 Responses:
 
-- `200`: all campaign clocks
+- `200`: all standalone clocks (campaign-, character-, and crew-owned)
 
 ## createClock
 
@@ -2656,6 +2672,7 @@ Responses:
 
 - `200`: clock DTO
 - `404`: OperationResult
+- `422`: OperationResult
 
 ## updateClock
 

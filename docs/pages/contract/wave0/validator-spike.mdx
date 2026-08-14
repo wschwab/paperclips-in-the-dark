@@ -5,6 +5,13 @@ description: Source-verified comparison of maintained Ada JSON Schema validation
 
 # SC-R1 — Ada recursive validator spike
 
+> **Wave 0 research (historical) — 2026-08-14.** This page is Wave 0 research and
+> documents the **pre-Wave-2 contract state** as of 2026-08-14. The frozen Wave 2
+> contract (`contract/`) is authoritative for current validation terminology —
+> entity validation is provided by the schema-generated validators, with no
+> hand-maintained required/allowed lists — and where this page and the landed
+> contract disagree, the contract wins.
+
 **Verdict: schema-generated entity validators.** No maintained Ada library provides Draft 2020-12 JSON Schema validation (Alire catalog, json-schema.org implementations list, and GitHub all empty; every candidate source read and found to lack schema validation). The decision rule therefore selects generation: the generic-library path fails every exercised requirement, and the generated-validator path passes all of them in the spike. **Dependency impact: zero new dependencies** — the spike compiles against the already-pinned GNAT FSF 16.1.0 + GNATCOLL 26.0.0 core JSON.
 
 This document feeds SC-A1 (recursive validator and canonicalizer) and SC-C5 (schema-derived validator metadata). All commands are re-runnable from `/tmp`; the complete spike source is in [Appendix A](#appendix-a--spike-source-and-reproduction).

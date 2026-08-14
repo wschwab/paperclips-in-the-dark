@@ -171,7 +171,7 @@ Runs only inside the fatal-harm transition (fatal 0 → 1). Exact field effects 
 
 ## 9. `canUndo` / `historyCount` derivation (frozen)
 
-- **Never stored** (locked rule: "No stale derived flag is persisted"; Q34). Computed at response time for roster summaries and character detail responses.
+- **Never stored** (locked rule: "No stale derived flag is persisted"; Q34). Computed at response time for roster summaries and entity-targeted operation results — the mutation responses carrying the full detail DTO. GET character detail remains the raw byte-identical stored document (locked rule 7) and does not carry them.
 - `historyCount` = number of retained snapshot entries in the entity's history (0..50, retention cap per PERSISTENCE-SNAPSHOT-002); `canUndo = historyCount > 0`.
 - Snapshot-worthy transitions (all rows marked **Yes** in § 3, plus `importCharacter`) increment; `x-snapshot: false` micro-ops (`stress.clear`, `armor.set`, `harm.healing-clock`, `session.set`, `notebook.set`, undo, delete) do not. Undo consumes one snapshot → `historyCount` decrements. Delete removes the entity, projections gone.
 - Projection cost: derived from the existing history index; no history files are touched on read.

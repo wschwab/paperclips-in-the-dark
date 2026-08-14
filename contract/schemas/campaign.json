@@ -29,13 +29,14 @@
     "characterSummary": {
       "type": "object",
       "required": [
-        "id", "name", "alias", "playbook", "gameStem", "crewId",
+        "kind", "id", "name", "alias", "playbook", "gameStem", "crewId",
         "stress", "traumas", "isRetired", "isDeadish", "revision",
         "isReadable", "isRepairable", "isComplete", "deleteToken",
         "canUndo", "historyCount"
       ],
       "additionalProperties": false,
       "properties": {
+        "kind": { "const": "character", "description": "route-derived row kind" },
         "id": { "$ref": "common.json#/$defs/uuid" },
         "name": { "type": "string" },
         "alias": { "type": "string" },
@@ -78,13 +79,14 @@
     "crewSummary": {
       "type": "object",
       "required": [
-        "id", "name", "crewType", "gameStem", "tier", "heat", "wanted",
+        "kind", "id", "name", "crewType", "gameStem", "tier", "heat", "wanted",
         "rep", "hold", "memberCount", "revision",
         "isReadable", "isRepairable", "isComplete", "deleteToken",
         "canUndo", "historyCount"
       ],
       "additionalProperties": false,
       "properties": {
+        "kind": { "const": "crew", "description": "route-derived row kind" },
         "id": { "$ref": "common.json#/$defs/uuid" },
         "name": { "type": "string" },
         "crewType": { "type": "string" },

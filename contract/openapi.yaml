@@ -9,8 +9,8 @@ info:
     JSON bodies and return the uniform OperationResult with the FULL entity DTO.
     All numeric maxima come from game-settings JSON, never hardcoded.
     Mutations accept optional If-Match (revision; REQUIRED on destructive
-    operations — undo, delete, import, repair) and Idempotency-Key headers.
-    Snapshot-worthiness of each mutation is declared via x-snapshot.
+    operations — undo, delete, import-apply, repair-apply) and Idempotency-Key
+    headers. Snapshot-worthiness of each mutation is declared via x-snapshot.
 servers:
   - url: http://localhost:9657/api
 
@@ -89,20 +89,7 @@ components:
           description: entity revision of a readable entity
         - { $ref: "./schemas/common.json#/$defs/errorContentToken" }
       description: "If-Match header value: integer revision, or sha256:<lowercase hex> content token for degraded entities."
-    PreviewResult:
-      type: object
-      required: [canonical, warnings]
-      additionalProperties: false
-      properties:
-        canonical: { const: true }
-        warnings:
-          type: array
-          items: { type: string }
-          description: "normalization warnings; empty when the document is already canonical"
-        previewToken:
-          type: string
-          minLength: 1
-          description: "import preview: always issued — unlocks the confirming apply. repair preview: omitted when the stored entity is already canonical (nothing to confirm)."
+    PreviewResult: { $ref: "./schemas/operation-result.json#/$defs/previewResult" }
     ImportRequest:
       type: object
       required: [entity]
@@ -129,7 +116,9 @@ components:
       description: >
         preview=1 sends {entity} only (previewToken/confirm present in preview
         mode → 400 VALIDATION). Apply (no preview param) sends
-        {entity, previewToken, confirm: true}.
+        {entity, previewToken, confirm: true}. If-Match is apply-only like
+        previewToken/confirm: preview mode does not require it; the confirming
+        apply requires the header (missing → 400 VALIDATION).
     RepairApply:
       type: object
       required: [previewToken]
@@ -343,12 +332,14 @@ components:
         failures delivered with HTTP 200 and the typed error body. Collections
         remain 200 even when members are degraded.
 
-        Entity-targeted operation results additionally carry the derived
-        canUndo (boolean) and historyCount (integer, minimum 0) response
-        fields — never stored, computed at response time from the entity's
-        retained snapshot count (retention cap 50); canUndo = historyCount > 0.
-        GET entity detail stays raw (byte identity); roster summaries and
-        operation results carry the derived fields (lifecycle-matrix §9).
+        Entity-targeted operation results additionally carry the optional
+        derived canUndo (boolean) and historyCount (integer, minimum 0)
+        top-level fields (operation-result.json) — never stored, computed at
+        response time from the entity's retained snapshot count (retention cap
+        50); canUndo = historyCount > 0. Batch items and pure failures do not
+        carry them. GET entity detail stays raw (byte identity); roster
+        summaries and operation results carry the derived fields
+        (lifecycle-matrix §9).
       content:
         application/json:
           schema: { $ref: "#/components/schemas/OperationResult" }
@@ -414,6 +405,7 @@ paths:
                 type: array
                 items: { $ref: "./schemas/campaign.json#/$defs/characterSummary" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /campaign/batch:
     post:
       operationId: batch
@@ -580,6 +572,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Character" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/capabilities:
     get:
       operationId: getCharacterCapabilities
@@ -598,6 +591,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/CharacterCapabilities" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/delete:
     post:
       operationId: deleteCharacter
@@ -636,16 +630,18 @@ paths:
         NORMALIZATION_REQUIRED with warnings, the previewed document, and the
         preview token; needs-input pointers → 409 listing the exact pointers
         awaiting caller values. Apply (no preview param) requires If-Match
-        (entity revision; degraded target: sha256: content token), the preview
-        token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically
-        writes the previewed result, clears history, and takes exactly one
-        baseline snapshot. Apply without values for needs-input pointers → 400
-        INVALID_ENTRY with pointer-level details; unknown properties are
-        rejected unless the preview classifies and displays their removal; a
-        changed document or stored entity since preview → 409 STALE_REVISION.
+        (entity revision; degraded target: sha256: content token; missing →
+        400 VALIDATION), the preview token, and confirm:true (missing →
+        CONFIRM_REQUIRED); it atomically writes the previewed result, clears
+        history, and takes exactly one baseline snapshot. Apply without values
+        for needs-input pointers → 400 INVALID_ENTRY with pointer-level
+        details; unknown properties are rejected unless the preview classifies
+        and displays their removal; a changed document or stored entity since
+        preview → 409 STALE_REVISION. If-Match is apply-only: preview mode
+        never requires it.
         Allowed on retired characters (data management, not gameplay). 1 MiB
         payload cap → 413 PAYLOAD_TOO_LARGE.
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }, { $ref: "#/components/parameters/preview" }]
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }, { $ref: "#/components/parameters/preview" }]
       requestBody:
         required: true
         content:
@@ -682,7 +678,7 @@ paths:
         previewed result, and the preview token; needs-input pointers still
         awaiting caller values are listed in the preview. Unparseable stored
         bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: false
         content:
@@ -739,6 +735,7 @@ paths:
                 type: array
                 items: { $ref: "./schemas/campaign.json#/$defs/historyEntry" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/history/{snapshotId}:
     get:
       operationId: getCharacterSnapshot
@@ -752,6 +749,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Character" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/undo:
     post:
       operationId: undoCharacter
@@ -967,7 +965,7 @@ paths:
     post:
       operationId: harmHealingClock
       x-snapshot: false
-      description: Rollover clock; overflow past full is carried and applied on reset.
+      description: "Clock-progress family: applied.requested is the requested progress, applied.effective all accepted progress including rollover, applied.visibleApplied and applied.overflowAdded report the split when nonzero. Rollover clock; overflow past full is carried and applied on reset."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1094,7 +1092,7 @@ paths:
     post:
       operationId: actionSetRating
       x-snapshot: true
-      description: "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED."
+      description: "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED. Absolute-setter family: requested = the requested target rating; effective = the stored target rating; a clamp (requested ≠ effective) is reported in the result."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1258,7 +1256,7 @@ paths:
     post:
       operationId: fundGain
       x-snapshot: true
-      description: "Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped."
+      description: "Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount actually placed. Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1278,7 +1276,7 @@ paths:
     post:
       operationId: fundSpend
       x-snapshot: true
-      description: "Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with maxAffordable detail."
+      description: "Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount processed. Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with {available, needed} detail."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1298,7 +1296,7 @@ paths:
     post:
       operationId: fundLiquidate
       x-snapshot: true
-      description: "Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS."
+      description: "Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount processed. Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1405,7 +1403,7 @@ paths:
     post:
       operationId: sessionSet
       x-snapshot: false
-      description: Partial update; each value clamped 0..max (game settings).
+      description: "Partial update; each value clamped 0..max (game settings). Absolute setter (absolute-setter result family): applied.requested is the requested target, applied.effective the stored (clamped) target."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1596,6 +1594,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/CrewCapabilities" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/delete:
     post:
       operationId: deleteCrew
@@ -1636,15 +1635,17 @@ paths:
         NORMALIZATION_REQUIRED with warnings, the previewed document, and the
         preview token; needs-input pointers → 409 listing the exact pointers
         awaiting caller values. Apply (no preview param) requires If-Match
-        (entity revision; degraded target: sha256: content token), the preview
-        token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically
-        writes the previewed result, clears history, and takes exactly one
-        baseline snapshot. Apply without values for needs-input pointers → 400
-        INVALID_ENTRY with pointer-level details; unknown properties are
-        rejected unless the preview classifies and displays their removal; a
-        changed document or stored entity since preview → 409 STALE_REVISION.
+        (entity revision; degraded target: sha256: content token; missing →
+        400 VALIDATION), the preview token, and confirm:true (missing →
+        CONFIRM_REQUIRED); it atomically writes the previewed result, clears
+        history, and takes exactly one baseline snapshot. Apply without values
+        for needs-input pointers → 400 INVALID_ENTRY with pointer-level
+        details; unknown properties are rejected unless the preview classifies
+        and displays their removal; a changed document or stored entity since
+        preview → 409 STALE_REVISION. If-Match is apply-only: preview mode
+        never requires it.
         1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }, { $ref: "#/components/parameters/preview" }]
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }, { $ref: "#/components/parameters/preview" }]
       requestBody:
         required: true
         content:
@@ -1681,7 +1682,7 @@ paths:
         previewed result, and the preview token; needs-input pointers still
         awaiting caller values are listed in the preview. Unparseable stored
         bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: false
         content:
@@ -1738,6 +1739,7 @@ paths:
                 type: array
                 items: { $ref: "./schemas/campaign.json#/$defs/historyEntry" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/history/{snapshotId}:
     get:
       operationId: getCrewSnapshot
@@ -1751,6 +1753,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Crew" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/undo:
     post:
       operationId: undoCrew
@@ -1772,6 +1775,7 @@ paths:
     post:
       operationId: heatAdd
       x-snapshot: true
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1786,6 +1790,7 @@ paths:
     post:
       operationId: wantedAdd
       x-snapshot: true
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1800,6 +1805,7 @@ paths:
     post:
       operationId: repAdd
       x-snapshot: true
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1814,7 +1820,7 @@ paths:
     post:
       operationId: tierAdd
       x-snapshot: true
-      description: Bounded below at 0; applied delta reported.
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1829,6 +1835,7 @@ paths:
     post:
       operationId: holdSet
       x-snapshot: true
+      description: "Absolute-setter family: requested = the requested target hold; effective = the stored target hold; a clamp (requested ≠ effective) is reported in the result."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1903,7 +1910,7 @@ paths:
     post:
       operationId: turfAdd
       x-snapshot: true
-      description: "C4 playtest change (2026-08-09): add (or remove, negative delta) turf, clamped 0..6. Each turf reduces the rep cost to develop by one (SRD Development)."
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes. C4 playtest change (2026-08-09): add (or remove, negative delta) turf. The maximum is authoritative from game settings (TurfMax; R4 migration) — clamping applies at the settings-derived bound, not a hardcoded 6. Each turf reduces the rep cost to develop by one (SRD Development)."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -2171,7 +2178,7 @@ paths:
     post:
       operationId: factionSetStatus
       x-snapshot: true
-      description: "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract."
+      description: "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -2212,7 +2219,7 @@ paths:
     post:
       operationId: coinAdd
       x-snapshot: true
-      description: Bounded below at 0; applied delta reported.
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -2227,7 +2234,7 @@ paths:
     post:
       operationId: stashAdd
       x-snapshot: true
-      description: Bounded below at 0; applied delta reported.
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -2269,7 +2276,7 @@ paths:
       operationId: listClocks
       responses:
         "200":
-          description: all campaign clocks
+          description: all standalone clocks (campaign-, character-, and crew-owned)
           content:
             application/json:
               schema:
@@ -2325,6 +2332,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Clock" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/update:
     post:
       operationId: updateClock

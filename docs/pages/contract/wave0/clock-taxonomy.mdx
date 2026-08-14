@@ -5,6 +5,13 @@ description: SC-R3 Wave 0 research — official Progress Clocks taxonomy reconci
 
 # Clock taxonomy and ownership (SC-R3)
 
+> **Wave 0 research (historical) — 2026-08-14.** This page is Wave 0 research and
+> documents the **pre-Wave-2 contract state** as of 2026-08-14. The frozen Wave 2
+> contract (`contract/`) is authoritative for current clock terminology —
+> `behavior`, `ownerKind`/`ownerId`, `purpose`, and `relatedClockIds`, with the
+> game-setting `ClockPurposes` list and unlink-on-delete as contract ops — and
+> where this page and the landed contract disagree, the contract wins.
+
 **Card:** `tasks/SC-R3.md` · **Status:** research complete, decisions frozen for downstream cards (SC-C1, SC-C2, SC-C3, SC-O5, SC-A7).
 
 ## 1. Scope and sources
@@ -14,7 +21,7 @@ description: SC-R3 Wave 0 research — official Progress Clocks taxonomy reconci
 | `docs/pages/contract/spec-change-work-spec.mdx` § "Clocks", Q12, Q23, Q24 | Governing decisions: three-concern model (storage ownership / narrative purpose / mechanical behavior), `ownerKind`/`ownerId`/`purpose`/`behavior`/`relatedClockIds`, purpose is descriptive (no auto-resolution), healing clocks not duplicated into `/api/clocks`, owner-deletion default (reassignment to campaign), rollover accumulation (Q24), clock progress result family (Q23) |
 | <https://bladesinthedark.com/progress-clocks> (fetched 2026-08-14) | Official taxonomy: progress umbrella, danger, racing, linked, mission, tug-of-war, long-term project, faction |
 | `blades-in-the-sheets/Models/` — `Game/ProjectClock.cs`, `Game/RolloverClock.cs`, `Characters/MonitorHarm.cs`, `Characters/Monitor.cs`, `Characters/Character.cs`, `Common/BoundedInteger.cs`, `Settings/GameSetting.cs` | Reference implementation: bounded primitive, rollover primitive, embedded healing clock, `RecoveryClockSize` settings field |
-| `contract/schemas/clock.json`, `contract/openapi.yaml` (clock ops, healing ops) | Current contract: campaign-only standalone clocks with `clockKind`, healing clock ops under `/characters/{id}/ops/` |
+| `contract/schemas/clock.json`, `contract/openapi.yaml` (clock ops, healing ops) | Pre-Wave-2 contract (this page's snapshot of the then-current shape): campaign-only standalone clocks with legacy `clockKind` (replaced in the Wave 2 contract by `behavior`/`ownerKind`/`ownerId`/`purpose`/`relatedClockIds`), healing clock ops under `/characters/{id}/ops/` |
 | `data/games/blades-in-the-dark.json`, `scum-and-villainy.json`, `data/games/game-settings-schema.json` | Game settings: no clock-purpose list exists today (`RecoveryClockSize` only) |
 
 ## 2. The three-concern model
@@ -56,13 +63,17 @@ The C# reference (`blades-in-the-sheets`) contains exactly **one concrete clock 
 - `ProjectClock` (bounded): `BoundedInteger` with `Min = 0`, `Max = size`; `Progress(segments)` → `ChangeUntilBound` (clamps, remainder discarded); `Ding` when full; `Reset()` → 0.
 - `RolloverClock : ProjectClock`: adds `Rollover`; `Progress` stores the overflow remainder; `Reset()` = zero, then re-apply carried overflow. See §10 for the exact divergence.
 - Healing clock: `Character.Monitor.MonitorHarm.HealingClock` — a `RolloverClock` embedded in character monitor state; size from `GameSetting.RecoveryClockSize` (`4` in blades-in-the-dark.json, `6` in scum-and-villainy.json); `MonitorHarm.CanHeal => HealingClock.Ding`; `Heal()` requires the clock full, resets it (rollover applied), and shifts harm intensities.
-- **No standalone clock storage, no purpose concept, no clock ownership, no faction/score/crew clock model exists in the reference.** Standalone clocks are a product-level extension already present in the current contract as campaign clocks.
+- **No standalone clock storage, no purpose concept, no clock ownership, no faction/score/crew clock model exists in the reference.** Standalone clocks are a product-level extension already present in the pre-Wave-2 contract (as of 2026-08-14) as campaign clocks.
 
 ### 4.2 Mapping
 
-| Axis | C# reference | Current contract | Target (this document) |
+The **Current contract** column below records the **pre-Wave-2** shape as of
+2026-08-14 (legacy): the Wave 2 contract replaces `clockKind` on `clock#` with
+`behavior`, `ownerKind`/`ownerId`, `purpose`, and `relatedClockIds`.
+
+| Axis | C# reference | Current contract (pre-Wave-2, legacy) | Target (this document) |
 |---|---|---|---|
-| Mechanical behavior | `ProjectClock` / `RolloverClock` | `clockKind: project \| rollover` | `behavior: bounded \| rollover` (rename; `project → bounded`, `rollover → rollover`) |
+| Mechanical behavior | `ProjectClock` / `RolloverClock` | `clockKind: project \| rollover` (legacy input shape) | `behavior: bounded \| rollover` (rename; `project → bounded`, `rollover → rollover`) |
 | Storage ownership | implicit (healing clock lives in the character monitor) | campaign only (`/clocks` = "all campaign clocks") | `ownerKind: campaign \| character \| crew` + `ownerId` |
 | Narrative purpose | none | none | `purpose` from settings list (§7) |
 | Relationships | none | none | `relatedClockIds` |
@@ -71,7 +82,7 @@ The C# reference (`blades-in-the-sheets`) contains exactly **one concrete clock 
 
 - **Conflict A (rollover accumulation):** `RolloverClock.Progress` *overwrites* `Rollover` with the new remainder instead of adding to it; the source carries the TODO *"edge case where calling Progress() while having Rollover could overwrite it"*. The locked decision Q24 mandates accumulation. The contract and SPARK semantics (§10) intentionally diverge from the current C# implementation; the reference's `Reset()` shape (re-apply carried overflow, at most one clock size) is preserved.
 - **Conflict B (official categories):** the official page names eight categories (umbrella + 7). `score` and `custom` are not on the page; they are mandated by the governing spec. Verified against both game settings: neither game defines any clock-purpose list today (only `RecoveryClockSize`), so there is no per-game restriction to reconcile.
-- **Conflict C (naming):** current contract field `clockKind` (`project`/`rollover`) is renamed to `behavior` (`bounded`/`rollover`); current `createClock` requires only `[name, clockKind, size]`. Migration mapping is explicit (§5, rule 0).
+- **Conflict C (naming):** the pre-Wave-2 contract field `clockKind` (`project`/`rollover`) is renamed in the Wave 2 contract to `behavior` (`bounded`/`rollover`); the pre-Wave-2 `createClock` requires only `[name, clockKind, size]`. Migration mapping is explicit (§5, rule 0).
 
 ## 5. Standalone clock DTO sketch — one schema for all kinds
 

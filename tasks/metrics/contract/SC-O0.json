@@ -1,0 +1,13 @@
+{
+  "task": "SC-O0",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "managed conformance harness",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " single dispatch 22m31s; launcher with build/port/temp-dir/seeding/readiness/exact-PID cleanup/evidence preservation; test:ada forwards selectors after last --; 9 tooling tests; found 4 deterministic drift failures + pre-existing flakiness"
+}

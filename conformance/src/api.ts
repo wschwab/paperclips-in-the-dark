@@ -90,8 +90,16 @@ export class PitdApi {
     return this.operation(await this.post("crews", { gameStem, crewType }));
   }
 
-  async createClock(name: string, clockKind: "project" | "rollover", size: number): Promise<OperationResultDto> {
-    return this.operation(await this.post("clocks", { name, clockKind, size }));
+  async createClock(
+    name: string,
+    behavior: "bounded" | "rollover",
+    size: number,
+    purpose = "custom",
+    ownerKind: "campaign" | "character" | "crew" = "campaign",
+    ownerId = "",
+    relatedClockIds: string[] = [],
+  ): Promise<OperationResultDto> {
+    return this.operation(await this.post("clocks", { name, behavior, size, purpose, ownerKind, ownerId, relatedClockIds }));
   }
 
   async character(id: string): Promise<CharacterDto> {

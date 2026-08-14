@@ -178,11 +178,6 @@ package body Pitd_Schema_Validators is
       Check_Int (V, Ptr, Integer'First, Integer'Last);
    end Check_Any_Int;
 
-   procedure Check_Int_Min_0_Max_6 (V : JSON_Value; Ptr : String) is
-   begin
-      Check_Int (V, Ptr, 0, 6);
-   end Check_Int_Min_0_Max_6;
-
    --  ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
    function Is_Uuid (S : String) return Boolean is
       Hex : constant String := "0123456789abcdef";
@@ -370,6 +365,17 @@ package body Pitd_Schema_Validators is
                  & S (V) & """");
       end if;
    end Check_Const;
+
+   procedure Check_Const_Int (V : JSON_Value; Ptr : String; Expected : Integer) is
+   begin
+      if V.Kind /= JSON_Int_Type then
+         Report (Ptr, "type: expected integer const " & Integer'Image (Expected)
+                 & ", found " & Kind_Name (V.Kind));
+      elsif Get (V) /= Expected then
+         Report (Ptr, "const: expected " & Integer'Image (Expected)
+                 & ", found " & Integer'Image (Get (V)));
+      end if;
+   end Check_Const_Int;
 
    procedure Check_Min_Length_1 (V : JSON_Value; Ptr : String) is
    begin
@@ -623,12 +629,12 @@ package body Pitd_Schema_Validators is
    Allowed_Health : constant String := Required_Health;
 
    Required_Character_Summary : constant String :=
-     "|id|name|alias|playbook|gameStem|crewId|stress|traumas|isRetired|isDeadish|revision|isReadable|isRepairable|isComplete|deleteToken|canUndo|historyCount|";
+     "|kind|id|name|alias|playbook|gameStem|crewId|stress|traumas|isRetired|isDeadish|revision|isReadable|isRepairable|isComplete|deleteToken|canUndo|historyCount|";
 
    Allowed_Character_Summary : constant String := Required_Character_Summary;
 
    Required_Crew_Summary : constant String :=
-     "|id|name|crewType|gameStem|tier|heat|wanted|rep|hold|memberCount|revision|isReadable|isRepairable|isComplete|deleteToken|canUndo|historyCount|";
+     "|kind|id|name|crewType|gameStem|tier|heat|wanted|rep|hold|memberCount|revision|isReadable|isRepairable|isComplete|deleteToken|canUndo|historyCount|";
 
    Allowed_Crew_Summary : constant String := Required_Crew_Summary;
 
@@ -692,6 +698,11 @@ package body Pitd_Schema_Validators is
       Check_Const (V, Ptr, "character");
    end Check_Const_Character_Kind;
 
+   procedure Check_Const_Int_Format_Version (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const_Int (V, Ptr, 1);
+   end Check_Const_Int_Format_Version;
+
    procedure Check_Const_Crew_Kind (V : JSON_Value; Ptr : String) is
    begin
       Check_Const (V, Ptr, "crew");
@@ -711,6 +722,16 @@ package body Pitd_Schema_Validators is
    begin
       Check_Const (V, Ptr, "ok");
    end Check_Const_Health_Status;
+
+   procedure Check_Const_Character_Summary_Kind (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const (V, Ptr, "character");
+   end Check_Const_Character_Summary_Kind;
+
+   procedure Check_Const_Crew_Summary_Kind (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const (V, Ptr, "crew");
+   end Check_Const_Crew_Summary_Kind;
 
    procedure Check_Named_Description (V : JSON_Value; Ptr : String) is
    begin
@@ -931,7 +952,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "gameName", Check_Str'Access);
       Check_Prop (V, Ptr, "language", Check_Str'Access);
       Check_Prop (V, Ptr, "revision", Check_Int_Min_1'Access);
-      Check_Prop (V, Ptr, "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, Ptr, "formatVersion", Check_Const_Int_Format_Version'Access);
       Check_Prop (V, Ptr, "createdAt", Check_Str'Access);
       Check_Prop (V, Ptr, "updatedAt", Check_Str'Access);
       Check_Prop (V, Ptr, "isRetired", Check_Bool'Access);
@@ -1058,7 +1079,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "gameName", Check_Str'Access);
       Check_Prop (V, Ptr, "language", Check_Str'Access);
       Check_Prop (V, Ptr, "revision", Check_Int_Min_1'Access);
-      Check_Prop (V, Ptr, "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, Ptr, "formatVersion", Check_Const_Int_Format_Version'Access);
       Check_Prop (V, Ptr, "createdAt", Check_Str'Access);
       Check_Prop (V, Ptr, "updatedAt", Check_Str'Access);
       Check_Prop (V, Ptr, "crewTypeName", Check_Str'Access);
@@ -1080,7 +1101,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "notes", Check_String_Array'Access);
       Check_Prop (V, Ptr, "contacts", Check_Contacts'Access);
       Check_Prop (V, Ptr, "factions", Check_Factions'Access);
-      Check_Prop (V, Ptr, "turf", Check_Int_Min_0_Max_6'Access);
+      Check_Prop (V, Ptr, "turf", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "claimedClaimIds", Check_Claimed_Claim_Ids'Access);
       Check_Prop (V, Ptr, "claimOverrides", Check_Claim_Overrides'Access);
    end Check_Crew;
@@ -1107,10 +1128,10 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "kind", Check_Const_Clock_Kind'Access);
       Check_Prop (V, Ptr, "id", Check_Uuid'Access);
       Check_Prop (V, Ptr, "revision", Check_Int_Min_1'Access);
-      Check_Prop (V, Ptr, "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, Ptr, "formatVersion", Check_Const_Int_Format_Version'Access);
       Check_Prop (V, Ptr, "createdAt", Check_Str'Access);
       Check_Prop (V, Ptr, "updatedAt", Check_Str'Access);
-      Check_Prop (V, Ptr, "name", Check_Str'Access);
+      Check_Prop (V, Ptr, "name", Check_Min_Length_1'Access);
       Check_Prop (V, Ptr, "ownerKind", Check_Enum_Clock_Owner_Kind'Access);
       Check_Prop (V, Ptr, "ownerId", Check_Str'Access);
       Check_Prop (V, Ptr, "purpose", Check_Enum_Clock_Purpose'Access);
@@ -1128,7 +1149,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "name", Check_Str'Access);
       Check_Prop (V, Ptr, "gameStem", Check_Game_Stem'Access);
       Check_Prop (V, Ptr, "createdAt", Check_Str'Access);
-      Check_Prop (V, Ptr, "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, Ptr, "formatVersion", Check_Const_Int_Format_Version'Access);
    end Check_Campaign;
 
    procedure Check_Health (V : JSON_Value; Ptr : String) is
@@ -1143,6 +1164,7 @@ package body Pitd_Schema_Validators is
    procedure Check_Character_Summary (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Character_Summary, Allowed_Character_Summary);
+      Check_Prop (V, Ptr, "kind", Check_Const_Character_Summary_Kind'Access);
       Check_Prop (V, Ptr, "id", Check_Uuid'Access);
       Check_Prop (V, Ptr, "name", Check_Str'Access);
       Check_Prop (V, Ptr, "alias", Check_Str'Access);
@@ -1165,6 +1187,7 @@ package body Pitd_Schema_Validators is
    procedure Check_Crew_Summary (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Crew_Summary, Allowed_Crew_Summary);
+      Check_Prop (V, Ptr, "kind", Check_Const_Crew_Summary_Kind'Access);
       Check_Prop (V, Ptr, "id", Check_Uuid'Access);
       Check_Prop (V, Ptr, "name", Check_Str'Access);
       Check_Prop (V, Ptr, "crewType", Check_Str'Access);
@@ -1247,7 +1270,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "name", Check_Str'Access);
       Check_Prop (V, "", "gameStem", Check_Game_Stem'Access);
       Check_Prop (V, "", "createdAt", Check_Str'Access);
-      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "formatVersion", Check_Const_Int_Format_Version'Access);
    end Validate_Campaign;
 
    procedure Validate_Character (V : JSON_Value) is
@@ -1259,7 +1282,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "gameName", Check_Str'Access);
       Check_Prop (V, "", "language", Check_Str'Access);
       Check_Prop (V, "", "revision", Check_Int_Min_1'Access);
-      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "formatVersion", Check_Const_Int_Format_Version'Access);
       Check_Prop (V, "", "createdAt", Check_Str'Access);
       Check_Prop (V, "", "updatedAt", Check_Str'Access);
       Check_Prop (V, "", "isRetired", Check_Bool'Access);
@@ -1281,6 +1304,7 @@ package body Pitd_Schema_Validators is
    procedure Validate_Character_Summary (V : JSON_Value) is
    begin
       Check_Object (V, "", Required_Character_Summary, Allowed_Character_Summary);
+      Check_Prop (V, "", "kind", Check_Const_Character_Summary_Kind'Access);
       Check_Prop (V, "", "id", Check_Uuid'Access);
       Check_Prop (V, "", "name", Check_Str'Access);
       Check_Prop (V, "", "alias", Check_Str'Access);
@@ -1306,10 +1330,10 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "kind", Check_Const_Clock_Kind'Access);
       Check_Prop (V, "", "id", Check_Uuid'Access);
       Check_Prop (V, "", "revision", Check_Int_Min_1'Access);
-      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "formatVersion", Check_Const_Int_Format_Version'Access);
       Check_Prop (V, "", "createdAt", Check_Str'Access);
       Check_Prop (V, "", "updatedAt", Check_Str'Access);
-      Check_Prop (V, "", "name", Check_Str'Access);
+      Check_Prop (V, "", "name", Check_Min_Length_1'Access);
       Check_Prop (V, "", "ownerKind", Check_Enum_Clock_Owner_Kind'Access);
       Check_Prop (V, "", "ownerId", Check_Str'Access);
       Check_Prop (V, "", "purpose", Check_Enum_Clock_Purpose'Access);
@@ -1331,7 +1355,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "gameName", Check_Str'Access);
       Check_Prop (V, "", "language", Check_Str'Access);
       Check_Prop (V, "", "revision", Check_Int_Min_1'Access);
-      Check_Prop (V, "", "formatVersion", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "formatVersion", Check_Const_Int_Format_Version'Access);
       Check_Prop (V, "", "createdAt", Check_Str'Access);
       Check_Prop (V, "", "updatedAt", Check_Str'Access);
       Check_Prop (V, "", "crewTypeName", Check_Str'Access);
@@ -1353,7 +1377,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "notes", Check_String_Array'Access);
       Check_Prop (V, "", "contacts", Check_Contacts'Access);
       Check_Prop (V, "", "factions", Check_Factions'Access);
-      Check_Prop (V, "", "turf", Check_Int_Min_0_Max_6'Access);
+      Check_Prop (V, "", "turf", Check_Int_Min_0'Access);
       Check_Prop (V, "", "claimedClaimIds", Check_Claimed_Claim_Ids'Access);
       Check_Prop (V, "", "claimOverrides", Check_Claim_Overrides'Access);
    end Validate_Crew;
@@ -1361,6 +1385,7 @@ package body Pitd_Schema_Validators is
    procedure Validate_Crew_Summary (V : JSON_Value) is
    begin
       Check_Object (V, "", Required_Crew_Summary, Allowed_Crew_Summary);
+      Check_Prop (V, "", "kind", Check_Const_Crew_Summary_Kind'Access);
       Check_Prop (V, "", "id", Check_Uuid'Access);
       Check_Prop (V, "", "name", Check_Str'Access);
       Check_Prop (V, "", "crewType", Check_Str'Access);

@@ -5,6 +5,37 @@ description: Exhaustive defect-class and property-path matrix for canonical shap
 
 # Canonicalization and repair matrix
 
+> **Wave 2 reconciliation (2026-08-14).** This page is Wave 0 research, frozen as
+> the reference for canonical defaults, defect classes, legacy conversion rules,
+> and HTTP classification. Items this page lists as SC-C1 additions or downstream
+> work have **landed in the Wave 2 contract** (`contract/openapi.yaml` +
+> `contract/schemas/`); where this page and the landed contract disagree, the
+> contract is authoritative:
+>
+> - **Lifecycle booleans** — `traumaPending`, `isOutOfAction`, and
+>   `stressClearPending` are canonical stored booleans on `character#` (alongside
+>   `isRetired`/`isDeadish`), with lifecycle gate semantics (LIFECYCLE-* IDs) in
+>   the contract.
+> - **Clock taxonomy** — `clockKind` is replaced by `behavior`, `ownerKind`,
+>   `ownerId`, `purpose`, and `relatedClockIds` on `clock#` (ownership
+>   validation, the game-setting `ClockPurposes` list, and unlink-on-delete are
+>   contract ops).
+> - **Summary rows** — roster `characterSummary`/`crewSummary` carry
+>   `isReadable`, `isRepairable`, `isComplete`, and `deleteToken` per the
+>   total-collection rule.
+> - **`canUndo` / `historyCount`** — derived at response time (never stored) on
+>   roster summaries and entity-targeted operation results.
+> - **`x-requiredWhenComplete`** — the 13 locked completeness records (8
+>   character + 5 crew, predicate `nonBlankString`) are emitted on the schemas.
+> - **Error union** — `INVALID_ENTRY` / `INVALID_ENTITY` /
+>   `NORMALIZATION_REQUIRED` and every other code are folded into the typed,
+>   code-discriminated error union (`operation-result.json`
+>   `$defs/operationError`).
+> - **Preview/repair ops** — import preview/apply (`?preview=1`),
+>   `repair-preview`, and confirmed `repair` apply for characters and crews, with
+>   preview tokens, `409 NORMALIZATION_REQUIRED`, `400 INVALID_ENTRY`, and
+>   `422 INVALID_ENTITY`.
+
 **Card:** SC-R0 (Wave 0, research). **Output of:** the ordered work specification,
 "Canonical shape and normalization" and "Stored-entity classification and HTTP errors"
 sections, plus decisions Q1–Q9/Q13–Q15/Q26. **Sources:** `contract/schemas/` (five entity
@@ -76,7 +107,7 @@ explicit, previewed rule — never a silent rewrite:
 | L2 | PascalCase C# enum serialization — `Strong`/`Weak` (CrewHold), `Friend`/`CloseFriend`/`Rival` (FriendCloseness), `None`/`Light`/`Normal`/`Heavy`/`Encumbered` (LoadCommitmentOption), `Gang`/`Expert` (CohortType), `Healthy`/`Weakened`/`Impaired`/`Broken`/`Dead` (CohortHarmLevel), `Fearsome`/`Independent`/`Loyal`/`Tenacious` (CohortEdge), `Principled`/`Savage`/`Unreliable`/`Wild` (CohortFlaw) | canonical enum / array-item strings (`"strong"`, `"close-friend"`, `"fearsome"`, …) | Deterministic one-to-one table; a variant not in the table is `needs-input`, not a guess |
 | L3 | C# dictionaries keyed by name — `AbilitiesByName`, `SpecialAbilities`, `Upgrades`, `LoadoutByName`, `AvailableGearByName`, `AttributesByName` (with nested `ActionsByName`), trauma `SortedSet` | canonical arrays with a `name` member: `playbook.abilities[]`, `crew.specialAbilities[]`, `crew.upgrades[]`, `gear.loadout[]`, `gear.availableGear[]`, `talent.attributes[]/actions[]`, `monitor.trauma.traumas[]` | Item fields map by name; dictionary key becomes `name`. Ordering is made deterministic (sort by key) and the sort is shown in the preview; the trauma set converts sorted and de-duplicated |
 | L4 | C# `DossierVice` has no purveyor | `vice.purveyor` filled `{"name":"","description":""}` | Pure missing-key fill applied to legacy documents; purveyor is a completeness pointer, so the character remains incomplete |
-| L5 | C# clocks — `ProjectClock` `{size, time}`; `RolloverClock` `{size, time, rollover}` | `clockKind:"project"`, `segments:time`, `rollover:0` / `clockKind:"rollover"`, `segments:time`, `rollover:<stored>` | Presence of a `rollover` key (even `0`) ⇒ RolloverClock ⇒ `"rollover"`; absence ⇒ `"project"`. A modern-shape document missing `clockKind` is ambiguous → needs input |
+| L5 | C# clocks (legacy input shape) — `ProjectClock` `{size, time}`; `RolloverClock` `{size, time, rollover}`; pre-Wave-2 wire documents may carry `clockKind:"project"\|"rollover"` | Wave 2 canonical: `behavior:"bounded"`, `segments:time`, `rollover:0` / `behavior:"rollover"`, `segments:time`, `rollover:<stored>`; legacy `clockKind` maps to `behavior` per clock-taxonomy §5 rule 0, and legacy campaign clocks also gain `ownerKind:"campaign"`, `ownerId:""`, `purpose:"custom"`, `relatedClockIds:[]` | Presence of a `rollover` key (even `0`) ⇒ RolloverClock ⇒ `"rollover"`; absence ⇒ `"project"`. A modern-shape document missing `clockKind` is ambiguous → needs input |
 | L6 | C3-era crew (contract change 2026-07-29): `contacts`/`factions` absent (optional until formatVersion bump) | `contacts:[]`, `factions:[]` | Q4 makes both required canonical arrays; empty means no entries |
 | L7 | Pre-C4 crew (playtest change 2026-08-09): no `turf` | `turf:0` | Bound 0..6 enforced |
 | L8 | Legacy C#-era history `snapshotId` (plain GUID, not `^[0-9]{17}-[A-Za-z0-9]+$`) | tolerated on read, never rewritten | History entries are response DTOs; new snapshots use the declared pattern (frontend decoder note, `f2aa`) |
@@ -243,14 +274,19 @@ value the canonicalizer fills; **rule** = fill / conversion / needs-input decisi
 
 ### 3.3 clock.json — `clock#`
 
+> **Wave 2:** `clock#/clockKind` below is the **legacy input shape**. The Wave 2
+> contract replaces it on `clock#` with `behavior`, `ownerKind`, `ownerId`,
+> `purpose`, and `relatedClockIds` (`contract/schemas/clock.json`; clock-taxonomy
+> §5), and the L5 conversion's canonical output is `behavior:"bounded"\|"rollover"`.
+
 | Property path | Canonical default | Rule | Class |
 |---|---|---|---|
-| `clock#/clockKind` | legacy-derived | legacy shapes derive it: presence of a rollover key (even 0) → "rollover" (C# RolloverClock always serializes Rollover), absence → "project" (L5). A modern-shape document missing clockKind is ambiguous → needs caller input. | `LEGACY` |
+| `clock#/clockKind` (legacy input shape — **replaced** by `clock#/behavior` plus `ownerKind`/`ownerId`/`purpose`/`relatedClockIds` in the Wave 2 contract) | legacy-derived | legacy shapes derive it: presence of a rollover key (even 0) → "rollover" (C# RolloverClock always serializes Rollover), absence → "project" (L5); the Wave 2 canonical output is `behavior` per clock-taxonomy §5 rule 0. A modern-shape document missing clockKind is ambiguous → needs caller input. | `LEGACY` |
 | `clock#/createdAt` | — | needs-input; import preview may offer server 'now'. | `NEEDS-INPUT` |
 | `clock#/formatVersion` | 1 | current version-1; no bump (Q5). | `FILL` |
 | `clock#/id` | route/server-generated | identity class: see character#/id. | `IDENTITY` |
 | `clock#/kind` | const "clock" | identity class: normalized to route directory (clocks/). | `CONST` |
-| `clock#/name` | "" | canonical empty. | `FILL` |
+| `clock#/name` | — | identifying configuration; no canonical empty (schema minLength 1; create requires it) — legacy empty names need caller input. | `NEEDS-INPUT` |
 | `clock#/revision` | 1 | schema minimum; server-managed. | `FILL` |
 | `clock#/rollover` | 0 | canonical empty (project clocks always 0); legacy rollover clocks keep their stored rollover (L5). | `FILL` |
 | `clock#/segments` | 0 | canonical empty; legacy `time` maps to segments (L5). | `FILL` |
@@ -389,7 +425,7 @@ sequence, and write/no-write property.
 | F4 | `crews/…/current.json` with `"hold": "Strong"` | L2 mapping to `"strong"`; `"hold": "medium"` → needs-input |
 | F5 | `crews/…/current.json` with `"turf": 9`, `"coin": -4` | clamps `9 → 6`, `-4 → 0`; preview flags material rewrite; apply requires confirmation |
 | F6 | `characters/…/current.json` with `"dossier": { "name": "X", "favoriteColor": "red", … }` | preview lists removal of `/dossier/favoriteColor`; import apply without preview `400 INVALID_ENTRY`; apply after preview `200` |
-| F7 | legacy crew `{ "notes": "first note" }`; legacy clock `{ "size": 4, "time": 2, "rollover": 1 }`; legacy vice without purveyor | L1 → `["first note"]`; L5 → `clockKind:"rollover"`, `segments:2`; L4 → purveyor fill; all previewed |
+| F7 | legacy crew `{ "notes": "first note" }`; legacy clock (legacy input shape) `{ "size": 4, "time": 2, "rollover": 1 }`; legacy vice without purveyor | L1 → `["first note"]`; L5 → `behavior:"rollover"` (legacy `clockKind:"rollover"` input), `segments:2`; L4 → purveyor fill; all previewed |
 | F8 | `characters/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/current.json` whose body is `{ "kind": "crew", "id": "bbbb…", … }` | roster row keeps route id/kind; repair preview normalizes body identity to route; if the body is a full crew shape, remaining pointers are needs-input; inbound import of a crew body into `characters/` → `400 INVALID_ENTRY` |
 | F9 | `characters/cccccccc-cccc-4ccc-8ccc-cccccccccccc/current.json` containing `[1, 2, 3]` | unreadable; direct GET `422 INVALID_ENTITY`; roster row `isReadable:false`, `deleteToken: "sha256:<hex>"`; DELETE with token `200`; token mismatch `409 STALE_REVISION`; no normalization possible |
 | F10 | `crews/…/current.json` containing `{ "name": "trunc` (truncated) | unreadable; identical degraded handling to F9 |

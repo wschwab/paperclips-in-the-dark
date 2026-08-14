@@ -124,7 +124,7 @@ Rules (all conformance-tested):
 3. **History**: snapshot of `current.json` taken *before* each mutating operation that declares itself snapshot-worthy in the contract (`x-snapshot: true`). Micro-ops (armor tick, loadout toggle) are `x-snapshot: false` to avoid history spam; undo restores the newest snapshot and deletes it. Retention: `MaxHistorySnapshots = 50` per entity. Import clears history and takes one baseline snapshot.
 4. **IDs**: UUIDv4, generated server-side only. Path components (`{id}`, game stems, friend names) are validated against `[A-Za-z0-9-]` / URL-encoded; no path traversal.
 5. **formatVersion**: integer, starts at 1, with a migration pipeline that exists (and is tested) from day one even while empty. It versions the persistence format, not the game edition. (Resolves REVIEW #6.)
-6. **Canonical shape**: stored documents are canonical totals — every property declared for an ordinary entity object is present, and `null` is never stored. Missing or `null` values normalize to schema-valid canonical defaults at the write boundary (create, successful import-apply, repair-apply, and every mutation that writes a nested object); reads never write, and a normal GET returns the stored bytes byte-identically. Because the product is pre-release, format version 1 is redefined in place: canonicalisation is not a migration and never changes `formatVersion` — there is no format-version bump.
+6. **Canonical shape**: stored documents are canonical totals — every property declared for an ordinary entity object is present, and `null` is never stored. Missing/`null` normalization to schema-valid canonical defaults applies to **stored data** and partial import/repair content (successful import-apply, repair-apply, and every mutation that writes a nested object). **Create request bodies are strict**: an explicit `null` is rejected with `400 VALIDATION` (canonicalization matrix D2), while absent fields are filled with canonical defaults at the write boundary — the created document is stored canonically. Reads never write, and a normal GET returns the stored bytes byte-identically. Because the product is pre-release, format version 1 is redefined in place: canonicalisation is not a migration and never changes `formatVersion` — there is no format-version bump.
 
 ---
 
@@ -144,7 +144,7 @@ These are the behaviors REVIEW found even the first spec got wrong. The C# sourc
 6. **Upgrades**: unmarking removes one box, not the whole upgrade (fix the C# `UnmarkUpgrade` semantics mismatch deliberately — spec the box-wise behavior, note the divergence from reference).
 7. **Rolodex** supports the full transition set: upgrade/downgrade both friends and rivals (REVIEW found the first API surface incomplete).
 8. **Fund** partial gains (satchel/stash caps) surface remainders as `sideEffects`, never silently drop coin.
-9. **Retirement / deadish** (state machine in §5.3): retirement is an explicit, confirmation-guarded operation and is **not restricted to reaching maximum trauma**. Retired characters remain readable and deletable; dossier, named-field, note, and notebook edits remain allowed, and lifecycle cleanup and undo remain available; gameplay mutations return `RETIRED` per the deny-list, and `trauma.remove` never silently reverses retirement. Deadish is caused only by fatal harm (`isDeadish` is write-time derived from `monitor.harm.fatal`, never an input), preserves harm, clears stress and pending state, and is distinct from retirement. Roster summaries expose `isRetired`, `isDeadish`, and the lifecycle flags; `canUndo`/`historyCount` are derived at response time, never stored.
+9. **Retirement / deadish** (state machine in §5.3): retirement is an explicit, confirmation-guarded operation and is **not restricted to reaching maximum trauma**. Retired characters remain readable and deletable; dossier, named-field, note, and notebook edits remain allowed, and lifecycle cleanup and undo remain available; gameplay mutations return `RETIRED` per the deny-list, and `trauma.remove` never silently reverses retirement. Deadish is caused only by fatal harm (`isDeadish` is write-time derived from `monitor.harm.fatal`, never an input), preserves harm, clears stress and pending state, and is distinct from retirement. Roster summaries expose `isRetired`/`isDeadish`, the derived `canUndo`/`historyCount`, and the total-row fields; the lifecycle flags (`traumaPending`, `isOutOfAction`, `stressClearPending`) live on the character DTO, and `canUndo`/`historyCount` are derived at response time, never stored.
 10. **Commitment lock** (`IsCommitmentLocked`) has explicit lock/unlock ops.
 11. **Cross-links**: `crewId` on a character is validated to reference an existing crew (or empty string — no nulls anywhere in DTOs); deleting a crew unlinks members; roster `memberCount` = scan of characters by crewId.
 
@@ -175,7 +175,7 @@ Retired allow-list (proceed normally): dossier updates (name, alias, look, herit
 
 Deadish: caused only by fatal harm. Becoming deadish clears stress and all pending/out-of-action state while preserving all harm (including the fatal harm), the healing clock, and armor usage; removing the fatal harm recomputes `isDeadish` false (recovery). Deadish is distinct from retirement — retirement clears harm, deadish preserves it.
 
-`canUndo` and `historyCount` are derived at response time for roster summaries and character detail (`historyCount` = retained snapshots, 0..50; `canUndo = historyCount > 0`); no stale derived flag is ever persisted.
+`canUndo` and `historyCount` are derived at response time for roster summaries and entity-targeted operation results (the mutation responses carrying the full detail DTO) — never on GET character detail, which returns the raw byte-identical stored document (locked rule 7) and carries neither (`historyCount` = retained snapshots, 0..50; `canUndo = historyCount > 0`); no stale derived flag is ever persisted.
 
 ### 5.4 Clocks
 
@@ -203,7 +203,7 @@ Character capabilities include settings and effective action caps, harm capaciti
 
 One format. Highlights (full schemas in `contract/schemas/`):
 
-- camelCase keys; collection members are canonical arrays with a `name` field (`playbook.abilities[]`, `talent.attributes[]/actions[]`, `gear.loadout[]`, `monitor.trauma.traumas[]`; legacy name-keyed dictionaries — `abilitiesByName`, `availableGearByName`, … — convert through explicit previewed rules, §7.1); type discriminators as `"kind"`; **no nulls and no absent keys** — every schema-declared property of an ordinary entity object is present in every stored document, with missing or `null` values normalized to schema-valid canonical defaults at the write boundary (§4.6); empty string / empty array / explicit booleans; `revision` and `formatVersion` on every entity; ISO-8601 UTC timestamps.
+- camelCase keys; collection members are canonical arrays with a `name` field (`playbook.abilities[]`, `talent.attributes[]/actions[]`, `gear.loadout[]`, `monitor.trauma.traumas[]`; legacy name-keyed dictionaries — `abilitiesByName`, `availableGearByName`, … — convert through explicit previewed rules, §7.1); type discriminators as `"kind"`; **no nulls and no absent keys** — every schema-declared property of an ordinary entity object is present in every stored document; missing or `null` values normalize to schema-valid canonical defaults at the write boundary for stored data and partial import/repair content (§4.6), while create request bodies are strict — explicit `null` → `400 VALIDATION`, absent fields fill canonical defaults at the write boundary; empty string / empty array / explicit booleans; `revision` and `formatVersion` on every entity; ISO-8601 UTC timestamps.
 - `claimOverrides` is the sparse exception: the outer array is always present and each override item always carries `claimId`; an omitted `name`, `description`, or `effects` means "inherit the canonical game-setting value" — a present empty array is semantically distinct from an omitted one.
 - Crew `contacts` and `factions` are **required canonical arrays**; empty means no entries.
 - Reads are pure and byte-identical: `GET /api/characters/{id}` and export return byte-identical documents to `current.json` on disk (conformance-tested round-trip identity for every field), and a normal GET never changes storage. There is no separate export endpoint (REVIEW #17): export = GET with `?download=1` adding a content-disposition header.
@@ -226,7 +226,7 @@ One format. Highlights (full schemas in `contract/schemas/`):
   "character": { …full DTO… },
   "applied": { "op": "stress.add", "requested": 3, "effective": 2 },
   "sideEffects": ["stress full — trauma pending"],
-  "error": null            // or { "code": "ARMOR_NOT_AVAILABLE", "detail": {…}, "retryable": false }
+  "error": null            // or { "code": "ARMOR_NOT_AVAILABLE", "status": 200, "message": "…", "retryable": false, "recovery": "…", "details": {…} }
 }
 ```
 

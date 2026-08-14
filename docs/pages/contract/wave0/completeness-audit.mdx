@@ -5,6 +5,14 @@ description: Validates the locked character and crew completeness pointer lists 
 
 # Completeness field and predicate audit
 
+> **Wave 0 research (historical) — 2026-08-14.** This page is Wave 0 research and
+> documents the **pre-Wave-2 contract state** as of 2026-08-14. The frozen Wave 2
+> contract (`contract/`) is authoritative for current completeness terminology —
+> the 13 locked pointers are expressed as `x-requiredWhenComplete` on the
+> entity schemas with the `nonBlankString` predicate, and completeness is
+> derived at response time, never stored — and where this page and the landed
+> contract disagree, the contract wins.
+
 **Card:** SC-R2 · **Wave:** 0 (research and reconciliation) · **Date:** 2026-08-14
 
 **Scope.** Validate the locked completeness pointer lists (decision Q8, `spec-change-work-spec.mdx` § Completeness) against the current entity schemas in `contract/schemas/`, confirm every pointer resolves to the intended scalar, define the canonical empty for each, generate the counterexample set for SC-O3, confirm clocks carry no completeness list, and approve the predicate vocabulary (Q9). This is a read-only audit; the normative lists below are restated from the governing spec and are binding on SC-C1, SC-F1, and SC-O3.

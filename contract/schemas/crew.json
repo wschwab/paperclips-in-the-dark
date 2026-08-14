@@ -261,8 +261,7 @@
     "turf": {
       "type": "integer",
       "minimum": 0,
-      "maximum": 6,
-      "description": "C4 playtest change (2026-08-09): turf held (0..6). Each turf reduces the rep cost to develop by one (SRD Development)."
+      "description": "C4 playtest change (2026-08-09): turf held. The maximum is authoritative from game settings (TurfMax; R4 migration) — this schema deliberately declares no hardcoded upper bound. Each turf reduces the rep cost to develop by one (SRD Development)."
     },
     "claimedClaimIds": {
       "type": "array",

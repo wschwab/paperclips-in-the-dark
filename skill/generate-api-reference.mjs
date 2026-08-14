@@ -73,7 +73,7 @@ const RECOVERY = {
   CANNOT_LEVEL_UP: "The attribute XP track is not full: award XP first.",
   RATING_MAXED: "The action is at its effective cap (published per action by the capabilities endpoint): cannot raise it.",
   UPGRADE_MAXED: "The upgrade is at TotalBoxes: cannot mark more boxes.",
-  INSUFFICIENT_FUNDS: "Insufficient funds: details report the max affordable — earn or liquidate first.",
+  INSUFFICIENT_FUNDS: "Insufficient funds: details report available vs needed — earn or liquidate first.",
   SATCHEL_FULL: "The satchel cannot hold the coins: spend or make room first.",
   OVER_BULK: "The item bulk exceeds load capacity: uncommit or raise the commitment.",
   NO_COMMITMENT: "No commitment is set: set one first (gear.set-commitment).",

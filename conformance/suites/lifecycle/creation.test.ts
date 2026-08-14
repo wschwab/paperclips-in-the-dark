@@ -19,7 +19,9 @@ describe("lifecycle creation flows", () => {
     const clock = await api.createClock("A test clock", "rollover", 4);
     expect(crew.kind).toBe("crew");
     expect(clock.ok).toBe(true);
-    expect(clock.clock?.clockKind).toBe("rollover");
+    expect(clock.clock?.behavior).toBe("rollover");
+    expect(clock.clock?.ownerKind).toBe("campaign");
+    expect(clock.clock?.ownerId).toBe("");
     const clocks = await api.get("clocks");
     expect(clocks.status).toBe(200);
     await decode(Schemas.JsonArray, clocks.body);

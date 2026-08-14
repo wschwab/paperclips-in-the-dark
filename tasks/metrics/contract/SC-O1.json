@@ -1,0 +1,13 @@
+{
+  "task": "SC-O1",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "canonicalization/import/repair oracle",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " 1 dispatch + O8 additions; canonical-shape 13 + import-repair 4 + FV-MIGRATE-CHAR/CREW + FV-NOTES-STRING; 18 red/2 green; decode-free raw assertions"
+}

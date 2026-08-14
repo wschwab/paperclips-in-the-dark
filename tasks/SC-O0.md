@@ -8,7 +8,7 @@ outputs:
   - conformance/package.json (test:ada script)
   - conformance/tooling tests for the launcher
 acceptance:
-  - (cd conformance && npm run test:ada -- --run) is the stable full managed-suite command; focused selectors forward after the second --
+  - (cd conformance && npm run test:ada -- --run) is the stable full managed-suite command; focused selectors forward after the second --. The seed-dependent oracle suites (entity-admission, total-collections, completeness) additionally require the standard oracle seeds and run via `npm run test:ada -- --seed-defaults -- --run <files>` (their file headers document the exact command; --seed-defaults loads conformance/fixtures/sc-o2-seeds + completeness-seeds)
   - Launcher builds/receives the server, picks an unused port, creates a temp data dir, seeds exact bytes before startup and between controlled restarts, observes readiness, stops only its own process tree, preserves evidence on failure, removes it on success
 ---
 
@@ -43,7 +43,7 @@ Today no managed launcher exists: suites run against a manually started server v
 
 ## Green
 
-- `(cd conformance && npm run test:ada -- --run)` runs the current suite against a managed server and reports the current pass/fail (expected: current state, no launcher-caused failures).
+- `(cd conformance && npm run test:ada -- --run)` runs the current suite against a managed server and reports the current pass/fail (expected: current state, no launcher-caused failures). Seed-dependent oracle suites are exercised with their seeded commands (`--seed-defaults`).
 - `npm run test:ada -- --run -t <existing-test-name>` runs only that test (forwarding works).
 - Tooling tests green.
 - No orphan processes after success and after failure paths (check with pgrep).

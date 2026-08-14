@@ -17,7 +17,8 @@
     },
     "formatVersion": {
       "type": "integer",
-      "minimum": 1
+      "const": 1,
+      "description": "Pre-release format version 1, redefined in place (no bump). A stored document with any other value is a future/unknown format and is rejected (422 INVALID_ENTITY) until a migration pipeline exists."
     },
     "boundedInteger": {
       "type": "object",
@@ -227,7 +228,28 @@
           "description": "The value that would exceed the limit (requested amount or currently held value)."
         }
       },
-      "description": "Limit details (*_MAXED, CANNOT_LEVEL_UP, CANNOT_HEAL, INSUFFICIENT_FUNDS, SATCHEL_FULL, OVER_BULK, PAYLOAD_TOO_LARGE): the enforced bound and the offending value."
+      "description": "Limit details (*_MAXED, CANNOT_LEVEL_UP, CANNOT_HEAL, SATCHEL_FULL, OVER_BULK, PAYLOAD_TOO_LARGE): the enforced bound and the offending value."
+    },
+    "errorFundsDetails": {
+      "type": "object",
+      "required": [
+        "available",
+        "needed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "available": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The maximum coin amount the operation could spend (satchel coins plus stash liquidatable at the exchange rate)."
+        },
+        "needed": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The coin amount the operation was asked to spend."
+        }
+      },
+      "description": "Funds-shortage details (INSUFFICIENT_FUNDS): the coins available to spend versus the coins needed."
     },
     "errorPreviewDetails": {
       "type": "object",

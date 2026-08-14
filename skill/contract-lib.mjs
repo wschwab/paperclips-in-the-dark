@@ -238,6 +238,7 @@ export function detailsShapeLabel(entry) {
     return {
       errorPointerDetails: "pointer issues (pointer, reason, expected)",
       errorLimitDetails: "limit + current",
+      errorFundsDetails: "available + needed",
       errorPreviewDetails: "warnings + previewToken",
       errorStaleDetails: "currentRevision or currentContentToken",
     }[defName] ?? defName;

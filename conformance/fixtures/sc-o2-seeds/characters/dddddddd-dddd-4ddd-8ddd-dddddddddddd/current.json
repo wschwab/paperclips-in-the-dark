@@ -1,0 +1,19 @@
+{
+  "kind": "character",
+  "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  "gameStem": "blades-in-the-dark",
+  "gameName": "Blades in the Dark",
+  "language": "English",
+  "revision": 12,
+  "formatVersion": 1,
+  "createdAt": "2026-07-19T12:00:00.000Z",
+  "updatedAt": "2026-07-19T14:30:12.417Z",
+  "isRetired": false,
+  "isDeadish": false,
+  "traumaPending": false,
+  "isOutOfAction": false,
+  "stressClearPending": false,
+  "dossier": {
+    "name": "Brenda Hilton",
+    "crewId": "",
+    "alias": "

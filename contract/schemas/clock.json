@@ -16,7 +16,7 @@
     "formatVersion": { "$ref": "common.json#/$defs/formatVersion" },
     "createdAt": { "$ref": "common.json#/$defs/timestamp" },
     "updatedAt": { "$ref": "common.json#/$defs/timestamp" },
-    "name": { "type": "string" },
+    "name": { "type": "string", "minLength": 1, "description": "Identifying configuration; nonempty by construction (create requires it). An empty stored name is non-canonical and needs caller input (repair)." },
     "ownerKind": {
       "enum": ["campaign", "character", "crew"],
       "description": "storage ownership: campaign, character, or crew"

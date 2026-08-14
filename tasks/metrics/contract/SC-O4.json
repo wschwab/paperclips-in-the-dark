@@ -1,0 +1,13 @@
+{
+  "task": "SC-O4",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "limits + numeric oracle",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " single dispatch 21m31s; 16 LIMIT + 7 NUM cases; 14 red/9 green; FV-005/011/021/022/029 gaps pinned with file:line"
+}

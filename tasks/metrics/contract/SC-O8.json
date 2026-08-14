@@ -1,0 +1,13 @@
+{
+  "task": "SC-O8",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "FV oracle corrections",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " single dispatch 48m46s; 32-FV mapping table recorded in traceability ledger; added FV-MIGRATE-CHAR/CREW + FV-NOTES-STRING (O1) + ERR-FV004-001 red + ERR-FV026-001 guard (O7)"
+}

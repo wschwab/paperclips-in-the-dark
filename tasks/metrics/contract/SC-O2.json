@@ -1,0 +1,13 @@
+{
+  "task": "SC-O2",
+  "track": "contract",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "admission + total collections oracle",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " 2 dispatches (first died to provider socket error; re-dispatch 14m19s); 14 ADMIT + 8 TOTAL cases + 20 seeded degraded fixtures; 19 red/3 green; FV-010 reproduction pinned"
+}

@@ -164,7 +164,7 @@ describe("§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010)", () => {
   });
 
   testCase("SEMANTICS-CORE-BOUNDARY-007", "project clocks still clamp at full and reset to zero", async () => {
-    const created = await api.createClock("AUDIT-0 project clock", "project", 4);
+    const created = await api.createClock("AUDIT-0 project clock", "bounded", 4);
     expect(created.ok).toBe(true);
     const id = created.clock?.id;
     if (!id) throw new Error("clock creation returned no clock");
