@@ -146,7 +146,7 @@ const cases: Case[] = [
   { id: "CONTRACT-CREW-HISTORY-001", method: "GET", path: "crews/{crew}/history", seeds: ["crew"], success: "history" },
   { id: "CONTRACT-CREW-SNAPSHOT-001", method: "GET", path: "crews/{crew}/history/{snapshot}", seeds: ["crew"], success: "crew" },
   { id: "CONTRACT-CLOCKS-LIST-001", method: "GET", path: "clocks", success: "clock-list" },
-  { id: "CONTRACT-CLOCK-CREATE-001", method: "POST", path: "clocks", body: { name: "Test", clockKind: "project", size: 4 }, success: "operation" },
+  { id: "CONTRACT-CLOCK-CREATE-001", method: "POST", path: "clocks", body: { name: "Test", behavior: "bounded", size: 4, ownerKind: "campaign", ownerId: "", purpose: "custom", relatedClockIds: [] }, success: "operation" },
   { id: "CONTRACT-CLOCK-GET-001", method: "GET", path: "clocks/{clock}", seeds: ["clock"], success: "clock" },
 ];
 
@@ -176,11 +176,11 @@ async function seed(seed: Seed): Promise<string> {
     if (!body.crew?.id) throw new Error("crew seeding returned no id");
     return body.crew.id;
   }
-  const response = await api.post("clocks", { name: "Contract clock", clockKind: "project", size: 4 });
-  expect(response.status).toBe(200);
-  const body = response.body as { clock?: { id?: string } };
-  if (!body.clock?.id) throw new Error("clock seeding returned no id");
-  return body.clock.id;
+  const result = await api.createClock("Contract clock", "bounded", 4);
+  expect(result.ok).toBe(true);
+  const clockId = result.clock?.id;
+  if (!clockId) throw new Error("clock seeding returned no id");
+  return clockId;
 }
 
 /** Produces one snapshot-worthy mutation and returns the newest snapshotId. */

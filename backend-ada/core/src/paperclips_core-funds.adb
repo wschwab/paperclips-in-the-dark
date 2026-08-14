@@ -31,7 +31,7 @@ package body Paperclips_Core.Funds is
       else
          From_Stash := Requested - Item.Satchel_Value;
          Item.Satchel_Value := 0;
-         Item.Stash_Value := Item.Stash_Value - 2 * From_Stash;
+         Item.Stash_Value := Item.Stash_Value - Item.Rate * From_Stash;
          Error := No_Error;
       end if;
    end Spend;
@@ -41,11 +41,11 @@ package body Paperclips_Core.Funds is
    begin
       if Coins > Item.Satchel_Max - Item.Satchel_Value then
          Error := Satchel_Full;
-      elsif Coins > Item.Stash_Value / 2 then
+      elsif Coins > Item.Stash_Value / Item.Rate then
          Error := Insufficient_Funds;
       else
          Item.Satchel_Value := Item.Satchel_Value + Coins;
-         Item.Stash_Value := Item.Stash_Value - 2 * Coins;
+         Item.Stash_Value := Item.Stash_Value - Item.Rate * Coins;
          Error := No_Error;
       end if;
    end Liquidate;

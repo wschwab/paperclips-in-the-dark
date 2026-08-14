@@ -987,8 +987,17 @@ describe("contract error union (SC-O7)", () => {
       }
       {
         const { id } = await createRawCharacter();
-        const noHistory = await api.post(`characters/${id}/undo`, undefined, { "If-Match": "1" });
-        responses.push({ code: "NO_HISTORY", response: noHistory });
+        // The create baseline (FV-028) means the FIRST undo is satisfiable
+        // (restores the create state). A second undo has no snapshots left
+        // and returns NO_HISTORY with a non-null message.
+        let last: HttpResponse | undefined;
+        for (let i = 0; i < 3; i += 1) {
+          const character = await readCharacter(id);
+          const revision = asNumber(character?.revision) ?? 1;
+          last = await api.post(`characters/${id}/undo`, undefined, { "If-Match": String(revision) });
+          if (okFlag(last.body) === false || asRecord(asRecord(last.body)?.error)?.code === "NO_HISTORY") break;
+        }
+        responses.push({ code: "NO_HISTORY", response: last ?? await api.post(`characters/${id}/undo`, undefined, { "If-Match": "1" }) });
       }
       for (const { code, response } of responses) {
         const message = asString(asRecord(asRecord(response.body)?.error)?.message);

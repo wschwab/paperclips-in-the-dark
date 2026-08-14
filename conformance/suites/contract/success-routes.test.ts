@@ -31,11 +31,11 @@ async function seedCrewId(): Promise<string> {
 }
 
 async function seedClockId(): Promise<string> {
-  const response = await api.post("clocks", { name: "Success-route clock", clockKind: "project", size: 4 });
-  expect(response.status).toBe(200);
-  const body = response.body as { clock?: { id?: string } };
-  if (!body.clock?.id) throw new Error("clock seeding returned no id");
-  return body.clock.id;
+  const result = await api.createClock("Success-route clock", "bounded", 4);
+  expect(result.ok).toBe(true);
+  const clockId = result.clock?.id;
+  if (!clockId) throw new Error("clock seeding returned no id");
+  return clockId;
 }
 
 /** Produces one snapshot-worthy mutation and returns the newest snapshotId. */

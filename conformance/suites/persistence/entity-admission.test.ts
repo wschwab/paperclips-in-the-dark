@@ -282,20 +282,12 @@ describe("persistence entity admission (SC-O2 recursive admission)", () => {
       const crewGet = await api.get(`crews/${crewCreatedBody.crew.id}`);
       expect(crewGet.status).toBe(200);
 
-      // Clock create: the current binary still validates the pre-Wave-2
-      // request shape (name/clockKind/size); the frozen create request
-      // (ownerKind/ownerId/purpose/behavior) is server-lag territory covered
-      // by the semantics suites. The stored-entity admission leg for the
-      // frozen clock shape is asserted against the seeded valid clock below.
-      const clockCreated = await api.post("clocks", { name: "SC-O2 control clock", clockKind: "project", size: 4 });
-      expect(clockCreated.status).toBe(200);
-      const clockCreatedBody = clockCreated.body as {
-        ok?: boolean;
-        clock?: { id?: string };
-      };
-      expect(clockCreatedBody.ok).toBe(true);
-      if (!clockCreatedBody.clock?.id) throw new Error("control clock creation returned no id");
-      const clockGet = await api.get(`clocks/${clockCreatedBody.clock.id}`);
+      // Clock create uses the frozen request shape (SC-A7); the created
+      // clock must pass admission untouched (ADMIT-CONTROLS-014).
+      const clockCreated = await api.createClock("SC-O2 control clock", "bounded", 4);
+      expect(clockCreated.ok).toBe(true);
+      if (!clockCreated.clock?.id) throw new Error("control clock creation returned no id");
+      const clockGet = await api.get(`clocks/${clockCreated.clock.id}`);
       expect(clockGet.status).toBe(200);
       // seeded frozen-shape clock passes admission untouched (direct GET 200)
       const seededClockGet = await api.get("clocks/babababa-baba-4bab-8bab-babababababa");

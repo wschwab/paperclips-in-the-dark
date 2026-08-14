@@ -81,8 +81,8 @@ const negativeCases: NegativeCase[] = [
   // ---- create request schemas ----
   { id: "CONTRACT-VALIDATION-CREATE-CHARACTER-MISSING-PLAYBOOK-001", target: "create-character", path: "characters", body: { gameStem: BLADES }, note: "character create without required playbook" },
   { id: "CONTRACT-VALIDATION-CREATE-CREW-MISSING-CREWTYPE-001", target: "create-crew", path: "crews", body: { gameStem: BLADES }, note: "crew create without required crewType" },
-  { id: "CONTRACT-VALIDATION-CREATE-CLOCK-EMPTY-001", target: "create-clock", path: "clocks", body: {}, note: "clock create {} (name, clockKind, size required)" },
-  { id: "CONTRACT-VALIDATION-CREATE-CLOCK-BAD-KIND-001", target: "create-clock", path: "clocks", body: { name: "x", clockKind: "fancy", size: 4 }, note: "clock create with out-of-enum clockKind" },
+  { id: "CONTRACT-VALIDATION-CREATE-CLOCK-EMPTY-001", target: "create-clock", path: "clocks", body: {}, note: "clock create {} (name, behavior, size required)" },
+  { id: "CONTRACT-VALIDATION-CREATE-CLOCK-BAD-KIND-001", target: "create-clock", path: "clocks", body: { name: "x", behavior: "fancy", size: 4, ownerKind: "campaign", ownerId: "", purpose: "custom", relatedClockIds: [] }, note: "clock create with out-of-enum behavior" },
 ];
 
 async function seedEntity(target: "character" | "crew" | "clock"): Promise<string> {
@@ -100,11 +100,10 @@ async function seedEntity(target: "character" | "crew" | "clock"): Promise<strin
     if (!body.crew?.id) throw new Error("crew seeding returned no id");
     return body.crew.id;
   }
-  const response = await api.post("clocks", { name: "Validation clock", clockKind: "project", size: 4 });
-  expect(response.status).toBe(200);
-  const body = response.body as { clock?: { id?: string } };
-  if (!body.clock?.id) throw new Error("clock seeding returned no id");
-  return body.clock.id;
+  const result = await api.createClock("Validation clock", "bounded", 4);
+  expect(result.ok).toBe(true);
+  if (!result.clock?.id) throw new Error("clock seeding returned no id");
+  return result.clock.id;
 }
 
 describe("contract v1 request-schema validation (AUDIT-0 BUG-011)", () => {

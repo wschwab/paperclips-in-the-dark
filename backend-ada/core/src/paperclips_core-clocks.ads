@@ -13,19 +13,27 @@ package Paperclips_Core.Clocks is
 
    --  SC-O5 frozen contract (clock-taxonomy.mdx §10.4, Q24): progress ADDS
    --  new overflow to the existing rollover instead of overwriting it
-   --  (FV-006).  The body still implements the legacy overwrite behavior;
-   --  the accumulation Post is intentionally unprovable until SC-A7
-   --  implements the contract.  The signed (tug-of-war) delta path is a
-   --  wire-level concern of the API; this core primitive keeps the
-   --  server-compatible Natural signature and states the positive rule.
-   --  SC-A7 additionally implements, at the API boundary, the signed path
-   --  declared by the frozen contract (clock-taxonomy.mdx §10.2, openapi
-   --  clock.progress): a negative delta empties the clock, consuming
-   --  existing overflow first, and preserves the invariant
-   --  Overflow > 0 => Segments = Size (W6).
+   --  (FV-006).  The signed (tug-of-war) delta path is a wire-level concern
+   --  of the API; this core primitive keeps the server-compatible Natural
+   --  signature and states the positive rule.  SC-A7 additionally
+   --  implements, at the API boundary, the signed path declared by the
+   --  frozen contract (clock-taxonomy.mdx §10.2, openapi clock.progress): a
+   --  negative delta empties the clock, consuming existing overflow first,
+   --  and preserves the invariant Overflow > 0 => Segments = Size (W6).
+   --
+   --  SC-A7 proof bounds (clock-taxonomy.mdx §10.4: "a max-rollover bound
+   --  or Natural arithmetic"): the accumulation Post
+   --  Overflow' = Overflow + Amount - Applied is provable in Natural
+   --  arithmetic only when both the carried overflow and the delta are
+   --  bounded, so the Pre bounds them (the API boundary rejects larger
+   --  deltas with VALIDATION).  The type invariant itself stays the frozen
+   --  structural rule — accumulation may carry overflow past any fixed
+   --  bound, so no max-rollover bound belongs in the predicate.
    procedure Progress (Item : in out Clock_State; Amount : Natural;
                        Applied : out Natural)
-   with Post =>
+   with Pre => Amount <= Capacity'Last
+     and Item.Overflow <= Natural'Last - Capacity'Last,
+     Post =>
      (if Amount <= Item.Size - Item'Old.Segments then
         Item.Segments = Item'Old.Segments + Amount
           and Applied = Amount

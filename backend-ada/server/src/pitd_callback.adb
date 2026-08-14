@@ -801,7 +801,34 @@ package body Pitd_Callback is
             end;
          end;
       end;
-   end Snapshot;
+end Snapshot;
+
+   --  SC-A8 / FV-028: create takes exactly one baseline snapshot so a
+   --  fresh entity's first undo is not NO_HISTORY.  The baseline is a
+   --  history file but NOT a retained snapshot: it is excluded from the
+   --  history listing, the sidecar index, and the undo newest-first search
+   --  (undo falls back to it only when no real snapshot exists), so the
+   --  derived historyCount/canUndo projections stay 0/false on a fresh
+   --  entity (LIFECYCLE-DERIVED-001).  The 17-zero prefix sorts before
+   --  every real snapshot id (Snapshot_Clock prefixes are epoch-millis).
+   Baseline_Snapshot_Name : constant String := "00000000000000000-baseline.json";
+
+   function Is_Baseline_Snapshot (Name : String) return Boolean is
+     (Name = Baseline_Snapshot_Name);
+
+   procedure Write_Baseline_Snapshot
+     (Kind, Id, Op : String; Entity : JSON_Value) is
+      H : JSON_Value := Create_Object;
+      M : JSON_Value := Create_Object;
+      Hist : constant String := Entity_Dir (Kind, Id) & "/history";
+   begin
+      Set_Field (M, "snapshotId", "00000000000000000-baseline");
+      Set_Field (M, "takenAt", Now);
+      Set_Field (M, "op", Op);
+      Set_Field (H, "_snapshot", M);
+      Set_Field (H, "entity", Clone (Entity));
+      Atomic_Write (Hist & "/" & Baseline_Snapshot_Name, H);
+   end Write_Baseline_Snapshot;
 
    --  BUG-008: history is returned NEWEST FIRST.  Files are sorted by name
    --  (17-digit prefix => creation order) and emitted in reverse, so
@@ -823,7 +850,8 @@ package body Pitd_Callback is
          (Ada.Directories.Ordinary_File => True, others => False));
       while Ada.Directories.More_Entries (Search) and then Count < Names'Last loop
          Ada.Directories.Get_Next_Entry (Search, Item);
-         if Ada.Directories.Simple_Name (Item) /= "_index.json" then
+         if Ada.Directories.Simple_Name (Item) /= "_index.json"
+           and then not Is_Baseline_Snapshot (Ada.Directories.Simple_Name (Item)) then
             Count := Count + 1;
             Names (Count) := To_Unbounded_String (Ada.Directories.Simple_Name (Item));
          end if;
@@ -900,7 +928,8 @@ package body Pitd_Callback is
             (Ada.Directories.Ordinary_File => True, others => False));
          while Ada.Directories.More_Entries (Search) and then Count < Names'Last loop
             Ada.Directories.Get_Next_Entry (Search, Item);
-            if Ada.Directories.Simple_Name (Item) /= "_index.json" then
+            if Ada.Directories.Simple_Name (Item) /= "_index.json"
+           and then not Is_Baseline_Snapshot (Ada.Directories.Simple_Name (Item)) then
                Count := Count + 1;
                Names (Count) := To_Unbounded_String (Ada.Directories.Simple_Name (Item));
             end if;
@@ -1135,8 +1164,9 @@ package body Pitd_Callback is
         or else Op = "hold.set"
         or else Op = "cohort.add" or else Op = "cohort.remove"
         or else Op = "cohort.update"
-        or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
+or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "fields.update"
+        or else Op = "update"
         or else Op = "contact.add" or else Op = "contact.remove"
         or else Op = "faction.set-status" or else Op = "faction.remove"
         or else Op = "end-score" or else Op = "end-downtime"
@@ -1418,7 +1448,42 @@ package body Pitd_Callback is
       end;
    end Game;
 
-   --  A8: ability.take is validated against the playbook/crew-type
+   --  Resolved game settings for DERIVED fills and settings-driven
+      --  enforcement (SC-A6: creation templates and mutation caps read the
+      --  validated settings through this helper — no game-domain literal).
+      type Settings_Ref is record
+         Stem : Unbounded_String := Null_Unbounded_String;
+         G    : JSON_Value := JSON_Null;
+      end record;
+
+      function Settings_Int (S : Settings_Ref; Key : String; Fallback : Integer) return Integer is
+         --  Key may be a dotted path into the settings object
+         --  (e.g. "FundMaxima.SatchelMax").
+         V : JSON_Value := S.G;
+         P : Integer := Key'First;
+      begin
+         if V.Kind /= JSON_Object_Type or else Key'Length = 0 then return Fallback; end if;
+         loop
+            declare
+               E : Integer := P;
+            begin
+               while E <= Key'Last and then Key (E) /= '.' loop E := E + 1; end loop;
+               declare
+                  Part : constant String := Key (P .. E - 1);
+               begin
+                  if not Has_Field (V, Part) then return Fallback; end if;
+                  V := Get (V, Part);
+                  if V.Kind /= JSON_Object_Type and then E <= Key'Last then return Fallback; end if;
+               end;
+               exit when E > Key'Last;
+               P := E + 1;
+            end;
+         end loop;
+         if V.Kind = JSON_Int_Type then return Integer'(Get (V)); end if;
+         return Fallback;
+      end Settings_Int;
+
+      --  A8: ability.take is validated against the playbook/crew-type
    --  SpecialAbilities game data (TimesTakeable).  Unknown ability or
    --  missing game data keeps the historical permissive behavior.
    function Can_Take_More (Kind, Name : String; E : JSON_Value; Times_Taken : Integer) return Boolean is
@@ -1605,34 +1670,38 @@ package body Pitd_Callback is
       return "";
    end Ability_Description;
 
-   --  A13c: Mastery-gated cap for action ratings.  The cap is 4 when the
-   --  character's crew has the Mastery upgrade fully marked (boxesMarked >=
-   --  TotalBoxes); otherwise 3.  TotalBoxes comes from the crew-type game
-   --  data (Game(stem & "-crews") CrewTypes[].Upgrades[] where Name="Mastery"),
-   --  falling back to 4 when the game data lookup fails.  Characters with no
-   --  crew (or an unreadable crew) cap at 3.
-   function Rating_Cap (E : JSON_Value) return Integer is
+   --  SC-A5: Mastery upgrade state for a character's crew (TotalBoxes from
+   --  the crew-type game data, boxes actually marked on the crew entity).
+   --  Crewless characters report 0/0 (no Mastery derivation possible).
+   procedure Mastery_State (E : JSON_Value; Total, Marked : out Integer) is
       Crew_Id : constant String := Str_Field (Get (E, "dossier"), "crewId");
    begin
-      if Crew_Id = "" then return 3; end if;
+      Total := 0;
+      Marked := 0;
+      if Crew_Id = "" then return; end if;
       declare
          Crew : constant JSON_Value := Read_Entity ("crew", Crew_Id);
       begin
-         if Crew.Kind /= JSON_Object_Type then return 3; end if;
+         if Crew.Kind /= JSON_Object_Type then return; end if;
          declare
-            G : constant JSON_Value := Game (Str_Field (Crew, "gameStem") & "-crews");
-            Marked : Integer := 0; Total : Integer := 4;
+            G : constant JSON_Value :=
+              Game (Str_Field (Crew, "gameStem") & "-crews");
          begin
             if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes") then
-               declare Types : constant JSON_Array := Get (G, "CrewTypes"); begin
+               declare
+                  Types : constant JSON_Array := Get (G, "CrewTypes");
+               begin
                   for I in 1 .. Length (Types) loop
                      declare T : constant JSON_Value := Get (Types, I); begin
                         if Str_Field (T, "Name") = Str_Field (Crew, "crewTypeName")
-                          and then Has_Field (T, "Upgrades") then
-                           declare Up : constant JSON_Array := Get (T, "Upgrades"); begin
+                          and then Has_Field (T, "Upgrades")
+                        then
+                           declare
+                              Up : constant JSON_Array := Get (T, "Upgrades");
+                           begin
                               for J in 1 .. Length (Up) loop
                                  if Str_Field (Get (Up, J), "Name") = "Mastery" then
-                                    Total := Int_Field (Get (Up, J), "TotalBoxes", 4);
+                                    Total := Int_Field (Get (Up, J), "TotalBoxes", 0);
                                  end if;
                               end loop;
                            end;
@@ -1641,36 +1710,74 @@ package body Pitd_Callback is
                   end loop;
                end;
             end if;
-            if Has_Field (Crew, "upgrades") then
-               declare Up : constant JSON_Array := Get (Crew, "upgrades"); begin
-                  for I in 1 .. Length (Up) loop
-                     if Str_Field (Get (Up, I), "name") = "Mastery" then
-                        Marked := Int_Field (Get (Up, I), "boxesMarked", 0);
-                     end if;
-                  end loop;
-               end;
-            end if;
-            return (if Marked >= Total then 4 else 3);
          end;
+         if Has_Field (Crew, "upgrades") then
+            declare Up : constant JSON_Array := Get (Crew, "upgrades"); begin
+               for I in 1 .. Length (Up) loop
+                  if Str_Field (Get (Up, I), "name") = "Mastery" then
+                     Marked := Int_Field (Get (Up, I), "boxesMarked", 0);
+                  end if;
+               end loop;
+            end;
+         end if;
       end;
+   end Mastery_State;
+
+   --  A13c: Mastery-gated cap for action ratings (SC-A6: the 3/4 literals
+   --  moved to the validated game settings ActionCap.Base/Mastery).  The
+   --  cap is ActionCap.Mastery when the character's crew has the Mastery
+   --  upgrade fully marked (boxesMarked >= TotalBoxes); otherwise
+   --  ActionCap.Base.  TotalBoxes comes from the crew-type game data
+   --  (Game(stem & "-crews") CrewTypes[].Upgrades[] where Name="Mastery").
+   --  Characters with no crew (or an unreadable crew) cap at ActionCap.Base.
+   --  The SAME derivation feeds the character capability projection
+   --  (effectiveActionCap), so action.set-rating and attribute.levelup
+   --  enforce exactly the published cap.
+   function Rating_Cap (E : JSON_Value) return Integer is
+      G     : constant JSON_Value := Game (Str_Field (E, "gameStem"));
+      Total : Integer;
+      Marked : Integer;
+   begin
+      Mastery_State (E, Total, Marked);
+      if G.Kind /= JSON_Object_Type or else not Has_Field (G, "ActionCap") then
+         return 0;
+      end if;
+      return (if Total > 0 and then Marked >= Total
+              then Int_Field (Get (G, "ActionCap"), "Mastery", 0)
+              else Int_Field (Get (G, "ActionCap"), "Base", 0));
    end Rating_Cap;
 
-   function New_Character (Stem, Playbook : String) return JSON_Value is
+function New_Character (Stem, Playbook : String) return JSON_Value is
       G : constant JSON_Value := Game (Stem);
+      S : constant Settings_Ref := (To_Unbounded_String (Stem), G);
       Id : constant String := New_Id;
       T : constant String := Now;
       C : JSON_Value;
       --  The stable DTO skeleton is intentionally explicit: it is the JSON boundary.
+      --  SC-A6: every game-domain maximum in the template is read from the
+      --  validated game settings (startup-validated; no fallback literal).
       Template : constant String :=
         "{""kind"":""character"",""id"":""" & Id & """,""gameStem"":""" & Stem
         & """,""gameName"":""" & Str_Field (G, "Name") & """,""language"":"""
         & Str_Field (G, "Language", "English") & """,""revision"":1,""formatVersion"":1,""createdAt"":"""
         & T & """,""updatedAt"":""" & T
-        & """,""isRetired"":false,""isDeadish"":false,""traumaPending"":false,""isOutOfAction"":false,""stressClearPending"":false,""dossier"":{""name"":"""",""crewId"":"""",""alias"":"""",""look"":"""",""notes"":[],""background"":{""name"":"""",""description"":""""},""heritage"":{""name"":"""",""description"":""""},""vice"":{""name"":"""",""description"":"""",""purveyor"":{""name"":"""",""description"":""""}}},""monitor"":{""stress"":{""current"":0,""max"":9},""trauma"":{""traumas"":[],""max"":4},""harm"":{""lesser"":[],""moderate"":[],""severe"":[],""fatal"":[],""healingClock"":{""segments"":0,""size"":"
-        & Trim_Image (Int_Field (G, "RecoveryClockSize", 4))
+        & """,""isRetired"":false,""isDeadish"":false,""traumaPending"":false,""isOutOfAction"":false,""stressClearPending"":false,""dossier"":{""name"":"""",""crewId"":"""",""alias"":"""",""look"":"""",""notes"":[],""background"":{""name"":"""",""description"":""""},""heritage"":{""name"":"""",""description"":""""},""vice"":{""name"":"""",""description"":"""",""purveyor"":{""name"":"""",""description"":""""}}},""monitor"":{""stress"":{""current"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "StressMax", 0))
+        & "},""trauma"":{""traumas"":[],""max"":"
+        & Trim_Image (Settings_Int (S, "TraumaMax", 0))
+        & "},""harm"":{""lesser"":[],""moderate"":[],""severe"":[],""fatal"":[],""healingClock"":{""segments"":0,""size"":"
+        & Trim_Image (Settings_Int (S, "RecoveryClockSize", 0))
         & ",""rollover"":0}},""armor"":{""standardUsed"":false,""heavyUsed"":false,""specialUsed"":false,""hasStandard"":false,""hasHeavy"":false,""hasSpecial"":false}},""talent"":{""attributes"":[]},""playbook"":{""name"":"""
-        & Playbook & """,""experience"":{""points"":0,""max"":8},""abilities"":[]},""gear"":{""loadout"":[],""availableGear"":[],""commitment"":""none"",""isCommitmentLocked"":false,""maxBulk"":9},""fund"":{""satchel"":{""coins"":2,""max"":4},""stash"":{""coins"":0,""max"":40}},""rolodex"":{""friends"":[]},""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":"
-        & Trim_Image (Int_Field (G, "SessionExpressionMax", 2))
+        & Playbook & """,""experience"":{""points"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "XpTrackMaxima.Playbook", 0))
+        & "},""abilities"":[]},""gear"":{""loadout"":[],""availableGear"":[],""commitment"":""none"",""isCommitmentLocked"":false,""maxBulk"":"
+        & Trim_Image (Settings_Int (S, "LoadMaxima.MaxBulk", 0))
+        & "},""fund"":{""satchel"":{""coins"":2,""max"":"
+        & Trim_Image (Settings_Int (S, "FundMaxima.SatchelMax", 0))
+        & "},""stash"":{""coins"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "FundMaxima.StashMax", 0))
+        & "}},""rolodex"":{""friends"":[]},""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "SessionExpressionMax", 0))
         & "},""notebook"":""""}";
    begin
       C := Read (Template);
@@ -1681,13 +1788,13 @@ package body Pitd_Callback is
                declare A0 : constant JSON_Value := Get (Attrs, I); A : JSON_Value := Create_Object;
                   XP : JSON_Value := Create_Object; Acts : JSON_Array := Empty_Array;
                begin
-                  Set_Field (A, "name", Str_Field (A0, "Name")); Set_Field (XP, "points", Integer'(0)); Set_Field (XP, "max", Integer'(6)); Set_Field (A, "experience", XP);
+                  Set_Field (A, "name", Str_Field (A0, "Name")); Set_Field (XP, "points", Integer'(0)); Set_Field (XP, "max", Settings_Int (S, "XpTrackMaxima.Attribute", 0)); Set_Field (A, "experience", XP);
                   if Has_Field (A0, "Actions") then
                      declare AA : constant JSON_Array := Get (A0, "Actions"); begin
                         for J in 1 .. Length (AA) loop
                            declare X : JSON_Value := Create_Object; begin
                               Set_Field (X, "name", Str_Field (Get (AA, J), "Name")); Set_Field (X, "rating", Integer'(0));
-                              Set_Field (X, "maxRating", Int_Field (G, "ActionPointMaximum", 4)); Append (Acts, X);
+                              Set_Field (X, "maxRating", Settings_Int (S, "ActionPointMaximum", 0)); Append (Acts, X);
                            end;
                         end loop;
                      end;
@@ -1702,12 +1809,22 @@ package body Pitd_Callback is
    end New_Character;
 
    function New_Crew (Stem, Crew_Type : String) return JSON_Value is
-      G : constant JSON_Value := Game (Stem); Id : constant String := New_Id; T : constant String := Now;
+      G : constant JSON_Value := Game (Stem);
+      S : constant Settings_Ref := (To_Unbounded_String (Stem), G);
+      Id : constant String := New_Id; T : constant String := Now;
    begin
       return Read ("{""kind"":""crew"",""id"":""" & Id & """,""gameStem"":""" & Stem
         & """,""gameName"":""" & Str_Field (G,"Name") & """,""language"":""" & Str_Field (G,"Language","English")
         & """,""revision"":1,""formatVersion"":1,""createdAt"":""" & T & """,""updatedAt"":""" & T
-        & """,""crewTypeName"":""" & Crew_Type & """,""name"":"""",""lair"":"""",""reputation"":"""",""huntingGrounds"":"""",""tier"":0,""hold"":""weak"",""heat"":{""current"":0,""max"":9},""wanted"":{""current"":0,""max"":4},""rep"":{""current"":0,""max"":12},""experience"":{""points"":0,""max"":10},""specialAbilities"":[],""upgrades"":[],""cohorts"":[],""contacts"":[],""factions"":[],""coin"":0,""stash"":0,""turf"":0,""notes"":[],""claimedClaimIds"":[],""claimOverrides"":[]}");
+        & """,""crewTypeName"":""" & Crew_Type & """,""name"":"""",""lair"":"""",""reputation"":"""",""huntingGrounds"":"""",""tier"":0,""hold"":""weak"",""heat"":{""current"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "CrewTrackerMaxima.HeatMax", 0))
+        & "},""wanted"":{""current"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "CrewTrackerMaxima.WantedMax", 0))
+        & "},""rep"":{""current"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "CrewTrackerMaxima.RepMax", 0))
+        & "},""experience"":{""points"":0,""max"":"
+        & Trim_Image (Settings_Int (S, "XpTrackMaxima.Crew", 0))
+        & "},""specialAbilities"":[],""upgrades"":[],""cohorts"":[],""contacts"":[],""factions"":[],""coin"":0,""stash"":0,""turf"":0,""notes"":[],""claimedClaimIds"":[],""claimOverrides"":[]}");
    end New_Crew;
 
    --  SC-A1: the frozen clock create writes the Wave-2 canonical shape
@@ -1842,33 +1959,23 @@ package body Pitd_Callback is
       elsif Op = "crew.create" then
          return Check_Fields (B, (Spec ("gameStem", JSON_String_Type),
                                   Spec ("crewType", JSON_String_Type)), Bad);
-      elsif Op = "clock.create" then
-         --  SC-A1: the frozen create request is
-         --  {name, behavior, size, purpose, ownerKind, ownerId,
-         --  relatedClockIds}; the legacy pre-Wave-2 shape (name/clockKind/
-         --  size) is still accepted and mapped per L5.  Every stored clock
-         --  is the canonical Wave-2 shape.
-         if not Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
-                                  Spec ("size", JSON_Int_Type, MnI => 1),
-                                  Spec ("behavior", JSON_String_Type,
-                                        En => "bounded|rollover", Rq => False),
-                                  Spec ("clockKind", JSON_String_Type,
-                                        En => "project|rollover", Rq => False),
-                                  Spec ("purpose", JSON_String_Type,
-                                        En => "progress|danger|racing|linked|mission|tug-of-war|long-term-project|faction|score|custom",
-                                        Rq => False),
+elsif Op = "clock.create" then
+         --  SC-A7: the frozen create request is exactly
+         --  {name, ownerKind, ownerId, purpose, behavior, size} with
+         --  optional relatedClockIds (contract/openapi.yaml /clocks POST;
+         --  CLOCK-CREATE-015).  The legacy pre-Wave-2 shape (clockKind) is
+         --  rejected on the create surface; stored legacy documents migrate
+         --  via the SC-A1 canonicalizer (L5), never here.
+         return Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
                                   Spec ("ownerKind", JSON_String_Type,
-                                        En => "campaign|character|crew", Rq => False),
-                                  Spec ("ownerId", JSON_String_Type, Rq => False),
-                                  Spec ("relatedClockIds", JSON_Array_Type, Rq => False)), Bad)
-         then
-            return False;
-         end if;
-         if not Has_Field (B, "behavior") and then not Has_Field (B, "clockKind") then
-            Bad := To_Unbounded_String ("clock.create requires behavior or clockKind");
-            return False;
-         end if;
-         return True;
+                                        En => "campaign|character|crew"),
+                                  Spec ("ownerId", JSON_String_Type),
+                                  Spec ("purpose", JSON_String_Type,
+                                        En => "progress|danger|racing|linked|mission|tug-of-war|long-term-project|faction|score|custom"),
+                                  Spec ("behavior", JSON_String_Type,
+                                        En => "bounded|rollover"),
+                                  Spec ("size", JSON_Int_Type, MnI => 1),
+                                  Spec ("relatedClockIds", JSON_Array_Type, Rq => False)), Bad);
       elsif Op = "harm.add" or else Op = "harm.remove" then
          return Check_Fields (B, (Spec ("description", JSON_String_Type, MnL => 1),
                                   Spec ("intensity", JSON_String_Type, En => "lesser|moderate|severe|fatal")), Bad);
@@ -1924,7 +2031,43 @@ package body Pitd_Callback is
                                   Spec ("gangType", JSON_String_Type, Rq => False),
                                   Spec ("expertType", JSON_String_Type, Rq => False),
                                   Spec ("quality", JSON_Int_Type, MnI => 0, Rq => False),
-                                  Spec ("scale", JSON_Int_Type, MnI => 0, Rq => False)), Bad);
+                                  Spec ("scale", JSON_Int_Type, MnI => 0, Rq => False),
+                                  Spec ("hasArmor", JSON_Boolean_Type, Rq => False),
+                                  Spec ("edges", JSON_Array_Type, Rq => False),
+                                  Spec ("flaws", JSON_Array_Type, Rq => False),
+                                  Spec ("description", JSON_String_Type, Rq => False)), Bad);
+      elsif Op = "cohort.remove" then
+         return Check_Fields (B, Spec_List'(1 => Spec ("cohortId", JSON_String_Type, MnL => 1)), Bad);
+      elsif Op = "cohort.update" then
+         if not Check_Fields (B, (Spec ("cohortId", JSON_String_Type, MnL => 1),
+                                  Spec ("gangType", JSON_String_Type, Rq => False),
+                                  Spec ("expertType", JSON_String_Type, Rq => False),
+                                  Spec ("quality", JSON_Int_Type, MnI => 0, Rq => False),
+                                  Spec ("scale", JSON_Int_Type, MnI => 0, Rq => False),
+                                  Spec ("hasArmor", JSON_Boolean_Type, Rq => False),
+                                  Spec ("edges", JSON_Array_Type, Rq => False),
+                                  Spec ("flaws", JSON_Array_Type, Rq => False),
+                                  Spec ("harm", JSON_String_Type, En => "healthy|weakened|impaired|broken|dead", Rq => False),
+                                  Spec ("description", JSON_String_Type, Rq => False)), Bad)
+         then
+            return False;
+         end if;
+         --  frozen contract: minProperties 2 (cohortId plus at least one
+         --  update field)
+         declare
+            Count : Natural := 0;
+            procedure Cnt (Name : UTF8_String; Value : JSON_Value) is
+            begin
+               Count := Count + 1;
+            end Cnt;
+         begin
+            Map_JSON_Object (B, Cnt'Access);
+            if Count < 2 then
+               Bad := To_Unbounded_String ("cohort.update requires cohortId plus at least one field");
+               return False;
+            end if;
+         end;
+         return True;
       elsif Op = "contact.add" then
          return Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
                                   Spec ("profession", JSON_String_Type)), Bad);
@@ -1960,9 +2103,34 @@ package body Pitd_Callback is
                                   Spec ("effects", JSON_Array_Type, Rq => False)), Bad);
       elsif Op = "claim.reset" then
          return Check_Fields (B, Spec_List'(1 => Spec ("claimId", JSON_String_Type, MnL => 1)), Bad);
-      elsif Op = "clock.progress" then
-         return Check_Fields (B, Spec_List'(1 => Spec ("segments", JSON_Int_Type, MnI => 0)), Bad);
+elsif Op = "clock.progress" then
+         --  SC-A7: signed delta (W6 tug-of-war); negative empties the clock.
+         return Check_Fields (B, Spec_List'(1 => Spec ("segments", JSON_Int_Type)), Bad);
       elsif Op = "clock.reset" then
+         return True;
+      elsif Op = "update" then
+         --  SC-A7: clock update (contract/openapi.yaml /clocks/{id}/update):
+         --  partial owner/purpose/relationship update.  ownerKind and
+         --  ownerId are updated together — provide both or neither
+         --  (CLOCK-OWNER-003).  Mechanical fields are not editable here.
+         if not Check_Fields (B, (Spec ("ownerKind", JSON_String_Type,
+                                        En => "campaign|character|crew", Rq => False),
+                                  Spec ("ownerId", JSON_String_Type, Rq => False),
+                                  Spec ("purpose", JSON_String_Type,
+                                        En => "progress|danger|racing|linked|mission|tug-of-war|long-term-project|faction|score|custom",
+                                        Rq => False),
+                                  Spec ("relatedClockIds", JSON_Array_Type, Rq => False)), Bad)
+         then
+            return False;
+         end if;
+         if not Has_Any_Field (B) then
+            Bad := To_Unbounded_String ("update requires at least one field");
+            return False;
+         end if;
+         if Has_Field (B, "ownerKind") /= Has_Field (B, "ownerId") then
+            Bad := To_Unbounded_String ("ownerKind and ownerId must be provided together");
+            return False;
+         end if;
          return True;
       elsif Op = "fields.update" then
          if not Has_Any_Field (B) then Bad := To_Unbounded_String ("fields.update requires at least one field"); return False; end if;
@@ -2225,40 +2393,7 @@ package body Pitd_Callback is
       when others => return "";
    end Campaign_Stem;
 
-   --  Resolved game settings for DERIVED fills.
-   type Settings_Ref is record
-      Stem : Unbounded_String := Null_Unbounded_String;
-      G    : JSON_Value := JSON_Null;
-   end record;
-
-   function Settings_Int (S : Settings_Ref; Key : String; Fallback : Integer) return Integer is
-      --  Key may be a dotted path into the settings object
-      --  (e.g. "FundMaxima.SatchelMax").
-      V : JSON_Value := S.G;
-      P : Integer := Key'First;
-   begin
-      if V.Kind /= JSON_Object_Type or else Key'Length = 0 then return Fallback; end if;
-      loop
-         declare
-            E : Integer := P;
-         begin
-            while E <= Key'Last and then Key (E) /= '.' loop E := E + 1; end loop;
-            declare
-               Part : constant String := Key (P .. E - 1);
-            begin
-               if not Has_Field (V, Part) then return Fallback; end if;
-               V := Get (V, Part);
-               if V.Kind /= JSON_Object_Type and then E <= Key'Last then return Fallback; end if;
-            end;
-            exit when E > Key'Last;
-            P := E + 1;
-         end;
-      end loop;
-      if V.Kind = JSON_Int_Type then return Integer'(Get (V)); end if;
-      return Fallback;
-   end Settings_Int;
-
-   --  L2: known legacy PascalCase enum variants (deterministic one-to-one;
+--  L2: known legacy PascalCase enum variants (deterministic one-to-one;
    --  a variant not in the table is needs-input, never a guess).
    type Legacy_Pair is record
       From_V : Unbounded_String;
@@ -4734,9 +4869,18 @@ package body Pitd_Callback is
          end;
          Set_Field (E, "isDeadish", False);
       end Retire_Character;
-   begin
+begin
+      --  SC-A8: the RETIRED gate is the frozen allow/deny lists
+      --  (lifecycle-matrix § 6).  On a retired character only the
+      --  allow-list proceeds: dossier.update, note.add/remove, notebook.set,
+      --  trauma.remove (the trauma-history correction path — never
+      --  recomputes isRetired), plus the direct entity ops handled before
+      --  Mutate (undo/delete/import) and all reads.  Every gameplay
+      --  mutation — including trauma.add and end-score — returns RETIRED.
       if Kind = "character" and then Bool_Field (E, "isRetired")
-        and then Op /= "trauma.add" and then Op /= "trauma.remove"
+        and then Op /= "dossier.update" and then Op /= "note.add"
+        and then Op /= "note.remove" and then Op /= "notebook.set"
+        and then Op /= "trauma.remove"
       then return Retired_Error (Op, "character is retired", E); end if;
 
       if Op = "stress.add" then
@@ -4829,14 +4973,45 @@ package body Pitd_Callback is
                Set_Field(T,"traumas",O);
             end if;
          end;
-      elsif Op = "harm.add" then
-         declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm"); Start:constant String:=Str_Field(B,"intensity","lesser"); Desc:constant String:=Str_Field(B,"description"); Land:Unbounded_String; begin
+elsif Op = "harm.add" then
+         declare
+            H : constant JSON_Value := Get (Get (E, "monitor"), "harm");
+            Start : constant String := Str_Field (B, "intensity", "lesser");
+            Desc : constant String := Str_Field (B, "description");
+            Land : Unbounded_String;
+            Old_Fatal : constant Natural := Array_Length (H, "fatal");
+            --  SC-A6: per-level slot capacities come from the validated
+            --  game settings (HarmCapacities), never a literal.
+            HC : constant JSON_Value :=
+              (if Game (Str_Field (E, "gameStem")).Kind = JSON_Object_Type
+               then Get (Game (Str_Field (E, "gameStem")), "HarmCapacities")
+               else Create_Object);
+            function Cap_For (Level : String) return Natural is
+            begin
+               if Level = "lesser" then return Natural (Int_Field (HC, "Lesser", 0));
+               elsif Level = "moderate" then return Natural (Int_Field (HC, "Moderate", 0));
+               elsif Level = "severe" then return Natural (Int_Field (HC, "Severe", 0));
+               else return Natural (Int_Field (HC, "Fatal", 0));
+               end if;
+            end Cap_For;
+         begin
             for Level of Level_Array'(To_Unbounded_String("lesser"),To_Unbounded_String("moderate"),To_Unbounded_String("severe"),To_Unbounded_String("fatal")) loop
                if (Start="lesser" or else To_String(Level)/="lesser") and then (Start/="severe" or else (To_String(Level)="severe" or else To_String(Level)="fatal")) and then (Start/="moderate" or else To_String(Level)/="lesser") and then (Start/="fatal" or else To_String(Level)="fatal") then
-                  declare A:constant JSON_Array:=Get(H,To_String(Level));Cap:constant Natural:=(if To_String(Level)="lesser" or else To_String(Level)="moderate" then 2 else 1);begin if Length(A)<Cap and then Length(Land)=0 then declare O:JSON_Array:=A;begin Append(O,Create(Desc));Set_Field(H,To_String(Level),O);Land:=Level;end;end if;end;
+                  declare A:constant JSON_Array:=Get(H,To_String(Level));Cap:constant Natural:=Cap_For(To_String(Level));begin if Length(A)<Cap and then Length(Land)=0 then declare O:JSON_Array:=A;begin Append(O,Create(Desc));Set_Field(H,To_String(Level),O);Land:=Level;end;end if;end;
                end if;
             end loop;
-            if Length(Land)=0 then return Slot_Full_Fatal_Error(Op,"all harm slots are full",E);end if;Set_Field(E,"isDeadish",Array_Length(H,"fatal")>0);return Success_Result(Op,E,Landed=>To_String(Land),Side=>(if To_String(Land)/=Start then "harm spilled to "&To_String(Land) else ""));
+            if Length(Land)=0 then return Slot_Full_Fatal_Error(Op,"all harm slots are full",E);end if;
+                        --  LIFECYCLE-DEADISH-001: becoming deadish (fatal 0 -> 1) runs
+                        --  the deadish cleanup in the same transition — stress and all
+                        --  pending/out-of-action state cleared; ALL harm preserved
+                        --  (lifecycle-matrix § 7.2).
+                        if To_String (Land) = "fatal" and then Old_Fatal = 0 then
+                           Set_Field (Get (Get (E, "monitor"), "stress"), "current", Integer'(0));
+                           Set_Field (E, "traumaPending", False);
+                           Set_Field (E, "isOutOfAction", False);
+                           Set_Field (E, "stressClearPending", False);
+                        end if;
+                        Set_Field(E,"isDeadish",Array_Length(H,"fatal")>0);return Success_Result(Op,E,Landed=>To_String(Land),Side=>(if To_String(Land)/=Start then "harm spilled to "&To_String(Land) else ""));
          end;
       elsif Op = "harm.remove" then
          declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm");Level:constant String:=Str_Field(B,"intensity");Desc:constant String:=Str_Field(B,"description");A:constant JSON_Array:=Get(H,Level);O:JSON_Array:=Empty_Array;Skipped:Boolean:=False;begin for I in 1..Length(A) loop if not Skipped and then String'(Get(Get(A,I)))=Desc then Skipped:=True;else Append(O,Get(A,I));end if;end loop;Set_Field(H,Level,O);Set_Field(E,"isDeadish",Array_Length(H,"fatal")>0);end;
@@ -4851,8 +5026,14 @@ package body Pitd_Callback is
          end;
       elsif Op = "playbook-xp.add" then
          Target := Get (Get (E,"playbook"),"experience"); Requested := Int_Field (B,"delta");
-         Core_Clamp_Add (Natural (Int_Field(Target,"points")),Natural(Int_Field(Target,"max")),Natural'Max(0,Requested),New_Value,Applied);
-         Set_Field(Target,"points",Integer(New_Value)); Effective:=Integer(Applied); return Success_Result(Op,E,Requested,Effective);
+         --  SC-A6: signed-delta family — negative deltas reduce the track
+         --  and clamp at zero (effective is the signed actual change).
+         if Requested >= 0 then
+            Core_Clamp_Add (Natural (Int_Field(Target,"points")),Natural(Int_Field(Target,"max")),Natural (Requested),New_Value,Applied);
+         else
+            Core_Clamp_Subtract (Natural (Int_Field(Target,"points")),Natural(Int_Field(Target,"max")),Natural (-Requested),New_Value,Applied);
+         end if;
+         Set_Field(Target,"points",Integer(New_Value)); Effective:=(if Requested >= 0 then Integer(Applied) else -Integer(Applied)); return Success_Result(Op,E,Requested,Effective);
       elsif Op = "playbook-xp.clear" then declare X : constant JSON_Value := Get(Get(E,"playbook"),"experience"); begin Set_Field(X,"points",Integer'(0)); end;
       elsif Op = "action.set-rating" then
          declare
@@ -4870,12 +5051,25 @@ package body Pitd_Callback is
                   for J in 1..Length(Acts) loop
                      declare X:constant JSON_Value:=Get(Acts,J);begin
                         if Str_Field(X,"name")=Name then
-                           if Rating > Rating_Cap (E) then
-                              return Rating_Maxed_Error
-                                (Op, "action rating capped by Mastery",
-                                 Rating_Cap (E), Int_Field (X, "rating"), E);
-                           end if;
-                           Set_Field(X,"rating",Integer'Min(Rating,Int_Field(X,"maxRating")));
+                           --  SC-A6: the SAME effective cap as
+                           --  attribute.levelup — the server-computed
+                           --  minimum of the raw max and the Mastery-derived
+                           --  cap (published as effectiveActionCap).
+                           declare
+                              Cap : constant Integer :=
+                                Integer'Min (Rating_Cap (E), Int_Field (X, "maxRating"));
+                           begin
+                              if Rating > Cap then
+                                 return Rating_Maxed_Error
+                                   (Op, "action rating capped by Mastery",
+                                    Cap, Int_Field (X, "rating"), E);
+                              end if;
+                              Set_Field (X, "rating", Rating);
+                              --  absolute-setter family: requested = target,
+                              --  effective = stored target
+                              Requested := Rating;
+                              Effective := Rating;
+                           end;
                            Found:=True;
                         end if;
                      end;
@@ -4888,10 +5082,22 @@ package body Pitd_Callback is
             end if;
          end;
       elsif Op = "attribute-xp.add" or else Op = "attribute-xp.clear" or else Op="attribute.levelup" then
-         declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"attribute");Found:Boolean:=False;begin for I in 1..Length(Attrs) loop declare A:constant JSON_Value:=Get(Attrs,I);X:constant JSON_Value:=Get(A,"experience");begin if Str_Field(A,"name")=Name then Found:=True;if Op="attribute-xp.clear" then Set_Field(X,"points",Integer'(0));elsif Op="attribute-xp.add" then Requested:=Int_Field(B,"delta");Core_Clamp_Add(Natural(Int_Field(X,"points")),Natural(Int_Field(X,"max")),Natural'Max(0,Requested),New_Value,Applied);Set_Field(X,"points",Integer(New_Value));Effective:=Integer(Applied);else
+         declare Attrs:constant JSON_Array:=Get(Get(E,"talent"),"attributes");Name:constant String:=Str_Field(B,"attribute");Found:Boolean:=False;begin for I in 1..Length(Attrs) loop declare A:constant JSON_Value:=Get(Attrs,I);X:constant JSON_Value:=Get(A,"experience");begin if Str_Field(A,"name")=Name then Found:=True;if Op="attribute-xp.clear" then Set_Field(X,"points",Integer'(0));elsif Op="attribute-xp.add" then
+            Requested:=Int_Field(B,"delta");
+            --  SC-A6: signed-delta family — negative deltas reduce the track
+            --  and clamp at zero (effective is the signed actual change).
+            if Requested >= 0 then
+               Core_Clamp_Add(Natural(Int_Field(X,"points")),Natural(Int_Field(X,"max")),Natural (Requested),New_Value,Applied);
+            else
+               Core_Clamp_Subtract(Natural(Int_Field(X,"points")),Natural(Int_Field(X,"max")),Natural (-Requested),New_Value,Applied);
+            end if;
+            Set_Field(X,"points",Integer(New_Value));Effective:=(if Requested >= 0 then Integer(Applied) else -Integer(Applied));
+         else
             --  BUG-004: level-up must run through the proved core semantics —
             --  the attribute XP track must be FULL, and the target action
-            --  rating must not exceed its max.
+            --  rating must not exceed the shared effective cap (SC-A6: the
+            --  same cap action.set-rating enforces — the server-computed
+            --  minimum of the raw max and the Mastery-derived cap).
             declare
                use Paperclips_Core.Experience_Trackers;
                Track : Experience_Tracker (Maximum => Paperclips_Core.Capacity (Int_Field (X, "max")));
@@ -4905,7 +5111,8 @@ package body Pitd_Callback is
                   declare Z : constant JSON_Value := Get (Acts, J); begin
                      if Str_Field (Z, "name") = Str_Field (B, "action") then
                         Tgt := Z; Found_Action := True;
-                        Rating_Max := Natural (Int_Field (Z, "maxRating"));
+                        Rating_Max := Natural
+                          (Integer'Min (Rating_Cap (E), Int_Field (Z, "maxRating")));
                      end if;
                   end;
                end loop;
@@ -4921,7 +5128,7 @@ package body Pitd_Callback is
                end if;
                if Natural (Int_Field (Tgt, "rating")) >= Rating_Max then
                   return Rating_Maxed_Error
-                    (Op, "action rating at its maximum",
+                    (Op, "action rating at its effective cap",
                      Integer (Rating_Max), Int_Field (Tgt, "rating"), E);
                end if;
                Set_Field (Tgt, "rating", Int_Field (Tgt, "rating") + 1);
@@ -4973,12 +5180,18 @@ package body Pitd_Callback is
             Set_Field(P,Field,O);
          end;
       elsif Op="fund.gain" or else Op="fund.spend" or else Op="fund.liquidate" then declare F:constant JSON_Value:=Get(E,"fund");S:constant JSON_Value:=Get(F,"satchel");Z:constant JSON_Value:=Get(F,"stash");Req:constant Integer:=Int_Field(B,"coins");A1,A2:Integer:=0;begin Requested:=Req;if Op="fund.gain" then A1:=Integer'Min(Req,Int_Field(S,"max")-Int_Field(S,"coins"));Set_Field(S,"coins",Int_Field(S,"coins")+A1);A2:=Integer'Min(Req-A1,Int_Field(Z,"max")-Int_Field(Z,"coins"));Set_Field(Z,"coins",Int_Field(Z,"coins")+A2);Effective:=A1+A2;return Success_Result(Op,E,Requested,Effective,Side=>(if Effective<Requested then Trim_Image(Requested-Effective)&" coin could not be stored" else ""));elsif Op="fund.spend" then
-         if Req>Int_Field(S,"coins")+Int_Field(Z,"coins")/2 then return Insufficient_Funds_Error(Op,"not enough coins",Int_Field(S,"coins")+Int_Field(Z,"coins")/2,Req,E);end if;
-         A1:=Integer'Min(Req,Int_Field(S,"coins"));Set_Field(S,"coins",Int_Field(S,"coins")-A1);Set_Field(Z,"coins",Int_Field(Z,"coins")-(Req-A1)*2);Effective:=Req;return Success_Result(Op,E,Requested,Effective);
+         --  SC-A6: the stash-to-coin conversion rate is the validated
+         --  settings value (FundMaxima.StashToCoinRate), never a literal.
+         declare Rate:constant Integer:=Settings_Int((To_Unbounded_String(Str_Field(E,"gameStem")),Game(Str_Field(E,"gameStem"))),"FundMaxima.StashToCoinRate",0);begin
+         if Req>Int_Field(S,"coins")+Int_Field(Z,"coins")/Rate then return Insufficient_Funds_Error(Op,"not enough coins",Int_Field(S,"coins")+Int_Field(Z,"coins")/Rate,Req,E);end if;
+         A1:=Integer'Min(Req,Int_Field(S,"coins"));Set_Field(S,"coins",Int_Field(S,"coins")-A1);Set_Field(Z,"coins",Int_Field(Z,"coins")-(Req-A1)*Rate);Effective:=Req;return Success_Result(Op,E,Requested,Effective);
+         end;
       elsif Op="fund.liquidate" then
+         declare Rate:constant Integer:=Settings_Int((To_Unbounded_String(Str_Field(E,"gameStem")),Game(Str_Field(E,"gameStem"))),"FundMaxima.StashToCoinRate",0);begin
          if Req>Int_Field(S,"max")-Int_Field(S,"coins") then return Satchel_Full_Error(Op,"satchel cannot hold that many coins",Int_Field(S,"max"),Int_Field(S,"coins"),E);end if;
-         if Int_Field(Z,"coins")/2<Req then return Insufficient_Funds_Error(Op,"not enough stash to liquidate",Int_Field(Z,"coins")/2,Req,E);end if;
-         Set_Field(Z,"coins",Int_Field(Z,"coins")-Req*2);Set_Field(S,"coins",Int_Field(S,"coins")+Req);Effective:=Req;return Success_Result(Op,E,Requested,Effective);
+         if Int_Field(Z,"coins")/Rate<Req then return Insufficient_Funds_Error(Op,"not enough stash to liquidate",Int_Field(Z,"coins")/Rate,Req,E);end if;
+         Set_Field(Z,"coins",Int_Field(Z,"coins")-Req*Rate);Set_Field(S,"coins",Int_Field(S,"coins")+Req);Effective:=Req;return Success_Result(Op,E,Requested,Effective);
+         end;
       end if;
       end;
       elsif Op="rolodex.add" then declare R:constant JSON_Value:=Get(E,"rolodex");A:constant JSON_Array:=Get(R,"friends");O:JSON_Array:=A;Entry_Name:constant String:=Str_Field(B,"entry");X:JSON_Value:=Create_Object;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Entry_Name then return Duplicate_Error(Op,"rolodex entry already exists",E);end if;end loop;Set_Field(X,"entry",Entry_Name);Set_Field(X,"closeness","friend");Append(O,X);Set_Field(R,"friends",O);end;
@@ -5031,14 +5244,29 @@ package body Pitd_Callback is
          if Kind /= "crew" then return Error_Result (Op,"VALIDATION","crew-only operation",E); end if;
          declare Cur : constant Integer := Int_Field (E,"turf"); Req : constant Integer := Int_Field (B,"delta"); begin
             Requested := Req;
-            Effective := Integer'Min (Integer'Max (Req, -Cur), 6 - Cur);
+            --  SC-A6: the turf ceiling is the validated settings value
+            --  (TurfMax), never a literal.
+            declare
+               Turf_Max : constant Integer :=
+                 Settings_Int ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                                Game (Str_Field (E, "gameStem"))),
+                               "TurfMax", 0);
+            begin
+               Effective := Integer'Min (Integer'Max (Req, -Cur), Turf_Max - Cur);
+            end;
             Set_Field (E,"turf",Cur + Effective); return Success_Result (Op,E,Requested,Effective);
          end;
       elsif Op = "xp.add" then
          if Kind /= "crew" then return Validation_Error(Op,"crew-only operation",Root_Issues("crew-only operation"),E); end if;
          Target := Get (E,"experience"); Requested := Int_Field (B,"delta");
-         Core_Clamp_Add (Natural (Int_Field (Target,"points")),Natural (Int_Field (Target,"max")),Natural'Max (0,Requested),New_Value,Applied);
-         Set_Field (Target,"points",Integer (New_Value)); Effective := Integer (Applied); return Success_Result (Op,E,Requested,Effective);
+         --  SC-A6: signed-delta family — negative deltas reduce the track
+         --  and clamp at zero (effective is the signed actual change).
+         if Requested >= 0 then
+            Core_Clamp_Add (Natural (Int_Field (Target,"points")),Natural (Int_Field (Target,"max")),Natural (Requested),New_Value,Applied);
+         else
+            Core_Clamp_Subtract (Natural (Int_Field (Target,"points")),Natural (Int_Field (Target,"max")),Natural (-Requested),New_Value,Applied);
+         end if;
+         Set_Field (Target,"points",Integer (New_Value)); Effective := (if Requested >= 0 then Integer (Applied) else -Integer (Applied)); return Success_Result (Op,E,Requested,Effective);
       elsif Op = "xp.clear" then
          if Kind /= "crew" then return Validation_Error(Op,"crew-only operation",Root_Issues("crew-only operation"),E); end if;
          declare X : constant JSON_Value := Get (E,"experience"); begin Set_Field (X,"points",Integer'(0)); end;
@@ -5047,17 +5275,77 @@ package body Pitd_Callback is
             use Paperclips_Core.Clocks;
             C   : Clock_State
               (Size => Paperclips_Core.Capacity (Int_Field (E, "size")));
-            Req : constant Natural := Natural'Max (0, Int_Field (B, "segments"));
+            Req : constant Integer := Int_Field (B, "segments");
             App : Natural;
+            Old_Seg, Old_Ov : Integer;
+            Visible, Ov_Added, Eff : Integer;
+            R, A : JSON_Value;
          begin
             C.Kind := (if Str_Field (E, "behavior", "bounded") = "rollover"
                        then Rollover else Project);
-            C.Segments := Natural (Int_Field (E, "segments"));
-            C.Overflow := Natural (Int_Field (E, "rollover", 0));
-            Progress (C, Req, App);
+            Old_Seg := Int_Field (E, "segments");
+            Old_Ov := Int_Field (E, "rollover", 0);
+            C.Segments := Natural (Old_Seg);
+            C.Overflow := Natural (Old_Ov);
+            if Req >= 0 then
+               --  SC-A7: the core accumulation primitive is bounded by its
+               --  proven Pre (Capacity'Last delta, bounded carried
+               --  overflow); the API boundary rejects deltas that could
+               --  push past it (clock-taxonomy.mdx §10.4).
+               if Req > Paperclips_Core.Capacity'Last
+                 or else Old_Ov > Integer (Natural'Last - Paperclips_Core.Capacity'Last)
+               then
+                  return Validation_Error
+                    (Op, "progress delta or carried overflow exceeds the supported bound",
+                     Root_Issues ("progress delta or carried overflow exceeds the supported bound"), E);
+               end if;
+               Progress (C, Natural (Req), App);
+            else
+               --  W6 tug-of-war emptying: consume carried rollover FIRST,
+               --  then empty visible segments, never below 0; the clamp
+               --  shape preserves Overflow > 0 => Segments = Size
+               --  (clock-taxonomy.mdx §10.2).
+               declare
+                  Size_LL : constant Long_Long_Integer :=
+                    Long_Long_Integer (Int_Field (E, "size"));
+                  Total : constant Long_Long_Integer :=
+                    Long_Long_Integer (Old_Seg) + Long_Long_Integer (Old_Ov)
+                    + Long_Long_Integer (Req);
+               begin
+                  if Total >= Size_LL then
+                     C.Segments := C.Size;
+                     C.Overflow := Natural
+                       (Long_Long_Integer'Min (Total - Size_LL,
+                                               Long_Long_Integer (Natural'Last)));
+                  elsif Total > 0 then
+                     C.Segments := Natural (Total);
+                     C.Overflow := 0;
+                  else
+                     C.Segments := 0;
+                     C.Overflow := 0;
+                  end if;
+               end;
+            end if;
+            Visible := Integer (C.Segments) - Old_Seg;
+            Ov_Added := Integer (C.Overflow) - Old_Ov;
+            Eff := Visible + Ov_Added;
             Set_Field (E, "segments", Integer (C.Segments));
             Set_Field (E, "rollover", Integer (C.Overflow));
-            return Success_Result (Op, E);
+            --  Q23 result family: requested/effective/visibleApplied/
+            --  overflowAdded (CLOCK-RESULT-014).
+            R := Create_Object;
+            A := Create_Object;
+            Set_Field (A, "op", Op);
+            Set_Field (A, "requested", Req);
+            Set_Field (A, "effective", Eff);
+            Set_Field (A, "visibleApplied", Visible);
+            Set_Field (A, "overflowAdded", Ov_Added);
+            Set_Field (R, "ok", True);
+            Set_Field (R, "applied", A);
+            Set_Field (R, "sideEffects", Empty_Array);
+            Set_Field (R, "error", JSON_Null);
+            Set_Field (R, "clock", E);
+            return R;
          end;
       elsif Op = "clock.reset" then
          declare
@@ -5171,7 +5459,7 @@ package body Pitd_Callback is
                Set_Field(X,"edges",(if Has_Field(B,"edges") then Get(B,"edges") else Empty_List));
                Set_Field(X,"flaws",(if Has_Field(B,"flaws") then Get(B,"flaws") else Empty_List));
                Set_Field(X,"harm","healthy");Set_Field(X,"description",Str_Field(B,"description"));
-               Append(O,X);Set_Field(E,"cohorts",O);
+               Prepend(O,X);Set_Field(E,"cohorts",O);
             end;
          end;
       elsif Op = "cohort.remove" then
@@ -5205,7 +5493,15 @@ package body Pitd_Callback is
       elsif Op = "session.set" then
          declare
             S : constant JSON_Value := Get (E, "session");
-            Max : constant Integer := Int_Field (S, "max", 3);
+            --  SC-A6: the session expression ceiling is the validated
+            --  settings value (SessionExpressionMax); the stored max is
+            --  settings-derived at creation, so this only guards a degraded
+            --  stored document (no game-domain literal).
+            Max : constant Integer := Int_Field
+              (S, "max",
+               Settings_Int ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                              Game (Str_Field (E, "gameStem"))),
+                             "SessionExpressionMax", 0));
             Allowed : Boolean := True;
             procedure Check (Name : UTF8_String; Value : JSON_Value) is
             begin
@@ -5238,13 +5534,83 @@ package body Pitd_Callback is
       elsif Op="upgrade.mark" or else Op="upgrade.unmark" then declare A:constant JSON_Array:=Get(E,"upgrades");O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop declare X:constant JSON_Value:=Get(A,I);begin if Str_Field(X,"name")=Name then Found:=True;if Op="upgrade.mark" and then Int_Field(X,"boxesMarked")>=Upgrade_Total_Boxes(E,Name) then return Upgrade_Maxed_Error(Op,"upgrade is at its total box count",Upgrade_Total_Boxes(E,Name),Int_Field(X,"boxesMarked"),E);end if;declare N:constant Integer:=Int_Field(X,"boxesMarked")+(if Op="upgrade.mark" then 1 else -1);begin if N>0 then Set_Field(X,"boxesMarked",N);Append(O,X);end if;end;else Append(O,X);end if;end;end loop;if Op="upgrade.mark" and then not Found then declare X:JSON_Value:=Create_Object;begin Set_Field(X,"name",Name);Set_Field(X,"boxesMarked",Integer'(1));Append(O,X);end;end if;Set_Field(E,"upgrades",O);end;
       elsif Op = "fields.update" then
          declare procedure Copy_Field (Name : UTF8_String; Value : JSON_Value) is begin if Has_Field(E,Name) then Set_Field(E,Name,Clone(Value)); end if; end; begin Map_JSON_Object(B,Copy_Field'Access); end;
+      elsif Op = "update" then
+         --  SC-A7: clock update (contract/openapi.yaml /clocks/{id}/update):
+         --  ownerKind/ownerId (together), purpose, and relatedClockIds
+         --  (replaces the full relationship set).  Mechanical fields are
+         --  not editable here.  Reference validation (owner exists, related
+         --  clocks exist, no self/duplicates) ran in Handle_Entity before
+         --  Mutate.
+         if Kind /= "clock" then
+            return Validation_Error (Op, "clock-only operation",
+                                      Root_Issues ("clock-only operation"), E);
+         end if;
+         if Has_Field (B, "ownerKind") then
+            Set_Field (E, "ownerKind", Str_Field (B, "ownerKind"));
+            Set_Field (E, "ownerId", Str_Field (B, "ownerId"));
+         end if;
+         if Has_Field (B, "purpose") then
+            Set_Field (E, "purpose", Str_Field (B, "purpose"));
+         end if;
+         if Has_Field (B, "relatedClockIds") then
+            Set_Field (E, "relatedClockIds", Clone (Get (B, "relatedClockIds")));
+         end if;
       elsif Op = "harm.healing-clock" then
-         declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm");C:constant JSON_Value:=Get(H,"healingClock");begin
-            Requested:=Int_Field(B,"segments");
-            Core_Clamp_Add(Natural(Int_Field(C,"segments")),Natural(Int_Field(C,"size")),Natural'Max(0,Requested),New_Value,Applied);
-            Set_Field(C,"segments",Integer(New_Value));
-            Set_Field(C,"rollover",Integer((if Applied<Natural'Max(0,Requested) then Natural'Max(0,Requested)-Applied else 0)));
-            return Success_Result(Op,E);
+         declare
+            use Paperclips_Core.Clocks;
+            H       : constant JSON_Value := Get (Get (E, "monitor"), "harm");
+            C       : constant JSON_Value := Get (H, "healingClock");
+            Req     : constant Integer := Int_Field (B, "segments");
+            Size    : constant Integer := Int_Field (C, "size");
+            App     : Natural;
+            Old_Seg, Old_Ov : Integer;
+            Visible, Ov_Added, Eff : Integer;
+            CS      : Clock_State (Size => Paperclips_Core.Capacity (Size));
+            R, A    : JSON_Value;
+         begin
+            --  The healing clock is a fixed rollover clock
+            --  (RecoveryClockSize); its progress family matches
+            --  clock.progress (FV-007, NUM-CLOCK-004).
+            CS.Kind := Rollover;
+            Old_Seg := Int_Field (C, "segments");
+            Old_Ov  := Int_Field (C, "rollover", 0);
+            CS.Segments := Natural (Old_Seg);
+            CS.Overflow := Natural (Old_Ov);
+            if Req > 0 then
+               --  Q24 accumulation: ADD new overflow to the existing
+               --  rollover (never replace), via the proven core primitive.
+               if Req > Paperclips_Core.Capacity'Last
+                 or else Old_Ov > Integer (Natural'Last - Paperclips_Core.Capacity'Last)
+               then
+                  return Validation_Error
+                    (Op, "healing progress delta or carried overflow exceeds the supported bound",
+                     Root_Issues ("healing progress delta or carried overflow exceeds the supported bound"), E);
+               end if;
+               Progress (CS, Natural (Req), App);
+            else
+               --  non-negative family: a non-positive delta is a no-op.
+               App := 0;
+            end if;
+            Visible := Integer (CS.Segments) - Old_Seg;
+            Ov_Added := Integer (CS.Overflow) - Old_Ov;
+            Eff := Visible + Ov_Added;
+            Set_Field (C, "segments", Integer (CS.Segments));
+            Set_Field (C, "rollover", Integer (CS.Overflow));
+            --  Q23 result family: requested/effective/visibleApplied/
+            --  overflowAdded (NUM-CLOCK-004).
+            R := Create_Object;
+            A := Create_Object;
+            Set_Field (A, "op", Op);
+            Set_Field (A, "requested", Req);
+            Set_Field (A, "effective", Eff);
+            Set_Field (A, "visibleApplied", Visible);
+            Set_Field (A, "overflowAdded", Ov_Added);
+            Set_Field (R, "ok", True);
+            Set_Field (R, "applied", A);
+            Set_Field (R, "sideEffects", Empty_Array);
+            Set_Field (R, "error", JSON_Null);
+            Set_Field (R, Str_Field (E, "kind"), E);
+            return R;
          end;
       elsif Op = "harm.heal" then
          declare H:constant JSON_Value:=Get(Get(E,"monitor"),"harm");C:constant JSON_Value:=Get(H,"healingClock");Level:constant String:=Str_Field(B,"intensity");Desc:constant String:=Str_Field(B,"description");begin
@@ -5517,6 +5883,15 @@ package body Pitd_Callback is
       Set_Field (X, "isRetired", Bool_Field (C, "isRetired"));
       Set_Field (X, "isDeadish", Bool_Field (C, "isDeadish"));
       Set_Field (X, "revision", Int_Field (C, "revision"));
+      --  SC-A8: derived canUndo/historyCount projections (lifecycle-matrix
+      --  § 9) — computed at response time from the retained snapshot count,
+      --  never stored.  The create baseline is excluded from the count.
+      declare
+         H : constant JSON_Array := History ("character", Str_Field (C, "id"));
+      begin
+         Set_Field (X, "canUndo", Length (H) > 0);
+         Set_Field (X, "historyCount", Integer (Length (H)));
+      end;
       return X;
    end Character_Summary;
 
@@ -5572,6 +5947,8 @@ package body Pitd_Callback is
          Set_Field (X, "traumas", Empty_Array);
          Set_Field (X, "isRetired", False);
          Set_Field (X, "isDeadish", False);
+         Set_Field (X, "canUndo", False);
+         Set_Field (X, "historyCount", Integer'(0));
       else
          Set_Field (X, "name", "");
          Set_Field (X, "crewType", "");
@@ -5582,6 +5959,8 @@ package body Pitd_Callback is
          Set_Field (X, "rep", Integer'(0));
          Set_Field (X, "hold", "strong");
          Set_Field (X, "memberCount", Integer'(0));
+         Set_Field (X, "canUndo", False);
+         Set_Field (X, "historyCount", Integer'(0));
       end if;
       Set_Field (X, "revision", Integer'(1));
       Set_Field (X, "isReadable", False);
@@ -5821,56 +6200,6 @@ package body Pitd_Callback is
    --  mutation endpoints remain authoritative.  Every limit value is read
    --  from the validated game settings; nothing here is persisted and no
    --  capability literal lives in these functions.
-   procedure Mastery_State (E : JSON_Value; Total, Marked : out Integer) is
-      Crew_Id : constant String := Str_Field (Get (E, "dossier"), "crewId");
-   begin
-      Total := 0;
-      Marked := 0;
-      if Crew_Id = "" then return; end if;
-      declare
-         Crew : constant JSON_Value := Read_Entity ("crew", Crew_Id);
-      begin
-         if Crew.Kind /= JSON_Object_Type then return; end if;
-         declare
-            G : constant JSON_Value :=
-              Game (Str_Field (Crew, "gameStem") & "-crews");
-         begin
-            if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes") then
-               declare
-                  Types : constant JSON_Array := Get (G, "CrewTypes");
-               begin
-                  for I in 1 .. Length (Types) loop
-                     declare T : constant JSON_Value := Get (Types, I); begin
-                        if Str_Field (T, "Name") = Str_Field (Crew, "crewTypeName")
-                          and then Has_Field (T, "Upgrades")
-                        then
-                           declare
-                              Up : constant JSON_Array := Get (T, "Upgrades");
-                           begin
-                              for J in 1 .. Length (Up) loop
-                                 if Str_Field (Get (Up, J), "Name") = "Mastery" then
-                                    Total := Int_Field (Get (Up, J), "TotalBoxes", 0);
-                                 end if;
-                              end loop;
-                           end;
-                        end if;
-                     end;
-                  end loop;
-               end;
-            end if;
-         end;
-         if Has_Field (Crew, "upgrades") then
-            declare Up : constant JSON_Array := Get (Crew, "upgrades"); begin
-               for I in 1 .. Length (Up) loop
-                  if Str_Field (Get (Up, I), "name") = "Mastery" then
-                     Marked := Int_Field (Get (Up, I), "boxesMarked", 0);
-                  end if;
-               end loop;
-            end;
-         end if;
-      end;
-   end Mastery_State;
-
    function Entity_Max_Rating (E : JSON_Value; Action : String) return Integer is
       --  maxRating as stored on the entity for this action; -1 when the
       --  entity has no such action (callers fall back to the settings).
@@ -6175,8 +6504,77 @@ package body Pitd_Callback is
       Set_Field (X, "effectiveTurf", Turf_Effective);
       Set_Field (X, "developThreshold",
                  Integer'Max (0, Int_Field (Get (E, "rep"), "max") - Turf_Effective));
-      return X;
+return X;
    end Crew_Capabilities;
+
+   --  SC-A7: clock ownership and relationship reference validation
+   --  (clock-taxonomy.mdx §5 rules 3 and 5; contract/openapi.yaml /clocks
+   --  POST and /clocks/{id}/update).  Requires store access, so it runs in
+   --  Handle_Entity (create and update paths) rather than in the pure
+   --  request-shape validator.  Self_Id is the clock's own id ("" on
+   --  create, where self-reference is impossible).
+   function Check_Clock_Refs
+     (B : JSON_Value; Self_Id : String; Bad : out Unbounded_String)
+      return Boolean
+   is
+      Ok : Boolean := True;
+      procedure Reject (Msg : String) is
+      begin
+         if Ok then Bad := To_Unbounded_String (Msg); Ok := False; end if;
+      end Reject;
+   begin
+      if Has_Field (B, "ownerKind") or else Has_Field (B, "ownerId") then
+         declare
+            OK : constant String := Str_Field (B, "ownerKind", "");
+            OI : constant String := Str_Field (B, "ownerId", "");
+         begin
+            if OK = "campaign" then
+               if OI /= "" then
+                  Reject ("campaign-owned clocks must have an empty ownerId");
+               end if;
+            elsif OK = "character" or else OK = "crew" then
+               if OI = "" then
+                  Reject ("ownerKind " & OK & " requires an ownerId");
+               elsif not Ada.Directories.Exists (Current_File (OK, OI)) then
+                  Reject ("ownerId does not reference an existing " & OK);
+               end if;
+            else
+               Reject ("ownerKind must be campaign, character or crew");
+            end if;
+         end;
+      end if;
+      if Has_Field (B, "relatedClockIds")
+        and then Get (B, "relatedClockIds").Kind = JSON_Array_Type
+      then
+         declare
+            A : constant JSON_Array := Get (B, "relatedClockIds");
+         begin
+            for I in 1 .. Length (A) loop
+               if Get (A, I).Kind /= JSON_String_Type then
+                  Reject ("relatedClockIds entries must be strings");
+               else
+                  declare
+                     RID : constant String := Get (Get (A, I));
+                  begin
+                     if Ok and then RID = Self_Id then
+                        Reject ("relatedClockIds must not reference the clock itself");
+                     end if;
+                     for J in 1 .. I - 1 loop
+                        if Ok and then String'(Get (Get (A, J))) = RID then
+                           Reject ("relatedClockIds must not contain duplicates");
+                           exit;
+                        end if;
+                     end loop;
+                     if Ok and then not Ada.Directories.Exists (Current_File ("clock", RID)) then
+                        Reject ("relatedClockIds entry does not reference an existing standalone clock");
+                     end if;
+                  end;
+               end if;
+            end loop;
+         end;
+      end if;
+      return Ok;
+   end Check_Clock_Refs;
 
    function Handle_Entity (Request : AWS.Status.Data; Path : String) return AWS.Response.Data is
       Plural : constant String := Part (Path, 2);
@@ -6221,6 +6619,24 @@ package body Pitd_Callback is
                             Message => To_String (Bad));
             end if;
          end;
+         if Kind = "clock" then
+            --  SC-A7: ownership and relationship references need store
+            --  access, so they are validated here (CLOCK-OWNER-002,
+            --  CLOCK-RELATED-009); the size bound keeps every stored clock
+            --  usable by the proven core primitive.
+            declare
+               Bad : Unbounded_String;
+            begin
+               if not Check_Clock_Refs (B, "", Bad) then
+                  return Fail (AWS.Messages.S400, "clock.create", "VALIDATION",
+                               Message => To_String (Bad));
+               end if;
+               if Int_Field (B, "size") > Paperclips_Core.Capacity'Last then
+                  return Fail (AWS.Messages.S400, "clock.create", "VALIDATION",
+                               Message => "size exceeds the supported bound");
+               end if;
+            end;
+         end if;
          if Kind = "character" then
             if Game (Str_Field (B, "gameStem")).Kind /= JSON_Object_Type then
                --  SC-A3: GAME_NOT_FOUND is a 200-status domain failure
@@ -6255,7 +6671,15 @@ package body Pitd_Callback is
                             Message => "created entity fails schema validation");
             end if;
          end;
-         Write_Entity (Kind, Str_Field (E, "id"), E);
+Write_Entity (Kind, Str_Field (E, "id"), E);
+         --  SC-A8 / FV-028: create takes exactly one baseline snapshot so a
+         --  fresh entity's first undo is not NO_HISTORY.  The baseline is
+         --  excluded from the history listing and the derived projections
+         --  (LIFECYCLE-DERIVED-001: fresh entity -> canUndo false,
+         --  historyCount 0).
+         if Kind = "character" or else Kind = "crew" then
+            Write_Baseline_Snapshot (Kind, Str_Field (E, "id"), Kind & ".create", E);
+         end if;
          return Json_Response (Success_Result (Kind & ".create", E));
       end if;
       if not Safe (Id) then return Fail (AWS.Messages.S404, "get", "NOT_FOUND"); end if;
@@ -6381,11 +6805,18 @@ package body Pitd_Callback is
          Scope_Key : Unbounded_String := Null_Unbounded_String;
          Body_Hash : Unbounded_String := Null_Unbounded_String;
       begin
-         --  BUG-002: idempotency is scoped to method+route+entityId+key and
+--  BUG-002: idempotency is scoped to method+route+entityId+key and
          --  compared against the hashed raw body.  An exact retry replays the
          --  stored response; the same scope key with a different body hash is
          --  rejected as 409 VALIDATION (ok:false) with no write.
+         --  SC-A6: the documented request bound (openapi maxLength 128) is
+         --  enforced here — an over-long key is a 400 VALIDATION, never used.
          if Header (Request, "Idempotency-Key") /= "" then
+            if Header (Request, "Idempotency-Key")'Length > 128 then
+               Entity_Lock_Registry.Release (Id);
+               return Fail (AWS.Messages.S400, Suffix, "VALIDATION", E,
+                            "Idempotency-Key exceeds the 128-character maximum");
+            end if;
             declare
                Scope : constant String :=
                  AWS.Status.Method (Request) & "|" & Path & "|"
@@ -6464,7 +6895,7 @@ package body Pitd_Callback is
                return Json_Response
                  (Confirm_Required_Result ("delete", E));
             end if;
-            if Kind = "crew" then
+if Kind = "crew" then
                --  SC-A4 Q16: deleting a crew scans READABLE characters and
                --  atomically clears every matching dossier.crewId before
                --  removing the crew; unreadable characters never block the
@@ -6492,14 +6923,103 @@ package body Pitd_Callback is
                   end loop;
                end;
             end if;
-            Ada.Directories.Delete_Tree (Entity_Dir (Kind, Id));
-            Entity_Lock_Registry.Release (Id);
-            --  SC-A4: a degraded entity has no readable DTO to embed in the
-            --  success envelope; the delete result carries the ok/applied/
-            --  sideEffects envelope only.
-            return Json_Response
-              (Success_Result ("delete",
-                               (if Adm_Canonical then E else JSON_Null)));
+            declare
+               Sides : JSON_Array := Empty_Array;
+            begin
+               if Kind = "clock" then
+                  --  W4 unlink-on-delete: this clock's id is removed from
+                  --  every remaining clock's relatedClockIds in the same
+                  --  atomic snapshot (clock-taxonomy.mdx §9); related
+                  --  clocks are never deleted, only unlinked.
+                  declare
+                     A : constant JSON_Array := Entity_Ids ("clock");
+                  begin
+                     for I in 1 .. Length (A) loop
+                        declare
+                           Cid : constant String := Get (Get (A, I));
+                           V   : JSON_Value;
+                           Exists, Parse_Ok : Boolean;
+                        begin
+                           if Cid /= Id then
+                              Try_Read_Entity ("clock", Cid, V, Exists, Parse_Ok);
+                              if V.Kind = JSON_Object_Type
+                                and then Entity_Is_Canonical ("clock", Cid, V)
+                                and then Has_Field (V, "relatedClockIds")
+                              then
+                                 declare
+                                    Old : constant JSON_Array :=
+                                      Get (V, "relatedClockIds");
+                                    O   : JSON_Array := Empty_Array;
+                                    Changed : Boolean := False;
+                                 begin
+                                    for J in 1 .. Length (Old) loop
+                                       if String'(Get (Get (Old, J))) = Id then
+                                          Changed := True;
+                                       else
+                                          Append (O, Get (Old, J));
+                                       end if;
+                                    end loop;
+                                    if Changed then
+                                       Set_Field (V, "relatedClockIds", O);
+                                       Stamp (V);
+                                       Write_Entity ("clock", Cid, V);
+                                    end if;
+                                 end;
+                              end if;
+                           end if;
+                        end;
+                     end loop;
+                  end;
+               elsif Kind = "character" or else Kind = "crew" then
+                  --  W5 owner deletion: standalone clocks owned by this
+                  --  entity are reassigned to campaign ownership in the
+                  --  same snapshot (clock-taxonomy.mdx §8); no clock is
+                  --  deleted.  The delete result reports each reassignment
+                  --  as a sideEffect (frozen C2 contract).
+                  declare
+                     A : constant JSON_Array := Entity_Ids ("clock");
+                  begin
+                     for I in 1 .. Length (A) loop
+                        declare
+                           Cid : constant String := Get (Get (A, I));
+                           V   : JSON_Value;
+                           Exists, Parse_Ok : Boolean;
+                        begin
+                           Try_Read_Entity ("clock", Cid, V, Exists, Parse_Ok);
+                           if V.Kind = JSON_Object_Type
+                             and then Entity_Is_Canonical ("clock", Cid, V)
+                             and then Str_Field (V, "ownerKind") = Kind
+                             and then Str_Field (V, "ownerId") = Id
+                           then
+                              Set_Field (V, "ownerKind", "campaign");
+                              Set_Field (V, "ownerId", "");
+                              Stamp (V);
+                              Write_Entity ("clock", Cid, V);
+                              Append (Sides, Create
+                                        ("clock " & Cid & " reassigned to campaign"));
+                           end if;
+                        end;
+                     end loop;
+                  end;
+               end if;
+               Ada.Directories.Delete_Tree (Entity_Dir (Kind, Id));
+               Entity_Lock_Registry.Release (Id);
+               --  SC-A4: a degraded entity has no readable DTO to embed in
+               --  the success envelope; the delete result carries the
+               --  ok/applied/sideEffects envelope only.
+               declare
+                  R  : JSON_Value := Create_Object;
+                  A2 : JSON_Value := Create_Object;
+               begin
+                  Set_Field (A2, "op", "delete");
+                  Set_Field (R, "ok", True);
+                  Set_Field (R, "applied", A2);
+                  Set_Field (R, "sideEffects", Sides);
+                  Set_Field (R, "error", JSON_Null);
+                  if Adm_Canonical then Set_Field (R, Kind, E); end if;
+                  return Json_Response (R);
+               end;
+            end;
          end if;
          if Suffix = "undo" then
             declare
@@ -6514,10 +7034,13 @@ package body Pitd_Callback is
                      (Ada.Directories.Ordinary_File => True, others => False));
                   while Ada.Directories.More_Entries (Search) loop
                      Ada.Directories.Get_Next_Entry (Search, Ent);
-                     --  BUG-008: undo picks the MAXIMUM (newest) snapshot
+--  BUG-008: undo picks the MAXIMUM (newest) snapshot
                      --  deterministically; the monotonic 17-digit filename
                      --  prefix makes lexicographic order equal creation order.
+                     --  The create baseline is excluded from the search and
+                     --  used only as the fallback below (FV-028).
                      if Ada.Directories.Simple_Name (Ent) /= "_index.json"
+                       and then not Is_Baseline_Snapshot (Ada.Directories.Simple_Name (Ent))
                        and then (Length (Best) = 0
                          or else Ada.Directories.Simple_Name (Ent) > To_String (Best))
                      then
@@ -6525,6 +7048,13 @@ package body Pitd_Callback is
                      end if;
                   end loop;
                   Ada.Directories.End_Search (Search);
+               end if;
+               if Length (Best) = 0
+                 and then Ada.Directories.Exists (Base & "/" & Baseline_Snapshot_Name)
+               then
+                  --  FV-028: a fresh entity's first undo restores the create
+                  --  baseline instead of failing with NO_HISTORY.
+                  Best := To_Unbounded_String (Baseline_Snapshot_Name);
                end if;
                if Length (Best) = 0 then
                   Entity_Lock_Registry.Release (Id);
@@ -7123,6 +7653,21 @@ package body Pitd_Callback is
                                Message => To_String (Bad));
                end if;
             end;
+            --  SC-A7: clock update reference validation (owner exists,
+            --  related clocks exist, no self/duplicates) needs store
+            --  access, so it runs here rather than in the pure request
+            --  validator (CLOCK-OWNER-003, CLOCK-RELATED-009).
+            if Kind = "clock" and then Op = "update" then
+               declare
+                  Bad : Unbounded_String;
+               begin
+                  if not Check_Clock_Refs (B, Id, Bad) then
+                     Entity_Lock_Registry.Release (Id);
+                     return Fail (AWS.Messages.S400, Op, "VALIDATION", E,
+                                  Message => To_String (Bad));
+                  end if;
+               end;
+            end if;
             R := Mutate (Kind, Op, E, B);
             if Bool_Field (R, "ok") then
                --  SC-A1: every write persists the complete canonical shape —

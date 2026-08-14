@@ -1,0 +1,13 @@
+{
+  "task": "SC-A6",
+  "track": "ada",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "limits + requested/effective",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " settings-driven templates/caps/enforcement; unified effective cap set-rating+levelup; upgrade.mark TotalBoxes; per-commitment load; idempotency-key 128; signed XP deltas; funds rate parameterized; LIMIT-RATING/UPGRADE/LOAD/SESSION/IDEMPOTENCY + NUM-SIGNED green; core funds 246 checks proved; full project gate green"
+}

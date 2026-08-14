@@ -1,12 +1,19 @@
 pragma SPARK_Mode (On);
 
+--  SC-A6: the stash-to-coin conversion rate is a Fund discriminant
+--  (game-settings FundMaxima.StashToCoinRate), never a hardcoded literal.
+--  Rate is typed as the proof-safe Capacity subtype so the division and
+--  multiplication arithmetic in Spend/Liquidate stays provable; absurd
+--  settings values are rejected at the server boundary (Constraint_Error
+--  on the Capacity conversion, surfaced as a typed VALIDATION).
+
 package Paperclips_Core.Funds is
-   type Fund (Satchel_Max : Capacity; Stash_Max : Capacity) is private;
+   type Fund (Satchel_Max : Capacity; Stash_Max : Capacity; Rate : Capacity) is private;
 
    function Satchel (Item : Fund) return Natural;
    function Stash (Item : Fund) return Natural;
    function Max_Affordable (Item : Fund) return Natural is
-     (Satchel (Item) + Stash (Item) / 2);
+     (Satchel (Item) + Stash (Item) / Item.Rate);
 
    procedure Gain
      (Item : in out Fund; Requested : Natural;
@@ -36,21 +43,21 @@ package Paperclips_Core.Funds is
                   and Stash (Item) = Stash (Item'Old)
                 else Satchel (Item) = 0
                   and Stash (Item) = Stash (Item'Old)
-                    - 2 * (Requested - Satchel (Item'Old))));
+                    - Item.Rate * (Requested - Satchel (Item'Old))));
 
    procedure Liquidate
      (Item : in out Fund; Coins : Natural; Error : out Operation_Error)
    with Post =>
      (if Coins > Item.Satchel_Max - Satchel (Item'Old) then
           Error = Satchel_Full
-      elsif Coins > Stash (Item'Old) / 2 then
+      elsif Coins > Stash (Item'Old) / Item.Rate then
           Error = Insufficient_Funds
       else Error = No_Error
            and Satchel (Item) = Satchel (Item'Old) + Coins
-           and Stash (Item) = Stash (Item'Old) - 2 * Coins);
+           and Stash (Item) = Stash (Item'Old) - Item.Rate * Coins);
 
 private
-   type Fund (Satchel_Max : Capacity; Stash_Max : Capacity) is record
+   type Fund (Satchel_Max : Capacity; Stash_Max : Capacity; Rate : Capacity) is record
       Satchel_Value : Natural := 0;
       Stash_Value   : Natural := 0;
    end record
