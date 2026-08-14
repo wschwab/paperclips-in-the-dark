@@ -120,10 +120,11 @@ JSON files on disk, campaign-scoped. Layout (fixes REVIEW #3 — no file/dir col
 Rules (all conformance-tested):
 
 1. **Atomic writes**: write `*.tmp` in the same directory, fsync, rename.
-2. **Concurrency**: per-entity mutex in-process (single process is an invariant of v1). Every entity DTO carries a monotonically increasing integer `revision`. Mutating requests MAY send `If-Match: <revision>`; a mismatch returns `409 CONFLICT` with error code `STALE_REVISION` and the current revision. (Resolves REVIEW #8.)
+2. **Concurrency**: per-entity mutex in-process (single process is an invariant of v1). Every entity DTO carries a monotonically increasing integer `revision`. Mutating requests MAY send `If-Match: <revision>`; **undo, delete, import-apply, and repair-apply MUST send it** (a degraded entity uses its opaque `deleteToken` instead, §7.1). A mismatch returns `409 CONFLICT` with error code `STALE_REVISION` and the current revision. (Resolves REVIEW #8.)
 3. **History**: snapshot of `current.json` taken *before* each mutating operation that declares itself snapshot-worthy in the contract (`x-snapshot: true`). Micro-ops (armor tick, loadout toggle) are `x-snapshot: false` to avoid history spam; undo restores the newest snapshot and deletes it. Retention: `MaxHistorySnapshots = 50` per entity. Import clears history and takes one baseline snapshot.
 4. **IDs**: UUIDv4, generated server-side only. Path components (`{id}`, game stems, friend names) are validated against `[A-Za-z0-9-]` / URL-encoded; no path traversal.
 5. **formatVersion**: integer, starts at 1, with a migration pipeline that exists (and is tested) from day one even while empty. It versions the persistence format, not the game edition. (Resolves REVIEW #6.)
+6. **Canonical shape**: stored documents are canonical totals — every property declared for an ordinary entity object is present, and `null` is never stored. Missing or `null` values normalize to schema-valid canonical defaults at the write boundary (create, successful import-apply, repair-apply, and every mutation that writes a nested object); reads never write, and a normal GET returns the stored bytes byte-identically. Because the product is pre-release, format version 1 is redefined in place: canonicalisation is not a migration and never changes `formatVersion` — there is no format-version bump.
 
 ---
 
@@ -135,15 +136,15 @@ Port of the C# `Models/` layer. Entities: **Character** (Dossier — heritage/ba
 
 These are the behaviors REVIEW found even the first spec got wrong. The C# source is authoritative; verify each against it during contract authoring, not from memory:
 
-1. **BoundedInteger** clamps rather than errors; operations report the clamped delta in the result (`requested: 3, applied: 2`).
+1. **BoundedInteger** clamps rather than errors; operations report the clamped delta in the result (`requested: 3, effective: 2`).
 2. **Harm spillover**: `AddHarm(intensity)` rolls *upward* when slots are full (lesser→moderate→severe→fatal). A "severe" request with severe full can land in fatal. The API reports where it landed as a `sideEffect`; it does not fail. Removing harm never cascades.
-3. **Stress overflow does not auto-trauma.** Full stress yields a `sideEffect: "stress full — consider trauma"` advisory only. Marking trauma is a separate explicit op.
+3. **Stress overflow does not auto-trauma.** Stress reaching maximum sets `traumaPending: true` and returns typed attention (`"stress full — trauma pending"`); the character never chooses trauma automatically. Marking trauma is a separate resolution op — see the lifecycle state machine in §5.3.
 4. **Armor is loadout-derived.** Standard/heavy/special armor availability derives from committed gear; setting `specialUsed` without special armor in loadout is a typed error (`ARMOR_NOT_AVAILABLE`), precondition queryable via GET.
 5. **XP tracks**: attribute track fill + level-up clears that track; playbook XP spend (take ability) is a *distinct, asymmetric* flow — document exactly what clears when, matching the C# `ExperienceTracker`/`Playbook` behavior, not intuition.
 6. **Upgrades**: unmarking removes one box, not the whole upgrade (fix the C# `UnmarkUpgrade` semantics mismatch deliberately — spec the box-wise behavior, note the divergence from reference).
 7. **Rolodex** supports the full transition set: upgrade/downgrade both friends and rivals (REVIEW found the first API surface incomplete).
 8. **Fund** partial gains (satchel/stash caps) surface remainders as `sideEffects`, never silently drop coin.
-9. **Retired / deadish**: roster summaries expose both `isRetired` and `isDeadish`. Mutating ops on retired characters return `RETIRED` except trauma-list edits; reads always work.
+9. **Retirement / deadish** (state machine in §5.3): retirement is an explicit, confirmation-guarded operation and is **not restricted to reaching maximum trauma**. Retired characters remain readable and deletable; dossier, named-field, note, and notebook edits remain allowed, and lifecycle cleanup and undo remain available; gameplay mutations return `RETIRED` per the deny-list, and `trauma.remove` never silently reverses retirement. Deadish is caused only by fatal harm (`isDeadish` is write-time derived from `monitor.harm.fatal`, never an input), preserves harm, clears stress and pending state, and is distinct from retirement. Roster summaries expose `isRetired`, `isDeadish`, and the lifecycle flags; `canUndo`/`historyCount` are derived at response time, never stored.
 10. **Commitment lock** (`IsCommitmentLocked`) has explicit lock/unlock ops.
 11. **Cross-links**: `crewId` on a character is validated to reference an existing crew (or empty string — no nulls anywhere in DTOs); deleting a crew unlinks members; roster `memberCount` = scan of characters by crewId.
 
@@ -156,14 +157,58 @@ The domain core is a SPARK-provable library, `paperclips-core`, with no IO:
 - Every mutating operation: `Pre` for structural preconditions, `Post` relating old/new state, `SPARK_Mode => On`. Target proof level: **absence of runtime errors (AoRTE, silver) for the whole core; gold (functional contracts) for BoundedInteger, Monitor, Fund, ExperienceTracker.**
 - HTTP layer, JSON, and filesystem are outside the SPARK boundary (`SPARK_Mode => Off`), thin, and call only the proven core.
 
+### 5.3 Lifecycle state machine
+
+Character lifecycle state is carried by canonical stored booleans — `traumaPending`, `isOutOfAction`, `stressClearPending` — alongside `isRetired` (set only by the retirement cleanup, never recomputed from the trauma count) and `isDeadish` (write-time derived from `monitor.harm.fatal`, never accepted as input). Invariants: `traumaPending` and `isOutOfAction` never co-occur, and `stressClearPending` is set and cleared together with `isOutOfAction`.
+
+The stress/trauma/score sequence:
+
+1. Stress reaching maximum sets `traumaPending: true` and returns typed attention (`"stress full — trauma pending"`) requiring a trauma choice. It never chooses trauma automatically.
+2. Resolving pending trauma (`trauma.add` is resolution-only: it requires `traumaPending`, else `VALIDATION`) records the selected trauma, keeps stress full, clears `traumaPending`, and sets `isOutOfAction` and `stressClearPending`.
+3. `end-score` rejects with `TRAUMA_REQUIRED` while `traumaPending` is true.
+4. A successful `end-score` (request body optional) clears stress to zero, resets both out-of-action flags, and performs its selected score cleanup — all in one snapshot and exactly one history entry.
+5. Stress ops on an out-of-action character are rejected with `OUT_OF_ACTION` (detail: out of action until `end-score`).
+
+Retirement is an explicit, confirmation-guarded operation (`{confirm: true}`, else `CONFIRM_REQUIRED`) and is not restricted to reaching maximum trauma. Final-trauma retirement (trauma resolution bringing the count to maximum) triggers retirement through the same transition. Both paths share one cleanup, applied atomically in one snapshot: sets `isRetired`; clears stress, `traumaPending`, `isOutOfAction`, `stressClearPending`, all harm, the healing clock, and armor usage; preserves dossier, playbook, trauma history, notes, gear ownership, and fund state.
+
+Retired allow-list (proceed normally): dossier updates (name, alias, look, heritage, background, vice, crewId), `note.add`/`note.remove`, `notebook.set`, `trauma.remove` (never recomputes or clears `isRetired`), undo (the sanctioned recovery path), delete, import, and all reads. Deny-list (→ `RETIRED`): all gameplay mutations — stress, trauma add, harm, armor, playbook/attribute XP, level-up, action ratings, abilities, gear, fund, rolodex, session, `end-score`, `end-downtime`.
+
+Deadish: caused only by fatal harm. Becoming deadish clears stress and all pending/out-of-action state while preserving all harm (including the fatal harm), the healing clock, and armor usage; removing the fatal harm recomputes `isDeadish` false (recovery). Deadish is distinct from retirement — retirement clears harm, deadish preserves it.
+
+`canUndo` and `historyCount` are derived at response time for roster summaries and character detail (`historyCount` = retained snapshots, 0..50; `canUndo = historyCount > 0`); no stale derived flag is ever persisted.
+
+### 5.4 Clocks
+
+Standalone clocks separate three concerns: **storage ownership** (`ownerKind`: `campaign` | `character` | `crew`; `ownerId` empty for campaign ownership, otherwise a valid existing entity id — create and update validate ownership), **narrative purpose** (`purpose` from the game-setting `ClockPurposes` list: `progress`, `danger`, `racing`, `linked`, `mission`, `tug-of-war`, `long-term-project`, `faction`, `score`, `custom` — `custom` always available), and **mechanical behavior** (`behavior`: `bounded` | `rollover`). `relatedClockIds` is a canonical array for descriptive linked/racing relationships. Purpose is descriptive: Paperclips never auto-resolves races, activates linked clocks, or determines fictional consequences. Embedded character healing clocks remain specialized monitor state with implicit character ownership and rollover healing behavior; they are never duplicated into `/api/clocks`. Legacy `clockKind: project|rollover` documents convert to `behavior: bounded|rollover`.
+
+Deleting an owner reassigns its standalone clocks to campaign ownership (the chosen default — deleting an owner never silently deletes its clocks, and clock deletion is never a side effect of owner deletion); each reassigned clock gets a new revision/`updatedAt`, and the delete result reports `reassignedClockIds`. Deleting a standalone clock removes its id from every remaining clock's `relatedClockIds` in the same atomic snapshot, so no dangling reference can exist in readable state.
+
+Rollover is real behavior: progress adds new overflow to existing overflow; reset applies at most one clock size and retains any remaining overflow; negative (tug-of-war) progress consumes rollover first, preserving the invariant `rollover > 0 ⇒ segments = size`.
+
+### 5.5 Limits and capabilities
+
+Every server-enforced, client-relevant bound is published through the appropriate source:
+
+- **game-domain** maxima and lists (stress, trauma, harm slots, XP tracks, fund/stash, crew trackers, turf, load commitment, action rating caps, ability take counts, upgrade boxes, recovery clocks, session expressions, clock purposes): the game-settings JSON and its schema — all supported game-setting files carry the complete domain-bound set, and Ada, frontend, and conformance expectations never embed a game-specific maximum;
+- **derived** limits (situation-dependent: effective action caps, harm capacities, load limits, available ability/upgrade takes): server-computed entity capability projections (service, character, crew), never persisted in byte-identical entity DTOs;
+- **request** field bounds: OpenAPI request schemas;
+- **service** limits (payload, batch, history): service capabilities;
+- **internal** capacities that can never produce a client-visible failure (e.g. the idempotency replay window): implementation details, never API promises.
+
+Character capabilities include settings and effective action caps, harm capacities, load limits, and available ability constraints; crew capabilities include the full available upgrade and ability catalog with current and maximum takes/boxes. A client does not join settings and cross-entity state to discover an enforced cap. A capability response is advisory for presentation; the mutation remains authoritative and returns a typed stale/maxed failure if state changes before use. Armor availability (`monitor.armor.hasStandard`/`hasHeavy`/`hasSpecial`) is the one write-derived exception: persisted canonical booleans, recomputed at every write boundary.
+
 ---
 
 ## 6. Serialization / DTO format
 
 One format. Highlights (full schemas in `contract/schemas/`):
 
-- camelCase keys; dictionaries keyed by name (`abilitiesByName`, `availableGearByName`); type discriminators as `"kind"`; **no nulls** — empty string / empty array / explicit booleans; `revision` and `formatVersion` on every entity; ISO-8601 UTC timestamps.
-- `GET /api/characters/{id}` and export return byte-identical documents to `current.json` on disk (conformance-tested round-trip identity for every field). There is no separate export endpoint (REVIEW #17): export = GET with `?download=1` adding a content-disposition header.
+- camelCase keys; collection members are canonical arrays with a `name` field (`playbook.abilities[]`, `talent.attributes[]/actions[]`, `gear.loadout[]`, `monitor.trauma.traumas[]`; legacy name-keyed dictionaries — `abilitiesByName`, `availableGearByName`, … — convert through explicit previewed rules, §7.1); type discriminators as `"kind"`; **no nulls and no absent keys** — every schema-declared property of an ordinary entity object is present in every stored document, with missing or `null` values normalized to schema-valid canonical defaults at the write boundary (§4.6); empty string / empty array / explicit booleans; `revision` and `formatVersion` on every entity; ISO-8601 UTC timestamps.
+- `claimOverrides` is the sparse exception: the outer array is always present and each override item always carries `claimId`; an omitted `name`, `description`, or `effects` means "inherit the canonical game-setting value" — a present empty array is semantically distinct from an omitted one.
+- Crew `contacts` and `factions` are **required canonical arrays**; empty means no entries.
+- Reads are pure and byte-identical: `GET /api/characters/{id}` and export return byte-identical documents to `current.json` on disk (conformance-tested round-trip identity for every field), and a normal GET never changes storage. There is no separate export endpoint (REVIEW #17): export = GET with `?download=1` adding a content-disposition header.
+- **Completeness is derived, never stored.** At response time, `x-requiredWhenComplete` predicate records on the character and crew schemas are evaluated — each record is a JSON pointer plus a predicate from the contract vocabulary (`nonBlankString`, `nonEmptyArray`, `positiveInteger`, `true`; the initial field set uses only `nonBlankString`, and new predicates require a contract change). Initial character pointers (8): `/dossier/name`, `/dossier/alias`, `/dossier/look`, `/dossier/heritage/name`, `/dossier/background/name`, `/dossier/vice/name`, `/dossier/vice/purveyor/name`, `/playbook/name`. Initial crew pointers (5): `/name`, `/crewTypeName`, `/lair`, `/reputation`, `/huntingGrounds`. Standalone clocks have no completeness list: successful creation already requires their identifying configuration (they still participate fully in canonical shape, recursive admission, import, repair, deletion, and total collection behavior). A present canonical empty at a locked pointer is readable and incomplete; an absent canonical property is a canonicality defect routed through repair/degraded handling (§7.1). Retirement and deadish state do not change completeness.
+- **Normalizer outcomes**: stored-entity normalization has exactly four outcomes — `canonical` (readable without changes), `repairable` (a schema-valid canonical result can be produced and previewed), `needs-input` (the preview identifies exact pointers that require caller-supplied values), and `unreadable` (bytes cannot be parsed as a recoverable entity object).
 
 ---
 
@@ -180,16 +225,22 @@ One format. Highlights (full schemas in `contract/schemas/`):
   "ok": true,
   "character": { …full DTO… },
   "applied": { "op": "stress.add", "requested": 3, "effective": 2 },
-  "sideEffects": ["stress full — consider trauma"],
-  "error": null            // or { "code": "ARMOR_NOT_AVAILABLE", "message": "…" }
+  "sideEffects": ["stress full — trauma pending"],
+  "error": null            // or { "code": "ARMOR_NOT_AVAILABLE", "detail": {…}, "retryable": false }
 }
 ```
 
   Always the **full entity DTO**, never slices. Agents hate polymorphic shapes; entities are small.
-- Idempotency: mutations accept optional `Idempotency-Key` header; the server keeps a small LRU of key→result for retry-safe agent tooling.
-- Errors: typed codes (`STALE_REVISION`, `NOT_FOUND`, `RETIRED`, `VALIDATION`, `ARMOR_NOT_AVAILABLE`, `SLOT_FULL_FATAL`, `CONFIRM_REQUIRED`, …), enumerated in the contract.
+
+  Numeric operation results declare exactly one family per operation in OpenAPI: **signed delta** (`requested` = signed requested change; `effective` = signed actual change), **absolute setter** (`requested` = requested target; `effective` = stored target), **quantity** (`requested` = requested amount; `effective` = amount processed), and **clock progress** (`requested` = requested progress; `effective` = all accepted progress including rollover, with `visibleApplied`/`overflowAdded` reporting the split when nonzero). Non-numeric operations omit numeric fields; clear/reset operations omit them unless the contract explicitly reports the amount cleared. A failed operation never claims a value was applied — its typed error carries current/limit data instead. When requested and effective differ, human and agent clients must report the clamp or partial application.
+- Idempotency: mutations accept optional `Idempotency-Key` header; the server keeps a small LRU of key→result for best-effort retry protection. The replay window is an internal capacity — never a promise of durable replay (§5.5).
+- Errors: one discriminated union over the whole error object, reused by top-level and batch operations; every code declares its HTTP status, required detail shape, recovery instruction, whether the same semantic operation may succeed after that instruction, and whether an entity, preview, or token accompanies the error. `retryable` means the operation may succeed after the documented recovery action — never a promise that blind replay of an identical request succeeds. Persisted-state classification: `400 VALIDATION` (invalid inbound request syntax or shape); `400 INVALID_ENTRY` (submitted import/repair content that cannot be normalized with the supplied values, with pointer-level details); `422 INVALID_ENTITY` (a parseable stored entity requiring explicit repair, or unparseable stored bytes, on direct access — collections remain `200`); `409 NORMALIZATION_REQUIRED` (a normalization preview requiring confirmation before a lossy or material rewrite, carrying warnings and a preview token); `409 STALE_REVISION` (changed revision, or degraded content token no longer matching the raw bytes); `404 NOT_FOUND` (missing path). `INVALID_ENTRY` is about caller-supplied content; `INVALID_ENTITY` is about persisted content. Further typed codes: `TRAUMA_REQUIRED`, `RETIRED`, `OUT_OF_ACTION`, `CONFIRM_REQUIRED`, `NO_HISTORY`, `INSUFFICIENT_FUNDS`, every `*_MAXED` code, `ARMOR_NOT_AVAILABLE`, `SLOT_FULL_FATAL`, `VALIDATION`, `DUPLICATE`, `COMMITMENT_LOCKED`, `PAYLOAD_TOO_LARGE`, … enumerated in the contract.
 - Request logging to stdout (structured, one JSON line per request) for agent debugging.
-- Import endpoints: schema-validated, 1 MiB body cap.
+- Import endpoints: full recursive schema validation (below), 1 MiB body cap, partial documents through preview/apply.
+- **Normalization and repair**: non-canonical stored data is repaired through explicit preview/confirm, never during a read. A repair preview computes the normalized result and its warnings without writing; apply requires confirmation and an opaque content token, then atomically writes the previewed result. Unparseable bytes stay degraded (`unreadable`, §6) and cannot be normalized — deletion (guarded by the raw-byte token) and re-import are the only paths. The canonicalizer returns an ordered change list (JSON pointer, reason, previous classification, replacement) covering every fill, conversion, correction, clamp, and removal; known legacy conversions (notes string → one-entry array, PascalCase enum variants, name-keyed dictionaries, C3-era absent contacts/factions, legacy clocks) are explicit previewed rules. Unknown or semantically constrained values are never guessed — when no schema-valid default can be derived (e.g. a standalone clock's `size`), the preview marks the exact pointers `needs-input` for caller-supplied values.
+- **Partial import**: preview accepts a partial document, shows every fill, conversion, correction, and data-dropping action, and does not write; apply requires `If-Match`, confirmation, and the preview token. Unknown properties are rejected unless the preview explicitly classifies and displays their removal — no unnoticed property drop is allowed.
+- **Total collections**: every collection endpoint is total — one bad member never removes valid rows and never changes the response from `200`. Every summary row has the same schema: route-derived `id` and `kind` (directory location is authoritative for degraded-row identity — a record stored under `characters/{id}` is listed as character `{id}` even when its body claims another identity or cannot be parsed), canonical empty summary values where source data cannot be read, `isReadable`, `isRepairable`, `isComplete` (when readable, otherwise `false`), and a `deleteToken` usable as the unreadable member's `If-Match` value. `deleteToken` is an opaque token bound to the current raw bytes, represented as `sha256:<lowercase hex>`; deleting or repairing after the bytes change returns `409 STALE_REVISION` rather than acting on unseen data. Deleting an unreadable crew scans readable characters and atomically clears every matching `dossier.crewId` before removing the crew; unreadable characters do not prevent deletion and remain separately visible.
+- **Recursive admission**: every write path (create, mutation, import-apply, repair-apply) enforces the entity schemas recursively — nested `required`, nested `additionalProperties: false`, enums, patterns, and numeric bounds at every depth — not merely top-level key lists (§9). API writes are canonical by construction: create, successful import, repair, and every mutation writing a nested object persist the complete canonical shape (§4.6).
 
 ### 7.2 Operations catalog
 
@@ -198,7 +249,8 @@ Adopted from `docs/agent-api-spec.md` §8–9 **with these corrections** (from R
 **Composites** (REVIEW #5), each a single snapshot + single history entry:
 
 - `POST /api/campaign/batch` — `{ops: [{entity, id, op, args}…]}`, executed sequentially, **all-or-nothing** (first failure rolls back to the pre-batch snapshot; result reports per-op outcomes).
-- `POST /api/characters/{id}/end-score` — optional helper: clear armor used, reset loadout commitment; takes explicit flags for each sub-action so no procedure is encoded.
+- `POST /api/characters/{id}/end-score` — the score release of the lifecycle state machine (§5.3): rejects `TRAUMA_REQUIRED` while trauma is pending; a successful call clears stress to zero and resets both out-of-action flags (request body optional), applies the selected cleanup flags (clear armor used, reset loadout commitment), and lands in one snapshot and exactly one history entry.
+- `POST /api/characters/{id}/retire` — explicit, confirmation-guarded retirement (`{confirm: true}`, else `CONFIRM_REQUIRED`); not restricted to reaching maximum trauma; uses the same cleanup as final-trauma retirement (§5.3).
 - `POST /api/characters/{id}/end-downtime` — clears session expressions, optional vice-relief stress clear amount (amount is caller-supplied — GM judgment stays outside).
 
 ### 7.3 Game data endpoints
@@ -209,7 +261,7 @@ Adopted from `docs/agent-api-spec.md` §8–9 **with these corrections** (from R
 
 ## 8. Conformance suite (the real product of phase 1)
 
-`conformance/` — TypeScript, **Effect** (Effect for HTTP client, schema decoding via `effect/Schema` mirroring `contract/schemas/`, and test orchestration), vitest runner. Runs against any `BASE_URL`; CI runs it against both backends.
+`conformance/` — TypeScript, **Effect** (Effect for HTTP client, schema decoding via `effect/Schema` mirroring `contract/schemas/`, and test orchestration), vitest runner. Runs against any `BASE_URL`; CI runs it against Track A and records Track Z's expected-red report separately (§10).
 
 Structure:
 
@@ -219,6 +271,8 @@ Structure:
 - `suites/lifecycle/` — creation flows, crew linking, import/export, retirement.
 - `fixtures/` — golden character/crew JSON documents both backends must emit byte-identically.
 
+Wave 2 conformance categories: canonicalization/import/repair (preview/apply atomicity, byte identity, no reads-writing), recursive admission and total collections (per-member isolation, degraded-row identity and tokens, unreadable-crew deletion), completeness (predicate evaluation, canonical empties, roster summaries), limits and numeric operations (every published bound, capability values, requested/effective families), clocks (ownership, purposes, rollover accumulation/reset, reassignment), lifecycle (stress/trauma/end-score/retirement/deadish transitions, retired allow/deny lists), and errors/concurrency/parity (error union, stale/degraded tokens, capability manifest).
+
 **Scoring harness**: `conformance run --against <url> --report json` emits pass/fail per test with stable test IDs. This is both the CI gate and the measurement instrument for the language experiment (§11).
 
 ---
@@ -227,12 +281,14 @@ Structure:
 
 - **Toolchain**: GNAT FSF + gnatprove via Alire (`alr`); crates: `aws` (Ada Web Server), `gnatcoll` (JSON), `spark_unbound` if useful. Pin versions in `alire.toml`.
 - **Layout**: `backend-ada/core/` (SPARK library, §5.2), `backend-ada/server/` (AWS routes, JSON mapping, file store; SPARK off).
+- **Validation**: full recursive enforcement of every schema construct used by entity DTOs, via **schema-generated entity validators** (Wave 0 verdict: no maintained Ada JSON Schema validator exists for the pinned GNAT/Alire toolchain, and the generated-validator spike passes every exercised requirement with zero new dependencies). Never hand-maintain a second unsynchronized set of required/allowed key lists.
 - **CI gates**: `alr build` clean; `gnatprove --level=2 --checks-as-errors` green on `core/`; conformance suite green.
 - **Agent guidance** (`backend-ada/AGENTS.md` with `CLAUDE.md` symlinked to it, written in phase A0): Ada style crib sheet, common gnatprove counterexample patterns and fixes, "run `gnatprove` on the changed unit only" loop guidance, AWS routing idioms. This file is load-bearing — it compensates for thin training data and is updated whenever an agent burns >3 iterations on a toolchain issue.
 
 ## 10. Track Z — Zero backend
 
 - Same contract, same conformance suite, same file-store rules.
+- **Halted**: Track Z is expected to fail the revised shared contract and remains explicitly halted (Zerolang issues [430](https://github.com/vercel-labs/zerolang/issues/430), [431](https://github.com/vercel-labs/zerolang/issues/431)). Shared-contract parity is suspended until the upstream Zero blockers clear and a dedicated resume wave implements the revised specification; the expected-red conformance report is recorded but does not block Track A completion.
 - **Reality check first**: phase Z0 is a spike proving Zero can (a) serve HTTP or be fronted trivially, (b) parse/emit JSON, (c) touch the filesystem. Zero is pre-1.0 systems-level; expect to write or vendor scaffolding.
 - **10.3 Escape hatch**: if the Z0 spike shows HTTP is impractical, Track Z narrows to **domain core + stdio harness**: Zero implements entities and operations behind a line-delimited JSON stdin/stdout protocol, and a ~200-line neutral shim (reused from conformance tooling) adapts HTTP↔stdio so the *same suite still runs*. The experiment then compares domain-logic authoring only — still a valid signal, honestly labeled in results.
 - Zero's agent-facing features (JSON diagnostics, repair metadata) should be wired directly into the orchestrator's feedback loop — that's the point of the experiment.
@@ -251,6 +307,14 @@ No grand claims from n=1; the deliverable is a written comparison memo (`agent-d
 ## 12. Frontend & aesthetic
 
 `frontend/` — static build (Vite), TypeScript + **Effect** (HTTP client, `effect/Schema` decoders generated/derived from `contract/schemas/`, state via Effect services; keep framework minimal — plain DOM or a thin lib, decided in F0). Served by the backend; talks only to `/api/*`. Multi-tab safety comes free from revisions (a stale tab gets `STALE_REVISION` and refetches).
+
+**Client obligations** (conformance-checked):
+
+- Every destructive and lifecycle operation (delete, undo, retire, import-apply, repair-apply) is reachable behind explicit confirmation; an exported TypeScript function without a reachable control does not count as a human path.
+- Outstanding fields are rendered from the generated completeness metadata (`x-requiredWhenComplete` predicates) — never hand-copied lists; incomplete rows use deterministic `Unnamed {playbook|crewType}` labels.
+- Clamps and partial applications are announced: whenever `requested` and `effective` differ, the UI reports the clamp or partial application (§7.1).
+- Errors are decoded through the typed error union with its recovery instructions — no raw-JSON or parser leakage.
+- A generated capability manifest maps every OpenAPI `operationId` to an agent reference entry and a required human route/control (or an explicit contract-author-approved exemption); every operation has an agent path, and destructive, lifecycle, and the designated sheet-management subset also have human UI.
 
 **Blades aesthetic** (the book/sheet look, without copying John Harper's actual layouts or art):
 
