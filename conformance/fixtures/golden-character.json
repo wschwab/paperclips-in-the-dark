@@ -10,6 +10,9 @@
   "updatedAt": "2026-07-19T14:30:12.417Z",
   "isRetired": false,
   "isDeadish": false,
+  "traumaPending": false,
+  "isOutOfAction": false,
+  "stressClearPending": false,
   "dossier": {
     "name": "Brenda Hilton",
     "crewId": "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",

@@ -18,6 +18,14 @@
         "op": { "type": "string", "description": "dotted op name, e.g. stress.add" },
         "requested": { "type": "integer" },
         "effective": { "type": "integer" },
+        "visibleApplied": {
+          "type": "integer",
+          "description": "clock.progress only: progress accepted onto the clock itself, excluding overflow (requested/effective families: work spec, numeric operation results)."
+        },
+        "overflowAdded": {
+          "type": "integer",
+          "description": "clock.progress only: progress rolled into the existing overflow; present only when nonzero (requested/effective families: work spec, numeric operation results)."
+        },
         "landedIntensity": {
           "$ref": "common.json#/$defs/harmIntensity",
           "description": "harm.add only: where the harm actually landed after spillover"
@@ -28,21 +36,13 @@
     "error": {
       "oneOf": [
         { "type": "null" },
-        {
-          "type": "object",
-          "required": ["code", "message"],
-          "additionalProperties": false,
-          "properties": {
-            "code": { "$ref": "common.json#/$defs/errorCode" },
-            "message": { "type": "string" },
-            "details": { "type": "object" }
-          }
-        }
-      ]
+        { "$ref": "#/$defs/operationError" }
+      ],
+      "description": "null on success; on failure (ok=false) the whole-error discriminated union — one branch per errorCode, discriminated on code."
     },
     "batch": {
       "type": "array",
-      "description": "campaign.batch only: per-op outcomes",
+      "description": "campaign.batch only: per-op outcomes; each item's error uses the same whole-error union as the top-level error",
       "items": {
         "type": "object",
         "required": ["ok", "op"],
@@ -53,20 +53,610 @@
           "error": {
             "oneOf": [
               { "type": "null" },
-              {
-                "type": "object",
-                "required": ["code", "message"],
-                "properties": {
-                  "code": { "$ref": "common.json#/$defs/errorCode" },
-                  "message": { "type": "string" },
-                  "details": { "type": "object" }
-                }
-              }
+              { "$ref": "#/$defs/operationError" }
             ]
           }
         }
       }
     }
   },
-  "description": "Exactly one of character/crew/clock is present when ok=true and the op targets an entity; none on pure failures. On failure ok=false and error is non-null."
+  "$defs": {
+    "operationError": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "VALIDATION" },
+            "status": { "const": 400, "description": "Invalid inbound request syntax or shape (locked status table)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": { "$ref": "common.json#/$defs/errorPointerDetails" },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO, when the op-level failure can still return it."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "INVALID_ENTRY" },
+            "status": { "const": 400, "description": "Submitted import/repair content that cannot be normalized with the supplied values (locked status table)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": { "$ref": "common.json#/$defs/errorPointerDetails" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "INVALID_ENTITY" },
+            "status": { "const": 422, "description": "Parseable stored entity requiring explicit repair, or unparseable stored bytes, on direct access (locked status table); collections remain 200." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": { "$ref": "common.json#/$defs/errorPointerDetails", "description": "Repairability issues: one issue per defective pointer (unparseable bytes report a single issue at the root pointer)." }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "preview", "token"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "NORMALIZATION_REQUIRED" },
+            "status": { "const": 409, "description": "Normalization preview requiring confirmation before a lossy or material rewrite (locked status table)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": { "$ref": "common.json#/$defs/errorPreviewDetails" },
+            "preview": {
+              "type": "object",
+              "description": "The full normalization preview: ordered change list (pointer, reason, previous, replacement), warnings, and any needs-input pointers."
+            },
+            "token": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Opaque preview token (same value as details.previewToken); must be presented on the confirming apply."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "NOT_FOUND" },
+            "status": { "const": 404, "description": "Missing path (locked status table)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the missing target is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO, when an op-level NOT_FOUND still returns it."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "STALE_REVISION" },
+            "status": { "const": 409, "description": "Changed revision, or degraded content token no longer matching the current raw bytes (locked status table)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": { "$ref": "common.json#/$defs/errorStaleDetails" },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO, when the failure still returns it."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "RETIRED" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the deny-list violation is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current (retired) entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "CONFIRM_REQUIRED" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the missing confirmation is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "DUPLICATE" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the duplicated entry is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "SLOT_FULL_FATAL" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the full harm slots are named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "CANNOT_HEAL" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = healing clock size; current = clock segments."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "ARMOR_NOT_AVAILABLE" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the unavailable armor is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "ABILITY_MAXED" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = TimesTakeable; current = timesTaken."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "CANNOT_LEVEL_UP" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = attribute XP track max; current = points."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "RATING_MAXED" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = effective rating cap; current = current rating."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "UPGRADE_MAXED" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = TotalBoxes; current = boxes marked."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "INSUFFICIENT_FUNDS" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = maximum affordable coins; current = requested coins."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "SATCHEL_FULL" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = satchel max; current = satchel coins."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "OVER_BULK" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = load capacity (maxBulk); current = item bulk."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "NO_COMMITMENT" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the missing commitment is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "COMMITMENT_LOCKED" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the locked commitment is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "NO_HISTORY" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the empty history is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "GAME_NOT_FOUND" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the missing game stem is named by the message."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "PAYLOAD_TOO_LARGE" },
+            "status": { "const": 413, "description": "Request exceeds the service payload bound (existing OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "$ref": "common.json#/$defs/errorLimitDetails",
+              "description": "limit = maximum request size in bytes; current = received size in bytes."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "TRAUMA_REQUIRED" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the pending-trauma gate is named by the message."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details", "entity"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "OUT_OF_ACTION" },
+            "status": { "const": 200, "description": "Domain failure: HTTP 200 with the typed error body (OpResult convention)." },
+            "message": { "type": "string", "description": "Human-presentable message; safe to show verbatim." },
+            "retryable": { "type": "boolean", "description": "May succeed after the documented recovery action; never a promise that blind replay succeeds." },
+            "recovery": { "type": "string", "description": "Instruction the client can follow to make the operation succeed." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "No detail shape: the out-of-action gate is named by the message (character is out of action until end-score)."
+            },
+            "entity": {
+              "oneOf": [
+                { "$ref": "character.json" },
+                { "$ref": "crew.json" },
+                { "$ref": "clock.json" }
+              ],
+              "description": "The current entity DTO."
+            }
+          }
+        }
+      ],
+      "discriminator": { "propertyName": "code" },
+      "description": "Whole-error discriminated union: one branch per errorCode, discriminated on code. Every branch declares code, status (the HTTP status the error is delivered with), message, retryable (the operation may succeed after the documented recovery action — never blind replay), recovery (instruction), and the typed per-code details; entity/preview/token accompany where applicable. Top-level error and batch[].error share this schema. Status values follow the locked table (spec-change-work-spec, stored-entity classification): VALIDATION 400, INVALID_ENTRY 400, INVALID_ENTITY 422, NORMALIZATION_REQUIRED 409, NOT_FOUND 404, STALE_REVISION 409, PAYLOAD_TOO_LARGE 413; all remaining codes are domain failures delivered with HTTP 200 and the typed error body."
+    }
+  },
+  "description": "Exactly one of character/crew/clock is present when ok=true and the op targets an entity; none on pure failures. On failure ok=false and error is a member of the typed whole-error union ($defs/operationError); batch[].error uses the same union."
 }

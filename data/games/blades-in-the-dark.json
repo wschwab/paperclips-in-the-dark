@@ -1020,6 +1020,57 @@
 		"Min": -3,
 		"Max": 3
 	},
+	"StressMax": 9,
+	"TraumaMax": 4,
+	"HarmCapacities": {
+		"Lesser": 2,
+		"Moderate": 2,
+		"Severe": 1,
+		"Fatal": 1
+	},
+	"XpTrackMaxima": {
+		"Playbook": 8,
+		"Attribute": 6,
+		"Crew": 10
+	},
+	"FundMaxima": {
+		"SatchelMax": 4,
+		"StashMax": 40,
+		"StashToCoinRate": 2
+	},
+	"CrewTrackerMaxima": {
+		"HeatMax": 9,
+		"WantedMax": 4,
+		"RepMax": 12
+	},
+	"TurfMax": 6,
+	"LoadMaxima": {
+		"MaxBulk": 9,
+		"CommitmentMaxBulk": {
+			"Light": 3,
+			"Normal": 5,
+			"Heavy": 6,
+			"Encumbered": 9
+		}
+	},
+	"ActionCap": {
+		"Base": 3,
+		"Mastery": 4
+	},
+	"SessionExpressionMax": 2,
+	"DevelopCoinCostMultiplier": 8,
+	"ClockPurposes": [
+		"progress",
+		"danger",
+		"racing",
+		"linked",
+		"mission",
+		"tug-of-war",
+		"long-term-project",
+		"faction",
+		"score",
+		"custom"
+	],
 	"ExtraDescription": {
 		"GearDescriptions": [
 			{

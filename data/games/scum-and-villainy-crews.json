@@ -1,0 +1,848 @@
+{
+	"Name": "Scum and Villainy",
+	"Language": "English",
+	"CrewTypes": [
+		{
+			"Name": "Stardancer",
+			"Hook": "You're smugglers and blockade runners, doing odd jobs, small thefts, and finding lost items.",
+			"Description": "Illicit merchants, smugglers, and blockade runners. A CF-350 Series Scarab-class Freighter.",
+			"ExperienceTrigger": "You executed a successful transport or smuggling operation.",
+			"SpecialAbilities": [
+				{
+					"Name": "The Getaway",
+					"TimesTakeable": 1,
+					"Description": "You gain potency when you scramble or helm to avoid capture or run a blockade. When doing a delivery job, take +1d to the engagement roll."
+				},
+				{
+					"Name": "Cargo Eye",
+					"TimesTakeable": 1,
+					"Description": "Your crew gains +1 cred for smuggling or delivery jobs. Whenever you gather info you can always ask, \"What is most valuable here?\""
+				},
+				{
+					"Name": "Field Repairs",
+					"TimesTakeable": 1,
+					"Description": "You gain potency when repairing your ship while in space. If you spend a gambit on a rig roll, you gain +2d (instead of +1d)."
+				},
+				{
+					"Name": "Leverage",
+					"TimesTakeable": 1,
+					"Description": "Your crew knows how to pull strings and cash in favors. When you lay low, instead of rolling you can take -1 status with a faction at Helpful (+1) or better to reduce your wanted level by 1, and set your heat to 0 in a system."
+				},
+				{
+					"Name": "Just Passing Through",
+					"TimesTakeable": 1,
+					"Description": "During payoff, take -1 heat. When your heat is 4 or less, you get +1d to deceive people when you pass yourselves off as ordinary citizens, and you still have two downtime activities even if you're at War (-3) with any faction, as they have trouble locating you."
+				},
+				{
+					"Name": "Home Cooking",
+					"TimesTakeable": 1,
+					"Description": "Your whole crew gains Home Cooking as a vice. Right after a job, you may spend 1 cred and a downtime activity to cook for everyone, allowing the whole crew present to make a vice roll. If anyone overindulges, a fight erupts, and everyone gains 1 stress after the vice roll. Requires a galley module."
+				},
+				{
+					"Name": "Problem Solvers",
+					"TimesTakeable": 1,
+					"Description": "Each PC may add 1 action rating to helm, rig, or scramble (up to a max of 3)."
+				},
+				{
+					"Name": "Veteran",
+					"TimesTakeable": 1,
+					"Description": "Choose a special ability from another source."
+				}
+			],
+			"Upgrades": [
+				{
+					"Name": "Smuggling Compartments",
+					"TotalBoxes": 1,
+					"Description": "Like a cargo hold (can carry a small shipment), but it won't show up on routine scans or visual inspections of the ship. At 3+ hull rating, has life support for smuggling people too."
+				},
+				{
+					"Name": "Cargo Hold",
+					"TotalBoxes": 1,
+					"Description": "Enough space on a ship to make a moderate (cred-earning) shipment. A cargo hold is evident when the ship is boarded, and no special precautions are taken to hide its contents."
+				},
+				{
+					"Name": "Jump Drive",
+					"TotalBoxes": 1,
+					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
+				},
+				{
+					"Name": "Afterburners",
+					"TotalBoxes": 1,
+					"Description": "Dumps raw fuel into the engines for a short burst of speed. May treat engines as one higher rating for a roll, but it may damage them."
+				},
+				{
+					"Name": "Fake Transponder",
+					"TotalBoxes": 1,
+					"Description": "Usable remotely, this system can broadcast a different ship's signal or play a powerful recording or sensor echoes (or act as a beacon)."
+				},
+				{
+					"Name": "Quantum Encryptor",
+					"TotalBoxes": 1,
+					"Description": "Encrypts comms and data storage. Grants special armor against interception of digital communications. Data on the ship is in a secure state until unlocked."
+				},
+				{
+					"Name": "AI Module",
+					"TotalBoxes": 1,
+					"Description": "Software connected to an Ur AI core running throughout the ship. Can automate tasks or run the ship on behalf of the crew. Snarky personality module available for free."
+				},
+				{
+					"Name": "Armory",
+					"TotalBoxes": 1,
+					"Description": "A secure room holding the crew weapons and armor, which are considered fine."
+				},
+				{
+					"Name": "Brig",
+					"TotalBoxes": 1,
+					"Description": "Space jail. Not meant for long-term incarceration."
+				},
+				{
+					"Name": "Galley",
+					"TotalBoxes": 1,
+					"Description": "A combined kitchen and serving area for meals. Greatly facilitates longer trips. Includes fresh food storage."
+				},
+				{
+					"Name": "Medical Bay",
+					"TotalBoxes": 1,
+					"Description": "A clean room with medical equipment. No hospital, but sufficient to patch most injuries. Storage for drugs and medical scanners. Add +1d to recovery rolls."
+				},
+				{
+					"Name": "Science Bay",
+					"TotalBoxes": 1,
+					"Description": "Laboratory that can be used to analyze anomalies and Precursor artifacts. Secure storage for things that may react oddly with the rest of the ship (or physics)."
+				},
+				{
+					"Name": "Shields",
+					"TotalBoxes": 2,
+					"Description": "Particle sinks and EM deflectors. Overwhelmed by focused fire. Counts as armor against ship weapons and energy attacks. Largely absorbs blaster fire. Costs two upgrades instead of one."
+				},
+				{
+					"Name": "Holo-Emitters",
+					"TotalBoxes": 1,
+					"Description": "For holo-conferences and maps. Images won't hold up to close scrutiny but can be convincing for a short while. Includes sweet games and holo-vids."
+				},
+				{
+					"Name": "Intruder Alarm",
+					"TotalBoxes": 1,
+					"Description": "A full suite of sensors about the ship, including motion sensors, door codes, and panic buttons that can all trigger a klaxon and red security lights."
+				},
+				{
+					"Name": "Land Rover",
+					"TotalBoxes": 1,
+					"Description": "Armored all-terrain vehicle for carrying heavy cargo or folks over land. High-powered winch and decorative stickers come standard."
+				},
+				{
+					"Name": "Power Reserves",
+					"TotalBoxes": 1,
+					"Description": "Batteries and energy supplies that can power the ship independently of the engine. Sufficient for a few hours of operation at minimal usage or a few minutes of full power. Acts as armor against power-related mishaps."
+				},
+				{
+					"Name": "Shuttle",
+					"TotalBoxes": 1,
+					"Description": "A small spacecraft capable of carrying a few people from planet to orbit. Limited systems capacity—treat any system as quality zero vs. actual ships. Can attach to airlocks, but best stored in a landing bay if you don't want stray asteroids or particle cannon fire affecting it."
+				},
+				{
+					"Name": "Stasis Pods",
+					"TotalBoxes": 1,
+					"Description": "State-of-the-art pods provide room for one severely injured, deathly ill, or unconscious guest each. Does not prevent dreams."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 1,
+					"Description": "Useful for securing valuables during space travel. Programmable lock allows for personalized security codes, one-time use codes, and access logs. Uses hull rating when contested."
+				},
+				{
+					"Name": "Insight",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Prowess",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Resolve",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Playbook",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Alien Pet",
+					"TotalBoxes": 1,
+					"Description": "Lovable rapscallion or loyal guardian, these critters are more trouble than they're worth."
+				},
+				{
+					"Name": "Land Transport",
+					"TotalBoxes": 1,
+					"Description": "Land-based transports for the entire crew. Tires or close-to-ground hover. These may be motorized bikes, land-skimmers, boats, or very small cars."
+				},
+				{
+					"Name": "Recon Drone",
+					"TotalBoxes": 1,
+					"Description": "A small drone for surveillance, mapping, and intelligence gathering. Can be given simple instructions. Uses comms quality when contested."
+				},
+				{
+					"Name": "Survival Gear",
+					"TotalBoxes": 1,
+					"Description": "Camping gear, rebreathers, climbing equipment, scuba gear. Everything an enterprising crew needs to survive on an inhospitable, but not uninhabitable, rock. Stillsuits included."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Plasma cutters, a nano-assembler, a stock of metal and electrical components, a forge—anything required to build, modify, or disassemble complex machines. Adds +1 quality to craft rolls."
+				},
+				{
+					"Name": "False Ship Papers",
+					"TotalBoxes": 1,
+					"Description": "A few well-forged or transferred documents, giving the crew and ship identities that are less wanted in any given system. Often simplify gate travel if the transponder and ship match. You have a couple sets you can swap between."
+				},
+				{
+					"Name": "Dark Hyperspace Lane Maps",
+					"TotalBoxes": 1,
+					"Description": "Routes through systems that aren't officially maintained. Sometimes faster. Always less patrolled. Often full of Way creatures, pirates, and other scoundrels. You don't want to think about the poor fools that died mapping them."
+				},
+				{
+					"Name": "Smuggler's Rigging",
+					"TotalBoxes": 1,
+					"Description": "Webbing or fake skin used to hold small items close to the body. Adds some hands-free carry room while working on the outside of the ship, and lets you smuggle a blaster into a well-guarded meeting while keeping the stylish cut of your coat. Hides one item with a max of 1 load."
+				},
+				{
+					"Name": "Lucky Charm",
+					"TotalBoxes": 2,
+					"Description": "Whether an Ur artifact or a few mementos prominently displayed, sometimes luck is just believing. The crew starts with +1 gambit every job. It costs two upgrades to unlock instead just one."
+				},
+				{
+					"Name": "Thrillseekers",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 stress box (increase max to 10). It costs three upgrades to unlock, not just one."
+				}
+			],
+			"StartingUpgrades": [
+				{
+					"Name": "Smuggling Compartments",
+					"TotalBoxes": 1,
+					"Description": "Like a cargo hold (can carry a small shipment), but it won't show up on routine scans or visual inspections of the ship. At 3+ hull rating, has life support for smuggling people too."
+				},
+				{
+					"Name": "Cargo Hold",
+					"TotalBoxes": 1,
+					"Description": "Enough space on a ship to make a moderate (cred-earning) shipment. A cargo hold is evident when the ship is boarded, and no special precautions are taken to hide its contents."
+				},
+				{
+					"Name": "Jump Drive",
+					"TotalBoxes": 1,
+					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
+				},
+				{
+					"Name": "Galley",
+					"TotalBoxes": 1,
+					"Description": "A combined kitchen and serving area for meals. Greatly facilitates longer trips. Includes fresh food storage."
+				},
+				{
+					"Name": "Insight",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				}
+			],
+			"Contacts": [
+				{
+					"Name": "T'kala",
+					"Description": "A dockmaster."
+				},
+				{
+					"Name": "Alor",
+					"Description": "A keen-eared barkeep."
+				},
+				{
+					"Name": "Heani",
+					"Description": "A tugboat captain."
+				},
+				{
+					"Name": "Rakka",
+					"Description": "A diplomat."
+				},
+				{
+					"Name": "Citani",
+					"Description": "A reclusive info broker."
+				}
+			],
+			"Reputations": [
+				"Ambitious",
+				"Brutal",
+				"Daring",
+				"Honorable",
+				"Professional",
+				"Savvy",
+				"Strange",
+				"Subtle"
+			]
+		},
+		{
+			"Name": "Cerberus",
+			"Hook": "You're extraction specialists, finding missing people or items and claiming bounties.",
+			"Description": "Bounty hunters and extraction specialists. An R-29 Firebrand-type Patrol Craft.",
+			"ExperienceTrigger": "You executed a successful extraction operation or capture of a bounty.",
+			"SpecialAbilities": [
+				{
+					"Name": "Licensed",
+					"TimesTakeable": 1,
+					"Description": "Take -2 heat on any legitimate bounty hunting job. Your ship can carry particle weapons, and your crew can carry and legally use heavy blasters in the pursuit of a target."
+				},
+				{
+					"Name": "On the Trail",
+					"TimesTakeable": 1,
+					"Description": "Your crew gains an extra downtime activity to work on long-term projects, or acquire assets to track bounties."
+				},
+				{
+					"Name": "Light Touch",
+					"TimesTakeable": 1,
+					"Description": "You gain potency when tailing a target, or when gathering info at a target's previous location."
+				},
+				{
+					"Name": "Snatch'N'Grab",
+					"TimesTakeable": 1,
+					"Description": "When you use a deception, infiltration, or social plan to execute a kidnapping or extraction, add +1d to the engagement roll."
+				},
+				{
+					"Name": "Loaded for Bear",
+					"TimesTakeable": 1,
+					"Description": "Your crew can carry +1 load. They have distinctive and high-quality armor. When you wear armor, it counts as heavy armor (two uses)."
+				},
+				{
+					"Name": "Play Both Sides",
+					"TimesTakeable": 1,
+					"Description": "When you release a bounty target, make them a crew contact."
+				},
+				{
+					"Name": "Deadly",
+					"TimesTakeable": 1,
+					"Description": "Each crew member may add 1 action rating to command, scrap, or skulk (up to a max of 3)."
+				},
+				{
+					"Name": "Veteran",
+					"TimesTakeable": 1,
+					"Description": "Choose a special ability from another source."
+				}
+			],
+			"Upgrades": [
+				{
+					"Name": "Long-Range Scanner",
+					"TotalBoxes": 1,
+					"Description": "Provides broad EM spectrum and gravimetric readings, giving the crew advance warning up to a dozen light-minutes away."
+				},
+				{
+					"Name": "Nexus Link",
+					"TotalBoxes": 1,
+					"Description": "A link to the Hegemonic System Network. Allows for news updates, realtime messages, and tapping into system-wide sensor grids. Others may be able to hack into your ship remotely via the same channel."
+				},
+				{
+					"Name": "Jump Drive",
+					"TotalBoxes": 1,
+					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
+				},
+				{
+					"Name": "Grappling Hooks",
+					"TotalBoxes": 1,
+					"Description": "Officially for latching onto asteroids and netting cargo, it's an array of nets, grappling lines, and arms that can tie together two vessels for towing or boarding. Legal."
+				},
+				{
+					"Name": "Particle Cannons",
+					"TotalBoxes": 1,
+					"Description": "Pew! Pew! Usually fixed in one direction on personal vessels. Often cross linked. Not legal without license."
+				},
+				{
+					"Name": "AI Module",
+					"TotalBoxes": 1,
+					"Description": "Software connected to an Ur AI core running throughout the ship. Can automate tasks or run the ship on behalf of the crew. Snarky personality module available for free."
+				},
+				{
+					"Name": "Armory",
+					"TotalBoxes": 1,
+					"Description": "A secure room holding the crew weapons and armor, which are considered fine."
+				},
+				{
+					"Name": "Brig",
+					"TotalBoxes": 1,
+					"Description": "Space jail. Not meant for long-term incarceration."
+				},
+				{
+					"Name": "Galley",
+					"TotalBoxes": 1,
+					"Description": "A combined kitchen and serving area for meals. Greatly facilitates longer trips. Includes fresh food storage."
+				},
+				{
+					"Name": "Medical Bay",
+					"TotalBoxes": 1,
+					"Description": "A clean room with medical equipment. No hospital, but sufficient to patch most injuries. Storage for drugs and medical scanners. Add +1d to recovery rolls."
+				},
+				{
+					"Name": "Science Bay",
+					"TotalBoxes": 1,
+					"Description": "Laboratory that can be used to analyze anomalies and Precursor artifacts. Secure storage for things that may react oddly with the rest of the ship (or physics)."
+				},
+				{
+					"Name": "Shields",
+					"TotalBoxes": 2,
+					"Description": "Particle sinks and EM deflectors. Overwhelmed by focused fire. Counts as armor against ship weapons and energy attacks. Largely absorbs blaster fire. Costs two upgrades instead of one."
+				},
+				{
+					"Name": "Holo-Emitters",
+					"TotalBoxes": 1,
+					"Description": "For holo-conferences and maps. Images won't hold up to close scrutiny but can be convincing for a short while. Includes sweet games and holo-vids."
+				},
+				{
+					"Name": "Intruder Alarm",
+					"TotalBoxes": 1,
+					"Description": "A full suite of sensors about the ship, including motion sensors, door codes, and panic buttons that can all trigger a klaxon and red security lights."
+				},
+				{
+					"Name": "Land Rover",
+					"TotalBoxes": 1,
+					"Description": "Armored all-terrain vehicle for carrying heavy cargo or folks over land. High-powered winch and decorative stickers come standard."
+				},
+				{
+					"Name": "Power Reserves",
+					"TotalBoxes": 1,
+					"Description": "Batteries and energy supplies that can power the ship independently of the engine. Sufficient for a few hours of operation at minimal usage or a few minutes of full power. Acts as armor against power-related mishaps."
+				},
+				{
+					"Name": "Shuttle",
+					"TotalBoxes": 1,
+					"Description": "A small spacecraft capable of carrying a few people from planet to orbit. Limited systems capacity—treat any system as quality zero vs. actual ships. Can attach to airlocks, but best stored in a landing bay if you don't want stray asteroids or particle cannon fire affecting it."
+				},
+				{
+					"Name": "Stasis Pods",
+					"TotalBoxes": 1,
+					"Description": "State-of-the-art pods provide room for one severely injured, deathly ill, or unconscious guest each. Does not prevent dreams."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 1,
+					"Description": "Useful for securing valuables during space travel. Programmable lock allows for personalized security codes, one-time use codes, and access logs. Uses hull rating when contested."
+				},
+				{
+					"Name": "Insight",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Prowess",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Resolve",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Playbook",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Alien Pet",
+					"TotalBoxes": 1,
+					"Description": "Lovable rapscallion or loyal guardian, these critters are more trouble than they're worth."
+				},
+				{
+					"Name": "Land Transport",
+					"TotalBoxes": 1,
+					"Description": "Land-based transports for the entire crew. Tires or close-to-ground hover. These may be motorized bikes, land-skimmers, boats, or very small cars."
+				},
+				{
+					"Name": "Recon Drone",
+					"TotalBoxes": 1,
+					"Description": "A small drone for surveillance, mapping, and intelligence gathering. Can be given simple instructions. Uses comms quality when contested."
+				},
+				{
+					"Name": "Survival Gear",
+					"TotalBoxes": 1,
+					"Description": "Camping gear, rebreathers, climbing equipment, scuba gear. Everything an enterprising crew needs to survive on an inhospitable, but not uninhabitable, rock. Stillsuits included."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Plasma cutters, a nano-assembler, a stock of metal and electrical components, a forge—anything required to build, modify, or disassemble complex machines. Adds +1 quality to craft rolls."
+				},
+				{
+					"Name": "Tracers",
+					"TotalBoxes": 1,
+					"Description": "A wide array of ways to track your targets. Includes tiny bugs that can be hidden on clothes with a suave pat on the back, beacons that can attach to hulls, and even transmission cloners for comms. Legality varies."
+				},
+				{
+					"Name": "Stun Weapons",
+					"TotalBoxes": 1,
+					"Description": "A variety of weapons for capturing and securing prisoners without (serious) harm. Includes, but is not limited to: restraints (0 load), stun batons (1 load), stun settings on normal blasters (1 load), even stun grenades (replace detonators on sheet, 1 load), knockout drugs (0 load, may not work on some xenos). Not required to bring on jobs, but useful if you want to claim bounties. Generally legal."
+				},
+				{
+					"Name": "Personal Vehicles",
+					"TotalBoxes": 2,
+					"Description": "Sleek single-seater craft that can fold up tight enough to fit into a reasonable parking space. Limited fuel, but can break atmo. Can carry basic weapons, though they can't seriously damage anything freighter-sized or larger. You may want a landing bay. Costs two upgrades instead of one."
+				},
+				{
+					"Name": "Hard Knocks",
+					"TotalBoxes": 2,
+					"Description": "Sometimes luck is just hard-earned experience. Your crew starts each job with +1 gambit. Costs two upgrades instead of one."
+				},
+				{
+					"Name": "Smooth Criminals",
+					"TotalBoxes": 3,
+					"Description": "Sometimes legality is only a question of who has the gun. Each crew member gains +1 stress box (total 10). Costs three upgrades instead of one."
+				}
+			],
+			"StartingUpgrades": [
+				{
+					"Name": "Long-Range Scanner",
+					"TotalBoxes": 1,
+					"Description": "Provides broad EM spectrum and gravimetric readings, giving the crew advance warning up to a dozen light-minutes away."
+				},
+				{
+					"Name": "Jump Drive",
+					"TotalBoxes": 1,
+					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
+				},
+				{
+					"Name": "Grappling Hooks",
+					"TotalBoxes": 1,
+					"Description": "Officially for latching onto asteroids and netting cargo, it's an array of nets, grappling lines, and arms that can tie together two vessels for towing or boarding. Legal."
+				},
+				{
+					"Name": "Brig",
+					"TotalBoxes": 1,
+					"Description": "Space jail. Not meant for long-term incarceration."
+				},
+				{
+					"Name": "Prowess",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				}
+			],
+			"Contacts": [
+				{
+					"Name": "Stacy Weathers",
+					"Description": "An ace reporter."
+				},
+				{
+					"Name": "Arlox",
+					"Description": "An Ashen Knives Pasha."
+				},
+				{
+					"Name": "Ishi",
+					"Description": "A weapons dealer."
+				},
+				{
+					"Name": "Lix",
+					"Description": "A xeno tracker."
+				},
+				{
+					"Name": "Jezri",
+					"Description": "A fixer."
+				}
+			],
+			"Reputations": [
+				"Ambitious",
+				"Brutal",
+				"Daring",
+				"Honorable",
+				"Professional",
+				"Savvy",
+				"Strange",
+				"Subtle"
+			]
+		},
+		{
+			"Name": "Firedrake",
+			"Hook": "You're rebels and criminals, protecting the downtrodden and fighting the Hegemony.",
+			"Description": "Rebels and hegemonic criminals. A Converted Khanjigar-class Corvette.",
+			"ExperienceTrigger": "You executed a successful job that opposes Hegemonic dominance.",
+			"SpecialAbilities": [
+				{
+					"Name": "Old Hands",
+					"TimesTakeable": 1,
+					"Description": "When you're at War (-3) with a Hegemony faction, all crew members get +1d to vice rolls and still get two downtime activities instead of just one."
+				},
+				{
+					"Name": "Forged in Fire",
+					"TimesTakeable": 1,
+					"Description": "Your crew has been toughened by cruel experience. You each get +1d to all resistance rolls."
+				},
+				{
+					"Name": "Sympathizers",
+					"TimesTakeable": 1,
+					"Description": "Your ideology is especially appealing. When you deal with a crew or faction, the GM will tell you who among them believes in your cause (one, a few, many, or all)."
+				},
+				{
+					"Name": "Natural Enemies",
+					"TimesTakeable": 1,
+					"Description": "When you run a job against Hegemony factions, take +1d to the engagement roll."
+				},
+				{
+					"Name": "Spark of Rebellion",
+					"TimesTakeable": 1,
+					"Description": "If you leave a calling card or highly visible symbol of resistance on your job, gain +2 heat. Your crew gains +1d to vice during the next downtime, and cannot overindulge."
+				},
+				{
+					"Name": "Just Cause",
+					"TimesTakeable": 1,
+					"Description": "When your crew does the right thing at cost to themselves, you may mark a crew xp."
+				},
+				{
+					"Name": "Hearts & Minds",
+					"TimesTakeable": 1,
+					"Description": "Each crew member may add 1 action rating to command, consort, or sway (up to a max of 3)."
+				},
+				{
+					"Name": "Veteran",
+					"TimesTakeable": 1,
+					"Description": "Choose a special ability from another source."
+				}
+			],
+			"Upgrades": [
+				{
+					"Name": "Targeting Computer",
+					"TotalBoxes": 1,
+					"Description": "Handles calculations and targeting for weapon systems without the crew. Roll comms rating when firing."
+				},
+				{
+					"Name": "Fake Transponder",
+					"TotalBoxes": 1,
+					"Description": "Usable remotely, this system can broadcast a different ship's signal or play a powerful recording or sensor echoes (or act as a beacon)."
+				},
+				{
+					"Name": "Jump Drive",
+					"TotalBoxes": 1,
+					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
+				},
+				{
+					"Name": "Particle Cannons",
+					"TotalBoxes": 1,
+					"Description": "Pew! Pew! Usually fixed in one direction on personal vessels. Often cross linked. Not legal without license."
+				},
+				{
+					"Name": "Coherence Cannon",
+					"TotalBoxes": 1,
+					"Description": "Capital weapon. One shot only until repaired or recharged on ships smaller than dreadnoughts. May fry systems. Deadly. Super not legal."
+				},
+				{
+					"Name": "Crew Quarters",
+					"TotalBoxes": 1,
+					"Description": "You can sleep anywhere, but crew quarters are actually meant for it. Crew quarters afford privacy and comfort in a domain where such things are luxuries. Also you don't have to share, and you know the first mate snores."
+				},
+				{
+					"Name": "Landing Bay",
+					"TotalBoxes": 1,
+					"Description": "Airlocks, bay-doors, and takeoff ramps to accommodate shuttles and single-pilot small fighter craft."
+				},
+				{
+					"Name": "AI Module",
+					"TotalBoxes": 1,
+					"Description": "Software connected to an Ur AI core running throughout the ship. Can automate tasks or run the ship on behalf of the crew. Snarky personality module available for free."
+				},
+				{
+					"Name": "Armory",
+					"TotalBoxes": 1,
+					"Description": "A secure room holding the crew weapons and armor, which are considered fine."
+				},
+				{
+					"Name": "Brig",
+					"TotalBoxes": 1,
+					"Description": "Space jail. Not meant for long-term incarceration."
+				},
+				{
+					"Name": "Galley",
+					"TotalBoxes": 1,
+					"Description": "A combined kitchen and serving area for meals. Greatly facilitates longer trips. Includes fresh food storage."
+				},
+				{
+					"Name": "Medical Bay",
+					"TotalBoxes": 1,
+					"Description": "A clean room with medical equipment. No hospital, but sufficient to patch most injuries. Storage for drugs and medical scanners. Add +1d to recovery rolls."
+				},
+				{
+					"Name": "Science Bay",
+					"TotalBoxes": 1,
+					"Description": "Laboratory that can be used to analyze anomalies and Precursor artifacts. Secure storage for things that may react oddly with the rest of the ship (or physics)."
+				},
+				{
+					"Name": "Shields",
+					"TotalBoxes": 2,
+					"Description": "Particle sinks and EM deflectors. Overwhelmed by focused fire. Counts as armor against ship weapons and energy attacks. Largely absorbs blaster fire. Costs two upgrades instead of one."
+				},
+				{
+					"Name": "Holo-Emitters",
+					"TotalBoxes": 1,
+					"Description": "For holo-conferences and maps. Images won't hold up to close scrutiny but can be convincing for a short while. Includes sweet games and holo-vids."
+				},
+				{
+					"Name": "Intruder Alarm",
+					"TotalBoxes": 1,
+					"Description": "A full suite of sensors about the ship, including motion sensors, door codes, and panic buttons that can all trigger a klaxon and red security lights."
+				},
+				{
+					"Name": "Land Rover",
+					"TotalBoxes": 1,
+					"Description": "Armored all-terrain vehicle for carrying heavy cargo or folks over land. High-powered winch and decorative stickers come standard."
+				},
+				{
+					"Name": "Power Reserves",
+					"TotalBoxes": 1,
+					"Description": "Batteries and energy supplies that can power the ship independently of the engine. Sufficient for a few hours of operation at minimal usage or a few minutes of full power. Acts as armor against power-related mishaps."
+				},
+				{
+					"Name": "Shuttle",
+					"TotalBoxes": 1,
+					"Description": "A small spacecraft capable of carrying a few people from planet to orbit. Limited systems capacity—treat any system as quality zero vs. actual ships. Can attach to airlocks, but best stored in a landing bay if you don't want stray asteroids or particle cannon fire affecting it."
+				},
+				{
+					"Name": "Stasis Pods",
+					"TotalBoxes": 1,
+					"Description": "State-of-the-art pods provide room for one severely injured, deathly ill, or unconscious guest each. Does not prevent dreams."
+				},
+				{
+					"Name": "Vault",
+					"TotalBoxes": 1,
+					"Description": "Useful for securing valuables during space travel. Programmable lock allows for personalized security codes, one-time use codes, and access logs. Uses hull rating when contested."
+				},
+				{
+					"Name": "Insight",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Prowess",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Resolve",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Playbook",
+					"TotalBoxes": 1,
+					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
+				},
+				{
+					"Name": "Alien Pet",
+					"TotalBoxes": 1,
+					"Description": "Lovable rapscallion or loyal guardian, these critters are more trouble than they're worth."
+				},
+				{
+					"Name": "Land Transport",
+					"TotalBoxes": 1,
+					"Description": "Land-based transports for the entire crew. Tires or close-to-ground hover. These may be motorized bikes, land-skimmers, boats, or very small cars."
+				},
+				{
+					"Name": "Recon Drone",
+					"TotalBoxes": 1,
+					"Description": "A small drone for surveillance, mapping, and intelligence gathering. Can be given simple instructions. Uses comms quality when contested."
+				},
+				{
+					"Name": "Survival Gear",
+					"TotalBoxes": 1,
+					"Description": "Camping gear, rebreathers, climbing equipment, scuba gear. Everything an enterprising crew needs to survive on an inhospitable, but not uninhabitable, rock. Stillsuits included."
+				},
+				{
+					"Name": "Workshop",
+					"TotalBoxes": 1,
+					"Description": "Plasma cutters, a nano-assembler, a stock of metal and electrical components, a forge—anything required to build, modify, or disassemble complex machines. Adds +1 quality to craft rolls."
+				},
+				{
+					"Name": "Black Market Contacts",
+					"TotalBoxes": 1,
+					"Description": "Able to get you all the modules (even illegal ones) your ship needs, even when you're wanted. Resourceful. Mobile. May have jobs for you from time to time."
+				},
+				{
+					"Name": "Secret Base",
+					"TotalBoxes": 1,
+					"Description": "Perhaps inside ancient Ur ruins on a planet. Maybe buildings inside a massive asteroid. Possibly an old and forgotten station, long abandoned but now repurposed. You have found and commissioned a hiding spot away from the baleful gaze of the Hegemony where you and your allies can meet, hide, and plan your jobs. It's secret...for now."
+				},
+				{
+					"Name": "Popular Support",
+					"TotalBoxes": 3,
+					"Description": "It takes work to win hearts and minds, but your cause has supporters among the common folk. When you approach a planet or a station, ask the GM who there might be a sympathizer. Costs three upgrades instead of one."
+				},
+				{
+					"Name": "Way-Blessed",
+					"TotalBoxes": 2,
+					"Description": "Some people are just plain lucky. The common folk think this is some sort of sign. Don't look too much into it. You start with +1 gambit at the start of every job. Costs two upgrades instead of one."
+				},
+				{
+					"Name": "Driven",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box. This can bring a PC with 4 trauma back into play if you wish. Costs three upgrades instead of one."
+				}
+			],
+			"StartingUpgrades": [
+				{
+					"Name": "Targeting Computer",
+					"TotalBoxes": 1,
+					"Description": "Handles calculations and targeting for weapon systems without the crew. Roll comms rating when firing."
+				},
+				{
+					"Name": "Jump Drive",
+					"TotalBoxes": 1,
+					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
+				},
+				{
+					"Name": "Particle Cannons",
+					"TotalBoxes": 1,
+					"Description": "Pew! Pew! Usually fixed in one direction on personal vessels. Often cross linked. Not legal without license."
+				},
+				{
+					"Name": "Crew Quarters",
+					"TotalBoxes": 1,
+					"Description": "You can sleep anywhere, but crew quarters are actually meant for it. Crew quarters afford privacy and comfort in a domain where such things are luxuries. Also you don't have to share, and you know the first mate snores."
+				},
+				{
+					"Name": "Shuttle",
+					"TotalBoxes": 1,
+					"Description": "A small spacecraft capable of carrying a few people from planet to orbit. Limited systems capacity—treat any system as quality zero vs. actual ships. Can attach to airlocks, but best stored in a landing bay if you don't want stray asteroids or particle cannon fire affecting it."
+				},
+				{
+					"Name": "Shields",
+					"TotalBoxes": 2,
+					"Description": "Particle sinks and EM deflectors. Overwhelmed by focused fire. Counts as armor against ship weapons and energy attacks. Largely absorbs blaster fire. Costs two upgrades instead of one."
+				}
+			],
+			"Contacts": [
+				{
+					"Name": "Garin",
+					"Description": "A Guild weapons engineer."
+				},
+				{
+					"Name": "Tyura",
+					"Description": "A legendary assassin."
+				},
+				{
+					"Name": "Ada Black",
+					"Description": "A famous performer."
+				},
+				{
+					"Name": "Tiko Lux",
+					"Description": "A hotshot pilot."
+				},
+				{
+					"Name": "Ibo-one",
+					"Description": "An ancient Cult mystic."
+				}
+			],
+			"Reputations": [
+				"Ambitious",
+				"Brutal",
+				"Daring",
+				"Honorable",
+				"Professional",
+				"Savvy",
+				"Strange",
+				"Subtle"
+			]
+		}
+	]
+}

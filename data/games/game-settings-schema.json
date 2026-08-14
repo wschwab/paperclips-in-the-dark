@@ -352,7 +352,7 @@
 						"object"
 					],
 					"additionalProperties": {
-						"$ref": "/definitions/StartingSpecialAbilitySetting"
+						"$ref": "#/definitions/StartingSpecialAbilitySetting"
 					}
 				},
 				"AbilitiesByHeritage": {
@@ -360,7 +360,7 @@
 						"object"
 					],
 					"additionalProperties": {
-						"$ref": "/definitions/StartingSpecialAbilitySetting"
+						"$ref": "#/definitions/StartingSpecialAbilitySetting"
 					}
 				}
 			},
@@ -403,9 +403,9 @@
 					"items": {
 						"$ref": "#/definitions/GearExtraDescriptionSetting"
 					}
-				},
-				"additionalProperties": false
-			}
+				}
+			},
+			"additionalProperties": false
 		},
 		"FactionStatusSetting": {
 			"type": "object",
@@ -421,6 +421,146 @@
 			"required": [
 				"Min",
 				"Max"
+			]
+		},
+		"HarmCapacitiesSetting": {
+			"type": "object",
+			"properties": {
+				"Lesser": {
+					"type": "integer"
+				},
+				"Moderate": {
+					"type": "integer"
+				},
+				"Severe": {
+					"type": "integer"
+				},
+				"Fatal": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Lesser",
+				"Moderate",
+				"Severe",
+				"Fatal"
+			]
+		},
+		"XpTrackMaximaSetting": {
+			"type": "object",
+			"properties": {
+				"Playbook": {
+					"type": "integer"
+				},
+				"Attribute": {
+					"type": "integer"
+				},
+				"Crew": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Playbook",
+				"Attribute",
+				"Crew"
+			]
+		},
+		"FundMaximaSetting": {
+			"type": "object",
+			"properties": {
+				"SatchelMax": {
+					"type": "integer"
+				},
+				"StashMax": {
+					"type": "integer"
+				},
+				"StashToCoinRate": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"SatchelMax",
+				"StashMax",
+				"StashToCoinRate"
+			]
+		},
+		"CrewTrackerMaximaSetting": {
+			"type": "object",
+			"properties": {
+				"HeatMax": {
+					"type": "integer"
+				},
+				"WantedMax": {
+					"type": "integer"
+				},
+				"RepMax": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"HeatMax",
+				"WantedMax",
+				"RepMax"
+			]
+		},
+		"CommitmentMaxBulkSetting": {
+			"type": "object",
+			"properties": {
+				"Light": {
+					"type": "integer"
+				},
+				"Normal": {
+					"type": "integer"
+				},
+				"Heavy": {
+					"type": "integer"
+				},
+				"Encumbered": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Light",
+				"Normal",
+				"Heavy",
+				"Encumbered"
+			]
+		},
+		"LoadMaximaSetting": {
+			"type": "object",
+			"properties": {
+				"MaxBulk": {
+					"type": "integer"
+				},
+				"CommitmentMaxBulk": {
+					"$ref": "#/definitions/CommitmentMaxBulkSetting"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"MaxBulk",
+				"CommitmentMaxBulk"
+			]
+		},
+		"ActionCapSetting": {
+			"type": "object",
+			"properties": {
+				"Base": {
+					"type": "integer"
+				},
+				"Mastery": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Base",
+				"Mastery"
 			]
 		}
 	},
@@ -509,6 +649,60 @@
 		"FactionStatus": {
 			"$ref": "#/definitions/FactionStatusSetting"
 		},
+		"StressMax": {
+			"type": "integer"
+		},
+		"TraumaMax": {
+			"type": "integer"
+		},
+		"HarmCapacities": {
+			"$ref": "#/definitions/HarmCapacitiesSetting"
+		},
+		"XpTrackMaxima": {
+			"$ref": "#/definitions/XpTrackMaximaSetting"
+		},
+		"FundMaxima": {
+			"$ref": "#/definitions/FundMaximaSetting"
+		},
+		"CrewTrackerMaxima": {
+			"$ref": "#/definitions/CrewTrackerMaximaSetting"
+		},
+		"TurfMax": {
+			"type": "integer"
+		},
+		"LoadMaxima": {
+			"$ref": "#/definitions/LoadMaximaSetting"
+		},
+		"ActionCap": {
+			"$ref": "#/definitions/ActionCapSetting"
+		},
+		"SessionExpressionMax": {
+			"type": "integer"
+		},
+		"DevelopCoinCostMultiplier": {
+			"type": "integer"
+		},
+		"ClockPurposes": {
+			"type": [
+				"array"
+			],
+			"items": {
+				"type": "string",
+				"enum": [
+					"progress",
+					"danger",
+					"racing",
+					"linked",
+					"mission",
+					"tug-of-war",
+					"long-term-project",
+					"faction",
+					"score",
+					"custom"
+				]
+			},
+			"uniqueItems": true
+		},
 		"StartingAbility": {
 			"type": [
 				"object"
@@ -534,6 +728,18 @@
 		"SharedItems",
 		"RecoveryClockSize",
 		"ActionPointMaximum",
-		"FactionStatus"
+		"FactionStatus",
+		"StressMax",
+		"TraumaMax",
+		"HarmCapacities",
+		"XpTrackMaxima",
+		"FundMaxima",
+		"CrewTrackerMaxima",
+		"TurfMax",
+		"LoadMaxima",
+		"ActionCap",
+		"SessionExpressionMax",
+		"DevelopCoinCostMultiplier",
+		"ClockPurposes"
 	]
 }

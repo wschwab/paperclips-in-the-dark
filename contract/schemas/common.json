@@ -156,8 +156,143 @@
         "COMMITMENT_LOCKED",
         "NO_HISTORY",
         "GAME_NOT_FOUND",
-        "PAYLOAD_TOO_LARGE"
+        "PAYLOAD_TOO_LARGE",
+        "INVALID_ENTRY",
+        "INVALID_ENTITY",
+        "NORMALIZATION_REQUIRED",
+        "TRAUMA_REQUIRED",
+        "OUT_OF_ACTION"
       ]
+    },
+    "errorPointer": {
+      "type": "string",
+      "pattern": "^(|/.*)$",
+      "description": "RFC 6901 JSON pointer into the offending document; the empty string is the document root."
+    },
+    "errorIssue": {
+      "type": "object",
+      "required": [
+        "pointer",
+        "reason",
+        "expected"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "pointer": {
+          "$ref": "#/$defs/errorPointer"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why the value at the pointer is not accepted."
+        },
+        "expected": {
+          "type": "string",
+          "description": "The schema-valid value that would have been accepted."
+        }
+      }
+    },
+    "errorPointerDetails": {
+      "type": "object",
+      "required": [
+        "issues"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "issues": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/errorIssue"
+          }
+        }
+      },
+      "description": "Pointer-level detail list (VALIDATION, INVALID_ENTRY, INVALID_ENTITY): one issue per defective location, each with JSON pointer, reason, and expected value."
+    },
+    "errorLimitDetails": {
+      "type": "object",
+      "required": [
+        "limit",
+        "current"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The enforced bound the operation could not exceed."
+        },
+        "current": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The value that would exceed the limit (requested amount or currently held value)."
+        }
+      },
+      "description": "Limit details (*_MAXED, CANNOT_LEVEL_UP, CANNOT_HEAL, INSUFFICIENT_FUNDS, SATCHEL_FULL, OVER_BULK, PAYLOAD_TOO_LARGE): the enforced bound and the offending value."
+    },
+    "errorPreviewDetails": {
+      "type": "object",
+      "required": [
+        "warnings",
+        "previewToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Human-readable normalization warnings (fills, conversions, clamps, listed removals)."
+        },
+        "previewToken": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque preview token; must be presented on the confirming apply."
+        }
+      },
+      "description": "Preview details (NORMALIZATION_REQUIRED): the warnings and the preview token that unlocks the confirming apply."
+    },
+    "errorContentToken": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "Opaque content token bound to the current raw bytes of a degraded entity (sha256:<lowercase hex>)."
+    },
+    "errorStaleDetails": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": [
+            "currentRevision"
+          ],
+          "properties": {
+            "currentRevision": {
+              "$ref": "#/$defs/revision"
+            },
+            "currentContentToken": false
+          }
+        },
+        {
+          "required": [
+            "currentContentToken"
+          ],
+          "properties": {
+            "currentRevision": false,
+            "currentContentToken": {
+              "$ref": "#/$defs/errorContentToken"
+            }
+          }
+        }
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "currentRevision": {
+          "$ref": "#/$defs/revision"
+        },
+        "currentContentToken": {
+          "$ref": "#/$defs/errorContentToken"
+        }
+      },
+      "description": "Stale details (STALE_REVISION): exactly one of currentRevision (readable entity) or currentContentToken (degraded entity whose raw bytes changed)."
     },
     "vice": {
       "type": "object",

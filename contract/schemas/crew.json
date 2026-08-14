@@ -31,6 +31,8 @@
     "stash",
     "notes",
     "turf",
+    "contacts",
+    "factions",
     "claimedClaimIds",
     "claimOverrides"
   ],
@@ -215,7 +217,7 @@
       "$ref": "common.json#/$defs/notes"
     },
     "contacts": {
-      "description": "C3 contract change (2026-07-29). Optional until formatVersion bump: servers implementing C3 MUST emit it (empty array when none); clients MUST tolerate absence.",
+      "description": "Required canonical array (Q4); empty means no entries. C3-era crews lacking contacts normalize to [] (legacy rule L6).",
       "type": "array",
       "items": {
         "type": "object",
@@ -236,7 +238,7 @@
       }
     },
     "factions": {
-      "description": "C3 contract change (2026-07-29). Same optionality rule as contacts. Status range comes from game-settings (server-clamped), never hardcoded here.",
+      "description": "Required canonical array (Q4); empty means no entries. C3-era crews lacking factions normalize to [] (legacy rule L6). Status range comes from game-settings (server-clamped), never hardcoded here.",
       "type": "array",
       "items": {
         "type": "object",
@@ -302,5 +304,12 @@
       },
       "description": "Per-crew customizations of canonical claim fields (inherit unless overridden)."
     }
-  }
+  },
+  "x-requiredWhenComplete": [
+    { "pointer": "/name", "predicate": "nonBlankString" },
+    { "pointer": "/crewTypeName", "predicate": "nonBlankString" },
+    { "pointer": "/lair", "predicate": "nonBlankString" },
+    { "pointer": "/reputation", "predicate": "nonBlankString" },
+    { "pointer": "/huntingGrounds", "predicate": "nonBlankString" }
+  ]
 }

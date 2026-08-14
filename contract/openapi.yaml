@@ -8,7 +8,8 @@ info:
     not rules engine: structural constraints only. All mutations are POST with
     JSON bodies and return the uniform OperationResult with the FULL entity DTO.
     All numeric maxima come from game-settings JSON, never hardcoded.
-    Mutations accept optional If-Match (revision) and Idempotency-Key headers.
+    Mutations accept optional If-Match (revision; REQUIRED on destructive
+    operations — undo, delete, import, repair) and Idempotency-Key headers.
     Snapshot-worthiness of each mutation is declared via x-snapshot.
 servers:
   - url: http://localhost:9657/api
@@ -24,8 +25,29 @@ components:
       name: If-Match
       in: header
       required: false
-      description: Entity revision; mismatch → 409 STALE_REVISION.
-      schema: { type: integer }
+      description: >
+        Entity revision for readable entities, or the raw-byte content token
+        (sha256:<lowercase hex>, the collection row's deleteToken) for degraded
+        entities. Mismatch against the current stored state → 409
+        STALE_REVISION. Required on undo, delete, import-apply, and repair-apply
+        (see ifMatchRequired).
+      schema: { $ref: "#/components/schemas/IfMatchValue" }
+    ifMatchRequired:
+      name: If-Match
+      in: header
+      required: true
+      description: >
+        Entity revision for readable entities, or the raw-byte content token
+        (sha256:<lowercase hex>, the collection row's deleteToken) for degraded
+        entities. Mismatch against the current stored state → 409
+        STALE_REVISION.
+      schema: { $ref: "#/components/schemas/IfMatchValue" }
+    preview:
+      name: preview
+      in: query
+      required: false
+      description: "preview=1 selects preview mode: classify the submitted document and return the normalization preview + preview token; never writes."
+      schema: { enum: ["1"] }
     idempotencyKey:
       name: Idempotency-Key
       in: header
@@ -42,6 +64,7 @@ components:
     Crew: { $ref: "./schemas/crew.json" }
     Clock: { $ref: "./schemas/clock.json" }
     OperationResult: { $ref: "./schemas/operation-result.json" }
+    OperationError: { $ref: "./schemas/operation-result.json#/$defs/operationError" }
     Delta:
       type: object
       required: [delta]
@@ -60,9 +83,272 @@ components:
       additionalProperties: false
       properties:
         confirm: { const: true }
+    IfMatchValue:
+      oneOf:
+        - type: integer
+          description: entity revision of a readable entity
+        - { $ref: "./schemas/common.json#/$defs/errorContentToken" }
+      description: "If-Match header value: integer revision, or sha256:<lowercase hex> content token for degraded entities."
+    PreviewResult:
+      type: object
+      required: [canonical, warnings]
+      additionalProperties: false
+      properties:
+        canonical: { const: true }
+        warnings:
+          type: array
+          items: { type: string }
+          description: "normalization warnings; empty when the document is already canonical"
+        previewToken:
+          type: string
+          minLength: 1
+          description: "import preview: always issued — unlocks the confirming apply. repair preview: omitted when the stored entity is already canonical (nothing to confirm)."
+    ImportRequest:
+      type: object
+      required: [entity]
+      additionalProperties: false
+      properties:
+        entity:
+          type: object
+          description: >
+            Full or partial entity document. The preview classifies every fill,
+            conversion, correction, and data-dropping action; unknown properties
+            are rejected unless the preview explicitly classifies and displays
+            their removal (no silent data loss).
+        previewToken:
+          type: string
+          minLength: 1
+          description: >
+            Apply mode: required. Issued by the preview (error details
+            previewToken / token). Binds the submitted document and the
+            previewed result; a changed document or stored entity since preview
+            → 409 STALE_REVISION.
+        confirm:
+          const: true
+          description: "Apply mode: required; missing → CONFIRM_REQUIRED."
+      description: >
+        preview=1 sends {entity} only (previewToken/confirm present in preview
+        mode → 400 VALIDATION). Apply (no preview param) sends
+        {entity, previewToken, confirm: true}.
+    RepairApply:
+      type: object
+      required: [previewToken]
+      additionalProperties: false
+      properties:
+        previewToken:
+          type: string
+          minLength: 1
+          description: "Issued by repair-preview; binds the stored bytes and the previewed result. Changed bytes since preview → 409 STALE_REVISION."
+        confirm:
+          const: true
+          description: "Required; missing → CONFIRM_REQUIRED."
+    ServiceCapabilities:
+      type: object
+      required: [maxPayloadBytes, maxHistorySnapshots, maxBatchOperations]
+      additionalProperties: false
+      description: >
+        Advisory service limits for presentation (governing spec, "Limits and
+        capabilities"). Mutations remain authoritative: exceeding a limit
+        fails with the documented typed error (import → 413 PAYLOAD_TOO_LARGE;
+        batch with more ops → 400 VALIDATION). Values are fixed by the current
+        server build.
+      properties:
+        maxPayloadBytes:
+          type: integer
+          const: 1048576
+          description: "Maximum request/import payload size in bytes (1 MiB); beyond → 413 PAYLOAD_TOO_LARGE."
+        maxHistorySnapshots:
+          type: integer
+          const: 50
+          description: "History snapshots retained per entity; the oldest is pruned beyond this and undo still works."
+        maxBatchOperations:
+          type: integer
+          const: 50
+          description: "Maximum operations per /campaign/batch request (bounds are 1..50)."
+    CharacterCapabilities:
+      type: object
+      required: [characterId, effectiveActionCaps, harmCapacities, loadLimits, availableAbilityTakes]
+      additionalProperties: false
+      description: >
+        Advisory character projection for presentation (governing spec,
+        "Limits and capabilities"). Derived limits are never persisted in the
+        entity DTO. Mutations remain authoritative: action.set-rating and
+        attribute.levelup enforce the effective cap (RATING_MAXED), harm.add
+        reports slot-full spillover per level, gear.commit returns OVER_BULK,
+        and ability.take returns ABILITY_MAXED when the state changed since
+        this projection was read.
+      properties:
+        characterId:
+          type: string
+          pattern: "^[A-Za-z0-9-]+$"
+        effectiveActionCaps:
+          type: array
+          description: "Effective rating cap per action: min(maxRating, crew-Mastery-derived cap)."
+          items:
+            type: object
+            required: [action, maxRating, effectiveMax, masteryTotalBoxes, masteryMarkedBoxes]
+            additionalProperties: false
+            properties:
+              action:
+                type: string
+                description: "Action name from the game settings Attributes[].Actions[]."
+              maxRating:
+                type: integer
+                description: "Raw maximum from settings ActionPointMaximum (entity maxRating)."
+              effectiveMax:
+                type: integer
+                description: "The enforced cap: min(maxRating, crew-derived cap)."
+              masteryTotalBoxes:
+                type: integer
+                description: "Mastery upgrade TotalBoxes from the crew catalog (0 when the character has no crew or the crew type has no Mastery upgrade)."
+              masteryMarkedBoxes:
+                type: integer
+                description: "Boxes marked on Mastery for the character's crew (0 when no crew); effectiveMax = ActionCap.Mastery only when marked ≥ total."
+        harmCapacities:
+          type: array
+          description: "Harm slots per level with the current empty-slot count."
+          items:
+            type: object
+            required: [level, capacity, remaining]
+            additionalProperties: false
+            properties:
+              level:
+                type: string
+                enum: [lesser, moderate, severe, fatal]
+              capacity:
+                type: integer
+                description: "Slots from settings HarmCapacities (2/2/1/1 for both supported games)."
+              remaining:
+                type: integer
+                description: "Empty slots = capacity − filled; 0 → harm.add reports the spillover ladder."
+        loadLimits:
+          type: array
+          description: "Maximum committed bulk per load commitment option."
+          items:
+            type: object
+            required: [commitment, maxBulk, remainingBulk]
+            additionalProperties: false
+            properties:
+              commitment:
+                type: string
+                enum: [none, light, normal, heavy, encumbered]
+              maxBulk:
+                type: integer
+                description: "LoadMaxima.CommitmentMaxBulk for the option; LoadMaxima.MaxBulk for none."
+              remainingBulk:
+                type: integer
+                description: "maxBulk − currently committed bulk (abilities such as Mule can raise the limit)."
+        availableAbilityTakes:
+          type: array
+          description: "Remaining takes per playbook special ability."
+          items:
+            type: object
+            required: [name, timesTaken, maxTakes, remaining]
+            additionalProperties: false
+            properties:
+              name:
+                type: string
+                description: "Ability name from the playbook settings SpecialAbilities[]."
+              timesTaken:
+                type: integer
+                minimum: 1
+                description: "Takes recorded on the character DTO."
+              maxTakes:
+                type: integer
+                description: "TimesTakeable from the playbook settings."
+              remaining:
+                type: integer
+                description: "maxTakes − timesTaken; 0 → ability.take returns ABILITY_MAXED."
+    CrewCapabilities:
+      type: object
+      required: [crewId, upgrades, abilities, effectiveTurf, developThreshold]
+      additionalProperties: false
+      description: >
+        Advisory crew projection for presentation (governing spec, "Limits and
+        capabilities"). Derived limits are never persisted in the entity DTO.
+        Mutations remain authoritative: upgrade.mark returns UPGRADE_MAXED past
+        totalBoxes and ability.take returns ABILITY_MAXED past maxTakes when
+        the state changed since this projection was read.
+      properties:
+        crewId:
+          type: string
+          pattern: "^[A-Za-z0-9-]+$"
+        upgrades:
+          type: array
+          description: "Full upgrade catalog of the crew type with current box state."
+          items:
+            type: object
+            required: [name, totalBoxes, marked, remaining]
+            additionalProperties: false
+            properties:
+              name:
+                type: string
+                description: "Upgrade name from the crew-settings catalog."
+              totalBoxes:
+                type: integer
+                description: "TotalBoxes from the crew-settings catalog."
+              marked:
+                type: integer
+                description: "Boxes currently marked on this crew (DTO upgrades[].boxesMarked)."
+              remaining:
+                type: integer
+                description: "totalBoxes − marked; 0 → upgrade.mark returns UPGRADE_MAXED."
+        abilities:
+          type: array
+          description: "Full special-ability catalog of the crew type with current take state."
+          items:
+            type: object
+            required: [name, maxTakes, taken, remaining]
+            additionalProperties: false
+            properties:
+              name:
+                type: string
+                description: "Ability name from the crew-settings catalog."
+              maxTakes:
+                type: integer
+                description: "TimesTakeable from the crew-settings catalog."
+              taken:
+                type: integer
+                description: "Times taken by this crew (DTO specialAbilities[].timesTaken)."
+              remaining:
+                type: integer
+                description: "maxTakes − taken; 0 → ability.take returns ABILITY_MAXED."
+        effectiveTurf:
+          type: integer
+          description: "Base turf + sum of claimed turf-delta effects from the claims map; S&V ships have no claims map, so this equals base turf."
+        developThreshold:
+          type: integer
+          description: "max(0, rep.max − effectiveTurf); the tier-up rep threshold (rep needs to reach this before tier.add)."
   responses:
     OpResult:
-      description: Uniform operation result (also used for typed failures, still HTTP 200 unless noted; NOT_FOUND → 404, STALE_REVISION → 409, VALIDATION → 400, PAYLOAD_TOO_LARGE → 413).
+      description: >
+        Uniform operation result, used for successes and typed failures alike.
+        On failure (ok:false) the error member is the whole-error discriminated
+        union (operation-result.json $defs/operationError; also exposed as
+        components.schemas.OperationError): one branch per errorCode,
+        discriminated on code. Every branch declares its HTTP status, typed
+        details shape, recovery instruction, retryable flag (the operation may
+        succeed after the documented recovery action — never blind replay), and
+        whether an entity, preview, or token accompanies the error. Top-level
+        and batch[].error share the same union schema.
+
+        Locked status table (spec-change-work-spec, stored-entity
+        classification): VALIDATION 400, INVALID_ENTRY 400, INVALID_ENTITY 422,
+        NORMALIZATION_REQUIRED 409, NOT_FOUND 404, STALE_REVISION 409,
+        PAYLOAD_TOO_LARGE 413. All remaining codes (CONFIRM_REQUIRED, DUPLICATE,
+        SLOT_FULL_FATAL, CANNOT_HEAL, ARMOR_NOT_AVAILABLE, ABILITY_MAXED,
+        CANNOT_LEVEL_UP, RATING_MAXED, UPGRADE_MAXED, INSUFFICIENT_FUNDS,
+        SATCHEL_FULL, OVER_BULK, NO_COMMITMENT, COMMITMENT_LOCKED, NO_HISTORY,
+        GAME_NOT_FOUND, RETIRED, TRAUMA_REQUIRED, OUT_OF_ACTION) are domain
+        failures delivered with HTTP 200 and the typed error body. Collections
+        remain 200 even when members are degraded.
+
+        Entity-targeted operation results additionally carry the derived
+        canUndo (boolean) and historyCount (integer, minimum 0) response
+        fields — never stored, computed at response time from the entity's
+        retained snapshot count (retention cap 50); canUndo = historyCount > 0.
+        GET entity detail stays raw (byte identity); roster summaries and
+        operation results carry the derived fields (lifecycle-matrix §9).
       content:
         application/json:
           schema: { $ref: "#/components/schemas/OperationResult" }
@@ -78,6 +364,23 @@ paths:
           content:
             application/json:
               schema: { $ref: "./schemas/campaign.json#/$defs/health" }
+
+  # ------------------------------------------------------------ capabilities
+  # Advisory projections (governing spec "Limits and capabilities"): the
+  # mutation endpoints remain authoritative and return typed stale/maxed
+  # failures if state changes between projection and mutation.
+  /capabilities:
+    get:
+      operationId: getServiceCapabilities
+      description: >
+        Service-level capabilities: payload, history, and batch limits.
+        Advisory for presentation; mutations remain authoritative.
+      responses:
+        "200":
+          description: service capabilities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ServiceCapabilities" }
 
   /campaign:
     get:
@@ -277,12 +580,40 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Character" }
         "404": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/capabilities:
+    get:
+      operationId: getCharacterCapabilities
+      description: >
+        Advisory character capability projection: effective action caps with
+        Mastery derivation inputs, harm capacities per level with remaining
+        slots, load limits per commitment option, and remaining ability takes.
+        Never persisted in the entity DTO; mutations remain authoritative
+        (RATING_MAXED / slot-full spillover / OVER_BULK / ABILITY_MAXED).
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+      responses:
+        "200":
+          description: character capabilities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CharacterCapabilities" }
+        "404": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/delete:
     post:
       operationId: deleteCharacter
       x-snapshot: false
-      description: Requires confirm:true (CONFIRM_REQUIRED otherwise). Removes entity and its history.
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      description: >
+        Requires confirm:true (CONFIRM_REQUIRED otherwise). Removes the entity
+        and its history; not undoable. Works on entities in ANY state including
+        degraded (If-Match: entity revision, or the sha256: content token for a
+        degraded entity — deletion is the designed path for unreadable rows).
+        Owner-deletion reassignment (W5): standalone clocks owned by this
+        character are reassigned to campaign ownership (ownerKind "campaign",
+        ownerId "") in the same atomic snapshot, each with a new revision and
+        updatedAt; no clock is ever deleted as a side effect. The result reports
+        the reassigned clock ids as sideEffects entries "clock <id> reassigned
+        to campaign" (the reassignedClockIds set).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
         content:
@@ -290,25 +621,111 @@ paths:
             schema: { $ref: "#/components/schemas/Confirm" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/import:
     post:
       operationId: importCharacter
       x-snapshot: true
-      description: Schema-validated full-DTO replacement; 1 MiB cap; clears history, takes one baseline snapshot.
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      description: >
+        Import preview/apply for a full or PARTIAL document; ?preview=1 selects
+        preview mode. Preview never writes: canonical document → 200 with the
+        preview and a preview token; normalization needed (fills, conversions,
+        clamps, legacy conversions, displayed removals) → 409
+        NORMALIZATION_REQUIRED with warnings, the previewed document, and the
+        preview token; needs-input pointers → 409 listing the exact pointers
+        awaiting caller values. Apply (no preview param) requires If-Match
+        (entity revision; degraded target: sha256: content token), the preview
+        token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically
+        writes the previewed result, clears history, and takes exactly one
+        baseline snapshot. Apply without values for needs-input pointers → 400
+        INVALID_ENTRY with pointer-level details; unknown properties are
+        rejected unless the preview classifies and displays their removal; a
+        changed document or stored entity since preview → 409 STALE_REVISION.
+        Allowed on retired characters (data management, not gameplay). 1 MiB
+        payload cap → 413 PAYLOAD_TOO_LARGE.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }, { $ref: "#/components/parameters/preview" }]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/Character" }
+            schema: { $ref: "#/components/schemas/ImportRequest" }
+      responses:
+        "200":
+          description: >
+            Preview mode: PreviewResult (document already canonical; previewToken
+            unlocks the confirming apply). Apply mode: the uniform OperationResult
+            with the character DTO and one baseline snapshot.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/PreviewResult" }
+                  - { $ref: "#/components/schemas/OperationResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "413": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/repair-preview:
+    post:
+      operationId: repairCharacterPreview
+      x-snapshot: false
+      description: >
+        Repair preview for a degraded/repairable stored character: computes the
+        normalized result and warnings WITHOUT writing. Optional body:
+        caller-supplied values for needs-input pointers, keyed by JSON pointer
+        into the stored document (e.g. {"/dossier/name": "..."}); keys that do
+        not resolve to a needs-input pointer are ignored with a warning. Stored
+        entity already canonical → 200 PreviewResult with no token (nothing to
+        confirm). Repairable → 409 NORMALIZATION_REQUIRED with warnings, the
+        previewed result, and the preview token; needs-input pointers still
+        awaiting caller values are listed in the preview. Unparseable stored
+        bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: "Optional caller-supplied values for needs-input pointers, keyed by JSON pointer."
+      responses:
+        "200":
+          description: PreviewResult — stored entity is already canonical; nothing to repair.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PreviewResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/repair:
+    post:
+      operationId: repairCharacterApply
+      x-snapshot: true
+      description: >
+        Confirmed repair apply. Requires If-Match (entity revision, or the
+        sha256: content token for degraded/unparseable rows), the preview token
+        from repair-preview, and confirm:true (missing → CONFIRM_REQUIRED).
+        Atomically writes the previewed normalized result — one snapshot,
+        revision +1. Changed stored bytes since the preview → 409
+        STALE_REVISION; no valid preview token → 409 NORMALIZATION_REQUIRED
+        (preview first). Unparseable stored bytes → 422 INVALID_ENTITY (cannot
+        be repaired; deletion only).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepairApply" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
-        "413": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/history:
     get:
       operationId: listCharacterHistory
@@ -339,18 +756,61 @@ paths:
     post:
       operationId: undoCharacter
       x-snapshot: false
-      description: Restore newest snapshot and delete it (consecutive undos walk backwards). No history → NO_HISTORY.
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      description: >
+        Restore the newest snapshot as the full current document and delete it
+        (consecutive undos walk backwards); the undo itself is not undoable. No
+        history → NO_HISTORY. If-Match required (entity revision, or sha256:
+        content token for a degraded entity). Degraded entity → 422
+        INVALID_ENTITY (repair or delete first).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/retire:
+    post:
+      operationId: retireCharacter
+      x-snapshot: true
+      description: >
+        Explicit retirement (Q33): confirmation-guarded lifecycle operation,
+        legal in any state and below maximum trauma. Requires body
+        {confirm: true} (else CONFIRM_REQUIRED) and If-Match. Runs the shared
+        retirement cleanup atomically (one snapshot, one history entry; undo
+        restores the complete prior state): isRetired → true; stress → 0;
+        traumaPending/isOutOfAction/stressClearPending → false; all harm → [];
+        healing clock segments and rollover → 0; armor usage → false; isDeadish
+        recomputed false; dossier, playbook, trauma history, notes, gear, and
+        fund preserved verbatim. Already retired → RETIRED. Degraded entity →
+        422 INVALID_ENTITY.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Confirm" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
 
   /characters/{id}/ops/stress.add:
     post:
       operationId: stressAdd
       x-snapshot: true
-      description: "Clamped delta (BoundedInteger semantics): applied.effective reports the clamp. At max stress a 'stress full — consider trauma' sideEffect is added; NEVER auto-trauma."
+      description: >
+        Clamped delta; signed-delta family: applied.requested is the signed
+        requested change, applied.effective the signed actual change after
+        clamping — when they differ, clients must report the clamp. Landing at
+        max from below (delta > 0, old < max, new = max) sets traumaPending and
+        adds the typed attention sideEffect "stress full — trauma pending"
+        (LIFECYCLE-STRESS-001); NEVER auto-trauma (LIFECYCLE-STRESS-002). Gates:
+        retired → RETIRED; traumaPending → TRAUMA_REQUIRED; isOutOfAction →
+        OUT_OF_ACTION (LIFECYCLE-STRESS-003/004). Degraded entity → 422
+        INVALID_ENTITY.
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -359,22 +819,43 @@ paths:
             schema: { $ref: "#/components/schemas/Delta" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/stress.clear:
     post:
       operationId: stressClear
       x-snapshot: false
+      description: >
+        Clears stress to 0. Non-numeric: no applied numeric fields. Gates:
+        retired → RETIRED; traumaPending → TRAUMA_REQUIRED (resolve the pending
+        trauma first); isOutOfAction → OUT_OF_ACTION — out of action until
+        end-score, which is the only sanctioned release (LIFECYCLE-STRESS-004).
+        Degraded entity → 422 INVALID_ENTITY.
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/trauma.add:
     post:
       operationId: traumaAdd
       x-snapshot: true
-      description: Separate explicit op (stress overflow never auto-traumas). Duplicate → DUPLICATE. Adding the max-th trauma retires the character (sideEffect).
+      description: >
+        Resolution-only (W14): requires traumaPending — no pending trauma → 400
+        VALIDATION (LIFECYCLE-TRAUMA-002); never auto-adds trauma. Records the
+        trauma, keeps stress full (untouched), clears traumaPending, sets
+        isOutOfAction and stressClearPending (LIFECYCLE-TRAUMA-001). Resolving
+        the max-th trauma runs the shared retirement cleanup in the SAME
+        transition and snapshot — observable post-state identical to explicit
+        retirement modulo the preserved trauma history (LIFECYCLE-TRAUMA-001/002,
+        LIFECYCLE-RETIRE-004): isRetired true, stress 0, harm/healing clock/
+        armor cleared, pending/out-of-action flags cleared; dossier, playbook,
+        trauma history, notes, gear, and fund preserved. Duplicate → DUPLICATE;
+        retired → RETIRED. Degraded entity → 422 INVALID_ENTITY.
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -388,13 +869,20 @@ paths:
                 trauma: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/trauma.remove:
     post:
       operationId: traumaRemove
       x-snapshot: true
-      description: Allowed even when retired (spec §5.1.9 exception).
+      description: >
+        Removes the named trauma from trauma history — the trauma-history
+        correction path, allowed on retired characters. Never recomputes or
+        clears isRetired: removing trauma from a retired character does not
+        un-retire; undo is the recovery path (LIFECYCLE-RETIRE-008). Absent
+        trauma → NOT_FOUND. Degraded entity → 422 INVALID_ENTITY.
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -408,8 +896,10 @@ paths:
                 trauma: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/harm.add:
     post:
       operationId: harmAdd
@@ -518,6 +1008,7 @@ paths:
     post:
       operationId: playbookXpAdd
       x-snapshot: true
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -542,6 +1033,7 @@ paths:
     post:
       operationId: attributeXpAdd
       x-snapshot: true
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -581,7 +1073,7 @@ paths:
     post:
       operationId: attributeLevelup
       x-snapshot: true
-      description: "Requires that attribute's XP track full (CANNOT_LEVEL_UP), action exists (NOT_FOUND), action below max rating (RATING_MAXED). Increments the action rating and clears that attribute's XP track."
+      description: "Requires that attribute's XP track full (CANNOT_LEVEL_UP), action exists (NOT_FOUND), action below the effective cap (RATING_MAXED) — the same shared cap action.set-rating enforces: server-computed minimum of the raw max (ActionPointMaximum) and the Mastery-derived cap (ActionCap Base/Mastery, crew-state-derived), published per action as effectiveActionCap by GET /api/characters/{id}/capabilities. Increments the action rating and clears that attribute's XP track."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -602,7 +1094,7 @@ paths:
     post:
       operationId: actionSetRating
       x-snapshot: true
-      description: Direct set, clamped 0..maxRating (game settings ActionPointMaximum).
+      description: "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -904,7 +1396,7 @@ paths:
                 crewId: { type: string }
                 background: { $ref: "./schemas/common.json#/$defs/namedDescription" }
                 heritage: { $ref: "./schemas/common.json#/$defs/namedDescription" }
-                vice: { $ref: "./schemas/common.json#/$defs/namedDescription" }
+                vice: { $ref: "./schemas/common.json#/$defs/vice" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
@@ -954,23 +1446,35 @@ paths:
     post:
       operationId: endScore
       x-snapshot: true
-      description: "Composite helper; explicit flags per sub-action so no procedure is encoded. Single snapshot + history entry."
+      description: >
+        Composite helper; body optional — a missing or empty body is valid
+        (W15). A successful end-score ALWAYS clears stress to 0 and resets both
+        out-of-action flags (isOutOfAction, stressClearPending); optional flags
+        select additional score cleanup (clearArmorUsed, resetLoadoutCommitment).
+        One snapshot and exactly one history entry: any mid-composite failure
+        (e.g. COMMITMENT_LOCKED from resetLoadoutCommitment) fails the whole
+        operation — nothing applied, no snapshot written. Gates: retired →
+        RETIRED; traumaPending → TRAUMA_REQUIRED — the pending trauma must be
+        resolved first, end-score can never erase an unresolved trauma
+        (LIFECYCLE-ENDSCORE-001); isOutOfAction does NOT block — end-score is
+        the release. Degraded entity → 422 INVALID_ENTITY.
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
               additionalProperties: false
-              minProperties: 1
               properties:
                 clearArmorUsed: { type: boolean }
                 resetLoadoutCommitment: { type: boolean }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/note.add:
     post:
       operationId: noteAdd
@@ -1074,12 +1578,42 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Crew" }
         "404": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/capabilities:
+    get:
+      operationId: getCrewCapabilities
+      description: >
+        Advisory crew capability projection: the full available upgrade
+        catalog with total/marked/remaining boxes, the full available ability
+        catalog with max/taken/remaining takes, effective turf, and the rep
+        develop threshold. Never persisted in the entity DTO; mutations remain
+        authoritative (UPGRADE_MAXED / ABILITY_MAXED).
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+      responses:
+        "200":
+          description: crew capabilities
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CrewCapabilities" }
+        "404": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/delete:
     post:
       operationId: deleteCrew
       x-snapshot: false
-      description: confirm:true required. Unlinks member characters (clears their crewId; reported in sideEffects).
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      description: >
+        Requires confirm:true (CONFIRM_REQUIRED otherwise). Removes the entity
+        and its history; not undoable. Works on entities in ANY state including
+        degraded (If-Match: entity revision, or the sha256: content token for a
+        degraded entity). Unlinks member characters: every readable character
+        with dossier.crewId = this crew gets crewId cleared, atomically in the
+        same snapshot (reported in sideEffects). Owner-deletion reassignment
+        (W5): standalone clocks owned by this crew are reassigned to campaign
+        ownership (ownerKind "campaign", ownerId "") in the same atomic
+        snapshot, each with a new revision and updatedAt; no clock is ever
+        deleted as a side effect. The result reports the reassigned clock ids as
+        sideEffects entries "clock <id> reassigned to campaign" (the
+        reassignedClockIds set).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
         content:
@@ -1087,24 +1621,110 @@ paths:
             schema: { $ref: "#/components/schemas/Confirm" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/import:
     post:
       operationId: importCrew
       x-snapshot: true
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      description: >
+        Import preview/apply for a full or PARTIAL document; ?preview=1 selects
+        preview mode. Preview never writes: canonical document → 200 with the
+        preview and a preview token; normalization needed (fills, conversions,
+        clamps, legacy conversions, displayed removals) → 409
+        NORMALIZATION_REQUIRED with warnings, the previewed document, and the
+        preview token; needs-input pointers → 409 listing the exact pointers
+        awaiting caller values. Apply (no preview param) requires If-Match
+        (entity revision; degraded target: sha256: content token), the preview
+        token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically
+        writes the previewed result, clears history, and takes exactly one
+        baseline snapshot. Apply without values for needs-input pointers → 400
+        INVALID_ENTRY with pointer-level details; unknown properties are
+        rejected unless the preview classifies and displays their removal; a
+        changed document or stored entity since preview → 409 STALE_REVISION.
+        1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }, { $ref: "#/components/parameters/preview" }]
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/Crew" }
+            schema: { $ref: "#/components/schemas/ImportRequest" }
+      responses:
+        "200":
+          description: >
+            Preview mode: PreviewResult (document already canonical; previewToken
+            unlocks the confirming apply). Apply mode: the uniform OperationResult
+            with the crew DTO and one baseline snapshot.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/PreviewResult" }
+                  - { $ref: "#/components/schemas/OperationResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "413": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/repair-preview:
+    post:
+      operationId: repairCrewPreview
+      x-snapshot: false
+      description: >
+        Repair preview for a degraded/repairable stored crew: computes the
+        normalized result and warnings WITHOUT writing. Optional body:
+        caller-supplied values for needs-input pointers, keyed by JSON pointer
+        into the stored document (e.g. {"/name": "..."}); keys that do not
+        resolve to a needs-input pointer are ignored with a warning. Stored
+        entity already canonical → 200 PreviewResult with no token (nothing to
+        confirm). Repairable → 409 NORMALIZATION_REQUIRED with warnings, the
+        previewed result, and the preview token; needs-input pointers still
+        awaiting caller values are listed in the preview. Unparseable stored
+        bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: "Optional caller-supplied values for needs-input pointers, keyed by JSON pointer."
+      responses:
+        "200":
+          description: PreviewResult — stored entity is already canonical; nothing to repair.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PreviewResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/repair:
+    post:
+      operationId: repairCrewApply
+      x-snapshot: true
+      description: >
+        Confirmed repair apply. Requires If-Match (entity revision, or the
+        sha256: content token for degraded/unparseable rows), the preview token
+        from repair-preview, and confirm:true (missing → CONFIRM_REQUIRED).
+        Atomically writes the previewed normalized result — one snapshot,
+        revision +1. Changed stored bytes since the preview → 409
+        STALE_REVISION; no valid preview token → 409 NORMALIZATION_REQUIRED
+        (preview first). Unparseable stored bytes → 422 INVALID_ENTITY (cannot
+        be repaired; deletion only).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepairApply" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
-        "413": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/history:
     get:
       operationId: listCrewHistory
@@ -1135,11 +1755,19 @@ paths:
     post:
       operationId: undoCrew
       x-snapshot: false
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      description: >
+        Restore the newest snapshot as the full current document and delete it
+        (consecutive undos walk backwards); the undo itself is not undoable. No
+        history → NO_HISTORY. If-Match required (entity revision, or sha256:
+        content token for a degraded entity). Degraded entity → 422
+        INVALID_ENTITY (repair or delete first).
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/heat.add:
     post:
       operationId: heatAdd
@@ -1220,6 +1848,7 @@ paths:
     post:
       operationId: crewXpAdd
       x-snapshot: true
+      description: "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1395,7 +2024,7 @@ paths:
     post:
       operationId: upgradeMark
       x-snapshot: true
-      description: One box; TotalBoxes from crew game settings → UPGRADE_MAXED.
+      description: "Marks one box. Enforces the upgrade's TotalBoxes (crew game settings, published via GET /api/crews/{id}/capabilities): marking is rejected with UPGRADE_MAXED once boxesMarked = total (the upgrade is full). Unmark stays box-wise and never raises UPGRADE_MAXED."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1649,6 +2278,16 @@ paths:
     post:
       operationId: createClock
       x-snapshot: false
+      description: >
+        Create a standalone clock with total ownership metadata (clock-taxonomy
+        §5). Ownership validation: ownerKind "campaign" ⇒ ownerId ""; ownerKind
+        "character"/"crew" ⇒ ownerId must be the UUID of an existing entity of
+        that kind (else VALIDATION). purpose must be in the game-setting
+        ClockPurposes list (the schema enum is the canonical set; custom is
+        always available). relatedClockIds (optional, default []): unique,
+        never this clock's own id, every entry an existing standalone clock at
+        write time (healing clocks are not referenceable); cycles allowed.
+        behavior "bounded" ⇒ rollover stays 0; segments never exceed size.
       parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1656,14 +2295,25 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, clockKind, size]
+              required: [name, ownerKind, ownerId, purpose, behavior, size]
               additionalProperties: false
               properties:
                 name: { type: string, minLength: 1 }
-                clockKind: { enum: [project, rollover] }
+                ownerKind: { enum: [campaign, character, crew] }
+                ownerId: { type: string, description: "empty string for campaign ownership; otherwise the UUID of an existing entity of ownerKind" }
+                purpose:
+                  enum: [progress, danger, racing, linked, mission, tug-of-war, long-term-project, faction, score, custom]
+                  description: "narrative purpose, from the game-setting ClockPurposes list; descriptive only, never auto-resolved"
+                behavior: { enum: [bounded, rollover] }
                 size: { type: integer, minimum: 1 }
+                relatedClockIds:
+                  type: array
+                  items: { $ref: "./schemas/common.json#/$defs/uuid" }
+                  uniqueItems: true
+                  description: "optional, default []; standalone clock ids for descriptive linked/racing relationships"
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}:
     get:
       operationId: getClock
@@ -1675,11 +2325,59 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Clock" }
         "404": { $ref: "#/components/responses/OpResult" }
+  /clocks/{id}/update:
+    post:
+      operationId: updateClock
+      x-snapshot: true
+      description: >
+        Partial ownership/purpose/relationship update (clock-taxonomy §5 rules
+        3 and 5). ownerKind and ownerId are updated together — provide both or
+        neither, else VALIDATION. Ownership validation: ownerKind "campaign" ⇒
+        ownerId ""; ownerKind "character"/"crew" ⇒ ownerId must be the UUID of
+        an existing entity of that kind. purpose must be in the game-setting
+        ClockPurposes list. relatedClockIds: unique, never this clock's own id,
+        every entry an existing standalone clock at write time; cycles allowed.
+        Other mechanical fields (name, behavior, size, segments, rollover) are
+        not editable here — they change through the dedicated ops. Degraded
+        clock → 422 INVALID_ENTITY.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                ownerKind: { enum: [campaign, character, crew] }
+                ownerId: { type: string, description: "empty string for campaign ownership; otherwise the UUID of an existing entity of ownerKind; must accompany ownerKind" }
+                purpose:
+                  enum: [progress, danger, racing, linked, mission, tug-of-war, long-term-project, faction, score, custom]
+                  description: "narrative purpose, from the game-setting ClockPurposes list; descriptive only, never auto-resolved"
+                relatedClockIds:
+                  type: array
+                  items: { $ref: "./schemas/common.json#/$defs/uuid" }
+                  uniqueItems: true
+                  description: "replaces the full relationship set; descriptive linked/racing relationships"
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/delete:
     post:
       operationId: deleteClock
       x-snapshot: false
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      description: >
+        Requires confirm:true (CONFIRM_REQUIRED otherwise). If-Match required
+        (entity revision, or the sha256: content token for a degraded clock).
+        Unlink-on-delete (W4): this clock's id is removed from every remaining
+        clock's relatedClockIds in the same atomic snapshot — no dangling
+        references in readable state; related clocks themselves are never
+        deleted, only unlinked.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatchRequired" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
         content:
@@ -1687,13 +2385,24 @@ paths:
             schema: { $ref: "#/components/schemas/Confirm" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/ops/clock.progress:
     post:
       operationId: clockProgress
       x-snapshot: false
-      description: "Project clocks clamp at full; rollover clocks carry overflow (applied on reset)."
+      description: >
+        Signed progress delta; clock-progress family: applied.requested is the
+        requested progress, applied.effective all accepted progress including
+        rollover, applied.visibleApplied and applied.overflowAdded report the
+        split when nonzero (Q23). Positive delta fills visible segments and
+        ADDS overflow to the existing rollover — overflow accumulates across
+        progress calls and may exceed one clock size (Q24); bounded clocks
+        clamp at full and discard overflow. Negative delta (tug-of-war
+        emptying) consumes carried rollover FIRST, then empties visible
+        segments, never below 0 (W6). Invariant maintained: rollover > 0 ⇒
+        segments = size. Degraded clock → 422 INVALID_ENTITY.
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1704,18 +2413,29 @@ paths:
               required: [segments]
               additionalProperties: false
               properties:
-                segments: { type: integer }
+                segments: { type: integer, description: "signed progress delta; negative empties (tug-of-war)" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/ops/clock.reset:
     post:
       operationId: clockReset
       x-snapshot: false
-      description: Rollover clocks re-apply carried overflow after reset.
+      description: >
+        Resets visible segments. Rollover clocks: applies AT MOST ONE clock
+        size of carried overflow and retains the remaining overflow —
+        segments' = min(rollover, size), rollover' = rollover − segments'
+        (Q24; matches the reference RolloverClock.Reset). Bounded clocks:
+        segments → 0 (rollover is always 0). Reset reports no applied numeric
+        fields (clear/reset family: amount cleared is not reported). Degraded
+        clock → 422 INVALID_ENTITY.
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }

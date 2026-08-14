@@ -30,7 +30,9 @@
       "type": "object",
       "required": [
         "id", "name", "alias", "playbook", "gameStem", "crewId",
-        "stress", "traumas", "isRetired", "isDeadish", "revision"
+        "stress", "traumas", "isRetired", "isDeadish", "revision",
+        "isReadable", "isRepairable", "isComplete", "deleteToken",
+        "canUndo", "historyCount"
       ],
       "additionalProperties": false,
       "properties": {
@@ -44,14 +46,42 @@
         "traumas": { "type": "array", "items": { "type": "string" } },
         "isRetired": { "type": "boolean" },
         "isDeadish": { "type": "boolean" },
-        "revision": { "$ref": "common.json#/$defs/revision" }
+        "revision": { "$ref": "common.json#/$defs/revision" },
+        "canUndo": {
+          "type": "boolean",
+          "description": "derived at response time (historyCount > 0); never stored"
+        },
+        "historyCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "derived at response time: retained snapshot count (cap 50); never stored"
+        },
+        "isReadable": {
+          "type": "boolean",
+          "description": "the stored document parses and validates as a canonical character"
+        },
+        "isRepairable": {
+          "type": "boolean",
+          "description": "a schema-valid canonical result can be produced from the stored bytes"
+        },
+        "isComplete": {
+          "type": "boolean",
+          "description": "all character x-requiredWhenComplete predicates hold; meaningful when isReadable, otherwise false"
+        },
+        "deleteToken": {
+          "type": "string",
+          "pattern": "^(sha256:[0-9a-f]{64})?$",
+          "description": "opaque token bound to the current raw bytes, usable as the degraded row's If-Match value; empty string for readable rows"
+        }
       }
     },
     "crewSummary": {
       "type": "object",
       "required": [
         "id", "name", "crewType", "gameStem", "tier", "heat", "wanted",
-        "rep", "hold", "memberCount", "revision"
+        "rep", "hold", "memberCount", "revision",
+        "isReadable", "isRepairable", "isComplete", "deleteToken",
+        "canUndo", "historyCount"
       ],
       "additionalProperties": false,
       "properties": {
@@ -65,7 +95,33 @@
         "rep": { "type": "integer", "minimum": 0 },
         "hold": { "$ref": "common.json#/$defs/hold" },
         "memberCount": { "type": "integer", "minimum": 0 },
-        "revision": { "$ref": "common.json#/$defs/revision" }
+        "revision": { "$ref": "common.json#/$defs/revision" },
+        "canUndo": {
+          "type": "boolean",
+          "description": "derived at response time (historyCount > 0); never stored"
+        },
+        "historyCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "derived at response time: retained snapshot count (cap 50); never stored"
+        },
+        "isReadable": {
+          "type": "boolean",
+          "description": "the stored document parses and validates as a canonical crew"
+        },
+        "isRepairable": {
+          "type": "boolean",
+          "description": "a schema-valid canonical result can be produced from the stored bytes"
+        },
+        "isComplete": {
+          "type": "boolean",
+          "description": "all crew x-requiredWhenComplete predicates hold; meaningful when isReadable, otherwise false"
+        },
+        "deleteToken": {
+          "type": "string",
+          "pattern": "^(sha256:[0-9a-f]{64})?$",
+          "description": "opaque token bound to the current raw bytes, usable as the degraded row's If-Match value; empty string for readable rows"
+        }
       }
     },
     "roster": {

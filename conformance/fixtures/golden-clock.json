@@ -6,8 +6,12 @@
   "createdAt": "2026-07-19T12:05:00.000Z",
   "updatedAt": "2026-07-19T13:00:00.000Z",
   "name": "Infiltrate the Bluecoats",
-  "clockKind": "project",
+  "ownerKind": "campaign",
+  "ownerId": "",
+  "purpose": "mission",
+  "behavior": "bounded",
   "segments": 3,
   "size": 8,
-  "rollover": 0
+  "rollover": 0,
+  "relatedClockIds": []
 }

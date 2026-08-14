@@ -1,0 +1,880 @@
+{
+  "schemaVersion": 1,
+  "generator": "skill/generate-capability-manifest.mjs",
+  "generatedFrom": "contract/openapi.yaml",
+  "operationCount": 108,
+  "dispositions": {
+    "health": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/health",
+      "agentReference": "api-reference/README.md#health",
+      "summary": "Health + agent-skill discovery"
+    },
+    "getServiceCapabilities": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/capabilities",
+      "agentReference": "api-reference/README.md#getservicecapabilities",
+      "summary": "Service-level capabilities: payload, history, and batch limits. Advisory for presentation; mutations remain authoritative."
+    },
+    "getCampaign": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/campaign",
+      "agentReference": "api-reference/README.md#getcampaign",
+      "summary": "campaign metadata"
+    },
+    "getRoster": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/campaign/roster",
+      "agentReference": "api-reference/README.md#getroster",
+      "summary": "all character + crew summaries"
+    },
+    "getCrewMembers": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/campaign/crew/{crewId}/members",
+      "agentReference": "api-reference/README.md#getcrewmembers",
+      "summary": "characters linked to this crew"
+    },
+    "batch": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/campaign/batch",
+      "agentReference": "api-reference/README.md#batch",
+      "summary": "Sequential all-or-nothing multi-op; single snapshot + history entry",
+      "flagged": true
+    },
+    "listGames": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/games",
+      "agentReference": "api-reference/README.md#listgames",
+      "summary": "installed games"
+    },
+    "getGame": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/games/{stem}",
+      "agentReference": "api-reference/README.md#getgame",
+      "summary": "full game-settings JSON (authored data, served verbatim from data/games/)"
+    },
+    "listPlaybooks": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/games/{stem}/playbooks",
+      "agentReference": "api-reference/README.md#listplaybooks",
+      "summary": "playbook name + hook list"
+    },
+    "getPlaybook": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/games/{stem}/playbooks/{playbook}",
+      "agentReference": "api-reference/README.md#getplaybook",
+      "summary": "full playbook settings"
+    },
+    "listHeritages": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/games/{stem}/heritages",
+      "agentReference": "api-reference/README.md#listheritages",
+      "summary": "heritage list"
+    },
+    "getCrewSettings": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/games/{stem}/crews",
+      "agentReference": "api-reference/README.md#getcrewsettings",
+      "summary": "crew game settings"
+    },
+    "getCrewTypeSettings": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/games/{stem}/crews/{crewType}",
+      "agentReference": "api-reference/README.md#getcrewtypesettings",
+      "summary": "full crew type settings"
+    },
+    "listCharacters": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/characters",
+      "agentReference": "api-reference/README.md#listcharacters",
+      "summary": "character summaries"
+    },
+    "createCharacter": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters",
+      "agentReference": "api-reference/README.md#createcharacter",
+      "summary": "",
+      "flagged": true
+    },
+    "getCharacter": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/characters/{id}",
+      "agentReference": "api-reference/README.md#getcharacter",
+      "summary": "Full DTO; byte-identical to current.json on disk. ?download=1 = export."
+    },
+    "getCharacterCapabilities": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/characters/{id}/capabilities",
+      "agentReference": "api-reference/README.md#getcharactercapabilities",
+      "summary": "Advisory character capability projection: effective action caps with Mastery derivation inputs, harm capacities per level with remaining slots, load limits per commitment option, and remaining ability takes. Never persisted in the entity DTO; mutations remain authoritative (RATING_MAXED / slot-full spillover / OVER_BULK / ABILITY_MAXED)."
+    },
+    "deleteCharacter": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/delete",
+      "agentReference": "api-reference/README.md#deletecharacter",
+      "summary": "Requires confirm:true (CONFIRM_REQUIRED otherwise). Removes the entity and its history; not undoable. Works on entities in ANY state including degraded (If-Match: entity revision, or the sha256: content token for a degraded entity — deletion is the designed path for unreadable rows). Owner-deletion reassignment (W5): standalone clocks owned by this character are reassigned to campaign ownership (ownerKind \"campaign\", ownerId \"\") in the same atomic snapshot, each with a new revision and updatedAt; no clock is ever deleted as a side effect. The result reports the reassigned clock ids as sideEffects entries \"clock <id> reassigned to campaign\" (the reassignedClockIds set).",
+      "categories": [
+        "destructive"
+      ],
+      "humanControl": "Reachable confirm-guarded delete control (confirm:true + If-Match; degraded rows accept the deleteToken)."
+    },
+    "importCharacter": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/import",
+      "agentReference": "api-reference/README.md#importcharacter",
+      "summary": "Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. Allowed on retired characters (data management, not gameplay). 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.",
+      "categories": [
+        "data-management"
+      ],
+      "humanControl": "Reachable import control with preview/apply confirmation (preview first; apply requires the preview token + If-Match)."
+    },
+    "repairCharacterPreview": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/repair-preview",
+      "agentReference": "api-reference/README.md#repaircharacterpreview",
+      "summary": "Repair preview for a degraded/repairable stored character: computes the normalized result and warnings WITHOUT writing. Optional body: caller-supplied values for needs-input pointers, keyed by JSON pointer into the stored document (e.g. {\"/dossier/name\": \"...\"}); keys that do not resolve to a needs-input pointer are ignored with a warning. Stored entity already canonical → 200 PreviewResult with no token (nothing to confirm). Repairable → 409 NORMALIZATION_REQUIRED with warnings, the previewed result, and the preview token; needs-input pointers still awaiting caller values are listed in the preview. Unparseable stored bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).",
+      "categories": [
+        "repair"
+      ],
+      "humanControl": "Reachable repair-preview control showing the normalized result and warnings before any write."
+    },
+    "repairCharacterApply": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/repair",
+      "agentReference": "api-reference/README.md#repaircharacterapply",
+      "summary": "Confirmed repair apply. Requires If-Match (entity revision, or the sha256: content token for degraded/unparseable rows), the preview token from repair-preview, and confirm:true (missing → CONFIRM_REQUIRED). Atomically writes the previewed normalized result — one snapshot, revision +1. Changed stored bytes since the preview → 409 STALE_REVISION; no valid preview token → 409 NORMALIZATION_REQUIRED (preview first). Unparseable stored bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).",
+      "categories": [
+        "repair"
+      ],
+      "humanControl": "Reachable confirm-guarded repair-apply control (preview token + If-Match)."
+    },
+    "listCharacterHistory": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/characters/{id}/history",
+      "agentReference": "api-reference/README.md#listcharacterhistory",
+      "summary": "snapshot list, newest first"
+    },
+    "getCharacterSnapshot": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/characters/{id}/history/{snapshotId}",
+      "agentReference": "api-reference/README.md#getcharactersnapshot",
+      "summary": "snapshot DTO (read-only)"
+    },
+    "undoCharacter": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/undo",
+      "agentReference": "api-reference/README.md#undocharacter",
+      "summary": "Restore the newest snapshot as the full current document and delete it (consecutive undos walk backwards); the undo itself is not undoable. No history → NO_HISTORY. If-Match required (entity revision, or sha256: content token for a degraded entity). Degraded entity → 422 INVALID_ENTITY (repair or delete first).",
+      "categories": [
+        "lifecycle"
+      ],
+      "humanControl": "Reachable undo control; surfaces NO_HISTORY when no snapshot exists."
+    },
+    "retireCharacter": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/retire",
+      "agentReference": "api-reference/README.md#retirecharacter",
+      "summary": "Explicit retirement (Q33): confirmation-guarded lifecycle operation, legal in any state and below maximum trauma. Requires body {confirm: true} (else CONFIRM_REQUIRED) and If-Match. Runs the shared retirement cleanup atomically (one snapshot, one history entry; undo restores the complete prior state): isRetired → true; stress → 0; traumaPending/isOutOfAction/stressClearPending → false; all harm → []; healing clock segments and rollover → 0; armor usage → false; isDeadish recomputed false; dossier, playbook, trauma history, notes, gear, and fund preserved verbatim. Already retired → RETIRED. Degraded entity → 422 INVALID_ENTITY.",
+      "categories": [
+        "lifecycle"
+      ],
+      "humanControl": "Reachable confirmation-guarded retire control (confirm:true + If-Match); explains retirement cleanup and undo as the recovery path."
+    },
+    "stressAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.add",
+      "agentReference": "api-reference/README.md#stressadd",
+      "summary": "Clamped delta; signed-delta family: applied.requested is the signed requested change, applied.effective the signed actual change after clamping — when they differ, clients must report the clamp. Landing at max from below (delta > 0, old < max, new = max) sets traumaPending and adds the typed attention sideEffect \"stress full — trauma pending\" (LIFECYCLE-STRESS-001); NEVER auto-trauma (LIFECYCLE-STRESS-002). Gates: retired → RETIRED; traumaPending → TRAUMA_REQUIRED; isOutOfAction → OUT_OF_ACTION (LIFECYCLE-STRESS-003/004). Degraded entity → 422 INVALID_ENTITY.",
+      "flagged": true
+    },
+    "stressClear": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.clear",
+      "agentReference": "api-reference/README.md#stressclear",
+      "summary": "Clears stress to 0. Non-numeric: no applied numeric fields. Gates: retired → RETIRED; traumaPending → TRAUMA_REQUIRED (resolve the pending trauma first); isOutOfAction → OUT_OF_ACTION — out of action until end-score, which is the only sanctioned release (LIFECYCLE-STRESS-004). Degraded entity → 422 INVALID_ENTITY."
+    },
+    "traumaAdd": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/trauma.add",
+      "agentReference": "api-reference/README.md#traumaadd",
+      "summary": "Resolution-only (W14): requires traumaPending — no pending trauma → 400 VALIDATION (LIFECYCLE-TRAUMA-002); never auto-adds trauma. Records the trauma, keeps stress full (untouched), clears traumaPending, sets isOutOfAction and stressClearPending (LIFECYCLE-TRAUMA-001). Resolving the max-th trauma runs the shared retirement cleanup in the SAME transition and snapshot — observable post-state identical to explicit retirement modulo the preserved trauma history (LIFECYCLE-TRAUMA-001/002, LIFECYCLE-RETIRE-004): isRetired true, stress 0, harm/healing clock/ armor cleared, pending/out-of-action flags cleared; dossier, playbook, trauma history, notes, gear, and fund preserved. Duplicate → DUPLICATE; retired → RETIRED. Degraded entity → 422 INVALID_ENTITY.",
+      "categories": [
+        "lifecycle"
+      ],
+      "humanControl": "Reachable trauma-resolution control for pending trauma (never auto-trauma)."
+    },
+    "traumaRemove": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/trauma.remove",
+      "agentReference": "api-reference/README.md#traumaremove",
+      "summary": "Removes the named trauma from trauma history — the trauma-history correction path, allowed on retired characters. Never recomputes or clears isRetired: removing trauma from a retired character does not un-retire; undo is the recovery path (LIFECYCLE-RETIRE-008). Absent trauma → NOT_FOUND. Degraded entity → 422 INVALID_ENTITY.",
+      "categories": [
+        "lifecycle"
+      ],
+      "humanControl": "Reachable trauma-history correction control (never clears isRetired)."
+    },
+    "harmAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.add",
+      "agentReference": "api-reference/README.md#harmadd",
+      "summary": "Spillover ladder: rolls UPWARD when slots full (lesser→moderate→severe→fatal). Landing intensity reported in applied.landedIntensity + sideEffect when it differs from requested. All full at/above requested → SLOT_FULL_FATAL.",
+      "flagged": true
+    },
+    "harmRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.remove",
+      "agentReference": "api-reference/README.md#harmremove",
+      "summary": "Exact intensity only; never cascades.",
+      "flagged": true
+    },
+    "harmHeal": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.heal",
+      "agentReference": "api-reference/README.md#harmheal",
+      "summary": "C4 playtest change (2026-08-09): healing a Harm means picking a specific currently-active Harm. Requires healing clock full (else CANNOT_HEAL). Removes the listed harm (exact intensity + description); resets the clock (rollover applied). Unknown harm → NOT_FOUND. No automatic shifting."
+    },
+    "harmHealingClock": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.healing-clock",
+      "agentReference": "api-reference/README.md#harmhealingclock",
+      "summary": "Rollover clock; overflow past full is carried and applied on reset."
+    },
+    "armorSet": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/armor.set",
+      "agentReference": "api-reference/README.md#armorset",
+      "summary": "Set used flag for one armor kind. Setting used=true without availability (loadout/ability-derived, exposed as monitor.armor.has*) → ARMOR_NOT_AVAILABLE. used=false always succeeds."
+    },
+    "playbookXpAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/playbook-xp.add",
+      "agentReference": "api-reference/README.md#playbookxpadd",
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
+    },
+    "playbookXpClear": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/playbook-xp.clear",
+      "agentReference": "api-reference/README.md#playbookxpclear",
+      "summary": "Explicit clear (e.g. after spending a playbook advance). NOTE the asymmetry: ability.take does NOT clear playbook XP; only this op and attribute.levelup (attribute track only) clear XP."
+    },
+    "attributeXpAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/attribute-xp.add",
+      "agentReference": "api-reference/README.md#attributexpadd",
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
+    },
+    "attributeXpClear": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/attribute-xp.clear",
+      "agentReference": "api-reference/README.md#attributexpclear",
+      "summary": ""
+    },
+    "attributeLevelup": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/attribute.levelup",
+      "agentReference": "api-reference/README.md#attributelevelup",
+      "summary": "Requires that attribute's XP track full (CANNOT_LEVEL_UP), action exists (NOT_FOUND), action below the effective cap (RATING_MAXED) — the same shared cap action.set-rating enforces: server-computed minimum of the raw max (ActionPointMaximum) and the Mastery-derived cap (ActionCap Base/Mastery, crew-state-derived), published per action as effectiveActionCap by GET /api/characters/{id}/capabilities. Increments the action rating and clears that attribute's XP track."
+    },
+    "actionSetRating": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/action.set-rating",
+      "agentReference": "api-reference/README.md#actionsetrating",
+      "summary": "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED."
+    },
+    "abilityTake": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/ability.take",
+      "agentReference": "api-reference/README.md#abilitytake",
+      "summary": "Validated against playbook settings (TimesTakeable → ABILITY_MAXED). Does NOT spend playbook XP — asymmetric flow, see playbook-xp.clear."
+    },
+    "abilityRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/ability.remove",
+      "agentReference": "api-reference/README.md#abilityremove",
+      "summary": "Removes the whole ability entry including all stacked takes."
+    },
+    "gearAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.add",
+      "agentReference": "api-reference/README.md#gearadd",
+      "summary": ""
+    },
+    "gearRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.remove",
+      "agentReference": "api-reference/README.md#gearremove",
+      "summary": "Also removes the item from loadout (sideEffect when it was committed)."
+    },
+    "gearCommit": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.commit",
+      "agentReference": "api-reference/README.md#gearcommit",
+      "summary": "Preconditions: commitment ≠ none (NO_COMMITMENT), item available (NOT_FOUND), bulk fits (OVER_BULK), not already committed (DUPLICATE), not locked (COMMITMENT_LOCKED)."
+    },
+    "gearUncommit": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.uncommit",
+      "agentReference": "api-reference/README.md#gearuncommit",
+      "summary": "Locked → COMMITMENT_LOCKED."
+    },
+    "gearSetCommitment": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-commitment",
+      "agentReference": "api-reference/README.md#gearsetcommitment",
+      "summary": "Locked → COMMITMENT_LOCKED. MaxBulk per option comes from game settings."
+    },
+    "gearClearCommitments": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.clear-commitments",
+      "agentReference": "api-reference/README.md#gearclearcommitments",
+      "summary": "Clears loadout AND resets commitment to none. Locked → COMMITMENT_LOCKED."
+    },
+    "gearLock": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.lock",
+      "agentReference": "api-reference/README.md#gearlock",
+      "summary": ""
+    },
+    "gearUnlock": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.unlock",
+      "agentReference": "api-reference/README.md#gearunlock",
+      "summary": ""
+    },
+    "fundGain": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/fund.gain",
+      "agentReference": "api-reference/README.md#fundgain",
+      "summary": "Satchel fills first, overflow to stash; coins that fit nowhere are reported in sideEffects and applied.effective — never silently dropped."
+    },
+    "fundSpend": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/fund.spend",
+      "agentReference": "api-reference/README.md#fundspend",
+      "summary": "Satchel first, then stash liquidation at 2 stash → 1 coin. Insufficient → INSUFFICIENT_FUNDS with maxAffordable detail."
+    },
+    "fundLiquidate": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/fund.liquidate",
+      "agentReference": "api-reference/README.md#fundliquidate",
+      "summary": "Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS."
+    },
+    "rolodexAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/rolodex.add",
+      "agentReference": "api-reference/README.md#rolodexadd",
+      "summary": "Duplicate entry → DUPLICATE. New friends start at closeness \"friend\"."
+    },
+    "rolodexRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/rolodex.remove",
+      "agentReference": "api-reference/README.md#rolodexremove",
+      "summary": ""
+    },
+    "rolodexSetCloseness": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/rolodex.set-closeness",
+      "agentReference": "api-reference/README.md#rolodexsetcloseness",
+      "summary": "Full transition set (friend/close-friend/rival) — supersedes the reference's four named upgrade/downgrade methods with one total operation."
+    },
+    "dossierUpdate": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/dossier.update",
+      "agentReference": "api-reference/README.md#dossierupdate",
+      "summary": "Partial update — only provided fields change. crewId must reference an existing crew or be empty string (VALIDATION).",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable dossier editing control (name, alias, look, heritage, background, vice, crewId; allowed after retirement)."
+    },
+    "sessionSet": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/session.set",
+      "agentReference": "api-reference/README.md#sessionset",
+      "summary": "Partial update; each value clamped 0..max (game settings)."
+    },
+    "notebookSet": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/notebook.set",
+      "agentReference": "api-reference/README.md#notebookset",
+      "summary": "",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable notebook editing control (allowed after retirement)."
+    },
+    "endScore": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/end-score",
+      "agentReference": "api-reference/README.md#endscore",
+      "summary": "Composite helper; body optional — a missing or empty body is valid (W15). A successful end-score ALWAYS clears stress to 0 and resets both out-of-action flags (isOutOfAction, stressClearPending); optional flags select additional score cleanup (clearArmorUsed, resetLoadoutCommitment). One snapshot and exactly one history entry: any mid-composite failure (e.g. COMMITMENT_LOCKED from resetLoadoutCommitment) fails the whole operation — nothing applied, no snapshot written. Gates: retired → RETIRED; traumaPending → TRAUMA_REQUIRED — the pending trauma must be resolved first, end-score can never erase an unresolved trauma (LIFECYCLE-ENDSCORE-001); isOutOfAction does NOT block — end-score is the release. Degraded entity → 422 INVALID_ENTITY.",
+      "categories": [
+        "lifecycle"
+      ],
+      "humanControl": "Reachable end-of-score control; explains out-of-action release and performs the selected cleanup flags."
+    },
+    "noteAdd": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.add",
+      "agentReference": "api-reference/README.md#noteadd",
+      "summary": "C4 playtest change (2026-08-09): append a note to dossier.notes (string[]).",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable note-append control (allowed after retirement)."
+    },
+    "noteRemove": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.remove",
+      "agentReference": "api-reference/README.md#noteremove",
+      "summary": "C4 playtest change (2026-08-09): remove the note at 0-based index. Index out of range → NOT_FOUND.",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable note-removal control (allowed after retirement)."
+    },
+    "endDowntime": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/end-downtime",
+      "agentReference": "api-reference/README.md#enddowntime",
+      "summary": "Composite helper: clears session expressions; optional caller-supplied vice-relief stress clear amount (GM judgment stays outside).",
+      "categories": [
+        "lifecycle"
+      ],
+      "humanControl": "Reachable end-of-downtime control."
+    },
+    "listCrews": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/crews",
+      "agentReference": "api-reference/README.md#listcrews",
+      "summary": "crew summaries"
+    },
+    "createCrew": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews",
+      "agentReference": "api-reference/README.md#createcrew",
+      "summary": "",
+      "flagged": true
+    },
+    "getCrew": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/crews/{id}",
+      "agentReference": "api-reference/README.md#getcrew",
+      "summary": "crew DTO (byte-identical to disk)"
+    },
+    "getCrewCapabilities": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/crews/{id}/capabilities",
+      "agentReference": "api-reference/README.md#getcrewcapabilities",
+      "summary": "Advisory crew capability projection: the full available upgrade catalog with total/marked/remaining boxes, the full available ability catalog with max/taken/remaining takes, effective turf, and the rep develop threshold. Never persisted in the entity DTO; mutations remain authoritative (UPGRADE_MAXED / ABILITY_MAXED)."
+    },
+    "deleteCrew": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/delete",
+      "agentReference": "api-reference/README.md#deletecrew",
+      "summary": "Requires confirm:true (CONFIRM_REQUIRED otherwise). Removes the entity and its history; not undoable. Works on entities in ANY state including degraded (If-Match: entity revision, or the sha256: content token for a degraded entity). Unlinks member characters: every readable character with dossier.crewId = this crew gets crewId cleared, atomically in the same snapshot (reported in sideEffects). Owner-deletion reassignment (W5): standalone clocks owned by this crew are reassigned to campaign ownership (ownerKind \"campaign\", ownerId \"\") in the same atomic snapshot, each with a new revision and updatedAt; no clock is ever deleted as a side effect. The result reports the reassigned clock ids as sideEffects entries \"clock <id> reassigned to campaign\" (the reassignedClockIds set).",
+      "categories": [
+        "destructive"
+      ],
+      "humanControl": "Reachable confirm-guarded delete control (confirm:true + If-Match); reports unlinked member characters in sideEffects."
+    },
+    "importCrew": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/import",
+      "agentReference": "api-reference/README.md#importcrew",
+      "summary": "Import preview/apply for a full or PARTIAL document; ?preview=1 selects preview mode. Preview never writes: canonical document → 200 with the preview and a preview token; normalization needed (fills, conversions, clamps, legacy conversions, displayed removals) → 409 NORMALIZATION_REQUIRED with warnings, the previewed document, and the preview token; needs-input pointers → 409 listing the exact pointers awaiting caller values. Apply (no preview param) requires If-Match (entity revision; degraded target: sha256: content token), the preview token, and confirm:true (missing → CONFIRM_REQUIRED); it atomically writes the previewed result, clears history, and takes exactly one baseline snapshot. Apply without values for needs-input pointers → 400 INVALID_ENTRY with pointer-level details; unknown properties are rejected unless the preview classifies and displays their removal; a changed document or stored entity since preview → 409 STALE_REVISION. 1 MiB payload cap → 413 PAYLOAD_TOO_LARGE.",
+      "categories": [
+        "data-management"
+      ],
+      "humanControl": "Reachable import control with preview/apply confirmation (preview first; apply requires the preview token + If-Match)."
+    },
+    "repairCrewPreview": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/repair-preview",
+      "agentReference": "api-reference/README.md#repaircrewpreview",
+      "summary": "Repair preview for a degraded/repairable stored crew: computes the normalized result and warnings WITHOUT writing. Optional body: caller-supplied values for needs-input pointers, keyed by JSON pointer into the stored document (e.g. {\"/name\": \"...\"}); keys that do not resolve to a needs-input pointer are ignored with a warning. Stored entity already canonical → 200 PreviewResult with no token (nothing to confirm). Repairable → 409 NORMALIZATION_REQUIRED with warnings, the previewed result, and the preview token; needs-input pointers still awaiting caller values are listed in the preview. Unparseable stored bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).",
+      "categories": [
+        "repair"
+      ],
+      "humanControl": "Reachable repair-preview control showing the normalized result and warnings before any write."
+    },
+    "repairCrewApply": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/repair",
+      "agentReference": "api-reference/README.md#repaircrewapply",
+      "summary": "Confirmed repair apply. Requires If-Match (entity revision, or the sha256: content token for degraded/unparseable rows), the preview token from repair-preview, and confirm:true (missing → CONFIRM_REQUIRED). Atomically writes the previewed normalized result — one snapshot, revision +1. Changed stored bytes since the preview → 409 STALE_REVISION; no valid preview token → 409 NORMALIZATION_REQUIRED (preview first). Unparseable stored bytes → 422 INVALID_ENTITY (cannot be repaired; deletion only).",
+      "categories": [
+        "repair"
+      ],
+      "humanControl": "Reachable confirm-guarded repair-apply control (preview token + If-Match)."
+    },
+    "listCrewHistory": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/crews/{id}/history",
+      "agentReference": "api-reference/README.md#listcrewhistory",
+      "summary": "snapshot list, newest first"
+    },
+    "getCrewSnapshot": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/crews/{id}/history/{snapshotId}",
+      "agentReference": "api-reference/README.md#getcrewsnapshot",
+      "summary": "snapshot DTO"
+    },
+    "undoCrew": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/undo",
+      "agentReference": "api-reference/README.md#undocrew",
+      "summary": "Restore the newest snapshot as the full current document and delete it (consecutive undos walk backwards); the undo itself is not undoable. No history → NO_HISTORY. If-Match required (entity revision, or sha256: content token for a degraded entity). Degraded entity → 422 INVALID_ENTITY (repair or delete first).",
+      "categories": [
+        "lifecycle"
+      ],
+      "humanControl": "Reachable undo control; surfaces NO_HISTORY when no snapshot exists."
+    },
+    "heatAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/heat.add",
+      "agentReference": "api-reference/README.md#heatadd",
+      "summary": ""
+    },
+    "wantedAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/wanted.add",
+      "agentReference": "api-reference/README.md#wantedadd",
+      "summary": ""
+    },
+    "repAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/rep.add",
+      "agentReference": "api-reference/README.md#repadd",
+      "summary": ""
+    },
+    "tierAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/tier.add",
+      "agentReference": "api-reference/README.md#tieradd",
+      "summary": "Bounded below at 0; applied delta reported."
+    },
+    "holdSet": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/hold.set",
+      "agentReference": "api-reference/README.md#holdset",
+      "summary": ""
+    },
+    "crewXpAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/xp.add",
+      "agentReference": "api-reference/README.md#crewxpadd",
+      "summary": "Signed delta (signed-delta result family): requested/effective are signed changes; negative deltas reduce the track and clamp at zero (effective 0, never negative)."
+    },
+    "crewNoteAdd": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.add",
+      "agentReference": "api-reference/README.md#crewnoteadd",
+      "summary": "C4 playtest change (2026-08-09): append a note to crew.notes (string[]).",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable crew note-append control (allowed after retirement)."
+    },
+    "crewNoteRemove": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.remove",
+      "agentReference": "api-reference/README.md#crewnoteremove",
+      "summary": "C4 playtest change (2026-08-09): remove the note at 0-based index. Index out of range → NOT_FOUND.",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable crew note-removal control (allowed after retirement)."
+    },
+    "turfAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/turf.add",
+      "agentReference": "api-reference/README.md#turfadd",
+      "summary": "C4 playtest change (2026-08-09): add (or remove, negative delta) turf, clamped 0..6. Each turf reduces the rep cost to develop by one (SRD Development)."
+    },
+    "crewXpClear": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/xp.clear",
+      "agentReference": "api-reference/README.md#crewxpclear",
+      "summary": ""
+    },
+    "crewAbilityTake": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/ability.take",
+      "agentReference": "api-reference/README.md#crewabilitytake",
+      "summary": ""
+    },
+    "crewAbilityRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/ability.remove",
+      "agentReference": "api-reference/README.md#crewabilityremove",
+      "summary": ""
+    },
+    "crewClaimSet": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/claim.set",
+      "agentReference": "api-reference/README.md#crewclaimset",
+      "summary": "Acquire or relinquish a crew claim (idempotent; Lair rejected)"
+    },
+    "crewClaimCustomize": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/claim.customize",
+      "agentReference": "api-reference/README.md#crewclaimcustomize",
+      "summary": "Write or merge a per-crew override for a claim (fields inherit unless overridden)"
+    },
+    "crewClaimReset": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/claim.reset",
+      "agentReference": "api-reference/README.md#crewclaimreset",
+      "summary": "Delete the override for a claim, restoring canonical defaults"
+    },
+    "upgradeMark": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/upgrade.mark",
+      "agentReference": "api-reference/README.md#upgrademark",
+      "summary": "Marks one box. Enforces the upgrade's TotalBoxes (crew game settings, published via GET /api/crews/{id}/capabilities): marking is rejected with UPGRADE_MAXED once boxesMarked = total (the upgrade is full). Unmark stays box-wise and never raises UPGRADE_MAXED."
+    },
+    "upgradeUnmark": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/upgrade.unmark",
+      "agentReference": "api-reference/README.md#upgradeunmark",
+      "summary": "Box-wise: removes ONE box; entry disappears only at 0 boxes. Deliberate divergence from the C# reference (which removed the whole upgrade)."
+    },
+    "cohortAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/cohort.add",
+      "agentReference": "api-reference/README.md#cohortadd",
+      "summary": "{ type: string }"
+    },
+    "cohortUpdate": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/cohort.update",
+      "agentReference": "api-reference/README.md#cohortupdate",
+      "summary": "Partial update by cohortId."
+    },
+    "cohortRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/cohort.remove",
+      "agentReference": "api-reference/README.md#cohortremove",
+      "summary": ""
+    },
+    "crewContactAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/contact.add",
+      "agentReference": "api-reference/README.md#crewcontactadd",
+      "summary": "C3 contract change (2026-07-29, human-authorized). Duplicate name → DUPLICATE."
+    },
+    "crewContactRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/contact.remove",
+      "agentReference": "api-reference/README.md#crewcontactremove",
+      "summary": "C3 contract change. Unknown name → NOT_FOUND."
+    },
+    "factionSetStatus": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.set-status",
+      "agentReference": "api-reference/README.md#factionsetstatus",
+      "summary": "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract."
+    },
+    "factionRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.remove",
+      "agentReference": "api-reference/README.md#factionremove",
+      "summary": "C3 contract change. Unknown name → NOT_FOUND."
+    },
+    "coinAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/coin.add",
+      "agentReference": "api-reference/README.md#coinadd",
+      "summary": "Bounded below at 0; applied delta reported."
+    },
+    "stashAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/crews/{id}/ops/stash.add",
+      "agentReference": "api-reference/README.md#stashadd",
+      "summary": "Bounded below at 0; applied delta reported."
+    },
+    "crewFieldsUpdate": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/ops/fields.update",
+      "agentReference": "api-reference/README.md#crewfieldsupdate",
+      "summary": "Partial update of free-text crew fields.",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable crew free-text editing control (name, lair, reputation, huntingGrounds, crewTypeName)."
+    },
+    "listClocks": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/clocks",
+      "agentReference": "api-reference/README.md#listclocks",
+      "summary": "all campaign clocks"
+    },
+    "createClock": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/clocks",
+      "agentReference": "api-reference/README.md#createclock",
+      "summary": "Create a standalone clock with total ownership metadata (clock-taxonomy §5). Ownership validation: ownerKind \"campaign\" ⇒ ownerId \"\"; ownerKind \"character\"/\"crew\" ⇒ ownerId must be the UUID of an existing entity of that kind (else VALIDATION). purpose must be in the game-setting ClockPurposes list (the schema enum is the canonical set; custom is always available). relatedClockIds (optional, default []): unique, never this clock's own id, every entry an existing standalone clock at write time (healing clocks are not referenceable); cycles allowed. behavior \"bounded\" ⇒ rollover stays 0; segments never exceed size.",
+      "flagged": true
+    },
+    "getClock": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/clocks/{id}",
+      "agentReference": "api-reference/README.md#getclock",
+      "summary": "clock DTO"
+    },
+    "updateClock": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/clocks/{id}/update",
+      "agentReference": "api-reference/README.md#updateclock",
+      "summary": "Partial ownership/purpose/relationship update (clock-taxonomy §5 rules 3 and 5). ownerKind and ownerId are updated together — provide both or neither, else VALIDATION. Ownership validation: ownerKind \"campaign\" ⇒ ownerId \"\"; ownerKind \"character\"/\"crew\" ⇒ ownerId must be the UUID of an existing entity of that kind. purpose must be in the game-setting ClockPurposes list. relatedClockIds: unique, never this clock's own id, every entry an existing standalone clock at write time; cycles allowed. Other mechanical fields (name, behavior, size, segments, rollover) are not editable here — they change through the dedicated ops. Degraded clock → 422 INVALID_ENTITY."
+    },
+    "deleteClock": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/clocks/{id}/delete",
+      "agentReference": "api-reference/README.md#deleteclock",
+      "summary": "Requires confirm:true (CONFIRM_REQUIRED otherwise). If-Match required (entity revision, or the sha256: content token for a degraded clock). Unlink-on-delete (W4): this clock's id is removed from every remaining clock's relatedClockIds in the same atomic snapshot — no dangling references in readable state; related clocks themselves are never deleted, only unlinked.",
+      "categories": [
+        "destructive"
+      ],
+      "humanControl": "Reachable confirm-guarded delete control (confirm:true + If-Match)."
+    },
+    "clockProgress": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/clocks/{id}/ops/clock.progress",
+      "agentReference": "api-reference/README.md#clockprogress",
+      "summary": "Signed progress delta; clock-progress family: applied.requested is the requested progress, applied.effective all accepted progress including rollover, applied.visibleApplied and applied.overflowAdded report the split when nonzero (Q23). Positive delta fills visible segments and ADDS overflow to the existing rollover — overflow accumulates across progress calls and may exceed one clock size (Q24); bounded clocks clamp at full and discard overflow. Negative delta (tug-of-war emptying) consumes carried rollover FIRST, then empties visible segments, never below 0 (W6). Invariant maintained: rollover > 0 ⇒ segments = size. Degraded clock → 422 INVALID_ENTITY."
+    },
+    "clockReset": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/clocks/{id}/ops/clock.reset",
+      "agentReference": "api-reference/README.md#clockreset",
+      "summary": "Resets visible segments. Rollover clocks: applies AT MOST ONE clock size of carried overflow and retains the remaining overflow — segments' = min(rollover, size), rollover' = rollover − segments' (Q24; matches the reference RolloverClock.Reset). Bounded clocks: segments → 0 (rollover is always 0). Reset reports no applied numeric fields (clear/reset family: amount cleared is not reported). Degraded clock → 422 INVALID_ENTITY."
+    }
+  },
+  "approvedExemptions": [],
+  "flaggedCandidates": [
+    "batch",
+    "createCharacter",
+    "stressAdd",
+    "harmAdd",
+    "harmRemove",
+    "createCrew",
+    "createClock"
+  ],
+  "notes": [
+    "Every operationId has exactly one disposition.",
+    "agent: documented for agent use (agentReference); no reachable human control required.",
+    "human: destructive, lifecycle, or designated sheet-management operation — a reachable human control is required (work spec 'Client obligations and parity'; an exported TypeScript function without a reachable control does not count as a human path).",
+    "exempt: requires explicit contract-author approval recorded in approvedExemptions with a reason. Default: none.",
+    "flagged: disposition is the conservative default; the orchestrator should confirm it."
+  ]
+}

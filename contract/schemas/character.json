@@ -23,7 +23,10 @@
     "session",
     "notebook",
     "isRetired",
-    "isDeadish"
+    "isDeadish",
+    "traumaPending",
+    "isOutOfAction",
+    "stressClearPending"
   ],
   "additionalProperties": false,
   "properties": {
@@ -59,7 +62,20 @@
       "type": "boolean"
     },
     "isDeadish": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "write-time derived from monitor.harm.fatal; never accepted as input"
+    },
+    "traumaPending": {
+      "type": "boolean",
+      "description": "true from the moment stress reaches maximum until the pending trauma is resolved"
+    },
+    "isOutOfAction": {
+      "type": "boolean",
+      "description": "true from trauma resolution until end-score; out of action for the remainder of the score"
+    },
+    "stressClearPending": {
+      "type": "boolean",
+      "description": "set and cleared together with isOutOfAction; records that end-score owes a stress clear"
     },
     "dossier": {
       "type": "object",
@@ -464,6 +480,16 @@
       "type": "string"
     }
   },
+  "x-requiredWhenComplete": [
+    { "pointer": "/dossier/name", "predicate": "nonBlankString" },
+    { "pointer": "/dossier/alias", "predicate": "nonBlankString" },
+    { "pointer": "/dossier/look", "predicate": "nonBlankString" },
+    { "pointer": "/dossier/heritage/name", "predicate": "nonBlankString" },
+    { "pointer": "/dossier/background/name", "predicate": "nonBlankString" },
+    { "pointer": "/dossier/vice/name", "predicate": "nonBlankString" },
+    { "pointer": "/dossier/vice/purveyor/name", "predicate": "nonBlankString" },
+    { "pointer": "/playbook/name", "predicate": "nonBlankString" }
+  ],
   "$defs": {
     "gearItems": {
       "type": "array",

@@ -5,7 +5,8 @@
   "type": "object",
   "required": [
     "kind", "id", "revision", "formatVersion", "createdAt", "updatedAt",
-    "name", "clockKind", "segments", "size", "rollover"
+    "name", "ownerKind", "ownerId", "purpose", "behavior",
+    "segments", "size", "rollover", "relatedClockIds"
   ],
   "additionalProperties": false,
   "properties": {
@@ -16,13 +17,53 @@
     "createdAt": { "$ref": "common.json#/$defs/timestamp" },
     "updatedAt": { "$ref": "common.json#/$defs/timestamp" },
     "name": { "type": "string" },
-    "clockKind": { "enum": ["project", "rollover"] },
+    "ownerKind": {
+      "enum": ["campaign", "character", "crew"],
+      "description": "storage ownership: campaign, character, or crew"
+    },
+    "ownerId": {
+      "type": "string",
+      "description": "empty string for campaign ownership; otherwise the UUID of an existing entity of ownerKind"
+    },
+    "purpose": {
+      "enum": ["progress", "danger", "racing", "linked", "mission", "tug-of-war", "long-term-project", "faction", "score", "custom"],
+      "description": "narrative purpose, from the game-setting ClockPurposes list; descriptive only, never auto-resolved"
+    },
+    "behavior": {
+      "enum": ["bounded", "rollover"],
+      "description": "mechanical behavior: bounded clamps at full and discards overflow; rollover carries overflow and re-applies it"
+    },
     "segments": { "type": "integer", "minimum": 0 },
-    "size": { "type": "integer", "minimum": 1 },
+    "size": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "clock size; positive, no maximum"
+    },
     "rollover": {
       "type": "integer",
       "minimum": 0,
-      "description": "overflow segments carried past full; always 0 for project clocks"
+      "description": "overflow segments carried past full; always 0 for bounded clocks"
+    },
+    "relatedClockIds": {
+      "type": "array",
+      "items": { "$ref": "common.json#/$defs/uuid" },
+      "uniqueItems": true,
+      "description": "standalone clock ids for descriptive linked/racing relationships; empty array means none"
     }
+  },
+  "if": {
+    "properties": {
+      "behavior": { "const": "bounded" }
+    }
+  },
+  "then": {
+    "properties": {
+      "rollover": { "const": 0 }
+    }
+  },
+  "x-segmentsLeSize": {
+    "description": "Admission rule 2 (clock-taxonomy.mdx §5): segments must not exceed size. Standard JSON Schema (draft 2020-12) cannot compare two numeric properties, so this extension keyword carries the rule; validators that support it (ajv addKeyword, server admission) reject segments > size, others must enforce it at admission.",
+    "type": "boolean",
+    "const": true
   }
 }

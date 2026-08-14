@@ -1,0 +1,262 @@
+{
+	"definitions": {
+		"CrewAbilitySetting": {
+			"type": "object",
+			"properties": {
+				"Name": {
+					"type": "string"
+				},
+				"TimesTakeable": {
+					"type": "integer",
+					"minimum": 1
+				},
+				"Description": {
+					"type": "string"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Name",
+				"TimesTakeable",
+				"Description"
+			]
+		},
+		"CrewUpgradeSetting": {
+			"type": "object",
+			"properties": {
+				"Name": {
+					"type": "string"
+				},
+				"TotalBoxes": {
+					"type": "integer",
+					"minimum": 1
+				},
+				"Description": {
+					"type": "string"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Name",
+				"TotalBoxes",
+				"Description"
+			]
+		},
+		"CrewContactSetting": {
+			"type": "object",
+			"properties": {
+				"Name": {
+					"type": "string"
+				},
+				"Description": {
+					"type": "string"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Name",
+				"Description"
+			]
+		},
+		"ClaimEffectSetting": {
+			"type": "object",
+			"properties": {
+				"Id": {
+					"type": "string"
+				},
+				"Kind": {
+					"type": "string"
+				},
+				"Target": {
+					"type": "string"
+				},
+				"Delta": {
+					"type": "integer"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Id",
+				"Kind",
+				"Target",
+				"Delta"
+			]
+		},
+		"ClaimNodeSetting": {
+			"type": "object",
+			"properties": {
+				"Id": {
+					"type": "string"
+				},
+				"Name": {
+					"type": "string"
+				},
+				"Description": {
+					"type": "string"
+				},
+				"Kind": {
+					"type": "string",
+					"enum": [
+						"claim",
+						"turf",
+						"lair"
+					]
+				},
+				"Column": {
+					"type": "integer"
+				},
+				"Row": {
+					"type": "integer"
+				},
+				"Effects": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/ClaimEffectSetting"
+					}
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Id",
+				"Name",
+				"Description",
+				"Kind",
+				"Column",
+				"Row",
+				"Effects"
+			]
+		},
+		"ClaimEdgeSetting": {
+			"type": "object",
+			"properties": {
+				"From": {
+					"type": "string"
+				},
+				"To": {
+					"type": "string"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"From",
+				"To"
+			]
+		},
+		"ClaimsSetting": {
+			"type": "object",
+			"properties": {
+				"Columns": {
+					"type": "integer"
+				},
+				"Rows": {
+					"type": "integer"
+				},
+				"Nodes": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/ClaimNodeSetting"
+					}
+				},
+				"Edges": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/ClaimEdgeSetting"
+					}
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Columns",
+				"Rows",
+				"Nodes",
+				"Edges"
+			]
+		},
+		"CrewTypeSetting": {
+			"type": "object",
+			"properties": {
+				"Name": {
+					"type": "string"
+				},
+				"Hook": {
+					"type": "string"
+				},
+				"Description": {
+					"type": "string"
+				},
+				"ExperienceTrigger": {
+					"type": "string"
+				},
+				"SpecialAbilities": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/CrewAbilitySetting"
+					}
+				},
+				"Upgrades": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/CrewUpgradeSetting"
+					}
+				},
+				"StartingUpgrades": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/CrewUpgradeSetting"
+					}
+				},
+				"Contacts": {
+					"type": "array",
+					"items": {
+						"$ref": "#/definitions/CrewContactSetting"
+					}
+				},
+				"FavoredOperations": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"Reputations": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"Claims": {
+					"$ref": "#/definitions/ClaimsSetting"
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"Name",
+				"Hook",
+				"Description",
+				"ExperienceTrigger",
+				"SpecialAbilities",
+				"Upgrades"
+			]
+		}
+	},
+	"type": "object",
+	"properties": {
+		"Name": {
+			"type": "string"
+		},
+		"Language": {
+			"type": "string"
+		},
+		"CrewTypes": {
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/CrewTypeSetting"
+			}
+		}
+	},
+	"additionalProperties": false,
+	"required": [
+		"Name",
+		"Language",
+		"CrewTypes"
+	]
+}
