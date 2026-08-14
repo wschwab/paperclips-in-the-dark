@@ -120,6 +120,15 @@ describe("contract v1 request-schema validation (AUDIT-0 BUG-011)", () => {
         const result = await api.operation(response);
         expect(result.ok).toBe(false);
         expect(result.error?.code).toBe("VALIDATION");
+        // Frozen whole-error union: the VALIDATION branch carries the typed
+        // pointer details (issue list) plus the locked envelope fields. The
+        // union type admits the legacy {code,message} branch, so the new
+        // envelope fields are read through an optional-shape cast.
+        const error = result.error as { status?: number; retryable?: boolean; recovery?: string };
+        expect(error.status).toBe(400);
+        expect(error.retryable).toBeTypeOf("boolean");
+        expect(error.recovery).toBeTypeOf("string");
+        expect(result.error?.details.issues.length).toBeGreaterThan(0);
         const afterList = await api.get(listPath);
         expect((afterList.body as unknown[]).length).toBe(countBefore);
         return;
@@ -132,6 +141,11 @@ describe("contract v1 request-schema validation (AUDIT-0 BUG-011)", () => {
       const result = await api.operation(response);
       expect(result.ok).toBe(false);
       expect(result.error?.code).toBe("VALIDATION");
+      const error = result.error as { status?: number; retryable?: boolean; recovery?: string };
+      expect(error.status).toBe(400);
+      expect(error.retryable).toBeTypeOf("boolean");
+      expect(error.recovery).toBeTypeOf("string");
+      expect(result.error?.details.issues.length).toBeGreaterThan(0);
       const after = await api.get(`${test.target}s/${id}`);
       expect(after.rawBody).toBe(before.rawBody);
     });

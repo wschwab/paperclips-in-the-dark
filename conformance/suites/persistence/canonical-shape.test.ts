@@ -312,22 +312,27 @@ describe("canonical shape oracle (SC-O1)", () => {
     "import apply with missing needs-input pointer values returns 400 INVALID_ENTRY with pointer-level details",
     async () => {
       const character = await createRawCharacter();
+      // D4 needs-input class: an unknown enum variant has no derivable
+      // canonical value — the preview lists it as a needs-input pointer, and
+      // applying without a caller value must fail INVALID_ENTRY with the
+      // pointer. (Fills like /createdAt are derivable — the matrix allows the
+      // preview to offer server 'now' — so they must NOT be used here.)
+      const partial = { gear: { commitment: "medium" } };
       const preview = await api.post(`characters/${character.id}/import?preview=1`, {
-        entity: { dossier: { name: "Needs Input" } },
+        entity: partial,
       });
       expect(preview.status).toBe(409);
       const previewBody = JSON.parse(preview.rawBody) as {
-        error: { token?: string; details?: { previewToken?: string; warnings?: string[] } };
+        error: { token?: string; details?: { previewToken?: string; needsInputPointers?: string[] } };
       };
       const token = previewBody.error?.token ?? previewBody.error?.details?.previewToken;
       expect(token).toBeTruthy();
+      expect(previewBody.error?.details?.needsInputPointers ?? []).toContain("/gear/commitment");
 
-      // apply re-submits the same partial document: fills are derivable, but
-      // needs-input pointers (e.g. /createdAt, /updatedAt — no derivable
-      // value per the R0 property inventory) still lack caller values.
+      // apply re-submits the same partial document without the caller value.
       const apply = await api.post(
         `characters/${character.id}/import`,
-        { entity: { dossier: { name: "Needs Input" } }, previewToken: token, confirm: true },
+        { entity: partial, previewToken: token, confirm: true },
         { "If-Match": String(character.revision) },
       );
       expect(apply.status).toBe(400);
@@ -346,7 +351,8 @@ describe("canonical shape oracle (SC-O1)", () => {
         expect(typeof issue.reason).toBe("string");
         expect(typeof issue.expected).toBe("string");
       }
-      // red today: no INVALID_ENTRY exists — the import path rejects with VALIDATION.
+      // needs-input apply without caller values → 400 INVALID_ENTRY with
+      // pointer-level details (SC-A2 machinery; green since Wave 4 A2).
     },
   );
 

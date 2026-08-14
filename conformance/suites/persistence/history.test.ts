@@ -2,7 +2,7 @@ import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
 import { decode, Schemas } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
-import { newCharacter, newCrew } from "../../src/suite-helpers.js";
+import { newCharacter, newCrew, revisionHeader } from "../../src/suite-helpers.js";
 
 describe("persistence history and undo", () => {
   testCase("PERSISTENCE-HISTORY-001", "snapshot-worthy character mutations create history entries", async () => {
@@ -20,7 +20,11 @@ describe("persistence history and undo", () => {
     const character = await newCharacter();
     const changed = await api.characterOp(character.id, "stress.add", { delta: 1 });
     expect(changed.ok).toBe(true);
-    const undone = await api.post(`characters/${character.id}/undo`);
+    const undone = await api.post(
+      `characters/${character.id}/undo`,
+      undefined,
+      revisionHeader(changed.character?.revision ?? character.revision + 1),
+    );
     expect(undone.status).toBe(200);
     const result = await api.operation(undone);
     expect(result.ok).toBe(true);

@@ -29,7 +29,10 @@ describe("§5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 B
     const response = await api.post("campaign/batch", {
       ops: [
         { entity: "character", id: character.id, op: "stress.add", args: { delta: 1 } },
-        { entity: "character", id: character.id, op: "trauma.add", args: { trauma: "Cold" } },
+        // trauma.add is resolution-only under the frozen lifecycle (it
+        // requires traumaPending — SC-A8), so the second op is an ungated
+        // snapshot-worthy op; the batch subject is sequencing/outcomes.
+        { entity: "character", id: character.id, op: "note.add", args: { text: "batched note" } },
       ],
     });
     expect(response.status).toBe(200);
@@ -40,12 +43,12 @@ describe("§5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 B
     expect(result.batch?.[0]?.ok).toBe(true);
     expect(result.batch?.[0]?.op).toBe("stress.add");
     expect(result.batch?.[1]?.ok).toBe(true);
-    expect(result.batch?.[1]?.op).toBe("trauma.add");
+    expect(result.batch?.[1]?.op).toBe("note.add");
 
     const after = await api.character(character.id);
     expect(after.revision).toBe(character.revision + 1);
     expect(after.monitor.stress.current).toBe(character.monitor.stress.current + 1);
-    expect(after.monitor.trauma.traumas).toContain("Cold");
+    expect(after.dossier.notes).toContain("batched note");
     expect(await historyLength(character.id)).toBe(historyBefore + 1);
   });
 
@@ -66,9 +69,25 @@ describe("§5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 B
     });
     expect(response.status).toBe(200);
     const result = await api.operation(response);
-    expect(result.ok).toBe(false);
-    expect(result.error).not.toBeNull();
-    expect(result.error?.code).toBeTypeOf("string");
+    // Frozen batch envelope: every planned item is evaluated and reported as
+    // a per-op outcome; the envelope stays 200 with ok:true and error:null —
+    // all-or-nothing refers to WRITES (nothing is written when any item
+    // fails), so the batch never fails as a whole.
+    expect(result.ok).toBe(true);
+    expect(result.error).toBeNull();
+    expect(result.batch).toHaveLength(3);
+    expect(result.batch?.[0]?.ok).toBe(true);
+    expect(result.batch?.[1]?.ok).toBe(false);
+    // Batch items carry the same whole-error union as the top-level error
+    // (ERR-BATCH-008); an unknown op is a VALIDATION branch with pointer
+    // details.
+    const itemError = result.batch?.[1]?.error as { status?: number; retryable?: boolean; recovery?: string } | undefined;
+    expect(result.batch?.[1]?.error?.code).toBe("VALIDATION");
+    expect(itemError?.status).toBe(400);
+    expect(itemError?.retryable).toBeTypeOf("boolean");
+    expect(itemError?.recovery).toBeTypeOf("string");
+    expect(result.batch?.[1]?.error?.details.issues.length).toBeGreaterThan(0);
+    expect(result.batch?.[2]?.ok).toBe(true);
 
     const firstAfter = await api.character(first.id);
     const secondAfter = await api.character(second.id);

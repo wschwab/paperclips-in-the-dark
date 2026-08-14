@@ -1,7 +1,7 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
 import { testCase } from "../../src/test-case.js";
-import { newCharacter, newCrew } from "../../src/suite-helpers.js";
+import { newCharacter, newCrew, revisionHeader } from "../../src/suite-helpers.js";
 
 describe("§5.1.11 character and crew cross-links", () => {
   testCase("SEMANTICS-CROSS-LINKS-001", "dossier crewId accepts an existing crew and roster counts members", async () => {
@@ -20,7 +20,7 @@ describe("§5.1.11 character and crew cross-links", () => {
     const crew = await newCrew();
     const character = await newCharacter();
     await api.characterOp(character.id, "dossier.update", { crewId: crew.id });
-    const deleted = await api.post(`crews/${crew.id}/delete`, { confirm: true });
+    const deleted = await api.post(`crews/${crew.id}/delete`, { confirm: true }, revisionHeader(crew.revision));
     expect(deleted.status).toBe(200);
     const unlinked = await api.character(character.id);
     expect(unlinked.dossier.crewId).toBe("");

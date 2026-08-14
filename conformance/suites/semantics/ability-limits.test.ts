@@ -21,11 +21,17 @@ describe("§5.1.9 ability.take enforces TimesTakeable and ability.remove removes
     const over = await api.characterOp(character.id, "ability.take", { name: "Battleborn" });
     expect(over.ok).toBe(false);
     expect(over.error?.code).toBe("ABILITY_MAXED");
+    // Frozen union: ABILITY_MAXED is a 200-status domain failure carrying the
+    // typed limit details; the DTO rides on error.entity, not the top-level
+    // character field.
+    expect((over.error as { status?: number }).status).toBe(200);
+    expect(over.error?.details).toEqual({ limit: 1, current: 1 });
     // The rejected take must not advance timesTaken or revision.
-    expect(over.character?.playbook.abilities).toContainEqual(
+    const afterReject = await api.character(character.id);
+    expect(afterReject.playbook.abilities).toContainEqual(
       expect.objectContaining({ name: "Battleborn", timesTaken: 1 }),
     );
-    expect(over.character?.revision).toBe(character.revision + 1);
+    expect(afterReject.revision).toBe(character.revision + 1);
 
     const removed = await api.characterOp(character.id, "ability.remove", { name: "Battleborn" });
     expect(removed.ok).toBe(true);
@@ -48,7 +54,9 @@ describe("§5.1.9 ability.take enforces TimesTakeable and ability.remove removes
     const over = await api.crewOp(crew.id, "ability.take", { name: "Predators" });
     expect(over.ok).toBe(false);
     expect(over.error?.code).toBe("ABILITY_MAXED");
-    expect(over.crew?.specialAbilities).toContainEqual(
+    expect(over.error?.details).toEqual({ limit: 1, current: 1 });
+    const afterReject = await api.crew(crew.id);
+    expect(afterReject.specialAbilities).toContainEqual(
       expect.objectContaining({ name: "Predators", timesTaken: 1 }),
     );
 

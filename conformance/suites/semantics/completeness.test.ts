@@ -279,6 +279,15 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
       expect(before).not.toContain("isReadable");
       expect(before).not.toContain("isRepairable");
 
+      // A fresh character carries canonical empties at all seven dossier
+      // pointers (create fills only playbook.name), so filling name alone
+      // leaves six pointers empty and the roster incomplete. Fill the other
+      // six first: the empty direction must report incomplete, and the name
+      // fill is what flips the summary to complete.
+      await rawCharacterOp(character.id, "dossier.update", fillExcept("/dossier/name", DOSSIER_FULL));
+      const beforeFlip = await rosterRow("characters", character.id);
+      expect(beforeFlip.isComplete).toBe(false);
+
       const filled = await rawCharacterOp(character.id, "dossier.update", { name: "Brenda" });
       expect(filled.character).toMatchObject({ dossier: { name: "Brenda" } });
 

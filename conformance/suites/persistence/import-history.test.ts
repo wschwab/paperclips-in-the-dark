@@ -2,7 +2,7 @@ import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
 import { decode, Schemas } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
-import { newCharacter, newCrew } from "../../src/suite-helpers.js";
+import { newCharacter, newCrew, revisionHeader } from "../../src/suite-helpers.js";
 
 describe("persistence import history", () => {
   testCase(
@@ -10,9 +10,8 @@ describe("persistence import history", () => {
     "a schema-invalid import is rejected and leaves bytes, revision, and history unchanged",
     async () => {
       const character = await newCharacter();
-      try {
-        const added = await api.characterOp(character.id, "note.add", { text: "before import" });
-        expect(added.ok).toBe(true);
+      const added = await api.characterOp(character.id, "note.add", { text: "before import" });
+      expect(added.ok).toBe(true);
 
         const before = await api.get(`characters/${character.id}`);
         expect(before.status).toBe(200);
@@ -32,24 +31,10 @@ describe("persistence import history", () => {
         expect(afterDto.revision).toBe(beforeDto.revision);
         const afterHistory = await decode(Schemas.History, (await api.get(`characters/${character.id}/history`)).body);
         expect(afterHistory).toEqual(beforeHistory);
-      } finally {
-        // Teardown (AUDIT-0 BUG-003): the buggy server accepts any import with matching
-        // kind/id, so the schema-invalid body above may have replaced current.json with
-        // unreadable data. Re-import a valid full Character DTO over the same id to
-        // overwrite current.json with valid data, so the corruption does not poison
-        // shared endpoints (GET /api/characters, /api/campaign/roster) for the rest of
-        // the suite run.
-        const fixture = (await import("../../fixtures/golden-character.json", { with: { type: "json" } })).default as Record<string, unknown>;
-        const repair = {
-          ...fixture,
-          id: character.id,
-          createdAt: character.createdAt,
-          updatedAt: character.updatedAt,
-          revision: character.revision,
-          dossier: { ...(fixture.dossier as Record<string, unknown>), crewId: character.dossier.crewId, notes: character.dossier.notes },
-        };
-        await api.post(`characters/${character.id}/import`, repair);
-      }
+        // No teardown needed: the AUDIT-0 BUG-003 corruption path (server
+        // accepting any import with matching kind/id) is closed by the frozen
+        // ImportRequest envelope — a body without `entity` is rejected above
+        // with 400 VALIDATION and nothing is written.
     },
   );
 
@@ -77,7 +62,21 @@ describe("persistence import history", () => {
         dossier: { ...(fixture.dossier as Record<string, unknown>), crewId: crew.id, notes },
       };
 
-      const response = await api.post(`characters/${character.id}/import`, imported);
+      // Frozen import transaction: preview classifies the golden document
+      // (canonical → 200 with a previewToken), then the confirming apply
+      // requires {entity, previewToken, confirm:true} plus If-Match (the
+      // current revision). The imported doc is a golden, so it applies
+      // directly after the token-issuing preview.
+      const preview = await api.post(`characters/${character.id}/import?preview=1`, { entity: imported });
+      expect(preview.status).toBe(200);
+      const previewBody = preview.body as { previewToken?: string };
+      expect(previewBody.previewToken).toBeTruthy();
+
+      const response = await api.post(
+        `characters/${character.id}/import`,
+        { entity: imported, previewToken: previewBody.previewToken ?? "", confirm: true },
+        revisionHeader(preDto.revision),
+      );
       expect(response.status).toBe(200);
       const result = await api.operation(response);
       expect(result.ok).toBe(true);

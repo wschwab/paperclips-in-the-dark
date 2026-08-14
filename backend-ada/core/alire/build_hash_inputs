@@ -1,4 +1,5 @@
 external:LIBRARY_TYPE=default
 external:PAPERCLIPS_CORE_LIBRARY_TYPE=default
-profile:paperclips_core=DEVELOPMENT
-switches:paperclips_core=-Og,-fdata-sections,-ffunction-sections,-g,-gnatVa,-gnatW8,-gnatw.X,-gnatwa,-gnaty-d,-gnaty3,-gnatyA,-gnatyB,-gnatyI,-gnatyO,-gnatyS,-gnatya,-gnatyb,-gnatyc,-gnatye,-gnatyf,-gnatyh,-gnatyi,-gnatyk,-gnatyl,-gnatym,-gnatyn,-gnatyp,-gnatyr,-gnatyt,-gnatyu,-gnatyx
+profile:paperclips_core=RELEASE
+switches:paperclips_core=-O3,-fdata-sections,-ffunction-sections,-gnatW8,-gnatn
+version:gnat_native=16.1.0

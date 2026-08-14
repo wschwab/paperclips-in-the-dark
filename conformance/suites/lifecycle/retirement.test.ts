@@ -1,7 +1,7 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
 import { testCase } from "../../src/test-case.js";
-import { newCharacter } from "../../src/suite-helpers.js";
+import { newCharacter, revisionHeader } from "../../src/suite-helpers.js";
 
 describe("lifecycle retirement", () => {
   testCase("LIFECYCLE-RETIREMENT-001", "a retired character remains readable", async () => {
@@ -20,12 +20,12 @@ describe("lifecycle retirement", () => {
 
   testCase("LIFECYCLE-RETIREMENT-002", "character deletion requires confirmation", async () => {
     const character = await newCharacter();
-    const rejected = await api.post(`characters/${character.id}/delete`, { confirm: false });
+    const rejected = await api.post(`characters/${character.id}/delete`, { confirm: false }, revisionHeader(character.revision));
     expect(rejected.status).toBe(200);
     const rejectedResult = await api.operation(rejected);
     expect(rejectedResult.ok).toBe(false);
     expect(rejectedResult.error?.code).toBe("CONFIRM_REQUIRED");
-    const deleted = await api.post(`characters/${character.id}/delete`, { confirm: true });
+    const deleted = await api.post(`characters/${character.id}/delete`, { confirm: true }, revisionHeader(character.revision));
     expect(deleted.status).toBe(200);
   });
 });

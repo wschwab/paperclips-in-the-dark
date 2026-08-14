@@ -270,9 +270,16 @@
           "type": "string",
           "minLength": 1,
           "description": "Opaque preview token; must be presented on the confirming apply."
+        },
+        "needsInputPointers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "JSON pointers that require caller-supplied values before the apply can succeed; empty when all changes are derivable."
         }
       },
-      "description": "Preview details (NORMALIZATION_REQUIRED): the warnings and the preview token that unlocks the confirming apply."
+      "description": "Preview details (NORMALIZATION_REQUIRED): the warnings, any needs-input pointers, and the preview token that unlocks the confirming apply."
     },
     "errorContentToken": {
       "type": "string",

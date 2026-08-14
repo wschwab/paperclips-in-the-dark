@@ -2,7 +2,7 @@ import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
 import { decode, Schemas } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
-import { newCharacter } from "../../src/suite-helpers.js";
+import { newCharacter, revisionHeader } from "../../src/suite-helpers.js";
 
 describe("persistence snapshot policy", () => {
   testCase(
@@ -31,8 +31,13 @@ describe("persistence snapshot policy", () => {
     async () => {
       const character = await newCharacter();
       for (let index = 0; index < 55; index += 1) {
-        const operation = index % 2 === 0 ? "note.add" : "stress.add";
-        const body = operation === "note.add" ? { text: `n${index}` } : { delta: 1 };
+        // note.add/dossier.update are both snapshot-worthy and never gate:
+        // stress.add would stop snapshotting once stress lands at max (the
+        // frozen lifecycle raises traumaPending and gates further adds with
+        // TRAUMA_REQUIRED — LIFECYCLE-STRESS-003), which would make the
+        // retained count depend on trauma semantics instead of retention.
+        const operation = index % 2 === 0 ? "note.add" : "dossier.update";
+        const body = operation === "note.add" ? { text: `n${index}` } : { name: `Name ${index}` };
         const response = await api.post(`characters/${character.id}/ops/${operation}`, body);
         expect(response.status).toBe(200);
       }
@@ -41,7 +46,7 @@ describe("persistence snapshot policy", () => {
       expect(history).toHaveLength(50);
       expect(new Set(history.map((entry) => entry.snapshotId)).size).toBe(50);
       expect(history[0]?.op).toBe("note.add");
-      expect(history[history.length - 1]?.op).toBe("stress.add");
+      expect(history[history.length - 1]?.op).toBe("dossier.update");
 
       const current = await api.character(character.id);
       expect(current.revision).toBe(character.revision + 55);
@@ -68,13 +73,17 @@ describe("persistence snapshot policy", () => {
         ["a", "b", "c", "d", "e"],
       ]);
 
-      const firstUndo = await api.post(`characters/${character.id}/undo`);
+      const firstUndo = await api.post(`characters/${character.id}/undo`, undefined, revisionHeader(character.revision + texts.length));
       expect(firstUndo.status).toBe(200);
       const firstResult = await api.operation(firstUndo);
       expect(firstResult.ok).toBe(true);
       expect(firstResult.character?.dossier.notes).toEqual(states[3]);
 
-      const secondUndo = await api.post(`characters/${character.id}/undo`);
+      const secondUndo = await api.post(
+        `characters/${character.id}/undo`,
+        undefined,
+        revisionHeader(firstResult.character?.revision ?? character.revision + texts.length + 1),
+      );
       expect(secondUndo.status).toBe(200);
       const secondResult = await api.operation(secondUndo);
       expect(secondResult.ok).toBe(true);

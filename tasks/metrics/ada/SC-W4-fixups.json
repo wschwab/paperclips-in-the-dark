@@ -1,0 +1,13 @@
+{
+  "task": "SC-W4-fixups",
+  "track": "ada",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "enum needs-input classification (D4), server-side isComplete derivation, suite-drift updates (If-Match/envelope/union shapes), FILL-002 frozen-case amendment (authorized)",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " full unseeded suite 358 passed/56 failed with remaining reds categorized to SC-A6/A7/A8/A9/SC-F4/wave-7"
+}
