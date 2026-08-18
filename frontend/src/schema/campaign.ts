@@ -18,7 +18,7 @@ export const Health = Schema.Struct({
 
 export type Health = typeof Health.Type;
 
-export const decodeHealth = Schema.decodeUnknownSync(Health);
+export const decodeHealth = Schema.decodeUnknownSync(Health, { onExcessProperty: "error" });
 export const decodeHealthEither = Schema.decodeUnknownEither(Health);
 
 /** Campaign metadata (campaign.json on disk) */
@@ -35,6 +35,7 @@ export type Campaign = typeof Campaign.Type;
 export const decodeCampaign = Schema.decodeUnknownSync(Campaign);
 
 export const CharacterSummary = Schema.Struct({
+  kind: Schema.Literal("character"),
   id: Uuid,
   name: Schema.String,
   alias: Schema.String,
@@ -46,11 +47,29 @@ export const CharacterSummary = Schema.Struct({
   isRetired: Schema.Boolean,
   isDeadish: Schema.Boolean,
   revision: Revision,
+  // E11 total collections (campaign.json#/$defs/characterSummary): every row
+  // carries readability/repair/undo state; deleteToken is "" for readable rows.
+  // Wave 3 tolerance: lagging roster rows omit these; canonical defaults fill
+  // in (a readable, repairable-free, complete-free row with no history), while
+  // present values must still be typed exactly.
+  isReadable: Schema.optionalWith(Schema.Boolean, { default: () => true }),
+  isRepairable: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  isComplete: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  deleteToken: Schema.optionalWith(
+    Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
+    { default: () => "" },
+  ),
+  canUndo: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  historyCount: Schema.optionalWith(
+    Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+    { default: () => 0 },
+  ),
 }).pipe(Schema.annotations({ identifier: "CharacterSummary" }));
 
 export type CharacterSummary = typeof CharacterSummary.Type;
 
 export const CrewSummary = Schema.Struct({
+  kind: Schema.Literal("crew"),
   id: Uuid,
   name: Schema.String,
   crewType: Schema.String,
@@ -62,6 +81,20 @@ export const CrewSummary = Schema.Struct({
   hold: Hold,
   memberCount: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   revision: Revision,
+  // E11 total collections (campaign.json#/$defs/crewSummary): same readable/
+  // repair/undo state fields and Wave-3 defaults as CharacterSummary.
+  isReadable: Schema.optionalWith(Schema.Boolean, { default: () => true }),
+  isRepairable: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  isComplete: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  deleteToken: Schema.optionalWith(
+    Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
+    { default: () => "" },
+  ),
+  canUndo: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  historyCount: Schema.optionalWith(
+    Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+    { default: () => 0 },
+  ),
 }).pipe(Schema.annotations({ identifier: "CrewSummary" }));
 
 export type CrewSummary = typeof CrewSummary.Type;
@@ -74,8 +107,10 @@ export const Roster = Schema.Struct({
 
 export type Roster = typeof Roster.Type;
 
-export const decodeRoster = Schema.decodeUnknownSync(Roster);
-export const decodeRosterEither = Schema.decodeUnknownEither(Roster);
+export const decodeRoster = Schema.decodeUnknownSync(Roster, { onExcessProperty: "error" });
+export const decodeRosterEither = Schema.decodeUnknownEither(Roster, {
+  onExcessProperty: "error",
+});
 
 export const HistoryEntry = Schema.Struct({
   // C#-era snapshots were "<17-digit-ticks>-<id>"; the Ada server emits UUIDs
@@ -87,5 +122,9 @@ export const HistoryEntry = Schema.Struct({
 
 export type HistoryEntry = typeof HistoryEntry.Type;
 
-export const decodeHistoryEntry = Schema.decodeUnknownSync(HistoryEntry);
-export const decodeHistoryEntryEither = Schema.decodeUnknownEither(HistoryEntry);
+export const decodeHistoryEntry = Schema.decodeUnknownSync(HistoryEntry, {
+  onExcessProperty: "error",
+});
+export const decodeHistoryEntryEither = Schema.decodeUnknownEither(HistoryEntry, {
+  onExcessProperty: "error",
+});

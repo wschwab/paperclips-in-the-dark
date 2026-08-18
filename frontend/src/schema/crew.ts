@@ -12,6 +12,12 @@ import {
   Timestamp,
   Uuid,
 } from "./common.js";
+import {
+  CREW_COMPLETENESS_RECORDS,
+  findIncompleteRecords,
+  isComplete,
+  type CompletenessRecord,
+} from "./generated/completeness.js";
 
 const SpecialAbility = Schema.Struct({
   name: Schema.String.pipe(Schema.minLength(1)),
@@ -23,11 +29,15 @@ const Upgrade = Schema.Struct({
   boxesMarked: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1)),
 });
 
+// Q4 (contract/schemas/crew.json): contacts are a required canonical array;
+// empty means no entries. Each entry requires name and profession.
 const Contact = Schema.Struct({
   name: Schema.String.pipe(Schema.minLength(1)),
-  profession: Schema.optional(Schema.String),
+  profession: Schema.String,
 });
 
+// Q4 (contract/schemas/crew.json): factions are a required canonical array;
+// empty means no entries. Each entry requires name and status (server-clamped).
 const Faction = Schema.Struct({
   name: Schema.String.pipe(Schema.minLength(1)),
   status: Schema.Number.pipe(Schema.int()),
@@ -82,8 +92,8 @@ export const Crew = Schema.Struct({
   specialAbilities: Schema.Array(SpecialAbility),
   upgrades: Schema.Array(Upgrade),
   cohorts: Schema.Array(Cohort),
-  contacts: Schema.optional(Schema.Array(Contact)),
-  factions: Schema.optional(Schema.Array(Faction)),
+  contacts: Schema.Array(Contact),
+  factions: Schema.Array(Faction),
   coin: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   stash: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   notes: Notes,
@@ -93,5 +103,20 @@ export const Crew = Schema.Struct({
 
 export type Crew = typeof Crew.Type;
 
-export const decodeCrew = Schema.decodeUnknownSync(Crew);
-export const decodeCrewEither = Schema.decodeUnknownEither(Crew);
+export const decodeCrew = Schema.decodeUnknownSync(Crew, { onExcessProperty: "error" });
+export const decodeCrewEither = Schema.decodeUnknownEither(Crew, {
+  onExcessProperty: "error",
+});
+
+/**
+ * Outstanding (incomplete) crew fields, computed from the GENERATED
+ * predicates module — never a hand-copied pointer list. A canonical empty at
+ * a locked pointer makes the entity readable + incomplete (Q10); a genuinely
+ * absent property is a canonicality (repair) concern, not a completeness one.
+ */
+export const crewOutstandingFields = (document: Crew): readonly CompletenessRecord[] =>
+  findIncompleteRecords(CREW_COMPLETENESS_RECORDS, document as unknown);
+
+/** True when every crew completeness predicate holds for the document. */
+export const isCrewComplete = (document: Crew): boolean =>
+  isComplete(CREW_COMPLETENESS_RECORDS, document as unknown);

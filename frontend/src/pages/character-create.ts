@@ -80,6 +80,43 @@ function renderLoading(): HTMLElement {
   );
 }
 
+/** State for the entity created in phase one but not yet named in phase two. */
+interface PhaseTwo {
+  id: string;
+  name: string;
+  revision: number;
+}
+
+/**
+ * FV-017 phase-two (naming) failure: the character was already created and
+ * must be retained. Offer a direct link to its sheet plus a retry that
+ * resumes ONLY dossier.update — never a second POST to create.
+ */
+function renderPhaseTwoRecovery(
+  entityHref: string,
+  message: string,
+  note: string,
+  retryLabel: string,
+  openLabel: string,
+  onRetry: () => void,
+): HTMLElement {
+  const retry = el("button", { type: "button", className: "btn-primary" }, retryLabel);
+  retry.addEventListener("click", onRetry);
+  return el(
+    "section",
+    { className: "character-create-error" },
+    el("h1", {}, "Create Character"),
+    el("p", { className: "error", role: "alert" }, message),
+    el("p", { className: "recovery-note" }, note),
+    el(
+      "div",
+      { className: "form-actions" },
+      el("a", { href: entityHref, className: "btn-secondary" }, openLabel),
+      retry,
+    ),
+  );
+}
+
 /**
  * Mount the character creation page into `root` for the given game.
  * Returns a disposer and a function to navigate after creation.
@@ -91,6 +128,9 @@ export function mountCharacterCreatePage(
   onCreated: (character: Character) => void,
 ): () => void {
   let cancelled = false;
+  // FV-017: set once phase one (create) succeeded; phase-two retries reuse it
+  // so the create endpoint is never POSTed twice for the same entity.
+  let phaseTwo: PhaseTwo | null = null;
   root.setAttribute("aria-live", "polite");
 
   const form = renderForm(gameStem, playbooks);
@@ -110,6 +150,53 @@ export function mountCharacterCreatePage(
     };
   }
 
+  const finish = (character: Character) => {
+    if (cancelled) return;
+    root.setAttribute("aria-busy", "false");
+    onCreated(character);
+  };
+
+  // Resume only the failed sub-step (dossier.update) with the retained
+  // id + revision. Create is not called again on this path.
+  const retryNaming = () => {
+    if (cancelled || !phaseTwo) return;
+    const retained = phaseTwo;
+    root.setAttribute("aria-busy", "true");
+    setChildren(root, renderLoading());
+    const program = Effect.gen(function* () {
+      return yield* dossierUpdate(retained.id, { name: retained.name }, retained.revision);
+    });
+    void Effect.runPromise(Effect.match(program, { onFailure: fail, onSuccess: finish }));
+  };
+
+  const fail = (err: unknown) => {
+    if (cancelled) return;
+    root.setAttribute("aria-busy", "false");
+    const detail =
+      err instanceof ApiError
+        ? `(${err.status}): ${err.body}`
+        : err instanceof DecodeError
+          ? `Invalid response: ${err.message}`
+          : String(err);
+    if (phaseTwo) {
+      // Phase-one succeeded: the character exists. Keep it, link to it, and
+      // offer a retry of the naming step only.
+      setChildren(
+        root,
+        renderPhaseTwoRecovery(
+          `/character/${phaseTwo.id}`,
+          `Character created, but naming it failed ${detail}`,
+          "The new character is kept on the roster without a name. Retry naming it, or open its sheet directly.",
+          "Retry naming",
+          "Open character sheet",
+          retryNaming,
+        ),
+      );
+    } else {
+      setChildren(root, renderError(`Failed to create character ${detail}`));
+    }
+  };
+
   formEl.addEventListener("submit", (ev) => {
     if (cancelled) return;
     ev.preventDefault();
@@ -128,34 +215,17 @@ export function mountCharacterCreatePage(
     setChildren(root, renderLoading());
 
     // Two-step create (Design Audit F-12): POST the character, then name it
-    // via dossier.update with the returned id+revision. A dossier.update
-    // failure must NOT re-POST the character on retry — it is recoverable,
-    // so we surface the error rather than risk a duplicate character.
+    // via dossier.update with the returned id+revision.
+    phaseTwo = null;
     const program = Effect.gen(function* () {
       const created = yield* createCharacter(gameStem, playbook);
       if (!name) return created;
+      phaseTwo = { id: created.id, name, revision: created.revision };
       return yield* dossierUpdate(created.id, { name }, created.revision);
     });
 
     void Effect.runPromise(
-      Effect.match(program, {
-        onFailure: (err) => {
-          if (cancelled) return;
-          root.setAttribute("aria-busy", "false");
-          const msg =
-            err instanceof ApiError
-              ? `Failed to create character (${err.status}): ${err.body}`
-              : err instanceof DecodeError
-                ? `Invalid response: ${err.message}`
-                : String(err);
-          setChildren(root, renderError(msg));
-        },
-        onSuccess: (character) => {
-          if (cancelled) return;
-          root.setAttribute("aria-busy", "false");
-          onCreated(character);
-        },
-      }),
+      Effect.match(program, { onFailure: fail, onSuccess: finish }),
     );
   });
 

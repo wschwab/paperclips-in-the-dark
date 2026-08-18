@@ -1031,7 +1031,8 @@
  * actions use one element type per the audit — <a class="btn-…">
  * is fine and renders identically. */
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-danger {
   display: inline-block;
   font-family: var(--font-label);
   font-size: 0.78rem;
@@ -1060,6 +1061,15 @@
 .btn-secondary:hover {
   background: var(--surface-sunk);
   border-color: var(--fill-border);
+}
+/* Destructive action (SC-F2 degraded-row delete): shares the sheet button
+ * pairing but signals a one-way removal. */
+.btn-danger {
+  background: var(--accent-strong);
+  color: var(--surface);
+}
+.btn-danger:hover {
+  filter: brightness(1.1);
 }
 
 .theme-controls {

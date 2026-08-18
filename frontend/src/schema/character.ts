@@ -13,6 +13,12 @@ import {
   Timestamp,
   Uuid,
 } from "./common.js";
+import {
+  CHARACTER_COMPLETENESS_RECORDS,
+  findIncompleteRecords,
+  isComplete,
+  type CompletenessRecord,
+} from "./generated/completeness.js";
 
 const GearItem = Schema.Struct({
   name: Schema.String.pipe(Schema.minLength(1)),
@@ -165,6 +171,12 @@ export const Character = Schema.Struct({
   updatedAt: Timestamp,
   isRetired: Schema.Boolean,
   isDeadish: Schema.Boolean,
+  // Wave 3 tolerance (frozen contract character.json): the lagging runtime's
+  // characters omit these Wave-2 lifecycle flags; canonical default false
+  // fills in, while a present value must still be a boolean.
+  traumaPending: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  isOutOfAction: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  stressClearPending: Schema.optionalWith(Schema.Boolean, { default: () => false }),
   dossier: Dossier,
   monitor: Monitor,
   talent: Talent,
@@ -178,5 +190,22 @@ export const Character = Schema.Struct({
 
 export type Character = typeof Character.Type;
 
-export const decodeCharacter = Schema.decodeUnknownSync(Character);
-export const decodeCharacterEither = Schema.decodeUnknownEither(Character);
+export const decodeCharacter = Schema.decodeUnknownSync(Character, { onExcessProperty: "error" });
+export const decodeCharacterEither = Schema.decodeUnknownEither(Character, {
+  onExcessProperty: "error",
+});
+
+/**
+ * Outstanding (incomplete) character fields, computed from the GENERATED
+ * predicates module — never a hand-copied pointer list. A canonical empty at
+ * a locked pointer makes the entity readable + incomplete (Q10); a genuinely
+ * absent property is a canonicality (repair) concern, not a completeness one.
+ */
+export const characterOutstandingFields = (
+  document: Character,
+): readonly CompletenessRecord[] =>
+  findIncompleteRecords(CHARACTER_COMPLETENESS_RECORDS, document as unknown);
+
+/** True when every character completeness predicate holds for the document. */
+export const isCharacterComplete = (document: Character): boolean =>
+  isComplete(CHARACTER_COMPLETENESS_RECORDS, document as unknown);

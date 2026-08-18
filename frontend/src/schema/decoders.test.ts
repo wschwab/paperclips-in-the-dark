@@ -11,8 +11,13 @@ import {
   decodeRoster,
 } from "./campaign.js";
 import { decodeCharacter, decodeCharacterEither } from "./character.js";
+import {
+  characterOutstandingFields,
+  isCharacterComplete,
+} from "./character.js";
 import { decodeClock, decodeClockEither } from "./clock.js";
 import { decodeCrew, decodeCrewEither } from "./crew.js";
+import { crewOutstandingFields, isCrewComplete } from "./crew.js";
 import {
   decodeOperationResult,
   decodeOperationResultEither,
@@ -154,6 +159,7 @@ describe("Roster decoder", () => {
     const roster = decodeRoster({
       characters: [
         {
+          kind: "character",
           id: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
           name: "Brenda Hilton",
           alias: "Webweaver",
@@ -169,6 +175,7 @@ describe("Roster decoder", () => {
       ],
       crews: [
         {
+          kind: "crew",
           id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
           name: "The Red Sashes",
           crewType: "Assassins",
@@ -304,3 +311,135 @@ describe("HistoryEntry decoder (F2aa)", () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// FV-027 P27B — recursive strictness matrix
+// ---------------------------------------------------------------------------
+describe("recursive strictness matrix (FV-027 P27B)", () => {
+  const goldenCharacter = loadFixture("golden-character.json") as Record<string, any>;
+  const goldenCrew = loadFixture("golden-crew.json") as Record<string, any>;
+
+  it("rejects an unknown top-level key", () => {
+    expect(Either.isLeft(decodeCharacterEither({ ...goldenCharacter, extraTop: 1 }))).toBe(
+      true,
+    );
+    expect(Either.isLeft(decodeCrewEither({ ...goldenCrew, extraTop: 1 }))).toBe(true);
+  });
+
+  it("rejects an unknown nested key", () => {
+    const dossier = { ...(goldenCharacter.dossier as object), extraNested: 1 };
+    expect(Either.isLeft(decodeCharacterEither({ ...goldenCharacter, dossier }))).toBe(true);
+
+    const harm = { ...(goldenCharacter.monitor.harm as object), extraHarm: 1 };
+    const monitor = { ...(goldenCharacter.monitor as object), harm };
+    expect(Either.isLeft(decodeCharacterEither({ ...goldenCharacter, monitor }))).toBe(true);
+  });
+
+  it("rejects an unknown key on an array item", () => {
+    const cohorts = (goldenCrew.cohorts as any[]).map((c: any) => ({
+      ...c,
+      extraCohort: 1,
+    }));
+    expect(Either.isLeft(decodeCrewEither({ ...goldenCrew, cohorts }))).toBe(true);
+  });
+
+  it("rejects a missing required field", () => {
+    const { id: _id, ...missingId } = goldenCharacter;
+    expect(Either.isLeft(decodeCharacterEither(missingId))).toBe(true);
+  });
+
+  it("rejects a wrong primitive type", () => {
+    expect(
+      Either.isLeft(decodeCharacterEither({ ...goldenCharacter, isRetired: "yes" })),
+    ).toBe(true);
+  });
+
+  it("rejects a wrong enum value", () => {
+    expect(Either.isLeft(decodeCrewEither({ ...goldenCrew, hold: "medium" }))).toBe(true);
+    expect(
+      Either.isLeft(
+        decodeClockEither({
+          ...(loadFixture("golden-clock.json") as object),
+          behavior: "death",
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects a value outside the declared bound", () => {
+    const stress = { current: -1, max: 9 };
+    const monitor = { ...(goldenCharacter.monitor as object), stress };
+    expect(Either.isLeft(decodeCharacterEither({ ...goldenCharacter, monitor }))).toBe(true);
+
+    const clock = { ...(loadFixture("golden-clock.json") as object), size: 0 };
+    expect(Either.isLeft(decodeClockEither(clock))).toBe(true);
+  });
+
+  it("decodes a valid canonical shape", () => {
+    expect(Either.isRight(decodeCharacterEither(goldenCharacter))).toBe(true);
+    expect(Either.isRight(decodeCrewEither(goldenCrew))).toBe(true);
+  });
+
+  it("decodes explicitly extensible nested data", () => {
+    // claimOverrides entries are sparse (only claimId required); their
+    // `effects` member is an arbitrary object (Schema.Record) — explicitly
+    // extensible, so extra/arbitrary keys must NOT be rejected.
+    const claimOverrides = [
+      {
+        claimId: "docks-warehouse",
+        effects: [{ arbitrary: true, nested: { deep: [1, 2, 3] } }],
+      },
+    ];
+    const result = decodeCrewEither({ ...goldenCrew, claimOverrides });
+    expect(Either.isRight(result)).toBe(true);
+    if (Either.isRight(result)) {
+      expect(result.right.claimOverrides[0]?.effects).toEqual([
+        { arbitrary: true, nested: { deep: [1, 2, 3] } },
+      ]);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Completeness consumption (SC-F1) — driven by the GENERATED predicates module
+// ---------------------------------------------------------------------------
+describe("completeness consumption (SC-F1)", () => {
+  it("reports a fully-named golden character as complete with no outstanding fields", () => {
+    const character = decodeCharacter(loadFixture("golden-character.json"));
+    expect(characterOutstandingFields(character)).toEqual([]);
+    expect(isCharacterComplete(character)).toBe(true);
+  });
+
+  it("reports a canonical empty at a locked pointer as readable + incomplete", () => {
+    const data = loadFixture("golden-character.json") as Record<string, any>;
+    const dossier = { ...(data.dossier as object), name: "" };
+    const character = decodeCharacter({ ...data, dossier });
+    const outstanding = characterOutstandingFields(character);
+    expect(outstanding.map((r) => r.pointer)).toContain("/dossier/name");
+    expect(isCharacterComplete(character)).toBe(false);
+  });
+
+  it("reports a whitespace-only locked pointer as incomplete", () => {
+    const data = loadFixture("golden-character.json") as Record<string, any>;
+    const dossier = { ...(data.dossier as object), alias: "   " };
+    const character = decodeCharacter({ ...data, dossier });
+    expect(characterOutstandingFields(character).map((r) => r.pointer)).toContain(
+      "/dossier/alias",
+    );
+  });
+
+  it("reports a fully-named golden crew as complete", () => {
+    const crew = decodeCrew(loadFixture("golden-crew.json"));
+    expect(crewOutstandingFields(crew)).toEqual([]);
+    expect(isCrewComplete(crew)).toBe(true);
+  });
+
+  it("reports a canonical empty crew name as incomplete", () => {
+    const crew = decodeCrew({
+      ...(loadFixture("golden-crew.json") as object),
+      name: "",
+    });
+    expect(crewOutstandingFields(crew).map((r) => r.pointer)).toContain("/name");
+    expect(isCrewComplete(crew)).toBe(false);
+  });
+});

@@ -120,6 +120,11 @@ export const ErrorCode = Schema.Literal(
   "NO_HISTORY",
   "GAME_NOT_FOUND",
   "PAYLOAD_TOO_LARGE",
+  "INVALID_ENTRY",
+  "INVALID_ENTITY",
+  "NORMALIZATION_REQUIRED",
+  "TRAUMA_REQUIRED",
+  "OUT_OF_ACTION",
 );
 export type ErrorCode = typeof ErrorCode.Type;
 

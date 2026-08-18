@@ -4,3 +4,4 @@ export * from "./clock.js";
 export * from "./common.js";
 export * from "./crew.js";
 export * from "./operation-result.js";
+export * from "./generated/completeness.js";

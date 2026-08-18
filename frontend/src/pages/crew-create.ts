@@ -80,6 +80,43 @@ function renderLoading(): HTMLElement {
   );
 }
 
+/** State for the entity created in phase one but not yet named in phase two. */
+interface PhaseTwo {
+  id: string;
+  name: string;
+  revision: number;
+}
+
+/**
+ * FV-017 phase-two (naming) failure: the crew was already created and must
+ * be retained. Offer a direct link to its sheet plus a retry that resumes
+ * ONLY fields.update — never a second POST to create.
+ */
+function renderPhaseTwoRecovery(
+  entityHref: string,
+  message: string,
+  note: string,
+  retryLabel: string,
+  openLabel: string,
+  onRetry: () => void,
+): HTMLElement {
+  const retry = el("button", { type: "button", className: "btn-primary" }, retryLabel);
+  retry.addEventListener("click", onRetry);
+  return el(
+    "section",
+    { className: "crew-create-error" },
+    el("h1", {}, "Create Crew"),
+    el("p", { className: "error", role: "alert" }, message),
+    el("p", { className: "recovery-note" }, note),
+    el(
+      "div",
+      { className: "form-actions" },
+      el("a", { href: entityHref, className: "btn-secondary" }, openLabel),
+      retry,
+    ),
+  );
+}
+
 /**
  * Mount the crew creation page into `root` for the given game.
  * Calls `onCreated` on successful creation; returns a disposer.
@@ -91,6 +128,9 @@ export function mountCrewCreatePage(
   onCreated: (crew: Crew) => void,
 ): () => void {
   let cancelled = false;
+  // FV-017: set once phase one (create) succeeded; phase-two retries reuse it
+  // so the create endpoint is never POSTed twice for the same entity.
+  let phaseTwo: PhaseTwo | null = null;
   root.setAttribute("aria-live", "polite");
 
   const form = renderForm(gameStem, crewTypes);
@@ -110,6 +150,53 @@ export function mountCrewCreatePage(
     };
   }
 
+  const finish = (crew: Crew) => {
+    if (cancelled) return;
+    root.setAttribute("aria-busy", "false");
+    onCreated(crew);
+  };
+
+  // Resume only the failed sub-step (fields.update) with the retained
+  // id + revision. Create is not called again on this path.
+  const retryNaming = () => {
+    if (cancelled || !phaseTwo) return;
+    const retained = phaseTwo;
+    root.setAttribute("aria-busy", "true");
+    setChildren(root, renderLoading());
+    const program = Effect.gen(function* () {
+      return yield* crewFieldsUpdate(retained.id, { name: retained.name }, retained.revision);
+    });
+    void Effect.runPromise(Effect.match(program, { onFailure: fail, onSuccess: finish }));
+  };
+
+  const fail = (err: unknown) => {
+    if (cancelled) return;
+    root.setAttribute("aria-busy", "false");
+    const detail =
+      err instanceof ApiError
+        ? `(${err.status}): ${err.body}`
+        : err instanceof DecodeError
+          ? `Invalid response: ${err.message}`
+          : String(err);
+    if (phaseTwo) {
+      // Phase-one succeeded: the crew exists. Keep it, link to it, and offer
+      // a retry of the naming step only.
+      setChildren(
+        root,
+        renderPhaseTwoRecovery(
+          `/crew/${phaseTwo.id}`,
+          `Crew created, but naming it failed ${detail}`,
+          "The new crew is kept on the roster without a name. Retry naming it, or open its sheet directly.",
+          "Retry naming",
+          "Open crew sheet",
+          retryNaming,
+        ),
+      );
+    } else {
+      setChildren(root, renderError(`Failed to create crew ${detail}`));
+    }
+  };
+
   formEl.addEventListener("submit", (ev) => {
     if (cancelled) return;
     ev.preventDefault();
@@ -128,33 +215,17 @@ export function mountCrewCreatePage(
     setChildren(root, renderLoading());
 
     // Two-step create (Design Audit F-12): POST the crew, then name it via
-    // fields.update with the returned id+revision. A fields.update failure
-    // must NOT re-POST the crew on retry — surface the error instead.
+    // fields.update with the returned id+revision.
+    phaseTwo = null;
     const program = Effect.gen(function* () {
       const created = yield* createCrew(gameStem, crewType);
       if (!name) return created;
+      phaseTwo = { id: created.id, name, revision: created.revision };
       return yield* crewFieldsUpdate(created.id, { name }, created.revision);
     });
 
     void Effect.runPromise(
-      Effect.match(program, {
-        onFailure: (err) => {
-          if (cancelled) return;
-          root.setAttribute("aria-busy", "false");
-          const msg =
-            err instanceof ApiError
-              ? `Failed to create crew (${err.status}): ${err.body}`
-              : err instanceof DecodeError
-                ? `Invalid response: ${err.message}`
-                : String(err);
-          setChildren(root, renderError(msg));
-        },
-        onSuccess: (crew) => {
-          if (cancelled) return;
-          root.setAttribute("aria-busy", "false");
-          onCreated(crew);
-        },
-      }),
+      Effect.match(program, { onFailure: fail, onSuccess: finish }),
     );
   });
 

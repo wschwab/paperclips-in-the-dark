@@ -34,6 +34,10 @@ function crewDTO(overrides: Record<string, unknown> = {}) {
     specialAbilities: [],
     upgrades: [],
     cohorts: [],
+    // SC-F1 frozen decoder: contacts and factions are required canonical
+    // arrays (Q4) — empty means no entries.
+    contacts: [],
+    factions: [],
     coin: 0,
     stash: 0,
     notes: [],
@@ -133,5 +137,63 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
     });
     const posts = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[0] === "/api/crews");
     expect(posts.length).toBe(1);
+  });
+
+  it("keeps the created crew and retries only fields.update across two failures (FV-017)", async () => {
+    const created = crewDTO();
+    const named = crewDTO({ revision: 2, name: "The Red Sashes" });
+    // create OK → fields.update fails twice → fields.update succeeds.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok(createdResp(created)))
+      .mockResolvedValueOnce(err500())
+      .mockResolvedValueOnce(err500())
+      .mockResolvedValueOnce(
+        ok({ ok: true, crew: named, applied: { op: "fields.update" }, sideEffects: [], error: null }),
+      );
+    global.fetch = fetchMock;
+
+    const onCreated = vi.fn();
+    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], onCreated);
+
+    const sheetHref = "/crew/f1e2d3c4-b5a6-4c7d-8e9f-0a1b2c3d4e5f";
+
+    submit("The Red Sashes");
+
+    // Phase-one succeeded, phase-two failed: the retained entity is linked and
+    // a retry control is available — no dead end.
+    await vi.waitFor(() => {
+      expect(root.querySelector(`a[href="${sheetHref}"]`)).not.toBeNull();
+      expect(root.querySelector(".crew-create-error button")).not.toBeNull();
+    });
+    expect(fetchMock.mock.calls.filter((c) => c[0] === "/api/crews").length).toBe(1);
+
+    // Retry #1 fails again: recovery UI stays (fresh controls), create is
+    // still not re-POSTed.
+    (root.querySelector(".crew-create-error button") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      expect(root.querySelector(`a[href="${sheetHref}"]`)).not.toBeNull();
+    });
+    expect(fetchMock.mock.calls.filter((c) => c[0] === "/api/crews").length).toBe(1);
+
+    // Retry #2 succeeds via fields.update alone — the sheet receives the
+    // named crew; entity count never grew past one.
+    (root.querySelector(".crew-create-error button") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(onCreated).toHaveBeenCalledWith(named);
+    });
+    expect(fetchMock.mock.calls.filter((c) => c[0] === "/api/crews").length).toBe(1);
+    const updates = fetchMock.mock.calls.filter(
+      (c) => (c[0] as string).endsWith("/ops/fields.update"),
+    );
+    expect(updates.length).toBe(3);
+    // Every retry re-sends the retained revision in If-Match.
+    expect(updates[2][1]).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({ "If-Match": "1" }),
+        body: JSON.stringify({ name: "The Red Sashes" }),
+      }),
+    );
   });
 });

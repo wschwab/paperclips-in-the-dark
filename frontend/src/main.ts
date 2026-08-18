@@ -1,8 +1,9 @@
 import { el, setChildren } from "./lib/dom.js";
 import { initTheme } from "./lib/theme.js";
-import { getPlaybookList, getCrewTypeList } from "./api/client.js";
+import { getPlaybookList, getCrewTypeList, getCharacter, getCrew } from "./api/client.js";
 import { mountHealthPage } from "./pages/health.js";
 import { mountRosterPage } from "./pages/roster.js";
+import { mountImportPage } from "./pages/import.js";
 import { mountCharacterDetailPage } from "./pages/character-detail.js";
 import { mountCharacterHistoryPage } from "./pages/character-history.js";
 import { mountCharacterCreatePage } from "./pages/character-create.js";
@@ -132,6 +133,31 @@ function render(): void {
     return;
   }
 
+  const charImportMatch = path.match(/^\/character\/([A-Za-z0-9-]+)\/import$/);
+  if (charImportMatch) {
+    const characterId = charImportMatch[1];
+    document.title = "Import Character — Paperclips in the Dark";
+    let cancelled = false;
+    outlet.textContent = "Loading character…";
+    disposePage = () => {
+      cancelled = true;
+    };
+    void Effect.runPromise(
+      Effect.match(getCharacter(characterId), {
+        onFailure: (err) => {
+          if (cancelled) return;
+          outlet.textContent = `Couldn't load the character for import: ${String(err)}`;
+        },
+        onSuccess: (character) => {
+          if (cancelled) return;
+          // If-Match for the confirming apply: the current entity revision.
+          disposePage = mountImportPage(outlet, "character", characterId, String(character.revision));
+        },
+      }),
+    );
+    return;
+  }
+
   const charMatch = path.match(/^\/character\/([A-Za-z0-9-]+)$/);
   if (charMatch) {
     const characterId = charMatch[1];
@@ -145,6 +171,30 @@ function render(): void {
     const characterId = charHistoryMatch[1];
     document.title = "Character History — Paperclips in the Dark";
     disposePage = mountCharacterHistoryPage(outlet, characterId);
+    return;
+  }
+
+  const crewImportMatch = path.match(/^\/crew\/([A-Za-z0-9-]+)\/import$/);
+  if (crewImportMatch) {
+    const crewId = crewImportMatch[1];
+    document.title = "Import Crew — Paperclips in the Dark";
+    let cancelled = false;
+    outlet.textContent = "Loading crew…";
+    disposePage = () => {
+      cancelled = true;
+    };
+    void Effect.runPromise(
+      Effect.match(getCrew(crewId), {
+        onFailure: (err) => {
+          if (cancelled) return;
+          outlet.textContent = `Couldn't load the crew for import: ${String(err)}`;
+        },
+        onSuccess: (crew) => {
+          if (cancelled) return;
+          disposePage = mountImportPage(outlet, "crew", crewId, String(crew.revision));
+        },
+      }),
+    );
     return;
   }
 
