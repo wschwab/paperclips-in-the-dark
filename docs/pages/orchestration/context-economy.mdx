@@ -1,0 +1,65 @@
+---
+title: Orchestration context economy
+description: Evidence and operating rules for long-running autonomous task-graph execution
+---
+
+# Orchestration context economy
+
+Paperclips intentionally permits an orchestrator to continue through every
+reachable wave without waiting for a human between phases. Context rollover
+preserves that policy: it changes the transcript carrying the work, not the
+scope, gates, or autonomy of the work.
+
+## August 2026 evidence
+
+The 2026-08-14 contract-change run executed for about 13.5 hours and made
+substantial progress through Waves 0–5. Its parent orchestrator and 54 worker
+ledgers recorded:
+
+- 4,016 Nous model calls;
+- 644.3 million Nous tokens, including 633.8 million cache-read tokens;
+- 4,633 model generations and 5,627 tool calls across all providers; and
+- an OMP-estimated Nous cost of $19.70. Provider billing is authoritative; the
+  ledger cost is useful for relative attribution, not invoice reconciliation.
+
+The run did not show a dominant duplicate-call loop or output flood. Exact
+repeated tool calls accounted for 30 excess calls, same-path reads repeated only
+19 times within a ledger, and no tool result exceeded 100 KB. Verification,
+review, and corrective dispatches found real defects and are required workflow,
+not waste.
+
+The material avoidable cost was retained context. Cache reads were 98.4% of
+Nous tokens. Caching made those tokens cheaper than new input, but thousands of
+requests repeatedly carried context that had ceased to be active. The parent
+reached about 567,000 cached tokens per generation; several workers exceeded
+300,000. Of Nous calls, 48.1% exceeded 128,000 cached tokens and 19.5% exceeded
+256,000.
+
+A theoretical 256,000-token cap would have removed up to 83.7 million cache
+reads, worth $2.34 at the ledger's recorded rate. A 192,000-token cap would have
+removed up to 142.9 million, worth $4.00. Real savings would be smaller because
+a successor needs a checkpoint and may reload relevant source, but the result
+establishes context rollover as the primary optimization target.
+
+## Operating rules
+
+1. **Continue autonomously.** A rollover never asks the human whether to begin
+   the next wave.
+2. **Roll at stable boundaries.** A green, recorded, and pushed wave starts a
+   fresh parent context. The successor consumes task logs and metrics, verifies
+   them against repository state, and dispatches the next ready batch.
+3. **Checkpoint long workers.** A worker whose transcript has become dominated
+   by prior investigation records decisions, changed paths, current failures,
+   and exact next commands before continuing in a fresh context.
+4. **Scope worker inputs.** Pass the governing card and relevant frozen sections,
+   not every upstream report by default. Workers may read additional source when
+   the task requires it.
+5. **Batch only independent work.** Independent reads and checks can share a
+   generation. Read/edit/verify chains remain sequential.
+6. **Recover cleanly from edit misses.** Reread and re-anchor after the first
+   failed match; never retry a progressively corrupted replacement string.
+7. **Keep every gate.** Do not trade verification, independent review, fix
+   dispatches, or acceptance evidence for lower token use.
+
+The required rollover checkpoint fields are defined in `tasks/README.md`. The
+mandatory agent-facing policy is in the repository root `AGENTS.md`.

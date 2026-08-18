@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountCrewCreatePage } from "./crew-create.js";
+import { renderShell } from "./shell.js";
+import { loadStylesheets, assertFirstH1ClearsSeam } from "./seam.js";
 
 const ok = (data: unknown) => ({
   ok: true,
@@ -75,6 +77,15 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
       new Event("submit", { bubbles: true, cancelable: true }),
     );
   }
+
+  it("places the first h1 below the app bar's torn seam (FV-031)", () => {
+    loadStylesheets();
+    const { shell, outlet } = renderShell({ currentPath: "/crew/create" });
+    document.body.appendChild(shell);
+    mountCrewCreatePage(outlet, "blades-in-the-dark", ["Assassins"], vi.fn());
+    expect(shell.querySelector(".app-bar.torn-foot")).not.toBeNull();
+    assertFirstH1ClearsSeam(outlet);
+  });
 
   it("POSTs create then fields.update with the name, delivering the named DTO", async () => {
     const created = crewDTO();

@@ -1,7 +1,11 @@
 import { Effect } from "effect";
 import {
   ApiError,
+  OpError,
   DecodeError,
+  opErrorFriendlyText,
+  transportErrorText,
+  decodeErrorText,
   getCrew,
   undoCrew,
   crewContactAdd,
@@ -33,8 +37,10 @@ import {
   crewNoteAdd,
   crewNoteRemove,
   crewTurfAdd,
+  getCrewCapabilities,
   StaleRevisionError,
 } from "../api/client.js";
+import type { CrewCapabilities, CrewTrackOpResult } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import { errorCard } from "../components/error-card.js";
 import type { Crew } from "../schema/crew.js";
@@ -66,6 +72,8 @@ interface RenderState {
   crewTypeData: Record<string, unknown> | null;
   crewTypesData: readonly Record<string, unknown>[] | null;
   crewGameData: Record<string, unknown> | null;
+  /** Server-computed crew capability projection (SC-F3); null until loaded or on fetch failure. */
+  crewCaps: CrewCapabilities | null;
   isUndoLoading: boolean;
   isAbilityLoading: boolean;
   isUpgradeLoading: boolean;
@@ -90,6 +98,9 @@ interface RenderState {
   noticeMsg: string | null;
   undoNotice: string | null;
   refreshNotice: string | null;
+  /** Derived undo state from the last operation result (null = unknown before any op). */
+  canUndo: boolean | null;
+  historyCount: number | null;
   handlers: {
     onUndo: () => void;
     onContactAdd: () => void;
@@ -138,26 +149,32 @@ interface RenderState {
 // Render helpers
 // ---------------------------------------------------------------------------
 
-/** Friendly text for op-level errors (DUPLICATE / NOT_FOUND / ABILITY_MAXED /
- * UPGRADE_MAXED / VALIDATION) carried in ApiError bodies. */
-function opErrorText(err: ApiError): string {
-  const body = err.body;
-  if (body.startsWith("DUPLICATE")) {
-    return "DUPLICATE: a contact with that name already exists";
+/** Friendly copy per error class (FV-023/FV-024): typed op errors map known
+ * codes to user copy, transport/decode failures get their own distinct copy;
+ * never raw body/DTO/parser text. */
+function opErrorText(err: unknown): string {
+  if (err instanceof OpError) {
+    if (err.error.code === "DUPLICATE") {
+      return "A contact with that name already exists";
+    }
+    if (err.error.code === "NOT_FOUND") {
+      return "Not on this sheet (removed elsewhere?)";
+    }
+    if (err.error.code === "ABILITY_MAXED") {
+      return "That ability is already taken to its limit";
+    }
+    if (err.error.code === "UPGRADE_MAXED") {
+      return "All of that upgrade's boxes are already marked";
+    }
+    return opErrorFriendlyText(err);
   }
-  if (body.startsWith("NOT_FOUND")) {
-    return "NOT_FOUND: not on this sheet (removed elsewhere?)";
+  if (err instanceof ApiError) {
+    return transportErrorText(err);
   }
-  if (body.startsWith("ABILITY_MAXED")) {
-    return "ABILITY_MAXED: that ability is already taken to its limit";
+  if (err instanceof DecodeError) {
+    return decodeErrorText(err);
   }
-  if (body.startsWith("UPGRADE_MAXED")) {
-    return "UPGRADE_MAXED: all of that upgrade's boxes are already marked";
-  }
-  if (body.startsWith("VALIDATION")) {
-    return body;
-  }
-  return `API error (${err.status}): ${body}`;
+  return String(err);
 }
 
 /**
@@ -297,7 +314,9 @@ function renderTracker(
 
   const plusBtn = el("button", {
     type: "button",
-    disabled: state.anyLoading,
+    // P29/FV-029: the bound control is disabled once the track is full — the
+    // server would otherwise clamp the delta silently.
+    disabled: state.anyLoading || opts.current >= opts.max,
     title: `Add 1 ${opts.label.toLowerCase()}`,
   }, opts.isLoading ? "…" : "+");
   plusBtn.addEventListener("click", () => opts.onDelta(1));
@@ -500,6 +519,36 @@ function extractExperienceTrigger(
   return null;
 }
 
+/**
+ * F4/FV-028: name the "restored state" after a successful crew undo by
+ * diffing before vs after. Picks the most salient changed tracker so the
+ * positive undo notice is concrete; falls back to a neutral phrase.
+ */
+function describeCrewRestore(before: Crew, after: Crew): string {
+  if (before.name !== after.name) {
+    return `the name "${after.name || "Unnamed"}"`;
+  }
+  if (before.heat.current !== after.heat.current) {
+    return `heat to ${after.heat.current}/${after.heat.max}`;
+  }
+  if (before.rep.current !== after.rep.current) {
+    return `rep to ${after.rep.current}/${after.rep.max}`;
+  }
+  if (before.coin !== after.coin) {
+    return `coin to ${after.coin}`;
+  }
+  if (before.stash !== after.stash) {
+    return `stash to ${after.stash}`;
+  }
+  if (before.turf !== after.turf) {
+    return `turf to ${after.turf}`;
+  }
+  if (before.experience.points !== after.experience.points) {
+    return `XP to ${after.experience.points}/${after.experience.max}`;
+  }
+  return "the previous state";
+}
+
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
@@ -512,7 +561,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   const undoButton = el(
     "button",
     {
-      disabled: state.isUndoLoading,
+      disabled: state.isUndoLoading || state.canUndo === false,
       title: "Undo last change",
     },
     state.isUndoLoading ? "…" : "Undo last change",
@@ -687,7 +736,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   // changes only through crewTurfAdd (+/−). Develop applies the SRD flow:
   // rep >= threshold → weak hold: hold.set strong + rep reset; strong hold:
   // pay (tier+1)×8 coin, tier.add +1, rep reset, hold.set weak.
-  const repThreshold = Math.max(0, c.rep.max - c.turf);
+  const repThreshold = state.crewCaps?.developThreshold ?? Math.max(0, c.rep.max - c.turf);
   const canDevelop = c.rep.current >= repThreshold;
 
   const repTracker = renderTracker(state, {
@@ -700,10 +749,15 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     onTrack: handlers.onRepTrack,
   });
 
-  // Crew Claims (A15): effective turf = base + derivedDelta from controlled
-  // turf claims.  Recomputed from base state (no subtractive drift).
-  const claimsForEffects = extractCrewClaims(state.crewTypeData, state.crewTypesData, c.crewTypeName);
-  const effectiveTurf = (() => {
+  // Effective turf is a server-computed projection (SC-F3): base turf + the
+  // claimed turf-delta effects from the claims map. The client never joins
+  // claims/settings to derive it; the local claims derivation is a graceful
+  // fallback only when the capability projection is unavailable.
+  let effectiveTurf: number;
+  if (state.crewCaps) {
+    effectiveTurf = state.crewCaps.effectiveTurf;
+  } else {
+    const claimsForEffects = extractCrewClaims(state.crewTypeData, state.crewTypesData, c.crewTypeName);
     let delta = 0;
     if (claimsForEffects) {
       const g = claimsGraph(claimsForEffects);
@@ -722,8 +776,8 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         }
       }
     }
-    return c.turf + delta;
-  })();
+    effectiveTurf = c.turf + delta;
+  }
 
   // Turf row: 6 slots, filled from the left per turf count, grayed from the
   // right — a rendering, not a button track.
@@ -950,6 +1004,13 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       c.crewTypeName,
     );
 
+    // SC-F3: take/box limits come from the server-computed capability catalog
+    // (the client never joins settings + DTO state to find an enforced cap).
+    // Game data remains a display-only lookup for descriptions.
+    const upgradeCapByName = new Map(
+      (state.crewCaps?.upgrades ?? []).map((u) => [u.name, u]),
+    );
+
     // -- Special abilities --------------------------------------------------
 
     const takenByName = new Map(c.specialAbilities.map((a) => [a.name, a]));
@@ -962,13 +1023,18 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         : "No description available.";
     };
 
-    // Eligible = in the game-data SpecialAbilities and either not taken yet
-    // or taken fewer than TimesTakeable (the server enforces the limit).
-    const eligible = specialAbilities.filter((sa) => {
-      const name = String(sa.Name);
-      const taken = takenByName.get(name);
-      return !taken || taken.timesTaken < abilityTimesTakeable(sa);
-    });
+    // Eligible = a catalog ability with remaining takes; the server enforces
+    // ABILITY_MAXED at 0. Falls back to the game-data join when the
+    // capability projection is unavailable.
+    const eligible = state.crewCaps
+      ? state.crewCaps.abilities
+          .filter((a) => a.remaining > 0)
+          .map((a) => ({ Name: a.name }))
+      : specialAbilities.filter((sa) => {
+          const name = String(sa.Name);
+          const taken = takenByName.get(name);
+          return !taken || taken.timesTaken < abilityTimesTakeable(sa);
+        });
 
     const abilityEntries = c.specialAbilities.map((a) =>
       el("div", {
@@ -1041,11 +1107,16 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     const findUpgrade = (name: string) =>
       upgradesData.find((u) => String(u.Name) === name);
 
+    // Total boxes per upgrade come from the capability catalog (SC-F3),
+    // falling back to crew-type game data when the projection is unavailable.
+    const totalFor = (name: string): number =>
+      upgradeCapByName.get(name)?.totalBoxes ?? upgradeTotalBoxes(findUpgrade(name));
+
     // List rows come from the DTO (name + boxesMarked); total and description
-    // come from the crew-type game data — never hardcoded.
+    // come from the capability catalog / game data — never hardcoded.
     const upgradeEntries = c.upgrades.map((u) => {
       const game = findUpgrade(u.name);
-      const total = upgradeTotalBoxes(game);
+      const total = totalFor(u.name);
       const atMax = u.boxesMarked >= total;
       const unmarkBtn = el("button", {
         type: "button",
@@ -1074,11 +1145,15 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       );
     });
 
-    // Mark menu: native <select> of game-data Upgrades not yet full — the way
+    // Mark menu: native <select> of catalog upgrades not yet full — the way
     // to start a new upgrade (the DTO list only shows already-marked ones).
-    const markable = upgradesData.filter(
-      (u) => (markedByName.get(String(u.Name)) ?? 0) < upgradeTotalBoxes(u),
-    );
+    const markable = state.crewCaps
+      ? state.crewCaps.upgrades
+          .filter((u) => u.remaining > 0)
+          .map((u) => ({ Name: u.name }))
+      : upgradesData.filter(
+          (u) => (markedByName.get(String(u.Name)) ?? 0) < upgradeTotalBoxes(u),
+        );
     const markSelect = el("select", {
       "aria-label": "Mark upgrade",
       disabled: anyLoading || markable.length === 0,
@@ -1101,20 +1176,26 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     // plus any DTO-only upgrades (older snapshots) appended. Clicking a box
     // marks/unmarks one box (upgrade.mark/upgrade.unmark are +1/−1 ops; there
     // is no set-to-N op).
-    const chartRows = [
-      ...upgradesData.map((u) => ({
-        name: String(u.Name),
-        total: upgradeTotalBoxes(u),
-        marked: markedByName.get(String(u.Name)) ?? 0,
-      })),
-      ...c.upgrades
-        .filter((u) => !upgradesData.some((g) => String(g.Name) === u.name))
-        .map((u) => ({
+    const chartRows = state.crewCaps
+      ? state.crewCaps.upgrades.map((u) => ({
           name: u.name,
-          total: Math.max(u.boxesMarked, 1),
-          marked: u.boxesMarked,
-        })),
-    ];
+          total: u.totalBoxes,
+          marked: u.marked,
+        }))
+      : [
+          ...upgradesData.map((u) => ({
+            name: String(u.Name),
+            total: upgradeTotalBoxes(u),
+            marked: markedByName.get(String(u.Name)) ?? 0,
+          })),
+          ...c.upgrades
+            .filter((u) => !upgradesData.some((g) => String(g.Name) === u.name))
+            .map((u) => ({
+              name: u.name,
+              total: Math.max(u.boxesMarked, 1),
+              marked: u.boxesMarked,
+            })),
+        ];
 
     const chartRowsEl = chartRows.map((row) => {
       const boxes = [];
@@ -1814,6 +1895,10 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       { className: "crew-actions" },
       el("h2", {}, "Actions"),
       undoButton,
+      state.historyCount !== null
+        ? el("p", { className: "lbl", style: "margin-top: 0.5em;" },
+            `${state.historyCount} snapshotted change${state.historyCount === 1 ? "" : "s"} can be undone.`)
+        : null,
     ),
     el(
       "div",
@@ -1825,7 +1910,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         ? el("p", { className: "notice", style: "margin-top: 1em;" }, state.undoNotice)
         : null,
       state.errorMsg
-        ? el("p", { className: "error", style: "margin-top: 1em;" }, state.errorMsg)
+        ? el("p", { className: "error", style: "margin-top: 1em;", role: "alert" }, state.errorMsg)
         : null,
       state.noticeMsg
         ? el("p", { className: "notice", style: "margin-top: 1em;" }, state.noticeMsg)
@@ -1854,6 +1939,8 @@ export function mountCrewDetailPage(
   let cancelled = false;
   let currentCrew: Crew | null = null;
   let isUndoLoading = false;
+  let canUndoState: boolean | null = null;
+  let historyCountState: number | null = null;
   let isContactLoading = false;
   let isFactionLoading = false;
   let isProfileLoading = false;
@@ -1874,6 +1961,7 @@ export function mountCrewDetailPage(
   let crewTypeData: Record<string, unknown> | null = null;
   let crewTypesData: readonly Record<string, unknown>[] | null = null;
   let crewGameData: Record<string, unknown> | null = null;
+  let crewCaps: CrewCapabilities | null = null;
   let editingProfile: ProfileEditingState | null = null;
   let editingCohortId: string | null = null;
   let errorMsg: string | null = null;
@@ -1888,6 +1976,23 @@ export function mountCrewDetailPage(
     refreshNotice = null;
   };
 
+  /** Re-fetch the crew capability projection after a mutation so the
+   * capability-driven controls never keep stale limits (SC-F3). Advisory and
+   * best-effort: keep the last good projection on failure. */
+  const refreshCaps = () => {
+    if (cancelled || !currentCrew) return;
+    void Effect.runPromise(
+      Effect.match(getCrewCapabilities(crewId), {
+        onFailure: () => undefined,
+        onSuccess: (caps) => {
+          if (cancelled) return;
+          crewCaps = caps;
+          renderDetail();
+        },
+      }),
+    );
+  };
+
   const refreshAndShowNotice = () => {
     if (!currentCrew) return;
     const recoverProgram = getCrew(crewId);
@@ -1895,18 +2000,13 @@ export function mountCrewDetailPage(
       Effect.match(recoverProgram, {
         onFailure: (recoverErr) => {
           if (cancelled) return;
-          if (recoverErr instanceof ApiError) {
-            errorMsg = `Sheet refresh failed (${recoverErr.status}): ${recoverErr.body}`;
-          } else if (recoverErr instanceof DecodeError) {
-            errorMsg = `Sheet refresh failed (invalid response): ${recoverErr.message}`;
-          } else {
-            errorMsg = `Sheet refresh failed: ${String(recoverErr)}`;
-          }
+          errorMsg = `Sheet refresh failed — ${opErrorText(recoverErr)}`;
           renderDetail();
         },
         onSuccess: (crew) => {
           if (cancelled) return;
           currentCrew = crew;
+          refreshCaps();
           refreshNotice = "Sheet refreshed because it changed elsewhere";
           renderDetail();
           setTimeout(() => {
@@ -1927,28 +2027,28 @@ export function mountCrewDetailPage(
     if (err instanceof StaleRevisionError) {
       renderDetail();
       refreshAndShowNotice();
-    } else if (err instanceof ApiError) {
-      errorMsg = opErrorText(err);
-      renderDetail();
-    } else if (err instanceof DecodeError) {
-      errorMsg = `Invalid response: ${err.message}`;
-      renderDetail();
     } else {
-      errorMsg = String(err);
+      errorMsg = opErrorText(err);
       renderDetail();
     }
   };
+
+  /** Type guard: a tracker op result (updated crew + requested/effective) vs a bare crew. */
+  const isCrewTrackResult = (r: Crew | CrewTrackOpResult): r is CrewTrackOpResult =>
+    typeof r === "object" && r !== null && "crew" in r;
 
   /**
    * Shared runner for the F2u mutation ops: set the per-op loading flag,
    * clear notices, re-render, run the program, and on success adopt the
    * updated crew. Failure goes through onOpFailure (STALE_REVISION refetch,
-   * op-level error notices).
+   * op-level error notices). Tracker ops report requested/effective clamps
+   * (P29/FV-029) when they applied less than requested.
    */
   const runCrewOp = (
     setLoading: (v: boolean) => void,
-    program: Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError>,
+    program: Effect.Effect<Crew | CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError>,
     successNotice?: string,
+    clampLabel?: string,
   ) => {
     setLoading(true);
     clearNotices();
@@ -1956,11 +2056,22 @@ export function mountCrewDetailPage(
     void Effect.runPromise(
       Effect.match(program, {
         onFailure: (err) => onOpFailure(err, () => setLoading(false)),
-        onSuccess: (crew) => {
+        onSuccess: (result) => {
           if (cancelled) return;
           setLoading(false);
+          const crew = isCrewTrackResult(result) ? result.crew : result;
           currentCrew = crew;
+          if (isCrewTrackResult(result) && result.effective !== result.requested) {
+            noticeMsg = `${clampLabel ?? "Value"} clamped to ${result.effective} (requested ${result.requested})`;
+            setTimeout(() => {
+              if (!cancelled) {
+                noticeMsg = null;
+                renderDetail();
+              }
+            }, 5000);
+          }
           if (successNotice) noticeMsg = successNotice;
+          refreshCaps();
           renderDetail();
         },
       }),
@@ -2011,12 +2122,15 @@ export function mountCrewDetailPage(
       crewTypeData,
       crewTypesData,
       crewGameData,
+      crewCaps,
       editingProfile,
       editingCohortId,
       errorMsg,
       noticeMsg,
       undoNotice,
       refreshNotice,
+      canUndo: canUndoState,
+      historyCount: historyCountState,
       handlers,
     }));
   };
@@ -2028,7 +2142,8 @@ export function mountCrewDetailPage(
       undoNotice = null;
       renderDetail();
 
-      const program = undoCrew(crewId);
+      const program = undoCrew(crewId, currentCrew.revision);
+      const before = currentCrew;
 
       void Effect.runPromise(
         Effect.match(program, {
@@ -2039,22 +2154,15 @@ export function mountCrewDetailPage(
               refreshNotice = null;
               renderDetail();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              if (err.body.startsWith("NO_HISTORY")) {
-                undoNotice = "Nothing to undo — no history available";
-              } else {
-                errorMsg = `API error (${err.status}): ${err.body}`;
-              }
-              renderDetail();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
+            } else if (err instanceof OpError && err.error.code === "NO_HISTORY") {
+              undoNotice = "Nothing to undo — no history available";
               renderDetail();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetail();
             }
           },
-          onSuccess: (crew) => {
+          onSuccess: ({ crew, canUndo, historyCount }) => {
             if (cancelled) return;
             isUndoLoading = false;
             errorMsg = null;
@@ -2062,6 +2170,11 @@ export function mountCrewDetailPage(
             undoNotice = null;
             refreshNotice = null;
             currentCrew = crew;
+            canUndoState = canUndo;
+            historyCountState = historyCount;
+            // FV-028: positive feedback naming the restored state, distinct
+            // from the NO_HISTORY error copy above.
+            undoNotice = `Undone — restored ${describeCrewRestore(before, crew)}.`;
             renderDetail();
           },
         }),
@@ -2243,6 +2356,8 @@ export function mountCrewDetailPage(
       runCrewOp(
         (v) => { isTurfLoading = v; },
         crewTurfAdd(crewId, delta, currentCrew.revision),
+        undefined,
+        "Turf",
       );
     },
 
@@ -2284,13 +2399,13 @@ export function mountCrewDetailPage(
       }
       const program = Effect.gen(function* () {
         const paid = yield* crewCoinAdd(crewId, -cost, crew.revision);
-        const raised = yield* crewTierAdd(crewId, 1, paid.revision);
+        const raised = yield* crewTierAdd(crewId, 1, paid.crew.revision);
         const reset = yield* crewRepAdd(
           crewId,
-          -raised.rep.current,
-          raised.revision,
+          -raised.crew.rep.current,
+          raised.crew.revision,
         );
-        const weakened = yield* crewHoldSet(crewId, "weak", reset.revision);
+        const weakened = yield* crewHoldSet(crewId, "weak", reset.crew.revision);
         return weakened;
       });
       runCrewOp(
@@ -2304,43 +2419,43 @@ export function mountCrewDetailPage(
 
     onRepDelta: (delta: number) => {
       if (!currentCrew || isRepLoading) return;
-      runCrewOp((v) => { isRepLoading = v; }, crewRepAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isRepLoading = v; }, crewRepAdd(crewId, delta, currentCrew.revision), undefined, "Rep");
     },
 
     onRepTrack: (next: number) => {
       if (!currentCrew || isRepLoading) return;
       const delta = next - currentCrew.rep.current;
       if (delta === 0) return;
-      runCrewOp((v) => { isRepLoading = v; }, crewRepAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isRepLoading = v; }, crewRepAdd(crewId, delta, currentCrew.revision), undefined, "Rep");
     },
 
     onHeatDelta: (delta: number) => {
       if (!currentCrew || isHeatLoading) return;
-      runCrewOp((v) => { isHeatLoading = v; }, crewHeatAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isHeatLoading = v; }, crewHeatAdd(crewId, delta, currentCrew.revision), undefined, "Heat");
     },
 
     onHeatTrack: (next: number) => {
       if (!currentCrew || isHeatLoading) return;
       const delta = next - currentCrew.heat.current;
       if (delta === 0) return;
-      runCrewOp((v) => { isHeatLoading = v; }, crewHeatAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isHeatLoading = v; }, crewHeatAdd(crewId, delta, currentCrew.revision), undefined, "Heat");
     },
 
     onWantedDelta: (delta: number) => {
       if (!currentCrew || isWantedLoading) return;
-      runCrewOp((v) => { isWantedLoading = v; }, crewWantedAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isWantedLoading = v; }, crewWantedAdd(crewId, delta, currentCrew.revision), undefined, "Wanted");
     },
 
     onWantedTrack: (next: number) => {
       if (!currentCrew || isWantedLoading) return;
       const delta = next - currentCrew.wanted.current;
       if (delta === 0) return;
-      runCrewOp((v) => { isWantedLoading = v; }, crewWantedAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isWantedLoading = v; }, crewWantedAdd(crewId, delta, currentCrew.revision), undefined, "Wanted");
     },
 
     onTierDelta: (delta: number) => {
       if (!currentCrew || isTierLoading) return;
-      runCrewOp((v) => { isTierLoading = v; }, crewTierAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isTierLoading = v; }, crewTierAdd(crewId, delta, currentCrew.revision), undefined, "Tier");
     },
 
     onHoldSet: (hold: string) => {
@@ -2351,12 +2466,12 @@ export function mountCrewDetailPage(
 
     onCoinDelta: (delta: number) => {
       if (!currentCrew || isCoinLoading) return;
-      runCrewOp((v) => { isCoinLoading = v; }, crewCoinAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isCoinLoading = v; }, crewCoinAdd(crewId, delta, currentCrew.revision), undefined, "Coin");
     },
 
     onStashDelta: (delta: number) => {
       if (!currentCrew || isStashLoading) return;
-      runCrewOp((v) => { isStashLoading = v; }, crewStashAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isStashLoading = v; }, crewStashAdd(crewId, delta, currentCrew.revision), undefined, "Stash");
     },
 
     // -- F2v: Playbook (abilities + upgrades + lair chart) -------------------
@@ -2545,14 +2660,14 @@ export function mountCrewDetailPage(
 
     onXpDelta: (delta: number) => {
       if (!currentCrew || isXpLoading) return;
-      runCrewOp((v) => { isXpLoading = v; }, crewXpAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isXpLoading = v; }, crewXpAdd(crewId, delta, currentCrew.revision), undefined, "XP");
     },
 
     onXpTrack: (next: number) => {
       if (!currentCrew || isXpLoading) return;
       const delta = next - currentCrew.experience.points;
       if (delta === 0) return;
-      runCrewOp((v) => { isXpLoading = v; }, crewXpAdd(crewId, delta, currentCrew.revision));
+      runCrewOp((v) => { isXpLoading = v; }, crewXpAdd(crewId, delta, currentCrew.revision), undefined, "XP");
     },
 
     onXpClear: () => {
@@ -2580,7 +2695,11 @@ export function mountCrewDetailPage(
         getCrewType(crew.gameStem, crew.crewTypeName),
       );
       const gameData = yield* Effect.either(getCrewGameData(crew.gameStem));
-      return { crew, crewType, gameData };
+      // SC-F3: the server-computed capability projection (upgrade/ability
+      // catalogs, effective turf, develop threshold). Advisory — degrade
+      // gracefully when it's unavailable.
+      const caps = yield* Effect.either(getCrewCapabilities(crewId));
+      return { crew, crewType, gameData, caps };
     });
 
     void Effect.runPromise(
@@ -2603,10 +2722,13 @@ export function mountCrewDetailPage(
             }),
           );
         },
-        onSuccess: ({ crew, crewType, gameData }) => {
+        onSuccess: ({ crew, crewType, gameData, caps }) => {
           if (cancelled) return;
           root.setAttribute("aria-busy", "false");
           currentCrew = crew;
+          if (caps._tag === "Right") {
+            crewCaps = caps.right;
+          }
           if (crewType._tag === "Right") {
             crewTypeData = crewType.right;
           }

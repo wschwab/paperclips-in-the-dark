@@ -582,7 +582,23 @@
 .character-detail-loading,
 .crew-detail,
 .crew-detail-error,
-.crew-detail-loading {
+.crew-detail-loading,
+/* create + history route roots: every page's first h1 (margin: 0 in
+ * base.css) must clear the torn seam under the app bar, so each route root
+ * gets the same gutter-padded, centered shell as the roster/detail pages
+ * (FV-031). */
+.character-create,
+.character-create-error,
+.character-create-loading,
+.crew-create,
+.crew-create-error,
+.crew-create-loading,
+.character-history,
+.character-history-loading,
+.crew-history,
+.crew-history-loading,
+.import-root,
+.not-found {
   max-width: var(--sheet-width);
   margin: 0 auto;
   padding: var(--gutter);
@@ -1198,4 +1214,18 @@ code {
   background: var(--surface-sunk);
   padding: 1px 4px;
   border-radius: var(--radius);
+}
+
+/* ── 404 (FV-030) ─────────────────────────────────────────────
+ * Unknown routes get a real 404: one page-level h1, an explanatory hint,
+ * and a single roster escape link. No API fetch happens on this route. */
+.not-found {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  align-content: start;
+}
+.not-found-hint {
+  margin: 0;
+  color: var(--text-muted);
 }

@@ -34,6 +34,8 @@ function crewDTO(overrides: Record<string, unknown> = {}) {
     specialAbilities: [],
     upgrades: [],
     cohorts: [],
+    contacts: [],
+    factions: [],
     coin: 0,
     stash: 2,
     notes: "Up-and-coming crew",
@@ -148,10 +150,13 @@ describe("crew-detail page", () => {
         applied: { op: "crew.undo" },
         sideEffects: [],
         error: null,
+        canUndo: true,
+        historyCount: 2,
       };
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -171,8 +176,10 @@ describe("crew-detail page", () => {
       undoBtn.click();
 
       await vi.waitFor(() => {
-        // Heat went from 4 to 2
+        // Heat went from 4 to 2 — FV-028 positive feedback names it.
         expect(root.textContent).toContain("2 / 9");
+        expect(root.textContent).toContain("Undone — restored heat to 2/9");
+        expect(root.textContent).toContain("2 snapshotted changes can be undone");
       });
     });
 
@@ -189,6 +196,7 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -221,7 +229,10 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 7 },
         },
       };
@@ -231,6 +242,7 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -338,6 +350,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(addResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -381,6 +394,7 @@ describe("crew-detail page", () => {
         )
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(removeResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -410,6 +424,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(dupResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -428,7 +443,10 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("DUPLICATE");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("A contact with that name already exists");
+        expect(err?.textContent).not.toContain("DUPLICATE");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -472,6 +490,7 @@ describe("crew-detail page", () => {
         )
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(setResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -508,6 +527,7 @@ describe("crew-detail page", () => {
         )
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(removeResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -539,6 +559,7 @@ describe("crew-detail page", () => {
         )
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(nfResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -551,7 +572,10 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("NOT_FOUND");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("Not on this sheet (removed elsewhere?)");
+        expect(err?.textContent).not.toContain("NOT_FOUND");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -562,13 +586,17 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 7 },
         },
       };
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -659,6 +687,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(fieldsOk));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -718,6 +747,7 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -786,7 +816,9 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(repResp))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok({
         ok: true,
         crew: crewDTO({ revision: 7, rep: { current: 5, max: 12 } }),
@@ -794,6 +826,7 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: null,
       }))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok({
         ok: true,
         crew: crewDTO({ revision: 8, rep: { current: 4, max: 12 } }),
@@ -842,7 +875,9 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(heatResp))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok({
         ok: true,
         crew: crewDTO({ revision: 7, heat: { current: 6, max: 9 } }),
@@ -884,7 +919,9 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(wantedResp))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok({
         ok: true,
         crew: crewDTO({ revision: 7, wanted: { current: 3, max: 4 } }),
@@ -927,7 +964,9 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(tierResp))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok({
         ok: true,
         crew: crewDTO({ revision: 7, tier: 1 }),
@@ -964,6 +1003,7 @@ describe("crew-detail page", () => {
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -1008,7 +1048,9 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(coinResp))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(stashResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1043,6 +1085,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(errResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1055,7 +1098,10 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("VALIDATION");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("The request wasn't valid");
+        expect(err?.textContent).not.toContain("VALIDATION");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -1066,13 +1112,17 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 7 },
         },
       };
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -1206,6 +1256,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(taken, "ability.take")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1236,6 +1287,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(removed, "ability.remove")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1261,6 +1313,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpErr("ability.take", "ABILITY_MAXED", "already at limit", playbookDTO())));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1273,7 +1326,10 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("ABILITY_MAXED");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("That ability is already taken to its limit");
+        expect(err?.textContent).not.toContain("ABILITY_MAXED");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -1314,6 +1370,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(marked, "upgrade.mark")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1346,6 +1403,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(unmarked, "upgrade.unmark")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1371,6 +1429,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpErr("upgrade.mark", "UPGRADE_MAXED", "all boxes marked", playbookDTO())));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1383,7 +1442,10 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("UPGRADE_MAXED");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("All of that upgrade's boxes are already marked");
+        expect(err?.textContent).not.toContain("UPGRADE_MAXED");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -1432,7 +1494,10 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 7 },
         },
       };
@@ -1442,6 +1507,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO()))
         .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
@@ -1557,6 +1623,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(cohortOpOk(added, "cohort.add")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1623,6 +1690,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(cohortOpOk(updated, "cohort.update")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1675,6 +1743,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(cohortOpOk(removed, "cohort.remove")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1709,6 +1778,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(nfResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1721,7 +1791,10 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("NOT_FOUND");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("Not on this sheet (removed elsewhere?)");
+        expect(err?.textContent).not.toContain("NOT_FOUND");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -1732,13 +1805,17 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 7 },
         },
       };
 
       global.fetch = vi
         .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
@@ -1831,8 +1908,11 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(crewType404) // fall back to the CrewTypes list
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(gained, "xp.add")))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(back, "xp.add")))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(cleared, "xp.clear")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1856,7 +1936,8 @@ describe("crew-detail page", () => {
       await vi.waitFor(() => {
         expect(root.querySelector(".crew-xp-count")?.textContent).toContain("2 / 8");
       });
-      expect(global.fetch).toHaveBeenLastCalledWith(
+      // caps refresh follows each successful op, so the op POST is no longer the last call
+      expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/xp.add`,
         expect.objectContaining({ body: JSON.stringify({ delta: -1 }) }),
       );
@@ -1866,7 +1947,7 @@ describe("crew-detail page", () => {
       await vi.waitFor(() => {
         expect(root.querySelector(".crew-xp-count")?.textContent).toContain("0 / 8");
       });
-      expect(global.fetch).toHaveBeenLastCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/xp.clear`,
         expect.objectContaining({ method: "POST" }),
       );
@@ -1886,6 +1967,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(crewType404)
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(errResp));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -1898,7 +1980,10 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("VALIDATION");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("The request wasn't valid");
+        expect(err?.textContent).not.toContain("VALIDATION");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -1909,7 +1994,10 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 7 },
         },
       };
@@ -1919,6 +2007,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(crewType404)
         .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
@@ -2031,6 +2120,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce({ ok: false, status: 404, text: async () => "games.crew: NOT_FOUND" })
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(fieldsOk));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -2137,7 +2227,9 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO({ turf: 2 })))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(lower, "turf.add")))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(raised, "turf.add")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -2159,7 +2251,8 @@ describe("crew-detail page", () => {
       await vi.waitFor(() => {
         expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 3 of 6");
       });
-      expect(global.fetch).toHaveBeenLastCalledWith(
+      // caps refresh follows each successful op, so the op POST is no longer the last call
+      expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/turf.add`,
         expect.objectContaining({ body: JSON.stringify({ delta: 1 }) }),
       );
@@ -2172,6 +2265,7 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO({ hold: "weak", rep: { current: 12, max: 12 } })))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(strong, "hold.set")))
@@ -2213,6 +2307,7 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO({ hold: "strong", tier: 1, coin: 20, rep: { current: 12, max: 12 } })))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(paid, "coin.add")))
@@ -2270,8 +2365,8 @@ describe("crew-detail page", () => {
         const err = root.querySelector(".notice");
         expect(err?.textContent).toContain("INSUFFICIENT_FUNDS");
       });
-      // tier 2 → cost (2+1)*8 = 24 > coin 5; nothing was posted
-      expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(3);
+      // tier 2 → cost (2+1)*8 = 24 > coin 5; nothing was posted (4 load fetches: crew, crewType, gameData, capabilities)
+      expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(4);
     });
   });
 
@@ -2329,6 +2424,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO({ notes: ["First note"] })))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(added, "note.add")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -2356,6 +2452,7 @@ describe("crew-detail page", () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(crewDTO({ notes: ["First note", "Second note", "Third note"] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(removed, "note.remove")));
@@ -2467,6 +2564,7 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
         .mockResolvedValueOnce(ok(crewOpOk(added, "cohort.add")));
 
       mountCrewDetailPage(root, CREW_ID);
@@ -2592,4 +2690,67 @@ describe("crew-detail page", () => {
     });
   });
 
+});
+
+// -- SC-F3/P29: tracker clamp feedback + bound controls -----------------------
+
+describe("SC-F3 tracker clamps", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  it("disables the rep + bound control when the track is full", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(crewDTO({ rep: { current: 12, max: 12 } })))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValue(ok(crewDTO({ rep: { current: 12, max: 12 } })));
+
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      const plus = root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement;
+      expect(plus).not.toBeNull();
+    });
+    const plus = root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement;
+    expect(plus.disabled).toBe(true);
+  });
+
+  it("shows a clamp notice when the server applies less than the requested rep delta", async () => {
+    const atMax = crewDTO({ revision: 6, rep: { current: 12, max: 12 } });
+    const clampOp = {
+      ok: true,
+      crew: atMax,
+      applied: { op: "rep.add", requested: 1, effective: 0 },
+      sideEffects: [],
+      error: null,
+    };
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(crewDTO({ rep: { current: 11, max: 12 } })))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValue(ok(clampOp));
+
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      const plus = root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement;
+      expect(plus).not.toBeNull();
+    });
+    const plus = root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement;
+    plus.click();
+
+    await vi.waitFor(() => {
+      const notice = root.querySelector(".notice");
+      expect(notice?.textContent).toContain("Rep clamped to");
+    });
+    expect(root.textContent).toContain("(requested 1)");
+  });
 });

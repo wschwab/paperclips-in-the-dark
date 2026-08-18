@@ -1,0 +1,13 @@
+{
+  "task": "SC-F1",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "frozen decoders + completeness consumption",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " 68m; strict recursive decoders (onExcessProperty error); generated-completeness module used; decoders.test.ts 21->35 tests green; build green"
+}

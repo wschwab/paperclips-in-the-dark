@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { createCrew, crewFieldsUpdate, ApiError, DecodeError } from "../api/client.js";
+import { createCrew, crewFieldsUpdate, apiFailureText } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Crew } from "../schema/crew.js";
 
@@ -172,12 +172,7 @@ export function mountCrewCreatePage(
   const fail = (err: unknown) => {
     if (cancelled) return;
     root.setAttribute("aria-busy", "false");
-    const detail =
-      err instanceof ApiError
-        ? `(${err.status}): ${err.body}`
-        : err instanceof DecodeError
-          ? `Invalid response: ${err.message}`
-          : String(err);
+    const detail = apiFailureText(err);
     if (phaseTwo) {
       // Phase-one succeeded: the crew exists. Keep it, link to it, and offer
       // a retry of the naming step only.
@@ -185,7 +180,7 @@ export function mountCrewCreatePage(
         root,
         renderPhaseTwoRecovery(
           `/crew/${phaseTwo.id}`,
-          `Crew created, but naming it failed ${detail}`,
+          `Crew created, but naming it failed: ${detail}`,
           "The new crew is kept on the roster without a name. Retry naming it, or open its sheet directly.",
           "Retry naming",
           "Open crew sheet",
@@ -193,7 +188,7 @@ export function mountCrewCreatePage(
         ),
       );
     } else {
-      setChildren(root, renderError(`Failed to create crew ${detail}`));
+      setChildren(root, renderError(`Failed to create crew: ${detail}`));
     }
   };
 

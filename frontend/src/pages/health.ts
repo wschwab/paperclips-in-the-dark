@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { ApiError, DecodeError, getHealth } from "../api/client.js";
+import { apiFailureText, getHealth } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Health } from "../schema/campaign.js";
 
@@ -67,13 +67,7 @@ export function mountHealthPage(root: HTMLElement): () => void {
     Effect.match(program, {
       onFailure: (err) => {
         if (cancelled) return;
-        const msg =
-          err instanceof ApiError
-            ? `Failed to reach /api/health (${err.status}): ${err.body}`
-            : err instanceof DecodeError
-              ? `Invalid health response: ${err.message}`
-              : String(err);
-        setChildren(root, renderError(msg));
+        setChildren(root, renderError(apiFailureText(err)));
       },
       onSuccess: (health) => {
         if (cancelled) return;

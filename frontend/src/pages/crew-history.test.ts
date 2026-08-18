@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountCrewHistoryPage } from "./crew-history.js";
+import { renderShell } from "./shell.js";
+import { loadStylesheets, assertFirstH1ClearsSeam } from "./seam.js";
 
 const CREW_ID = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
 
@@ -34,6 +36,8 @@ const crewDTO = {
   turf: 0,
   claimedClaimIds: [],
   claimOverrides: [],
+  contacts: [],
+  factions: [],
 };
 
 const ok = (data: unknown) => ({
@@ -76,6 +80,26 @@ describe("crew-history page (F2aa)", () => {
         "3f9e0c51-9a2b-4d7e-8c1f-6a5b4c3d2e1f",
       );
     });
+  });
+
+  it("places the first h1 below the app bar's torn seam (FV-031)", async () => {
+    loadStylesheets();
+    global.fetch = vi.fn().mockImplementation((url: unknown) => {
+      if (String(url).endsWith(`/crews/${CREW_ID}/history`)) {
+        return Promise.resolve(ok([]));
+      }
+      return Promise.resolve(ok(crewDTO));
+    });
+    const { shell, outlet } = renderShell({
+      currentPath: `/crew/${CREW_ID}/history`,
+    });
+    document.body.appendChild(shell);
+    mountCrewHistoryPage(outlet, CREW_ID);
+    expect(shell.querySelector(".app-bar.torn-foot")).not.toBeNull();
+    await vi.waitFor(() => {
+      expect(outlet.querySelector(".crew-history")).not.toBeNull();
+    });
+    assertFirstH1ClearsSeam(outlet);
   });
 
   it("renders an empty state when there is no history", async () => {

@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountCharacterHistoryPage } from "./character-history.js";
+import { renderShell } from "./shell.js";
+import { loadStylesheets, assertFirstH1ClearsSeam } from "./seam.js";
 
 const CHARACTER_ID = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
 
@@ -105,6 +107,27 @@ describe("character-history page (F2aa)", () => {
         "22a96212-1d82-45c5-8116-245196a8150b",
       );
     });
+  });
+
+  it("places the first h1 below the app bar's torn seam (FV-031)", async () => {
+    loadStylesheets();
+    global.fetch = vi.fn().mockImplementation((url: unknown) => {
+      if (String(url).endsWith(`/characters/${CHARACTER_ID}/history`)) {
+        return Promise.resolve(ok([]));
+      }
+      return Promise.resolve(ok(characterDTO));
+    });
+    const { shell, outlet } = renderShell({
+      currentPath: `/character/${CHARACTER_ID}/history`,
+    });
+    document.body.appendChild(shell);
+    mountCharacterHistoryPage(outlet, CHARACTER_ID);
+    expect(shell.querySelector(".app-bar.torn-foot")).not.toBeNull();
+    // Await the loaded (non-loading) section that owns the page h1.
+    await vi.waitFor(() => {
+      expect(outlet.querySelector(".character-history")).not.toBeNull();
+    });
+    assertFirstH1ClearsSeam(outlet);
   });
 
   it("renders an empty state when there is no history", async () => {

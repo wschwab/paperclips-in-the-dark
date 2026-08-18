@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountCharacterCreatePage } from "./character-create.js";
+import { renderShell } from "./shell.js";
+import { loadStylesheets, assertFirstH1ClearsSeam } from "./seam.js";
 
 const ok = (data: unknown) => ({
   ok: true,
@@ -113,6 +115,24 @@ describe("character-create page (Design Audit F-12 two-step naming)", () => {
     await vi.waitFor(() => {
       expect(onCreated).toHaveBeenCalledWith(named);
     });
+  });
+
+  it("places the first h1 below the app bar's torn seam (FV-031)", () => {
+    loadStylesheets();
+    const { shell, outlet } = renderShell({
+      currentPath: "/character/create",
+    });
+    document.body.appendChild(shell);
+    mountCharacterCreatePage(
+      outlet,
+      "blades-in-the-dark",
+      ["Spider"],
+      vi.fn(),
+    );
+    // The seam is present on the app bar; the route root's first h1 must sit
+    // on a top gutter that clears it (no overlap).
+    expect(shell.querySelector(".app-bar.torn-foot")).not.toBeNull();
+    assertFirstH1ClearsSeam(outlet);
   });
 
   it("skips dossier.update when no name is given", async () => {

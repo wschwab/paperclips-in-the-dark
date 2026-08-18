@@ -19,7 +19,9 @@ export const Health = Schema.Struct({
 export type Health = typeof Health.Type;
 
 export const decodeHealth = Schema.decodeUnknownSync(Health, { onExcessProperty: "error" });
-export const decodeHealthEither = Schema.decodeUnknownEither(Health);
+export const decodeHealthEither = Schema.decodeUnknownEither(Health, {
+  onExcessProperty: "error",
+});
 
 /** Campaign metadata (campaign.json on disk) */
 export const Campaign = Schema.Struct({
@@ -32,7 +34,9 @@ export const Campaign = Schema.Struct({
 
 export type Campaign = typeof Campaign.Type;
 
-export const decodeCampaign = Schema.decodeUnknownSync(Campaign);
+export const decodeCampaign = Schema.decodeUnknownSync(Campaign, {
+  onExcessProperty: "error",
+});
 
 export const CharacterSummary = Schema.Struct({
   kind: Schema.Literal("character"),

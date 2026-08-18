@@ -1,6 +1,11 @@
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getRoster, getCharacter, getCrew, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { OpError,
+  opErrorFriendlyText,
+  transportErrorText,
+  decodeErrorText,
+  NETWORK_ERROR_COPY,
+  getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -11,6 +16,8 @@ describe("getRoster", () => {
     const rosterData = {
       characters: [
         {
+          // SC-F1 frozen decoder requires the summary discriminant.
+          kind: "character",
           id: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
           name: "Brenda Hilton",
           alias: "Webweaver",
@@ -26,6 +33,8 @@ describe("getRoster", () => {
       ],
       crews: [
         {
+          // SC-F1 frozen decoder requires the summary discriminant.
+          kind: "crew",
           id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
           name: "The Red Sashes",
           crewType: "Assassins",
@@ -227,12 +236,14 @@ describe("getCrew", () => {
       specialAbilities: [],
       upgrades: [],
       cohorts: [],
+      contacts: [],
+      factions: [],
       coin: 0,
       stash: 2,
       notes: "Up-and-coming crew",
-    turf: 0,
-    claimedClaimIds: [],
-    claimOverrides: [],
+      turf: 0,
+      claimedClaimIds: [],
+      claimOverrides: [],
     };
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -685,12 +696,14 @@ describe("createCrew", () => {
       specialAbilities: [],
       upgrades: [],
       cohorts: [],
+      contacts: [],
+      factions: [],
       coin: 0,
       stash: 0,
       notes: "",
-    turf: 0,
-    claimedClaimIds: [],
-    claimOverrides: [],
+      turf: 0,
+      claimedClaimIds: [],
+      claimOverrides: [],
     };
 
     const opResult = {
@@ -856,7 +869,10 @@ describe("stressAdd", () => {
       sideEffects: [],
       error: {
         code: "STALE_REVISION",
+        status: 409,
         message: "Character revision mismatch",
+        retryable: true,
+        recovery: "Refresh the sheet and retry.",
         details: { currentRevision: 15 },
       },
     };
@@ -961,12 +977,14 @@ describe("undoCrew", () => {
       specialAbilities: [],
       upgrades: [],
       cohorts: [],
+      contacts: [],
+      factions: [],
       coin: 0,
       stash: 2,
       notes: "Up-and-coming crew",
-    turf: 0,
-    claimedClaimIds: [],
-    claimOverrides: [],
+      turf: 0,
+      claimedClaimIds: [],
+      claimOverrides: [],
     };
 
     const opResult = {
@@ -983,15 +1001,17 @@ describe("undoCrew", () => {
     });
 
     const result = await Effect.runPromise(
-      undoCrew(crewId),
+      undoCrew(crewId, 5),
     );
-    expect(result.id).toBe(crewId);
-    expect(result.heat.current).toBe(2);
+    expect(result.crew.id).toBe(crewId);
+    expect(result.crew.heat.current).toBe(2);
+    // P19/FV-019: destructive undo carries If-Match with the current revision.
     expect(global.fetch).toHaveBeenCalledWith(`/api/crews/${crewId}/undo`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        "If-Match": "5",
       },
       body: JSON.stringify({}),
     });
@@ -1016,13 +1036,16 @@ describe("undoCrew", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCrew(crewId)),
+      Effect.either(undoCrew(crewId, 5)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
+      // FV-024: op-level failures are typed OpErrors carrying the decoded union.
+      expect(result.left).toBeInstanceOf(OpError);
       expect(result.left).toBeInstanceOf(ApiError);
-      if (result.left instanceof ApiError) {
+      if (result.left instanceof OpError) {
         expect(result.left.status).toBe(200);
+        expect(result.left.error.code).toBe("NO_HISTORY");
       }
     }
   });
@@ -1035,7 +1058,10 @@ describe("undoCrew", () => {
       sideEffects: [],
       error: {
         code: "STALE_REVISION",
+        status: 409,
         message: "Crew revision mismatch",
+        retryable: true,
+        recovery: "Refresh the sheet and retry.",
         details: { currentRevision: 7 },
       },
     };
@@ -1047,7 +1073,7 @@ describe("undoCrew", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCrew(crewId)),
+      Effect.either(undoCrew(crewId, 5)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1066,7 +1092,7 @@ describe("undoCrew", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCrew("nonexistent-id")),
+      Effect.either(undoCrew("nonexistent-id", 5)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
@@ -1081,7 +1107,7 @@ describe("undoCrew", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCrew("some-id")),
+      Effect.either(undoCrew("some-id", 5)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1097,7 +1123,7 @@ describe("undoCrew", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCrew("some-id")),
+      Effect.either(undoCrew("some-id", 5)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1183,13 +1209,18 @@ function opOk(character: unknown) {
 }
 
 function staleResp(opName: string, currentRevision: number) {
+  // Full frozen-shape whole-error (SC-F1): status/retryable/recovery are
+  // required on the new-shape branch, and details rejects the legacy branch.
   return {
     ok: false,
     applied: { op: opName },
     sideEffects: [],
     error: {
       code: "STALE_REVISION",
+      status: 409,
       message: "Revision mismatch",
+      retryable: true,
+      recovery: "Refresh the sheet and retry.",
       details: { currentRevision },
     },
   };
@@ -1588,15 +1619,17 @@ describe("undoCharacter", () => {
     });
 
     const result = await Effect.runPromise(
-      undoCharacter(characterId),
+      undoCharacter(characterId, 12),
     );
-    expect(result.id).toBe(characterId);
-    expect(result.monitor.stress.current).toBe(2);
+    expect(result.character.id).toBe(characterId);
+    expect(result.character.monitor.stress.current).toBe(2);
+    // P19/FV-019: destructive undo carries If-Match with the current revision.
     expect(global.fetch).toHaveBeenCalledWith(`/api/characters/${characterId}/undo`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        "If-Match": "12",
       },
       body: JSON.stringify({}),
     });
@@ -1621,13 +1654,16 @@ describe("undoCharacter", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCharacter(characterId)),
+      Effect.either(undoCharacter(characterId, 12)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
+      // FV-024: op-level failures are typed OpErrors carrying the decoded union.
+      expect(result.left).toBeInstanceOf(OpError);
       expect(result.left).toBeInstanceOf(ApiError);
-      if (result.left instanceof ApiError) {
+      if (result.left instanceof OpError) {
         expect(result.left.status).toBe(200);
+        expect(result.left.error.code).toBe("NO_HISTORY");
       }
     }
   });
@@ -1640,7 +1676,10 @@ describe("undoCharacter", () => {
       sideEffects: [],
       error: {
         code: "STALE_REVISION",
+        status: 409,
         message: "Character revision mismatch",
+        retryable: true,
+        recovery: "Refresh the sheet and retry.",
         details: { currentRevision: 15 },
       },
     };
@@ -1652,7 +1691,7 @@ describe("undoCharacter", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCharacter(characterId)),
+      Effect.either(undoCharacter(characterId, 12)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1671,7 +1710,7 @@ describe("undoCharacter", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCharacter("nonexistent-id")),
+      Effect.either(undoCharacter("nonexistent-id", 12)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
@@ -1686,7 +1725,7 @@ describe("undoCharacter", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCharacter("some-id")),
+      Effect.either(undoCharacter("some-id", 12)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1702,7 +1741,7 @@ describe("undoCharacter", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(undoCharacter("some-id")),
+      Effect.either(undoCharacter("some-id", 12)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1711,6 +1750,156 @@ describe("undoCharacter", () => {
         expect(result.left.status).toBe(409);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F4 client methods — retireCharacter, endScore, deleteCharacter
+// ---------------------------------------------------------------------------
+
+describe("retireCharacter", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts confirm:true to /characters/{id}/retire with If-Match and returns the retired character", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    const retired = makeChar({
+      revision: 13,
+      isRetired: true,
+      monitor: {
+        ...makeChar().monitor,
+        stress: { current: 0, max: 9 },
+        harm: { lesser: [], moderate: [], severe: [], fatal: [], healingClock: { segments: 0, size: 6, rollover: 0 } },
+        armor: { standardUsed: false, heavyUsed: false, specialUsed: false, hasStandard: true, hasHeavy: false, hasSpecial: false },
+      },
+    });
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ ok: true, character: retired, applied: { op: "retire" }, sideEffects: [], error: null }),
+    });
+
+    const result = await Effect.runPromise(retireCharacter(characterId, 12));
+    expect(result.isRetired).toBe(true);
+    expect(result.monitor.stress.current).toBe(0);
+    expect(global.fetch).toHaveBeenCalledWith(`/api/characters/${characterId}/retire`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": "12",
+      },
+      body: JSON.stringify({ confirm: true }),
+    });
+  });
+
+  it("surfaces OpError when the server rejects with RETIRED (already retired)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        ok: false,
+        applied: { op: "retire" },
+        sideEffects: [],
+        error: { code: "RETIRED", status: 200, message: "already retired", retryable: false, recovery: "", details: {} },
+      }),
+      status: 200,
+    });
+    const result = await Effect.runPromise(Effect.either(retireCharacter("some-id", 12)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof OpError) {
+      expect(result.left.error.code).toBe("RETIRED");
+    }
+  });
+});
+
+describe("endScore", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts an omitted/empty body to /characters/{id}/end-score and returns the cleared character", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    const ended = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        stress: { current: 0, max: 9 },
+      },
+    });
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ ok: true, character: ended, applied: { op: "end-score" }, sideEffects: [], error: null }),
+    });
+
+    const result = await Effect.runPromise(endScore(characterId, 12));
+    expect(result.monitor.stress.current).toBe(0);
+    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(JSON.parse(String(init.body))).toEqual({});
+  });
+
+  it("passes the optional cleanup flags through unchanged", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    const ended = makeChar({ revision: 13 });
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ ok: true, character: ended, applied: { op: "end-score" }, sideEffects: [], error: null }),
+    });
+
+    await Effect.runPromise(
+      endScore(characterId, 12, { clearArmorUsed: true, resetLoadoutCommitment: true }),
+    );
+    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(JSON.parse(String(init.body))).toEqual({ clearArmorUsed: true, resetLoadoutCommitment: true });
+  });
+
+  it("surfaces TRAUMA_REQUIRED while a trauma is pending", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        ok: false,
+        applied: { op: "end-score" },
+        sideEffects: [],
+        error: { code: "TRAUMA_REQUIRED", status: 200, message: "resolve pending trauma", retryable: false, recovery: "", details: {} },
+      }),
+      status: 200,
+    });
+    const result = await Effect.runPromise(Effect.either(endScore("some-id", 12)));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof OpError) {
+      expect(result.left.error.code).toBe("TRAUMA_REQUIRED");
+    }
+  });
+});
+
+describe("deleteCharacter", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts confirm:true to /characters/{id}/delete with the revision as If-Match and resolves to void", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ ok: true, applied: { op: "deleteCharacter" }, sideEffects: [], error: null }),
+    });
+
+    const result = await Effect.runPromise(deleteCharacter(characterId, "12"));
+    expect(result).toBeUndefined();
+    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(init.headers["If-Match"]).toBe("12");
+    expect(JSON.parse(String(init.body))).toEqual({ confirm: true });
+  });
+
+  it("accepts a degraded-entity delete token as If-Match", async () => {
+    const characterId = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ ok: true, applied: { op: "deleteCharacter" }, sideEffects: [], error: null }),
+    });
+    const token = `sha256:${"a".repeat(64)}`;
+    await Effect.runPromise(deleteCharacter(characterId, token));
+    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(init.headers["If-Match"]).toBe(token);
   });
 });
 
@@ -2029,6 +2218,8 @@ describe("listCrews", () => {
   it("fetches /api/crews and decodes crew summaries", async () => {
     const crewsData = [
       {
+        // SC-F1 frozen decoder requires the summary discriminant.
+        kind: "crew",
         id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
         name: "The Red Sashes",
         crewType: "Assassins",
@@ -2326,6 +2517,8 @@ function makeCrew(overrides: Record<string, unknown> = {}) {
     specialAbilities: [],
     upgrades: [],
     cohorts: [],
+    contacts: [],
+    factions: [],
     coin: 0,
     stash: 2,
     notes: "Up-and-coming crew",
@@ -2719,7 +2912,8 @@ describe("crewRepAdd", () => {
     });
 
     const result = await Effect.runPromise(crewRepAdd(CREW_ID_F2Y, 2, 5));
-    expect(result.rep.current).toBe(5);
+    expect(result.crew.rep.current).toBe(5);
+    expect(result.requested).toBe(2);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/rep.add`,
       {
@@ -2777,7 +2971,8 @@ describe("crewHeatAdd", () => {
     });
 
     const result = await Effect.runPromise(crewHeatAdd(CREW_ID_F2Y, 2, 5));
-    expect(result.heat.current).toBe(6);
+    expect(result.crew.heat.current).toBe(6);
+    expect(result.requested).toBe(2);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/heat.add`,
       {
@@ -2835,7 +3030,8 @@ describe("crewWantedAdd", () => {
     });
 
     const result = await Effect.runPromise(crewWantedAdd(CREW_ID_F2Y, 2, 5));
-    expect(result.wanted.current).toBe(3);
+    expect(result.crew.wanted.current).toBe(3);
+    expect(result.requested).toBe(2);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/wanted.add`,
       {
@@ -2893,7 +3089,8 @@ describe("crewTierAdd", () => {
     });
 
     const result = await Effect.runPromise(crewTierAdd(CREW_ID_F2Y, 1, 5));
-    expect(result.tier).toBe(2);
+    expect(result.crew.tier).toBe(2);
+    expect(result.requested).toBe(1);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/tier.add`,
       {
@@ -3009,7 +3206,8 @@ describe("crewCoinAdd", () => {
     });
 
     const result = await Effect.runPromise(crewCoinAdd(CREW_ID_F2Y, 4, 5));
-    expect(result.coin).toBe(4);
+    expect(result.crew.coin).toBe(4);
+    expect(result.requested).toBe(4);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/coin.add`,
       {
@@ -3067,7 +3265,8 @@ describe("crewStashAdd", () => {
     });
 
     const result = await Effect.runPromise(crewStashAdd(CREW_ID_F2Y, 4, 5));
-    expect(result.stash).toBe(6);
+    expect(result.crew.stash).toBe(6);
+    expect(result.requested).toBe(4);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/stash.add`,
       {
@@ -5999,7 +6198,8 @@ describe("crewXpAdd", () => {
     });
 
     const result = await Effect.runPromise(crewXpAdd(CREW_ID_F2Y, 1, 5));
-    expect(result.experience.points).toBe(3);
+    expect(result.crew.experience.points).toBe(3);
+    expect(result.requested).toBe(1);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/xp.add`,
       {
@@ -6236,7 +6436,8 @@ describe("crewTurfAdd", () => {
     });
 
     const result = await Effect.runPromise(crewTurfAdd(CREW_ID_F2Y, 1, 5));
-    expect(result.turf).toBe(3);
+    expect(result.crew.turf).toBe(3);
+    expect(result.requested).toBe(1);
     expect(global.fetch).toHaveBeenCalledWith(
       `/api/crews/${CREW_ID_F2Y}/ops/turf.add`,
       {
@@ -6332,5 +6533,241 @@ describe("getCrewGameData", () => {
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(DecodeError);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P23/FV-023 — transport classification
+// ---------------------------------------------------------------------------
+
+describe("fetchJson transport classification (FV-023)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("classifies malformed 200 JSON as DecodeError, never a status-0 ApiError, without leaking parser text", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => "not json at all",
+    });
+
+    const result = await Effect.runPromise(Effect.either(getRoster()));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+      expect(result.left).not.toBeInstanceOf(ApiError);
+      if (result.left instanceof DecodeError) {
+        // Distinct friendly copy; no parser message ("Unexpected token…") leaks.
+        expect(decodeErrorText(result.left)).toBe(
+          "The server answered in an unexpected format — refresh the sheet and try again.",
+        );
+        expect(decodeErrorText(result.left)).not.toContain("token");
+      }
+    }
+  });
+
+  it("classifies a thrown fetch as a network ApiError with friendly copy", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new TypeError("fetch failed"));
+
+    const result = await Effect.runPromise(Effect.either(getRoster()));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left" && result.left instanceof ApiError) {
+      expect(result.left.status).toBe(0);
+      expect(result.left.body).toBe(NETWORK_ERROR_COPY);
+      expect(result.left.message).not.toContain("fetch failed");
+    }
+  });
+
+  it("classifies rejected HTTP as an ApiError, not DecodeError", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: async () => "service unavailable",
+    });
+
+    const result = await Effect.runPromise(Effect.either(getRoster()));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(ApiError);
+      expect(result.left).not.toBeInstanceOf(DecodeError);
+      if (result.left instanceof ApiError) {
+        expect(result.left.status).toBe(503);
+        // Distinct friendly copy per class (FV-023), never the raw body.
+        expect(transportErrorText(result.left)).toBe("The server returned an error (503).");
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P24/FV-024 — typed operation-error copy
+// ---------------------------------------------------------------------------
+
+describe("op-level error copy (FV-024)", () => {
+  it("maps known codes to user copy and surfaces the recovery instruction", () => {
+    const err = new OpError(200, {
+      code: "RETIRED",
+      status: 200,
+      message: "character is retired",
+      retryable: false,
+      recovery: "Retirement can be undone from the history view.",
+      details: {},
+    });
+    const text = opErrorFriendlyText(err);
+    expect(text).toContain("This character has retired");
+    expect(text).toContain("Retirement can be undone from the history view.");
+    expect(text).not.toContain("RETIRED");
+    expect(text).not.toContain("character is retired");
+  });
+
+  it("gives a concise fallback for an unknown code without leaking it raw", () => {
+    // Defensive path: a future server code that shipped before the client
+    // copy table caught up. The frozen union type can't express it, so the
+    // fixture escapes through a typed boundary cast.
+    const unknownError = {
+      code: "UNKNOWN_NEW_CODE",
+      status: 200,
+      message: "server internals",
+      retryable: false,
+      recovery: "",
+      details: {},
+    } as unknown as ConstructorParameters<typeof OpError>[1];
+    const err = new OpError(200, unknownError);
+    const text = opErrorFriendlyText(err);
+    expect(text).toBe(
+      "That action couldn't be completed — the sheet refreshes with the server state.",
+    );
+    expect(text).not.toContain("UNKNOWN_NEW_CODE");
+    expect(text).not.toContain("server internals");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SC-F3 capability projections + tracker clamp reporting
+// ---------------------------------------------------------------------------
+
+describe("getCharacterCapabilities", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/characters/{id}/capabilities and decodes the projection", async () => {
+    const projection = {
+      characterId: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
+      effectiveActionCaps: [
+        { action: "Hunt", maxRating: 4, effectiveMax: 3, masteryTotalBoxes: 3, masteryMarkedBoxes: 0 },
+      ],
+      harmCapacities: [
+        { level: "lesser", capacity: 2, remaining: 2 },
+        { level: "moderate", capacity: 2, remaining: 2 },
+        { level: "severe", capacity: 1, remaining: 1 },
+        { level: "fatal", capacity: 1, remaining: 1 },
+      ],
+      loadLimits: [
+        { commitment: "light", maxBulk: 5, remainingBulk: 5 },
+        { commitment: "normal", maxBulk: 6, remainingBulk: 4 },
+      ],
+      availableAbilityTakes: [{ name: "Rook's Gambit", timesTaken: 1, maxTakes: 2, remaining: 1 }],
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(projection),
+    });
+
+    const result = await Effect.runPromise(
+      getCharacterCapabilities("c46ba7cb-993b-4fc7-974d-fb95eacd5446"),
+    );
+    expect(result.effectiveActionCaps[0].effectiveMax).toBe(3);
+    expect(result.harmCapacities.find((h) => h.level === "severe")?.capacity).toBe(1);
+    expect(result.loadLimits[1].remainingBulk).toBe(4);
+    expect(result.availableAbilityTakes[0].remaining).toBe(1);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/capabilities",
+      expect.objectContaining({ headers: expect.objectContaining({ Accept: "application/json" }) }),
+    );
+  });
+
+  it("surfaces DecodeError for a malformed projection body", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => "not-json",
+    });
+    const result = await Effect.runPromise(Effect.either(getCharacterCapabilities("some-id")));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+});
+
+describe("getCrewCapabilities", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("fetches /api/crews/{id}/capabilities and decodes the catalog", async () => {
+    const projection = {
+      crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+      upgrades: [
+        { name: "Quality", totalBoxes: 4, marked: 4, remaining: 0 },
+        { name: "Lair", totalBoxes: 3, marked: 1, remaining: 2 },
+      ],
+      abilities: [{ name: "Captain", maxTakes: 1, taken: 0, remaining: 1 }],
+      effectiveTurf: 2,
+      developThreshold: 10,
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(projection),
+    });
+
+    const result = await Effect.runPromise(
+      getCrewCapabilities("8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2"),
+    );
+    expect(result.upgrades[0].remaining).toBe(0);
+    expect(result.upgrades[1].marked).toBe(1);
+    expect(result.abilities[0].remaining).toBe(1);
+    expect(result.effectiveTurf).toBe(2);
+    expect(result.developThreshold).toBe(10);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/crews/8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2/capabilities",
+      expect.anything(),
+    );
+  });
+});
+
+describe("crewRepAdd clamp reporting", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("reports requested/effective when the server applies less than requested", async () => {
+    const clamped = makeCrew({ revision: 6, rep: { current: 12, max: 12 } });
+    // rep at max: requested +2, effective +0 (clamped).
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify(crewOpOk(clamped, "rep.add", { requested: 2, effective: 0 })),
+    });
+
+    const result = await Effect.runPromise(crewRepAdd(CREW_ID_F2Y, 2, 5));
+    expect(result.crew.rep.current).toBe(12);
+    expect(result.requested).toBe(2);
+    expect(result.effective).toBe(0);
+    expect(result.effective).not.toBe(result.requested);
+  });
+
+  it("keeps requested equal to effective when the full delta is applied", async () => {
+    const gained = makeCrew({ revision: 6, rep: { current: 5, max: 12 } });
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(gained, "rep.add", { requested: 2, effective: 2 })),
+    });
+    const result = await Effect.runPromise(crewRepAdd(CREW_ID_F2Y, 2, 5));
+    expect(result.requested).toBe(2);
+    expect(result.effective).toBe(2);
   });
 });

@@ -1,0 +1,13 @@
+{
+  "task": "SC-F5",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "transport/operation errors",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " 27m; fetchJson classification (DecodeError/ApiError/network), whole-union decoding via fetchOperation, undo If-Match, friendly error cards; client 261+main+shell green; resolved all 70 detail-page mock drifts too; build green"
+}

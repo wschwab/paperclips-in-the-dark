@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import { createCharacter, dossierUpdate, ApiError, DecodeError } from "../api/client.js";
+import { createCharacter, dossierUpdate, apiFailureText } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
 
@@ -172,12 +172,7 @@ export function mountCharacterCreatePage(
   const fail = (err: unknown) => {
     if (cancelled) return;
     root.setAttribute("aria-busy", "false");
-    const detail =
-      err instanceof ApiError
-        ? `(${err.status}): ${err.body}`
-        : err instanceof DecodeError
-          ? `Invalid response: ${err.message}`
-          : String(err);
+    const detail = apiFailureText(err);
     if (phaseTwo) {
       // Phase-one succeeded: the character exists. Keep it, link to it, and
       // offer a retry of the naming step only.
@@ -185,7 +180,7 @@ export function mountCharacterCreatePage(
         root,
         renderPhaseTwoRecovery(
           `/character/${phaseTwo.id}`,
-          `Character created, but naming it failed ${detail}`,
+          `Character created, but naming it failed: ${detail}`,
           "The new character is kept on the roster without a name. Retry naming it, or open its sheet directly.",
           "Retry naming",
           "Open character sheet",
@@ -193,7 +188,7 @@ export function mountCharacterCreatePage(
         ),
       );
     } else {
-      setChildren(root, renderError(`Failed to create character ${detail}`));
+      setChildren(root, renderError(`Failed to create character: ${detail}`));
     }
   };
 

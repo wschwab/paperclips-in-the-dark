@@ -1,9 +1,10 @@
-import { Effect, Schema } from "effect";
+import { Effect, Either, Schema } from "effect";
 import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema, type HistoryEntry, HistoryEntry as HistoryEntrySchema } from "../schema/campaign.js";
 import { type Character, Character as CharacterSchema } from "../schema/character.js";
 import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
 import { type CrewSummary, CrewSummary as CrewSummarySchema } from "../schema/campaign.js";
-import { OperationResult as OperationResultSchema } from "../schema/operation-result.js";
+import { decodeOperationResultEither } from "../schema/operation-result.js";
+import type { OperationResult } from "../schema/operation-result.js";
 import { type Clock, Clock as ClockSchema } from "../schema/clock.js";
 
 /**
@@ -42,30 +43,238 @@ export class StaleRevisionError extends Error {
   }
 }
 
+/**
+ * Typed operation failure: the server answered with an OperationResult whose
+ * ok=false (or with a rejected HTTP status carrying a decodeable
+ * OperationResult error). Carries the frozen-union decoded error so pages
+ * map known codes to user copy without re-reading raw DTO text (FV-024).
+ */
+export class OpError extends ApiError {
+  constructor(
+    status: number,
+    readonly error: Exclude<OperationResult["error"], null>,
+  ) {
+    const code = typeof error?.code === "string" ? error.code : "OPERATION_FAILED";
+    const message = typeof error?.message === "string" ? error.message : "operation failed";
+    super(status, `${code}: ${message}`);
+    this.name = "OpError";
+  }
+}
+
+/** User-facing copy for transport failures (fetch() threw; no HTTP answer). */
+export const NETWORK_ERROR_COPY = "Could not reach the server — check the connection and try again.";
+
+/** User-facing copy for responses that failed to parse/decode. */
+export const DECODE_ERROR_COPY = "The server answered in an unexpected format — refresh the sheet and try again.";
+
+/** Distinct friendly copy per transport class (FV-023). */
+export function transportErrorText(err: ApiError): string {
+  return err.status === 0 ? NETWORK_ERROR_COPY : `The server returned an error (${err.status}).`;
+}
+
+/** Distinct friendly copy for decode failures (FV-023). Never parser text. */
+export function decodeErrorText(_err: DecodeError): string {
+  return DECODE_ERROR_COPY;
+}
+
+/** Known operation-error codes → user copy (FV-024; no raw code/DTO text). */
+const OP_ERROR_COPY: Readonly<Record<string, string>> = {
+  VALIDATION: "The request wasn't valid — check the fields and try again.",
+  INVALID_ENTRY: "The entry wasn't valid — fix it and try again.",
+  INVALID_ENTITY: "The sheet data couldn't be read — refresh the sheet.",
+  NORMALIZATION_REQUIRED: "The sheet needs its data normalized before continuing.",
+  NOT_FOUND: "That's no longer there — the sheet refreshes with the server state.",
+  STALE_REVISION: "The sheet changed in another tab — refresh to see the latest state.",
+  RETIRED: "This character has retired — no further actions are available.",
+  CONFIRM_REQUIRED: "This action needs an explicit confirmation before it can run.",
+  DUPLICATE: "That already exists — enter something new.",
+  SLOT_FULL_FATAL: "There's no room for that.",
+  CANNOT_HEAL: "Cannot heal — the healing clock isn't full yet.",
+  ARMOR_NOT_AVAILABLE: "That armor isn't available to use.",
+  ABILITY_MAXED: "That ability is already taken to its limit.",
+  CANNOT_LEVEL_UP: "The XP track isn't full enough to level up yet.",
+  RATING_MAXED: "That rating is already at its maximum.",
+  UPGRADE_MAXED: "All of that upgrade's boxes are already marked.",
+  INSUFFICIENT_FUNDS: "Not enough coins to cover that.",
+  SATCHEL_FULL: "The satchel can't hold that many coins.",
+  OVER_BULK: "This would exceed the load capacity.",
+  NO_COMMITMENT: "Set a load commitment before committing gear.",
+  COMMITMENT_LOCKED: "The commitment is locked — unlock it first.",
+  NO_HISTORY: "Nothing to undo — no history available.",
+  GAME_NOT_FOUND: "The game data for this campaign couldn't be found.",
+  PAYLOAD_TOO_LARGE: "That request was too large to handle.",
+  TRAUMA_REQUIRED: "That requires a trauma before it can happen.",
+  OUT_OF_ACTION: "This character is out of action right now.",
+};
+
+/** Concise fallback for a decoded error code with no known user copy. */
+const OP_ERROR_FALLBACK =
+  "That action couldn't be completed — the sheet refreshes with the server state.";
+
+/**
+ * Friendly text for a typed operation error: known codes map to user copy
+ * and the server's `recovery` instruction is surfaced when present; unknown
+ * codes get a concise fallback (FV-024).
+ */
+export function opErrorFriendlyText(err: OpError): string {
+  const error = err.error;
+  const code = typeof error?.code === "string" ? error.code : "";
+  let recovery = "";
+  if (
+    error &&
+    typeof error === "object" &&
+    "recovery" in error &&
+    typeof error.recovery === "string"
+  ) {
+    recovery = error.recovery;
+  }
+  const base = OP_ERROR_COPY[code] ?? OP_ERROR_FALLBACK;
+  return recovery ? `${base} ${recovery}` : base;
+}
+
+/**
+ * Friendly, classified copy for any client failure (FV-023/FV-024): op-level
+ * operation errors map to known user copy, transport failures to per-status
+ * copy, and decode failures to parser-free copy. Never surfaces raw
+ * ApiError.body or DecodeError.message text.
+ */
+export function apiFailureText(err: unknown): string {
+  if (err instanceof OpError) return opErrorFriendlyText(err);
+  if (err instanceof ApiError) return transportErrorText(err);
+  if (err instanceof DecodeError) return decodeErrorText(err);
+  return "Something went wrong — try again.";
+}
+
+/**
+ * Classify one fetch: malformed 200 JSON → DecodeError (never a status-0
+ * ApiError, never parser text); rejected HTTP → ApiError; thrown fetch →
+ * network ApiError (FV-023).
+ */
 export function fetchJson(
   path: string,
   init?: RequestInit,
-): Effect.Effect<unknown, ApiError> {
+): Effect.Effect<unknown, ApiError | DecodeError> {
   return Effect.tryPromise({
     try: async () => {
-      const res = await fetch(path, {
-        ...init,
-        headers: {
-          Accept: "application/json",
-          ...(init?.headers ?? {}),
-        },
-      });
+      let res: Response;
+      try {
+        res = await fetch(path, {
+          ...init,
+          headers: {
+            Accept: "application/json",
+            ...(init?.headers ?? {}),
+          },
+        });
+      } catch {
+        throw new ApiError(0, NETWORK_ERROR_COPY);
+      }
       const text = await res.text();
       if (!res.ok) {
         throw new ApiError(res.status, text);
       }
       if (text.length === 0) return null;
-      return JSON.parse(text) as unknown;
+      try {
+        return JSON.parse(text) as unknown;
+      } catch {
+        throw new DecodeError(new Error("malformed JSON response"));
+      }
     },
-    catch: (e) =>
-      e instanceof ApiError
-        ? e
-        : new ApiError(0, e instanceof Error ? e.message : String(e)),
+    catch: (e) => {
+      if (e instanceof ApiError || e instanceof DecodeError) return e;
+      return new ApiError(0, NETWORK_ERROR_COPY);
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Operation response classification (whole-error union)
+// ---------------------------------------------------------------------------
+
+/**
+ * Decode an operation response body through the frozen whole-error union.
+ * Null when the body is missing, malformed JSON, or not a valid
+ * OperationResult (callers decide the error class from the HTTP status).
+ */
+function tryDecodeOperationBody(text: string): OperationResult | null {
+  if (text.length === 0) return null;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    const either = decodeOperationResultEither(parsed);
+    return Either.isLeft(either) ? null : either.right;
+  } catch {
+    return null;
+  }
+}
+
+/** Build the stale-revision failure from a decoded STALE_REVISION error. */
+function staleRevisionFrom(
+  error: NonNullable<OperationResult["error"]>,
+): StaleRevisionError {
+  if (error.code !== "STALE_REVISION") return new StaleRevisionError(0);
+  const currentRevision = error.details?.currentRevision;
+  return new StaleRevisionError(
+    typeof currentRevision === "number" ? currentRevision : 0,
+  );
+}
+
+/**
+ * POST to an operation endpoint and classify the response through the
+ * frozen whole-error union (FV-023/FV-024):
+ *
+ * - thrown fetch → network ApiError (status 0, friendly copy)
+ * - rejected HTTP carrying a decodeable OperationResult error → typed
+ *   OpError (STALE_REVISION → StaleRevisionError with the current revision)
+ * - rejected HTTP otherwise → ApiError(status, body)
+ * - ok HTTP whose body is not a valid OperationResult → DecodeError
+ * - ok HTTP with ok:false → OpError carrying the union-decoded error
+ * - ok HTTP with ok:true → the decoded OperationResult
+ */
+function fetchOperation(
+  path: string,
+  init: RequestInit,
+): Effect.Effect<OperationResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const res = yield* Effect.tryPromise({
+      try: async () => {
+        try {
+          return await fetch(path, init);
+        } catch {
+          throw new ApiError(0, NETWORK_ERROR_COPY);
+        }
+      },
+      catch: (e) =>
+        e instanceof ApiError ? e : new ApiError(0, NETWORK_ERROR_COPY),
+    });
+    const text = yield* Effect.tryPromise({
+      try: () => res.text(),
+      catch: () => new ApiError(0, NETWORK_ERROR_COPY),
+    });
+
+    if (!res.ok) {
+      const opResult = tryDecodeOperationBody(text);
+      if (opResult && !opResult.ok && opResult.error) {
+        if (opResult.error.code === "STALE_REVISION") {
+          return yield* Effect.fail(staleRevisionFrom(opResult.error));
+        }
+        return yield* Effect.fail(new OpError(res.status, opResult.error));
+      }
+      return yield* Effect.fail(new ApiError(res.status, text));
+    }
+
+    const opResult = tryDecodeOperationBody(text);
+    if (!opResult) {
+      return yield* Effect.fail(new DecodeError(new Error("invalid OperationResult")));
+    }
+    if (!opResult.ok) {
+      if (opResult.error) {
+        if (opResult.error.code === "STALE_REVISION") {
+          return yield* Effect.fail(staleRevisionFrom(opResult.error));
+        }
+        return yield* Effect.fail(new OpError(res.status, opResult.error));
+      }
+      return yield* Effect.fail(new ApiError(res.status, "Operation failed"));
+    }
+    return opResult;
   });
 }
 
@@ -73,7 +282,7 @@ export function getHealth(): Effect.Effect<Health, ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson("/api/health");
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(HealthSchema)(raw),
+      try: () => Schema.decodeUnknownSync(HealthSchema, { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -83,7 +292,7 @@ export function getRoster(): Effect.Effect<Roster, ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson("/api/campaign/roster");
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(RosterSchema)(raw),
+      try: () => Schema.decodeUnknownSync(RosterSchema, { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -93,7 +302,7 @@ export function getCharacter(id: string): Effect.Effect<Character, ApiError | De
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/characters/${id}`);
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(CharacterSchema)(raw),
+      try: () => Schema.decodeUnknownSync(CharacterSchema, { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -103,7 +312,7 @@ export function listCrews(): Effect.Effect<readonly CrewSummary[], ApiError | De
   return Effect.gen(function* () {
     const raw = yield* fetchJson("/api/crews");
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(Schema.Array(CrewSummarySchema))(raw),
+      try: () => Schema.decodeUnknownSync(Schema.Array(CrewSummarySchema), { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -113,7 +322,157 @@ export function getCrew(id: string): Effect.Effect<Crew, ApiError | DecodeError>
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/crews/${id}`);
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(CrewSchema)(raw),
+      try: () => Schema.decodeUnknownSync(CrewSchema, { onExcessProperty: "error" })(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// SC-F3 capability projections (advisory, never persisted). The server
+// computes derived limits (effective action caps, harm capacities, load
+// limits, ability takes, crew upgrade/ability catalogs, effective turf and
+// the develop threshold) so the client never joins settings with cross-entity
+// state to discover an enforced cap. Mutations remain authoritative.
+// ---------------------------------------------------------------------------
+
+export interface CharacterCapabilities {
+  characterId: string;
+  effectiveActionCaps: readonly EffectiveActionCap[];
+  harmCapacities: readonly HarmCapacity[];
+  loadLimits: readonly LoadLimit[];
+  availableAbilityTakes: readonly AvailableAbilityTake[];
+}
+
+export interface EffectiveActionCap {
+  action: string;
+  maxRating: number;
+  effectiveMax: number;
+  masteryTotalBoxes: number;
+  masteryMarkedBoxes: number;
+}
+
+export interface HarmCapacity {
+  level: "lesser" | "moderate" | "severe" | "fatal";
+  capacity: number;
+  remaining: number;
+}
+
+export interface LoadLimit {
+  commitment: "none" | "light" | "normal" | "heavy" | "encumbered";
+  maxBulk: number;
+  remainingBulk: number;
+}
+
+export interface AvailableAbilityTake {
+  name: string;
+  timesTaken: number;
+  maxTakes: number;
+  remaining: number;
+}
+
+export interface CrewCapabilities {
+  crewId: string;
+  upgrades: readonly UpgradeCapability[];
+  abilities: readonly AbilityCapability[];
+  effectiveTurf: number;
+  developThreshold: number;
+}
+
+export interface UpgradeCapability {
+  name: string;
+  totalBoxes: number;
+  marked: number;
+  remaining: number;
+}
+
+export interface AbilityCapability {
+  name: string;
+  maxTakes: number;
+  taken: number;
+  remaining: number;
+}
+
+const EffectiveActionCapSchema = Schema.Struct({
+  action: Schema.String,
+  maxRating: Schema.Number.pipe(Schema.int()),
+  effectiveMax: Schema.Number.pipe(Schema.int()),
+  masteryTotalBoxes: Schema.Number.pipe(Schema.int()),
+  masteryMarkedBoxes: Schema.Number.pipe(Schema.int()),
+});
+
+const HarmCapacitySchema = Schema.Struct({
+  level: Schema.Literal("lesser", "moderate", "severe", "fatal"),
+  capacity: Schema.Number.pipe(Schema.int()),
+  remaining: Schema.Number.pipe(Schema.int()),
+});
+
+const LoadLimitSchema = Schema.Struct({
+  commitment: Schema.Literal("none", "light", "normal", "heavy", "encumbered"),
+  maxBulk: Schema.Number.pipe(Schema.int()),
+  remainingBulk: Schema.Number.pipe(Schema.int()),
+});
+
+const AvailableAbilityTakeSchema = Schema.Struct({
+  name: Schema.String,
+  timesTaken: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1)),
+  maxTakes: Schema.Number.pipe(Schema.int()),
+  remaining: Schema.Number.pipe(Schema.int()),
+});
+
+const CharacterCapabilitiesSchema = Schema.Struct({
+  characterId: Schema.String,
+  effectiveActionCaps: Schema.Array(EffectiveActionCapSchema),
+  harmCapacities: Schema.Array(HarmCapacitySchema),
+  loadLimits: Schema.Array(LoadLimitSchema),
+  availableAbilityTakes: Schema.Array(AvailableAbilityTakeSchema),
+});
+
+const UpgradeCapabilitySchema = Schema.Struct({
+  name: Schema.String,
+  totalBoxes: Schema.Number.pipe(Schema.int()),
+  marked: Schema.Number.pipe(Schema.int()),
+  remaining: Schema.Number.pipe(Schema.int()),
+});
+
+const AbilityCapabilitySchema = Schema.Struct({
+  name: Schema.String,
+  maxTakes: Schema.Number.pipe(Schema.int()),
+  taken: Schema.Number.pipe(Schema.int()),
+  remaining: Schema.Number.pipe(Schema.int()),
+});
+
+const CrewCapabilitiesSchema = Schema.Struct({
+  crewId: Schema.String,
+  upgrades: Schema.Array(UpgradeCapabilitySchema),
+  abilities: Schema.Array(AbilityCapabilitySchema),
+  effectiveTurf: Schema.Number.pipe(Schema.int()),
+  developThreshold: Schema.Number.pipe(Schema.int()),
+});
+
+/** Advisory character capability projection (SC-F3): effective action caps,
+ * harm capacities, load limits, remaining ability takes. */
+export function getCharacterCapabilities(
+  id: string,
+): Effect.Effect<CharacterCapabilities, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/characters/${id}/capabilities`);
+    return yield* Effect.try({
+      try: () => Schema.decodeUnknownSync(CharacterCapabilitiesSchema, { onExcessProperty: "error" })(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+/** Advisory crew capability projection (SC-F3): full upgrade/ability catalog
+ * with current box/take state, effective turf, and the rep develop threshold. */
+export function getCrewCapabilities(
+  id: string,
+): Effect.Effect<CrewCapabilities, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/crews/${id}/capabilities`);
+    return yield* Effect.try({
+      try: () => Schema.decodeUnknownSync(CrewCapabilitiesSchema, { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -123,7 +482,7 @@ export function getCharacterHistory(id: string): Effect.Effect<readonly HistoryE
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/characters/${id}/history`);
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(Schema.Array(HistoryEntrySchema))(raw),
+      try: () => Schema.decodeUnknownSync(Schema.Array(HistoryEntrySchema), { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -152,23 +511,20 @@ export function getPlaybookList(gameStem: string): Effect.Effect<readonly string
   });
 }
 
-export function createCharacter(gameStem: string, playbook: string): Effect.Effect<Character, ApiError | DecodeError> {
+export function createCharacter(gameStem: string, playbook: string): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const raw = yield* fetchJson("/api/characters", {
+    const opResult = yield* fetchOperation("/api/characters", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ gameStem, playbook }),
     });
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(raw);
-        if (!opResult.character) {
-          throw new Error("Missing character in OperationResult");
-        }
-        return opResult.character;
-      },
-      catch: (cause) => new DecodeError(cause),
-    });
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
+    }
+    return opResult.character;
   });
 }
 
@@ -176,7 +532,7 @@ export function getCrewHistory(id: string): Effect.Effect<readonly HistoryEntry[
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/crews/${id}/history`);
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(Schema.Array(HistoryEntrySchema))(raw),
+      try: () => Schema.decodeUnknownSync(Schema.Array(HistoryEntrySchema), { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -209,144 +565,193 @@ export function getCrewTypeList(gameStem: string): Effect.Effect<readonly string
   });
 }
 
-export function undoCharacter(id: string): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+// ---------------------------------------------------------------------------
+// F4 lifecycle operations — retireCharacter, endScore, deleteCharacter
+// (lifecycle-matrix §3/§4/§6; SC-F4 exports for reachable client parity)
+// ---------------------------------------------------------------------------
+
+/**
+ * Explicit retirement (Q33 / lifecycle-matrix §3): confirmation-guarded
+ * (body {confirm:true}), legal in any state and below maximum trauma. Runs
+ * the shared retirement cleanup atomically — one snapshot, one history
+ * entry; undo restores the complete prior state (the sanctioned recovery
+ * path). Degraded entity → 422 INVALID_ENTITY.
+ */
+export function retireCharacter(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/characters/${id}/undo`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
-        });
-        const text = await response.text();
-        return { response, text };
-      },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
-    });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
-    }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(res.response.status, "Operation failed");
-        }
-        if (!opResult.character) {
-          throw new Error("Missing character in OperationResult");
-        }
-        return opResult.character;
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
-  });
-}
-
-export function undoCrew(id: string): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/crews/${id}/undo`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
-        });
-        const text = await response.text();
-        return { response, text };
-      },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
-    });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
-    }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(res.response.status, "Operation failed");
-        }
-        if (!opResult.crew) {
-          throw new Error("Missing crew in OperationResult");
-        }
-        return opResult.crew;
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
-  });
-}
-
-export function createCrew(gameStem: string, crewType: string): Effect.Effect<Crew, ApiError | DecodeError> {
-  return Effect.gen(function* () {
-    const raw = yield* fetchJson("/api/crews", {
+    const opResult = yield* fetchOperation(`/api/characters/${id}/retire`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
+      },
+      body: JSON.stringify({ confirm: true }),
+    });
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
+    }
+    return opResult.character;
+  });
+}
+
+/** Optional score-cleanup flags for endScore. The body is optional — a
+ * missing/empty body clears stress + out-of-action flags only. */
+export interface EndScoreFlags {
+  clearArmorUsed?: boolean;
+  resetLoadoutCommitment?: boolean;
+}
+
+/**
+ * End the score (lifecycle-matrix §4): ALWAYS clears stress → 0 and resets
+ * both out-of-action flags (isOutOfAction, stressClearPending); optional
+ * flags add armor/loadout cleanup. The whole composite lands in one snapshot
+ * and exactly one history entry (any mid-composite failure fails everything).
+ * Gates: retired → RETIRED; traumaPending → TRAUMA_REQUIRED.
+ */
+export function endScore(
+  id: string,
+  revision: number,
+  flags: EndScoreFlags = {},
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation(`/api/characters/${id}/end-score`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
+      },
+      body: JSON.stringify(flags),
+    });
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
+    }
+    return opResult.character;
+  });
+}
+
+/**
+ * Delete a character (lifecycle-matrix §6.1 — retired characters remain
+ * deletable). Requires {confirm:true} (else CONFIRM_REQUIRED); If-Match is
+ * the entity revision, or the sha256: content token for a degraded entity.
+ * The response carries no entity (deletion always succeeds to a gone state);
+ * this Effect resolves to void and the caller navigates away on success.
+ */
+export function deleteCharacter(
+  id: string,
+  ifMatch: string,
+): Effect.Effect<void, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    yield* fetchOperation(`/api/characters/${id}/delete`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": ifMatch,
+      },
+      body: JSON.stringify({ confirm: true }),
+    });
+  });
+}
+
+/** Result of undoCharacter: the restored character plus the derived undo state (FV-028 / lifecycle-matrix §9). */
+export interface UndoCharacterResult {
+  character: Character;
+  /** True while at least one snapshot remains (derived server-side; false below the retention floor). */
+  canUndo: boolean;
+  /** Number of retained snapshot entries (0..50) — consumed one per undo. */
+  historyCount: number;
+}
+
+/**
+ * Undo the last character change (P19/FV-019). Destructive ops require
+ * If-Match with the current revision; a 409 STALE_REVISION surfaces as
+ * StaleRevisionError so the page refreshes without undoing concurrent state.
+ * The response's derived canUndo/historyCount (never stored) drive the
+ * undo control's state (FV-028).
+ */
+export function undoCharacter(
+  id: string,
+  revision: number,
+): Effect.Effect<UndoCharacterResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation(`/api/characters/${id}/undo`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
+      },
+      body: JSON.stringify({}),
+    });
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
+    }
+    return {
+      character: opResult.character,
+      canUndo: opResult.canUndo ?? false,
+      historyCount: opResult.historyCount ?? 0,
+    };
+  });
+}
+
+/** Result of undoCrew: the restored crew plus the derived undo state (FV-028). */
+export interface UndoCrewResult {
+  crew: Crew;
+  canUndo: boolean;
+  historyCount: number;
+}
+
+/**
+ * Undo the last crew change (P19/FV-019). Same If-Match contract as
+ * undoCharacter.
+ */
+export function undoCrew(
+  id: string,
+  revision: number,
+): Effect.Effect<UndoCrewResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation(`/api/crews/${id}/undo`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
+      },
+      body: JSON.stringify({}),
+    });
+    if (!opResult.crew) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing crew in OperationResult")));
+    }
+    return {
+      crew: opResult.crew,
+      canUndo: opResult.canUndo ?? false,
+      historyCount: opResult.historyCount ?? 0,
+    };
+  });
+}
+
+export function createCrew(gameStem: string, crewType: string): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation("/api/crews", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         gameStem,
         crewType,
       }),
     });
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(raw);
-        if (!opResult.crew) {
-          throw new Error("Missing crew in OperationResult");
-        }
-        return opResult.crew;
-      },
-      catch: (cause) => new DecodeError(cause),
-    });
+    if (!opResult.crew) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing crew in OperationResult")));
+    }
+    return opResult.crew;
   });
 }
 
@@ -354,7 +759,7 @@ export function createCrew(gameStem: string, crewType: string): Effect.Effect<Cr
 // F2m operations — dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame
 // ---------------------------------------------------------------------------
 
-/** Generic mutator helper: POST to /ops/{op}, parse OperationResult, extract character. */
+/** Generic mutator helper: POST to /ops/{op}, decode through the whole-error union, extract character. */
 function characterMutate(
   id: string,
   op: string,
@@ -362,61 +767,19 @@ function characterMutate(
   body: unknown = {},
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/characters/${id}/ops/${op}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "If-Match": String(revision),
-          },
-          body: JSON.stringify(body),
-        });
-        const text = await response.text();
-        return { response, text };
+    const opResult = yield* fetchOperation(`/api/characters/${id}/ops/${op}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
       },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+      body: JSON.stringify(body),
     });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
     }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(res.response.status, "Operation failed");
-        }
-        if (!opResult.character) {
-          throw new Error("Missing character in OperationResult");
-        }
-        return opResult.character;
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
+    return opResult.character;
   });
 }
 
@@ -468,53 +831,20 @@ export function harmAdd(
   revision: number,
 ): Effect.Effect<HarmAddResult, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/characters/${id}/ops/harm.add`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "If-Match": String(revision),
-          },
-          body: JSON.stringify({ description, intensity }),
-        });
-        const text = await response.text();
-        return { response, text };
+    const opResult = yield* fetchOperation(`/api/characters/${id}/ops/harm.add`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
       },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+      body: JSON.stringify({ description, intensity }),
     });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
     }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.character) {
-          throw new Error("Missing character in OperationResult");
-        }
-        const landedIntensity = opResult.applied.landedIntensity ?? null;
-        return { character: opResult.character, landedIntensity };
-      },
-      catch: (cause) => new DecodeError(cause),
-    });
+    const landedIntensity = opResult.applied.landedIntensity ?? null;
+    return { character: opResult.character, landedIntensity };
   });
 }
 
@@ -556,11 +886,11 @@ export function armorSet(
   return characterMutate(id, "armor.set", revision, { armor, used });
 }
 
-export function getGame(gameStem: string): Effect.Effect<Record<string, unknown>, ApiError> {
+export function getGame(gameStem: string): Effect.Effect<Record<string, unknown>, ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/games/${gameStem}`);
-    if (typeof raw !== "object" || raw === null) {
-      yield* Effect.fail(new ApiError(0, "Expected object"));
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+      yield* Effect.fail(new DecodeError(new Error("Expected game data object")));
     }
     return raw as Record<string, unknown>;
   });
@@ -568,52 +898,19 @@ export function getGame(gameStem: string): Effect.Effect<Record<string, unknown>
 
 export function stressAdd(id: string, delta: number, revision: number): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/characters/${id}/ops/stress.add`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "If-Match": String(revision),
-          },
-          body: JSON.stringify({ delta }),
-        });
-        const text = await response.text();
-        return { response, text };
+    const opResult = yield* fetchOperation(`/api/characters/${id}/ops/stress.add`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
       },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+      body: JSON.stringify({ delta }),
     });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
     }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.character) {
-          throw new Error("Missing character in OperationResult");
-        }
-        return opResult.character;
-      },
-      catch: (cause) => new DecodeError(cause),
-    });
+    return opResult.character;
   });
 }
 
@@ -649,61 +946,19 @@ function crewMutate(
   body: unknown = {},
 ): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/crews/${id}/ops/${op}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "If-Match": String(revision),
-          },
-          body: JSON.stringify(body),
-        });
-        const text = await response.text();
-        return { response, text };
+    const opResult = yield* fetchOperation(`/api/crews/${id}/ops/${op}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
       },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+      body: JSON.stringify(body),
     });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    if (!opResult.crew) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing crew in OperationResult")));
     }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(res.response.status, "Operation failed");
-        }
-        if (!opResult.crew) {
-          throw new Error("Missing crew in OperationResult");
-        }
-        return opResult.crew;
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
+    return opResult.crew;
   });
 }
 
@@ -767,63 +1022,21 @@ export function factionSetStatus(
   revision: number,
 ): Effect.Effect<FactionSetStatusResult, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/crews/${id}/ops/faction.set-status`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "If-Match": String(revision),
-          },
-          body: JSON.stringify({ name, status }),
-        });
-        const text = await response.text();
-        return { response, text };
+    const opResult = yield* fetchOperation(`/api/crews/${id}/ops/faction.set-status`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
       },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+      body: JSON.stringify({ name, status }),
     });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    if (!opResult.crew) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing crew in OperationResult")));
     }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(res.response.status, "Operation failed");
-        }
-        if (!opResult.crew) {
-          throw new Error("Missing crew in OperationResult");
-        }
-        const requested = opResult.applied.requested ?? status;
-        const effective = opResult.applied.effective ?? requested;
-        return { crew: opResult.crew, requested, effective };
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
+    const requested = opResult.applied.requested ?? status;
+    const effective = opResult.applied.effective ?? requested;
+    return { crew: opResult.crew, requested, effective };
   });
 }
 
@@ -853,40 +1066,84 @@ export function crewFieldsUpdate(
   return crewMutate(id, "fields.update", revision, fields);
 }
 
-/** Crew reputation delta (bounded 0..max server-side). */
+/** Result of a crew tracker (0..max bounded) op: the updated crew plus the
+ * server's requested/effective deltas so the page can report clamping (P29/FV-029),
+ * following the fund-result pattern. When the server applied the full requested
+ * change, requested === effective and the page stays quiet. */
+export interface CrewTrackOpResult {
+  crew: Crew;
+  requested: number;
+  effective: number;
+}
+
+/**
+ * Generic crew tracker mutator: POST to /ops/{op}, parse the OperationResult,
+ * extract the updated crew plus applied.requested / applied.effective (the
+ * same clamp-reporting shape used by fundMutate / factionSetStatus).
+ */
+function crewTrackMutate(
+  id: string,
+  op: string,
+  revision: number,
+  body: unknown = {},
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation(`/api/crews/${id}/ops/${op}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!opResult.crew) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing crew in OperationResult")));
+    }
+    const requested =
+      opResult.applied.requested ??
+      (typeof body === "object" && body !== null && "delta" in body
+        ? (body as { delta: number }).delta
+        : 0);
+    const effective = opResult.applied.effective ?? requested;
+    return { crew: opResult.crew, requested, effective };
+  });
+}
+
+/** Crew reputation delta (bounded 0..max server-side; reports clamps via requested/effective). */
 export function crewRepAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "rep.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "rep.add", revision, { delta });
 }
 
-/** Crew heat delta (bounded 0..max server-side). */
+/** Crew heat delta (bounded 0..max server-side; reports clamps via requested/effective). */
 export function crewHeatAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "heat.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "heat.add", revision, { delta });
 }
 
-/** Crew wanted-level delta (bounded 0..max server-side). */
+/** Crew wanted-level delta (bounded 0..max server-side; reports clamps via requested/effective). */
 export function crewWantedAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "wanted.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "wanted.add", revision, { delta });
 }
 
-/** Crew tier delta (bounded below at 0 server-side). */
+/** Crew tier delta (bounded below at 0 server-side; reports clamps via requested/effective). */
 export function crewTierAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "tier.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "tier.add", revision, { delta });
 }
 
 /** Set crew hold to one of the contract enum values ("strong" | "weak"). */
@@ -898,22 +1155,22 @@ export function crewHoldSet(
   return crewMutate(id, "hold.set", revision, { hold });
 }
 
-/** Crew coin (loose funds) delta — bounded below at 0 server-side. */
+/** Crew coin (loose funds) delta — bounded below at 0 server-side; reports clamps via requested/effective. */
 export function crewCoinAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "coin.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "coin.add", revision, { delta });
 }
 
-/** Crew stash (vaults) delta — bounded below at 0 server-side. */
+/** Crew stash (vaults) delta — bounded below at 0 server-side; reports clamps via requested/effective. */
 export function crewStashAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "stash.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "stash.add", revision, { delta });
 }
 
 // ---------------------------------------------------------------------------
@@ -941,13 +1198,14 @@ export function crewNoteRemove(
 }
 
 /** Crew turf delta (C4: clamped 0..6 server-side; each turf lowers the rep
- * develop threshold by one). Negative deltas remove turf. */
+ * develop threshold by one). Negative deltas remove turf. Reports clamps via
+ * requested/effective. */
 export function crewTurfAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "turf.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "turf.add", revision, { delta });
 }
 
 // ---------------------------------------------------------------------------
@@ -1064,13 +1322,14 @@ export function cohortUpdate(
 /**
  * Crew experience delta (xp.add). The server clamps points to
  * experience.max (from the crew DTO / game data) — never hardcoded here.
+ * Reports clamps via requested/effective.
  */
 export function crewXpAdd(
   id: string,
   delta: number,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
-  return crewMutate(id, "xp.add", revision, { delta });
+): Effect.Effect<CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError> {
+  return crewTrackMutate(id, "xp.add", revision, { delta });
 }
 
 /** Clear all crew experience points (xp.clear — no request body). */
@@ -1094,11 +1353,11 @@ export function crewXpClear(
 export function getCrewType(
   gameStem: string,
   crewType: string,
-): Effect.Effect<Record<string, unknown>, ApiError> {
+): Effect.Effect<Record<string, unknown>, ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/games/${gameStem}/crews/${crewType}`);
-    if (typeof raw !== "object" || raw === null) {
-      yield* Effect.fail(new ApiError(0, "Expected object"));
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+      yield* Effect.fail(new DecodeError(new Error("Expected crew type object")));
     }
     return raw as Record<string, unknown>;
   });
@@ -1226,11 +1485,11 @@ export function sessionSet(
 export function getPlaybook(
   gameStem: string,
   playbook: string,
-): Effect.Effect<Record<string, unknown>, ApiError> {
+): Effect.Effect<Record<string, unknown>, ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/games/${gameStem}/playbooks/${playbook}`);
-    if (typeof raw !== "object" || raw === null) {
-      yield* Effect.fail(new ApiError(0, "Expected object"));
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+      yield* Effect.fail(new DecodeError(new Error("Expected playbook object")));
     }
     return raw as Record<string, unknown>;
   });
@@ -1368,63 +1627,21 @@ function fundMutate(
   body: unknown = {},
 ): Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/characters/${id}/ops/${op}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "If-Match": String(revision),
-          },
-          body: JSON.stringify(body),
-        });
-        const text = await response.text();
-        return { response, text };
+    const opResult = yield* fetchOperation(`/api/characters/${id}/ops/${op}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
       },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+      body: JSON.stringify(body),
     });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
     }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(res.response.status, "Operation failed");
-        }
-        if (!opResult.character) {
-          throw new Error("Missing character in OperationResult");
-        }
-        const requested = opResult.applied.requested ?? 0;
-        const effective = opResult.applied.effective ?? requested;
-        return { character: opResult.character, requested, effective };
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
+    const requested = opResult.applied.requested ?? 0;
+    const effective = opResult.applied.effective ?? requested;
+    return { character: opResult.character, requested, effective };
   });
 }
 
@@ -1461,7 +1678,7 @@ export function listClocks(): Effect.Effect<readonly Clock[], ApiError | DecodeE
   return Effect.gen(function* () {
     const raw = yield* fetchJson("/api/clocks");
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(Schema.Array(ClockSchema))(raw),
+      try: () => Schema.decodeUnknownSync(Schema.Array(ClockSchema), { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -1480,59 +1697,17 @@ function clockMutate(
   body: unknown = {},
 ): Effect.Effect<Clock | null, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const res = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch(`/api/clocks/${id}/${subpath}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "If-Match": String(revision),
-          },
-          body: JSON.stringify(body),
-        });
-        const text = await response.text();
-        return { response, text };
+    const opResult = yield* fetchOperation(`/api/clocks/${id}/${subpath}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
       },
-      catch: (e) => new ApiError(0, e instanceof Error ? e.message : String(e)),
+      body: JSON.stringify(body),
     });
-
-    if (!res.response.ok) {
-      if (res.response.status === 409) {
-        try {
-          const parsed = JSON.parse(res.text);
-          const opResult = Schema.decodeUnknownSync(OperationResultSchema)(parsed);
-          if (opResult.error?.code === "STALE_REVISION") {
-            const currentRevision = opResult.error.details?.currentRevision;
-            if (typeof currentRevision === "number") {
-              yield* Effect.fail(new StaleRevisionError(currentRevision));
-            }
-            yield* Effect.fail(new StaleRevisionError(0));
-          }
-        } catch {
-          // Malformed 409 body: fall through to ApiError
-        }
-      }
-      yield* Effect.fail(new ApiError(res.response.status, res.text));
-    }
-
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(JSON.parse(res.text));
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(res.response.status, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(res.response.status, "Operation failed");
-        }
-        // delete ops may omit the entity in some implementations; callers treat null as "gone"
-        return opResult.clock ?? null;
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
+    // delete ops may omit the entity in some implementations; callers treat null as "gone"
+    return opResult.clock ?? null;
   });
 }
 
@@ -1541,32 +1716,20 @@ export function createClock(
   name: string,
   clockKind: "project" | "rollover",
   size: number,
-): Effect.Effect<Clock, ApiError | DecodeError> {
+): Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const raw = yield* fetchJson("/api/clocks", {
+    const opResult = yield* fetchOperation("/api/clocks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ name, clockKind, size }),
     });
-    return yield* Effect.try({
-      try: () => {
-        const opResult = Schema.decodeUnknownSync(OperationResultSchema)(raw);
-        if (!opResult.ok) {
-          if (opResult.error) {
-            throw new ApiError(200, opResult.error.code + ": " + opResult.error.message);
-          }
-          throw new ApiError(200, "Operation failed");
-        }
-        if (!opResult.clock) {
-          throw new Error("Missing clock in OperationResult");
-        }
-        return opResult.clock;
-      },
-      catch: (cause) => {
-        if (cause instanceof ApiError) return cause;
-        return new DecodeError(cause);
-      },
-    });
+    if (!opResult.clock) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing clock in OperationResult")));
+    }
+    return opResult.clock;
   });
 }
 

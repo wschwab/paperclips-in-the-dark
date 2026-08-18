@@ -1,16 +1,24 @@
 import { Effect } from "effect";
 import {
   ApiError,
+  OpError,
   DecodeError,
+  opErrorFriendlyText,
+  transportErrorText,
+  decodeErrorText,
   getCharacter,
   getGame,
   getPlaybook,
+  getCharacterCapabilities,
   stressAdd,
   stressClear,
   traumaAdd,
   traumaRemove,
   dossierUpdate,
   undoCharacter,
+  endScore,
+  retireCharacter,
+  deleteCharacter,
   StaleRevisionError,
   harmAdd,
   harmHeal,
@@ -48,6 +56,7 @@ import {
   type SessionFields,
   type FundOpResult,
 } from "../api/client.js";
+import type { CharacterCapabilities } from "../api/client.js";
 import { stressTrack } from "../components/stress-track.js";
 import { actionDots } from "../components/action-dots.js";
 import { clock } from "../components/clock.js";
@@ -225,26 +234,54 @@ function abilityDescription(
 }
 
 /** Friendly text for heal op-level errors (CANNOT_HEAL / NOT_FOUND). */
-function healOpErrorText(err: ApiError): string {
-  if (err.body.startsWith("CANNOT_HEAL")) {
+function healOpErrorText(err: OpError): string {
+  if (err.error.code === "CANNOT_HEAL") {
     return "Cannot heal — the healing clock isn't full yet";
   }
-  if (err.body.startsWith("NOT_FOUND")) {
+  if (err.error.code === "NOT_FOUND") {
     return "That harm is no longer there — the sheet refreshes with the server state";
   }
-  return `API error (${err.status}): ${err.body}`;
+  return opErrorFriendlyText(err);
 }
 
-/** Friendly text for playbook op-level errors (ABILITY_MAXED / NOT_FOUND) carried in ApiError bodies. */
-function playbookOpErrorText(err: ApiError): string {
-  const body = err.body;
-  if (body.startsWith("ABILITY_MAXED")) {
-    return "ABILITY_MAXED: that ability is already taken to its limit";
+/** Friendly text for playbook op-level errors (ABILITY_MAXED / NOT_FOUND). */
+function playbookOpErrorText(err: OpError): string {
+  if (err.error.code === "ABILITY_MAXED") {
+    return "That ability is already taken to its limit";
   }
-  if (body.startsWith("NOT_FOUND")) {
-    return "NOT_FOUND: not on this sheet (removed elsewhere?)";
+  if (err.error.code === "NOT_FOUND") {
+    return "Not on this sheet (removed elsewhere?)";
   }
-  return `API error (${err.status}): ${body}`;
+  return opErrorFriendlyText(err);
+}
+
+/**
+ * F4/FV-028: name the "restored state" after a successful undo by diffing the
+ * character before vs after. Picks the most salient changed value so the
+ * positive undo notice is concrete rather than a generic "undone". Falls back
+ * to a neutral phrase when nothing tracked changed shape.
+ */
+function describeRestore(before: Character, after: Character): string {
+  if (before.isRetired !== after.isRetired) {
+    return after.isRetired ? "the retirement" : "the character (un-retired)";
+  }
+  if (before.dossier.name !== after.dossier.name) {
+    return `the name "${after.dossier.name || "Unnamed"}"`;
+  }
+  if (before.monitor.stress.current !== after.monitor.stress.current) {
+    return `stress to ${after.monitor.stress.current}/${after.monitor.stress.max}`;
+  }
+  const beforeHarm = before.monitor.harm.lesser.length + before.monitor.harm.moderate.length +
+    before.monitor.harm.severe.length + before.monitor.harm.fatal.length;
+  const afterHarm = after.monitor.harm.lesser.length + after.monitor.harm.moderate.length +
+    after.monitor.harm.severe.length + after.monitor.harm.fatal.length;
+  if (beforeHarm !== afterHarm) {
+    return `${afterHarm} active harm${afterHarm === 1 ? "" : "s"}`;
+  }
+  if (before.monitor.trauma.traumas.length !== after.monitor.trauma.traumas.length) {
+    return `${after.monitor.trauma.traumas.length} trauma history entr${after.monitor.trauma.traumas.length === 1 ? "y" : "ies"}`;
+  }
+  return "the previous state";
 }
 
 /** One entry of the gear add-menu (playbook Items + game SharedItems). */
@@ -291,52 +328,43 @@ function extractGearMenu(
   return Array.from(byName, ([name, bulk]) => ({ name, bulk }));
 }
 
-/** Friendly text for gear op-level errors carried in ApiError bodies. */
-function gearOpErrorText(err: ApiError): string {
-  const body = err.body;
-  if (body.startsWith("COMMITMENT_LOCKED")) {
-    return "COMMITMENT_LOCKED: the commitment is locked — unlock it before changing it";
+/** Friendly text for gear op-level errors (COMMITMENT_LOCKED / OVER_BULK / …). */
+function gearOpErrorText(err: OpError): string {
+  if (err.error.code === "COMMITMENT_LOCKED") {
+    return "The commitment is locked — unlock it before changing it";
   }
-  if (body.startsWith("NO_COMMITMENT")) {
-    return "NO_COMMITMENT: set a load commitment before committing gear";
+  if (err.error.code === "NO_COMMITMENT") {
+    return "Set a load commitment before committing gear";
   }
-  if (body.startsWith("OVER_BULK")) {
-    return "OVER_BULK: this item would exceed your load capacity";
+  if (err.error.code === "OVER_BULK") {
+    return "This item would exceed your load capacity";
   }
-  if (body.startsWith("DUPLICATE")) {
-    return "DUPLICATE: that item is already in your loadout";
+  if (err.error.code === "DUPLICATE") {
+    return "That item is already in your loadout";
   }
-  if (body.startsWith("NOT_FOUND")) {
-    return "NOT_FOUND: not on this sheet (removed elsewhere?)";
+  if (err.error.code === "NOT_FOUND") {
+    return "Not on this sheet (removed elsewhere?)";
   }
-  return `API error (${err.status}): ${body}`;
+  return opErrorFriendlyText(err);
 }
 
-/** Friendly text for fund/stash op-level errors carried in ApiError bodies. */
-function coinOpErrorText(err: ApiError): string {
-  const body = err.body;
-  if (body.startsWith("INSUFFICIENT_FUNDS")) {
-    return "INSUFFICIENT_FUNDS: not enough coins to cover that (spend draws from the satchel first, then liquidates stash at 2:1)";
+/** Friendly text for fund/stash op-level errors (INSUFFICIENT_FUNDS / SATCHEL_FULL / …). */
+function coinOpErrorText(err: OpError): string {
+  if (err.error.code === "INSUFFICIENT_FUNDS") {
+    return "Not enough coins to cover that (spend draws from the satchel first, then liquidates stash at 2:1)";
   }
-  if (body.startsWith("SATCHEL_FULL")) {
-    return "SATCHEL_FULL: the satchel can't hold that many coins — spend or stash some first";
+  if (err.error.code === "SATCHEL_FULL") {
+    return "The satchel can't hold that many coins — spend or stash some first";
   }
-  if (body.startsWith("VALIDATION")) {
-    return body;
-  }
-  return `API error (${err.status}): ${body}`;
+  return opErrorFriendlyText(err);
 }
 
-/** Friendly text for clock op-level errors carried in ApiError bodies. */
-function clockOpErrorText(err: ApiError): string {
-  const body = err.body;
-  if (body.startsWith("VALIDATION")) {
-    return body;
+/** Friendly text for clock op-level errors (VALIDATION / NOT_FOUND). */
+function clockOpErrorText(err: OpError): string {
+  if (err.error.code === "NOT_FOUND") {
+    return "Clock gone (deleted elsewhere?)";
   }
-  if (body.startsWith("NOT_FOUND")) {
-    return "NOT_FOUND: clock gone (deleted elsewhere?)";
-  }
-  return `API error (${err.status}): ${body}`;
+  return opErrorFriendlyText(err);
 }
 
 // ---------------------------------------------------------------------------
@@ -347,6 +375,8 @@ interface RenderState {
   c: Character;
   gameData: Record<string, unknown> | null;
   playbookData: Record<string, unknown> | null;
+  /** Server-computed character capability projection (SC-F3); null until loaded or on fetch failure. */
+  caps: CharacterCapabilities | null;
   // Loading flags
   isStressLoading: boolean;
   isStressClearLoading: boolean;
@@ -383,6 +413,13 @@ interface RenderState {
   notesNotice: string | null;
   isTraumaPickerLoading: boolean;
   healNotice: string | null;
+  // F4 lifecycle state
+  isEndScoreLoading: boolean;
+  isRetireLoading: boolean;
+  isDeleteLoading: boolean;
+  /** Derived undo state from the last operation result (null = unknown before any op). */
+  canUndo: boolean | null;
+  historyCount: number | null;
   // Error / notice
   errorMsg: string | null;
   noticeMsg: string | null;
@@ -412,6 +449,9 @@ interface RenderState {
     onCrewJoin: () => void;
     onCrewLeave: () => void;
     onUndo: () => void;
+    onEndScore: () => void;
+    onRetire: () => void;
+    onDeleteCharacter: () => void;
     onHarmAdd: () => void;
     onHarmRemove: (description: string, intensity: string) => void;
     onHarmHeal: () => void;
@@ -450,9 +490,12 @@ function renderDetail(state: RenderState): HTMLElement {
   const currentTraumas = new Set(c.monitor.trauma.traumas);
   const availableTraumas = traumaList.filter((t) => !currentTraumas.has(t));
 
-  // F2ab: stress is full when the track is at capacity — the sheet then
-  // offers the trauma picker (trauma.add + stress.clear flow).
-  const stressFull = c.monitor.stress.current >= c.monitor.stress.max;
+  // F4 lifecycle flags (lifecycle-matrix §2): retired (deny-list gated),
+  // pending trauma (gameplay/end-score blocked), out-of-action (stress ops
+  // blocked). The page must explain each state rather than clear it.
+  const retired = c.isRetired;
+  const pendingTrauma = !!c.traumaPending;
+  const outOfAction = !!c.isOutOfAction;
 
   const anyLoading = state.isStressLoading || state.isStressClearLoading ||
     state.isTraumaLoading || state.isDossierLoading || state.isUndoLoading ||
@@ -460,7 +503,35 @@ function renderDetail(state: RenderState): HTMLElement {
     state.isTalentsLoading || state.isSessionLoading || state.isPlaybookLoading ||
     state.isGearLoading || state.isGearCommitmentLoading || state.isGearLockLoading ||
     state.isCoinLoading || state.isClocksLoading ||
-    state.isCrewsLoading || state.isNotesLoading || state.isTraumaPickerLoading;
+    state.isCrewsLoading || state.isNotesLoading ||
+    state.isTraumaPickerLoading || state.isEndScoreLoading ||
+    state.isRetireLoading || state.isDeleteLoading;
+
+  // Retired: every gameplay mutation is on the deny-list (→ RETIRED); the
+  // allow-list (dossier/notes/notebook/trauma.remove/undo/delete/reads) stays
+  // enabled. stressDisabled layers the pending / out-of-action gates on top
+  // (stress.add + Indulge Vice are the ops those flags block).
+  const gameplayDisabled = anyLoading || retired;
+  const stressDisabled = anyLoading || retired || pendingTrauma || outOfAction;
+  // End-score is the only sanctioned release from out-of-action, so its title
+  // explains the inherent stress clear + flag resets (lifecycle-matrix §4).
+  const endScoreTitle = pendingTrauma
+    ? "Resolve the pending trauma before ending the score"
+    : "End the score — clears stress and takes the character out of action";
+
+  // SC-F3: derived limits come from the server-computed capability projection
+  // (effective action caps, harm capacities, load limits) — the client never
+  // joins settings + cross-entity state to find an enforced cap. Gracefully
+  // fall back to the raw DTO values when the projection is unavailable.
+  const effCapByName = new Map(
+    (state.caps?.effectiveActionCaps ?? []).map((cap) => [cap.action, cap]),
+  );
+  const harmCapByLevel = new Map(
+    (state.caps?.harmCapacities ?? []).map((h) => [h.level, h]),
+  );
+  const loadLimitByCommitment = new Map(
+    (state.caps?.loadLimits ?? []).map((l) => [l.commitment, l]),
+  );
 
   // -- Stress track ---------------------------------------------------------
 
@@ -472,14 +543,14 @@ function renderDetail(state: RenderState): HTMLElement {
 
   const stressMinusBtn = el("button", {
     type: "button",
-    disabled: anyLoading || c.monitor.stress.current <= 0,
+    disabled: stressDisabled || c.monitor.stress.current <= 0,
     title: "Remove 1 stress",
   }, "−");
   stressMinusBtn.addEventListener("click", () => handlers.onStressDelta(-1));
 
   const stressPlusBtn = el("button", {
     type: "button",
-    disabled: anyLoading,
+    disabled: stressDisabled,
     title: "Add 1 stress",
   }, state.isStressLoading ? "…" : "+1");
   stressPlusBtn.addEventListener("click", () => handlers.onStressDelta(1));
@@ -495,15 +566,15 @@ function renderDetail(state: RenderState): HTMLElement {
     onRemove: (name) => handlers.onTraumaRemove(name),
   });
 
-  const traumaSelect = el("select", { "aria-label": "Add trauma", disabled: anyLoading || availableTraumas.length === 0 },
+  const traumaSelect = el("select", { "aria-label": "Add trauma", disabled: gameplayDisabled || !pendingTrauma || availableTraumas.length === 0 },
     el("option", { value: "" }, "--"),
     ...availableTraumas.map((t) => el("option", { value: t }, t)),
   );
 
   const traumaAddBtn = el("button", {
     type: "button",
-    disabled: anyLoading || availableTraumas.length === 0,
-    title: "Add trauma",
+    disabled: gameplayDisabled || !pendingTrauma || availableTraumas.length === 0,
+    title: "Resolve pending trauma",
   }, state.isTraumaLoading ? "…" : "+");
   traumaAddBtn.addEventListener("click", () => {
     const sel = traumaSelect as HTMLSelectElement;
@@ -518,16 +589,18 @@ function renderDetail(state: RenderState): HTMLElement {
 
   const indulgeBtn = el("button", {
     type: "button",
-    disabled: anyLoading || c.monitor.stress.current === 0,
+    disabled: stressDisabled || c.monitor.stress.current === 0,
     title: "Clear all stress (Indulge Vice)",
   }, state.isStressClearLoading ? "…" : "Indulge Vice");
   indulgeBtn.addEventListener("click", handlers.onStressClear);
 
   // -- Undo button ----------------------------------------------------------
-
+  // Lifecycle-recovery is on the retired allow-list; the button reflects the
+  // server-derived canUndo state when an operation has reported it (untouched
+  // on first load, where GET detail carries no projection).
   const undoBtn = el("button", {
     type: "button",
-    disabled: anyLoading,
+    disabled: anyLoading || state.canUndo === false,
     title: "Undo last change",
   }, state.isUndoLoading ? "…" : "Undo last change");
   undoBtn.addEventListener("click", handlers.onUndo);
@@ -676,8 +749,10 @@ function renderDetail(state: RenderState): HTMLElement {
   }
 
   /**
-   * F2ab: trauma picker shown when the stress track is full. Picking a
-   * trauma posts trauma.add and then stress.clear (trauma on full stress).
+   * F4: the pending-trauma prompt (Q42, lifecycle-matrix §8). Shown while
+   * traumaPending is set — when stress reached maximum. Resolving records the
+   * trauma, keeps stress FULL, and marks the character out-of-action for the
+   * remainder of the score (end-score is the only sanctioned release).
    */
   function renderTraumaPicker() {
     const pickerSelect = el("select", {
@@ -690,7 +765,7 @@ function renderDetail(state: RenderState): HTMLElement {
     const takeBtn = el("button", {
       type: "button",
       disabled: anyLoading || availableTraumas.length === 0,
-      title: "Take trauma (clears stress)",
+      title: "Take trauma to resolve pending stress (stress stays full)",
     }, state.isTraumaPickerLoading ? "…" : "Take trauma");
     takeBtn.addEventListener("click", handlers.onTraumaFromStress);
 
@@ -698,12 +773,12 @@ function renderDetail(state: RenderState): HTMLElement {
       className: "stress-trauma-picker",
       style: "margin-top: 0.5em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
     },
-      el("p", { className: "notice", style: "margin: 0;" },
-        "Stress is full — take a trauma to clear it."),
+      el("p", { className: "notice", style: "margin: 0; width: 100%;" },
+        "Stress is at its maximum — resolve the pending trauma to continue. Taking a trauma keeps stress full, and the character is out of action for the rest of the score (ending the score releases them)."),
       pickerSelect,
       takeBtn,
       availableTraumas.length === 0
-        ? el("p", { className: "lbl", style: "margin: 0;" }, "(all traumas taken)")
+        ? el("p", { className: "lbl", style: "margin: 0;" }, "(all traumas taken — cannot resolve pending trauma)")
         : null,
     );
   }
@@ -874,6 +949,25 @@ function renderDetail(state: RenderState): HTMLElement {
       ),
     ),
 
+    // F4: retired banner — RETIRED copy. Retirement clears stress, harm, and
+    // armor but preserves dossier, playbook, trauma history, notes, gear, and
+    // fund; only allow-list edits (dossier/notes, trauma.remove, undo, delete,
+    // reads) remain. Undo is the recovery path to un-retire by mistake.
+    retired
+      ? el("div", { className: "character-lifecycle-banner", role: "status" },
+          el("p", { className: "notice", style: "margin: 0; width: 100%;" },
+            "This character has retired. Gameplay is no longer available, but you can keep editing the dossier and notes, and Undo can restore the character if retirement was a mistake."),
+        )
+      : null,
+    // F4: pending-trauma banner — pending blocks gameplay and end-score until
+    // the trauma is resolved (TRAUMA_REQUIRED).
+    pendingTrauma && !retired
+      ? el("div", { className: "character-lifecycle-banner", role: "status" },
+          el("p", { className: "notice", style: "margin: 0; width: 100%;" },
+            "A trauma is pending — resolve it before continuing. Gameplay and ending the score are blocked until then."),
+        )
+      : null,
+
     // Personal (Dossier) — inline editable
     el(
       "div",
@@ -944,7 +1038,14 @@ function renderDetail(state: RenderState): HTMLElement {
         stressMinusBtn,
         stressPlusBtn,
       ),
-      stressFull ? renderTraumaPicker() : null,
+      // F4: pending-trauma prompt (resolve keeps stress full + out-of-action).
+      pendingTrauma ? renderTraumaPicker() : null,
+      // F4: out-of-action explanation — the client obligation is to explain
+      // the state, not to clear stress (Q42; stress stays full until end-score).
+      outOfAction
+        ? el("p", { className: "notice", style: "margin-top: 0.5em;" },
+            "This character is out of action for the remainder of the score — stress can't change until the score ends.")
+        : null,
       renderViceBlock(),
     ),
 
@@ -973,19 +1074,20 @@ function renderDetail(state: RenderState): HTMLElement {
       // F-03 / F-05) so the sheet and styleguide render identically.
       (() => {
         const h = c.monitor.harm;
-        // Capacities come from the shared component's canonical fallback
-        // (lesser/moderate 2, severe/fatal 1) until BUG-015 parameterizes
-        // them from game settings — never hardcode maxima here.
+        // SC-F3: harm slot capacities come from the server-computed capability
+        // projection (harmCapacities) — never hardcoded, never a local settings
+        // join. Falls back to the shared component's canonical default.
         const harmLevels: HarmLevel[] = ["lesser", "moderate", "severe", "fatal"];
         return harmTable({
           caption: "Harm",
-          disabled: anyLoading,
+          disabled: gameplayDisabled,
           rows: harmLevels.map((level) => {
             const entries = h[level] as readonly string[];
             return {
               level,
               label: level[0]!.toUpperCase() + level.slice(1),
               slots: entries,
+              capacity: harmCapByLevel.get(level)?.capacity,
               onRemove: (slotIndex, text) => {
                 const desc = text || entries[slotIndex] || "";
                 if (desc) handlers.onHarmRemove(desc, level);
@@ -1002,7 +1104,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
       // Add harm controls
       el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
-        el("select", { "aria-label": "Harm intensity", disabled: anyLoading },
+        el("select", { "aria-label": "Harm intensity", disabled: gameplayDisabled },
           el("option", { value: "" }, "--"),
           el("option", { value: "lesser" }, "Lesser"),
           el("option", { value: "moderate" }, "Moderate"),
@@ -1012,13 +1114,13 @@ function renderDetail(state: RenderState): HTMLElement {
         el("input", {
           type: "text",
           "aria-label": "Harm description",
-          disabled: anyLoading,
+          disabled: gameplayDisabled,
           placeholder: "injury description",
         }),
         (() => {
           const addBtn = el("button", {
             type: "button",
-            disabled: anyLoading,
+            disabled: gameplayDisabled,
             title: "Add harm",
           }, state.isHarmLoading ? "…" : "+");
           addBtn.addEventListener("click", handlers.onHarmAdd);
@@ -1037,7 +1139,7 @@ function renderDetail(state: RenderState): HTMLElement {
           const cb = document.createElement("input");
           cb.type = "checkbox";
           cb.dataset.armorKind = a.key;
-          cb.disabled = anyLoading || !a.has;
+          cb.disabled = gameplayDisabled || !a.has;
           cb.checked = a.used;
           cb.addEventListener("change", () => {
             handlers.onArmorSet(a.key, cb.checked);
@@ -1068,14 +1170,14 @@ function renderDetail(state: RenderState): HTMLElement {
 
         const addSegmentBtn = el("button", {
           type: "button",
-          disabled: anyLoading || state.isClockLoading,
+          disabled: gameplayDisabled || state.isClockLoading,
           title: "Add healing segment",
         }, state.isClockLoading ? "…" : "+1 segment");
         addSegmentBtn.addEventListener("click", handlers.onHarmHealingClock);
 
         const healSelect = el("select", {
           "aria-label": "Harm to heal",
-          disabled: anyLoading || harms.length === 0,
+          disabled: gameplayDisabled || harms.length === 0,
         },
           el("option", { value: "" }, "--"),
           ...harms.map((h, idx) =>
@@ -1084,7 +1186,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
         const healBtn = el("button", {
           type: "button",
-          disabled: anyLoading || state.isHealLoading || !clockFull || harms.length === 0,
+          disabled: gameplayDisabled || state.isHealLoading || !clockFull || harms.length === 0,
           title: "Heal harm (requires full clock)",
         }, state.isHealLoading ? "…" : "Heal");
         healBtn.addEventListener("click", handlers.onHarmHeal);
@@ -1092,6 +1194,10 @@ function renderDetail(state: RenderState): HTMLElement {
         return el("div", { style: "margin-top: 1em;" },
           el("h3", { className: "lbl" }, "Healing Clock"),
           clockEl,
+          hc.rollover > 0
+            ? el("p", { className: "lbl", style: "margin-top: 0.35em;" },
+                `(overflow ${hc.rollover} — carries past the reset)`)
+            : null,
           el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
             addSegmentBtn,
             healSelect,
@@ -1134,12 +1240,19 @@ function renderDetail(state: RenderState): HTMLElement {
           // tab stops from the densest card on the sheet.
           ...attr.actions.map((action) => {
             const desc = actionDescription(attr.name, action.name);
+            // SC-F3/P21: the enforced cap is the server-computed effective cap
+            // (min of the raw max and the crew-Mastery-derived cap); the UI
+            // never offers a dot the server would reject with RATING_MAXED.
+            const effectiveMax = effCapByName.get(action.name)?.effectiveMax ?? action.maxRating;
             const dots = actionDots({
               name: action.name,
               value: action.rating,
-              max: action.maxRating,
+              max: effectiveMax,
               title: desc ?? undefined,
-              onChange: (next) => handlers.onActionSetRating(attr.name, action.name, next),
+              // Retired → dots become display-only (no onChange ⇒ non-interactive).
+              onChange: gameplayDisabled
+                ? undefined
+                : (next) => handlers.onActionSetRating(attr.name, action.name, next),
             });
 
             return el("div", {
@@ -1151,7 +1264,7 @@ function renderDetail(state: RenderState): HTMLElement {
               // F2aa: one clean name per action — the underlined .action-name
               // inside the dots component carries the tooltip now.
               dots,
-              el("span", {}, `${action.rating}/${action.maxRating}`),
+              el("span", {}, `${action.rating}/${effectiveMax}`),
             );
           }),
 
@@ -1160,32 +1273,32 @@ function renderDetail(state: RenderState): HTMLElement {
             const xp = attr.experience;
             const minusBtn = el("button", {
               type: "button",
-              disabled: anyLoading || xp.points <= 0,
+              disabled: gameplayDisabled || xp.points <= 0,
               title: `Remove 1 XP (${attr.name})`,
             }, "−");
             minusBtn.addEventListener("click", () => handlers.onAttributeXpDelta(attr.name, -1));
             const plusBtn = el("button", {
               type: "button",
-              disabled: anyLoading || xp.points >= xp.max,
+              disabled: gameplayDisabled || xp.points >= xp.max,
               title: `Add 1 XP (${attr.name})`,
             }, "+");
             plusBtn.addEventListener("click", () => handlers.onAttributeXpDelta(attr.name, 1));
             const clearBtn = el("button", {
               type: "button",
-              disabled: anyLoading || xp.points === 0,
+              disabled: gameplayDisabled || xp.points === 0,
               title: `Clear XP (${attr.name})`,
             }, "clear");
             clearBtn.addEventListener("click", () => handlers.onAttributeXpClear(attr.name));
 
-            // Level up: pick an action below max rating, spend the full XP track
-            const levelable = attr.actions.filter((a) => a.rating < a.maxRating);
+            // Level up: pick an action below its effective cap, spend the full XP track
+            const levelable = attr.actions.filter((a) => a.rating < (effCapByName.get(a.name)?.effectiveMax ?? a.maxRating));
             const levelSelect = el("select", {
               "aria-label": `Level up action (${attr.name})`,
-              disabled: anyLoading || levelable.length === 0,
+              disabled: gameplayDisabled || levelable.length === 0,
             }, ...levelable.map((a) => el("option", { value: a.name }, a.name)));
             const levelBtn = el("button", {
               type: "button",
-              disabled: anyLoading || xp.points < xp.max || levelable.length === 0,
+              disabled: gameplayDisabled || xp.points < xp.max || levelable.length === 0,
               title: `Level up ${attr.name} (spends XP)`,
               "data-levelup-attribute": attr.name,
             }, state.isTalentsLoading ? "…" : "Level up");
@@ -1225,13 +1338,13 @@ function renderDetail(state: RenderState): HTMLElement {
         track.setAttribute("data-session-track", t.short);
         const minusBtn = el("button", {
           type: "button",
-          disabled: anyLoading || c.session[t.key] <= 0,
+          disabled: gameplayDisabled || c.session[t.key] <= 0,
           title: `Remove 1 ${t.label}`,
         }, "−");
         minusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, -1));
         const plusBtn = el("button", {
           type: "button",
-          disabled: anyLoading || c.session[t.key] >= c.session.max,
+          disabled: gameplayDisabled || c.session[t.key] >= c.session.max,
           title: `Add 1 ${t.label}`,
         }, "+");
         plusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, 1));
@@ -1275,31 +1388,36 @@ function renderDetail(state: RenderState): HTMLElement {
       );
       const specialAbilities = extractSpecialAbilities(playbookData, gameData, c.playbook.name);
 
-      // Eligible = in the playbook's SpecialAbilities (game data) and either
-      // not taken yet or taken fewer than TimesTakeable (server enforces).
-      const eligible = specialAbilities.filter((sa) => {
-        const name = String(sa.Name);
-        const timesTakeable = typeof sa.TimesTakeable === "number" ? sa.TimesTakeable : 1;
-        const taken = takenByName.get(name);
-        return !taken || taken.timesTaken < timesTakeable;
-      });
+      // Eligible = a catalog ability with remaining takes; the server enforces
+      // ABILITY_MAXED at 0. Comes from the capability projection (SC-F3), with
+      // a graceful fallback to the game-data join when it's unavailable.
+      const eligible = state.caps
+        ? state.caps.availableAbilityTakes
+            .filter((a) => a.remaining > 0)
+            .map((a) => ({ Name: a.name }))
+        : specialAbilities.filter((sa) => {
+            const name = String(sa.Name);
+            const timesTakeable = typeof sa.TimesTakeable === "number" ? sa.TimesTakeable : 1;
+            const taken = takenByName.get(name);
+            return !taken || taken.timesTaken < timesTakeable;
+          });
 
       // Playbook XP tracker: points/max with +/− and clear
       const xpMinusBtn = el("button", {
         type: "button",
-        disabled: anyLoading || xp.points <= 0,
+        disabled: gameplayDisabled || xp.points <= 0,
         title: "Remove 1 playbook XP",
       }, "−");
       xpMinusBtn.addEventListener("click", () => handlers.onPlaybookXpDelta(-1));
       const xpPlusBtn = el("button", {
         type: "button",
-        disabled: anyLoading || xp.points >= xp.max,
+        disabled: gameplayDisabled || xp.points >= xp.max,
         title: "Add 1 playbook XP",
       }, "+");
       xpPlusBtn.addEventListener("click", () => handlers.onPlaybookXpDelta(1));
       const xpClearBtn = el("button", {
         type: "button",
-        disabled: anyLoading || xp.points === 0,
+        disabled: gameplayDisabled || xp.points === 0,
         title: "Clear playbook XP",
       }, "clear");
       xpClearBtn.addEventListener("click", handlers.onPlaybookXpClear);
@@ -1321,7 +1439,7 @@ function renderDetail(state: RenderState): HTMLElement {
             abilityDescription(a, specialAbilities) || "No description available."),
           el("button", {
             type: "button",
-            disabled: anyLoading,
+            disabled: gameplayDisabled,
             title: `Remove ability: ${a.name}`,
           }, "✕"),
         ),
@@ -1336,7 +1454,7 @@ function renderDetail(state: RenderState): HTMLElement {
       // Take menu: native select from game data + <details>/<summary> description
       const abilitySelect = el("select", {
         "aria-label": "Take ability",
-        disabled: anyLoading || eligible.length === 0,
+        disabled: gameplayDisabled || eligible.length === 0,
       },
         el("option", { value: "" }, "--"),
         ...eligible.map((sa) => el("option", { value: String(sa.Name) }, String(sa.Name))),
@@ -1363,7 +1481,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
       const takeBtn = el("button", {
         type: "button",
-        disabled: anyLoading || eligible.length === 0,
+        disabled: gameplayDisabled || eligible.length === 0,
         title: "Take ability",
       }, state.isPlaybookLoading ? "…" : "+");
       takeBtn.addEventListener("click", handlers.onAbilityTake);
@@ -1400,9 +1518,13 @@ function renderDetail(state: RenderState): HTMLElement {
     (() => {
       const gear = c.gear;
       const loadoutBulk = gear.loadout.reduce((sum, item) => sum + item.bulk, 0);
-      // Load headroom is derived, display-only: maxBulk (from the DTO) minus the
-      // bulk sum of committed items. Never hardcoded.
-      const headroom = gear.maxBulk - loadoutBulk;
+      // SC-F3: the load cap for the current commitment comes from the
+      // server-computed capability projection (loadLimits; abilities such as
+      // Mule raise it) — never a local formula. Falls back to the DTO value.
+      const loadCap = loadLimitByCommitment.get(gear.commitment)?.maxBulk ?? gear.maxBulk;
+      // Load headroom is derived, display-only: the cap minus the bulk sum of
+      // committed items. Never hardcoded.
+      const headroom = loadCap - loadoutBulk;
 
       // Loadout list: name + bulk per item, remove per item (gear.remove also
       // drops it from available gear, per the contract's sideEffect).
@@ -1416,7 +1538,7 @@ function renderDetail(state: RenderState): HTMLElement {
           el("span", { className: "gear-item-bulk" }, `${item.bulk} bulk`),
           el("button", {
             type: "button",
-            disabled: anyLoading,
+            disabled: gameplayDisabled,
             title: `Remove gear: ${item.name}`,
           }, "✕"),
         ),
@@ -1434,14 +1556,14 @@ function renderDetail(state: RenderState): HTMLElement {
       const gearMenu = extractGearMenu(playbookData, gameData, c.playbook.name);
       const addSelect = el("select", {
         "aria-label": "Add gear item",
-        disabled: anyLoading || gearMenu.length === 0,
+        disabled: gameplayDisabled || gearMenu.length === 0,
       },
         el("option", { value: "" }, "--"),
         ...gearMenu.map((m) => el("option", { value: m.name }, `${m.name} (bulk ${m.bulk})`)),
       );
       const addBtn = el("button", {
         type: "button",
-        disabled: anyLoading || gearMenu.length === 0,
+        disabled: gameplayDisabled || gearMenu.length === 0,
         title: "Add gear item",
       }, state.isGearLoading ? "…" : "+");
       addBtn.addEventListener("click", handlers.onGearAdd);
@@ -1459,7 +1581,7 @@ function renderDetail(state: RenderState): HTMLElement {
       const commitmentOptions = ["light", "normal", "heavy", "encumbered"];
       const commitmentSelect = el("select", {
         "aria-label": "Set commitment",
-        disabled: anyLoading,
+        disabled: gameplayDisabled,
       },
         ...commitmentOptions.map((opt) => el("option", { value: opt }, opt)),
       ) as HTMLSelectElement;
@@ -1468,7 +1590,7 @@ function renderDetail(state: RenderState): HTMLElement {
       }
       const commitmentBtn = el("button", {
         type: "button",
-        disabled: anyLoading,
+        disabled: gameplayDisabled,
         title: "Set commitment",
       }, state.isGearCommitmentLoading ? "…" : "set");
       commitmentBtn.addEventListener("click", handlers.onGearSetCommitment);
@@ -1478,14 +1600,14 @@ function renderDetail(state: RenderState): HTMLElement {
       // which surfaces through the op-error notice.
       const lockBtn = el("button", {
         type: "button",
-        disabled: anyLoading,
+        disabled: gameplayDisabled,
         title: gear.isCommitmentLocked ? "Unlock commitment" : "Lock commitment",
       }, state.isGearLockLoading ? "…" : gear.isCommitmentLocked ? "unlock" : "lock");
       lockBtn.addEventListener("click", handlers.onGearToggleLock);
 
       const clearBtn = el("button", {
         type: "button",
-        disabled: anyLoading || (gear.loadout.length === 0 && gear.commitment === "none"),
+        disabled: gameplayDisabled || (gear.loadout.length === 0 && gear.commitment === "none"),
         title: "Clear commitments",
       }, state.isGearCommitmentLoading ? "…" : "clear");
       clearBtn.addEventListener("click", handlers.onGearClearCommitments);
@@ -1495,7 +1617,7 @@ function renderDetail(state: RenderState): HTMLElement {
       const loadoutNames = new Set(gear.loadout.map((item) => item.name));
       const gearSelect = el("select", {
         "aria-label": "Select gear item",
-        disabled: anyLoading || gear.availableGear.length === 0,
+        disabled: gameplayDisabled || gear.availableGear.length === 0,
       },
         el("option", { value: "" }, "--"),
         ...gear.availableGear.map((item) =>
@@ -1503,13 +1625,13 @@ function renderDetail(state: RenderState): HTMLElement {
       );
       const commitBtn = el("button", {
         type: "button",
-        disabled: anyLoading || gear.availableGear.length === 0,
+        disabled: gameplayDisabled || gear.availableGear.length === 0,
         title: "Commit selected gear",
       }, state.isGearLoading ? "…" : "commit");
       commitBtn.addEventListener("click", handlers.onGearCommit);
       const uncommitBtn = el("button", {
         type: "button",
-        disabled: anyLoading || gear.availableGear.length === 0,
+        disabled: gameplayDisabled || gear.availableGear.length === 0,
         title: "Uncommit selected gear",
       }, state.isGearLoading ? "…" : "uncommit");
       uncommitBtn.addEventListener("click", handlers.onGearUncommit);
@@ -1518,7 +1640,7 @@ function renderDetail(state: RenderState): HTMLElement {
         el("h2", {}, "Gear"),
         el("div", { className: "gear-summary", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
           el("span", { className: "lbl" }, "Load:"),
-          el("span", { className: "gear-bulk-sum" }, `${loadoutBulk} / ${gear.maxBulk}`),
+          el("span", { className: "gear-bulk-sum" }, `${loadoutBulk} / ${loadCap}`),
           el("span", { className: "gear-headroom" }, `headroom ${headroom}`),
         ),
         el("h3", { className: "lbl", style: "margin-top: 0.5em;" }, "Loadout"),
@@ -1551,14 +1673,14 @@ function renderDetail(state: RenderState): HTMLElement {
 
       const spendBtn = el("button", {
         type: "button",
-        disabled: anyLoading || state.isCoinLoading,
+        disabled: gameplayDisabled || state.isCoinLoading,
         title: "Spend 1 coin",
       }, state.isCoinLoading ? "…" : "−");
       spendBtn.addEventListener("click", () => handlers.onFundDelta(-1));
 
       const gainBtn = el("button", {
         type: "button",
-        disabled: anyLoading || state.isCoinLoading,
+        disabled: gameplayDisabled || state.isCoinLoading,
         title: "Gain 1 coin",
       }, state.isCoinLoading ? "…" : "+");
       gainBtn.addEventListener("click", () => handlers.onFundDelta(1));
@@ -1568,13 +1690,13 @@ function renderDetail(state: RenderState): HTMLElement {
       const liquidateInput = el("input", {
         type: "number",
         "aria-label": "Coins to liquidate",
-        disabled: anyLoading || state.isCoinLoading,
+        disabled: gameplayDisabled || state.isCoinLoading,
         value: "1",
         min: "1",
       }) as HTMLInputElement;
       const liquidateBtn = el("button", {
         type: "button",
-        disabled: anyLoading || state.isCoinLoading,
+        disabled: gameplayDisabled || state.isCoinLoading,
         title: "Liquidate stash to coins",
       }, state.isCoinLoading ? "…" : "liquidate");
       liquidateBtn.addEventListener("click", handlers.onFundLiquidate);
@@ -1630,14 +1752,14 @@ function renderDetail(state: RenderState): HTMLElement {
 
         const minusBtn = el("button", {
           type: "button",
-          disabled: anyLoading || state.isClocksLoading || clk.segments <= 0,
+          disabled: gameplayDisabled || state.isClocksLoading || clk.segments <= 0,
           title: `Remove 1 segment: ${clk.name}`,
         }, "−");
         minusBtn.addEventListener("click", () => handlers.onClockProgress(clk.id, -1));
 
         const plusBtn = el("button", {
           type: "button",
-          disabled: anyLoading || state.isClocksLoading,
+          disabled: gameplayDisabled || state.isClocksLoading,
           title: `Add 1 segment: ${clk.name}`,
         }, state.isClocksLoading ? "…" : "+");
         plusBtn.addEventListener("click", () => handlers.onClockProgress(clk.id, 1));
@@ -1645,14 +1767,14 @@ function renderDetail(state: RenderState): HTMLElement {
         const resetBtn = el("button", {
           type: "button",
           // enabled for rollover clocks carrying overflow even at 0 segments
-          disabled: anyLoading || state.isClocksLoading || (clk.segments === 0 && clk.rollover === 0),
+          disabled: gameplayDisabled || state.isClocksLoading || (clk.segments === 0 && clk.rollover === 0),
           title: `Reset clock: ${clk.name}`,
         }, state.isClocksLoading ? "…" : "reset");
         resetBtn.addEventListener("click", () => handlers.onClockReset(clk.id));
 
         const deleteBtn = el("button", {
           type: "button",
-          disabled: anyLoading || state.isClocksLoading,
+          disabled: gameplayDisabled || state.isClocksLoading,
           title: `Delete clock: ${clk.name}`,
         }, "✕");
         deleteBtn.addEventListener("click", () => handlers.onClockDelete(clk.id));
@@ -1682,25 +1804,25 @@ function renderDetail(state: RenderState): HTMLElement {
       const nameInput = el("input", {
         type: "text",
         "aria-label": "Clock name",
-        disabled: anyLoading || state.isClocksLoading,
+        disabled: gameplayDisabled || state.isClocksLoading,
         placeholder: "project name",
       }) as HTMLInputElement;
       const kindSelect = el("select", {
         "aria-label": "Clock kind",
-        disabled: anyLoading || state.isClocksLoading,
+        disabled: gameplayDisabled || state.isClocksLoading,
       },
         ...kindOptions.map((k) => el("option", { value: k.value }, k.label)),
       ) as HTMLSelectElement;
       const sizeInput = el("input", {
         type: "number",
         "aria-label": "Clock size",
-        disabled: anyLoading || state.isClocksLoading,
+        disabled: gameplayDisabled || state.isClocksLoading,
         min: "1",
         placeholder: "4",
       }) as HTMLInputElement;
       const createBtn = el("button", {
         type: "button",
-        disabled: anyLoading || state.isClocksLoading,
+        disabled: gameplayDisabled || state.isClocksLoading,
         title: "Create clock",
       }, state.isClocksLoading ? "…" : "+");
       createBtn.addEventListener("click", handlers.onCreateClock);
@@ -1727,7 +1849,7 @@ function renderDetail(state: RenderState): HTMLElement {
     // Info
     // Messages
     state.errorMsg
-      ? el("p", { className: "error", style: "margin-top: 1em;" }, state.errorMsg)
+      ? el("p", { className: "error", style: "margin-top: 1em;", role: "alert" }, state.errorMsg)
       : null,
     state.noticeMsg
       ? el("p", { className: "notice", style: "margin-top: 1em;" }, state.noticeMsg)
@@ -1736,12 +1858,63 @@ function renderDetail(state: RenderState): HTMLElement {
       ? el("p", { className: "notice", style: "margin-top: 1em;" }, state.undoNotice)
       : null,
 
+    // -- F4 lifecycle actions ---------------------------------------------
+    // End-score: always clears stress + out-of-action flags (the sanctioned
+    // release); blocked by pending trauma (TRAUMA_REQUIRED) and retired.
+    // Retire: explicit, confirmation-guarded, independent of trauma.
+    // Delete: confirm-guarded; retired characters remain deletable.
+    (() => {
+      const endScoreBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || retired || pendingTrauma,
+        title: endScoreTitle,
+      }, state.isEndScoreLoading ? "…" : "End score");
+      endScoreBtn.addEventListener("click", handlers.onEndScore);
+
+      const retireBtn = el("button", {
+        type: "button",
+        disabled: anyLoading || retired,
+        title: "Retire this character (confirmation required)",
+      }, state.isRetireLoading ? "…" : "Retire");
+      retireBtn.addEventListener("click", handlers.onRetire);
+
+      const deleteBtn = el("button", {
+        type: "button",
+        disabled: anyLoading,
+        title: "Delete this character (confirmation required, not undoable)",
+      }, state.isDeleteLoading ? "…" : "Delete");
+      deleteBtn.addEventListener("click", handlers.onDeleteCharacter);
+
+      return el("div", { className: "character-lifecycle-actions", style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin-top: 0.5em;" },
+        endScoreBtn,
+        retireBtn,
+        deleteBtn,
+        // RETIRED copy for the gameplay gate (stress already disabled above).
+        retired
+          ? el("p", { className: "lbl", style: "margin: 0; width: 100%;" },
+              "Retired — gameplay actions are disabled; Undo can restore the character.")
+          : null,
+        pendingTrauma && !retired
+          ? el("p", { className: "lbl", style: "margin: 0; width: 100%;" },
+              "A trauma is pending — resolve it before ending the score.")
+          : null,
+        state.canUndo === false && state.historyCount === 0
+          ? el("p", { className: "lbl", style: "margin: 0; width: 100%;" },
+              "No history is available to undo.")
+          : null,
+      );
+    })(),
+
     // Undo
     el(
       "div",
       { className: "character-actions" },
       el("h2", {}, "Actions"),
       undoBtn,
+      state.historyCount !== null
+        ? el("p", { className: "lbl", style: "margin-top: 0.5em;" },
+            `${state.historyCount} snapshotted change${state.historyCount === 1 ? "" : "s"} can be undone.`)
+        : null,
     ),
 
     // Notes (F2ab: C4 array of entries with per-note add/remove; legacy
@@ -1844,6 +2017,13 @@ export function mountCharacterDetailPage(
   let harmSpillNotice: string | null = null;
   let editing: EditingState | null = null;
 
+  // F4 lifecycle state
+  let isEndScoreLoading = false;
+  let isRetireLoading = false;
+  let isDeleteLoading = false;
+  let canUndoState: boolean | null = null;
+  let historyCountState: number | null = null;
+
   // F2n Health state
   let isHarmLoading = false;
   let isArmorLoading = false;
@@ -1856,6 +2036,7 @@ export function mountCharacterDetailPage(
   let clampNotice: string | null = null;
   let experienceCondition: string | null = null;
   let playbookData: Record<string, unknown> | null = null;
+  let caps: CharacterCapabilities | null = null;
 
   // F2p Playbook state
   let isPlaybookLoading = false;
@@ -1897,6 +2078,25 @@ export function mountCharacterDetailPage(
     healNotice = null;
   };
 
+  /**
+   * Friendly inline error copy per error class (FV-023/FV-024): typed
+   * operation errors map known codes to user copy (per-op override first,
+   * shared fallback otherwise); HTTP/network and decode failures get their
+   * own distinct copy. Never renders raw body/parser text.
+   */
+  const opErrorText = (err: unknown, onOpError?: (err: OpError) => string): string => {
+    if (err instanceof OpError) {
+      return onOpError ? onOpError(err) : opErrorFriendlyText(err);
+    }
+    if (err instanceof ApiError) {
+      return transportErrorText(err);
+    }
+    if (err instanceof DecodeError) {
+      return decodeErrorText(err);
+    }
+    return String(err);
+  };
+
   const refreshAndShowNotice = () => {
     if (!currentCharacter) return;
     const recoverProgram = getCharacter(characterId);
@@ -1904,18 +2104,13 @@ export function mountCharacterDetailPage(
       Effect.match(recoverProgram, {
         onFailure: (recoverErr) => {
           if (cancelled) return;
-          if (recoverErr instanceof ApiError) {
-            errorMsg = `Sheet refresh failed (${recoverErr.status}): ${recoverErr.body}`;
-          } else if (recoverErr instanceof DecodeError) {
-            errorMsg = `Sheet refresh failed (invalid response): ${recoverErr.message}`;
-          } else {
-            errorMsg = `Sheet refresh failed: ${String(recoverErr)}`;
-          }
+          errorMsg = `Sheet refresh failed — ${opErrorText(recoverErr)}`;
           renderDetailWrapper();
         },
         onSuccess: (character) => {
           if (cancelled) return;
           currentCharacter = character;
+          refreshCaps();
           noticeMsg = "Sheet refreshed because it changed elsewhere";
           renderDetailWrapper();
           setTimeout(() => {
@@ -1934,7 +2129,7 @@ export function mountCharacterDetailPage(
     program: Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError>,
     onSuccess: (character: Character) => void,
     clearLoading: () => void,
-    onApiError?: (err: ApiError) => string,
+    onApiError?: (err: OpError) => string,
   ) => {
     void Effect.runPromise(
       Effect.match(program, {
@@ -1944,14 +2139,8 @@ export function mountCharacterDetailPage(
           if (err instanceof StaleRevisionError) {
             renderDetailWrapper();
             refreshAndShowNotice();
-          } else if (err instanceof ApiError) {
-            errorMsg = onApiError ? onApiError(err) : `API error (${err.status}): ${err.body}`;
-            renderDetailWrapper();
-          } else if (err instanceof DecodeError) {
-            errorMsg = `Invalid response: ${err.message}`;
-            renderDetailWrapper();
           } else {
-            errorMsg = String(err);
+            errorMsg = opErrorText(err, onApiError);
             renderDetailWrapper();
           }
         },
@@ -1959,6 +2148,23 @@ export function mountCharacterDetailPage(
           if (cancelled) return;
           clearLoading();
           onSuccess(character);
+        },
+      }),
+    );
+  };
+
+  /** Re-fetch the character capability projection after a mutation so the
+   * capability-driven controls never keep stale limits (SC-F3). Advisory and
+   * best-effort: keep the last good projection on failure. */
+  const refreshCaps = () => {
+    if (cancelled || !currentCharacter) return;
+    void Effect.runPromise(
+      Effect.match(getCharacterCapabilities(characterId), {
+        onFailure: () => undefined,
+        onSuccess: (projection) => {
+          if (cancelled) return;
+          caps = projection;
+          renderDetailWrapper();
         },
       }),
     );
@@ -1975,14 +2181,8 @@ export function mountCharacterDetailPage(
     if (err instanceof StaleRevisionError) {
       renderDetailWrapper();
       refreshAndShowNotice();
-    } else if (err instanceof ApiError) {
-      errorMsg = `API error (${err.status}): ${err.body}`;
-      renderDetailWrapper();
-    } else if (err instanceof DecodeError) {
-      errorMsg = `Invalid response: ${err.message}`;
-      renderDetailWrapper();
     } else {
-      errorMsg = String(err);
+      errorMsg = opErrorText(err);
       renderDetailWrapper();
     }
   };
@@ -1992,7 +2192,7 @@ export function mountCharacterDetailPage(
     program: Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError>,
     onSuccess: (result: FundOpResult) => void,
     clearLoading: () => void,
-    onApiError?: (err: ApiError) => string,
+    onApiError?: (err: OpError) => string,
   ) => {
     void Effect.runPromise(
       Effect.match(program, {
@@ -2002,14 +2202,8 @@ export function mountCharacterDetailPage(
           if (err instanceof StaleRevisionError) {
             renderDetailWrapper();
             refreshAndShowNotice();
-          } else if (err instanceof ApiError) {
-            errorMsg = onApiError ? onApiError(err) : `API error (${err.status}): ${err.body}`;
-            renderDetailWrapper();
-          } else if (err instanceof DecodeError) {
-            errorMsg = `Invalid response: ${err.message}`;
-            renderDetailWrapper();
           } else {
-            errorMsg = String(err);
+            errorMsg = opErrorText(err, onApiError);
             renderDetailWrapper();
           }
         },
@@ -2027,7 +2221,7 @@ export function mountCharacterDetailPage(
     program: Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError>,
     onSuccess: (clock: Clock) => void,
     clearLoading: () => void,
-    onApiError?: (err: ApiError) => string,
+    onApiError?: (err: OpError) => string,
   ) => {
     void Effect.runPromise(
       Effect.match(program, {
@@ -2037,14 +2231,8 @@ export function mountCharacterDetailPage(
           if (err instanceof StaleRevisionError) {
             renderDetailWrapper();
             refreshClocksAndNotice();
-          } else if (err instanceof ApiError) {
-            errorMsg = onApiError ? onApiError(err) : `API error (${err.status}): ${err.body}`;
-            renderDetailWrapper();
-          } else if (err instanceof DecodeError) {
-            errorMsg = `Invalid response: ${err.message}`;
-            renderDetailWrapper();
           } else {
-            errorMsg = String(err);
+            errorMsg = opErrorText(err, onApiError);
             renderDetailWrapper();
           }
         },
@@ -2063,13 +2251,7 @@ export function mountCharacterDetailPage(
       Effect.match(listClocks(), {
         onFailure: (err) => {
           if (cancelled) return;
-          if (err instanceof ApiError) {
-            clocksNotice = `Clock refresh failed (${err.status}): ${err.body}`;
-          } else if (err instanceof DecodeError) {
-            clocksNotice = `Clock refresh failed (invalid response): ${err.message}`;
-          } else {
-            clocksNotice = `Clock refresh failed: ${String(err)}`;
-          }
+          clocksNotice = `Clock refresh failed — ${opErrorText(err)}`;
           renderDetailWrapper();
         },
         onSuccess: (list) => {
@@ -2115,14 +2297,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2154,14 +2330,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2191,14 +2361,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2231,14 +2395,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2267,14 +2425,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2313,14 +2465,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2427,8 +2573,10 @@ export function mountCharacterDetailPage(
       renderDetailWrapper();
     },
 
-    // -- F2ab: stress-full → trauma picker (trauma.add then stress.clear) --
-
+    // -- F4: pending-trauma resolution (Q42, lifecycle-matrix §8) ----------
+    // Resolving records the trauma, keeps stress FULL, and marks the
+    // character out-of-action for the remainder of the score. The stress.clear
+    // chain is gone — stress stays full until end-score (the only release).
     onTraumaFromStress: () => {
       if (!currentCharacter || isTraumaPickerLoading) return;
       const sel = root.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
@@ -2446,28 +2594,16 @@ export function mountCharacterDetailPage(
           },
           onSuccess: (withTrauma) => {
             if (cancelled) return;
-            // Chain stress.clear with the updated revision from trauma.add.
-            const clearProgram = stressClear(characterId, withTrauma.revision);
-            void Effect.runPromise(
-              Effect.match(clearProgram, {
-                onFailure: (err2) => {
-                  failMutate(err2, () => { isTraumaPickerLoading = false; });
-                },
-                onSuccess: (cleared) => {
-                  if (cancelled) return;
-                  isTraumaPickerLoading = false;
-                  currentCharacter = cleared;
-                  noticeMsg = `${trauma} taken — stress cleared`;
-                  setTimeout(() => {
-                    if (!cancelled) {
-                      noticeMsg = null;
-                      renderDetailWrapper();
-                    }
-                  }, 4000);
-                  renderDetailWrapper();
-                },
-              }),
-            );
+            isTraumaPickerLoading = false;
+            currentCharacter = withTrauma;
+            noticeMsg = `${trauma} taken — stress stays full; out of action until the score ends`;
+            setTimeout(() => {
+              if (!cancelled) {
+                noticeMsg = null;
+                renderDetailWrapper();
+              }
+            }, 4000);
+            renderDetailWrapper();
           },
         }),
       );
@@ -2558,7 +2694,8 @@ export function mountCharacterDetailPage(
       undoNotice = null;
       renderDetailWrapper();
 
-      const program = undoCharacter(characterId);
+      const program = undoCharacter(characterId, currentCharacter.revision);
+      const before = currentCharacter;
 
       void Effect.runPromise(
         Effect.match(program, {
@@ -2568,29 +2705,110 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              if (err.body.startsWith("NO_HISTORY")) {
-                undoNotice = "Nothing to undo — no history available";
-              } else {
-                errorMsg = `API error (${err.status}): ${err.body}`;
-              }
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
+            } else if (err instanceof OpError && err.error.code === "NO_HISTORY") {
+              undoNotice = "Nothing to undo — no history available";
               renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
-          onSuccess: (character) => {
+          onSuccess: ({ character, canUndo, historyCount }) => {
             if (cancelled) return;
             isUndoLoading = false;
             errorMsg = null;
             noticeMsg = null;
-            undoNotice = null;
             currentCharacter = character;
+            canUndoState = canUndo;
+            historyCountState = historyCount;
+            // FV-028: positive feedback that names the restored state, distinct
+            // from the NO_HISTORY error copy above.
+            undoNotice = `Undone — restored ${describeRestore(before, character)}.`;
             renderDetailWrapper();
+          },
+        }),
+      );
+    },
+
+    // -- F4: end-score / retire / delete -----------------------------------
+
+    onEndScore: () => {
+      if (!currentCharacter || isEndScoreLoading) return;
+      const confirmed = window.confirm(
+        "End the score? This clears stress, takes the character out of action, " +
+        "and (optionally) resets armor and loadout — in one snapshotted change " +
+        "you can undo.",
+      );
+      if (!confirmed) return;
+      isEndScoreLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = endScore(characterId, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          noticeMsg = "Score ended — stress cleared.";
+          renderDetailWrapper();
+        },
+        () => { isEndScoreLoading = false; },
+      );
+    },
+
+    onRetire: () => {
+      if (!currentCharacter || isRetireLoading) return;
+      const confirmed = window.confirm(
+        "Retire this character? This is independent of trauma — it heals harm, " +
+        "clears stress and armor, and keeps the dossier/notes, but disables " +
+        "gameplay. If it's a mistake, Undo restores the character.",
+      );
+      if (!confirmed) return;
+      isRetireLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = retireCharacter(characterId, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          noticeMsg = `${character.dossier.name || "This character"} has retired. Undo can restore it.`;
+          renderDetailWrapper();
+        },
+        () => { isRetireLoading = false; },
+      );
+    },
+
+    onDeleteCharacter: () => {
+      if (!currentCharacter || isDeleteLoading) return;
+      const confirmed = window.confirm(
+        "Delete this character permanently? This is not undoable and removes " +
+        "their history. Retired characters can also be deleted.",
+      );
+      if (!confirmed) return;
+      isDeleteLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = deleteCharacter(characterId, String(currentCharacter.revision));
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isDeleteLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshAndShowNotice();
+            } else {
+              errorMsg = opErrorText(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: () => {
+            if (cancelled) return;
+            // The entity is gone — leave the page via history navigation.
+            window.location.assign("/roster");
           },
         }),
       );
@@ -2618,14 +2836,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2663,14 +2875,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2718,13 +2924,16 @@ export function mountCharacterDetailPage(
 
     onHarmHealingClock: () => {
       if (!currentCharacter || isClockLoading) return;
-      const hc = currentCharacter.monitor.harm.healingClock;
-      const nextSegments = hc.segments + 1;
+      // FV-007/P07: the healing clock is a rollover clock and the +1 control
+      // sends a DELTA (the clock-progress family), never an absolute segment
+      // count — so a clock at 5/6 sends {segments:1}. The server accepts
+      // overflow into rollover and applies it on reset.
+      const delta = 1;
       isClockLoading = true;
       clearNotices();
       renderDetailWrapper();
 
-      const program = harmHealingClock(characterId, nextSegments, currentCharacter.revision);
+      const program = harmHealingClock(characterId, delta, currentCharacter.revision);
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => {
@@ -2733,14 +2942,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -2769,14 +2972,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshAndShowNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = `API error (${err.status}): ${err.body}`;
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err);
               renderDetailWrapper();
             }
           },
@@ -3207,13 +3404,7 @@ export function mountCharacterDetailPage(
           onFailure: (err) => {
             if (cancelled) return;
             isClocksLoading = false;
-            if (err instanceof ApiError) {
-              errorMsg = clockOpErrorText(err);
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-            } else {
-              errorMsg = String(err);
-            }
+            errorMsg = opErrorText(err, clockOpErrorText);
             renderDetailWrapper();
           },
           onSuccess: (created) => {
@@ -3283,14 +3474,8 @@ export function mountCharacterDetailPage(
             if (err instanceof StaleRevisionError) {
               renderDetailWrapper();
               refreshClocksAndNotice();
-            } else if (err instanceof ApiError) {
-              errorMsg = clockOpErrorText(err);
-              renderDetailWrapper();
-            } else if (err instanceof DecodeError) {
-              errorMsg = `Invalid response: ${err.message}`;
-              renderDetailWrapper();
             } else {
-              errorMsg = String(err);
+              errorMsg = opErrorText(err, clockOpErrorText);
               renderDetailWrapper();
             }
           },
@@ -3311,6 +3496,7 @@ export function mountCharacterDetailPage(
       c: currentCharacter,
       gameData,
       playbookData,
+      caps,
       crews,
       isCrewsLoading,
       crewNotice,
@@ -3318,6 +3504,11 @@ export function mountCharacterDetailPage(
       notesNotice,
       isTraumaPickerLoading,
       healNotice,
+      isEndScoreLoading,
+      isRetireLoading,
+      isDeleteLoading,
+      canUndo: canUndoState,
+      historyCount: historyCountState,
       isStressLoading,
       isStressClearLoading,
       isTraumaLoading,
@@ -3373,7 +3564,10 @@ export function mountCharacterDetailPage(
       // Crew list for the membership selector; failures degrade gracefully
       // (the selector renders disabled until a successful fetch).
       const crewList = yield* Effect.either(listCrews());
-      return { character, game, playbook, clockList, crewList };
+      // SC-F3: server-computed capability projection (effective action caps,
+      // harm capacities, load limits). Advisory — degrade gracefully.
+      const capProjection = yield* Effect.either(getCharacterCapabilities(characterId));
+      return { character, game, playbook, clockList, crewList, capProjection };
     });
 
     void Effect.runPromise(
@@ -3396,10 +3590,13 @@ export function mountCharacterDetailPage(
             }),
           );
         },
-        onSuccess: ({ character, game, playbook, clockList, crewList }) => {
+        onSuccess: ({ character, game, playbook, clockList, crewList, capProjection }) => {
           if (cancelled) return;
           root.setAttribute("aria-busy", "false");
           currentCharacter = character;
+          if (capProjection._tag === "Right") {
+            caps = capProjection.right;
+          }
           if (game._tag === "Right") {
             gameData = game.right;
           }

@@ -130,6 +130,29 @@ orchestrator-owned live Ada probe are mandatory backstops, not formalities.
 
 Record per-task metrics per spec §11 (`tasks/metrics/{track}/{task}.json`).
 
+## Orchestration context economy
+
+Unbounded autonomous completion is intentional. A context rollover is an
+internal continuation boundary, not a reason to stop or ask the human.
+
+- After each green, recorded, and pushed wave, continue from a fresh
+  orchestrator context using task logs and metrics as the handoff. Do not retain
+  prior-wave transcripts merely for convenience.
+- Long-running workers checkpoint completed decisions, changed paths, current
+  failures, and exact next commands, then continue in a fresh worker context
+  before transcript history becomes the dominant input.
+- Give workers card-specific source sections and frozen decisions. Do not make
+  every worker ingest whole research plans when a bounded excerpt is sufficient.
+- Batch independent reads and checks. Keep dependent read/edit/verify steps
+  sequential.
+- After an edit match fails, reread and re-anchor the target. Never retry a
+  progressively mutated replacement string.
+- Verification, independent review, and corrective dispatches remain required.
+  Context economy must not reduce gates or narrow requested scope.
+
+Checkpoint requirements and the measured rationale live in `tasks/README.md`
+and `docs/pages/orchestration/context-economy.mdx`.
+
 ## Frontend work by models without vision
 
 A model that cannot inspect visual output MUST NOT mark a frontend/UI change

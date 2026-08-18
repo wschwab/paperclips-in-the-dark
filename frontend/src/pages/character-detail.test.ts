@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import { mountCharacterDetailPage } from "./character-detail.js";
 
 // ---------------------------------------------------------------------------
@@ -117,6 +117,8 @@ const GAME_DATA = {
 /** Crew summaries for the membership selector (GET /api/crews). */
 const CREWS_DATA = [
   {
+    // SC-F1 frozen decoder requires the summary discriminant.
+    kind: "crew",
     id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
     name: "The Red Sashes",
     crewType: "Assassins",
@@ -141,6 +143,13 @@ const PLAYBOOK_DATA = {
   Rolodex: { Name: "Shrewd Friends", Friends: [] },
   DefaultActionPoints: [],
 };
+
+/**
+ * SC-F3: the mount now fetches /api/characters/{id}/capabilities as a sixth
+ * load call. Every test that mounts must supply a mock that FAILS caps decode
+ * (caps=null → graceful game-data fallback) so it isn't consumed by the
+ * capabilities fetch instead of the intended op mock.
+ */
 
 /** Create a deferred promise + resolver pair — typed loosely for mock Responses. */
 function deferred<T>(): [Promise<T>, (value: T) => void] {
@@ -196,7 +205,8 @@ describe("character-detail page", () => {
       .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -277,6 +287,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(stressSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -306,6 +317,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce({
           ok: false,
           status: 422,
@@ -324,8 +336,11 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         const err = getError(root);
-        expect(err?.textContent).toContain("422");
-        expect(err?.textContent).toContain("validation failed");
+        // FV-023: rejected HTTP gets distinct friendly copy, never the body.
+        expect(err?.textContent).toBe("The server returned an error (422).");
+        expect(err?.textContent).not.toContain("validation failed");
+        // FV-024: the error message is an accessible alert.
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -352,7 +367,10 @@ describe("character-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Character revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 15 },
         },
       };
@@ -369,6 +387,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         // 3) stressAdd POST → 409 STALE_REVISION
         .mockResolvedValueOnce({
           ok: false,
@@ -479,6 +498,8 @@ describe("character-detail page", () => {
         applied: { op: "character.undo" },
         sideEffects: [],
         error: null,
+        canUndo: true,
+        historyCount: 3,
       };
 
       global.fetch = vi
@@ -488,6 +509,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(undoSuccessResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -503,9 +525,12 @@ describe("character-detail page", () => {
 
       undoBtn.click();
 
+      // FV-028: positive feedback names the restored state (stress went 3→1),
+      // and the history count is surfaced.
       await vi.waitFor(() => {
-        // Stress went from 3 to 1 (after undo)
         expect(root.textContent).toContain("1 / 9");
+        expect(root.textContent).toContain("Undone — restored stress to 1/9");
+        expect(root.textContent).toContain("3 snapshotted changes can be undone");
       });
     });
 
@@ -527,6 +552,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(noHistoryResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -558,7 +584,10 @@ describe("character-detail page", () => {
         sideEffects: [],
         error: {
           code: "STALE_REVISION",
+          status: 409,
           message: "Character revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
           details: { currentRevision: 15 },
         },
       };
@@ -573,6 +602,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce({
           ok: false,
           status: 409,
@@ -645,7 +675,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -688,6 +719,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -724,6 +756,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -758,7 +791,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -801,7 +835,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -837,6 +872,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -887,6 +923,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -937,6 +974,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -967,7 +1005,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1003,7 +1042,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1043,6 +1083,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1110,6 +1151,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(dossierOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1163,7 +1205,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1198,6 +1241,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(stressResp3));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1224,7 +1268,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1247,7 +1292,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1265,7 +1311,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1283,12 +1330,18 @@ describe("character-detail page", () => {
     });
 
     it("adds trauma via select + button, removes via remove button", async () => {
+      // trauma.add is resolution-only: the generic add control is enabled
+      // while a trauma is pending.
+      const pending = characterDTO({
+        traumaPending: true,
+      });
       const withCold = characterDTO({
         revision: 13,
         monitor: {
           ...characterDTO().monitor,
           trauma: { traumas: ["Haunted", "Cold"], max: 4 },
         },
+        traumaPending: false,
       });
 
       const traumaAddOk = {
@@ -1301,11 +1354,12 @@ describe("character-detail page", () => {
 
       global.fetch = vi
         .fn()
-        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(pending))
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted", "Obsessed"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(traumaAddOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1315,7 +1369,7 @@ describe("character-detail page", () => {
       });
 
       // Click add button
-      const addBtn = root.querySelector('button[title="Add trauma"]') as HTMLButtonElement;
+      const addBtn = root.querySelector('button[title="Resolve pending trauma"]') as HTMLButtonElement;
       expect(addBtn).not.toBeNull();
       addBtn.click();
 
@@ -1327,22 +1381,24 @@ describe("character-detail page", () => {
 
   // -- F2ab: Stress-full → trauma picker + Heal picker ----------------------
 
-  describe("F2ab Stress-full trauma picker", () => {
-    it("shows the trauma picker when stress is full, and clearing stress removes it", async () => {
-      const full = characterDTO({
+  describe("F4 pending-trauma picker", () => {
+    it("shows the pending-trauma prompt when traumaPending is set, with out-of-action copy", async () => {
+      const pending = characterDTO({
         monitor: {
           ...characterDTO().monitor,
           stress: { current: 9, max: 9 },
         },
+        traumaPending: true,
       });
 
       global.fetch = vi
         .fn()
-        .mockResolvedValueOnce(ok(full))
+        .mockResolvedValueOnce(ok(pending))
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1350,14 +1406,15 @@ describe("character-detail page", () => {
         expect(root.querySelector(".stress-trauma-picker")).not.toBeNull();
       });
       const picker = root.querySelector(".stress-trauma-picker") as HTMLElement;
-      expect(picker.textContent).toContain("Stress is full");
+      expect(picker.textContent).toContain("Stress is at its maximum");
+      expect(picker.textContent).toContain("out of action");
       const select = picker.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
       // Haunted is already stamped on the fixture — only unstamped traumas are offered.
       expect(Array.from(select.options).map((o) => o.value)).toEqual(["", "Cold", "Obsessed", "Paranoid"]);
-      expect(picker.querySelector('button[title="Take trauma (clears stress)"]')).not.toBeNull();
+      expect(picker.querySelector('button[title="Take trauma to resolve pending stress (stress stays full)"]')).not.toBeNull();
     });
 
-    it("hits max via the + button, then trauma.add + stress.clear clear the track", async () => {
+    it("hits max via the + button, then resolving keeps stress full and marks out-of-action (no stress.clear)", async () => {
       const nearFull = characterDTO({
         monitor: {
           ...characterDTO().monitor,
@@ -1370,6 +1427,7 @@ describe("character-detail page", () => {
           ...characterDTO().monitor,
           stress: { current: 9, max: 9 },
         },
+        traumaPending: true,
       });
       const withTrauma = characterDTO({
         revision: 14,
@@ -1378,14 +1436,9 @@ describe("character-detail page", () => {
           stress: { current: 9, max: 9 },
           trauma: { traumas: ["Haunted", "Cold"], max: 4 },
         },
-      });
-      const cleared = characterDTO({
-        revision: 15,
-        monitor: {
-          ...characterDTO().monitor,
-          stress: { current: 0, max: 9 },
-          trauma: { traumas: ["Haunted", "Cold"], max: 4 },
-        },
+        traumaPending: false,
+        isOutOfAction: true,
+        stressClearPending: true,
       });
       const stressOk = {
         ok: true,
@@ -1401,13 +1454,6 @@ describe("character-detail page", () => {
         sideEffects: [],
         error: null,
       };
-      const clearOk = {
-        ok: true,
-        character: cleared,
-        applied: { op: "stress.clear" },
-        sideEffects: [],
-        error: null,
-      };
 
       global.fetch = vi
         .fn()
@@ -1416,44 +1462,50 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(stressOk))
-        .mockResolvedValueOnce(ok(traumaOk))
-        .mockResolvedValueOnce(ok(clearOk));
+        .mockResolvedValueOnce(ok(traumaOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
       await vi.waitFor(() => {
         expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
       });
-      // 8/9 is not full — no picker yet, but the + button is available.
+      // 8/9 is not full — no pending prompt yet.
       expect(root.querySelector(".stress-trauma-picker")).toBeNull();
       expect(root.textContent).toContain("8 / 9");
 
       (root.querySelector('button[title="Add 1 stress"]') as HTMLButtonElement).click();
 
+      // Server returns traumaPending — the pending prompt appears.
       await vi.waitFor(() => {
         expect(root.querySelector(".stress-trauma-picker")).not.toBeNull();
       });
 
       const pickerSelect = root.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
       pickerSelect.value = "Cold";
-      (root.querySelector('button[title="Take trauma (clears stress)"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Take trauma to resolve pending stress (stress stays full)"]') as HTMLButtonElement).click();
 
+      // Q42: resolving keeps stress FULL (no stress.clear chain) and marks
+      // out-of-action — the sheet explains it instead.
       await vi.waitFor(() => {
-        expect(root.textContent).toContain("0 / 9");
+        expect(root.textContent).toContain("9 / 9");
         expect(root.textContent).toContain("Cold");
       });
-      // picker gone after the clear
-      expect(root.querySelector(".stress-trauma-picker")).toBeNull();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".stress-trauma-picker")).toBeNull();
+      });
+      // Out-of-action explained (not the picker's copy, which is now gone).
+      expect(root.textContent).toContain("out of action for the remainder");
 
       const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
       const traumaCall = calls.find((c) => String(c[0]).endsWith("/ops/trauma.add"));
       expect(traumaCall).toBeTruthy();
       expect(traumaCall![1].body).toBe(JSON.stringify({ trauma: "Cold" }));
       expect(traumaCall![1].headers["If-Match"]).toBe("13");
+      // No stress.clear should be issued after resolving the pending trauma.
       const clearCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.clear"));
-      expect(clearCall).toBeTruthy();
-      expect(clearCall![1].headers["If-Match"]).toBe("14");
+      expect(clearCall).toBeUndefined();
     });
   });
 
@@ -1480,7 +1532,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1522,6 +1575,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(healOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1561,6 +1615,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(healErr));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1594,6 +1649,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(healErr));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1632,7 +1688,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1667,7 +1724,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1685,7 +1743,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1729,6 +1788,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(harmAddResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1762,7 +1822,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1804,6 +1865,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(armorSetResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1828,7 +1890,7 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         // After toggle to true, the character should be updated
-        expect(global.fetch).toHaveBeenCalledTimes(6); // getChar, getGame, getPlaybook, listClocks, crews, armorSet
+        expect(global.fetch).toHaveBeenCalledTimes(7); // + caps projection on mount
       });
     });
 
@@ -1862,6 +1924,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(clockAddResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1877,7 +1940,7 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         // After add, the character updates
-        expect(global.fetch).toHaveBeenCalledTimes(6); // + listClocks + crews on mount
+        expect(global.fetch).toHaveBeenCalledTimes(7); // + caps projection on mount
       });
     });
 
@@ -1924,6 +1987,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(removeResp));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -1940,7 +2004,7 @@ describe("character-detail page", () => {
       removeBtn.click();
 
       await vi.waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(6); // + listClocks + crews on mount
+        expect(global.fetch).toHaveBeenCalledTimes(7); // + caps projection on mount
       });
     });
   });
@@ -1955,7 +2019,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -1988,6 +2053,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(clearOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2102,7 +2168,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2144,6 +2211,142 @@ describe("character-detail page", () => {
       expect(nameEls[0]?.getAttribute("title")).toContain("When you Hunt");
     });
 
+    // SC-F3/P21: the UI respects the server-computed effective action cap —
+    // a crewless DTO at DTO max 4 whose effective cap is 3 renders 3 dots
+    // (never offering a dot the server would reject with RATING_MAXED).
+    it("renders the effective action cap from the capability projection, not the raw max", async () => {
+      const capsProjection = {
+        characterId: CHARACTER_ID,
+        effectiveActionCaps: [
+          { action: "Hunt", maxRating: 4, effectiveMax: 3, masteryTotalBoxes: 3, masteryMarkedBoxes: 0 },
+          { action: "Study", maxRating: 4, effectiveMax: 3, masteryTotalBoxes: 3, masteryMarkedBoxes: 0 },
+          { action: "Survey", maxRating: 4, effectiveMax: 3, masteryTotalBoxes: 3, masteryMarkedBoxes: 0 },
+          { action: "Tinker", maxRating: 4, effectiveMax: 3, masteryTotalBoxes: 3, masteryMarkedBoxes: 0 },
+        ],
+        harmCapacities: [
+          { level: "lesser", capacity: 2, remaining: 2 },
+          { level: "moderate", capacity: 2, remaining: 2 },
+          { level: "severe", capacity: 1, remaining: 1 },
+          { level: "fatal", capacity: 1, remaining: 1 },
+        ],
+        loadLimits: [{ commitment: "none", maxBulk: 8, remainingBulk: 8 }],
+        availableAbilityTakes: [],
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok(capsProjection));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.talent-action-row[data-action="Hunt"]')).not.toBeNull();
+      });
+
+      const huntRow = root.querySelector('.talent-action-row[data-action="Hunt"]')!;
+      // 3 dots (the effective cap), not the raw 4-dot max.
+      expect(huntRow.querySelectorAll(".action-dot")).toHaveLength(3);
+      // Count text reflects the effective cap, not the raw maxRating.
+      expect(huntRow.textContent).toContain("1/3");
+    });
+
+    // FV-007/P07: the healing-clock +1 control sends a DELTA (clock-progress
+    // family), never an absolute segment count — a clock at 5/6 sends 1, with
+    // rollover handled by the server.
+    it("healing-clock +1 sends a segment delta, not an absolute count", async () => {
+      const atFive = characterDTO({
+        revision: 13,
+        monitor: {
+          stress: { current: 3, max: 9 },
+          trauma: { traumas: ["Haunted"], max: 4 },
+          harm: {
+            lesser: [],
+            moderate: [],
+            severe: [],
+            fatal: [],
+            healingClock: { segments: 5, size: 6, rollover: 0 },
+          },
+          armor: {
+            standardUsed: false,
+            heavyUsed: false,
+            specialUsed: false,
+            hasStandard: true,
+            hasHeavy: false,
+            hasSpecial: false,
+          },
+        },
+      });
+      const atSix = characterDTO({
+        revision: 14,
+        monitor: {
+          stress: { current: 3, max: 9 },
+          trauma: { traumas: ["Haunted"], max: 4 },
+          harm: {
+            lesser: [],
+            moderate: [],
+            severe: [],
+            fatal: [],
+            healingClock: { segments: 6, size: 6, rollover: 0 },
+          },
+          armor: {
+            standardUsed: false,
+            heavyUsed: false,
+            specialUsed: false,
+            hasStandard: true,
+            hasHeavy: false,
+            hasSpecial: false,
+          },
+        },
+      });
+      const tickOp = {
+        ok: true,
+        character: atSix,
+        applied: { op: "harm.healing-clock", requested: 1, effective: 1 },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(atFive))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
+        // capabilities GET degrades (no explicit mock) — harm/load fall back.
+        .mockResolvedValueOnce(ok(tickOp))
+        .mockResolvedValueOnce(ok(tickOp));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const btn = root.querySelector('button[title="Add healing segment"]') as HTMLButtonElement;
+        expect(btn).not.toBeNull();
+      });
+      // Extra load fetches consume the extra OK responses; the capabilities
+      // GET and the op both resolve through the leftover ok() mocks. Cast the
+      // mock fetch to read the request body.
+      const fetchMock = global.fetch as unknown as Mock;
+      const addSegmentBtn = root.querySelector('button[title="Add healing segment"]') as HTMLButtonElement;
+      addSegmentBtn.click();
+
+      await vi.waitFor(() => {
+        const opCall = fetchMock.mock.calls.find(
+          (c) => String(c[0]).includes("/ops/harm.healing-clock"),
+        );
+        expect(opCall).toBeTruthy();
+        const body = JSON.parse(String((opCall![1] as RequestInit).body));
+        // delta 1, never the absolute 6 a 5/6 clock would otherwise send.
+        expect(body).toEqual({ segments: 1 });
+      });
+    });
+
     it("clicking an action dot issues actionSetRating with the dot index", async () => {
       const raised = talentDTO({
         revision: 13,
@@ -2170,6 +2373,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(raised, "action.set-rating")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2240,6 +2444,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(plusResp, "action.set-rating")))
         .mockResolvedValueOnce(ok(charOpOk(minusResp, "action.set-rating")));
 
@@ -2304,6 +2509,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(clamped, "action.set-rating")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2363,6 +2569,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(added, "attribute-xp.add")))
         .mockResolvedValueOnce(ok(charOpOk(cleared, "attribute-xp.clear")));
 
@@ -2423,6 +2630,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(leveled, "attribute.levelup")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2454,7 +2662,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2487,6 +2696,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(pbUpdated, "session.set")))
         .mockResolvedValueOnce(ok(charOpOk(stUpdated, "session.set")));
 
@@ -2538,6 +2748,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(gameWithPlaybooks))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         // no playbook mock: the /playbooks/{name} fetch fails and degrades gracefully
         .mockResolvedValueOnce(ok(charOpOk(talentDTO(), "action.set-rating")));
 
@@ -2595,7 +2806,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(GAME_DATA))
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2643,6 +2855,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(added, "playbook-xp.add")))
         .mockResolvedValueOnce(ok(charOpOk(playbookDTO(), "playbook-xp.add")))
         .mockResolvedValueOnce(ok(charOpOk(cleared, "playbook-xp.clear")));
@@ -2711,6 +2924,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(taken, "ability.take")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2749,6 +2963,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(removed, "ability.remove")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2785,6 +3000,7 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(opErr));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -2796,8 +3012,10 @@ describe("character-detail page", () => {
       (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("ABILITY_MAXED");
-        expect(err?.textContent).toContain("already taken to its limit");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("That ability is already taken to its limit");
+        expect(err?.textContent).not.toContain("ABILITY_MAXED");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -2819,7 +3037,8 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok(playbookDTO({ playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] } })))
         .mockResolvedValueOnce(ok(gameWithPlaybooks))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2897,7 +3116,8 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2930,7 +3150,8 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_GAME_DATA))
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA));
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
 
@@ -2970,6 +3191,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(added, "gear.add")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3023,6 +3245,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(removed, "gear.remove")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3062,6 +3285,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(set, "gear.set-commitment")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3121,6 +3345,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(committed, "gear.commit")))
         .mockResolvedValueOnce(ok(charOpOk(uncommitted, "gear.uncommit")));
 
@@ -3195,6 +3420,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(locked, "gear.lock")))
         .mockResolvedValueOnce(ok(charOpOk(unlocked, "gear.unlock")));
 
@@ -3255,6 +3481,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(opErr));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3269,8 +3496,10 @@ describe("F2r Gear", () => {
 
       await vi.waitFor(() => {
         const err = root.querySelector(".error");
-        expect(err?.textContent).toContain("COMMITMENT_LOCKED");
-        expect(err?.textContent).toContain("commitment is locked");
+        // FV-024: known code maps to user copy; no raw code/DTO string.
+        expect(err?.textContent).toContain("The commitment is locked");
+        expect(err?.textContent).not.toContain("COMMITMENT_LOCKED");
+        expect(err?.getAttribute("role")).toBe("alert");
       });
     });
 
@@ -3299,6 +3528,7 @@ describe("F2r Gear", () => {
         .mockResolvedValueOnce(ok(GEAR_PLAYBOOK_DATA))
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
         .mockResolvedValueOnce(ok(charOpOk(cleared, "gear.clear-commitments")));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3449,6 +3679,7 @@ describe("F2ab Notes", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(noteOk));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3499,6 +3730,7 @@ describe("F2ab Notes", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(removeOk));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3567,6 +3799,7 @@ describe("F2ab Crew membership", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(joinOk));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3607,6 +3840,7 @@ describe("F2ab Crew membership", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(leaveOk));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3681,6 +3915,7 @@ describe("F2s Coin", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(fundOk(updated, "fund.gain", 1, 1)));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3713,6 +3948,7 @@ describe("F2s Coin", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(fundOk(updated, "fund.spend", 1, 1)));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3747,6 +3983,7 @@ describe("F2s Coin", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(fundOk(updated, "fund.liquidate", 1, 1)));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3778,6 +4015,7 @@ describe("F2s Coin", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(fundOk(full, "fund.gain", 3, 0)));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3807,6 +4045,7 @@ describe("F2s Coin", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(opErr));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3817,7 +4056,10 @@ describe("F2s Coin", () => {
     (root.querySelector('button[title="Spend 1 coin"]') as HTMLButtonElement).click();
     await vi.waitFor(() => {
       const err = root.querySelector(".error");
-      expect(err?.textContent).toContain("INSUFFICIENT_FUNDS");
+      // FV-024: known code maps to user copy; no raw code/DTO string.
+      expect(err?.textContent).toContain("Not enough coins to cover that");
+      expect(err?.textContent).not.toContain("INSUFFICIENT_FUNDS");
+      expect(err?.getAttribute("role")).toBe("alert");
     });
   });
 });
@@ -3901,6 +4143,7 @@ describe("F2s Projects", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(created, "clock.create")));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3939,6 +4182,7 @@ describe("F2s Projects", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([clockDTO()]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(progressed, "clock.progress")));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -3972,6 +4216,7 @@ describe("F2s Projects", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([clockDTO()]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(progressed, "clock.progress")));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -4009,6 +4254,7 @@ describe("F2s Projects", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([clockDTO()]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(reset, "clock.reset")));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -4039,6 +4285,7 @@ describe("F2s Projects", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([clockDTO()]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(clockDTO(), "delete")));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -4076,6 +4323,7 @@ describe("F2s Projects", () => {
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
       .mockResolvedValueOnce(ok([]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(opErr));
 
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -4093,9 +4341,224 @@ describe("F2s Projects", () => {
 
     await vi.waitFor(() => {
       const err = root.querySelector(".error");
-      expect(err?.textContent).toContain("VALIDATION");
+      // FV-024: known code maps to user copy; no raw code/DTO string.
+      expect(err?.textContent).toContain("The request wasn't valid");
+      expect(err?.textContent).not.toContain("VALIDATION");
+      expect(err?.getAttribute("role")).toBe("alert");
     });
   });
 });
 });
+
+// ---------------------------------------------------------------------------
+// F4 — lifecycle UI (pending trauma, out-of-action, end-score, retire, delete)
+// ---------------------------------------------------------------------------
+
+describe("F4 lifecycle UI", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  /** Mount with the given character DTO and the standard trailing fetches. */
+  const mountWith = (dto: Record<string, unknown>, extraMocks: readonly unknown[] = []) => {
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}));
+    for (const m of extraMocks) {
+      mocked.mockResolvedValueOnce(m);
+    }
+    global.fetch = mocked;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  };
+
+  const getStressPlus = (r: HTMLElement) => r.querySelector('button[title="Add 1 stress"]') as HTMLButtonElement | null;
+  const getIndulge = (r: HTMLElement) => r.querySelector('button[title="Clear all stress (Indulge Vice)"]') as HTMLButtonElement | null;
+  const getEndScore = (r: HTMLElement) => r.querySelector('button[title^="End the score"], button[title^="Resolve the pending trauma before ending the score"]') as HTMLButtonElement | null;
+  const getRetire = (r: HTMLElement) => r.querySelector('button[title="Retire this character (confirmation required)"]') as HTMLButtonElement | null;
+  const getDelete = (r: HTMLElement) => r.querySelector('button[title="Delete this character (confirmation required, not undoable)"]') as HTMLButtonElement | null;
+
+  it("pending trauma blocks stress ops and end-score with TRAUMA_REQUIRED copy", async () => {
+    const pending = characterDTO({
+      monitor: { ...characterDTO().monitor, stress: { current: 9, max: 9 } },
+      traumaPending: true,
+    });
+    mountWith(pending);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
+    });
+    // Stress + and Indulge Vice are disabled while pending.
+    expect(getStressPlus(root)!.disabled).toBe(true);
+    expect(getIndulge(root)!.disabled).toBe(true);
+    // End-score is disabled and the pending banner explains the gate.
+    expect(getEndScore(root)!.disabled).toBe(true);
+    expect(root.textContent).toContain("A trauma is pending");
+  });
+
+  it("out-of-action blocks stress ops with OUT_OF_ACTION copy but leaves end-score enabled", async () => {
+    const ooa = characterDTO({
+      monitor: { ...characterDTO().monitor, stress: { current: 9, max: 9 } },
+      isOutOfAction: true,
+      stressClearPending: true,
+    });
+    mountWith(ooa);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
+    });
+    expect(getStressPlus(root)!.disabled).toBe(true);
+    expect(getIndulge(root)!.disabled).toBe(true);
+    expect(root.textContent).toContain("out of action");
+    // End-score is the release — it stays enabled.
+    expect(getEndScore(root)!.disabled).toBe(false);
+  });
+
+  it("end-score posts endScore after confirmation and clears stress", async () => {
+    const ended = characterDTO({
+      revision: 13,
+      monitor: { ...characterDTO().monitor, stress: { current: 0, max: 9 } },
+    });
+    const endOk = {
+      ok: true,
+      character: ended,
+      applied: { op: "end-score" },
+      sideEffects: [],
+      error: null,
+    };
+    mountWith(characterDTO(), [ok(endOk)]);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    await vi.waitFor(() => {
+      expect(getEndScore(root)).not.toBeNull();
+    });
+
+    getEndScore(root)!.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("0 / 9");
+      expect(root.textContent).toContain("Score ended");
+    });
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const endCall = calls.find((c) => String(c[0]).endsWith("/end-score"));
+    expect(endCall).toBeTruthy();
+    expect(endCall![1].headers["If-Match"]).toBe("12");
+    confirmSpy.mockRestore();
+  });
+
+  it("retire posts retireCharacter after confirmation and shows the RETIRED banner", async () => {
+    const retired = characterDTO({
+      revision: 13,
+      isRetired: true,
+      monitor: { ...characterDTO().monitor, stress: { current: 0, max: 9 } },
+    });
+    const retireOk = {
+      ok: true,
+      character: retired,
+      applied: { op: "retire" },
+      sideEffects: [],
+      error: null,
+    };
+    mountWith(characterDTO(), [ok(retireOk)]);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    await vi.waitFor(() => {
+      expect(getRetire(root)).not.toBeNull();
+    });
+
+    getRetire(root)!.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("has retired");
+    });
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const retireCall = calls.find((c) => String(c[0]).endsWith("/retire"));
+    expect(retireCall).toBeTruthy();
+    expect(retireCall![1].body).toBe(JSON.stringify({ confirm: true }));
+    confirmSpy.mockRestore();
+  });
+
+  it("retired characters keep dossier/notes editable but disable gameplay with RETIRED copy", async () => {
+    const retired = characterDTO({
+      isRetired: true,
+      monitor: { ...characterDTO().monitor, stress: { current: 0, max: 9 } },
+    });
+    mountWith(retired);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector("h1")?.textContent).toContain("(retired)");
+    });
+    // RETIRED banner + copy.
+    expect(root.textContent).toContain("This character has retired");
+    // Gameplay disabled: stress + and harm add.
+    expect(getStressPlus(root)!.disabled).toBe(true);
+    const harmAdd = root.querySelector('button[title="Add harm"]') as HTMLButtonElement;
+    expect(harmAdd.disabled).toBe(true);
+    // Dossier (name) and notes remain editable.
+    const nameEdit = root.querySelector('button[title="Edit Name"]') as HTMLButtonElement;
+    expect(nameEdit.disabled).toBe(false);
+    const noteAdd = root.querySelector('button[title="Add note"]') as HTMLButtonElement;
+    expect(noteAdd.disabled).toBe(false);
+  });
+
+  it("delete posts deleteCharacter after confirmation", async () => {
+    const delOk = {
+      ok: true,
+      applied: { op: "deleteCharacter" },
+      sideEffects: [],
+      error: null,
+    };
+    mountWith(characterDTO(), [ok(delOk)]);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const assignSpy = vi.spyOn(window.location, "assign").mockReturnValue(undefined as never);
+
+    await vi.waitFor(() => {
+      expect(getDelete(root)).not.toBeNull();
+    });
+
+    getDelete(root)!.click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const delCall = calls.find((c) => String(c[0]).endsWith("/delete"));
+      expect(delCall).toBeTruthy();
+      expect(delCall![1].body).toBe(JSON.stringify({ confirm: true }));
+      expect(delCall![1].headers["If-Match"]).toBe("12");
+    });
+    confirmSpy.mockRestore();
+    assignSpy.mockRestore();
+  });
+
+  it("undo button is disabled when the server reports canUndo false", async () => {
+    const undoResp = {
+      ok: true,
+      character: characterDTO({ revision: 13 }),
+      applied: { op: "character.undo" },
+      sideEffects: [],
+      error: null,
+      canUndo: false,
+      historyCount: 0,
+    };
+    mountWith(characterDTO(), [ok(undoResp)]);
+
+    await vi.waitFor(() => {
+      expect(getUndoButton(root)).not.toBeNull();
+    });
+    // First load has no projection → enabled; after the undo reports canUndo
+    // false the button becomes disabled and the NO_HISTORY-style copy shows.
+    getUndoButton(root)!.click();
+    await vi.waitFor(() => {
+      expect(getUndoButton(root)!.disabled).toBe(true);
+      expect(root.textContent).toContain("No history is available to undo");
+    });
+  });
+});
+
 

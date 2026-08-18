@@ -1,0 +1,13 @@
+{
+  "task": "SC-F3",
+  "track": "frontend",
+  "implementationAgent": "deepseek-v4-flash-0731 (nous, omp task worker)",
+  "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
+  "date": "2026-08-14",
+  "iterationsToGreen": 1,
+  "iterationNotes": "capabilities + clamps + healing delta",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": " 80m; capability projections consumed (no local joins as primary); tracker clamps + requested/effective notices; healing-clock delta; 441 focused tests green; build green"
+}
