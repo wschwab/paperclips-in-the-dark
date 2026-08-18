@@ -36,13 +36,22 @@ function renderCharacterHistory(character: Character, history: readonly HistoryE
     el(
       "div",
       { className: "history-header" },
+      el(
+        "a",
+        { className: "btn-secondary history-back", href: `/character/${character.id}` },
+        "Back to sheet",
+      ),
       el("h1", {}, `${character.dossier.name} — History`),
     ),
     el(
       "div",
       { className: "history-content" },
       history.length === 0
-        ? el("p", { className: "no-history" }, "(no history snapshots)")
+        ? el(
+            "p",
+            { className: "no-history" },
+            "No history snapshots yet. Changes you make to this character will appear here as a snapshot.",
+          )
         : el(
             "ul",
             { className: "history-list" },

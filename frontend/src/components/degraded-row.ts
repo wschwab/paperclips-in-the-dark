@@ -11,20 +11,39 @@
 
 import { Effect } from "effect";
 import {
-  repairPreview,
-  repairApply,
   deleteEntity,
   NormalizationRequiredError,
   NeedsInputError,
   InvalidEntityError,
   StaleStateError,
   NotFoundError,
+  type ApplyResult,
   type EntityKind,
   type PreviewView,
 } from "../api/import-repair.js";
 import { ApiError, DecodeError } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import { renderPreviewPanel } from "./normalization-preview.js";
+
+/** Kind-bound repair preview entry point (page-supplied so the roster drives the opId exports). */
+export type RepairPreviewFn = (
+  id: string,
+  ifMatch: string,
+  values?: Record<string, unknown>,
+) => Effect.Effect<
+  PreviewView,
+  ApiError | DecodeError | NormalizationRequiredError | NeedsInputError | InvalidEntityError | NotFoundError
+>;
+
+/** Kind-bound repair apply entry point. */
+export type RepairApplyFn = (
+  id: string,
+  ifMatch: string,
+  previewToken: string,
+) => Effect.Effect<
+  ApplyResult,
+  ApiError | DecodeError | StaleStateError | NormalizationRequiredError | InvalidEntityError | NotFoundError
+>;
 
 export interface DegradedRowOptions {
   kind: EntityKind;
@@ -33,6 +52,10 @@ export interface DegradedRowOptions {
   deleteToken: string;
   /** Called after a successful repair/delete, or when a stale token needs a fresh roster fetch. */
   onChanged: () => void;
+  /** Repair preview for this row's entity kind (opId export from the client). */
+  preview: RepairPreviewFn;
+  /** Confirmed repair apply for this row's entity kind (opId export from the client). */
+  apply: RepairApplyFn;
 }
 
 const KIND_LABEL: Record<EntityKind, string> = { character: "character", crew: "crew" };
@@ -66,11 +89,11 @@ function button(label: string, className: string, action: () => void): HTMLButto
 }
 
 function startRepair(container: HTMLElement, opts: DegradedRowOptions, values?: Record<string, unknown>): void {
-  const { kind, id, deleteToken } = opts;
+  const { id, deleteToken } = opts;
   setChildren(container, el("p", { className: "degraded-busy" }, "Preparing repair preview…"));
 
   const program = Effect.gen(function* () {
-    return yield* repairPreview(kind, id, deleteToken, values);
+    return yield* opts.preview(id, deleteToken, values);
   });
 
   void Effect.runPromise(
@@ -121,11 +144,11 @@ function startRepair(container: HTMLElement, opts: DegradedRowOptions, values?: 
 
 function applyRepair(container: HTMLElement, opts: DegradedRowOptions, view: PreviewView): void {
   if (!view.previewToken) return;
-  const { kind, id, deleteToken } = opts;
+  const { id, deleteToken } = opts;
   setChildren(container, el("p", { className: "degraded-busy" }, "Applying repair…"));
 
   const program = Effect.gen(function* () {
-    return yield* repairApply(kind, id, deleteToken, view.previewToken as string);
+    return yield* opts.apply(id, deleteToken, view.previewToken as string);
   });
 
   void Effect.runPromise(

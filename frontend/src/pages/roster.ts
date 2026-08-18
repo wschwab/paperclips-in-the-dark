@@ -1,5 +1,13 @@
 import { Effect } from "effect";
-import { ApiError, DecodeError, getRoster } from "../api/client.js";
+import {
+  ApiError,
+  DecodeError,
+  getRoster,
+  repairCharacterApply,
+  repairCharacterPreview,
+  repairCrewApply,
+  repairCrewPreview,
+} from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import { errorCard } from "../components/error-card.js";
 import { mountDegradedControls } from "../components/degraded-row.js";
@@ -26,12 +34,20 @@ function renderDegradedRow(
     el("span", { className: "unnamed" }, label),
     controlsEl,
   );
+  // Kind-bound opId exports (repairCharacterPreview/Apply for characters,
+  // repairCrewPreview/Apply for crews) drive the degraded-row controls so the
+  // reachable human repair path runs through the operationId-named client API.
+  const ops =
+    kind === "character"
+      ? { preview: repairCharacterPreview, apply: repairCharacterApply }
+      : { preview: repairCrewPreview, apply: repairCrewApply };
   mountDegradedControls(controlsEl, {
     kind,
     id: row.id,
     isRepairable: row.isRepairable,
     deleteToken: row.deleteToken,
     onChanged,
+    ...ops,
   });
   return li;
 }
@@ -106,10 +122,22 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
           ...roster.crews.map((cr) => renderCrew(cr, onChanged)),
         );
 
+  const refreshBtn = el("button", {
+    type: "button",
+    className: "btn-secondary roster-refresh",
+    title: "Refresh the roster",
+  }, "Refresh");
+  refreshBtn.addEventListener("click", onChanged);
+
   return el(
     "section",
     { className: "roster" },
-    el("h1", { className: "page-title" }, "Roster"),
+    el(
+      "div",
+      { className: "roster-header", style: "display: flex; align-items: center; gap: 0.75em; flex-wrap: wrap;" },
+      el("h1", { className: "page-title" }, "Roster"),
+      refreshBtn,
+    ),
     el(
       "div",
       { className: "roster-characters torn-foot" },

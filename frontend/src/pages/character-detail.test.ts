@@ -1758,6 +1758,30 @@ describe("character-detail page", () => {
       });
     });
 
+    it("keeps add-harm controls inside a stable .harm-add-row container (FV-015)", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        const row = root.querySelector(".harm-add-row");
+        expect(row).not.toBeNull();
+      });
+      // FV-015: the containment class must land on the controls row itself
+      // (not an outer wrapper) so the CSS shrink/wrap rules bind to the
+      // select + input + button directly — the row's nowrap flex otherwise
+      // bleeds past the card below ~390px.
+      const row = root.querySelector(".harm-add-row") as HTMLElement;
+      expect(Array.from(row.children).map((n) => n.tagName)).toEqual(["SELECT", "INPUT", "BUTTON"]);
+    });
+
     it("adds a harm entry and shows spillover notice when landedIntensity differs", async () => {
       const withSpilled = characterDTO({
         revision: 13,
@@ -4558,6 +4582,360 @@ describe("F4 lifecycle UI", () => {
       expect(getUndoButton(root)!.disabled).toBe(true);
       expect(root.textContent).toContain("No history is available to undo");
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FV-012 — mutation focus restoration
+// ---------------------------------------------------------------------------
+//
+// Wholesale re-renders (setChildren) destroy the focused control after every
+// mutation; without restoration focus falls to <body> and keyboard users lose
+// their place. These tests pin the restored destination for each op family:
+// replacement trigger (success/failure/stale), new item control (add), and
+// next sibling (delete).
+
+describe("FV-012 focus restoration", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+    // Focus() only tracks elements connected to the document; the sheet root
+    // must be attached for the focus-restoration assertions to be meaningful.
+    document.body.append(root);
+  });
+
+  afterEach(() => {
+    root.remove();
+  });
+
+  /** Mount with the standard 6 load fetches + extra op mocks. */
+  const mountWith = (dto: Record<string, unknown>, extraMocks: readonly unknown[] = []) => {
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({})); // capabilities (decode-fail => fallback)
+    for (const m of extraMocks) mocked.mockResolvedValueOnce(m);
+    global.fetch = mocked;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  };
+
+  const opOk = (character: unknown, op: string) => ({
+    ok: true,
+    character,
+    applied: { op },
+    sideEffects: [],
+    error: null,
+  });
+
+  const stressPlus = () => root.querySelector('button[title="Add 1 stress"]') as HTMLButtonElement;
+
+  it("keeps focus on the stress add button after a successful stress add", async () => {
+    const bumped = characterDTO({
+      revision: 13,
+      monitor: { ...characterDTO().monitor, stress: { current: 4, max: 9 } },
+    });
+    mountWith(characterDTO(), [ok(opOk(bumped, "stress.add"))]);
+
+    await vi.waitFor(() => expect(stressPlus()).not.toBeNull());
+    stressPlus().focus();
+    stressPlus().click();
+
+    await vi.waitFor(() => expect(root.textContent).toContain("4 / 9"));
+    expect(document.activeElement).toBe(stressPlus());
+  });
+
+  it("returns focus to the stress add button after a failed (422) stress add", async () => {
+    mountWith(characterDTO(), [
+      { ok: false, status: 422, text: async () => "validation failed" },
+    ]);
+
+    await vi.waitFor(() => expect(stressPlus()).not.toBeNull());
+    stressPlus().focus();
+    stressPlus().click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".error")).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(stressPlus());
+  });
+
+  it("returns focus to the stress add button after a stale (409) refresh", async () => {
+    const staleResp = {
+      ok: false,
+      applied: { op: "stress.add" },
+      sideEffects: [],
+      error: {
+        code: "STALE_REVISION",
+        status: 409,
+        message: "Character revision mismatch",
+        retryable: true,
+        recovery: "Refresh the sheet and retry.",
+        details: { currentRevision: 15 },
+      },
+    };
+    mountWith(characterDTO(), [
+      { ok: false, status: 409, text: async () => JSON.stringify(staleResp) },
+      ok(characterDTO({ revision: 15 })),
+    ]);
+
+    await vi.waitFor(() => expect(stressPlus()).not.toBeNull());
+    stressPlus().focus();
+    stressPlus().click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Sheet refreshed");
+    });
+    expect(document.activeElement).toBe(stressPlus());
+  });
+
+  it("moves focus to the newly added note's remove button (new item control)", async () => {
+    const withNote = characterDTO({
+      revision: 13,
+      dossier: { ...characterDTO().dossier, notes: ["Spider operative", "Watch the Lamplighters"] },
+    });
+    mountWith(characterDTO(), [ok(opOk(withNote, "note.add"))]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('input[aria-label="New note"]')).not.toBeNull();
+    });
+    const input = root.querySelector('input[aria-label="New note"]') as HTMLInputElement;
+    input.value = "Watch the Lamplighters";
+    const addBtn = root.querySelector('button[title="Add note"]') as HTMLButtonElement;
+    input.focus();
+    addBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Watch the Lamplighters");
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove note 2"]'));
+  });
+
+  it("keeps focus in the add row when a note is added from the button", async () => {
+    const withNote = characterDTO({
+      revision: 13,
+      dossier: { ...characterDTO().dossier, notes: ["Spider operative", "Watch the Lamplighters"] },
+    });
+    mountWith(characterDTO(), [ok(opOk(withNote, "note.add"))]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Add note"]')).not.toBeNull();
+    });
+    const input = root.querySelector('input[aria-label="New note"]') as HTMLInputElement;
+    input.value = "Watch the Lamplighters";
+    const addBtn = root.querySelector('button[title="Add note"]') as HTMLButtonElement;
+    addBtn.focus();
+    addBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Watch the Lamplighters");
+    });
+    expect(document.activeElement).toBe(root.querySelector('input[aria-label="New note"]'));
+  });
+
+  it("moves focus to the next note's remove button after deleting a middle note", async () => {
+    const afterRemove = characterDTO({
+      revision: 13,
+      dossier: { ...characterDTO().dossier, notes: ["First note", "Third note"] },
+    });
+    mountWith(
+      characterDTO({
+        dossier: { ...characterDTO().dossier, notes: ["First note", "Second note", "Third note"] },
+      }),
+      [ok(opOk(afterRemove, "note.remove"))],
+    );
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[title^="Remove note"]')).toHaveLength(3);
+    });
+    const rm = root.querySelector('button[title="Remove note 2"]') as HTMLButtonElement;
+    rm.focus();
+    rm.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[title^="Remove note"]')).toHaveLength(2);
+    });
+    // The list is now [First note, Third note]; the next sibling (Third note)
+    // is rendered at index 1 → "Remove note 2".
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove note 2"]'));
+  });
+
+  it("falls back to the add-row input when the last note is deleted", async () => {
+    const afterRemove = characterDTO({
+      revision: 13,
+      dossier: { ...characterDTO().dossier, notes: ["First note"] },
+    });
+    mountWith(
+      characterDTO({
+        dossier: { ...characterDTO().dossier, notes: ["First note", "Second note"] },
+      }),
+      [ok(opOk(afterRemove, "note.remove"))],
+    );
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[title^="Remove note"]')).toHaveLength(2);
+    });
+    const rm = root.querySelector('button[title="Remove note 2"]') as HTMLButtonElement;
+    rm.focus();
+    rm.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[title^="Remove note"]')).toHaveLength(1);
+    });
+    expect(document.activeElement).toBe(root.querySelector('input[aria-label="New note"]'));
+  });
+
+  it("keeps focus in the harm add row after adding a harm", async () => {
+    const withHarm = characterDTO({
+      revision: 13,
+      monitor: {
+        ...characterDTO().monitor,
+        harm: {
+          lesser: ["Bruised"],
+          moderate: [],
+          severe: [],
+          fatal: [],
+          healingClock: { segments: 0, size: 6, rollover: 0 },
+        },
+      },
+    });
+    mountWith(characterDTO(), [ok(opOk(withHarm, "harm.add"))]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Add harm"]')).not.toBeNull();
+    });
+    (root.querySelector('select[aria-label="Harm intensity"]') as HTMLSelectElement).value = "lesser";
+    (root.querySelector('input[aria-label="Harm description"]') as HTMLInputElement).value = "Bruised";
+    const addBtn = root.querySelector('button[title="Add harm"]') as HTMLButtonElement;
+    addBtn.focus();
+    addBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Bruised");
+    });
+    // The add-row input is the continuation point for entering the next harm.
+    expect(document.activeElement).toBe(root.querySelector('input[aria-label="Harm description"]'));
+  });
+
+  it("moves focus to the next clock's control after deleting a clock", async () => {
+    const clockA = {
+      kind: "clock",
+      id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      revision: 2,
+      formatVersion: 1,
+      createdAt: "2026-07-24T00:00:00.000Z",
+      updatedAt: "2026-07-24T00:00:00.000Z",
+      name: "Infiltrate the Bluecoats",
+      clockKind: "project",
+      segments: 2,
+      size: 6,
+      rollover: 0,
+    };
+    const clockB = { ...clockA, id: "d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f", name: "Secure the Docks" };
+    const deleteOk = { ok: true, clock: clockA, applied: { op: "clock.delete" }, sideEffects: [], error: null };
+
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([clockA, clockB]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(ok(deleteOk));
+    global.fetch = mocked;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]')).not.toBeNull();
+    });
+    const delBtn = root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]') as HTMLButtonElement;
+    delBtn.focus();
+    delBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]')).toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Delete clock: Secure the Docks"]'));
+  });
+
+  it("moves focus to the new trauma's remove button after resolving a pending trauma", async () => {
+    const pending = characterDTO({ traumaPending: true });
+    const withCold = characterDTO({
+      revision: 13,
+      monitor: {
+        ...characterDTO().monitor,
+        trauma: { traumas: ["Haunted", "Cold"], max: 4 },
+      },
+      traumaPending: false,
+    });
+    mountWith(pending, [ok(opOk(withCold, "trauma.add"))]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Resolve pending trauma"]')).not.toBeNull();
+    });
+    (root.querySelector('select[aria-label="Add trauma"]') as HTMLSelectElement).value = "Cold";
+    const addBtn = root.querySelector('button[title="Resolve pending trauma"]') as HTMLButtonElement;
+    addBtn.focus();
+    addBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[aria-label="Remove trauma: Cold"]')).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[aria-label="Remove trauma: Cold"]'));
+  });
+
+  it("moves focus to the saved field's Edit button after a dossier save", async () => {
+    const updated = characterDTO({ revision: 13, dossier: { ...characterDTO().dossier, name: "Brenda H." } });
+    mountWith(characterDTO(), [ok(opOk(updated, "dossier.update"))]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit Name"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector('input[aria-label="Name"]')).not.toBeNull();
+    });
+    (root.querySelector('input[aria-label="Name"]') as HTMLInputElement).value = "Brenda H.";
+    const saveBtn = root.querySelector('.field-editing button[title="Save"]') as HTMLButtonElement;
+    saveBtn.focus();
+    saveBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Brenda H.");
+    });
+    // The form closed — focus lands on the same field's replacement Edit button.
+    expect(document.activeElement).toBe(root.querySelector('button[title="Edit Name"]'));
+  });
+
+  it("keeps focus on the undo button after a successful undo", async () => {
+    const undoResp = {
+      ok: true,
+      character: characterDTO({ revision: 13 }),
+      canUndo: true,
+      historyCount: 1,
+      applied: { op: "character.undo" },
+      sideEffects: [],
+      error: null,
+    };
+    mountWith(characterDTO(), [ok(undoResp)]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Undo last change"]')).not.toBeNull();
+    });
+    const undoBtn = root.querySelector('button[title="Undo last change"]') as HTMLButtonElement;
+    undoBtn.focus();
+    undoBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Undone");
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Undo last change"]'));
   });
 });
 

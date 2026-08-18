@@ -130,7 +130,7 @@ describe("character-history page (F2aa)", () => {
     assertFirstH1ClearsSeam(outlet);
   });
 
-  it("renders an empty state when there is no history", async () => {
+  it("renders an empty state with explanatory copy and a Back to sheet link (FV-032)", async () => {
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (String(url).endsWith(`/characters/${CHARACTER_ID}/history`)) {
         return Promise.resolve(ok([]));
@@ -141,9 +141,38 @@ describe("character-history page (F2aa)", () => {
     mountCharacterHistoryPage(root, CHARACTER_ID);
 
     await vi.waitFor(() => {
-      expect(root.querySelector(".no-history")?.textContent).toContain(
-        "no history snapshots",
-      );
+      const empty = root.querySelector(".no-history");
+      expect(empty?.textContent).toContain("No history snapshots yet");
+      expect(empty?.textContent).not.toBe("(no history snapshots)");
+      const back = root.querySelector('a[href="/character/c46ba7cb-993b-4fc7-974d-fb95eacd5446"]');
+      expect(back).not.toBeNull();
+      expect(back?.textContent).toBe("Back to sheet");
+    });
+  });
+
+  it("offers a Back to sheet link in the normal (populated) state (FV-032)", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).endsWith(`/characters/${CHARACTER_ID}/history`)) {
+        return Promise.resolve(
+          ok([
+            {
+              snapshotId: "22a96212-1d82-45c5-8116-245196a8150b",
+              takenAt: "2026-08-09T12:00:00.000Z",
+              op: "stress.add",
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(ok(characterDTO));
+    });
+
+    mountCharacterHistoryPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".history-entry")).not.toBeNull();
+      const back = root.querySelector('a[href="/character/c46ba7cb-993b-4fc7-974d-fb95eacd5446"]');
+      expect(back).not.toBeNull();
+      expect(back?.textContent).toBe("Back to sheet");
     });
   });
 

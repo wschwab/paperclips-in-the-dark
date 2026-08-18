@@ -102,7 +102,7 @@ describe("crew-history page (F2aa)", () => {
     assertFirstH1ClearsSeam(outlet);
   });
 
-  it("renders an empty state when there is no history", async () => {
+  it("renders an empty state with explanatory copy and a Back to sheet link (FV-032)", async () => {
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (String(url).endsWith(`/crews/${CREW_ID}/history`)) {
         return Promise.resolve(ok([]));
@@ -113,9 +113,38 @@ describe("crew-history page (F2aa)", () => {
     mountCrewHistoryPage(root, CREW_ID);
 
     await vi.waitFor(() => {
-      expect(root.querySelector(".no-history")?.textContent).toContain(
-        "no history snapshots",
-      );
+      const empty = root.querySelector(".no-history");
+      expect(empty?.textContent).toContain("No history snapshots yet");
+      expect(empty?.textContent).not.toBe("(no history snapshots)");
+      const back = root.querySelector('a[href="/crew/8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2"]');
+      expect(back).not.toBeNull();
+      expect(back?.textContent).toBe("Back to sheet");
+    });
+  });
+
+  it("offers a Back to sheet link in the normal (populated) state (FV-032)", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).endsWith(`/crews/${CREW_ID}/history`)) {
+        return Promise.resolve(
+          ok([
+            {
+              snapshotId: "3f9e0c51-9a2b-4d7e-8c1f-6a5b4c3d2e1f",
+              takenAt: "2026-08-09T13:00:00.000Z",
+              op: "heat.add",
+            },
+          ]),
+        );
+      }
+      return Promise.resolve(ok(crewDTO));
+    });
+
+    mountCrewHistoryPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".history-entry")).not.toBeNull();
+      const back = root.querySelector('a[href="/crew/8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2"]');
+      expect(back).not.toBeNull();
+      expect(back?.textContent).toBe("Back to sheet");
     });
   });
 

@@ -69,11 +69,23 @@ function currentPath(): string {
   return window.location.pathname.replace(/\/+$/, "") || "/";
 }
 
+/**
+ * FV-013: after a client-side route change, move focus to the new page's
+ * <main> landmark (tabindex=-1, the same target as the skip link) so
+ * keyboard/AT users are not dropped back to BODY after every navigation.
+ * The initial page load is untouched: focus stays on BODY there, which is
+ * exactly what makes the skip link meaningful for fresh loads.
+ */
+function focusRouteTarget(): void {
+  document.querySelector<HTMLElement>("#main")?.focus();
+}
+
 function navigate(path: string): void {
   if (path !== currentPath()) {
     window.history.pushState({}, "", path);
   }
   render();
+  focusRouteTarget();
 }
 
 function render(): void {
@@ -342,6 +354,9 @@ document.addEventListener("click", (ev) => {
   navigate(href);
 });
 
-window.addEventListener("popstate", () => render());
+window.addEventListener("popstate", () => {
+  render();
+  focusRouteTarget();
+});
 
 render();

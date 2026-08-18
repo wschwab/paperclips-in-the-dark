@@ -1,5 +1,7 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
+import { firstPlaybook, gameSetting } from "../../src/game-data.js";
+import type { CharacterDto } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { BLADES, firstActionFor, newCharacter } from "../../src/suite-helpers.js";
 
@@ -12,8 +14,10 @@ import { BLADES, firstActionFor, newCharacter } from "../../src/suite-helpers.js
  *   Experience.CanLevelUp), ExperienceTracker.CanLevelUp (Points == Max),
  *   MonitorTrauma.MaxTraumas = 4, and the core Experience_Trackers.Level_Up /
  *   Monitors.Add_Trauma contracts. Expected: CANNOT_LEVEL_UP with no
- *   mutation; the fifth trauma is rejected without exceeding the declared
- *   max, leaving revision and entity state unchanged.
+ *   mutation; trauma never exceeds the declared max — with pending, the
+ *   max-th resolution at the settings-derived TraumaMax runs the shared
+ *   retirement cleanup, and trauma.add while retired returns RETIRED
+ *   (frozen Wave 2 semantics; see suites/lifecycle/lifecycle-state-machine.test.ts).
  * BUG-006: armor availability is loadout-derived (CharacterArmor.cs:
  *   HasArmor / HasHeavyArmor scan Gear.Loadout; BitD heavy search text is
  *   "+Heavy"). Expected: an empty loadout exposes no standard/heavy armor;
@@ -25,6 +29,75 @@ import { BLADES, firstActionFor, newCharacter } from "../../src/suite-helpers.js
  *   segments; overflow larger than one full clock carries across successive
  *   resets; project clocks still clamp.
  */
+interface RawError {
+  code: string;
+  message: string;
+}
+
+interface RawResult {
+  ok: boolean;
+  character?: CharacterDto;
+  sideEffects?: string[];
+  error?: RawError | null;
+}
+
+/** Creates a character and returns the raw DTO (no schema decode). */
+async function newRawCharacter(): Promise<CharacterDto> {
+  const response = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
+  expect(response.status).toBe(200);
+  const body = response.body as RawResult;
+  expect(body.ok).toBe(true);
+  if (!body.character) throw new Error("creation did not return a character");
+  return body.character;
+}
+
+/** POSTs a character op and returns the raw result (no schema decode). */
+async function characterOpRaw(
+  id: string,
+  operation: string,
+  body: unknown,
+  revision?: number,
+): Promise<RawResult> {
+  const headers: Record<string, string> = revision === undefined ? {} : { "If-Match": String(revision) };
+  return (await api.post(`characters/${encodeURIComponent(id)}/ops/${operation}`, body, headers)).body as RawResult;
+}
+
+/** POSTs a direct entity endpoint (end-score/...) raw. */
+async function entityPostRaw(id: string, suffix: string, body: unknown, revision?: number): Promise<RawResult> {
+  const headers: Record<string, string> = revision === undefined ? {} : { "If-Match": String(revision) };
+  return (await api.post(`characters/${encodeURIComponent(id)}/${suffix}`, body, headers)).body as RawResult;
+}
+
+/**
+ * Stress.add to exactly max — the frozen-contract trigger that sets
+ * traumaPending (sequence step 1).
+ */
+async function reachPending(character: CharacterDto): Promise<CharacterDto> {
+  const result = await characterOpRaw(
+    character.id,
+    "stress.add",
+    { delta: character.monitor.stress.max },
+    character.revision,
+  );
+  expect(result.ok).toBe(true);
+  if (!result.character) throw new Error("stress.add did not return a character");
+  expect(result.character.monitor.stress.current).toBe(character.monitor.stress.max);
+  expect(result.character.traumaPending).toBe(true);
+  return result.character;
+}
+
+/**
+ * Resolves the pending trauma via trauma.add — the frozen-contract
+ * resolution that keeps stress full (sequence step 2).
+ */
+async function resolvePending(pending: CharacterDto, trauma: string): Promise<CharacterDto> {
+  const result = await characterOpRaw(pending.id, "trauma.add", { trauma }, pending.revision);
+  expect(result.ok).toBe(true);
+  if (!result.character) throw new Error("trauma.add did not return a character");
+  expect(result.character.monitor.trauma.traumas).toContain(trauma);
+  return result.character;
+}
+
 describe("§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010)", () => {
   testCase("SEMANTICS-CORE-BOUNDARY-001", "zero-XP attribute level-up is rejected with CANNOT_LEVEL_UP and no mutation", async () => {
     const character = await newCharacter();
@@ -47,23 +120,35 @@ describe("§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010)", () => {
     expect(attributeAfter?.actions.find((item) => item.name === action)?.rating).toBe(actionBefore.rating);
   });
 
-  testCase("SEMANTICS-CORE-BOUNDARY-002", "the fifth trauma is rejected at the declared max without mutation", async () => {
-    const character = await newCharacter();
-    for (const trauma of ["Cold", "Haunted", "Obsessed", "Paranoid"]) {
-      const result = await api.characterOp(character.id, "trauma.add", { trauma });
-      expect(result.ok).toBe(true);
+  testCase("SEMANTICS-CORE-BOUNDARY-002", "the max-th trauma resolution runs retirement; the next trauma.add returns RETIRED", async () => {
+    // Frozen flow: every trauma requires pending (stress.add to max) and is
+    // resolved via trauma.add; end-score releases between scores. The
+    // resolution at the settings-derived TraumaMax runs the shared
+    // retirement cleanup, so a trauma beyond the declared max is never
+    // reachable — trauma.add while retired returns RETIRED.
+    const character = await newRawCharacter();
+    let latest = character;
+    const traumaMax = gameSetting(BLADES).TraumaMax;
+    const traumas = gameSetting(BLADES).Traumas.slice(0, traumaMax);
+    for (const [index, trauma] of traumas.entries()) {
+      const pending = await reachPending(latest);
+      const resolved = await resolvePending(pending, trauma);
+      latest = resolved;
+      if (index < traumas.length - 1) {
+        const ended = await entityPostRaw(latest.id, "end-score", {}, latest.revision);
+        expect(ended.ok).toBe(true);
+        if (!ended.character) throw new Error("end-score did not return a character");
+        latest = ended.character;
+      }
     }
-    const before = await api.character(character.id);
-    expect(before.monitor.trauma.traumas).toHaveLength(before.monitor.trauma.max);
+    expect(latest.monitor.trauma.traumas).toHaveLength(traumaMax);
+    expect(latest.isRetired).toBe(true);
 
-    const fifth = await api.characterOp(character.id, "trauma.add", { trauma: "Reckless" });
+    // The fifth settings trauma ("Reckless") is not among the resolved four,
+    // so only the retired gate can reject it.
+    const fifth = await characterOpRaw(character.id, "trauma.add", { trauma: "Reckless" }, latest.revision);
     expect(fifth.ok).toBe(false);
-    expect(fifth.error?.code).toBe("DUPLICATE");
-
-    const after = await api.character(character.id);
-    expect(after.revision).toBe(before.revision);
-    expect(after.monitor.trauma.traumas).toHaveLength(before.monitor.trauma.max);
-    expect(after.monitor.trauma.traumas).not.toContain("Reckless");
+    expect(fifth.error?.code).toBe("RETIRED");
   });
 
   testCase("SEMANTICS-CORE-BOUNDARY-003", "an empty loadout exposes no standard or heavy armor and using either is rejected", async () => {

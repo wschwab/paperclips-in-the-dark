@@ -208,3 +208,127 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
     );
   });
 });
+
+/**
+ * FV-025: every create-form control must have an accessible name from a
+ * VISIBLE <label for> association (the placeholder alone is not a name).
+ */
+function controlName(root: ParentNode, id: string): string | null {
+  const control = root.querySelector<HTMLInputElement | HTMLSelectElement>(`#${id}`);
+  if (!control) return null;
+  const aria = control.getAttribute("aria-label");
+  if (aria) return aria;
+  const label = root.querySelector<HTMLLabelElement>(`label[for="${id}"]`);
+  if (!label) return null;
+  const text = label.textContent?.trim() ?? "";
+  if (!text) return null;
+  // The label's `for` must resolve to exactly this control's id (paired with
+  // the id-uniqueness assertions this IS the association). happy-dom reports
+  // an empty .labels for disabled controls in detached roots, so the label
+  // list only corroborates when it is populated.
+  if (label.getAttribute("for") !== control.id) return null;
+  const labels = control.labels ? Array.from(control.labels) : null;
+  if (labels && labels.length > 0 && !labels.includes(label)) return null;
+  return text;
+}
+
+describe("crew create form accessible names (FV-025)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  function submit(name: string) {
+    const crewType = root.querySelector("#crewType") as HTMLSelectElement;
+    crewType.value = "Assassins";
+    if (name) {
+      const nameField = root.querySelector("#name") as HTMLInputElement;
+      nameField.value = name;
+    }
+    (root.querySelector("form") as HTMLFormElement).dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
+  }
+
+  it("gives gameStem/name/crewType accessible names via visible label associations", () => {
+    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], vi.fn());
+
+    const expected: Record<string, string> = {
+      gameStem: "Game",
+      name: "Name",
+      crewType: "Crew Type *",
+    };
+    for (const [id, want] of Object.entries(expected)) {
+      const label = root.querySelector<HTMLLabelElement>(`label[for="${id}"]`);
+      expect(label, `visible <label for="${id}">`).not.toBeNull();
+      expect(label?.textContent?.trim(), `visible label text for ${id}`).toBe(want);
+      expect(controlName(root, id), `accessible name for ${id}`).toBe(want);
+    }
+    // The name input is labeled by its visible label, not by placeholder or
+    // an aria crutch — exactly the FV-025 gap.
+    const nameInput = root.querySelector<HTMLInputElement>("#name");
+    expect(nameInput?.getAttribute("placeholder") ?? "").not.toBe("");
+    expect(nameInput?.getAttribute("aria-label")).toBeNull();
+  });
+
+  it("keeps ids unique and labels associated after an invalid submit (validation)", () => {
+    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], vi.fn());
+    // Validation gate: required crew type missing → the form stays mounted
+    // (no fetch, no re-render) — ids must stay unique and labels intact.
+    (root.querySelector("form") as HTMLFormElement).dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true }),
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(root.querySelector("form")).not.toBeNull();
+    const ids = Array.from(root.querySelectorAll<HTMLElement>("[id]")).map((n) => n.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ["gameStem", "name", "crewType"]) {
+      expect(controlName(root, id), `accessible name for ${id}`).not.toBeNull();
+    }
+  });
+
+  it("keeps ids unique across phase-two retries (FV-017 flow)", async () => {
+    const created = crewDTO();
+    const named = crewDTO({ revision: 2, name: "The Red Sashes" });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok(createdResp(created)))
+      .mockResolvedValueOnce(err500())
+      .mockResolvedValueOnce(err500())
+      .mockResolvedValueOnce(
+        ok({ ok: true, crew: named, applied: { op: "fields.update" }, sideEffects: [], error: null }),
+      );
+    global.fetch = fetchMock;
+
+    const onCreated = vi.fn();
+    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], onCreated);
+    const idsUnique = () => {
+      const ids = Array.from(root.querySelectorAll<HTMLElement>("[id]")).map((n) => n.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    };
+
+    idsUnique(); // initial form render
+    submit("The Red Sashes");
+    // First phase-two failure: recovery UI replaces the form without
+    // reusing or duplicating any of the form's ids.
+    await vi.waitFor(() => {
+      expect(root.querySelector(".crew-create-error")).not.toBeNull();
+    });
+    idsUnique();
+    // Retry #1 fails again: freshly rendered recovery UI, ids still unique.
+    (root.querySelector(".crew-create-error button") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      expect(root.querySelector(".crew-create-error button")).not.toBeNull();
+    });
+    idsUnique();
+    // Retry #2 succeeds — the invariant held through every render.
+    (root.querySelector(".crew-create-error button") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(onCreated).toHaveBeenCalledWith(named);
+    });
+    idsUnique();
+  });
+});

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { mountCrewDetailPage } from "./crew-detail.js";
+import { loadStylesheets } from "./seam.js";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -467,6 +468,58 @@ describe("crew-detail page", () => {
       await vi.waitFor(() => {
         expect(root.textContent).toContain("The Crows");
         expect(root.textContent).toContain("Ironhook Prison");
+      });
+    });
+
+    it("keeps faction-entry rows shrinkable on narrow sheets (FV-014)", async () => {
+      loadStylesheets();
+      global.fetch = vi.fn().mockResolvedValue(
+        ok(crewDTO({ factions: [{ name: "The Crows", status: 2 }] })),
+      );
+
+      mountCrewDetailPage(root, CREW_ID);
+      document.body.appendChild(root);
+
+      await vi.waitFor(() => {
+        const row = root.querySelector(".faction-entry");
+        expect(row).not.toBeNull();
+        const statusInput = row?.querySelector(
+          'input[aria-label="Set status for The Crows"]',
+        );
+        expect(statusInput).not.toBeNull();
+        // happy-dom does no layout, so the narrow-sheet containment contract
+        // is carried by computed style from the real stylesheets (same
+        // convention as shell.test.ts FV-016 / seam.ts): the row must be
+        // allowed to shrink, and the status input must shrink below its
+        // browser-default min-content width (min-width: auto, ~201px) instead
+        // of bleeding past the card at 320/360/420 (FV-014).
+        expect(getComputedStyle(row as Element).minWidth).toBe("0");
+        expect(getComputedStyle(statusInput as Element).minWidth).toBe("0");
+        expect(getComputedStyle(statusInput as Element).flexGrow).toBe("1");
+        expect(getComputedStyle(statusInput as Element).flexShrink).toBe("1");
+        expect(getComputedStyle(statusInput as Element).flexBasis).toBe("10em");
+      });
+    });
+
+    it("keeps the contact add row shrinkable (FV-014: contact row unchanged)", async () => {
+      loadStylesheets();
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+      document.body.appendChild(root);
+
+      await vi.waitFor(() => {
+        const row = root.querySelector(".contact-add-row");
+        expect(row).not.toBeNull();
+        const nameInput = row?.querySelector(
+          'input[aria-label="Contact name"]',
+        );
+        expect(nameInput).not.toBeNull();
+        // Regression guard: the contact row's shrink contract (the pattern
+        // FV-014 generalizes) must stay intact.
+        expect(getComputedStyle(row as Element).minWidth).toBe("0");
+        expect(getComputedStyle(nameInput as Element).minWidth).toBe("0");
+        expect(getComputedStyle(nameInput as Element).flexBasis).toBe("10em");
       });
     });
 
@@ -2752,5 +2805,376 @@ describe("SC-F3 tracker clamps", () => {
       expect(notice?.textContent).toContain("Rep clamped to");
     });
     expect(root.textContent).toContain("(requested 1)");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FV-012 — mutation focus restoration
+// ---------------------------------------------------------------------------
+
+describe("FV-012 focus restoration", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+    // Focus() only tracks elements connected to the document; the sheet root
+    // must be attached for the focus-restoration assertions to be meaningful.
+    document.body.append(root);
+  });
+
+  afterEach(() => {
+    root.remove();
+  });
+
+  const crewOpOk = (crew: unknown, opName: string) => ({
+    ok: true,
+    crew,
+    applied: { op: opName },
+    sideEffects: [],
+    error: null,
+  });
+
+  /** Mount with the 4 standard load fetches + extra op mocks. */
+  const mountWith = (dto: Record<string, unknown>, extraMocks: readonly unknown[] = []) => {
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()));
+    for (const m of extraMocks) mocked.mockResolvedValueOnce(m);
+    global.fetch = mocked;
+    mountCrewDetailPage(root, CREW_ID);
+  };
+
+  const turfPlus = () => root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement;
+  const addContact = () => root.querySelector('button[title="Add contact"]') as HTMLButtonElement;
+  const contactName = () => root.querySelector('input[aria-label="Contact name"]') as HTMLInputElement;
+
+  it("keeps focus on the turf add button after a successful turf add", async () => {
+    mountWith(crewDTO({ turf: 0 }), [ok(crewOpOk(crewDTO({ revision: 6, turf: 1 }), "turf.add"))]);
+
+    await vi.waitFor(() => expect(turfPlus()).not.toBeNull());
+    turfPlus().focus();
+    turfPlus().click();
+
+    await vi.waitFor(() => expect(root.textContent).toContain("1 / 6"));
+    expect(document.activeElement).toBe(turfPlus());
+  });
+
+  it("returns focus to the turf add button after a failed (422) turf add", async () => {
+    mountWith(crewDTO({ turf: 0 }), [
+      { ok: false, status: 422, text: async () => "validation failed" },
+    ]);
+
+    await vi.waitFor(() => expect(turfPlus()).not.toBeNull());
+    turfPlus().focus();
+    turfPlus().click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".error")).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(turfPlus());
+  });
+
+  it("moves focus to the new contact's remove button after adding a contact", async () => {
+    const withContact = crewDTO({
+      revision: 6,
+      contacts: [{ name: "Rolan Wott", profession: "magistrate" }],
+    });
+    mountWith(crewDTO({ contacts: [] }), [ok(crewOpOk(withContact, "contact.add"))]);
+
+    await vi.waitFor(() => expect(contactName()).not.toBeNull());
+    contactName().value = "Rolan Wott";
+    (root.querySelector('input[aria-label="Contact profession"]') as HTMLInputElement).value = "magistrate";
+    contactName().focus();
+    addContact().click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Remove contact: Rolan Wott"]')).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove contact: Rolan Wott"]'));
+  });
+
+  it("moves focus to the next contact's remove button after deleting a contact", async () => {
+    const without = crewDTO({
+      revision: 6,
+      contacts: [{ name: "Veleris", profession: "" }],
+    });
+    mountWith(
+      crewDTO({ contacts: [{ name: "Rolan Wott", profession: "magistrate" }, { name: "Veleris", profession: "" }] }),
+      [ok(crewOpOk(without, "contact.remove"))],
+    );
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[title^="Remove contact:"]')).toHaveLength(2);
+    });
+    const rm = root.querySelector('button[title="Remove contact: Rolan Wott"]') as HTMLButtonElement;
+    rm.focus();
+    rm.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Remove contact: Rolan Wott"]')).toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove contact: Veleris"]'));
+  });
+
+  it("moves focus to the new note's remove button after adding a note", async () => {
+    const withNote = crewDTO({ revision: 6, notes: ["First note"] });
+    mountWith(crewDTO({ notes: [] }), [ok(crewOpOk(withNote, "note.add"))]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('textarea[aria-label="New note"]')).not.toBeNull();
+    });
+    const textarea = root.querySelector('textarea[aria-label="New note"]') as HTMLTextAreaElement;
+    textarea.value = "First note";
+    textarea.focus();
+    (root.querySelector('button[title="Add note"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[aria-label="Remove note 0"]')).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[aria-label="Remove note 0"]'));
+  });
+
+  it("moves focus to the next note's remove button after deleting a middle note", async () => {
+    const without = crewDTO({ revision: 6, notes: ["First note", "Third note"] });
+    mountWith(
+      crewDTO({ notes: ["First note", "Second note", "Third note"] }),
+      [ok(crewOpOk(without, "note.remove"))],
+    );
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[aria-label^="Remove note"]')).toHaveLength(3);
+    });
+    const rm = root.querySelector('button[aria-label="Remove note 1"]') as HTMLButtonElement;
+    rm.focus();
+    rm.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[aria-label^="Remove note"]')).toHaveLength(2);
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[aria-label="Remove note 1"]'));
+  });
+
+  it("moves focus to the saved field's Edit button after a profile save", async () => {
+    const updated = crewDTO({ revision: 6, name: "Renamed Crew" });
+    mountWith(crewDTO(), [ok(crewOpOk(updated, "fields.update"))]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit Name"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector('input[aria-label="Name"]')).not.toBeNull();
+    });
+    (root.querySelector('input[aria-label="Name"]') as HTMLInputElement).value = "Renamed Crew";
+    const saveBtn = root.querySelector('.field-editing button[title="Save"]') as HTMLButtonElement;
+    saveBtn.focus();
+    saveBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Renamed Crew");
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Edit Name"]'));
+  });
+
+  it("keeps focus on the Set reputation button after saving a reputation", async () => {
+    const REPUTATIONS = [
+      "Ambitious", "Brutal", "Daring", "Honorable",
+      "Professional", "Savvy", "Subtle", "Strange",
+    ];
+    const CREW_TYPES = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [{ Name: "Assassins", Reputations: REPUTATIONS }],
+    };
+    const updated = crewDTO({ revision: 6, reputation: "Savvy" });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce({ ok: false, status: 404, text: async () => "games.crew: NOT_FOUND" })
+      .mockResolvedValueOnce(ok(CREW_TYPES))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewOpOk(updated, "fields.update")));
+
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Set reputation"]')).not.toBeNull();
+    });
+    (root.querySelector('select[aria-label="Reputation"]') as HTMLSelectElement).value = "Savvy";
+    const setBtn = root.querySelector('button[title="Set reputation"]') as HTMLButtonElement;
+    setBtn.focus();
+    setBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".crew-reputation .field-value")?.textContent).toBe("Savvy");
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Set reputation"]'));
+  });
+
+  it("keeps focus on the undo button after a successful undo", async () => {
+    const undoResp = {
+      ok: true,
+      crew: crewDTO({ revision: 6 }),
+      canUndo: true,
+      historyCount: 1,
+      applied: { op: "crew.undo" },
+      sideEffects: [],
+      error: null,
+    };
+    mountWith(crewDTO(), [ok(undoResp)]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Undo last change"]')).not.toBeNull();
+    });
+    const undoBtn = root.querySelector('button[title="Undo last change"]') as HTMLButtonElement;
+    undoBtn.focus();
+    undoBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Undone");
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Undo last change"]'));
+  });
+
+  it("moves focus to the next faction's remove button after deleting a faction", async () => {
+    const without = crewDTO({
+      revision: 6,
+      factions: [{ name: "The Lampblacks", status: 1 }],
+    });
+    mountWith(
+      crewDTO({
+        factions: [
+          { name: "The Crows", status: 2 },
+          { name: "The Lampblacks", status: 1 },
+        ],
+      }),
+      [ok(crewOpOk(without, "faction.remove"))],
+    );
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[title^="Remove faction:"]')).toHaveLength(2);
+    });
+    const rm = root.querySelector('button[title="Remove faction: The Crows"]') as HTMLButtonElement;
+    rm.focus();
+    rm.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Remove faction: The Crows"]')).toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove faction: The Lampblacks"]'));
+  });
+
+  it("moves focus to the newly taken ability's remove button", async () => {
+    const CREW_TYPE_DATA = {
+      Name: "Assassins",
+      Hook: "You're professional murderers.",
+      SpecialAbilities: [
+        { Name: "Predators", TimesTakeable: 1, Description: "When you use a stealth or deception plan to commit murder, take +1d to the engagement roll." },
+        { Name: "Deadly", TimesTakeable: 1, Description: "Each PC may add +1 action rating to Hunt, Prowl, or Skirmish." },
+      ],
+      Upgrades: [],
+      StartingUpgrades: [],
+    };
+    const CREW_TYPES_DATA = {
+      Name: "Blades in the Dark",
+      Language: "en",
+      CrewTypes: [CREW_TYPE_DATA],
+    };
+    const taken = crewDTO({
+      revision: 6,
+      specialAbilities: [{ name: "Deadly", timesTaken: 1 }],
+    });
+
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(crewDTO({ specialAbilities: [] })))
+      .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+      .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewOpOk(taken, "ability.take")));
+
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Take ability"]')).not.toBeNull();
+    });
+    const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+    select.value = "Deadly";
+    select.focus();
+    (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Remove ability: Deadly"]')).not.toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove ability: Deadly"]'));
+  });
+
+  it("moves focus to the next cohort's remove button after deleting a cohort", async () => {
+    const cohort = (id: string, gangType: string) => ({
+      id,
+      cohortKind: "gang",
+      gangType,
+      expertType: "",
+      quality: 1,
+      scale: 1,
+      hasArmor: false,
+      edges: [],
+      flaws: [],
+      harm: "healthy",
+      description: "",
+    });
+    const without = crewDTO({ revision: 6, cohorts: [cohort("b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "Skulls")] });
+    mountWith(
+      crewDTO({
+        cohorts: [cohort("a0a1a2a3-a4a5-4a6a-8a7a-9a0a1a2a3a4a", "Adepts"), cohort("b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "Skulls")],
+      }),
+      [ok(crewOpOk(without, "cohort.remove"))],
+    );
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('button[title^="Remove cohort:"]')).toHaveLength(2);
+    });
+    const rm = root.querySelector('button[title="Remove cohort: Adepts"]') as HTMLButtonElement;
+    rm.focus();
+    rm.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Remove cohort: Adepts"]')).toBeNull();
+    });
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove cohort: Skulls"]'));
+  });
+
+  it("returns focus to the add-contact button after a stale (409) refresh", async () => {
+    const staleResp = {
+      ok: false,
+      applied: { op: "contact.add" },
+      sideEffects: [],
+      error: {
+        code: "STALE_REVISION",
+        status: 409,
+        message: "Crew revision mismatch",
+        retryable: true,
+        recovery: "Refresh the sheet and retry.",
+        details: { currentRevision: 7 },
+      },
+    };
+    mountWith(crewDTO(), [
+      { ok: false, status: 409, text: async () => JSON.stringify(staleResp) },
+      ok(crewDTO({ revision: 7 })),
+    ]);
+
+    await vi.waitFor(() => expect(addContact()).not.toBeNull());
+    contactName().value = "Rolan Wott";
+    addContact().focus();
+    addContact().click();
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Sheet refreshed");
+    });
+    expect(document.activeElement).toBe(addContact());
   });
 });

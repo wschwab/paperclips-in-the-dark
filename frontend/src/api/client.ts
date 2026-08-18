@@ -6,6 +6,19 @@ import { type CrewSummary, CrewSummary as CrewSummarySchema } from "../schema/ca
 import { decodeOperationResultEither } from "../schema/operation-result.js";
 import type { OperationResult } from "../schema/operation-result.js";
 import { type Clock, Clock as ClockSchema } from "../schema/clock.js";
+// SC-F2 import/repair pipeline (same-origin client): the opId exports below
+// pin the contract URL and delegate the classification to import-repair.ts.
+import { importApply, repairApply, repairPreview } from "./import-repair.js";
+import type {
+  ApplyResult,
+  InvalidEntityError,
+  InvalidEntryError,
+  NeedsInputError,
+  NotFoundError,
+  NormalizationRequiredError,
+  PreviewView,
+  StaleStateError,
+} from "./import-repair.js";
 
 /**
  * Same-origin API client. Always uses relative `/api/*` paths so the
@@ -634,6 +647,39 @@ export function endScore(
   });
 }
 
+/** Optional endDowntime body: clearSessionExpressions + a GM-judged vice-relief stress amount. */
+export interface EndDowntimeOptions {
+  clearSessionExpressions?: boolean;
+  viceReliefStress?: number;
+}
+
+/**
+ * End downtime (composite helper): clears the session expression tracks; an
+ * optional vice-relief stress clear amount is caller-supplied (GM judgment).
+ * Same If-Match + OperationResult shape as endScore.
+ */
+export function endDowntime(
+  id: string,
+  revision: number,
+  opts: EndDowntimeOptions = {},
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation(`/api/characters/${id}/end-downtime`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
+      },
+      body: JSON.stringify(opts),
+    });
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
+    }
+    return opResult.character;
+  });
+}
+
 /**
  * Delete a character (lifecycle-matrix §6.1 — retired characters remain
  * deletable). Requires {confirm:true} (else CONFIRM_REQUIRED); If-Match is
@@ -645,8 +691,34 @@ export function deleteCharacter(
   id: string,
   ifMatch: string,
 ): Effect.Effect<void, ApiError | DecodeError | StaleRevisionError> {
+  const op = "delete" as const;
   return Effect.gen(function* () {
-    yield* fetchOperation(`/api/characters/${id}/delete`, {
+    yield* fetchOperation(`/api/characters/${id}/${op}`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": ifMatch,
+      },
+      body: JSON.stringify({ confirm: true }),
+    });
+  });
+}
+
+/**
+ * Delete a crew (requires {confirm:true} else CONFIRM_REQUIRED; not undoable).
+ * If-Match is the crew revision, or the sha256: content token for a degraded
+ * crew. Unlinks member characters and reassigns standalone crew-owned clocks
+ * to campaign ownership in the same atomic snapshot (see the contract).
+ * Mirrors deleteCharacter: resolves to void and the page navigates away.
+ */
+export function deleteCrew(
+  id: string,
+  ifMatch: string,
+): Effect.Effect<void, ApiError | DecodeError | StaleRevisionError> {
+  const op = "delete" as const;
+  return Effect.gen(function* () {
+    yield* fetchOperation(`/api/crews/${id}/${op}`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -932,6 +1004,15 @@ export function noteRemove(
   revision: number,
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return characterMutate(id, "note.remove", revision, { index });
+}
+
+/** Replace the character's free-text notebook (contract /ops/notebook.set). */
+export function notebookSet(
+  id: string,
+  text: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "notebook.set", revision, { text });
 }
 
 // ---------------------------------------------------------------------------
@@ -1768,4 +1849,109 @@ export function deleteClock(
   revision: number,
 ): Effect.Effect<Clock | null, ApiError | DecodeError | StaleRevisionError> {
   return clockMutate(id, "delete", revision, { confirm: true });
+}
+
+// ---------------------------------------------------------------------------
+// SC-F2 import/repair opId exports — importCharacter, importCrew,
+// repairCharacterPreview/Apply, repairCrewPreview/Apply
+//
+// Kind-bound entry points for the shared import/repair pipeline in
+// import-repair.ts. Each pins the exact contract URL (the capability-parity
+// oracle verifies the URL literal in the body) while the typed classification
+// (NORMALIZATION_REQUIRED / INVALID_ENTRY / INVALID_ENTITY / STALE_REVISION)
+// stays single-sourced in import-repair.ts.
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply a previewed import of a full or PARTIAL character document.
+ * Requires If-Match (revision, or the sha256: content token for a degraded
+ * row) plus the preview token from the preview step.
+ */
+export function importCharacter(
+  id: string,
+  document: unknown,
+  ifMatch: string,
+  previewToken: string,
+): Effect.Effect<
+  ApplyResult,
+  ApiError | DecodeError | StaleStateError | NormalizationRequiredError | InvalidEntryError | InvalidEntityError | NotFoundError
+> {
+  return importApply("character", id, document, ifMatch, previewToken, `/api/characters/${id}/import`);
+}
+
+/**
+ * Apply a previewed import of a full or PARTIAL crew document.
+ * Requires If-Match (revision, or the sha256: content token for a degraded
+ * row) plus the preview token from the preview step.
+ */
+export function importCrew(
+  id: string,
+  document: unknown,
+  ifMatch: string,
+  previewToken: string,
+): Effect.Effect<
+  ApplyResult,
+  ApiError | DecodeError | StaleStateError | NormalizationRequiredError | InvalidEntryError | InvalidEntityError | NotFoundError
+> {
+  return importApply("crew", id, document, ifMatch, previewToken, `/api/crews/${id}/import`);
+}
+
+/**
+ * Preview the repair of a degraded/repairable stored character. Optional
+ * values keyed by JSON pointer satisfy the preview's needs-input pointers.
+ */
+export function repairCharacterPreview(
+  id: string,
+  ifMatch: string,
+  values?: Record<string, unknown>,
+): Effect.Effect<
+  PreviewView,
+  ApiError | DecodeError | NormalizationRequiredError | NeedsInputError | InvalidEntityError | NotFoundError
+> {
+  return repairPreview("character", id, ifMatch, values, `/api/characters/${id}/repair-preview`);
+}
+
+/**
+ * Apply a confirmed character repair. Requires If-Match (revision or content
+ * token) plus the preview token from repairCharacterPreview.
+ */
+export function repairCharacterApply(
+  id: string,
+  ifMatch: string,
+  previewToken: string,
+): Effect.Effect<
+  ApplyResult,
+  ApiError | DecodeError | StaleStateError | NormalizationRequiredError | InvalidEntityError | NotFoundError
+> {
+  return repairApply("character", id, ifMatch, previewToken, `/api/characters/${id}/repair`);
+}
+
+/**
+ * Preview the repair of a degraded/repairable stored crew. Optional values
+ * keyed by JSON pointer satisfy the preview's needs-input pointers.
+ */
+export function repairCrewPreview(
+  id: string,
+  ifMatch: string,
+  values?: Record<string, unknown>,
+): Effect.Effect<
+  PreviewView,
+  ApiError | DecodeError | NormalizationRequiredError | NeedsInputError | InvalidEntityError | NotFoundError
+> {
+  return repairPreview("crew", id, ifMatch, values, `/api/crews/${id}/repair-preview`);
+}
+
+/**
+ * Apply a confirmed crew repair. Requires If-Match (revision or content
+ * token) plus the preview token from repairCrewPreview.
+ */
+export function repairCrewApply(
+  id: string,
+  ifMatch: string,
+  previewToken: string,
+): Effect.Effect<
+  ApplyResult,
+  ApiError | DecodeError | StaleStateError | NormalizationRequiredError | InvalidEntityError | NotFoundError
+> {
+  return repairApply("crew", id, ifMatch, previewToken, `/api/crews/${id}/repair`);
 }

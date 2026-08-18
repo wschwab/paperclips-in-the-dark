@@ -1,7 +1,6 @@
 import { Effect } from "effect";
 import {
   importPreview,
-  importApply,
   NormalizationRequiredError,
   NeedsInputError,
   InvalidEntryError,
@@ -11,7 +10,7 @@ import {
   type EntityKind,
   type Issue,
 } from "../api/import-repair.js";
-import { ApiError, DecodeError } from "../api/client.js";
+import { ApiError, DecodeError, importCharacter, importCrew } from "../api/client.js";
 import type { ApplyResult } from "../api/import-repair.js";
 import { el, setChildren } from "../lib/dom.js";
 import { renderPreviewPanel } from "../components/normalization-preview.js";
@@ -233,7 +232,10 @@ export function mountImportPage(
     setChildren(status, el("span", {}, "Applying…"));
 
     const program = Effect.gen(function* () {
-      return yield* importApply(kind, id, doc, ifMatch, previewToken as string);
+      if (kind === "character") {
+        return yield* importCharacter(id, doc, ifMatch, previewToken as string);
+      }
+      return yield* importCrew(id, doc, ifMatch, previewToken as string);
     });
 
     void Effect.runPromise(

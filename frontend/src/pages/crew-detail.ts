@@ -8,6 +8,7 @@ import {
   decodeErrorText,
   getCrew,
   undoCrew,
+  deleteCrew,
   crewContactAdd,
   crewContactRemove,
   factionSetStatus,
@@ -42,6 +43,7 @@ import {
 } from "../api/client.js";
 import type { CrewCapabilities, CrewTrackOpResult } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
+import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
 import { errorCard } from "../components/error-card.js";
 import type { Crew } from "../schema/crew.js";
 import { CohortHarm, CohortType, Hold } from "../schema/common.js";
@@ -75,6 +77,7 @@ interface RenderState {
   /** Server-computed crew capability projection (SC-F3); null until loaded or on fetch failure. */
   crewCaps: CrewCapabilities | null;
   isUndoLoading: boolean;
+  isDeleteLoading: boolean;
   isAbilityLoading: boolean;
   isUpgradeLoading: boolean;
   isCohortLoading: boolean;
@@ -103,6 +106,7 @@ interface RenderState {
   historyCount: number | null;
   handlers: {
     onUndo: () => void;
+    onDeleteCrew: () => void;
     onContactAdd: () => void;
     onContactRemove: (name: string) => void;
     onFactionSetStatus: (name: string, status: number) => void;
@@ -568,6 +572,15 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   );
   undoButton.addEventListener("click", handlers.onUndo);
 
+  // -- Delete crew button ---------------------------------------------------
+
+  const deleteCrewBtn = el("button", {
+    type: "button",
+    disabled: state.isDeleteLoading,
+    title: "Delete this crew permanently (confirmation required, not undoable)",
+  }, state.isDeleteLoading ? "…" : "Delete crew");
+  deleteCrewBtn.addEventListener("click", handlers.onDeleteCrew);
+
   // -- Profile (F2u) --------------------------------------------------------
 
   const profileFields = (["name", "lair", "huntingGrounds"] as const)
@@ -613,7 +626,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         cancelBtn.addEventListener("click", handlers.onProfileCancel);
         return el(
           "div",
-          { className: "field-editing", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.25em 0;" },
+          { className: "field-editing", "data-focus-key": `profile-${field}`, style: "display: flex; gap: 0.5em; align-items: center; margin: 0.25em 0;" },
           el("span", { className: "lbl" }, `${label}: `),
           input,
           saveBtn,
@@ -628,7 +641,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       editBtn.addEventListener("click", () => handlers.onProfileEdit(field));
       return el(
         "div",
-        { className: "field-read", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.25em 0;" },
+        { className: "field-read", "data-focus-key": `profile-${field}`, style: "display: flex; gap: 0.5em; align-items: center; margin: 0.25em 0;" },
         el("span", { className: "lbl" }, `${label}: `),
         el("span", { className: "field-value" }, displayValue),
         editBtn,
@@ -1225,7 +1238,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       );
     });
 
-    return el("div", { className: "crew-playbook" },
+    return el("div", { className: "crew-playbook", "data-section": "playbook" },
       el("h2", {}, "Playbook"),
       el("h3", { className: "lbl", style: "margin-top: 0.5em;" }, "Special Abilities"),
       c.specialAbilities.length === 0
@@ -1414,7 +1427,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
 
       return el(
         "div",
-        { className: "cohort-entry editing", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind },
+        { className: "cohort-entry editing", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind, "data-focus-key": `cohort-${cohort.id}` },
         el("span", { className: "cohort-kind-badge" }, kindLabel),
         el("div", { className: "cohort-edit-fields", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
           el("label", { className: "lbl" }, `${kindLabel} type:`, typeControl),
@@ -1445,7 +1458,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
 
     return el(
       "div",
-      { className: "cohort-entry", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind },
+      { className: "cohort-entry", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind, "data-focus-key": `cohort-${cohort.id}` },
       el("span", { className: "cohort-kind-badge" }, kindLabel),
       el("span", { className: "cohort-type" }, typeValue),
       el("span", { className: "cohort-quality" }, `Quality ${cohort.quality}`),
@@ -1564,7 +1577,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
 
   const cohortsSection = el(
     "div",
-    { className: "crew-cohorts" },
+    { className: "crew-cohorts", "data-section": "cohorts" },
     el("h2", {}, "Cohorts"),
     c.cohorts.length === 0
       ? el("p", {}, "(no cohorts)")
@@ -1621,7 +1634,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
 
   const xpSection = el(
     "div",
-    { className: "crew-xp" },
+    { className: "crew-xp", "data-section": "xp" },
     el("h2", {}, "Crew XP"),
     el("div", {
       className: "crew-xp-tracker",
@@ -1655,7 +1668,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     if (!claims) {
       return el(
         "section",
-        { className: "crew-claims" },
+        { className: "crew-claims", "data-section": "claims" },
         el("h2", {}, "Claims"),
         el("p", { className: "lbl" }, "No claims map available for this crew type."),
       );
@@ -1752,7 +1765,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
 
     return el(
       "section",
-      { className: "crew-claims" },
+      { className: "crew-claims", "data-section": "claims" },
       el("h2", {}, "Claims"),
       el("p", { className: "rules-note", style: "margin-top: 0.35em;" },
         "Acquired claims are marked. Connected claims are highlighted; out-of-sequence acquisition remains allowed. The Lair is always controlled.",
@@ -1791,7 +1804,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     { className: "crew-detail" },
     el(
       "div",
-      { className: "crew-header torn-foot torn-foot-lg" },
+      { className: "crew-header torn-foot torn-foot-lg", "data-section": "header" },
       el("p", { className: "crew-kicker" }, c.gameName),
       el("h1", {}, c.name || `Unnamed ${c.crewTypeName}`),
       el("p", { className: "crew-type uneven" }, c.crewTypeName),
@@ -1804,7 +1817,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     ),
     el(
       "div",
-      { className: "crew-profile" },
+      { className: "crew-profile", "data-section": "profile" },
       el("h2", {}, "Profile"),
       ...profileFields,
       reputationRow,
@@ -1812,7 +1825,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     notesSection,
     el(
       "div",
-      { className: "crew-trackers" },
+      { className: "crew-trackers", "data-section": "trackers" },
       el("h2", {}, "Trackers"),
       el("h3", { className: "lbl" }, "Rep & Turf"),
       repTracker,
@@ -1853,7 +1866,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     ),
     el(
       "div",
-      { className: "crew-fund" },
+      { className: "crew-fund", "data-section": "fund" },
       el("h2", {}, "Fund"),
       el("div", { className: "crew-coin", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.35em 0;" },
         el("span", { className: "lbl" }, "Coin:"),
@@ -1874,7 +1887,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     xpSection,
     el(
       "div",
-      { className: "crew-contacts-factions" },
+      { className: "crew-contacts-factions", "data-section": "contacts" },
       el("h2", {}, "Contacts & Factions"),
       el("h3", { className: "lbl" }, "Contacts"),
       contacts.length === 0
@@ -1892,9 +1905,10 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     ),
     el(
       "div",
-      { className: "crew-actions" },
+      { className: "crew-actions", "data-section": "actions" },
       el("h2", {}, "Actions"),
       undoButton,
+      deleteCrewBtn,
       state.historyCount !== null
         ? el("p", { className: "lbl", style: "margin-top: 0.5em;" },
             `${state.historyCount} snapshotted change${state.historyCount === 1 ? "" : "s"} can be undone.`)
@@ -1902,7 +1916,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     ),
     el(
       "div",
-      { className: "crew-notices", style: "margin-top: 1em;" },
+      { className: "crew-notices", "data-section": "notices", style: "margin-top: 1em;" },
       state.refreshNotice
         ? el("p", { className: "notice", style: "margin-top: 1em;" }, state.refreshNotice)
         : null,
@@ -1939,6 +1953,7 @@ export function mountCrewDetailPage(
   let cancelled = false;
   let currentCrew: Crew | null = null;
   let isUndoLoading = false;
+  let isDeleteLoading = false;
   let canUndoState: boolean | null = null;
   let historyCountState: number | null = null;
   let isContactLoading = false;
@@ -2078,12 +2093,20 @@ export function mountCrewDetailPage(
     );
   };
 
+  // FV-012: wholesale re-renders destroy the focused control; capture the
+  // focused control's position before rendering and restore it after. The
+  // request stays pending while the target is disabled (in-flight loading
+  // render) so the post-mutation render fulfils it.
+  let pendingFocus: FocusTarget | null = null;
+
   const renderDetail = () => {
     if (!currentCrew) return;
+    if (!pendingFocus) pendingFocus = captureFocusTarget(root);
     setChildren(root, renderCrewDetail({
       c: currentCrew,
       anyLoading:
         isUndoLoading ||
+        isDeleteLoading ||
         isContactLoading ||
         isFactionLoading ||
         isProfileLoading ||
@@ -2102,6 +2125,7 @@ export function mountCrewDetailPage(
         isNoteLoading ||
         isDevelopLoading,
       isUndoLoading,
+      isDeleteLoading,
       isContactLoading,
       isFactionLoading,
       isProfileLoading,
@@ -2133,6 +2157,7 @@ export function mountCrewDetailPage(
       historyCount: historyCountState,
       handlers,
     }));
+    if (pendingFocus && applyFocusTarget(root, pendingFocus)) pendingFocus = null;
   };
 
   const handlers = {
@@ -2176,6 +2201,31 @@ export function mountCrewDetailPage(
             // from the NO_HISTORY error copy above.
             undoNotice = `Undone — restored ${describeCrewRestore(before, crew)}.`;
             renderDetail();
+          },
+        }),
+      );
+    },
+
+    onDeleteCrew: () => {
+      if (!currentCrew || isDeleteLoading) return;
+      const confirmed = window.confirm(
+        "Delete this crew permanently? This is not undoable and removes " +
+        "their history. Member characters are unlinked and standalone " +
+        "crew-owned clocks move to the campaign.",
+      );
+      if (!confirmed) return;
+      isDeleteLoading = true;
+      clearNotices();
+      renderDetail();
+
+      const program = deleteCrew(crewId, String(currentCrew.revision));
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => onOpFailure(err, () => { isDeleteLoading = false; }),
+          onSuccess: () => {
+            if (cancelled) return;
+            // The entity is gone — leave the page via history navigation.
+            window.location.assign("/roster");
           },
         }),
       );

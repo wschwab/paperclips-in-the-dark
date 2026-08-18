@@ -667,6 +667,7 @@
   font-style: italic;
   color: var(--text-muted);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .crew-header .crew-type {
   font-family: var(--font-epigraph);
@@ -748,6 +749,37 @@
   flex: 1 1 10em;
 }
 
+/* Faction rows share the contact rows' constraint: the status <input> keeps a
+ * large intrinsic min-content width (browser default min-width: auto), so it
+ * must shrink around the Set/remove buttons on a narrow sheet instead of
+ * bleeding past the card (FV-014). Only the status input gets shrink rules;
+ * the name/status spans and buttons keep their natural sizing. */
+.faction-entry {
+  min-width: 0;
+}
+.faction-entry input {
+  min-width: 0;
+  flex: 1 1 10em;
+}
+
+/* Harm add controls (FV-015): the native intensity select keeps an
+ * intrinsic min-content width and the description input's intrinsic
+ * width (~201px) exceeds the card at 320-390px. Let the row shrink and
+ * wrap so the controls stay inside the health card (same treatment as
+ * .contact-add-row, plus wrap for the select's fixed width). */
+.harm-add-row {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.harm-add-row select,
+.harm-add-row input,
+.harm-add-row button {
+  min-width: 0;
+}
+.harm-add-row input {
+  flex: 1 1 10em;
+}
+
 /* ── Page primitives (Design Audit F-04 / F-28 / F-29) ────────
  * The high-traffic orphaned class names get sheet language: ruled
  * ledger lines instead of browser-default bullets, and form fields as
@@ -797,9 +829,45 @@
   color: var(--text-muted);
   font-size: 0.92rem;
 }
+/* FV-008: long names/aliases must wrap inside the roster plate — the link
+ * row already wraps, but its children default to min-width:auto (min-content
+ * width), so unbroken text would widen the page. anywhere keeps every child
+ * shrinkable so the row stays inside the plate. */
+.character-list a > *,
+.crew-list a > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .character-list li:hover,
 .crew-list li:hover {
   background: var(--surface-sunk);
+}
+
+/* FV-008: user-entered note text and field values wrap within the sheet —
+ * the text spans are flex items (min-width:auto), so anywhere wrapping keeps
+ * them shrinkable instead of pinning the row to its min-content width. */
+.note-list {
+  min-width: 0;
+}
+.note-list .note-entry span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.field-read,
+.field-editing {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.field-read > span:not(.lbl),
+.field-editing > span:not(.lbl) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* FV-008: the membership row renders the current crew name as a value
+ * span — wrap it like every other user-entered value. */
+.crew-membership .crew-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .roster-characters,
 .roster-crews {
@@ -849,6 +917,7 @@
   font-family: var(--font-typewriter);
   font-size: 0.85rem;
   color: var(--text);
+  overflow-wrap: anywhere;
 }
 .history-timestamp {
   color: var(--text-muted);
@@ -859,10 +928,22 @@
   font-size: 0.75rem;
   color: var(--text-faint);
   word-break: break-all;
+  overflow-wrap: anywhere;
 }
 .no-history {
   color: var(--text-muted);
   font-style: italic;
+}
+/* history page header — back link above the page heading (FV-032) */
+.history-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin: 0 0 0.8em;
+}
+.history-header .btn-secondary {
+  align-self: flex-start;
 }
 
 /* form groups — Oswald labels above ruled blank fields */
@@ -1138,7 +1219,15 @@
   text-transform: uppercase;
   letter-spacing: 0.012em;
 }
-.app-bar nav { display: flex; gap: 12px; align-items: center; }
+.app-bar nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  /* FV-016: allow the nav to shrink below its content width so its children
+   * wrap inside the bar instead of bleeding past the viewport at 320px. */
+  min-width: 0;
+}
 .app-bar nav a { text-decoration: none; }
 .app-bar nav a[aria-current="page"] {
   color: var(--text);
@@ -1161,6 +1250,24 @@
 .app-bar.torn-foot a.app-title:hover {
   color: var(--band-text);
   text-decoration: underline;
+}
+
+/* FV-016: at ≤340px tighten the nav gap and theme-control padding so the
+ * bar stays compact and nothing bleeds past the viewport. The nav's own
+ * flex-wrap (above) is the hard containment guarantee; this keeps the
+ * controls comfortable rather than relying on a wrap alone. */
+@media (max-width: 340px) {
+  .app-bar nav {
+    gap: 8px;
+  }
+  .theme-controls {
+    gap: 2px;
+    padding: 2px;
+  }
+  .theme-controls button {
+    padding: 4px 6px;
+    letter-spacing: 0.05em;
+  }
 }
 
 /* ── Layout helpers ─────────────────────────────────────────── */

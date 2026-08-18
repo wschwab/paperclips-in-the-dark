@@ -297,6 +297,8 @@ export function importPreview(
 /**
  * Apply a previewed import. Requires If-Match (entity revision or degraded
  * content token) plus the preview token; body is {entity, previewToken, confirm: true}.
+ * `path` optionally pins the exact request URL (the client's operationId
+ * exports pass it); it defaults to the kind-derived /import URL.
  */
 export function importApply(
   kind: EntityKind,
@@ -304,13 +306,14 @@ export function importApply(
   document: unknown,
   ifMatch: string,
   previewToken: string,
+  path?: string,
 ): Effect.Effect<
   ApplyResult,
   ApiError | DecodeError | StaleStateError | NormalizationRequiredError | InvalidEntryError | InvalidEntityError | NotFoundError
 > {
-  const path = `/api/${kind}s/${id}/import`;
+  const resolvedPath = path ?? `/api/${kind}s/${id}/import`;
   return Effect.gen(function* () {
-    const { status, text } = yield* post(path, { entity: document, previewToken, confirm: true }, ifMatch);
+    const { status, text } = yield* post(resolvedPath, { entity: document, previewToken, confirm: true }, ifMatch);
     const parsed = parseJson(text);
 
     if (status === 200) {
@@ -346,19 +349,22 @@ export function importApply(
 /**
  * Preview the repair of a degraded/repairable stored row. Optional body: values
  * for needs-input pointers, keyed by JSON pointer into the stored document.
+ * `path` optionally pins the exact request URL (the client's operationId
+ * exports pass it); it defaults to the kind-derived /repair-preview URL.
  */
 export function repairPreview(
   kind: EntityKind,
   id: string,
   ifMatch: string,
   values?: Record<string, unknown>,
+  path?: string,
 ): Effect.Effect<
   PreviewView,
   ApiError | DecodeError | NormalizationRequiredError | NeedsInputError | InvalidEntityError | NotFoundError
 > {
-  const path = `/api/${kind}s/${id}/repair-preview`;
+  const resolvedPath = path ?? `/api/${kind}s/${id}/repair-preview`;
   return Effect.gen(function* () {
-    const { status, text } = yield* post(path, values, ifMatch);
+    const { status, text } = yield* post(resolvedPath, values, ifMatch);
     const parsed = parseJson(text);
 
     if (status === 200) {
@@ -390,20 +396,23 @@ export function repairPreview(
 
 /**
  * Apply a confirmed repair. Requires If-Match (revision or content token) and
- * the preview token; body is {previewToken, confirm: true}.
+ * the preview token; body is {previewToken, confirm: true}. `path` optionally
+ * pins the exact request URL (the client's operationId exports pass it); it
+ * defaults to the kind-derived /repair URL.
  */
 export function repairApply(
   kind: EntityKind,
   id: string,
   ifMatch: string,
   previewToken: string,
+  path?: string,
 ): Effect.Effect<
   ApplyResult,
   ApiError | DecodeError | StaleStateError | NormalizationRequiredError | InvalidEntityError | NotFoundError
 > {
-  const path = `/api/${kind}s/${id}/repair`;
+  const resolvedPath = path ?? `/api/${kind}s/${id}/repair`;
   return Effect.gen(function* () {
-    const { status, text } = yield* post(path, { previewToken, confirm: true }, ifMatch);
+    const { status, text } = yield* post(resolvedPath, { previewToken, confirm: true }, ifMatch);
     const parsed = parseJson(text);
 
     if (status === 200) {

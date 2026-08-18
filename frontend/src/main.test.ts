@@ -225,3 +225,53 @@ describe("import-route load failures (FV-020/SC-F2)", () => {
     expect(document.querySelector("#app")?.textContent).not.toContain("boom crew");
   });
 });
+
+describe("route focus (FV-013)", () => {
+  beforeEach(() => {
+    if (!document.querySelector("#app")) {
+      document.body.innerHTML = '<div id="app"></div>';
+    }
+    vi.clearAllMocks();
+    global.fetch = vi.fn().mockResolvedValue(
+      ok({ characters: [], crews: [] }),
+    );
+  });
+
+  it("moves focus to the new route's main after click navigation (not BODY)", async () => {
+    window.history.replaceState({}, "", "/roster");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    await vi.waitFor(() => {
+      expect(document.querySelector(".roster")).not.toBeNull();
+    });
+
+    // Client-side click on a same-origin nav link (main.ts intercepts it).
+    const link = document.querySelector<HTMLAnchorElement>(
+      '.app-bar a[href="/styleguide"]',
+    );
+    expect(link).not.toBeNull();
+    link!.click();
+
+    await vi.waitFor(() => {
+      expect(document.querySelector(".styleguide")).not.toBeNull();
+    });
+    // Focus must not silently stay on BODY: the new route's main owns it.
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement?.id).toBe("main");
+  });
+
+  it("moves focus to the page main after browser Back (popstate)", async () => {
+    window.history.replaceState({}, "", "/styleguide");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    await vi.waitFor(() => {
+      expect(document.querySelector(".styleguide")).not.toBeNull();
+    });
+
+    window.history.replaceState({}, "", "/roster");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+
+    await vi.waitFor(() => {
+      expect(document.querySelector(".roster")).not.toBeNull();
+    });
+    expect(document.activeElement?.id).toBe("main");
+  });
+});

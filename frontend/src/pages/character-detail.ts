@@ -17,6 +17,7 @@ import {
   dossierUpdate,
   undoCharacter,
   endScore,
+  endDowntime,
   retireCharacter,
   deleteCharacter,
   StaleRevisionError,
@@ -52,6 +53,7 @@ import {
   deleteClock,
   noteAdd,
   noteRemove,
+  notebookSet,
   listCrews,
   type SessionFields,
   type FundOpResult,
@@ -64,6 +66,7 @@ import { harmTable } from "../components/harm-table.js";
 import type { HarmLevel } from "../components/harm-table.js";
 import { traumaStamps } from "../components/trauma-stamps.js";
 import { el, setChildren } from "../lib/dom.js";
+import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
 import { errorCard } from "../components/error-card.js";
 import type { Character } from "../schema/character.js";
 import type { CrewSummary } from "../schema/campaign.js";
@@ -411,10 +414,13 @@ interface RenderState {
   crewNotice: string | null;
   isNotesLoading: boolean;
   notesNotice: string | null;
+  isNotebookLoading: boolean;
+  notebookNotice: string | null;
   isTraumaPickerLoading: boolean;
   healNotice: string | null;
   // F4 lifecycle state
   isEndScoreLoading: boolean;
+  isDowntimeLoading: boolean;
   isRetireLoading: boolean;
   isDeleteLoading: boolean;
   /** Derived undo state from the last operation result (null = unknown before any op). */
@@ -446,10 +452,12 @@ interface RenderState {
     onTraumaFromStress: () => void;
     onNoteAdd: () => void;
     onNoteRemove: (index: number) => void;
+    onNotebookSave: () => void;
     onCrewJoin: () => void;
     onCrewLeave: () => void;
     onUndo: () => void;
     onEndScore: () => void;
+    onEndDowntime: () => void;
     onRetire: () => void;
     onDeleteCharacter: () => void;
     onHarmAdd: () => void;
@@ -503,8 +511,8 @@ function renderDetail(state: RenderState): HTMLElement {
     state.isTalentsLoading || state.isSessionLoading || state.isPlaybookLoading ||
     state.isGearLoading || state.isGearCommitmentLoading || state.isGearLockLoading ||
     state.isCoinLoading || state.isClocksLoading ||
-    state.isCrewsLoading || state.isNotesLoading ||
-    state.isTraumaPickerLoading || state.isEndScoreLoading ||
+    state.isCrewsLoading || state.isNotesLoading || state.isNotebookLoading ||
+    state.isTraumaPickerLoading || state.isEndScoreLoading || state.isDowntimeLoading ||
     state.isRetireLoading || state.isDeleteLoading;
 
   // Retired: every gameplay mutation is on the deny-list (→ RETIRED); the
@@ -649,7 +657,11 @@ function renderDetail(state: RenderState): HTMLElement {
       const cancelBtn = el("button", { type: "button", title: "Cancel" }, "✕");
       cancelBtn.addEventListener("click", handlers.onDossierCancel);
 
-      return el("div", { className: "field-editing", style: "display: flex; gap: 0.5em; align-items: center;" },
+      return el("div", {
+        className: "field-editing",
+        "data-focus-key": `dossier-${typeof field === "string" ? field : field.key}`,
+        style: "display: flex; gap: 0.5em; align-items: center;",
+      },
         el("span", { className: "lbl" }, `${label}: `),
         input,
         saveBtn,
@@ -659,7 +671,11 @@ function renderDetail(state: RenderState): HTMLElement {
 
     editBtn.addEventListener("click", () => handlers.onDossierEdit(field));
 
-    return el("div", { className: "field-read", style: "display: flex; gap: 0.5em; align-items: center;" },
+    return el("div", {
+      className: "field-read",
+      "data-focus-key": `dossier-${typeof field === "string" ? field : field.key}`,
+      style: "display: flex; gap: 0.5em; align-items: center;",
+    },
       el("span", { className: "lbl" }, `${label}: `),
       el("span", {}, displayValue || "(not set)"),
       editBtn,
@@ -719,6 +735,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
       return el("div", {
         className: "field-editing",
+        "data-focus-key": `named-${key}`,
         style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
       },
         el("span", { className: "lbl" }, `${label}: `),
@@ -739,6 +756,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
     return el("div", {
       className: "field-read",
+      "data-focus-key": `named-${key}`,
       style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
     },
       el("span", { className: "lbl" }, `${label}: `),
@@ -800,7 +818,7 @@ function renderDetail(state: RenderState): HTMLElement {
         title: "Edit Vice",
       }, "✎");
       editBtn.addEventListener("click", () => handlers.onNamedEdit("vice"));
-      return el("div", { className: "character-vice" },
+      return el("div", { className: "character-vice", "data-focus-key": "vice" },
         el("h3", { className: "lbl" }, "Vice"),
         el("p", {}, el("strong", {}, v.name || "(not set)")),
         v.description ? el("p", { className: "serif" }, v.description) : null,
@@ -901,7 +919,7 @@ function renderDetail(state: RenderState): HTMLElement {
     const cancelBtn = el("button", { type: "button", title: "Cancel" }, "✕");
     cancelBtn.addEventListener("click", handlers.onNamedCancel);
 
-    return el("div", { className: "character-vice" },
+    return el("div", { className: "character-vice", "data-focus-key": "vice" },
       el("h3", { className: "lbl" }, "Vice"),
       el("div", { className: "vice-editor", style: "display: flex; flex-direction: column; gap: 0.4em;" },
         el("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" },
@@ -938,7 +956,7 @@ function renderDetail(state: RenderState): HTMLElement {
     // an orphaned eleventh card).
     el(
       "div",
-      { className: "character-header torn-foot torn-foot-lg" },
+      { className: "character-header torn-foot torn-foot-lg", "data-section": "header" },
       el("p", { className: "character-kicker" }, `${c.playbook.name} · ${c.gameName}`),
       el("h1", {}, `${c.dossier.name || `Unnamed ${c.playbook.name}`}${status}`),
       el("p", { className: "alias uneven" }, c.dossier.alias),
@@ -971,7 +989,7 @@ function renderDetail(state: RenderState): HTMLElement {
     // Personal (Dossier) — inline editable
     el(
       "div",
-      { className: "character-personal" },
+      { className: "character-personal", "data-section": "personal" },
       el("h2", {}, "Personal"),
       renderField("Name", "name", c.dossier.name),
       renderField("Alias", "alias", c.dossier.alias),
@@ -1030,7 +1048,7 @@ function renderDetail(state: RenderState): HTMLElement {
     // bladesintheday.com — stress track with vice below it)
     el(
       "div",
-      { className: "character-stress" },
+      { className: "character-stress", "data-section": "stress" },
       el("h2", {}, "Stress"),
       el("div", { style: "display: flex; gap: 1em; align-items: center; flex-wrap: wrap;" },
         stressTrackEl,
@@ -1052,7 +1070,7 @@ function renderDetail(state: RenderState): HTMLElement {
     // Traumas
     el(
       "div",
-      { className: "character-traumas" },
+      { className: "character-traumas", "data-section": "traumas" },
       el("h2", {}, "Traumas"),
       c.monitor.trauma.traumas.length === 0
         ? el("p", {}, "(none)")
@@ -1067,7 +1085,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
     el(
       "div",
-      { className: "character-health" },
+      { className: "character-health", "data-section": "health" },
       el("h2", {}, "Health"),
 
       // Harm table — routed through the shared component (Design Audit
@@ -1103,7 +1121,7 @@ function renderDetail(state: RenderState): HTMLElement {
         : null,
 
       // Add harm controls
-      el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
+      el("div", { className: "harm-add-row", style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
         el("select", { "aria-label": "Harm intensity", disabled: gameplayDisabled },
           el("option", { value: "" }, "--"),
           el("option", { value: "lesser" }, "Lesser"),
@@ -1360,7 +1378,7 @@ function renderDetail(state: RenderState): HTMLElement {
         );
       });
 
-      return el("div", { className: "character-talents" },
+      return el("div", { className: "character-talents", "data-section": "talents" },
         el("h2", {}, "Talents"),
         ...attributeGroups,
         el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Score XP"),
@@ -1373,6 +1391,20 @@ function renderDetail(state: RenderState): HTMLElement {
             )
           : null,
         ...sessionEls,
+        // End of downtime: clears the session expression tracks (contract
+        // end-downtime). The vice-relief stress amount stays GM-side.
+        (() => {
+          const endDowntimeBtn = el("button", {
+            type: "button",
+            disabled: gameplayDisabled,
+            title: "End downtime — clears the session expression tracks",
+          }, state.isDowntimeLoading ? "…" : "End downtime");
+          endDowntimeBtn.addEventListener("click", handlers.onEndDowntime);
+          return el("div", { className: "downtime-row", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin-top: 0.75em;" },
+            endDowntimeBtn,
+            el("span", { className: "lbl", style: "font-size: 0.9em;" }, "Clears playbook, character, and struggle expressions."),
+          );
+        })(),
         state.clampNotice
           ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.clampNotice)
           : null,
@@ -1486,7 +1518,7 @@ function renderDetail(state: RenderState): HTMLElement {
       }, state.isPlaybookLoading ? "…" : "+");
       takeBtn.addEventListener("click", handlers.onAbilityTake);
 
-      return el("div", { className: "character-playbook" },
+      return el("div", { className: "character-playbook", "data-section": "playbook" },
         el("h2", {}, "Playbook"),
         el("div", {
           className: "playbook-xp",
@@ -1636,7 +1668,7 @@ function renderDetail(state: RenderState): HTMLElement {
       }, state.isGearLoading ? "…" : "uncommit");
       uncommitBtn.addEventListener("click", handlers.onGearUncommit);
 
-      return el("div", { className: "character-gear" },
+      return el("div", { className: "character-gear", "data-section": "gear" },
         el("h2", {}, "Gear"),
         el("div", { className: "gear-summary", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
           el("span", { className: "lbl" }, "Load:"),
@@ -1701,7 +1733,7 @@ function renderDetail(state: RenderState): HTMLElement {
       }, state.isCoinLoading ? "…" : "liquidate");
       liquidateBtn.addEventListener("click", handlers.onFundLiquidate);
 
-      return el("div", { className: "character-coin" },
+      return el("div", { className: "character-coin", "data-section": "coin" },
         el("h2", {}, "Coin"),
         el("div", { className: "coin-satchel", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
           el("span", { className: "lbl" }, "Satchel:"),
@@ -1827,7 +1859,7 @@ function renderDetail(state: RenderState): HTMLElement {
       }, state.isClocksLoading ? "…" : "+");
       createBtn.addEventListener("click", handlers.onCreateClock);
 
-      return el("div", { className: "character-projects" },
+      return el("div", { className: "character-projects", "data-section": "projects" },
         el("h2", {}, "Projects"),
         clocks.length === 0
           ? el("p", { className: "project-empty" }, "(no clocks)")
@@ -1885,7 +1917,7 @@ function renderDetail(state: RenderState): HTMLElement {
       }, state.isDeleteLoading ? "…" : "Delete");
       deleteBtn.addEventListener("click", handlers.onDeleteCharacter);
 
-      return el("div", { className: "character-lifecycle-actions", style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin-top: 0.5em;" },
+      return el("div", { className: "character-lifecycle-actions", "data-section": "lifecycle", style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin-top: 0.5em;" },
         endScoreBtn,
         retireBtn,
         deleteBtn,
@@ -1908,7 +1940,7 @@ function renderDetail(state: RenderState): HTMLElement {
     // Undo
     el(
       "div",
-      { className: "character-actions" },
+      { className: "character-actions", "data-section": "actions" },
       el("h2", {}, "Actions"),
       undoBtn,
       state.historyCount !== null
@@ -1960,7 +1992,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
       return el(
         "div",
-        { className: "character-notes" },
+        { className: "character-notes", "data-section": "notes" },
         el("h2", {}, "Notes"),
         entries.length > 0
           ? el("ul", { className: "note-list" }, ...noteEntries)
@@ -1975,6 +2007,40 @@ function renderDetail(state: RenderState): HTMLElement {
         state.notesNotice
           ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.notesNotice)
           : null,
+      );
+    })(),
+
+    // Notebook (contract /ops/notebook.set): free-text sheet notes, saved on
+    // demand. Stays on the retired allow-list (dossier/notes/notebook).
+    (() => {
+      const notebookEl = el("textarea", {
+        className: "form-input character-notebook",
+        rows: 6,
+        "aria-label": "Notebook",
+        disabled: anyLoading,
+      }) as HTMLTextAreaElement;
+      notebookEl.value = c.notebook;
+      const saveBtn = el("button", {
+        type: "button",
+        className: "btn-secondary",
+        disabled: anyLoading,
+        title: "Save the notebook",
+      }, state.isNotebookLoading ? "…" : "Save notebook");
+      saveBtn.addEventListener("click", handlers.onNotebookSave);
+      return el(
+        "div",
+        { className: "character-notebook-section", "data-section": "notebook" },
+        el("h2", {}, "Notebook"),
+        notebookEl,
+        el("div", {
+          className: "form-actions",
+          style: "display: flex; gap: 0.5em; align-items: center; margin-top: 0.5em;",
+        },
+          saveBtn,
+          state.notebookNotice
+            ? el("span", { className: "notice", style: "font-size: 0.9em;" }, state.notebookNotice)
+            : null,
+        ),
       );
     })(),
   );
@@ -2019,6 +2085,7 @@ export function mountCharacterDetailPage(
 
   // F4 lifecycle state
   let isEndScoreLoading = false;
+  let isDowntimeLoading = false;
   let isRetireLoading = false;
   let isDeleteLoading = false;
   let canUndoState: boolean | null = null;
@@ -2060,6 +2127,8 @@ export function mountCharacterDetailPage(
   let crewNotice: string | null = null;
   let isNotesLoading = false;
   let notesNotice: string | null = null;
+  let isNotebookLoading = false;
+  let notebookNotice: string | null = null;
   let namedEditor: NamedEditorState | null = null;
   let isTraumaPickerLoading = false;
   let healNotice: string | null = null;
@@ -2075,6 +2144,7 @@ export function mountCharacterDetailPage(
     clocksNotice = null;
     crewNotice = null;
     notesNotice = null;
+    notebookNotice = null;
     healNotice = null;
   };
 
@@ -2648,6 +2718,26 @@ export function mountCharacterDetailPage(
       );
     },
 
+    onNotebookSave: () => {
+      if (!currentCharacter || isNotebookLoading) return;
+      const notebookEl = root.querySelector('textarea[aria-label="Notebook"]') as HTMLTextAreaElement;
+      const text = notebookEl?.value ?? "";
+      isNotebookLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = notebookSet(characterId, text, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          notebookNotice = "Notebook saved.";
+          renderDetailWrapper();
+        },
+        () => { isNotebookLoading = false; },
+      );
+    },
+
     // -- F2ab: crew membership ---------------------------------------------
 
     onCrewJoin: () => {
@@ -2753,6 +2843,29 @@ export function mountCharacterDetailPage(
           renderDetailWrapper();
         },
         () => { isEndScoreLoading = false; },
+      );
+    },
+
+    onEndDowntime: () => {
+      if (!currentCharacter || isDowntimeLoading) return;
+      const confirmed = window.confirm(
+        "End downtime? This clears the playbook, character, and struggle " +
+        "expression tracks. Undo can restore them.",
+      );
+      if (!confirmed) return;
+      isDowntimeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = endDowntime(characterId, currentCharacter.revision, { clearSessionExpressions: true });
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          noticeMsg = "Downtime ended — session expressions cleared.";
+          renderDetailWrapper();
+        },
+        () => { isDowntimeLoading = false; },
       );
     },
 
@@ -3490,8 +3603,15 @@ export function mountCharacterDetailPage(
     },
   };
 
+  // FV-012: wholesale re-renders destroy the focused control; capture the
+  // focused control's position before rendering and restore it after. The
+  // request stays pending while the target is disabled (in-flight loading
+  // render) so the post-mutation render fulfils it.
+  let pendingFocus: FocusTarget | null = null;
+
   const renderDetailWrapper = () => {
     if (!currentCharacter) return;
+    if (!pendingFocus) pendingFocus = captureFocusTarget(root);
     setChildren(root, renderDetail({
       c: currentCharacter,
       gameData,
@@ -3502,9 +3622,12 @@ export function mountCharacterDetailPage(
       crewNotice,
       isNotesLoading,
       notesNotice,
+      isNotebookLoading,
+      notebookNotice,
       isTraumaPickerLoading,
       healNotice,
       isEndScoreLoading,
+      isDowntimeLoading,
       isRetireLoading,
       isDeleteLoading,
       canUndo: canUndoState,
@@ -3541,6 +3664,7 @@ export function mountCharacterDetailPage(
       rerender: renderDetailWrapper,
       handlers,
     }));
+    if (pendingFocus && applyFocusTarget(root, pendingFocus)) pendingFocus = null;
   };
 
   root.setAttribute("aria-live", "polite");
