@@ -23,26 +23,17 @@ import { BLADES, SCUM, firstActionFor, newCrew } from "../../src/suite-helpers.j
  * a value was applied and its typed error carries current/limit data; when
  * requested ≠ effective both clients must be able to detect the clamp.
  *
- * NOTE on raw parsing: the current Ada runtime still emits the pre-Wave-2
- * character DTO (no traumaPending/isOutOfAction/stressClearPending), so the
- * frozen Character decoder rejects every character response. Character
- * creation/ops are therefore parsed from the raw body here; the frozen-shape
- * assertions (applied families, error union) are exactly where the reds live.
- * Crew responses decode cleanly and use api.crewOp (the OperationResult
- * decoder) for applied-family assertions.
+ * NOTE on raw parsing: character creation/ops are parsed from the raw body
+ * here so the applied-family assertions target exact field values; crew
+ * responses decode cleanly and use api.crewOp (the OperationResult decoder).
  *
- * Red cases pin the SC-R4 gap list:
- *   - NUM-SIGNED-001: FV-011 — playbook-xp.add / attribute-xp.add / xp.add
- *     clamp negative deltas to 0 before adding (pitd_callback.adb:1517,1523,
- *     1665), so -1 is a no-op instead of reducing the track.
- *   - NUM-CLOCK-004: FV-007 — harm.healing-clock (and clock.progress) return
- *     applied = {op} only; the visibleApplied/overflowAdded split is absent.
- *   - NUM-FAIL-006: the server error object carries only code/message; the
- *     frozen whole-error union requires status/retryable/recovery/details.
- *
- * Guards: absolute setters (session.set), quantity ops (coin.add/heat.add,
- * harm.add landedIntensity), non-numeric ops, and clamp detection already
- * report the frozen applied shapes.
+ * All families are green against the completed implementation (Waves 4-7):
+ * signed deltas reduce the track and clamp at zero (FV-011), clock-progress
+ * ops carry the visibleApplied/overflowAdded split (FV-007), and a failed
+ * operation returns the frozen whole-error union (status/retryable/recovery/
+ * details). Guards: absolute setters (session.set), quantity ops
+ * (coin.add/heat.add, harm.add landedIntensity), non-numeric ops, and clamp
+ * detection report the frozen applied shapes.
  *
  * Every clamp target below is read from the frozen game settings
  * (data/games/*.json) — conformance never embeds a game-specific maximum
@@ -101,17 +92,15 @@ interface RawOpResult {
   error: RawError | null;
 }
 
-/** Create a character and return the raw DTO (the frozen decoder rejects the
- *  lagging server DTO, so setup must not decode). */
+/** Create a character and return the raw DTO (no schema decode). */
 async function rawCreateCharacter(stem: string): Promise<RawCharacter> {
   const response = await api.post("characters", { gameStem: stem, playbook: firstPlaybook(stem) });
   const body = JSON.parse(response.rawBody) as { character: RawCharacter };
   return body.character;
 }
 
-/** Post a character op and parse the raw body: the current server's character
- *  DTO and error shape do not decode against the frozen schemas, so
- *  error-asserting and character-returning cases inspect the raw response. */
+/** Post a character op and parse the raw body (applied-family assertions
+ *  target exact field values). */
 async function rawCharacterOp(id: string, op: string, body?: unknown): Promise<RawOpResult> {
   const response = await api.post(`characters/${encodeURIComponent(id)}/ops/${op}`, body);
   return JSON.parse(response.rawBody) as RawOpResult;
@@ -131,12 +120,12 @@ describe("§ numeric operation families (SC-O4)", () => {
 
         const minusOne = await rawCharacterOp(character.id, "playbook-xp.add", { delta: -1 });
         expect(minusOne.applied?.requested).toBe(-1);
-        expect(minusOne.applied?.effective).toBe(-1); // RED: FV-011 — server no-ops negatives (effective 0)
+        expect(minusOne.applied?.effective).toBe(-1); // signed delta reduces the track
         expect(minusOne.character?.playbook.experience.points).toBe(2);
 
         const clamp = await rawCharacterOp(character.id, "playbook-xp.add", { delta: -5 });
         expect(clamp.applied?.requested).toBe(-5);
-        expect(clamp.applied?.effective).toBe(-2); // RED: clamps at zero, never negative
+        expect(clamp.applied?.effective).toBe(-2); // effective clamps at the track floor
         expect(clamp.character?.playbook.experience.points).toBe(0);
       }
       const crew = await newCrew(BLADES, "Assassins");
@@ -144,7 +133,7 @@ describe("§ numeric operation families (SC-O4)", () => {
       expect(crewPositive.applied?.effective).toBe(2);
       const crewMinus = await api.crewOp(crew.id, "xp.add", { delta: -1 });
       expect(crewMinus.applied?.requested).toBe(-1);
-      expect(crewMinus.applied?.effective).toBe(-1); // RED: same no-op negative
+      expect(crewMinus.applied?.effective).toBe(-1); // same signed-delta semantics
       expect(crewMinus.crew?.experience.points).toBe(1);
     },
   );
@@ -217,7 +206,7 @@ describe("§ numeric operation families (SC-O4)", () => {
       const bladesHeal = await rawCharacterOp(blades.id, "harm.healing-clock", { segments: 5 });
       expect(bladesHeal.applied?.requested).toBe(5);
       expect(bladesHeal.applied?.effective).toBe(5);
-      expect(bladesHeal.applied?.visibleApplied).toBe(bladesSize); // RED: FV-007 — field names absent
+      expect(bladesHeal.applied?.visibleApplied).toBe(bladesSize); // accepted segments
       expect(bladesHeal.applied?.overflowAdded).toBe(5 - bladesSize);
       expect(bladesHeal.character?.monitor.harm.healingClock.segments).toBe(bladesSize);
       expect(bladesHeal.character?.monitor.harm.healingClock.rollover).toBe(5 - bladesSize);
@@ -227,7 +216,7 @@ describe("§ numeric operation families (SC-O4)", () => {
       const scumHeal = await rawCharacterOp(scum.id, "harm.healing-clock", { segments: 5 });
       expect(scumHeal.applied?.requested).toBe(5);
       expect(scumHeal.applied?.effective).toBe(5);
-      expect(scumHeal.applied?.visibleApplied).toBe(Math.min(5, scumSize)); // RED: no overflow on SCUM (size 6)
+      expect(scumHeal.applied?.visibleApplied).toBe(Math.min(5, scumSize)); // no overflow on SCUM (size 6)
       expect(scumHeal.applied?.overflowAdded).toBe(Math.max(0, 5 - scumSize));
       expect(scumHeal.character?.monitor.harm.healingClock.segments).toBe(Math.min(5, scumSize));
       expect(scumHeal.character?.monitor.harm.healingClock.rollover).toBe(Math.max(0, 5 - scumSize));
@@ -278,7 +267,7 @@ describe("§ numeric operation families (SC-O4)", () => {
       expect(body.ok).toBe(false);
       expect(body.applied).toEqual({ op: "action.set-rating" }); // never claims a value was applied
       expect(body.error.code).toBe("RATING_MAXED");
-      expect(body.error.status).toBe(200); // RED: error union absent — server omits status/retryable/recovery/details
+      expect(body.error.status).toBe(200); // frozen error union: status/retryable/recovery/details
       expect(typeof body.error.retryable).toBe("boolean");
       expect(typeof body.error.recovery).toBe("string");
       expect(typeof body.error.details?.limit).toBe("number");

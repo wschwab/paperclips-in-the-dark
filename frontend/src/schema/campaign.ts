@@ -53,21 +53,14 @@ export const CharacterSummary = Schema.Struct({
   revision: Revision,
   // E11 total collections (campaign.json#/$defs/characterSummary): every row
   // carries readability/repair/undo state; deleteToken is "" for readable rows.
-  // Wave 3 tolerance: lagging roster rows omit these; canonical defaults fill
-  // in (a readable, repairable-free, complete-free row with no history), while
-  // present values must still be typed exactly.
-  isReadable: Schema.optionalWith(Schema.Boolean, { default: () => true }),
-  isRepairable: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  isComplete: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  deleteToken: Schema.optionalWith(
-    Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
-    { default: () => "" },
-  ),
-  canUndo: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  historyCount: Schema.optionalWith(
-    Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
-    { default: () => 0 },
-  ),
+  // These fields are REQUIRED by the frozen contract — the backend has emitted
+  // them since Waves 4-5, so the Wave-3 optional-with-default tolerance is gone.
+  isReadable: Schema.Boolean,
+  isRepairable: Schema.Boolean,
+  isComplete: Schema.Boolean,
+  deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
+  canUndo: Schema.Boolean,
+  historyCount: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
 }).pipe(Schema.annotations({ identifier: "CharacterSummary" }));
 
 export type CharacterSummary = typeof CharacterSummary.Type;
@@ -86,19 +79,14 @@ export const CrewSummary = Schema.Struct({
   memberCount: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   revision: Revision,
   // E11 total collections (campaign.json#/$defs/crewSummary): same readable/
-  // repair/undo state fields and Wave-3 defaults as CharacterSummary.
-  isReadable: Schema.optionalWith(Schema.Boolean, { default: () => true }),
-  isRepairable: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  isComplete: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  deleteToken: Schema.optionalWith(
-    Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
-    { default: () => "" },
-  ),
-  canUndo: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  historyCount: Schema.optionalWith(
-    Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
-    { default: () => 0 },
-  ),
+  // repair/undo state fields as CharacterSummary — REQUIRED by the frozen
+  // contract (the backend has emitted them since Waves 4-5).
+  isReadable: Schema.Boolean,
+  isRepairable: Schema.Boolean,
+  isComplete: Schema.Boolean,
+  deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
+  canUndo: Schema.Boolean,
+  historyCount: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
 }).pipe(Schema.annotations({ identifier: "CrewSummary" }));
 
 export type CrewSummary = typeof CrewSummary.Type;

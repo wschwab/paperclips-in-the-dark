@@ -5,6 +5,7 @@ with Ada.Exceptions;
 with Ada.Streams.Stream_IO;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
+with Ada.Strings.UTF_Encoding.Wide_Wide_Strings;
 with Ada.Text_IO;
 
 with AWS.Headers;
@@ -5985,14 +5986,31 @@ elsif Op = "harm.add" then
      (if V.Kind = JSON_Object_Type then Get (V, Name) else JSON_Null);
 
    function Non_Blank_String (S : String) return Boolean is
+      use Ada.Strings.UTF_Encoding.Wide_Wide_Strings;
+      W : constant Wide_Wide_String := Decode (S);
+      --  ECMAScript TrimString whitespace set (matches the frontend
+      --  generated evaluator's trim()): TAB..CR, SPACE, NBSP, OGHAM,
+      --  EN..EM QUAD, LS, PS, NARROW NBSP, MATH SPACE, IDEOGRAPHIC SPACE,
+      --  ZWNBSP.  Anything else makes the string non-blank.
+      function Is_Whitespace (C : Wide_Wide_Character) return Boolean is
+        (C = ' '
+         or else (C >= Wide_Wide_Character'Val (16#0009#)
+                  and C <= Wide_Wide_Character'Val (16#000D#))
+         or else C = Wide_Wide_Character'Val (16#00A0#)
+         or else C = Wide_Wide_Character'Val (16#1680#)
+         or else (C >= Wide_Wide_Character'Val (16#2000#)
+                  and C <= Wide_Wide_Character'Val (16#200A#))
+         or else C = Wide_Wide_Character'Val (16#2028#)
+         or else C = Wide_Wide_Character'Val (16#2029#)
+         or else C = Wide_Wide_Character'Val (16#202F#)
+         or else C = Wide_Wide_Character'Val (16#205F#)
+         or else C = Wide_Wide_Character'Val (16#3000#)
+         or else C = Wide_Wide_Character'Val (16#FEFF#));
    begin
-      for I in S'Range loop
-         case S (I) is
-            when ' ' | ASCII.HT | ASCII.LF | ASCII.CR | ASCII.VT | ASCII.FF =>
-               null;
-            when others =>
-               return True;
-         end case;
+      for I in W'Range loop
+         if not Is_Whitespace (W (I)) then
+            return True;
+         end if;
       end loop;
       return False;
    end Non_Blank_String;
@@ -6028,19 +6046,21 @@ elsif Op = "harm.add" then
    end Crew_Is_Complete;
 
    --  SC-A4: one degraded clock list row.  The clock list schema is the
-   --  full Clock DTO (no clock summary exists), so an unreadable clock is
-   --  listed in the canonical-empty clock shape: route-derived identity,
-   --  zeroed fields, and the neutral behavior/ownership defaults.  The raw
-   --  bytes are never parsed into the row.  Read-only: never writes.
-   function Degraded_Clock_Row (Id : String) return JSON_Value is
+   --  frozen clockSummary (campaign.json#/$defs/clockSummary), so an
+   --  unreadable clock is listed in the canonical-empty summary shape:
+   --  route-derived identity, zeroed fields, the neutral behavior/ownership
+   --  defaults, isReadable:false, isRepairable (true for parseable-
+   --  repairable / needs-input outcomes, false for unreadable bytes),
+   --  isComplete:false, and deleteToken = sha256:<lowercase hex> of the
+   --  CURRENT raw bytes (the degraded row's If-Match value).  The raw bytes
+   --  are never parsed into the row.  Read-only: never writes.
+   function Degraded_Clock_Row
+     (Id, Bytes : String; Repairable : Boolean) return JSON_Value
+   is
       X : JSON_Value := Create_Object;
    begin
       Set_Field (X, "kind", "clock");
       Set_Field (X, "id", Id);
-      Set_Field (X, "revision", Integer'(1));
-      Set_Field (X, "formatVersion", Integer'(1));
-      Set_Field (X, "createdAt", Now);
-      Set_Field (X, "updatedAt", Now);
       Set_Field (X, "name", "");
       Set_Field (X, "ownerKind", "campaign");
       Set_Field (X, "ownerId", "");
@@ -6050,8 +6070,36 @@ elsif Op = "harm.add" then
       Set_Field (X, "size", Integer'(1));
       Set_Field (X, "rollover", Integer'(0));
       Set_Field (X, "relatedClockIds", Empty_Array);
+      Set_Field (X, "isReadable", False);
+      Set_Field (X, "isRepairable", Repairable);
+      Set_Field (X, "isComplete", False);
+      Set_Field (X, "deleteToken", Content_Token (Bytes));
       return X;
    end Degraded_Clock_Row;
+
+   --  SC-A4: one canonical clock summary row.  The clock list schema is
+   --  the frozen clockSummary (campaign.json#/$defs/clockSummary) — the
+   --  stored DTO's clock fields only, never revision/formatVersion/
+   --  timestamps.  Read-only: never writes.
+   function Clock_Summary (C : JSON_Value) return JSON_Value is
+      X : JSON_Value := Create_Object;
+   begin
+      Set_Field (X, "id", Str_Field (C, "id"));
+      Set_Field (X, "name", Str_Field (C, "name"));
+      Set_Field (X, "ownerKind", Str_Field (C, "ownerKind"));
+      Set_Field (X, "ownerId", Str_Field (C, "ownerId"));
+      Set_Field (X, "purpose", Str_Field (C, "purpose"));
+      Set_Field (X, "behavior", Str_Field (C, "behavior"));
+      Set_Field (X, "segments", Int_Field (C, "segments"));
+      Set_Field (X, "size", Int_Field (C, "size"));
+      Set_Field (X, "rollover", Int_Field (C, "rollover"));
+      declare
+         R : constant JSON_Array := Get (C, "relatedClockIds");
+      begin
+         Set_Field (X, "relatedClockIds", R);
+      end;
+      return X;
+   end Clock_Summary;
 
    --  SC-A4: the ONE character-row projection shared by the roster, the
    --  list endpoint, and the members endpoint.  Every directory route is
@@ -6149,9 +6197,12 @@ elsif Op = "harm.add" then
       return O;
    end Crew_Rows;
 
-   --  SC-A4: the ONE clock-row projection (list endpoint).  Canonical
-   --  clocks are served as their stored DTO; degraded clocks stay listed as
-   --  canonical-empty clock rows (route identity).  Read-only: never writes.
+   --  SC-A4: the ONE clock-row projection (list endpoint).  Every route is
+   --  listed (Q15): canonical rows carry the frozen clockSummary fields
+   --  (clock fields + isReadable/isRepairable/isComplete true and the
+   --  canonical empty deleteToken); degraded rows keep the same schema via
+   --  Degraded_Clock_Row.  One unreadable clock never removes valid rows
+   --  and never changes the 200 status.  Read-only: never writes.
    function Clock_Rows return JSON_Array is
       CA : constant JSON_Array := Entity_Ids ("clock");
       O  : JSON_Array := Empty_Array;
@@ -6167,13 +6218,22 @@ elsif Op = "harm.add" then
                   E, Ctx : JSON_Value;
                   Iss    : JSON_Array;
                   Can    : Boolean;
+                  X      : JSON_Value;
                begin
                   Classify_Stored ("clock", Rid, Bytes, E, Ctx, Iss, Can);
                   if Can then
-                     Append (O, E);
+                     X := Clock_Summary (E);
+                     Set_Field (X, "kind", "clock");
+                     Set_Field (X, "isReadable", True);
+                     Set_Field (X, "isRepairable", True);
+                     Set_Field (X, "isComplete", True);
+                     Set_Field (X, "deleteToken", "");
                   else
-                     Append (O, Degraded_Clock_Row (Rid));
+                     X := Degraded_Clock_Row
+                       (Rid, Bytes,
+                        Str_Field (Ctx, "outcome") /= "unreadable");
                   end if;
+                  Append (O, X);
                end;
             end if;
          end;

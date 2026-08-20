@@ -40,6 +40,14 @@ if [ "${RUN_CONFORMANCE:-0}" = "1" ]; then
    (cd "$SCRIPT_DIR/../frontend" && npm ci && npm run build)
 
    rm -rf /tmp/pitd-campaign-data
+   # Seed the standard oracle fixtures (same as the managed harness
+   # --seed-defaults) so the seeded suites run against fresh state.
+   mkdir -p /tmp/pitd-campaign-data
+   for seed in "$SCRIPT_DIR/../conformance/fixtures/sc-o2-seeds" "$SCRIPT_DIR/../conformance/fixtures/completeness-seeds"; do
+      if [ -d "$seed" ]; then
+         cp -R "$seed"/. /tmp/pitd-campaign-data/
+      fi
+   done
    "$SCRIPT_DIR/server/bin/pitd" --port 9657 --data /tmp/pitd-campaign-data \
       --static "$SCRIPT_DIR/../frontend/dist" \
       --games "$SCRIPT_DIR/../data/games" &

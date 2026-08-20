@@ -9,12 +9,11 @@ import type { OperationResultDto } from "../../src/schemas.js";
 /**
  * SC-O5 — Clocks oracle (frozen Wave 2 contract; clock-taxonomy.mdx).
  *
- * The Ada runtime still emits legacy clock rows (clockKind, no owner fields)
- * and rejects the new create request shape until SC-A7, so every
- * create-dependent case is red today at create/decode. The red reason per
- * case is documented in the case title; the assertions freeze the new
- * contract and go green once SC-A7 lands. CLOCK-HEALING-013 is the guard
- * that must stay green (embedded healing clocks are not /api/clocks rows).
+ * The completed implementation emits the frozen clock rows (owner fields)
+ * and accepts the new create request shape, so every create-dependent case
+ * is green. The assertions freeze the new contract. CLOCK-HEALING-013 is
+ * the guard that must stay green (embedded healing clocks are not
+ * /api/clocks rows).
  */
 
 /** POST a clock through the frozen create request shape and decode the result. */
@@ -23,9 +22,9 @@ async function postClock(body: unknown): Promise<OperationResultDto> {
 }
 
 /**
- * Create a character through the raw API and return its id. The character
- * DTO decode lags the frozen contract until SC-A7, so cases that only need
- * an existing owner id (or an owner to delete) read the raw body instead.
+ * Create a character through the raw API and return its id. Cases that only
+ * need an existing owner id (or an owner to delete) read the raw body
+ * instead.
  */
 async function rawCharacter(): Promise<{ id: string; revision: number }> {
   const response = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
@@ -321,7 +320,7 @@ describe("SC-O5 frozen clock contract (clock-taxonomy.mdx)", () => {
     expect(rows.some((row) => row.id === clock.id)).toBe(true);
   });
 
-  testCase("CLOCK-LIST-012", "listClocks is total and lists all standalone clocks with the new row shape", async () => {
+  testCase("CLOCK-LIST-012", "listClocks is total and lists all standalone clocks with the clockSummary row shape", async () => {
     const character = await rawCharacter();
     const campaignClock = await api.createClock("List campaign", "bounded", 4);
     const characterClock = await api.createClock("List character", "rollover", 6, "custom", "character", character.id);
@@ -337,13 +336,25 @@ describe("SC-O5 frozen clock contract (clock-taxonomy.mdx)", () => {
       expect(row.purpose).toBeDefined();
       expect(row.behavior).toBeDefined();
       expect(row.relatedClockIds).toBeDefined();
+      // frozen clockSummary metadata (campaign.json#/$defs/clockSummary):
+      // every row carries readability/repair/completion state and the
+      // deleteToken ("" for readable rows, sha256 token for degraded rows)
+      expect(row.isReadable).toBeDefined();
+      expect(row.isRepairable).toBeDefined();
+      expect(row.isComplete).toBeDefined();
+      expect(row.deleteToken).toMatch(/^(sha256:[0-9a-f]{64})?$/);
     }
+    // created clocks are readable rows: canonical summary values
+    const camp = rows.find((r) => r.id === campaignClock.clock?.id);
+    expect(camp?.isReadable).toBe(true);
+    expect(camp?.isRepairable).toBe(true);
+    expect(camp?.isComplete).toBe(true);
+    expect(camp?.deleteToken).toBe("");
   });
 
   testCase("CLOCK-HEALING-013", "embedded healing clock stays out of /api/clocks and heals via harm ops (guard)", async () => {
-    // Raw requests: the character DTO decode lags the frozen contract until
-    // SC-A7, but the healing clock shape is unchanged, so the guard asserts
-    // on raw fields and must stay green.
+    // Raw requests: the healing clock shape is unchanged, so the guard
+    // asserts on raw fields and must stay green.
     const created = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
     expect(created.status).toBe(200);
     const character = (created.body as { character?: { id: string } }).character;

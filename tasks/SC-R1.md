@@ -57,7 +57,7 @@ Acceptance: every exercised requirement has a pass/fail row and the verdict row 
 
 ## Log
 
-Timestamped dispatch entry when work starts; note toolchain surprises (they belong in `backend-ada/AGENTS.md` style crib notes only if you cannot avoid them — you may NOT edit that file; report them instead).
+- **2026-08-14:** Dispatched to deepseek-v4-flash-0731 (nous, omp task worker). Outcome recorded in tasks/metrics/contract/SC-R1.json; acceptance gates verified by the orchestrator.
 
 Before you finish, answer in your report:
 1. Was anything in these instructions contradicted by what you found in the codebase?

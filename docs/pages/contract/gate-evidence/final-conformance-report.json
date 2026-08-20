@@ -1,0 +1,2918 @@
+{
+  "schemaVersion": 1,
+  "against": "http://127.0.0.1:9660",
+  "results": [
+    {
+      "id": "ADMIT-BOUND-008",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-BOUND-008] an out-of-bound number at depth fails admission with 422 INVALID_ENTITY and never writes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 1.037424000000044
+    },
+    {
+      "id": "ADMIT-CONTROLS-014",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-CONTROLS-014] control: valid canonical character, crew (empty contacts/factions), and clock pass admission untouched",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 46.515153
+    },
+    {
+      "id": "ADMIT-ENUM-007",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-ENUM-007] an invalid enum value at depth fails admission with 422 INVALID_ENTITY and never writes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 1.169952999999964
+    },
+    {
+      "id": "ADMIT-HISTORY-011",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-HISTORY-011] history reads of a degraded entity fail with 422 INVALID_ENTITY",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 0.9739730000000009
+    },
+    {
+      "id": "ADMIT-IDENTITY-009",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-IDENTITY-009] a body whose kind/id contradicts its route fails direct GET with 422 and the roster row keeps the route-derived identity",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 63.46668699999998
+    },
+    {
+      "id": "ADMIT-IMPORT-013",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-IMPORT-013] importing an entity that fails admission returns 400 INVALID_ENTRY with pointer-level details",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 86.98615000000001
+    },
+    {
+      "id": "ADMIT-KEY-003",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-KEY-003] an undeclared top-level key fails admission with 422 INVALID_ENTITY, never writes, and collections stay 200",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 58.79110600000001
+    },
+    {
+      "id": "ADMIT-KEY-004",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-KEY-004] an undeclared NESTED key fails admission with 422 INVALID_ENTITY (recursive, not top-level-only) and never writes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 1.4476159999999823
+    },
+    {
+      "id": "ADMIT-MUTATION-012",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-MUTATION-012] mutations on a degraded entity fail with 422 INVALID_ENTITY and never write",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 3.2611400000000117
+    },
+    {
+      "id": "ADMIT-PARSE-001",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-PARSE-001] unparseable stored bytes (truncated JSON, invalid UTF-8) fail direct GET with 422 INVALID_ENTITY and stay byte-identical",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 16.38031799999999
+    },
+    {
+      "id": "ADMIT-REQUIRED-005",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-REQUIRED-005] a missing nested required property fails admission with 422 INVALID_ENTITY and never writes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 1.3924279999999953
+    },
+    {
+      "id": "ADMIT-REVISION-010",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-REVISION-010] revision below 1 and a formatVersion mismatch both fail admission with 422 INVALID_ENTITY and never write",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 2.1742780000000153
+    },
+    {
+      "id": "ADMIT-ROOT-002",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-ROOT-002] a non-object stored root (array) fails direct GET with 422 INVALID_ENTITY while collections stay 200",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 56.00008500000001
+    },
+    {
+      "id": "ADMIT-TYPE-006",
+      "name": "persistence entity admission (SC-O2 recursive admission) [ADMIT-TYPE-006] a wrong primitive type at depth fails admission with 422 INVALID_ENTITY and never writes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/entity-admission.test.ts",
+      "status": "passed",
+      "durationMs": 1.3853669999999738
+    },
+    {
+      "id": "CANON-CREATE-001",
+      "name": "canonical shape oracle (SC-O1) [CANON-CREATE-001] create writes every declared key in canonical shape (character, crew, clock)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 15.727899999999977
+    },
+    {
+      "id": "CANON-IMPORT-003",
+      "name": "canonical shape oracle (SC-O1) [CANON-IMPORT-003] partial import preview returns 409 NORMALIZATION_REQUIRED with warnings + preview token and writes nothing",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 88.404021
+    },
+    {
+      "id": "CANON-IMPORT-004",
+      "name": "canonical shape oracle (SC-O1) [CANON-IMPORT-004] confirmed import apply requires If-Match + preview token + confirmation and atomically writes the previewed result",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 94.34784300000001
+    },
+    {
+      "id": "CANON-IMPORT-005",
+      "name": "canonical shape oracle (SC-O1) [CANON-IMPORT-005] import apply with missing needs-input pointer values returns 400 INVALID_ENTRY with pointer-level details",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 44.60223700000006
+    },
+    {
+      "id": "CANON-IMPORT-006",
+      "name": "canonical shape oracle (SC-O1) [CANON-IMPORT-006] unknown property in import is rejected unless the preview classifies and displays removal; with preview the removal is listed",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 88.78347500000007
+    },
+    {
+      "id": "CANON-LEGACY-007",
+      "name": "canonical shape oracle (SC-O1) [CANON-LEGACY-007] known legacy conversion (notes string -> one-entry array) is previewed and applied",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 85.76286699999991
+    },
+    {
+      "id": "CANON-NOWRITE-010",
+      "name": "canonical shape oracle (SC-O1) [CANON-NOWRITE-010] no read path writes to disk (guard)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 85.40745900000002
+    },
+    {
+      "id": "CANON-NULL-002",
+      "name": "canonical shape oracle (SC-O1) [CANON-NULL-002] create rejects an explicit null with 400 VALIDATION; import previews the null-to-default fill (D2)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 132.03706
+    },
+    {
+      "id": "CANON-READONLY-009",
+      "name": "canonical shape oracle (SC-O1) [CANON-READONLY-009] GET returns the stored document byte-identically and never repairs a seeded non-canonical file (guard: read identity)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 93.28762000000006
+    },
+    {
+      "id": "CANON-REPAIR-008",
+      "name": "canonical shape oracle (SC-O1) [CANON-REPAIR-008] repair preview on a degraded stored entity computes without writing; apply atomically writes; preview-token staleness -> 409 STALE_REVISION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 184.078888
+    },
+    {
+      "id": "CANON-SPARSE-012",
+      "name": "canonical shape oracle (SC-O1) [CANON-SPARSE-012] claimOverrides outer array always present; items keep only claimId when inheriting (guard)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 2.5824360000001434
+    },
+    {
+      "id": "CANON-TOTAL-013",
+      "name": "canonical shape oracle (SC-O1) [CANON-TOTAL-013] a stored document missing an ordinary property is classified repairable, never silently repaired on read",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 2.183283999999958
+    },
+    {
+      "id": "CANON-VERSION-011",
+      "name": "canonical shape oracle (SC-O1) [CANON-VERSION-011] canonicalisation never changes formatVersion",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/canonical-shape.test.ts",
+      "status": "passed",
+      "durationMs": 43.930881
+    },
+    {
+      "id": "CLOCK-BEHAVIOR-005",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-BEHAVIOR-005] bounded clock clamps at full, discards overflow, rollover stays 0",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 1.424915999999996
+    },
+    {
+      "id": "CLOCK-CREATE-015",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-CREATE-015] create requires name/ownerKind/ownerId/purpose/behavior/size",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 1.5984190000000353
+    },
+    {
+      "id": "CLOCK-HEALING-013",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-HEALING-013] embedded healing clock stays out of /api/clocks and heals via harm ops (guard)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 262.44137000000006
+    },
+    {
+      "id": "CLOCK-LIST-012",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-LIST-012] listClocks is total and lists all standalone clocks with the clockSummary row shape",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 47.50976200000002
+    },
+    {
+      "id": "CLOCK-OWNER-001",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-OWNER-001] create with campaign ownership (empty ownerId) succeeds",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 15.483283999999998
+    },
+    {
+      "id": "CLOCK-OWNER-002",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-OWNER-002] character/crew ownerId must reference an existing entity of that kind",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 4.969419000000016
+    },
+    {
+      "id": "CLOCK-OWNER-003",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-OWNER-003] update changes owner; ownership validation applies",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 47.62676000000002
+    },
+    {
+      "id": "CLOCK-PURPOSE-004",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-PURPOSE-004] purpose validated against the settings ClockPurposes list (10 values)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 7.492878999999988
+    },
+    {
+      "id": "CLOCK-REASSIGN-011",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-REASSIGN-011] deleting a character reassigns its clocks to campaign with bumped revisions; no clock deleted",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 128.60572200000001
+    },
+    {
+      "id": "CLOCK-RELATED-009",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-RELATED-009] relatedClockIds validated: unique, not self, must exist; cycles allowed; healing clocks unreferenceable",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 46.243251999999984
+    },
+    {
+      "id": "CLOCK-RESET-007",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-RESET-007] reset applies at most one clock size and retains remaining overflow (taxonomy §10.3)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 6.8712019999999825
+    },
+    {
+      "id": "CLOCK-RESULT-014",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-RESULT-014] clock.progress result carries requested/effective/visibleApplied/overflowAdded",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 1.7041439999999284
+    },
+    {
+      "id": "CLOCK-ROLLOVER-006",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-ROLLOVER-006] rollover clock accumulates prior overflow across progress calls (FV-006)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 2.2824739999999792
+    },
+    {
+      "id": "CLOCK-TUG-008",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-TUG-008] negative progress consumes rollover first, preserving rollover > 0 ⇒ segments = size",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 4.8239169999999945
+    },
+    {
+      "id": "CLOCK-UNLINK-010",
+      "name": "SC-O5 frozen clock contract (clock-taxonomy.mdx) [CLOCK-UNLINK-010] deleting a clock removes its id from remaining clocks' relatedClockIds atomically",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/clocks.test.ts",
+      "status": "passed",
+      "durationMs": 3.671929000000034
+    },
+    {
+      "id": "COMPLETE-ALL-003",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-ALL-003] each of the 13 completeness pointers: canonical empty → incomplete; a satisfying value → complete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 1474.510462
+    },
+    {
+      "id": "COMPLETE-CLOCK-009",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-CLOCK-009] standalone clocks are always complete after create: no completeness list exists on clocks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 1.278219000000263
+    },
+    {
+      "id": "COMPLETE-EMPTY-001",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-EMPTY-001] a character with canonical empty at /dossier/name is readable and incomplete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 60.81645500000002
+    },
+    {
+      "id": "COMPLETE-FILL-002",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-FILL-002] filling the pointer flips the roster summary to complete without any stored flag change",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 100.91161
+    },
+    {
+      "id": "COMPLETE-LEGIT-005",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-LEGIT-005] legitimate empties outside the list leave a fully-named entity complete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 146.9330970000001
+    },
+    {
+      "id": "COMPLETE-NOSTORE-010",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-NOSTORE-010] no completeness flag is ever persisted: stored bytes are stable across roster reads",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 164.06795899999997
+    },
+    {
+      "id": "COMPLETE-PREDICATES-006",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-PREDICATES-006] counterexamples X2/X3/X4 are schema-valid, readable, and never block completeness",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 148.08749799999987
+    },
+    {
+      "id": "COMPLETE-RETIRED-008",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-RETIRED-008] retired and deadish entities use the same completeness computation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 201.01913400000012
+    },
+    {
+      "id": "COMPLETE-SUMMARY-007",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-SUMMARY-007] roster summary reports isReadable/isRepairable/isComplete with no stored flags",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 104.82524799999965
+    },
+    {
+      "id": "COMPLETE-WHITESPACE-004",
+      "name": "§ Completeness — derived, never stored (SC-O3) [COMPLETE-WHITESPACE-004] whitespace-only string fails nonBlankString and stays incomplete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/completeness.test.ts",
+      "status": "passed",
+      "durationMs": 146.9297590000001
+    },
+    {
+      "id": "CONC-IFMATCH-001",
+      "name": "contract concurrency tokens (SC-O7) [CONC-IFMATCH-001] undo without If-Match is rejected with VALIDATION and writes nothing",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency-tokens.test.ts",
+      "status": "passed",
+      "durationMs": 99.13404500000001
+    },
+    {
+      "id": "CONC-IFMATCH-002",
+      "name": "contract concurrency tokens (SC-O7) [CONC-IFMATCH-002] delete without If-Match is rejected with VALIDATION and the entity survives",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency-tokens.test.ts",
+      "status": "passed",
+      "durationMs": 43.93470400000001
+    },
+    {
+      "id": "CONC-IFMATCH-003",
+      "name": "contract concurrency tokens (SC-O7) [CONC-IFMATCH-003] import-apply and repair-apply without If-Match are rejected with VALIDATION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency-tokens.test.ts",
+      "status": "passed",
+      "durationMs": 128.7222
+    },
+    {
+      "id": "CONC-NOWRITE-006",
+      "name": "contract concurrency tokens (SC-O7) [CONC-NOWRITE-006] a failed concurrency check writes nothing (byte-identical entity afterwards)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency-tokens.test.ts",
+      "status": "passed",
+      "durationMs": 126.05320899999992
+    },
+    {
+      "id": "CONC-REV-004",
+      "name": "contract concurrency tokens (SC-O7) [CONC-REV-004] readable entity: current revision succeeds, stale revision → 409 STALE_REVISION with the current revision",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency-tokens.test.ts",
+      "status": "passed",
+      "durationMs": 44.204363
+    },
+    {
+      "id": "CONC-TOKEN-005",
+      "name": "contract concurrency tokens (SC-O7) [CONC-TOKEN-005] degraded entity: the collection deleteToken works as If-Match; a stale token → 409 STALE_REVISION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency-tokens.test.ts",
+      "status": "passed",
+      "durationMs": 177.67168299999997
+    },
+    {
+      "id": "CONTRACT-BATCH-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-BATCH-001] POST /api/campaign/batch",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 45.29521100000005
+    },
+    {
+      "id": "CONTRACT-CAMPAIGN-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CAMPAIGN-001] GET /api/campaign",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.1148220000000038
+    },
+    {
+      "id": "CONTRACT-CHARACTER-CREATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-CREATE-001] POST /api/characters",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 41.688496999999984
+    },
+    {
+      "id": "CONTRACT-CHARACTER-DELETE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-DELETE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/delete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5319180000000188
+    },
+    {
+      "id": "CONTRACT-CHARACTER-END-DOWNTIME-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-END-DOWNTIME-001] POST /api/characters/00000000-0000-4000-8000-000000000000/end-downtime",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.574361999999951
+    },
+    {
+      "id": "CONTRACT-CHARACTER-END-SCORE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-END-SCORE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/end-score",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.7920740000000706
+    },
+    {
+      "id": "CONTRACT-CHARACTER-GET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-GET-001] GET /api/characters/{character}",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 43.753337000000045
+    },
+    {
+      "id": "CONTRACT-CHARACTER-HISTORY-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-HISTORY-001] GET /api/characters/{character}/history",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 43.50939099999994
+    },
+    {
+      "id": "CONTRACT-CHARACTER-IMPORT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-IMPORT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/import",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.49608599999999115
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ABILITY-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ABILITY-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/ability.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5456699999999728
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ABILITY-TAKE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ABILITY-TAKE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/ability.take",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4802420000000893
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ACTION-SET-RATING-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ACTION-SET-RATING-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/action.set-rating",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.305405999999948
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ARMOR-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ARMOR-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/armor.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5841409999999314
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ATTRIBUTE-LEVELUP-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ATTRIBUTE-LEVELUP-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute.levelup",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.6870420000000195
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute-xp.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5018860000000132
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute-xp.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5134180000000015
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-DOSSIER-UPDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-DOSSIER-UPDATE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/dossier.update",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4314350000000786
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-FUND-GAIN-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-FUND-GAIN-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.gain",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.46141000000000076
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-FUND-LIQUIDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-FUND-LIQUIDATE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.liquidate",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4639029999999593
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-FUND-SPEND-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-FUND-SPEND-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.spend",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4727700000000823
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4769209999999475
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-CLEAR-COMMITMENTS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-CLEAR-COMMITMENTS-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.clear-commitments",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4333240000000842
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-COMMIT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-COMMIT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.commit",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4937800000000152
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-LOCK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-LOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.lock",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.35986099999990984
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5041969999999765
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-SET-COMMITMENT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-SET-COMMITMENT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.set-commitment",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.44988999999998214
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-UNCOMMIT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-UNCOMMIT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.uncommit",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.46892300000001796
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-GEAR-UNLOCK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-GEAR-UNLOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.unlock",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4026979999999867
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.49436500000001615
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-HEAL-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-HEAL-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.heal",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.46986200000003464
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-HEALING-CLOCK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-HEALING-CLOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.healing-clock",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.44958500000007007
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-HARM-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-HARM-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5528469999999288
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-NOTEBOOK-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-NOTEBOOK-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/notebook.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4392520000000104
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/playbook-xp.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.6913019999999506
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/playbook-xp.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.42452000000002954
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ROLODEX-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ROLODEX-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/rolodex.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.46638000000007196
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ROLODEX-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ROLODEX-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/rolodex.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4873240000000578
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-ROLODEX-SET-CLOSENESS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-ROLODEX-SET-CLOSENESS-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/rolodex.set-closeness",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4683349999999109
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-SESSION-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-SESSION-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/session.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4782820000000356
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-STRESS-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-STRESS-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/stress.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4665619999999535
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-STRESS-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-STRESS-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/stress.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5296280000000024
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-TRAUMA-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-TRAUMA-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/trauma.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5702729999999292
+    },
+    {
+      "id": "CONTRACT-CHARACTER-OPS-TRAUMA-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-OPS-TRAUMA-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/trauma.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.48978599999998096
+    },
+    {
+      "id": "CONTRACT-CHARACTER-SNAPSHOT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-SNAPSHOT-001] GET /api/characters/{character}/history/{snapshot}",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 84.35728700000004
+    },
+    {
+      "id": "CONTRACT-CHARACTER-UNDO-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTER-UNDO-001] POST /api/characters/00000000-0000-4000-8000-000000000000/undo",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4181429999999864
+    },
+    {
+      "id": "CONTRACT-CHARACTERS-LIST-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CHARACTERS-LIST-001] GET /api/characters",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 12.81692499999997
+    },
+    {
+      "id": "CONTRACT-CLOCK-CREATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-CREATE-001] POST /api/clocks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.7519919999999729
+    },
+    {
+      "id": "CONTRACT-CLOCK-DELETE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-DELETE-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/delete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4506420000000162
+    },
+    {
+      "id": "CONTRACT-CLOCK-GET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-GET-001] GET /api/clocks/{clock}",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.2155079999999998
+    },
+    {
+      "id": "CONTRACT-CLOCK-OPS-CLOCK-PROGRESS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-OPS-CLOCK-PROGRESS-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/ops/clock.progress",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.46082300000000487
+    },
+    {
+      "id": "CONTRACT-CLOCK-OPS-CLOCK-RESET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCK-OPS-CLOCK-RESET-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/ops/clock.reset",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.36820000000000164
+    },
+    {
+      "id": "CONTRACT-CLOCKS-LIST-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CLOCKS-LIST-001] GET /api/clocks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.6480090000000018
+    },
+    {
+      "id": "CONTRACT-COLLECTION-CHARACTERS-001",
+      "name": "contract v1 collection summary schemas (AUDIT-0 BUG-012) [CONTRACT-COLLECTION-CHARACTERS-001] GET /api/characters returns character summaries, not full DTOs",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/collection-schemas.test.ts",
+      "status": "passed",
+      "durationMs": 96.86291500000002
+    },
+    {
+      "id": "CONTRACT-COLLECTION-CREWS-001",
+      "name": "contract v1 collection summary schemas (AUDIT-0 BUG-012) [CONTRACT-COLLECTION-CREWS-001] GET /api/crews returns crew summaries with crewType and memberCount",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/collection-schemas.test.ts",
+      "status": "passed",
+      "durationMs": 121.21740499999999
+    },
+    {
+      "id": "CONTRACT-COLLECTION-MEMBER-COUNT-001",
+      "name": "contract v1 collection summary schemas (AUDIT-0 BUG-012) [CONTRACT-COLLECTION-MEMBER-COUNT-001] linked characters are counted in crew summaries and carry the crewId",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/collection-schemas.test.ts",
+      "status": "passed",
+      "durationMs": 131.21078000000006
+    },
+    {
+      "id": "CONTRACT-COLLECTION-MEMBERS-001",
+      "name": "contract v1 collection summary schemas (AUDIT-0 BUG-012) [CONTRACT-COLLECTION-MEMBERS-001] GET /api/campaign/crew/{crewId}/members lists linked characters as summaries",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/collection-schemas.test.ts",
+      "status": "passed",
+      "durationMs": 116.511728
+    },
+    {
+      "id": "CONTRACT-CREW-CREATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-CREATE-001] POST /api/crews",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.004020999999966
+    },
+    {
+      "id": "CONTRACT-CREW-DELETE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-DELETE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/delete",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.49028599999996914
+    },
+    {
+      "id": "CONTRACT-CREW-GET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-GET-001] GET /api/crews/{crew}",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.2718219999999292
+    },
+    {
+      "id": "CONTRACT-CREW-HISTORY-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-HISTORY-001] GET /api/crews/{crew}/history",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 1.8113070000000562
+    },
+    {
+      "id": "CONTRACT-CREW-IMPORT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-IMPORT-001] POST /api/crews/00000000-0000-4000-8000-000000000002/import",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.47626500000001215
+    },
+    {
+      "id": "CONTRACT-CREW-MEMBERS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-MEMBERS-001] GET /api/campaign/crew/{crew}/members",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 12.500839000000042
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-ABILITY-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-ABILITY-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/ability.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.430753999999979
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-ABILITY-TAKE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-ABILITY-TAKE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/ability.take",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.45758299999999963
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COHORT-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COHORT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4330210000000534
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COHORT-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COHORT-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.6176070000000209
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COHORT-UPDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COHORT-UPDATE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.update",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.45814400000006117
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-COIN-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-COIN-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/coin.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.465720000000033
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-CONTACT-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-CONTACT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/contact.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.6160610000000588
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-CONTACT-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-CONTACT-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/contact.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.44502699999998185
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-FACTION-REMOVE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-FACTION-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/faction.remove",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4327250000000049
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-FACTION-SET-STATUS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-FACTION-SET-STATUS-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/faction.set-status",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4345899999999574
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-FIELDS-UPDATE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-FIELDS-UPDATE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/fields.update",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.47809700000004796
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-HEAT-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-HEAT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/heat.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4506980000001022
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-HOLD-SET-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-HOLD-SET-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/hold.set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.47941900000000714
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-REP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-REP-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/rep.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.45126700000002984
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-STASH-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-STASH-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/stash.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4575320000000147
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-TIER-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-TIER-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/tier.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5213700000000472
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-UPGRADE-MARK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-UPGRADE-MARK-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/upgrade.mark",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.41834099999994123
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-UPGRADE-UNMARK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-UPGRADE-UNMARK-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/upgrade.unmark",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4565890000000081
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-WANTED-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-WANTED-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/wanted.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.4512809999999945
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-XP-ADD-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-XP-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/xp.add",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.5204679999999371
+    },
+    {
+      "id": "CONTRACT-CREW-OPS-XP-CLEAR-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-OPS-XP-CLEAR-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/xp.clear",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.37472200000001976
+    },
+    {
+      "id": "CONTRACT-CREW-SNAPSHOT-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-SNAPSHOT-001] GET /api/crews/{crew}/history/{snapshot}",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.7821609999999737
+    },
+    {
+      "id": "CONTRACT-CREW-UNDO-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREW-UNDO-001] POST /api/crews/00000000-0000-4000-8000-000000000002/undo",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.42278300000009494
+    },
+    {
+      "id": "CONTRACT-CREWS-LIST-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-CREWS-LIST-001] GET /api/crews",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 54.295851000000084
+    },
+    {
+      "id": "CONTRACT-GAME-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-001] GET /api/games/blades-in-the-dark",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 42.084626000000014
+    },
+    {
+      "id": "CONTRACT-GAME-CREW-TYPE-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-CREW-TYPE-001] GET /api/games/blades-in-the-dark/crews/Assassins",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 42.04976599999998
+    },
+    {
+      "id": "CONTRACT-GAME-CREWS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-CREWS-001] GET /api/games/blades-in-the-dark/crews",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 2.263473000000033
+    },
+    {
+      "id": "CONTRACT-GAME-HERITAGES-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-HERITAGES-001] GET /api/games/blades-in-the-dark/heritages",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.6578179999999634
+    },
+    {
+      "id": "CONTRACT-GAME-PLAYBOOK-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-PLAYBOOK-001] GET /api/games/blades-in-the-dark/playbooks/Cutter",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 40.59680800000001
+    },
+    {
+      "id": "CONTRACT-GAME-PLAYBOOKS-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAME-PLAYBOOKS-001] GET /api/games/blades-in-the-dark/playbooks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.9737440000000106
+    },
+    {
+      "id": "CONTRACT-GAMES-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-GAMES-001] GET /api/games",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 0.7500630000000115
+    },
+    {
+      "id": "CONTRACT-HEALTH-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-HEALTH-001] GET /api/health",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 10.900068000000005
+    },
+    {
+      "id": "CONTRACT-ROSTER-001",
+      "name": "contract v1 endpoint coverage [CONTRACT-ROSTER-001] GET /api/campaign/roster",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/endpoints.test.ts",
+      "status": "passed",
+      "durationMs": 58.13569000000001
+    },
+    {
+      "id": "CONTRACT-SCHEMA-CHARACTER-001",
+      "name": "contract DTO decoders [CONTRACT-SCHEMA-CHARACTER-001] character golden document decodes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/schemas.test.ts",
+      "status": "passed",
+      "durationMs": 14.372295000000008
+    },
+    {
+      "id": "CONTRACT-SCHEMA-CLOCK-001",
+      "name": "contract DTO decoders [CONTRACT-SCHEMA-CLOCK-001] clock golden document decodes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/schemas.test.ts",
+      "status": "passed",
+      "durationMs": 3.3398520000000076
+    },
+    {
+      "id": "CONTRACT-SCHEMA-CREW-001",
+      "name": "contract DTO decoders [CONTRACT-SCHEMA-CREW-001] crew golden document decodes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/schemas.test.ts",
+      "status": "passed",
+      "durationMs": 1.810325000000006
+    },
+    {
+      "id": "CONTRACT-STRICT-CAMPAIGN-001",
+      "name": "live responses satisfy the frozen schemas (AUDIT-0 BUG-013) [CONTRACT-STRICT-CAMPAIGN-001] the live campaign decodes with its required kind and RFC 3339 createdAt",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 10.526004999999998
+    },
+    {
+      "id": "CONTRACT-STRICT-CREATE-TIMESTAMP-001",
+      "name": "live responses satisfy the frozen schemas (AUDIT-0 BUG-013) [CONTRACT-STRICT-CREATE-TIMESTAMP-001] created entities carry RFC 3339 timestamps",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 47.679295999999994
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-CAMPAIGN-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-CAMPAIGN-001] campaign without the required kind is rejected",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 8.927976999999998
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-CREWSUMMARY-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-CREWSUMMARY-001] a crew with object-valued heat does not decode as a crew summary",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 0.5616860000000088
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-ERRORCODE-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-ERRORCODE-001] unknown error codes are rejected",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 23.896901000000014
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-EXCESS-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-EXCESS-001] excess properties are rejected (additionalProperties: false)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 0.6820629999999994
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-REVISION-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-REVISION-001] revision 0 violates the minimum of 1",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 0.5867909999999767
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-SNAPSHOT-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-SNAPSHOT-001] plain-UUID snapshotIds are rejected (pattern requires 17 digits)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 0.4956899999999962
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-SUMMARY-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-SUMMARY-001] a full character DTO does not decode as a character summary",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 0.6073009999999783
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-TIMESTAMP-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-TIMESTAMP-001] space-separated timestamps (no RFC 3339 T) are rejected",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 6.594055999999995
+    },
+    {
+      "id": "CONTRACT-STRICT-DECODE-UUID-001",
+      "name": "strict decoders reject contract-invalid output (AUDIT-0 BUG-013) [CONTRACT-STRICT-DECODE-UUID-001] non-UUID entity ids are rejected",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 0.5617390000000171
+    },
+    {
+      "id": "CONTRACT-STRICT-HEALTH-001",
+      "name": "live responses satisfy the frozen schemas (AUDIT-0 BUG-013) [CONTRACT-STRICT-HEALTH-001] health decodes with the typed implementation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 0.8062040000000366
+    },
+    {
+      "id": "CONTRACT-STRICT-HISTORY-001",
+      "name": "live responses satisfy the frozen schemas (AUDIT-0 BUG-013) [CONTRACT-STRICT-HISTORY-001] live history entries decode with contract snapshot IDs",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 45.445403999999996
+    },
+    {
+      "id": "CONTRACT-STRICT-ROSTER-001",
+      "name": "live responses satisfy the frozen schemas (AUDIT-0 BUG-013) [CONTRACT-STRICT-ROSTER-001] the live roster decodes to summary DTOs",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/strict-responses.test.ts",
+      "status": "passed",
+      "durationMs": 59.80518699999999
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CAMPAIGN-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CAMPAIGN-001] GET /api/campaign",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 1.753957000000014
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CHARACTER-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CHARACTER-001] GET /api/characters/{id} for a created character",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 43.069703000000004
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CHARACTER-HISTORY-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CHARACTER-HISTORY-001] GET /api/characters/{id}/history after a snapshot-worthy op",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 44.46334999999999
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CHARACTER-SNAPSHOT-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CHARACTER-SNAPSHOT-001] GET /api/characters/{id}/history/{snapshotId} for an existing snapshot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 85.01463999999999
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CHARACTERS-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CHARACTERS-001] GET /api/characters returns character summaries",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 56.38176400000003
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CLOCK-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CLOCK-001] GET /api/clocks/{id} for a created clock",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 1.4409459999999399
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CLOCKS-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CLOCKS-001] GET /api/clocks returns clock DTOs",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 44.26085499999999
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CREW-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CREW-001] GET /api/crews/{id} for a created crew",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 1.6768140000000358
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CREW-HISTORY-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CREW-HISTORY-001] GET /api/crews/{id}/history after a snapshot-worthy op",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 2.0001259999999093
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CREW-MEMBERS-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CREW-MEMBERS-001] GET /api/campaign/crew/{crewId}/members for a known crew",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 14.088756999999987
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CREW-SETTINGS-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CREW-SETTINGS-001] GET /api/games/{stem}/crews",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 1.9183510000000297
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CREW-SNAPSHOT-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CREW-SNAPSHOT-001] GET /api/crews/{id}/history/{snapshotId} for an existing snapshot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 2.5153420000000324
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CREW-TYPE-SETTINGS-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CREW-TYPE-SETTINGS-001] GET /api/games/{stem}/crews/{crewType} for a known crew type",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 41.55805299999997
+    },
+    {
+      "id": "CONTRACT-SUCCESS-CREWS-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-CREWS-001] GET /api/crews returns crew summaries",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 57.367164
+    },
+    {
+      "id": "CONTRACT-SUCCESS-GAME-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-GAME-001] GET /api/games/{stem} for an installed game",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 41.08391500000005
+    },
+    {
+      "id": "CONTRACT-SUCCESS-GAMES-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-GAMES-001] GET /api/games",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 0.5195229999999356
+    },
+    {
+      "id": "CONTRACT-SUCCESS-HEALTH-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-HEALTH-001] GET /api/health",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 11.309053000000006
+    },
+    {
+      "id": "CONTRACT-SUCCESS-HERITAGES-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-HERITAGES-001] GET /api/games/{stem}/heritages",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 0.5771159999999327
+    },
+    {
+      "id": "CONTRACT-SUCCESS-PLAYBOOK-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-PLAYBOOK-001] GET /api/games/{stem}/playbooks/{playbook} for a known playbook",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 40.965987999999925
+    },
+    {
+      "id": "CONTRACT-SUCCESS-PLAYBOOKS-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-PLAYBOOKS-001] GET /api/games/{stem}/playbooks",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 0.7056079999999838
+    },
+    {
+      "id": "CONTRACT-SUCCESS-ROSTER-001",
+      "name": "contract v1 declared read routes return 200 for known resources (AUDIT-0 BUG-007) [CONTRACT-SUCCESS-ROSTER-001] GET /api/campaign/roster",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/success-routes.test.ts",
+      "status": "passed",
+      "durationMs": 60.956433000000004
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-ARMOR-SET-BAD-KIND-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-ARMOR-SET-BAD-KIND-001] armor.set with out-of-enum armor → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.90576499999997
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-ARMOR-SET-MISSING-USED-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-ARMOR-SET-MISSING-USED-001] armor.set without used → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.94517900000005
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-DOSSIER-UPDATE-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-DOSSIER-UPDATE-EMPTY-001] dossier.update {} (minProperties 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.01775099999986
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-DOSSIER-UPDATE-EXTRA-FIELD-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-DOSSIER-UPDATE-EXTRA-FIELD-001] dossier.update with an unknown field → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.99348900000018
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-END-DOWNTIME-NEGATIVE-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-END-DOWNTIME-NEGATIVE-001] end-downtime with negative viceReliefStress (minimum 0) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.99744699999974
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-END-SCORE-EXTRA-FIELD-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-END-SCORE-EXTRA-FIELD-001] end-score with an unknown field → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.88856400000031
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-FUND-GAIN-ZERO-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-FUND-GAIN-ZERO-001] fund.gain with coins below minimum 1 → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.05218100000002
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-GEAR-ADD-EMPTY-NAME-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-GEAR-ADD-EMPTY-NAME-001] gear.add with empty name (minLength 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.03717299999994
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-GEAR-ADD-NEGATIVE-BULK-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-GEAR-ADD-NEGATIVE-BULK-001] gear.add with negative bulk (minimum 0) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.97518200000013
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-HARM-ADD-BAD-INTENSITY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-HARM-ADD-BAD-INTENSITY-001] harm.add with out-of-enum intensity → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.90588899999995
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-HARM-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-HARM-ADD-EMPTY-001] harm.add {} (both fields required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 60.992469
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-HARM-ADD-EMPTY-DESCRIPTION-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-HARM-ADD-EMPTY-DESCRIPTION-001] harm.add with empty description (minLength 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.85862000000003
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-HARM-ADD-EXTRA-FIELD-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-HARM-ADD-EXTRA-FIELD-001] harm.add with an unknown field (additionalProperties:false) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 86.96804600000002
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-HARM-ADD-MISSING-INTENSITY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-HARM-ADD-MISSING-INTENSITY-001] harm.add without intensity → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 86.65752600000002
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-NOTE-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-NOTE-ADD-EMPTY-001] note.add {} (text required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.78811399999995
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-NOTE-REMOVE-NEGATIVE-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-NOTE-REMOVE-NEGATIVE-001] note.remove with negative index (minimum 0) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.99588600000016
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-ROLODEX-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-ROLODEX-ADD-EMPTY-001] rolodex.add with empty entry (minLength 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.79456000000005
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-ROLODEX-CLOSENESS-ENUM-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-ROLODEX-CLOSENESS-ENUM-001] rolodex.set-closeness with out-of-enum closeness → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 86.09437200000002
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-SESSION-SET-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-SESSION-SET-EMPTY-001] session.set {} (minProperties 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.13495899999998
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-SESSION-SET-NEGATIVE-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-SESSION-SET-NEGATIVE-001] session.set with negative expression (minimum 0) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 84.79591900000014
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-STRESS-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-STRESS-ADD-EMPTY-001] stress.add {} (delta required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 86.91605000000004
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-STRESS-ADD-EXTRA-FIELD-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-STRESS-ADD-EXTRA-FIELD-001] stress.add with an unknown field → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 87.01879499999995
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-STRESS-ADD-TYPE-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-STRESS-ADD-TYPE-001] stress.add with string delta → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.92605500000002
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-TRAUMA-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-TRAUMA-ADD-EMPTY-001] trauma.add with empty trauma (minLength 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 85.98394399999995
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CHARACTER-TRAUMA-ADD-EXTRA-FIELD-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CHARACTER-TRAUMA-ADD-EXTRA-FIELD-001] trauma.add with an unknown field → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 86.88521100000003
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CLOCK-PROGRESS-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CLOCK-PROGRESS-EMPTY-001] clock.progress {} (segments required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.3389240000001337
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CLOCK-PROGRESS-TYPE-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CLOCK-PROGRESS-TYPE-001] clock.progress with string segments → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.067250999999942
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREATE-CHARACTER-MISSING-PLAYBOOK-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREATE-CHARACTER-MISSING-PLAYBOOK-001] character create without required playbook → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 127.89907099999982
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREATE-CLOCK-BAD-KIND-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREATE-CLOCK-BAD-KIND-001] clock create with out-of-enum behavior → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 43.163064000000304
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREATE-CLOCK-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREATE-CLOCK-EMPTY-001] clock create {} (name, behavior, size required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 42.7700219999997
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREATE-CREW-MISSING-CREWTYPE-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREATE-CREW-MISSING-CREWTYPE-001] crew create without required crewType → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 94.96232700000019
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-COHORT-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-COHORT-ADD-EMPTY-001] cohort.add {} (cohortKind required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.103718000000299
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-COHORT-ADD-ENUM-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-COHORT-ADD-ENUM-001] cohort.add with out-of-enum cohortKind → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.068217000000004
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-CONTACT-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-CONTACT-ADD-EMPTY-001] contact.add {} (name and profession required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.1279389999999694
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-CONTACT-ADD-EMPTY-NAME-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-CONTACT-ADD-EMPTY-NAME-001] contact.add with empty name (minLength 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.0957939999998416
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-FACTION-SET-STATUS-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-FACTION-SET-STATUS-EMPTY-001] faction.set-status {} (name and status required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.054135000000315
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-FIELDS-UPDATE-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-FIELDS-UPDATE-EMPTY-001] fields.update {} (minProperties 1) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.0850729999997384
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-HEAT-ADD-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-HEAT-ADD-EMPTY-001] heat.add {} (delta required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.6778730000000905
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-HOLD-SET-ENUM-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-HOLD-SET-ENUM-001] hold.set with out-of-enum hold → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.2146200000001954
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-NOTE-REMOVE-NEGATIVE-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-NOTE-REMOVE-NEGATIVE-001] crew note.remove with negative index → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.211232000000109
+    },
+    {
+      "id": "CONTRACT-VALIDATION-CREW-UPGRADE-MARK-EMPTY-001",
+      "name": "contract v1 request-schema validation (AUDIT-0 BUG-011) [CONTRACT-VALIDATION-CREW-UPGRADE-MARK-EMPTY-001] upgrade.mark {} (name required) → 400 VALIDATION with no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/request-validation.test.ts",
+      "status": "passed",
+      "durationMs": 2.0631349999998747
+    },
+    {
+      "id": "ERR-BATCH-008",
+      "name": "contract error union (SC-O7) [ERR-BATCH-008] batch items use the same whole-error union schema",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 128.52853099999993
+    },
+    {
+      "id": "ERR-DETAIL-002",
+      "name": "contract error union (SC-O7) [ERR-DETAIL-002] VALIDATION carries pointer-level details with expected shape",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 1.0383100000001377
+    },
+    {
+      "id": "ERR-DETAIL-003",
+      "name": "contract error union (SC-O7) [ERR-DETAIL-003] RATING_MAXED carries limit and current in its details",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 42.6332960000002
+    },
+    {
+      "id": "ERR-DETAIL-004",
+      "name": "contract error union (SC-O7) [ERR-DETAIL-004] NORMALIZATION_REQUIRED carries warnings and the preview token",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 43.89609799999994
+    },
+    {
+      "id": "ERR-DETAIL-005",
+      "name": "contract error union (SC-O7) [ERR-DETAIL-005] STALE_REVISION carries the current revision in its details",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 84.66622499999994
+    },
+    {
+      "id": "ERR-FV004-001",
+      "name": "contract error union (SC-O7) [ERR-FV004-001] cohort.add accepts hasArmor/edges/flaws/description and rejects a true unknown field (FV-004)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 3.2901829999996153
+    },
+    {
+      "id": "ERR-FV026-001",
+      "name": "contract error union (SC-O7) [ERR-FV026-001] dossier.update vice request schema is $defs.vice (purveyor required) and a full vice object persists (FV-026, guard)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 85.56334199999992
+    },
+    {
+      "id": "ERR-MISMATCH-006",
+      "name": "contract error union (SC-O7) [ERR-MISMATCH-006] code/details mismatch is impossible at the schema level (frozen union probe)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 83.46543600000018
+    },
+    {
+      "id": "ERR-NORAW-009",
+      "name": "contract error union (SC-O7) [ERR-NORAW-009] error messages are human-presentable and never embed a raw document",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 260.866794
+    },
+    {
+      "id": "ERR-RETRY-007",
+      "name": "contract error union (SC-O7) [ERR-RETRY-007] after the documented recovery action the same semantic operation succeeds",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 45.07776199999989
+    },
+    {
+      "id": "ERR-UNION-001",
+      "name": "contract error union (SC-O7) [ERR-UNION-001] every branch of the whole-error union is exercised with status, code, detail shape, retryable, and recovery",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/error-union.test.ts",
+      "status": "passed",
+      "durationMs": 1366.208207
+    },
+    {
+      "id": "FV-MIGRATE-CHAR-001",
+      "name": "import/repair token oracle (SC-O1) [FV-MIGRATE-CHAR-001] legacy v1 character: direct GET 422 INVALID_ENTITY (repairable, never writes); preview 409 with the purveyor fill; apply 200 canonical (FV-001)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-repair.test.ts",
+      "status": "passed",
+      "durationMs": 127.74034599999999
+    },
+    {
+      "id": "FV-MIGRATE-CREW-001",
+      "name": "import/repair token oracle (SC-O1) [FV-MIGRATE-CREW-001] legacy v1 crew: direct GET 422 INVALID_ENTITY (repairable, never writes); preview 409 listing turf/claimedClaimIds/claimOverrides; apply 200 canonical (FV-002)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-repair.test.ts",
+      "status": "passed",
+      "durationMs": 87.45804399999997
+    },
+    {
+      "id": "FV-NOTES-STRING-001",
+      "name": "import/repair token oracle (SC-O1) [FV-NOTES-STRING-001] legacy string notes: direct GET and mutation 422 (no migration write); preview 409 listing the L1 conversion; apply 200 canonical one-entry array (FV-009)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-repair.test.ts",
+      "status": "passed",
+      "durationMs": 131.88113999999996
+    },
+    {
+      "id": "LIFECYCLE-CREATION-001",
+      "name": "lifecycle creation flows [LIFECYCLE-CREATION-001] character creation returns a complete DTO",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/creation.test.ts",
+      "status": "passed",
+      "durationMs": 17.105301999999995
+    },
+    {
+      "id": "LIFECYCLE-CREATION-002",
+      "name": "lifecycle creation flows [LIFECYCLE-CREATION-002] crew and clock creation are independently discoverable",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/creation.test.ts",
+      "status": "passed",
+      "durationMs": 48.071383
+    },
+    {
+      "id": "LIFECYCLE-CREATION-003",
+      "name": "lifecycle creation flows [LIFECYCLE-CREATION-003] S&V creation uses the authored settings",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/creation.test.ts",
+      "status": "passed",
+      "durationMs": 2.488710999999995
+    },
+    {
+      "id": "LIFECYCLE-DEADISH-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-DEADISH-001] fatal harm triggers deadish cleanup: clears stress and pending state, preserves all harm",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 45.25177600000006
+    },
+    {
+      "id": "LIFECYCLE-DEADISH-002",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-DEADISH-002] deadish is caused only by fatal harm (no free-standing toggle; isDeadish derived from fatal array)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 129.67700100000002
+    },
+    {
+      "id": "LIFECYCLE-DEADISH-003",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-DEADISH-003] removing the fatal harm ends deadish (recovery)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 44.172725000000355
+    },
+    {
+      "id": "LIFECYCLE-DELETE-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-DELETE-001] deletion requires confirmation and removes entity and history",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 88.1016510000004
+    },
+    {
+      "id": "LIFECYCLE-DERIVED-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-DERIVED-001] canUndo and historyCount are derived response-time fields that track snapshot consumption and are never persisted",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 269.61358800000016
+    },
+    {
+      "id": "LIFECYCLE-ENDSCORE-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-ENDSCORE-001] end-score while trauma pending is rejected with TRAUMA_REQUIRED",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 44.22096399999998
+    },
+    {
+      "id": "LIFECYCLE-ENDSCORE-002",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-ENDSCORE-002] end-score clears stress to zero and resets both out-of-action flags",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 85.49013000000002
+    },
+    {
+      "id": "LIFECYCLE-ENDSCORE-003",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-ENDSCORE-003] end-score performs all selected cleanup in exactly one snapshot (one history entry; undo restores prior state)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 129.994863
+    },
+    {
+      "id": "LIFECYCLE-GAMES-001",
+      "name": "lifecycle game discovery [LIFECYCLE-GAMES-001] the games endpoint includes S&V",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/games.test.ts",
+      "status": "passed",
+      "durationMs": 10.882978000000008
+    },
+    {
+      "id": "LIFECYCLE-GAMES-002",
+      "name": "lifecycle game discovery [LIFECYCLE-GAMES-002] S&V local maxima are not the Blades defaults",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/games.test.ts",
+      "status": "passed",
+      "durationMs": 2.507659999999987
+    },
+    {
+      "id": "LIFECYCLE-IMPORT-001",
+      "name": "lifecycle import and export [LIFECYCLE-IMPORT-001] a golden character can be schema-decoded before import",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/import-export.test.ts",
+      "status": "passed",
+      "durationMs": 64.237574
+    },
+    {
+      "id": "LIFECYCLE-IMPORT-002",
+      "name": "lifecycle import and export [LIFECYCLE-IMPORT-002] invalid imports return a typed validation response",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/import-export.test.ts",
+      "status": "passed",
+      "durationMs": 45.29638899999998
+    },
+    {
+      "id": "LIFECYCLE-INVARIANTS-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-INVARIANTS-001] no reachable state has traumaPending and isOutOfAction both true; stressClearPending equals isOutOfAction",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 87.79343500000004
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-001] explicit retirement requires confirm:true (CONFIRM_REQUIRED otherwise)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 43.41529800000001
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-002",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-002] explicit retirement succeeds below maximum trauma",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 42.827882000000045
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-003",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-003] retirement cleanup clears stress, harm, healing clock, armor and preserves dossier/playbook/trauma history/notes/gear/fund",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 216.1863589999998
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-004",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-004] voluntary and final-trauma retirement produce identical post-cleanup state (shared cleanup)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 303.3263119999999
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-005",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-005] retired characters remain readable and deletable",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 88.20691899999997
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-006",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-006] retired dossier, name, note and notebook edits remain allowed",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 128.90001099999995
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-007",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-007] retired gameplay mutations return RETIRED",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 129.02403800000002
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-008",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-008] trauma.remove after retirement does not clear isRetired",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 88.168725
+    },
+    {
+      "id": "LIFECYCLE-RETIRE-009",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-RETIRE-009] undo restores the complete pre-retirement state (isRetired false again)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 127.58778799999982
+    },
+    {
+      "id": "LIFECYCLE-RETIREMENT-001",
+      "name": "lifecycle retirement [LIFECYCLE-RETIREMENT-001] a retired character remains readable and deletable",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/retirement.test.ts",
+      "status": "passed",
+      "durationMs": 280.487281
+    },
+    {
+      "id": "LIFECYCLE-RETIREMENT-002",
+      "name": "lifecycle retirement [LIFECYCLE-RETIREMENT-002] character deletion requires confirmation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/retirement.test.ts",
+      "status": "passed",
+      "durationMs": 91.06093799999996
+    },
+    {
+      "id": "LIFECYCLE-STRESS-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-STRESS-001] stress reaching max sets traumaPending and returns typed attention",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 14.51803000000001
+    },
+    {
+      "id": "LIFECYCLE-STRESS-002",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-STRESS-002] stress overflow never auto-adds trauma",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 43.977396999999996
+    },
+    {
+      "id": "LIFECYCLE-STRESS-003",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-STRESS-003] stress.add while trauma pending is rejected with TRAUMA_REQUIRED",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 85.86230900000001
+    },
+    {
+      "id": "LIFECYCLE-STRESS-004",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-STRESS-004] stress.add and stress.clear while out of action are rejected with OUT_OF_ACTION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 89.91164000000003
+    },
+    {
+      "id": "LIFECYCLE-TRAUMA-001",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-TRAUMA-001] trauma resolution keeps stress full, clears pending, marks out-of-action and stressClearPending",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 86.69770000000005
+    },
+    {
+      "id": "LIFECYCLE-TRAUMA-002",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-TRAUMA-002] trauma.add without pending trauma is rejected with VALIDATION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 42.90632800000003
+    },
+    {
+      "id": "LIFECYCLE-TRAUMA-003",
+      "name": "lifecycle state machine (SC-O6 oracle) [LIFECYCLE-TRAUMA-003] duplicate trauma is rejected with DUPLICATE",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/lifecycle/lifecycle-state-machine.test.ts",
+      "status": "passed",
+      "durationMs": 130.07673
+    },
+    {
+      "id": "LIMIT-CAP-001",
+      "name": "§ published limits (SC-O4) [LIMIT-CAP-001] service capabilities expose maxPayloadBytes 1048576, maxHistorySnapshots 50, maxBatchOperations 50",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 10.428818000000007
+    },
+    {
+      "id": "LIMIT-CHAR-002",
+      "name": "§ published limits (SC-O4) [LIMIT-CHAR-002] character capabilities expose effective action caps from settings + Mastery derivation for crewless and Mastery characters",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 186.667816
+    },
+    {
+      "id": "LIMIT-CREW-003",
+      "name": "§ published limits (SC-O4) [LIMIT-CREW-003] crew capabilities expose the full upgrade catalog with totalBoxes/marked/remaining and abilities with maxTakes/taken",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 42.022741999999994
+    },
+    {
+      "id": "LIMIT-FUND-010",
+      "name": "§ published limits (SC-O4) [LIMIT-FUND-010] satchel/stash caps and the stash-to-coin conversion match the settings FundMaxima",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 172.323625
+    },
+    {
+      "id": "LIMIT-HARM-009",
+      "name": "§ published limits (SC-O4) [LIMIT-HARM-009] harm slots hold the settings capacities with upward spillover for both games",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 386.9004010000001
+    },
+    {
+      "id": "LIMIT-IDEMPOTENCY-013",
+      "name": "§ published limits (SC-O4) [LIMIT-IDEMPOTENCY-013] an Idempotency-Key longer than 128 chars is rejected with VALIDATION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 43.96045200000003
+    },
+    {
+      "id": "LIMIT-IMPORT-014",
+      "name": "§ published limits (SC-O4) [LIMIT-IMPORT-014] import cannot set trackers above the settings maxima",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 85.78530899999987
+    },
+    {
+      "id": "LIMIT-LOAD-011",
+      "name": "§ published limits (SC-O4) [LIMIT-LOAD-011] per-commitment max bulk is enforced from the settings LoadMaxima",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 126.65572999999995
+    },
+    {
+      "id": "LIMIT-RATING-004",
+      "name": "§ published limits (SC-O4) [LIMIT-RATING-004] action.set-rating and attribute.levelup enforce the same effective cap for crewless, non-Mastery, and Mastery characters",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 477.953738
+    },
+    {
+      "id": "LIMIT-SERVICE-016",
+      "name": "§ published limits (SC-O4) [LIMIT-SERVICE-016] a payload just over 1 MiB is rejected with 413 PAYLOAD_TOO_LARGE and just under is accepted",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 121.67811099999972
+    },
+    {
+      "id": "LIMIT-SESSION-012",
+      "name": "§ published limits (SC-O4) [LIMIT-SESSION-012] session expressions clamp at the settings SessionExpressionMax",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 86.95038599999998
+    },
+    {
+      "id": "LIMIT-STALE-015",
+      "name": "§ published limits (SC-O4) [LIMIT-STALE-015] capability responses are advisory and a mutation after a state change returns a typed maxed failure",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 46.30392400000028
+    },
+    {
+      "id": "LIMIT-STRESS-007",
+      "name": "§ published limits (SC-O4) [LIMIT-STRESS-007] stress clamps at the settings StressMax for both games",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 85.07286999999997
+    },
+    {
+      "id": "LIMIT-TRAUMA-008",
+      "name": "§ published limits (SC-O4) [LIMIT-TRAUMA-008] trauma max matches the settings TraumaMax for both games",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 42.98284999999987
+    },
+    {
+      "id": "LIMIT-UPGRADE-005",
+      "name": "§ published limits (SC-O4) [LIMIT-UPGRADE-005] upgrade.mark enforces TotalBoxes with UPGRADE_MAXED at cap+1 and boxes stay at the settings cap for two crew types",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 14.51386500000001
+    },
+    {
+      "id": "LIMIT-XP-006",
+      "name": "§ published limits (SC-O4) [LIMIT-XP-006] XP tracks clamp at the settings-published lengths",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/published-limits.test.ts",
+      "status": "passed",
+      "durationMs": 86.98513400000002
+    },
+    {
+      "id": "NUM-ABS-002",
+      "name": "§ numeric operation families (SC-O4) [NUM-ABS-002] absolute setters report requested = target and effective = stored target",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/numeric-families.test.ts",
+      "status": "passed",
+      "durationMs": 85.18554999999998
+    },
+    {
+      "id": "NUM-CLAMP-007",
+      "name": "§ numeric operation families (SC-O4) [NUM-CLAMP-007] requested ≠ effective is detectable from the result when a clamp occurs",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/numeric-families.test.ts",
+      "status": "passed",
+      "durationMs": 46.218773000000056
+    },
+    {
+      "id": "NUM-CLOCK-004",
+      "name": "§ numeric operation families (SC-O4) [NUM-CLOCK-004] clock progress reports requested/effective with the visibleApplied/overflowAdded split when nonzero",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/numeric-families.test.ts",
+      "status": "passed",
+      "durationMs": 85.65254400000003
+    },
+    {
+      "id": "NUM-FAIL-006",
+      "name": "§ numeric operation families (SC-O4) [NUM-FAIL-006] a failed operation never claims applied and its typed error carries current/limit data",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/numeric-families.test.ts",
+      "status": "passed",
+      "durationMs": 43.50938699999995
+    },
+    {
+      "id": "NUM-NONUM-005",
+      "name": "§ numeric operation families (SC-O4) [NUM-NONUM-005] non-numeric operations omit the numeric applied fields",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/numeric-families.test.ts",
+      "status": "passed",
+      "durationMs": 47.43825700000002
+    },
+    {
+      "id": "NUM-QTY-003",
+      "name": "§ numeric operation families (SC-O4) [NUM-QTY-003] quantity family: fund.gain reports requested amount and processed effective with clamps; the dropped remainder surfaces in sideEffects, never silently",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/numeric-families.test.ts",
+      "status": "passed",
+      "durationMs": 132.29015199999998
+    },
+    {
+      "id": "NUM-SIGNED-001",
+      "name": "§ numeric operation families (SC-O4) [NUM-SIGNED-001] XP signed deltas accept -1 above zero, clamp at zero, and leave positives unchanged",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/numeric-families.test.ts",
+      "status": "passed",
+      "durationMs": 153.71719899999997
+    },
+    {
+      "id": "PARITY-AGENT-002",
+      "name": "capability parity (SC-O7) [PARITY-AGENT-002] every operation has an agent reference entry that resolves in the API reference",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/parity/capability-parity.test.ts",
+      "status": "passed",
+      "durationMs": 6.065103999999991
+    },
+    {
+      "id": "PARITY-EXEMPT-004",
+      "name": "capability parity (SC-O7) [PARITY-EXEMPT-004] manifest exemptions require explicit approval and a reason",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/parity/capability-parity.test.ts",
+      "status": "passed",
+      "durationMs": 1.7417020000000036
+    },
+    {
+      "id": "PARITY-HUMAN-003",
+      "name": "capability parity (SC-O7) [PARITY-HUMAN-003] destructive, lifecycle, and sheet-management operations have reachable human routes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/parity/capability-parity.test.ts",
+      "status": "passed",
+      "durationMs": 4.764532000000003
+    },
+    {
+      "id": "PARITY-MANIFEST-001",
+      "name": "capability parity (SC-O7) [PARITY-MANIFEST-001] every operationId in the contract appears in the generated manifest with exactly one disposition",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/parity/capability-parity.test.ts",
+      "status": "passed",
+      "durationMs": 9.680758000000012
+    },
+    {
+      "id": "PERSISTENCE-ATOMIC-001",
+      "name": "persistence atomic-write crash hook [PERSISTENCE-ATOMIC-001] the optional crash hook never exposes a partial JSON document",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/atomic-write.test.ts",
+      "status": "passed",
+      "durationMs": 60.71367700000002
+    },
+    {
+      "id": "PERSISTENCE-CONCURRENCY-001",
+      "name": "persistence concurrent writes [PERSISTENCE-CONCURRENCY-001] every acknowledged concurrent write survives on the entity",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency.test.ts",
+      "status": "passed",
+      "durationMs": 234.369811
+    },
+    {
+      "id": "PERSISTENCE-CONCURRENCY-002",
+      "name": "persistence concurrent writes [PERSISTENCE-CONCURRENCY-002] a same-revision If-Match race yields one winner and one typed STALE_REVISION with intact JSON",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/concurrency.test.ts",
+      "status": "passed",
+      "durationMs": 86.115997
+    },
+    {
+      "id": "PERSISTENCE-HISTORY-001",
+      "name": "persistence history and undo [PERSISTENCE-HISTORY-001] snapshot-worthy character mutations create history entries",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/history.test.ts",
+      "status": "passed",
+      "durationMs": 20.717776999999984
+    },
+    {
+      "id": "PERSISTENCE-HISTORY-002",
+      "name": "persistence history and undo [PERSISTENCE-HISTORY-002] undo restores the pre-operation character and consumes the snapshot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/history.test.ts",
+      "status": "passed",
+      "durationMs": 90.09884799999998
+    },
+    {
+      "id": "PERSISTENCE-HISTORY-003",
+      "name": "persistence history and undo [PERSISTENCE-HISTORY-003] crew history is entity-scoped",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/history.test.ts",
+      "status": "passed",
+      "durationMs": 3.3204579999999737
+    },
+    {
+      "id": "PERSISTENCE-IDEMPOTENCY-001",
+      "name": "persistence idempotency scope [PERSISTENCE-IDEMPOTENCY-001] reusing a key on a different target executes normally instead of replaying",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/idempotency.test.ts",
+      "status": "passed",
+      "durationMs": 107.83448599999997
+    },
+    {
+      "id": "PERSISTENCE-IDEMPOTENCY-002",
+      "name": "persistence idempotency scope [PERSISTENCE-IDEMPOTENCY-002] the same scoped key with a different body is a typed conflict, not a replay",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/idempotency.test.ts",
+      "status": "passed",
+      "durationMs": 88.49030199999999
+    },
+    {
+      "id": "PERSISTENCE-IDEMPOTENCY-003",
+      "name": "persistence idempotency scope [PERSISTENCE-IDEMPOTENCY-003] concurrent identical retries apply the mutation exactly once",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/idempotency.test.ts",
+      "status": "passed",
+      "durationMs": 88.47868199999999
+    },
+    {
+      "id": "PERSISTENCE-IDEMPOTENCY-004",
+      "name": "persistence idempotency scope [PERSISTENCE-IDEMPOTENCY-004] an exact retry returns the original response without another revision or snapshot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/idempotency.test.ts",
+      "status": "passed",
+      "durationMs": 88.30901
+    },
+    {
+      "id": "PERSISTENCE-IMPORT-001",
+      "name": "persistence import history [PERSISTENCE-IMPORT-001] a schema-invalid import is rejected and leaves bytes, revision, and history unchanged",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-history.test.ts",
+      "status": "passed",
+      "durationMs": 108.91860199999999
+    },
+    {
+      "id": "PERSISTENCE-IMPORT-002",
+      "name": "persistence import history [PERSISTENCE-IMPORT-002] a valid import round-trips and establishes exactly one baseline snapshot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-history.test.ts",
+      "status": "passed",
+      "durationMs": 180.13174199999997
+    },
+    {
+      "id": "PERSISTENCE-REPEATABILITY-001",
+      "name": "persistence repeatability [PERSISTENCE-REPEATABILITY-001] roster remains available as persisted crews accumulate",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/repeatability.test.ts",
+      "status": "passed",
+      "durationMs": 138.250987
+    },
+    {
+      "id": "PERSISTENCE-REPEATABILITY-002",
+      "name": "persistence repeatability [PERSISTENCE-REPEATABILITY-002] deletion does not make a live entity ID reusable",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/repeatability.test.ts",
+      "status": "passed",
+      "durationMs": 38.758601
+    },
+    {
+      "id": "PERSISTENCE-REVISION-001",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-001] a stale If-Match returns STALE_REVISION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 62.62273400000001
+    },
+    {
+      "id": "PERSISTENCE-REVISION-002",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-002] one of two same-revision writes loses the race",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 44.433254000000005
+    },
+    {
+      "id": "PERSISTENCE-REVISION-003",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-003] idempotency repeats the original operation result",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 44.866960000000006
+    },
+    {
+      "id": "PERSISTENCE-REVISION-004",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-004] a stale If-Match on a C3 crew op returns STALE_REVISION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 3.169826999999998
+    },
+    {
+      "id": "PERSISTENCE-REVISION-005",
+      "name": "persistence revisions and concurrency [PERSISTENCE-REVISION-005] idempotency repeats the original C3 crew op result",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/revisions.test.ts",
+      "status": "passed",
+      "durationMs": 2.3709089999999833
+    },
+    {
+      "id": "PERSISTENCE-ROUND-TRIP-001",
+      "name": "persistence round-trip identity [PERSISTENCE-ROUND-TRIP-001] character GET and download export are byte-identical",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/round-trip.test.ts",
+      "status": "passed",
+      "durationMs": 61.662600999999995
+    },
+    {
+      "id": "PERSISTENCE-ROUND-TRIP-002",
+      "name": "persistence round-trip identity [PERSISTENCE-ROUND-TRIP-002] crew GET and download export preserve the full DTO",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/round-trip.test.ts",
+      "status": "passed",
+      "durationMs": 4.177348999999992
+    },
+    {
+      "id": "PERSISTENCE-SNAPSHOT-001",
+      "name": "persistence snapshot policy [PERSISTENCE-SNAPSHOT-001] micro-ops declared x-snapshot:false leave no history entry",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/snapshot-policy.test.ts",
+      "status": "passed",
+      "durationMs": 67.021468
+    },
+    {
+      "id": "PERSISTENCE-SNAPSHOT-002",
+      "name": "persistence snapshot policy [PERSISTENCE-SNAPSHOT-002] retention keeps the newest 50 snapshots in newest-first order",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/snapshot-policy.test.ts",
+      "status": "passed",
+      "durationMs": 1264.240872
+    },
+    {
+      "id": "PERSISTENCE-SNAPSHOT-003",
+      "name": "persistence snapshot policy [PERSISTENCE-SNAPSHOT-003] consecutive undos restore the last two known states in reverse order",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/snapshot-policy.test.ts",
+      "status": "passed",
+      "durationMs": 177.59865999999988
+    },
+    {
+      "id": "REPAIR-ATOMIC-004",
+      "name": "import/repair token oracle (SC-O1) [REPAIR-ATOMIC-004] crash between preview and apply leaves old bytes; crash during apply leaves old or complete new file only (guard: crash hook)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-repair.test.ts",
+      "status": "passed",
+      "durationMs": 45.88341399999996
+    },
+    {
+      "id": "REPAIR-TOKEN-001",
+      "name": "import/repair token oracle (SC-O1) [REPAIR-TOKEN-001] unparseable bytes cannot be repaired (deletion only): direct GET returns 422 INVALID_ENTITY",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-repair.test.ts",
+      "status": "passed",
+      "durationMs": 14.473021000000017
+    },
+    {
+      "id": "REPAIR-TOKEN-002",
+      "name": "import/repair token oracle (SC-O1) [REPAIR-TOKEN-002] deleteToken = sha256:<hex> is bound to the raw bytes; changed bytes -> 409 STALE_REVISION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-repair.test.ts",
+      "status": "passed",
+      "durationMs": 49.553646000000015
+    },
+    {
+      "id": "REPAIR-TOKEN-003",
+      "name": "import/repair token oracle (SC-O1) [REPAIR-TOKEN-003] repair/delete after bytes change never acts on unseen data",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/persistence/import-repair.test.ts",
+      "status": "passed",
+      "durationMs": 129.91509
+    },
+    {
+      "id": "SEMANTICS-ABILITY-DESC-001",
+      "name": "§5.1 playtest server fixes [SEMANTICS-ABILITY-DESC-001] ability.take stores the game-data description",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/a13-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 44.155012
+    },
+    {
+      "id": "SEMANTICS-ABILITY-LIMITS-001",
+      "name": "§5.1.9 ability.take enforces TimesTakeable and ability.remove removes [SEMANTICS-ABILITY-LIMITS-001] character ability.take works up to TimesTakeable then ABILITY_MAXED, and remove is whole-entry",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/ability-limits.test.ts",
+      "status": "passed",
+      "durationMs": 109.70861199999999
+    },
+    {
+      "id": "SEMANTICS-ABILITY-LIMITS-002",
+      "name": "§5.1.9 ability.take enforces TimesTakeable and ability.remove removes [SEMANTICS-ABILITY-LIMITS-002] crew ability.take works up to TimesTakeable then ABILITY_MAXED, and remove is whole-entry",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/ability-limits.test.ts",
+      "status": "passed",
+      "durationMs": 6.554818000000012
+    },
+    {
+      "id": "SEMANTICS-ARMOR-001",
+      "name": "§5.1 playtest server fixes [SEMANTICS-ARMOR-001] armor availability is derived from the loadout; special needs an ability",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/a13-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 176.30867
+    },
+    {
+      "id": "SEMANTICS-ARMOR-AVAILABILITY-001",
+      "name": "§5.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-001] unavailable special armor is a typed error",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/armor-availability.test.ts",
+      "status": "passed",
+      "durationMs": 19.554832000000005
+    },
+    {
+      "id": "SEMANTICS-ARMOR-AVAILABILITY-002",
+      "name": "§5.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-002] clearing an armor-used flag is always permitted",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/armor-availability.test.ts",
+      "status": "passed",
+      "durationMs": 46.409355000000005
+    },
+    {
+      "id": "SEMANTICS-BOUNDED-INTEGER-001",
+      "name": "§5.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-001] stress addition clamps at the game maximum",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/bounded-integer.test.ts",
+      "status": "passed",
+      "durationMs": 19.17748400000002
+    },
+    {
+      "id": "SEMANTICS-BOUNDED-INTEGER-002",
+      "name": "§5.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-002] action ratings clamp below zero",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/bounded-integer.test.ts",
+      "status": "passed",
+      "durationMs": 87.97477000000003
+    },
+    {
+      "id": "SEMANTICS-COHORT-001",
+      "name": "§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove [SEMANTICS-COHORT-001] cohort.add appends a cohort with an id; update mutates; remove drops; unknown → NOT_FOUND",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/missing-ops.test.ts",
+      "status": "passed",
+      "durationMs": 25.06722400000001
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-001",
+      "name": "§5.1 gear commitment is a contract enum value [SEMANTICS-COMMITMENT-001] a fresh character has commitment \"none\"",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-enum.test.ts",
+      "status": "passed",
+      "durationMs": 16.963435999999973
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-002",
+      "name": "§5.1 gear commitment is a contract enum value [SEMANTICS-COMMITMENT-002] gear.clear-commitments resets commitment to \"none\"",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-enum.test.ts",
+      "status": "passed",
+      "durationMs": 91.15370600000003
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-003",
+      "name": "§5.1 gear commitment is a contract enum value [SEMANTICS-COMMITMENT-003] gear.commit with unset commitment → NO_COMMITMENT",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-enum.test.ts",
+      "status": "passed",
+      "durationMs": 87.978501
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-004",
+      "name": "§5.1 gear commitment is a contract enum value [SEMANTICS-COMMITMENT-004] commitment always decodes to the contract enum across set/commit/clear cycles",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-enum.test.ts",
+      "status": "passed",
+      "durationMs": 131.418254
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-LOCK-001",
+      "name": "§5.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-001] locked commitment rejects changes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-lock.test.ts",
+      "status": "passed",
+      "durationMs": 61.53812100000002
+    },
+    {
+      "id": "SEMANTICS-COMMITMENT-LOCK-002",
+      "name": "§5.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-002] unlock permits an explicit commitment change",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-lock.test.ts",
+      "status": "passed",
+      "durationMs": 89.06360499999997
+    },
+    {
+      "id": "SEMANTICS-COMPOSITES-001",
+      "name": "§5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) [SEMANTICS-COMPOSITES-001] campaign.batch applies ops sequentially, reports per-op outcomes, and writes one history entry",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/composites.test.ts",
+      "status": "passed",
+      "durationMs": 65.854119
+    },
+    {
+      "id": "SEMANTICS-COMPOSITES-002",
+      "name": "§5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) [SEMANTICS-COMPOSITES-002] a batch with an invalid middle op rolls back atomically leaving revisions and state unchanged",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/composites.test.ts",
+      "status": "passed",
+      "durationMs": 176.056304
+    },
+    {
+      "id": "SEMANTICS-COMPOSITES-003",
+      "name": "§5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) [SEMANTICS-COMPOSITES-003] end-score clears armor used and resets loadout commitment",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/composites.test.ts",
+      "status": "passed",
+      "durationMs": 177.97723100000002
+    },
+    {
+      "id": "SEMANTICS-COMPOSITES-004",
+      "name": "§5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) [SEMANTICS-COMPOSITES-004] end-downtime clears session expressions and applies the caller-supplied vice relief",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/composites.test.ts",
+      "status": "passed",
+      "durationMs": 132.19039699999996
+    },
+    {
+      "id": "SEMANTICS-CORE-BOUNDARY-001",
+      "name": "§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010) [SEMANTICS-CORE-BOUNDARY-001] zero-XP attribute level-up is rejected with CANNOT_LEVEL_UP and no mutation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/core-boundary.test.ts",
+      "status": "passed",
+      "durationMs": 62.881945
+    },
+    {
+      "id": "SEMANTICS-CORE-BOUNDARY-002",
+      "name": "§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010) [SEMANTICS-CORE-BOUNDARY-002] the max-th trauma resolution runs retirement; the next trauma.add returns RETIRED",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/core-boundary.test.ts",
+      "status": "passed",
+      "durationMs": 303.53948900000006
+    },
+    {
+      "id": "SEMANTICS-CORE-BOUNDARY-003",
+      "name": "§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010) [SEMANTICS-CORE-BOUNDARY-003] an empty loadout exposes no standard or heavy armor and using either is rejected",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/core-boundary.test.ts",
+      "status": "passed",
+      "durationMs": 88.31235400000003
+    },
+    {
+      "id": "SEMANTICS-CORE-BOUNDARY-004",
+      "name": "§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010) [SEMANTICS-CORE-BOUNDARY-004] committing armor gear derives standard/heavy availability and uncommit reverses it",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/core-boundary.test.ts",
+      "status": "passed",
+      "durationMs": 223.69082400000002
+    },
+    {
+      "id": "SEMANTICS-CORE-BOUNDARY-005",
+      "name": "§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010) [SEMANTICS-CORE-BOUNDARY-005] rollover clock overflow is carried and applied on reset",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/core-boundary.test.ts",
+      "status": "passed",
+      "durationMs": 2.329356999999959
+    },
+    {
+      "id": "SEMANTICS-CORE-BOUNDARY-006",
+      "name": "§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010) [SEMANTICS-CORE-BOUNDARY-006] rollover overflow larger than one clock carries across successive resets",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/core-boundary.test.ts",
+      "status": "passed",
+      "durationMs": 3.1397309999999834
+    },
+    {
+      "id": "SEMANTICS-CORE-BOUNDARY-007",
+      "name": "§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010) [SEMANTICS-CORE-BOUNDARY-007] project clocks still clamp at full and reset to zero",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/core-boundary.test.ts",
+      "status": "passed",
+      "durationMs": 2.30318299999999
+    },
+    {
+      "id": "SEMANTICS-CREW-CONTACTS-001",
+      "name": "C3 crew contacts (add/remove by name) [SEMANTICS-CREW-CONTACTS-001] contact.add writes a named contact with profession",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 17.05767
+    },
+    {
+      "id": "SEMANTICS-CREW-CONTACTS-002",
+      "name": "C3 crew contacts (add/remove by name) [SEMANTICS-CREW-CONTACTS-002] duplicate contact name is rejected",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 4.186250000000001
+    },
+    {
+      "id": "SEMANTICS-CREW-CONTACTS-003",
+      "name": "C3 crew contacts (add/remove by name) [SEMANTICS-CREW-CONTACTS-003] contact.remove drops the named contact",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 4.710313999999983
+    },
+    {
+      "id": "SEMANTICS-CREW-CONTACTS-004",
+      "name": "C3 crew contacts (add/remove by name) [SEMANTICS-CREW-CONTACTS-004] removing an unknown contact returns NOT_FOUND",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 2.559533999999985
+    },
+    {
+      "id": "SEMANTICS-CREW-FACTIONS-001",
+      "name": "C3 crew factions (status set is an upsert, clamped per game-settings) [SEMANTICS-CREW-FACTIONS-001] faction.set-status creates the faction on first set",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 2.159077999999994
+    },
+    {
+      "id": "SEMANTICS-CREW-FACTIONS-002",
+      "name": "C3 crew factions (status set is an upsert, clamped per game-settings) [SEMANTICS-CREW-FACTIONS-002] faction.set-status updates an existing faction instead of duplicating",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 3.1234540000000095
+    },
+    {
+      "id": "SEMANTICS-CREW-FACTIONS-003",
+      "name": "C3 crew factions (status set is an upsert, clamped per game-settings) [SEMANTICS-CREW-FACTIONS-003] status clamps to the game-settings maximum and reports it",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 1.909891000000016
+    },
+    {
+      "id": "SEMANTICS-CREW-FACTIONS-004",
+      "name": "C3 crew factions (status set is an upsert, clamped per game-settings) [SEMANTICS-CREW-FACTIONS-004] status clamps to the game-settings minimum and reports it",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 1.9314799999999934
+    },
+    {
+      "id": "SEMANTICS-CREW-FACTIONS-005",
+      "name": "C3 crew factions (status set is an upsert, clamped per game-settings) [SEMANTICS-CREW-FACTIONS-005] faction.remove drops the named faction",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 2.6639940000000024
+    },
+    {
+      "id": "SEMANTICS-CREW-FACTIONS-006",
+      "name": "C3 crew factions (status set is an upsert, clamped per game-settings) [SEMANTICS-CREW-FACTIONS-006] removing an unknown faction returns NOT_FOUND",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/crew-contacts-factions.test.ts",
+      "status": "passed",
+      "durationMs": 1.697654
+    },
+    {
+      "id": "SEMANTICS-CREW-FUND-001",
+      "name": "§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove [SEMANTICS-CREW-FUND-001] crew coin.add / stash.add / tier.add report applied deltas; tier floors at 0",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/missing-ops.test.ts",
+      "status": "passed",
+      "durationMs": 6.6712129999999945
+    },
+    {
+      "id": "SEMANTICS-CREW-XP-001",
+      "name": "§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove [SEMANTICS-CREW-XP-001] crew xp.add clamps to max; xp.clear resets",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/missing-ops.test.ts",
+      "status": "passed",
+      "durationMs": 2.593123999999989
+    },
+    {
+      "id": "SEMANTICS-CROSS-LINKS-001",
+      "name": "§5.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-001] dossier crewId accepts an existing crew and roster counts members",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/cross-links.test.ts",
+      "status": "passed",
+      "durationMs": 161.687441
+    },
+    {
+      "id": "SEMANTICS-CROSS-LINKS-002",
+      "name": "§5.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-002] deleting a crew unlinks its members",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/cross-links.test.ts",
+      "status": "passed",
+      "durationMs": 122.88013699999999
+    },
+    {
+      "id": "SEMANTICS-FUND-001",
+      "name": "§5.1.8 fund gains expose partial capacity [SEMANTICS-FUND-001] satchel then stash fill and overflow is visible",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund.test.ts",
+      "status": "passed",
+      "durationMs": 18.911719000000005
+    },
+    {
+      "id": "SEMANTICS-FUND-002",
+      "name": "§5.1.8 fund gains expose partial capacity [SEMANTICS-FUND-002] spending uses satchel before stash liquidation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund.test.ts",
+      "status": "passed",
+      "durationMs": 45.059769999999986
+    },
+    {
+      "id": "SEMANTICS-FUND-003",
+      "name": "§5.1.8 fund spend stash-liquidation and fund.liquidate [SEMANTICS-FUND-003] fund.spend uses satchel first, then stash liquidation at 2:1",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund-liquidate.test.ts",
+      "status": "passed",
+      "durationMs": 108.00404200000003
+    },
+    {
+      "id": "SEMANTICS-FUND-004",
+      "name": "§5.1.8 fund spend stash-liquidation and fund.liquidate [SEMANTICS-FUND-004] fund.spend beyond max affordable → INSUFFICIENT_FUNDS",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund-liquidate.test.ts",
+      "status": "passed",
+      "durationMs": 44.170525
+    },
+    {
+      "id": "SEMANTICS-FUND-005",
+      "name": "§5.1.8 fund spend stash-liquidation and fund.liquidate [SEMANTICS-FUND-005] fund.liquidate converts stash to satchel at 2:1",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund-liquidate.test.ts",
+      "status": "passed",
+      "durationMs": 91.05745599999995
+    },
+    {
+      "id": "SEMANTICS-FUND-006",
+      "name": "§5.1.8 fund spend stash-liquidation and fund.liquidate [SEMANTICS-FUND-006] fund.liquidate with a full satchel → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund-liquidate.test.ts",
+      "status": "passed",
+      "durationMs": 130.87759899999992
+    },
+    {
+      "id": "SEMANTICS-GEAR-OPS-001",
+      "name": "§5.1 gear ops add/remove/commit/uncommit/clear-commitments [SEMANTICS-GEAR-OPS-001] gear.add appends to availableGear; duplicate name → DUPLICATE",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/gear-ops.test.ts",
+      "status": "passed",
+      "durationMs": 63.692789999999974
+    },
+    {
+      "id": "SEMANTICS-GEAR-OPS-002",
+      "name": "§5.1 gear ops add/remove/commit/uncommit/clear-commitments [SEMANTICS-GEAR-OPS-002] gear.commit moves an available item into loadout with preconditions; over-bulk and duplicate rejected",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/gear-ops.test.ts",
+      "status": "passed",
+      "durationMs": 178.921811
+    },
+    {
+      "id": "SEMANTICS-GEAR-OPS-003",
+      "name": "§5.1 gear ops add/remove/commit/uncommit/clear-commitments [SEMANTICS-GEAR-OPS-003] gear.uncommit removes from loadout; lock blocks commit; clear-commitments resets loadout and commitment",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/gear-ops.test.ts",
+      "status": "passed",
+      "durationMs": 262.89996900000006
+    },
+    {
+      "id": "SEMANTICS-GEAR-OPS-004",
+      "name": "§5.1 gear ops add/remove/commit/uncommit/clear-commitments [SEMANTICS-GEAR-OPS-004] gear.remove drops from availableGear and loadout; unknown → NOT_FOUND",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/gear-ops.test.ts",
+      "status": "passed",
+      "durationMs": 133.80154100000004
+    },
+    {
+      "id": "SEMANTICS-HARM-SPILLOVER-001",
+      "name": "§5.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-001] full severe harm rolls upward into fatal",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/harm-spillover.test.ts",
+      "status": "passed",
+      "durationMs": 64.874854
+    },
+    {
+      "id": "SEMANTICS-HARM-SPILLOVER-002",
+      "name": "§5.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-002] removing one intensity does not cascade another slot",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/harm-spillover.test.ts",
+      "status": "passed",
+      "durationMs": 89.01238500000002
+    },
+    {
+      "id": "SEMANTICS-HEAL-001",
+      "name": "§C4 playtest contract changes [SEMANTICS-HEAL-001] harm.heal requires a specific harm and removes exactly it",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/c4-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 265.085063
+    },
+    {
+      "id": "SEMANTICS-MASTERY-001",
+      "name": "§5.1 playtest server fixes [SEMANTICS-MASTERY-001] action ratings cap at 3 until the character's crew unlocks Mastery",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/a13-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 136.83484900000002
+    },
+    {
+      "id": "SEMANTICS-NOTES-001",
+      "name": "§C4 playtest contract changes [SEMANTICS-NOTES-001] character notes are a list; note.add appends and note.remove drops by index",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/c4-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 107.13378600000001
+    },
+    {
+      "id": "SEMANTICS-NOTES-002",
+      "name": "§C4 playtest contract changes [SEMANTICS-NOTES-002] crew notes are a list; note.add appends and note.remove drops by index",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/c4-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 4.512198000000012
+    },
+    {
+      "id": "SEMANTICS-RETIRED-DEADISH-001",
+      "name": "§5.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-001] the final trauma retires the character and exposes both flags",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/retired-deadish.test.ts",
+      "status": "passed",
+      "durationMs": 235.225236
+    },
+    {
+      "id": "SEMANTICS-RETIRED-DEADISH-002",
+      "name": "§5.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-002] retired reads and allow-list writes work; gameplay mutations return RETIRED",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/retired-deadish.test.ts",
+      "status": "passed",
+      "durationMs": 172.71315900000002
+    },
+    {
+      "id": "SEMANTICS-ROLODEX-001",
+      "name": "§5.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-001] friend can move through close-friend to rival",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/rolodex.test.ts",
+      "status": "passed",
+      "durationMs": 63.67619300000001
+    },
+    {
+      "id": "SEMANTICS-ROLODEX-002",
+      "name": "§5.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-002] rival can be downgraded back to friend",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/rolodex.test.ts",
+      "status": "passed",
+      "durationMs": 87.658504
+    },
+    {
+      "id": "SEMANTICS-ROLODEX-REMOVE-001",
+      "name": "§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove [SEMANTICS-ROLODEX-REMOVE-001] character rolodex.remove drops a friend; unknown → NOT_FOUND",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/missing-ops.test.ts",
+      "status": "passed",
+      "durationMs": 87.21801299999998
+    },
+    {
+      "id": "SEMANTICS-SESSION-SET-001",
+      "name": "§5.1.12 session expression tracks clamp and clear [SEMANTICS-SESSION-SET-001] session.set updates a track, clamps at max, and clears back down",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/session-set.test.ts",
+      "status": "passed",
+      "durationMs": 64.29185999999999
+    },
+    {
+      "id": "SEMANTICS-STRESS-OVERFLOW-001",
+      "name": "§5.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-001] full stress does not add trauma automatically",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/stress-overflow.test.ts",
+      "status": "passed",
+      "durationMs": 15.29381699999999
+    },
+    {
+      "id": "SEMANTICS-STRESS-OVERFLOW-002",
+      "name": "§5.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-002] trauma is a separate explicit resolution-only operation",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/stress-overflow.test.ts",
+      "status": "passed",
+      "durationMs": 87.770939
+    },
+    {
+      "id": "SEMANTICS-STRESS-REDUCE-001",
+      "name": "§5.1 playtest server fixes [SEMANTICS-STRESS-REDUCE-001] stress.add with a negative delta reduces stress (clamped at 0)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/a13-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 107.07770399999998
+    },
+    {
+      "id": "SEMANTICS-TURF-001",
+      "name": "§C4 playtest contract changes [SEMANTICS-TURF-001] crew turf.add adds with 0..6 clamp; negative removes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/c4-playtest.test.ts",
+      "status": "passed",
+      "durationMs": 3.8081639999999766
+    },
+    {
+      "id": "SEMANTICS-UPGRADES-001",
+      "name": "§5.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-001] marking the same multi-box upgrade twice retains two boxes",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/upgrades.test.ts",
+      "status": "passed",
+      "durationMs": 18.54488599999999
+    },
+    {
+      "id": "SEMANTICS-UPGRADES-002",
+      "name": "§5.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-002] unmarking removes one box instead of the whole upgrade",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/upgrades.test.ts",
+      "status": "passed",
+      "durationMs": 5.835052999999988
+    },
+    {
+      "id": "SEMANTICS-XP-TRACKS-001",
+      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-001] attribute level-up clears only that attribute track",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
+      "status": "passed",
+      "durationMs": 63.03736600000002
+    },
+    {
+      "id": "SEMANTICS-XP-TRACKS-002",
+      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-002] taking an ability does not clear playbook XP",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
+      "status": "passed",
+      "durationMs": 45.238332000000014
+    },
+    {
+      "id": "SEMANTICS-XP-TRACKS-003",
+      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-003] S&V action maxima and healing clock size come from game data",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
+      "status": "passed",
+      "durationMs": 2.002272000000005
+    },
+    {
+      "id": "TOTAL-200-001",
+      "name": "contract total collections (SC-O2) [TOTAL-200-001] the roster stays 200 with an unreadable member present and every valid row preserved (FV-010 reproduction)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 26.03130999999999
+    },
+    {
+      "id": "TOTAL-CLOCK-DELETE-009",
+      "name": "contract total collections (SC-O2) [TOTAL-CLOCK-DELETE-009] a degraded clock row is deletable via its deleteToken as If-Match; a stale token returns 409 STALE_REVISION",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 87.12894400000005
+    },
+    {
+      "id": "TOTAL-CREW-005",
+      "name": "contract total collections (SC-O2) [TOTAL-CREW-005] deleting an unreadable crew atomically unlinks its readable characters while unreadable characters remain visible separately",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 120.71650900000003
+    },
+    {
+      "id": "TOTAL-DELETE-003",
+      "name": "contract total collections (SC-O2) [TOTAL-DELETE-003] an unreadable member is deletable via its deleteToken as If-Match",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 65.54157600000002
+    },
+    {
+      "id": "TOTAL-HEALTH-007",
+      "name": "contract total collections (SC-O2) [TOTAL-HEALTH-007] guard: the server stays healthy after every counterexample in this suite",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 0.7956179999999904
+    },
+    {
+      "id": "TOTAL-LIST-006",
+      "name": "contract total collections (SC-O2) [TOTAL-LIST-006] character, crew, and clock list endpoints stay 200 with degraded members listed",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 77.27013099999999
+    },
+    {
+      "id": "TOTAL-NOWRITE-008",
+      "name": "contract total collections (SC-O2) [TOTAL-NOWRITE-008] guard: collection reads never write (checksums of degraded and valid seed files unchanged)",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 125.89555599999994
+    },
+    {
+      "id": "TOTAL-ROW-002",
+      "name": "contract total collections (SC-O2) [TOTAL-ROW-002] a degraded row carries the same summary schema as valid rows: route id/kind, canonical empties, readability flags, deleteToken",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 17.16521799999998
+    },
+    {
+      "id": "TOTAL-STALE-004",
+      "name": "contract total collections (SC-O2) [TOTAL-STALE-004] deleting with a stale content token returns 409 STALE_REVISION and leaves the degraded row in place",
+      "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/contract/total-collections.test.ts",
+      "status": "passed",
+      "durationMs": 58.99379299999998
+    }
+  ],
+  "summary": {
+    "total": 415,
+    "passed": 415,
+    "failed": 0,
+    "skipped": 0,
+    "todo": 0
+  }
+}

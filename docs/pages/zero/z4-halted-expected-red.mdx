@@ -1,0 +1,84 @@
+---
+title: Z4 — Track Z halted and expected-red (Wave 8)
+description: Track Z status per the work spec — explicitly halted, expected to fail the revised shared contract, parity suspended until upstream Zero blockers clear; recorded without blocking Track A.
+---
+
+# Z4 — Track Z halted / expected-red (Wave 8)
+
+Track Z (the Zero backend) is **explicitly halted** and **expected to fail the
+revised shared contract**. Its expected-red conformance report is recorded on
+this page and **does not block Track A completion**.
+
+## Status (per the work spec)
+
+- **Halted.** Zerolang issues [#430](https://github.com/vercel-labs/zerolang/issues/430)
+  (`std.http.listen` response failure) and [#431](https://github.com/vercel-labs/zerolang/issues/431)
+  (persistent stdin feature request) block the transport path the full contract
+  requires. The Z2S stdio escape hatch was stopped at the transport boundary
+  (see `z2-notes.mdx`).
+- **Expected red.** The revised shared contract moved to canonical total
+  objects, preview/apply import and repair, and the lifecycle state machine —
+  none of which the frozen Zero server implements.
+- **Parity suspended.** Shared-contract parity is suspended until the upstream
+  Zero blockers clear and a dedicated resume wave implements the revised
+  specification.
+- **Non-blocking.** The expected-red report is recorded without treating it as
+  Track A failure (work spec "Track Z" section, Wave 8 exit gate, Q39;
+  `PAPERCLIPS.md` §10).
+
+## What Track Z currently has
+
+- `backend-zero/` — the Zero (zerolang.ai) backend, pinned to Zero 0.3.4
+  (build `5b3a90a`), toolchain at `~/.zero/bin/zero`.
+- `server/` — `zero.graph` + `src/`, launched via `server/run.sh` (adds
+  `~/.zero/bin` to PATH and symlinks `./zero`); cold start via `PITD_RESET=1`;
+  the listener is compiled to port 9657.
+- Last measured conformance result: **Z2, 131/131 across 21 test files against
+  the frozen contract** (2026-07-21), archived at
+  `backend-zero/scorecards/Z2-scorecard.json`.
+- `current.json` is the wire source of truth, with entity-scoped snapshot
+  history (50-entry cap) and a packed-state execution cache; game settings load
+  from `data/games/`.
+- Known transport limits recorded in `z2-notes.mdx`: a ~6 KiB roster response
+  boundary (`handler_failed`), a fixed compiled port, no in-process
+  `World`/stdout logging capability, and a single-op batch path.
+
+## Why it is expected red
+
+The Zero server predates the revised contract — its last verified surface is the
+frozen 131-test contract from 2026-07-21, after which it was halted. The revised
+contract added, at minimum:
+
+- **Canonical total objects** — normalize-on-write canonicalization
+  (`INVALID_ENTITY` → 422, never 500); total collections where degraded rows
+  remain visible and deletable (`isReadable: false`); completeness derived from
+  `x-requiredWhenComplete` at response time, never stored.
+- **Preview/repair** — import and repair `preview`/`apply` endpoints with
+  preview tokens, `If-Match` `sha256:` content tokens for degraded rows, and
+  `NORMALIZATION_REQUIRED` / `CONFIRM_REQUIRED` / `STALE_REVISION` semantics;
+  unparseable stored bytes → 422 `INVALID_ENTITY`.
+- **Lifecycle state machine** — stress max → `traumaPending` with typed
+  attention (never auto-trauma), trauma resolution → `isOutOfAction` +
+  `stressClearPending`, `end-score` as the only sanctioned release, and
+  locked retired/deadish transitions.
+
+The revised conformance suite covering these categories (`total-collections`,
+`import-repair`, `canonical-shape`, `lifecycle-state-machine`, `completeness`,
+`capability-parity`) has never been run against the Zero server. The red status
+is therefore per the work spec, not a fresh measurement.
+
+## Does not block Track A
+
+Track Z's expected-red status is recorded without treating it as a Track A
+failure and **does not block Track A completion** (work spec "Track Z" section
+and Wave 8 exit gate; `PAPERCLIPS.md` §10). Resumption requires the upstream
+Zero blockers (#430/#431) to clear and a dedicated resume wave implementing the
+revised specification.
+
+## References
+
+- `docs/pages/contract/spec-change-work-spec.mdx` — "Track Z" section, Wave 8 exit gate, Q39
+- `PAPERCLIPS.md` §8 (conformance categories) and §10 (Track Z halted status)
+- `backend-zero/README.md`, `backend-zero/AGENTS.md`, `backend-zero/scorecards/Z2-scorecard.json`
+- Zerolang issues [#430](https://github.com/vercel-labs/zerolang/issues/430) and [#431](https://github.com/vercel-labs/zerolang/issues/431)
+- `docs/pages/zero/z2-notes.mdx`, `docs/pages/zero/z0-go-no-go.mdx`

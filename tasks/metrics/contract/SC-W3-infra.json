@@ -5,9 +5,14 @@
   "reviewAgent": "orchestrator",
   "date": "2026-08-14",
   "iterationsToGreen": 2,
-  "iterationNotes": "Decoder sync (drift fix) then decoder tolerance (canonical-default filling) so the pre-existing suite returns green against the lagging runtime; baseline 279 passed / 135 red (oracle reds only). createClock api + 2 stale clockKind test sites updated to frozen contract.",
+  "iterationNotes": "Decoder sync (drift fix) then decoder tolerance (canonical-default filling) so the pre-existing suite returns green against the lagging runtime; baseline 279 passed / 135 failed (oracle reds only). createClock api + 2 stale clockKind test sites updated to frozen contract.",
   "wallClockMinutes": null,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "Full managed suite: 279 passed / 135 failed at freeze; 9 strict-decode offline tests still reject bad shapes; remaining reds are behavioral oracles + server-lag classes.
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Full managed suite: 279 passed / 135 failed at freeze; 9 strict-decode offline tests still reject bad shapes; remaining reds are behavioral oracles + server-lag classes."
 }

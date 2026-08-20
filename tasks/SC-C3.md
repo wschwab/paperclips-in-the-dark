@@ -56,7 +56,7 @@ Report the exact commands and outputs. Do NOT run project-wide gates.
 
 ## Log
 
-Timestamped dispatch entry when work starts; list any S&V crew values you could not source.
+- **2026-08-14:** Dispatched to deepseek-v4-flash-0731 (nous, omp task worker). Outcome recorded in tasks/metrics/contract/SC-C3.json; acceptance gates verified by the orchestrator.
 
 Before you finish, answer in your report:
 1. Was anything in these instructions contradicted by what you found in the codebase?

@@ -1,0 +1,93 @@
+---
+title: Independent gate evidence — Luna reviews and final integration results
+description: Committed record of the independent Luna review gates (Waves 3, 6, 7, final) and the Wave 8 integration gate results
+---
+
+# Independent gate evidence
+
+Dated record of the independent review gates required by the ordered work
+specification and `AGENTS.md` (GPT 5.6 Luna via `openai-codex`, reasoning
+effort `xhigh`, read-only sandbox) plus the Wave 8 integration results.
+Each gate ended in exactly `VERDICT: PASS` (anything else fails the gate and
+is fixed before the next round).
+
+## Wave 3 — contract/oracle correctness review (2026-08-14)
+
+- **Rounds:** 15 (14 × `VERDICT: FAIL`, then `VERDICT: PASS`).
+- **Scope:** Waves 1–3 (amended PAPERCLIPS, frozen contract + schemas +
+  settings + generators, managed harness, frozen red oracle, SPARK clock
+  Posts).
+- **Findings fixed across rounds:** read-purity vs migrate-on-GET (explicit
+  repair only), turf/formatVersion schema alignment, summary-row `kind`,
+  INSUFFICIENT_FUNDS funds detail shape, preview document/token schema,
+  numeric-family declarations, harness startup/signal robustness (spawn-time
+  PID registration, vitest-child tracking, port retry), strict-decode
+  boundary, and more.
+- **Evidence:** the FAIL→PASS round transcripts and the fix commits are in the
+  wave history; final verdict recorded in the orchestrator session log.
+
+## Wave 6 — multimodal UI gate (2026-08-14)
+
+- **Rounds:** 5 (4 × `VERDICT: FAIL`, then `VERDICT: PASS`).
+- **Scope:** frontend clients (SC-F1…F6, G1), real-Chromium evidence
+  (52 screenshots + numeric containment/focus/a11y), light + dark.
+- **Findings fixed:** strict `onExcessProperty:"error"` at the client API
+  boundary, repairable deep-link import rendered raw 422, raw transport text
+  in create/health alerts, missing 404 route (FV-030 closed early), torn-seam
+  heading clip (FV-031 closed early).
+- **Evidence:** `agent-docs/frontend-vetting/wave6-evidence-r2/`
+  (gitignored local evidence; numeric entries + screenshots).
+
+## Wave 7 — craft-evidence multimodal review (R3) (2026-08-14)
+
+- **Rounds:** 1 × `VERDICT: PASS`.
+- **Scope:** the eight craft findings (P08/P12/P13/P14/P15/P16/P25/P32;
+  P30/P31 closed in Wave 6) — 71 PNGs + numeric geometry + source.
+- **Evidence:** `agent-docs/frontend-vetting/wave7/` (gitignored local
+  evidence).
+
+## Wave 8 — final integration gate (2026-08-14)
+
+Orchestrator-verified, re-runnable from the repository root:
+
+| Gate | Command | Result |
+|---|---|---|
+| Ada build + core tests + launch paths + SPA routes + whole-core proof | `./backend-ada/ci.sh` | green; gnatprove 246/246 checks proved |
+| Full conformance against a fresh seeded server | `env RUN_CONFORMANCE=1 ./backend-ada/ci.sh` | **415/415** |
+| Frontend suite | `(cd frontend && npm test -- --run)` | **598/598** |
+| Frontend build | `(cd frontend && npm run build)` | green |
+| Conformance tooling | `(cd conformance && npm run test:tooling)` | **21/21** |
+| Generator idempotency | run generators twice, `sha256sum` diff | byte-identical |
+| Golden fixtures + settings | ajv 2020-12 + ajv-draft-04 | all valid |
+| Corruption/repair suites | managed-run, twice, fresh dirs | **22/22** twice |
+| Agent workflows | exercised from generated docs only | matched docs |
+| Track Z expected-red | `docs/pages/zero/z4-halted-expected-red.mdx` | recorded; non-blocking |
+
+Notes:
+
+- The conformance suite is deterministic: `fileParallelism: false` in
+  `conformance/vitest.config.ts` (a black-box suite must run files
+  sequentially against one server) and `backend-ada/ci.sh` seeds the standard
+  oracle fixtures before starting its server.
+- The two pre-existing ordering flakes (CLOCK-HEALING-013 full-list equality,
+  create-validation global count) were root-caused to file-level parallelism
+  and fixed by the config change.
+- `nonBlankString` is Unicode-whitespace on both the Ada server and the
+  generated frontend evaluator (ECMAScript TrimString set); the completeness
+  oracle pins an NBSP case (COMPLETE-WHITESPACE-004).
+
+## Final whole-initiative review
+
+- **Rounds:** 9 (8 × `VERDICT: FAIL`, then `VERDICT: PASS`, 2026-08-14).
+- **Round 1–8 findings (all fixed):** stale "backend not implemented" comment; fix-coverage.json suite-name + duplicated-path defects; change log stopped at Wave 6; historical luna-review.md + wave7 "R3 pending" notes; stale vocs status lines; `nonBlankString` Unicode-whitespace alignment (Ada now mirrors the ECMAScript TrimString set, pinned by an NBSP case); missing committed raw conformance report; degraded-clock collection rows (clockSummary end-to-end + TOTAL-CLOCK-DELETE-009); frontend summary metadata made required; 415/415 vs 414/414 and 588/588 vs 598/598 count inconsistencies; invalid metrics JSON; template-only task-card Log sections (39 backfilled); dangling final-verdict.md reference.
+- **Round 9:** `VERDICT: PASS` — no real defects; all 17 deliverables coherent; the three cross-cutting invariants hold across contract/Ada/frontend; frozen oracle coverage present; report records 415/415; no unfinished markers; manifest 108/108 (85 agent / 23 human / 0 exempt); 32/32 findings Closed.
+
+Final verdict (dated, authoritative):
+
+> **VERDICT: PASS** — GPT 5.6 Luna via `openai-codex` at `xhigh`, read-only,
+> 2026-08-14. The complete contract-correction initiative — normative spec,
+> frozen contract + oracle, Ada backend (246/246 gnatprove), frontend clients
+> (598/598), agent skill, 32/32 findings closed, integration gates
+> (conformance 415/415) — passes the independent gate.
+
+Full verdict transcript: `docs/pages/contract/gate-evidence/final-verdict.md`.

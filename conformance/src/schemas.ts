@@ -531,6 +531,28 @@ const HistoryEntry = Schema.Struct({
   op: Schema.String,
 });
 
+const ClockSummary = Schema.Struct({
+  kind: Schema.Literal("clock"),
+  id: Uuid,
+  name: Schema.String,
+  ownerKind: ClockOwnerKind,
+  ownerId: Schema.String,
+  purpose: ClockPurpose,
+  behavior: ClockBehavior,
+  segments: NonNegativeInt,
+  size: PositiveInt,
+  rollover: NonNegativeInt,
+  relatedClockIds: Schema.Array(Uuid),
+  // E11 total collections (campaign.json#/$defs/clockSummary): every clock
+  // list row carries readability/repair/completion state; deleteToken is ""
+  // for readable rows and the sha256 content token for degraded rows. The
+  // summary schema is strict (no Wave-3 tolerance — the rows are new).
+  isReadable: Schema.Boolean,
+  isRepairable: Schema.Boolean,
+  isComplete: Schema.Boolean,
+  deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
+});
+
 const Campaign = Schema.Struct({
   kind: Schema.Literal("campaign"),
   name: Schema.String,
@@ -558,7 +580,8 @@ export const Schemas = {
   HistoryEntry,
   CharacterSummaryList: Schema.Array(CharacterSummary),
   CrewSummaryList: Schema.Array(CrewSummary),
-  ClockList: Schema.Array(Clock),
+  ClockSummaryList: Schema.Array(ClockSummary),
+  ClockList: Schema.Array(ClockSummary),
   Campaign,
   GameList: Schema.Array(GameSummary),
   SummaryList: Schema.Array(Schema.Union(CharacterSummary, CrewSummary)),

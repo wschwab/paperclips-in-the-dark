@@ -57,7 +57,7 @@ Acceptance: run a check that every schema property path appears in the document 
 
 ## Log
 
-Timestamped dispatch entry when work starts; note any decision that contradicts the work spec, with citation.
+- **2026-08-14:** Dispatched to deepseek-v4-flash-0731 (nous, omp task worker). Outcome recorded in tasks/metrics/contract/SC-R0.json; acceptance gates verified by the orchestrator.
 
 Before you finish, answer in your report:
 1. Was anything in these instructions contradicted by what you found in the codebase?

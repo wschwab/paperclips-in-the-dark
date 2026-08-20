@@ -130,6 +130,12 @@ const CREWS_DATA = [
     hold: "strong",
     memberCount: 1,
     revision: 5,
+    isReadable: true,
+    isRepairable: false,
+    isComplete: true,
+    deleteToken: "",
+    canUndo: false,
+    historyCount: 0,
   },
 ];
 
@@ -4089,7 +4095,7 @@ describe("F2s Coin", () => {
 });
 
 describe("F2s Projects", () => {
-  /** Minimal valid Clock DTO. */
+  /** Minimal valid Clock DTO (OperationResult entity payload). */
   function clockDTO(overrides: Record<string, unknown> = {}) {
     return {
       kind: "clock",
@@ -4103,6 +4109,28 @@ describe("F2s Projects", () => {
       segments: 2,
       size: 6,
       rollover: 0,
+      ...overrides,
+    };
+  }
+
+  /** Minimal clockSummary list row (campaign.json#/$defs/clockSummary). */
+  function clockSummaryDTO(overrides: Record<string, unknown> = {}) {
+    return {
+      kind: "clock",
+      id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      name: "Infiltrate the Bluecoats",
+      ownerKind: "campaign",
+      ownerId: "",
+      purpose: "custom",
+      behavior: "bounded",
+      segments: 2,
+      size: 6,
+      rollover: 0,
+      relatedClockIds: [],
+      isReadable: true,
+      isRepairable: true,
+      isComplete: true,
+      deleteToken: "",
       ...overrides,
     };
   }
@@ -4128,7 +4156,7 @@ describe("F2s Projects", () => {
   };
 
   it("renders the clock list from GET /clocks: name, kind, segments/size and an SVG dial", async () => {
-    mountWithClocks([clockDTO()]);
+    mountWithClocks([clockSummaryDTO()]);
 
     await vi.waitFor(() => {
       expect(root.querySelector(".character-projects")).not.toBeNull();
@@ -4197,14 +4225,14 @@ describe("F2s Projects", () => {
     });
   });
 
-  it("progress + posts clock.progress with the clock's revision (If-Match) and updates segments", async () => {
+  it("progress + posts clock.progress (no If-Match for a readable summary row) and updates segments", async () => {
     const progressed = clockDTO({ revision: 3, segments: 3 });
     global.fetch = vi
       .fn()
       .mockResolvedValueOnce(ok(characterDTO()))
       .mockResolvedValueOnce(ok(GAME_DATA))
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
-      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok([clockSummaryDTO()]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
       .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(progressed, "clock.progress")));
@@ -4220,7 +4248,7 @@ describe("F2s Projects", () => {
         "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
         expect.objectContaining({
           body: JSON.stringify({ segments: 1 }),
-          headers: expect.objectContaining({ "If-Match": "2" }),
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
         }),
       );
     });
@@ -4238,7 +4266,7 @@ describe("F2s Projects", () => {
       .mockResolvedValueOnce(ok(characterDTO()))
       .mockResolvedValueOnce(ok(GAME_DATA))
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
-      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok([clockSummaryDTO()]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
       .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(progressed, "clock.progress")));
@@ -4260,7 +4288,7 @@ describe("F2s Projects", () => {
         "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
         expect.objectContaining({
           body: JSON.stringify({ segments: 2 }),
-          headers: expect.objectContaining({ "If-Match": "2" }),
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
         }),
       );
     });
@@ -4269,14 +4297,14 @@ describe("F2s Projects", () => {
     });
   });
 
-  it("reset posts clock.reset with the clock's revision and zeroes the clock", async () => {
+  it("reset posts clock.reset (no If-Match for a readable summary row) and zeroes the clock", async () => {
     const reset = clockDTO({ revision: 3, segments: 0 });
     global.fetch = vi
       .fn()
       .mockResolvedValueOnce(ok(characterDTO()))
       .mockResolvedValueOnce(ok(GAME_DATA))
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
-      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok([clockSummaryDTO()]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
       .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(reset, "clock.reset")));
@@ -4292,7 +4320,7 @@ describe("F2s Projects", () => {
         "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.reset",
         expect.objectContaining({
           body: JSON.stringify({}),
-          headers: expect.objectContaining({ "If-Match": "2" }),
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
         }),
       );
     });
@@ -4301,13 +4329,53 @@ describe("F2s Projects", () => {
     });
   });
 
-  it("delete posts /delete with confirm and the clock's revision, then removes the clock", async () => {
+  it("delete fetches the full clock DTO for the revision then posts /delete with confirm + If-Match, removing the clock", async () => {
     global.fetch = vi
       .fn()
       .mockResolvedValueOnce(ok(characterDTO()))
       .mockResolvedValueOnce(ok(GAME_DATA))
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
-      .mockResolvedValueOnce(ok([clockDTO()]))
+      .mockResolvedValueOnce(ok([clockSummaryDTO()]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
+      .mockResolvedValueOnce(ok(clockDTO()))  // getClock: full DTO for the revision
+      .mockResolvedValueOnce(ok(clockOk(clockDTO(), "delete")));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]')).not.toBeNull();
+    });
+
+    (root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+        { headers: { Accept: "application/json" } },
+      );
+    });
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/delete",
+        expect.objectContaining({
+          body: JSON.stringify({ confirm: true }),
+          headers: expect.objectContaining({ "If-Match": "2" }),
+        }),
+      );
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector(".project-clock")).toBeNull();
+      expect(root.querySelector(".project-empty")?.textContent).toContain("no clocks");
+    });
+  });
+
+  it("delete uses the row's deleteToken as If-Match for a degraded clock", async () => {
+    const token = "sha256:" + "b".repeat(64);
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([clockSummaryDTO({ deleteToken: token, isReadable: false, isRepairable: false })]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
       .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
       .mockResolvedValueOnce(ok(clockOk(clockDTO(), "delete")));
@@ -4323,7 +4391,7 @@ describe("F2s Projects", () => {
         "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/delete",
         expect.objectContaining({
           body: JSON.stringify({ confirm: true }),
-          headers: expect.objectContaining({ "If-Match": "2" }),
+          headers: expect.objectContaining({ "If-Match": token }),
         }),
       );
     });
@@ -4823,30 +4891,53 @@ describe("FV-012 focus restoration", () => {
   });
 
   it("moves focus to the next clock's control after deleting a clock", async () => {
-    const clockA = {
+    const clockSummaryA = {
       kind: "clock",
       id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+      name: "Infiltrate the Bluecoats",
+      ownerKind: "campaign",
+      ownerId: "",
+      purpose: "custom",
+      behavior: "bounded",
+      segments: 2,
+      size: 6,
+      rollover: 0,
+      relatedClockIds: [],
+      isReadable: true,
+      isRepairable: true,
+      isComplete: true,
+      deleteToken: "",
+    };
+    const clockSummaryB = { ...clockSummaryA, id: "d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f", name: "Secure the Docks" };
+    const fullA = {
+      kind: "clock",
+      id: clockSummaryA.id,
       revision: 2,
       formatVersion: 1,
       createdAt: "2026-07-24T00:00:00.000Z",
       updatedAt: "2026-07-24T00:00:00.000Z",
-      name: "Infiltrate the Bluecoats",
+      name: clockSummaryA.name,
+      ownerKind: "campaign",
+      ownerId: "",
+      purpose: "custom",
+      behavior: "bounded",
       clockKind: "project",
       segments: 2,
       size: 6,
       rollover: 0,
+      relatedClockIds: [],
     };
-    const clockB = { ...clockA, id: "d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f", name: "Secure the Docks" };
-    const deleteOk = { ok: true, clock: clockA, applied: { op: "clock.delete" }, sideEffects: [], error: null };
+    const deleteOk = { ok: true, clock: fullA, applied: { op: "clock.delete" }, sideEffects: [], error: null };
 
     const mocked = vi
       .fn()
       .mockResolvedValueOnce(ok(characterDTO()))
       .mockResolvedValueOnce(ok(GAME_DATA))
       .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
-      .mockResolvedValueOnce(ok([clockA, clockB]))
+      .mockResolvedValueOnce(ok([clockSummaryA, clockSummaryB]))
       .mockResolvedValueOnce(ok(CREWS_DATA))
       .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(ok(fullA)) // getClock: full DTO for the revision
       .mockResolvedValueOnce(ok(deleteOk));
     global.fetch = mocked;
     mountCharacterDetailPage(root, CHARACTER_ID);

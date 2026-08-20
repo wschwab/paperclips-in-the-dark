@@ -151,7 +151,7 @@ describe("contract total collections (SC-O2)", () => {
       expect(result.ok).toBe(true);
 
       // readable member unlinked atomically with the crew removal (raw
-      // assert; the current server lags the frozen lifecycle fields)
+      // assert)
       const unlinked = await api.get(`characters/${VALID_CHAR}`);
       expect(unlinked.status).toBe(200);
       expect((unlinked.body as { dossier?: { crewId?: string } }).dossier?.crewId).toBe("");
@@ -183,8 +183,25 @@ describe("contract total collections (SC-O2)", () => {
 
       const clocks = await api.get("clocks");
       expect(clocks.status).toBe(200);
-      const clockRows = clocks.body as Array<Record<string, unknown>>;
-      expect(clockRows.some((c) => c.id === UNREADABLE_CLOCK)).toBe(true);
+      const clockRows = await decode(Schemas.ClockSummaryList, clocks.body);
+      const degradedClock = clockRows.find((c) => c.id === UNREADABLE_CLOCK);
+      expect(degradedClock).toBeDefined();
+      // frozen clockSummary row shape for a degraded clock: route id/kind,
+      // canonical empties, readability flags, raw-byte deleteToken
+      expect(degradedClock?.kind).toBe("clock");
+      expect(degradedClock?.name).toBe("");
+      expect(degradedClock?.ownerKind).toBe("campaign");
+      expect(degradedClock?.ownerId).toBe("");
+      expect(degradedClock?.purpose).toBe("custom");
+      expect(degradedClock?.behavior).toBe("bounded");
+      expect(degradedClock?.segments).toBe(0);
+      expect(degradedClock?.size).toBe(1);
+      expect(degradedClock?.rollover).toBe(0);
+      expect(degradedClock?.relatedClockIds).toEqual([]);
+      expect(degradedClock?.isReadable).toBe(false);
+      expect(degradedClock?.isRepairable).toBe(false); // unparseable bytes cannot be normalized
+      expect(degradedClock?.isComplete).toBe(false);
+      expect(degradedClock?.deleteToken).toMatch(/^sha256:[0-9a-f]{64}$/); // bound to raw bytes
     },
   );
 
@@ -218,6 +235,47 @@ describe("contract total collections (SC-O2)", () => {
       for (const [kind, id] of watched) {
         expect(await fileSha256(kind, id)).toBe(before.get(`${kind}/${id}`));
       }
+    },
+  );
+
+  testCase(
+    "TOTAL-CLOCK-DELETE-009",
+    "a degraded clock row is deletable via its deleteToken as If-Match; a stale token returns 409 STALE_REVISION",
+    async () => {
+      const clocks = await api.get("clocks");
+      expect(clocks.status).toBe(200);
+      const rows = await decode(Schemas.ClockSummaryList, clocks.body);
+      const row = rows.find((c) => c.id === UNREADABLE_CLOCK);
+      if (!row) throw new Error(`degraded clock ${UNREADABLE_CLOCK} missing from the list`);
+      expect(row.isReadable).toBe(false);
+      expect(row.deleteToken).toMatch(/^sha256:[0-9a-f]{64}$/);
+
+      // stale content token → 409 STALE_REVISION; the row stays listed
+      const stale = await api.post(
+        `clocks/${UNREADABLE_CLOCK}/delete`,
+        { confirm: true },
+        { "If-Match": `sha256:${"0".repeat(64)}` },
+      );
+      expect(stale.status).toBe(409);
+      const staleResult = await api.operation(stale);
+      expect(staleResult.ok).toBe(false);
+      expect(staleResult.error?.code).toBe("STALE_REVISION");
+      const still = await api.get("clocks");
+      expect(still.status).toBe(200);
+      const stillRows = await decode(Schemas.ClockSummaryList, still.body);
+      expect(stillRows.some((c) => c.id === UNREADABLE_CLOCK)).toBe(true);
+
+      // current deleteToken → 200, then the clock is gone
+      const deleted = await api.post(
+        `clocks/${UNREADABLE_CLOCK}/delete`,
+        { confirm: true },
+        { "If-Match": row.deleteToken },
+      );
+      expect(deleted.status).toBe(200);
+      const result = await api.operation(deleted);
+      expect(result.ok).toBe(true);
+      const gone = await api.get(`clocks/${UNREADABLE_CLOCK}`);
+      expect(gone.status).toBe(404);
     },
   );
 });

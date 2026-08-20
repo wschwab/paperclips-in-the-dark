@@ -76,6 +76,59 @@
         }
       }
     },
+    "clockSummary": {
+      "type": "object",
+      "required": [
+        "kind", "id", "name", "ownerKind", "ownerId", "purpose", "behavior",
+        "segments", "size", "rollover", "relatedClockIds",
+        "isReadable", "isRepairable", "isComplete", "deleteToken"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "clock", "description": "route-derived row kind" },
+        "id": { "$ref": "common.json#/$defs/uuid" },
+        "name": { "type": "string" },
+        "ownerKind": {
+          "enum": ["campaign", "character", "crew"],
+          "description": "storage ownership: campaign, character, or crew"
+        },
+        "ownerId": { "type": "string" },
+        "purpose": {
+          "enum": ["progress", "danger", "racing", "linked", "mission", "tug-of-war", "long-term-project", "faction", "score", "custom"],
+          "description": "narrative purpose, from the game-setting ClockPurposes list"
+        },
+        "behavior": {
+          "enum": ["bounded", "rollover"],
+          "description": "mechanical behavior: bounded clamps at full and discards overflow; rollover carries overflow and re-applies it"
+        },
+        "segments": { "type": "integer", "minimum": 0 },
+        "size": { "type": "integer", "minimum": 1 },
+        "rollover": { "type": "integer", "minimum": 0 },
+        "relatedClockIds": {
+          "type": "array",
+          "items": { "$ref": "common.json#/$defs/uuid" },
+          "uniqueItems": true,
+          "description": "standalone clock ids for descriptive linked/racing relationships; empty array means none"
+        },
+        "isReadable": {
+          "type": "boolean",
+          "description": "the stored document parses and validates as a canonical clock"
+        },
+        "isRepairable": {
+          "type": "boolean",
+          "description": "a schema-valid canonical result can be produced from the stored bytes"
+        },
+        "isComplete": {
+          "type": "boolean",
+          "description": "clock rows have no x-requiredWhenComplete predicates; true when readable, otherwise false"
+        },
+        "deleteToken": {
+          "type": "string",
+          "pattern": "^(sha256:[0-9a-f]{64})?$",
+          "description": "opaque token bound to the current raw bytes, usable as the degraded row's If-Match value; empty string for readable rows"
+        }
+      }
+    },
     "crewSummary": {
       "type": "object",
       "required": [

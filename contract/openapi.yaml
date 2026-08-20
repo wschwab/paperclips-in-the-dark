@@ -2281,7 +2281,7 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: "#/components/schemas/Clock" }
+                items: { $ref: "./schemas/campaign.json#/$defs/clockSummary" }
     post:
       operationId: createClock
       x-snapshot: false

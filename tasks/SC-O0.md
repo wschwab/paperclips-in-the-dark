@@ -56,7 +56,7 @@ Report exact commands and outputs. Do NOT run project-wide gates (no full ci.sh)
 
 ## Log
 
-Timestamped dispatch entry when work starts.
+- **2026-08-14:** Dispatched to deepseek-v4-flash-0731 (nous, omp task worker). Outcome recorded in tasks/metrics/contract/SC-O0.json; acceptance gates verified by the orchestrator.
 
 Before you finish, answer in your report:
 1. Was anything in these instructions contradicted by what you found in the codebase?

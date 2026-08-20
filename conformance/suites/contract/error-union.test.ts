@@ -20,17 +20,13 @@ import { firstAction, firstPlaybook } from "../../src/game-data.js";
 // SC-O7 error-union oracle (frozen against contract/schemas/operation-result.json
 // #/$defs/operationError, Wave 2).
 //
-// Every assertion targets the RAW response body: the current Ada runtime still
-// emits the legacy `{code, message}` error shape, and the frozen decoders in
-// src/schemas.ts reject it — decoding would turn every red into an opaque
-// ParseError instead of a precise union-shape failure.
-//
-// Red reasons (against the current source): the whole-error union is absent —
-// errors carry no status/retryable/recovery/details (and no typed per-code
-// detail shape), import/repair/retire routes do not exist yet, and collections
-// expose no degraded-row state. The schema-level tooling check
-// (ERR-MISMATCH-006) and the message hygiene guard (ERR-NORAW-009) pass
-// already: the frozen schemas landed in Wave 2 and current messages are short
+// Every assertion targets the RAW response body so the frozen union shape is
+// checked precisely. All branches are green against the completed
+// implementation (Waves 4-7): errors carry status/retryable/recovery/details
+// with typed per-code detail shapes, the import/repair/retire routes are
+// live, and collections expose degraded-row state. The schema-level tooling
+// check (ERR-MISMATCH-006) and the message hygiene guard (ERR-NORAW-009)
+// also pass: the frozen schemas landed in Wave 2 and messages are short
 // human strings.
 // ---------------------------------------------------------------------------
 
@@ -615,7 +611,7 @@ describe("contract error union (SC-O7)", () => {
     "every branch of the whole-error union is exercised with status, code, detail shape, retryable, and recovery",
     async () => {
       // Run every branch and collect each failure so the oracle reports the
-      // whole union at once (Wave 4-5 implementers see every missing branch).
+      // whole union at once.
       const failures: string[] = [];
       for (const branch of branches()) {
         try {
@@ -1017,12 +1013,11 @@ describe("contract error union (SC-O7)", () => {
   // -------------------------------------------------------------------------
   // SC-O8 FV-specific oracle corrections (FV-004, FV-026).
   //
-  // FV-004 (owner SC-A9): the server's cohort.add field check rejects the
-  // contract-allowed fields hasArmor/edges/flaws/description ("unknown
-  // field", 400 VALIDATION) — every UI cohort add fails. The case asserts the
-  // SERVER behavior (allowed fields accepted, true unknowns rejected), which
-  // is distinct from the contract schema check. RED: allowed-field requests
-  // return ok:false VALIDATION "unknown field" today (FV-004 reproduction).
+  // FV-004 (owner SC-A9): the server's cohort.add field check previously
+  // rejected the contract-allowed fields hasArmor/edges/flaws/description
+  // ("unknown field", 400 VALIDATION). The case asserts the SERVER behavior
+  // (allowed fields accepted, true unknowns rejected), which is distinct
+  // from the contract schema check — green since the field check was fixed.
   //
   // FV-026 (owner SC-C6, contract-only): dossier.update's vice request
   // schema previously typed vice as namedDescription (no purveyor). Wave 2
@@ -1051,7 +1046,7 @@ describe("contract error union (SC-O7)", () => {
         { "If-Match": String(revision) },
       );
       expect(withArmor.status).toBe(200);
-      expect(okFlag(withArmor.body)).toBe(true); // RED: ok:false VALIDATION "unknown field" — no cohort created
+      expect(okFlag(withArmor.body)).toBe(true); // contract-allowed fields accepted
       const armorCohorts = Array.isArray(asRecord(asRecord(withArmor.body)?.crew)?.cohorts)
         ? (asRecord(asRecord(withArmor.body)?.crew)?.cohorts as Array<Record<string, unknown>>)
         : [];
@@ -1070,7 +1065,7 @@ describe("contract error union (SC-O7)", () => {
         { "If-Match": String(revAfterArmor) },
       );
       expect(withExtras.status).toBe(200);
-      expect(okFlag(withExtras.body)).toBe(true); // RED today: same "unknown field" 400
+      expect(okFlag(withExtras.body)).toBe(true); // full allowed field set accepted
       const extrasCohorts = Array.isArray(asRecord(asRecord(withExtras.body)?.crew)?.cohorts)
         ? (asRecord(asRecord(withExtras.body)?.crew)?.cohorts as Array<Record<string, unknown>>)
         : [];
@@ -1079,7 +1074,7 @@ describe("contract error union (SC-O7)", () => {
       expect(extrasCohorts[0]?.description).toBe("A steady hand");
       const revAfterExtras = asNumber(asRecord(asRecord(withExtras.body)?.crew)?.revision) ?? revAfterArmor + 1;
 
-      // Control (green today): a true unknown field stays rejected with the
+      // Control: a true unknown field stays rejected with the
       // VALIDATION branch of the error union.
       const unknown = await api.post(
         `crews/${id}/ops/cohort.add`,

@@ -18,50 +18,26 @@ import { BLADES, SCUM, firstActionFor, newCrew } from "../../src/suite-helpers.j
  * embed a game-specific maximum — every value below is read from the frozen
  * settings files (BLADES and SCUM) or the frozen OpenAPI/schemas.
  *
- * NOTE on raw parsing: the current Ada runtime still emits the pre-Wave-2
- * character DTO (no traumaPending/isOutOfAction/stressClearPending), so the
- * frozen Character decoder rejects every character response. Character
- * creation/ops are therefore parsed from the raw body here; the frozen-shape
- * assertions (capabilities, error union, applied families) are exactly where
- * the reds live. Crew responses decode cleanly and use api.crewOp (the
- * OperationResult decoder) for applied-family assertions.
+ * NOTE on raw parsing: character creation/ops are parsed from the raw body
+ * here so the frozen-shape assertions (capabilities, error union, applied
+ * families) target exact field values; crew responses decode cleanly and
+ * use api.crewOp (the OperationResult decoder) for applied-family
+ * assertions.
  *
- * Red cases pin the SC-R4 gap list:
- *   - LIMIT-CAP-001/CHAR-002/CREW-003/STALE-015: capability endpoints do not
- *     exist yet (SC-A5 pending) — GET /api/capabilities,
- *     /api/characters/{id}/capabilities, /api/crews/{id}/capabilities 404.
- *   - LIMIT-RATING-004: FV-022 — attribute.levelup checks the raw max
- *     (ActionPointMaximum; Rating_Max captured at pitd_callback.adb:1531)
- *     while action.set-rating checks the Mastery-derived Rating_Cap
- *     (pitd_callback.adb:1521), so the two ops disagree at cap+1 for
- *     crewless/non-Mastery characters.
- *   - LIMIT-UPGRADE-005: FV-005 — upgrade.mark increments boxesMarked without
- *     checking TotalBoxes (pitd_callback.adb:1850) despite OpenAPI promising
- *     UPGRADE_MAXED.
- *   - LIMIT-LOAD-011: per-commitment max bulk (LoadMaxima.CommitmentMaxBulk)
- *     is never enforced; gear.commit only checks the flat LoadMaxima.MaxBulk.
- *   - LIMIT-SESSION-012: the Ada creation template hardcodes session max 3
- *     (pitd_callback.adb:1079) while the frozen settings say
- *     SessionExpressionMax 2 (C# reference Session.MaxExpressions = 2).
- *   - LIMIT-IDEMPOTENCY-013: Idempotency-Key maxLength 128 is documented in
- *     OpenAPI only; the server uses the header verbatim.
- *   - LIMIT-IMPORT-014: import validates against the storage schema only, so
- *     trackers can be set above the settings maxima (R4 gap #4). The case
- *     runs the contract apply sequence (preview → confirming apply with the
- *     full envelope + If-Match); today it fails at the preview (no preview
- *     machinery — the contract-shaped envelope is rejected with 400
- *     VALIDATION), and the maxima assertion is reached only when the preview
- *     lands.
- *   - LIMIT-SERVICE-016: the 1 MiB cap is enforced (413 status) but the error
- *     code is VALIDATION instead of the frozen PAYLOAD_TOO_LARGE. The
- *     just-under-cap guard runs the full preview→apply contract sequence and
- *     is red today at the preview (no preview machinery — the {entity}
- *     envelope is rejected with 400 VALIDATION); it turns green when the
- *     full flow works.
+ * All LIMIT-* cases are green against the completed implementation
+ * (Waves 4-7): the capability endpoints are live (LIMIT-CAP-001/CHAR-002/
+ * CREW-003/STALE-015), levelup and set-rating agree at the effective cap
+ * (LIMIT-RATING-004), upgrade.mark enforces TotalBoxes (LIMIT-UPGRADE-005),
+ * per-commitment bulk is enforced (LIMIT-LOAD-011), session expressions use
+ * the frozen settings (LIMIT-SESSION-012), the Idempotency-Key length bound
+ * is enforced (LIMIT-IDEMPOTENCY-013), import runs the full preview→apply
+ * contract sequence and refuses trackers above the settings maxima
+ * (LIMIT-IMPORT-014), and the 1 MiB cap returns the frozen
+ * PAYLOAD_TOO_LARGE (LIMIT-SERVICE-016).
  *
  * Guards: XP/attribute/crew track lengths, stress, trauma, harm capacities,
- * fund caps + StashToCoinRate conversion, and the 413 status are already
- * enforced by the current server with values matching the frozen settings.
+ * fund caps + StashToCoinRate conversion, and the 413 status are enforced
+ * with values matching the frozen settings.
  */
 
 /** Frozen game-settings maxima (data/games/<stem>.json). */
@@ -179,8 +155,7 @@ interface RawOpResult {
   body: Record<string, unknown>;
 }
 
-/** Create a character and return the raw DTO (the frozen decoder rejects the
- *  lagging server DTO, so setup must not decode). */
+/** Create a character and return the raw DTO (no schema decode). */
 async function rawCreateCharacter(stem: string): Promise<RawCharacter> {
   const response = await api.post("characters", { gameStem: stem, playbook: firstPlaybook(stem) });
   const body = JSON.parse(response.rawBody) as { character: RawCharacter };
@@ -192,9 +167,8 @@ async function rawGetCharacter(id: string): Promise<RawCharacter> {
   return JSON.parse(response.rawBody) as RawCharacter;
 }
 
-/** Post a character op and parse the raw body: the current server's character
- *  DTO and error shape do not decode against the frozen schemas, so
- *  error-asserting and character-returning cases inspect the raw response. */
+/** Post a character op and parse the raw body (error-asserting and
+ *  character-returning cases target exact field values). */
 async function rawCharacterOp(id: string, op: string, body?: unknown): Promise<RawOpResult> {
   const response = await api.post(`characters/${encodeURIComponent(id)}/ops/${op}`, body);
   const parsed = JSON.parse(response.rawBody) as Omit<RawOpResult, "status" | "body">;
@@ -214,7 +188,7 @@ describe("§ published limits (SC-O4)", () => {
     "service capabilities expose maxPayloadBytes 1048576, maxHistorySnapshots 50, maxBatchOperations 50",
     async () => {
       const response = await api.get("capabilities");
-      expect(response.status).toBe(200); // RED: no /api/capabilities endpoint (SC-A5 pending)
+      expect(response.status).toBe(200); // service capabilities endpoint live
       const body = JSON.parse(response.rawBody) as {
         maxPayloadBytes?: number;
         maxHistorySnapshots?: number;
@@ -235,7 +209,7 @@ describe("§ published limits (SC-O4)", () => {
       const bladesAction = firstActionFor(BLADES).action;
       const bladesSettings = gameSettings(BLADES);
       const bladesCaps = await api.get(`characters/${blades.id}/capabilities`);
-      expect(bladesCaps.status).toBe(200); // RED: no character capability endpoint (FV-021)
+      expect(bladesCaps.status).toBe(200); // character capability endpoint live
       const bladesBody = JSON.parse(bladesCaps.rawBody) as {
         effectiveActionCaps?: Array<{
           action: string;
@@ -293,7 +267,7 @@ describe("§ published limits (SC-O4)", () => {
     async () => {
       const crew = await newCrew(BLADES, "Assassins");
       const response = await api.get(`crews/${crew.id}/capabilities`);
-      expect(response.status).toBe(200); // RED: no crew capability endpoint (SC-A5 pending)
+      expect(response.status).toBe(200); // crew capability endpoint live
       const body = JSON.parse(response.rawBody) as {
         upgrades?: Array<{ name: string; totalBoxes: number; marked: number; remaining: number }>;
         abilities?: Array<{ name: string; maxTakes: number; taken: number; remaining: number }>;
@@ -363,7 +337,7 @@ describe("§ published limits (SC-O4)", () => {
 
       // BLADES with a non-Mastery crew: effective cap ActionCap.Base —
       // levelup must reject ActionPointMaximum exactly like set-rating
-      // (RED: FV-022 — levelup checks the raw max only).
+      // (FV-022: both ops enforce the same effective cap).
       const crew = await newCrew(BLADES, "Assassins");
       const member = await rawCreateCharacter(BLADES);
       await rawCharacterOp(member.id, "dossier.update", { crewId: crew.id });
@@ -379,7 +353,7 @@ describe("§ published limits (SC-O4)", () => {
         attribute: bladesFirst.attribute,
         action: bladesFirst.action,
       });
-      expect(memberLevelup.ok).toBe(false); // RED: server levels up Base → Base+1
+      expect(memberLevelup.ok).toBe(false); // rejected at ActionPointMaximum
       expect(memberLevelup.error?.code).toBe("RATING_MAXED");
 
       // Crewless BLADES: same mismatch (ActionCap.Base vs ActionPointMaximum).
@@ -396,7 +370,7 @@ describe("§ published limits (SC-O4)", () => {
         attribute: bladesFirst.attribute,
         action: bladesFirst.action,
       });
-      expect(soloLevelup.ok).toBe(false); // RED: server levels up Base → Base+1
+      expect(soloLevelup.ok).toBe(false); // rejected at ActionPointMaximum
       expect(soloLevelup.error?.code).toBe("RATING_MAXED");
     },
   );
@@ -413,7 +387,7 @@ describe("§ published limits (SC-O4)", () => {
           expect(mark.ok).toBe(true);
         }
         const fifth = await rawCrewOp(crew.id, "upgrade.mark", { name: "Mastery" });
-        expect(fifth.ok).toBe(false); // RED: FV-005 — server increments past TotalBoxes
+        expect(fifth.ok).toBe(false); // UPGRADE_MAXED at TotalBoxes + 1
         expect(fifth.error?.code).toBe("UPGRADE_MAXED");
         const after = await api.crew(crew.id);
         expect(after.upgrades.find((u) => u.name === "Mastery")?.boxesMarked).toBe(boxes);
@@ -545,7 +519,7 @@ describe("§ published limits (SC-O4)", () => {
       await rawCharacterOp(character.id, "gear.add", { name: "crate", bulk: loadMaxima.CommitmentMaxBulk.Light + 1 });
       await rawCharacterOp(character.id, "gear.set-commitment", { commitment: "light" });
       const commit = await rawCharacterOp(character.id, "gear.commit", { name: "crate" });
-      expect(commit.ok).toBe(false); // RED: per-commitment max bulk is never enforced — server only checks the flat MaxBulk
+      expect(commit.ok).toBe(false); // per-commitment max bulk enforced
       expect(commit.error?.code).toBe("OVER_BULK");
       const after = await rawGetCharacter(character.id);
       expect(after.gear.loadout).toHaveLength(0);
@@ -559,7 +533,7 @@ describe("§ published limits (SC-O4)", () => {
       for (const stem of [BLADES, SCUM]) {
         const character = await rawCreateCharacter(stem);
         const sessionMax = gameSettings(stem).SessionExpressionMax;
-        expect(character.session.max).toBe(sessionMax); // RED: Ada template hardcodes 3, settings say 2
+        expect(character.session.max).toBe(sessionMax); // settings-derived
         const set = await rawCharacterOp(character.id, "session.set", { playbookExpressions: sessionMax + 3 });
         expect(set.applied?.effective).toBe(sessionMax);
         expect(set.character?.session.playbookExpressions).toBe(sessionMax);
@@ -578,7 +552,7 @@ describe("§ published limits (SC-O4)", () => {
         { text: "x" },
         { "Idempotency-Key": longKey },
       );
-      expect(response.status).toBe(400); // RED: maxLength 128 documented only; server uses the header verbatim
+      expect(response.status).toBe(400); // maxLength 128 enforced
       const body = JSON.parse(response.rawBody) as { error?: { code?: string } };
       expect(body.error?.code).toBe("VALIDATION");
     },
@@ -596,11 +570,8 @@ describe("§ published limits (SC-O4)", () => {
       // If-Match. The inflated document is schema-valid (boundedInteger.max
       // declares no maximum — the settings bound is a separate gate), so the
       // frozen preview classifies it canonical → 200 with the preview token;
-      // the settings-maxima rejection is an APPLY-time gate.
-      // RED today: no preview machinery — the contract-shaped envelope is
-      // rejected with 400 VALIDATION at the preview (NORMALIZATION_REQUIRED
-      // 409 is absent too), so the flow stops here; the maxima assertion
-      // below is reached only when the preview lands.
+      // the settings-maxima rejection is an APPLY-time gate, and the flow
+      // below runs end to end.
       const preview = await api.post(`characters/${character.id}/import?preview=1`, { entity: inflated });
       expect(preview.status).toBe(200);
       const previewBody = JSON.parse(preview.rawBody) as {
@@ -615,9 +586,7 @@ describe("§ published limits (SC-O4)", () => {
         { "If-Match": String(character.revision) },
       );
       // The apply must refuse (>= 400): trackers above the settings maxima
-      // must never be stored. RED (R4 gap #4) the moment envelope support
-      // lands: import then validates against the storage schema only, so the
-      // apply would succeed without maxima clamping.
+      // must never be stored.
       expect(response.status).toBeGreaterThanOrEqual(400);
       const after = await rawGetCharacter(character.id);
       expect(after.monitor.stress.max).toBe(gameSettings(BLADES).StressMax);
@@ -630,7 +599,7 @@ describe("§ published limits (SC-O4)", () => {
     async () => {
       const crew = await newCrew(BLADES, "Assassins");
       const caps = await api.get(`crews/${crew.id}/capabilities`);
-      expect(caps.status).toBe(200); // RED: no capability endpoint (fails until backend)
+      expect(caps.status).toBe(200); // capability endpoint live
       const body = JSON.parse(caps.rawBody) as { upgrades?: Array<{ name: string; remaining: number }> };
       const mastery = body.upgrades?.find((u) => u.name === "Mastery");
       const boxes = upgradeBoxes(BLADES, "Assassins", "Mastery");
@@ -653,9 +622,8 @@ describe("§ published limits (SC-O4)", () => {
       // apply with the full envelope {entity, previewToken, confirm: true} +
       // If-Match) must succeed. The document is schema-valid, so the frozen
       // preview classifies it canonical → 200 with the preview token.
-      // RED today: no preview machinery — the contract-shaped envelope is
-      // rejected with 400 VALIDATION at the preview, so the flow stops here;
-      // the guard turns green only when the full preview→apply flow works.
+      // The full preview→apply flow runs end to end: the canonical document
+      // previews with a token and the confirming apply succeeds.
       const under = JSON.parse(JSON.stringify(character)) as { notebook: string };
       under.notebook = "y".repeat(900_000);
       const underPreview = await api.post(`characters/${character.id}/import?preview=1`, { entity: under });
@@ -674,9 +642,7 @@ describe("§ published limits (SC-O4)", () => {
       expect(underResponse.status).toBe(200);
       // Just over the cap: the request-level payload bound fires before
       // preview semantics — the preview request itself is rejected with 413
-      // PAYLOAD_TOO_LARGE. Status is a guard (the server already refuses the
-      // oversized body); the typed code is RED (the server emits VALIDATION
-      // instead of the frozen PAYLOAD_TOO_LARGE).
+      // PAYLOAD_TOO_LARGE, and the typed code matches the frozen union.
       const over = JSON.parse(JSON.stringify(character)) as { notebook: string };
       over.notebook = "x".repeat(1_100_000);
       const overPreview = await api.post(`characters/${character.id}/import?preview=1`, { entity: over });

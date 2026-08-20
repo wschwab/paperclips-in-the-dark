@@ -62,7 +62,7 @@ Acceptance: every locked pointer appears in the resolution table with a resolvab
 
 ## Log
 
-Timestamped dispatch entry when work starts.
+- **2026-08-14:** Dispatched to deepseek-v4-flash-0731 (nous, omp task worker). Outcome recorded in tasks/metrics/contract/SC-R2.json; acceptance gates verified by the orchestrator.
 
 Before you finish, answer in your report:
 1. Was anything in these instructions contradicted by what you found in the codebase?

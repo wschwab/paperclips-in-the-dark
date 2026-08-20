@@ -25,9 +25,9 @@ Design notes to pick up later:
 - Aesthetically this is a natural home for the aged-print treatment already in the
   design system — `IM Fell English` epigraphs and the trauma-stamp/typewriter
   accents that are used sparingly elsewhere.
-- Retirement currently has no UI trigger at all; it is API-only. The
-  confirmation-guarded retire affordance decided in the
-  [contract review](/contract/completeness-and-lifecycle-review) is a prerequisite.
+- Retirement has a confirmation-guarded UI affordance (Wave 6 SC-F4): the retire
+  control, pending-trauma prompt, out-of-action explanation, and undo/history are
+  all reachable in the human UI per the frozen lifecycle design.
 
 ## Known coverage gaps
 
@@ -39,9 +39,11 @@ loss of gitignored evidence.
   instead.
 - **Real screen-reader passes** — Orca (L2) and NVDA (L3) still pending per
   `agent-docs/accessibility-plan.md`.
-- **320 px viewports** — every route overflows at 320 px. 360 px is the practical
-  floor until the narrow-width defects are fixed.
+- **320 px viewports** — contained as of Waves 7 (P08/P14/P15/P16): the app bar,
+  faction rows, harm-add rows, and long-text containers no longer overflow at
+  320 px; the responsive matrix is exercised in the wave evidence.
 - **Slow-network behavior** — only a 1500 ms artificial delay was exercised; real
   3G throttling untested.
-- **Batch/composite endpoints** — `end-score` and `end-downtime` have no UI and
-  were only probed via the API.
+- **Batch/composite endpoints** — `end-score` and `end-downtime` have UI
+  affordances (Wave 6 SC-F4 + parity); `campaign.batch` remains API-only by
+  design (agent-first composite).

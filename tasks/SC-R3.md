@@ -64,7 +64,7 @@ Acceptance: the taxonomy table covers every official category; the DTO sketch is
 
 ## Log
 
-Timestamped dispatch entry when work starts; record any official-category conflict with the C# model.
+- **2026-08-14:** Dispatched to deepseek-v4-flash-0731 (nous, omp task worker). Outcome recorded in tasks/metrics/contract/SC-R3.json; acceptance gates verified by the orchestrator.
 
 Before you finish, answer in your report:
 1. Was anything in these instructions contradicted by what you found in the codebase?

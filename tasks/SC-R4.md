@@ -64,7 +64,7 @@ Acceptance: every row has all five columns filled; no game-domain literal lacks 
 
 ## Log
 
-Timestamped dispatch entry when work starts.
+- **2026-08-14:** Dispatched to deepseek-v4-flash-0731 (nous, omp task worker). Outcome recorded in tasks/metrics/contract/SC-R4.json; acceptance gates verified by the orchestrator.
 
 Before you finish, answer in your report:
 1. Was anything in these instructions contradicted by what you found in the codebase?

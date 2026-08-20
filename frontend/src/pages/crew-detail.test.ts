@@ -2086,7 +2086,7 @@ describe("crew-detail page", () => {
     });
 
     it("degrades gracefully when crew-type game data is unavailable (no criteria text, tracker still renders)", async () => {
-      // getCrewType + getCrewTypes both fail (backend not implemented yet) —
+      // getCrewType + getCrewTypes both fail (server/network error) —
       // the criteria line is omitted but the tracker still renders and works.
       global.fetch = vi
         .fn()

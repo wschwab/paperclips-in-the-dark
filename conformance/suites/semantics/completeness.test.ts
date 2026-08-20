@@ -22,32 +22,24 @@ import { PREDICATES } from "../../../frontend/src/schema/generated/completeness.
  * change the computation; the roster summary reports
  * isReadable/isRepairable/isComplete derived at response time.
  *
- * Setup note (wave-wide server lag): the live Ada runtime still emits the
- * pre-Wave-2 DTO shapes (characters lack traumaPending/isOutOfAction/
- * stressClearPending), so the shared newCharacter()/newCrew() helpers (which
- * decode the response) throw today. These cases therefore create entities
- * through the raw API and assert readability as "served as a normal entity
+ * These cases create entities through the raw API (the suite targets exact
+ * pointer values) and assert readability as "served as a normal entity
  * document (200) with the expected pointer value"; full frozen-schema
  * readability is pinned by SC-O1's canonical-shape cases.
  *
- * Red against the current runtime: the roster summary still emits the
- * pre-Wave-2 shape (no isReadable/isRepairable/isComplete/deleteToken), so
- * every case that reads those fields fails with `undefined`. That includes
- * the real-value assertions in COMPLETE-LEGIT-005 (a fully-named entity must
- * report isReadable/isComplete true — previously a `not.toBe(false)` guard
- * that undefined passed vacuously) and the seeded stored-entity directions
- * in COMPLETE-ALL-003 (canonical empty at /playbook/name and /crewTypeName,
- * directions the ops cannot reach). The remaining guards (COMPLETE-CLOCK-009,
- * COMPLETE-NOSTORE-010) pass.
+ * The roster summary derives isReadable/isRepairable/isComplete/deleteToken
+ * at response time (green since Wave 4). The real-value assertions in
+ * COMPLETE-LEGIT-005 (a fully-named entity must report isReadable/isComplete
+ * true) and the seeded stored-entity directions in COMPLETE-ALL-003
+ * (canonical empty at /playbook/name and /crewTypeName, directions the ops
+ * cannot reach) assert that derivation end to end; the guards
+ * (COMPLETE-CLOCK-009, COMPLETE-NOSTORE-010) stay green.
  *
  * Run through the managed harness with the completeness seeds (the seeded
  * stored entities only exist when the seed tree is applied):
  *   node scripts/managed-run.mjs --seed conformance/fixtures/completeness-seeds -- --run suites/semantics/completeness.test.ts
- * The guard COMPLETE-NOSTORE-010 expects roster 200 and therefore runs with
- * the completeness seeds ONLY. Under `--seed-defaults` (which also applies
- * the sc-o2-seeds admission fixtures) the pre-Wave-2 server returns 400 for
- * the roster and NOSTORE-010 fails on that documented server-lag — use the
- * dedicated command above for this suite's guards.
+ * The suite also runs green under `--seed-defaults`, which applies the
+ * sc-o2-seeds admission fixtures plus the completeness seeds.
  */
 
 // ---------------------------------------------------------------------------
@@ -186,7 +178,8 @@ function crewFill(pointer: string): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
-// Raw API helpers (no DTO decode — the live runtime emits pre-Wave-2 shapes).
+// Raw API helpers (raw bodies, no DTO decode — assertions target exact field
+// values).
 // ---------------------------------------------------------------------------
 
 async function createRawCharacter(): Promise<{ id: string; revision: number }> {
@@ -228,9 +221,8 @@ async function rawDetail(kind: "characters" | "crews", id: string): Promise<Reco
 }
 
 /**
- * Roster row lookup. The current runtime emits the pre-Wave-2 summary shape,
- * so the roster cannot be decoded with Schemas.Roster yet (missing required
- * fields); read the raw body and find the row by id.
+ * Roster row lookup. Read the raw body and find the row by id so assertions
+ * target exact field values.
  */
 async function rosterRow(kind: "characters" | "crews", id: string): Promise<Record<string, unknown>> {
   const response = await api.get("campaign/roster");
@@ -259,8 +251,8 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
       const detail = await rawDetail("characters", character.id);
       expect(detail.dossier).toMatchObject({ name: "" });
 
-      // Incomplete: the roster summary must report it (fails: no isComplete
-      // in the current runtime's summary shape).
+      // Incomplete: the roster summary must report it (derived at response
+      // time).
       const summary = await rosterRow("characters", character.id);
       expect(summary.isReadable).toBe(true);
       expect(summary.isComplete).toBe(false);
@@ -291,7 +283,7 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
       const filled = await rawCharacterOp(character.id, "dossier.update", { name: "Brenda" });
       expect(filled.character).toMatchObject({ dossier: { name: "Brenda" } });
 
-      // The roster summary flips to complete (fails: no isComplete today).
+      // The roster summary flips to complete (derived at response time).
       const summary = await rosterRow("characters", character.id);
       expect(summary.isComplete).toBe(true);
 
@@ -313,13 +305,12 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
         if (pointer === "/playbook/name") {
           // playbook.name is satisfied at creation (create takes the playbook
           // name); the canonical-empty direction is unreachable through the
-          // API today (no op rewrites playbook.name; import is server-lag
-          // red). Pin the satisfying direction here, and the canonical-empty
-          // direction on the seeded stored character (route id == body id,
-          // kind matches, canonical otherwise — see
-          // conformance/fixtures/completeness-seeds/): its stored
-          // playbook.name is "" and every other pointer is satisfied, so the
-          // roster must report it incomplete (fails: no isComplete today).
+          // API (no op rewrites playbook.name). Pin the satisfying direction
+          // here, and the canonical-empty direction on the seeded stored
+          // character (route id == body id, kind matches, canonical
+          // otherwise — see conformance/fixtures/completeness-seeds/): its
+          // stored playbook.name is "" and every other pointer is satisfied,
+          // so the roster must report it incomplete.
           const filled = await rawCharacterOp(character.id, "dossier.update", DOSSIER_FULL);
           expect(filled.ok).toBe(true);
           const summary = await rosterRow("characters", character.id);
@@ -331,7 +322,7 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
           continue;
         }
         // Canonical empty at this pointer, every other dossier pointer
-        // satisfied → incomplete (fails: no isComplete today).
+        // satisfied → incomplete.
         const except = fillExcept(pointer, DOSSIER_FULL);
         const partial = await rawCharacterOp(character.id, "dossier.update", except);
         expect(partial.ok).toBe(true);
@@ -352,7 +343,7 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
           // canonical-empty direction on the seeded stored crew (route id ==
           // body id, kind matches, canonical otherwise): stored
           // crewTypeName "" with every other pointer satisfied must be
-          // reported incomplete (fails: no isComplete today).
+          // reported incomplete.
           const filled = await rawCrewOp(crew.id, "fields.update", CREW_FULL);
           expect(filled.ok).toBe(true);
           const summary = await rosterRow("crews", crew.id);
@@ -386,12 +377,20 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
 
       // Whitespace is schema-valid (no minLength/pattern on the pointer), so
       // the entity stays readable — but nonBlankString fails (no
-      // non-whitespace character), so it must be reported incomplete (fails:
-      // no isComplete today).
+      // non-whitespace character), so it must be reported incomplete.
       const detail = await rawDetail("characters", character.id);
       expect(detail.dossier).toMatchObject({ name: "   " });
       const summary = await rosterRow("characters", character.id);
       expect(summary.isComplete).toBe(false);
+
+      // Unicode whitespace is ALSO blank per the predicate vocabulary
+      // (nonBlankString = at least one character that is NOT Unicode
+      // whitespace; audit X1). NBSP must fail the predicate on both the
+      // backend and the frontend evaluators.
+      const nbsp = await rawCharacterOp(character.id, "dossier.update", { name: "\u00A0\u00A0" });
+      expect(nbsp.character).toMatchObject({ dossier: { name: "\u00A0\u00A0" } });
+      const nbspSummary = await rosterRow("characters", character.id);
+      expect(nbspSummary.isComplete).toBe(false);
     },
   );
 
@@ -410,10 +409,9 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
       const summary = await rosterRow("characters", character.id);
       // Real-value assertion: a fully-named entity (all 8 pointers
       // satisfied) with only legitimate empties outside the list must be
-      // reported readable and complete. Red today (the pre-Wave-2 roster
-      // omits the fields, so this fails with undefined); green when the
-      // frozen summary lands — and it also fails if the implementation
-      // ever over-reports incompleteness for these states.
+      // reported readable and complete (green since Wave 4) — and it also
+      // fails if the implementation ever over-reports incompleteness for
+      // these states.
       expect(summary.isReadable).toBe(true);
       expect(summary.isComplete).toBe(true);
 
@@ -427,7 +425,7 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
       const crewSummary = await rosterRow("crews", crew.id);
       // Same real-value assertion as the character half: all 5 crew
       // pointers satisfied, legitimate states only outside the list →
-      // readable and complete (red today; see above).
+      // readable and complete.
       expect(crewSummary.isReadable).toBe(true);
       expect(crewSummary.isComplete).toBe(true);
     },
@@ -506,8 +504,7 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
       // A fresh character is readable (canonical), repairable (a canonical
       // result exists — itself), incomplete (canonical empties at the locked
       // pointers), and carries an empty deleteToken (readable rows). All
-      // derived at response time; nothing stored (fails: the current runtime
-      // emits none of these fields).
+      // derived at response time; nothing stored.
       const character = await createRawCharacter();
       const summary = await rosterRow("characters", character.id);
       expect(summary.isReadable).toBe(true);
@@ -530,8 +527,7 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
     async () => {
       // Retired: the seeded stored retired character (canonical, isRetired
       // true, canonical empty at /dossier/name — retirement preserves
-      // dossier verbatim, so the empty stays) must remain incomplete (fails:
-      // no isComplete today).
+      // dossier verbatim, so the empty stays) must remain incomplete.
       const retiredDetail = await rawDetail("characters", RETIRED_EMPTY_SEED);
       expect(retiredDetail.isRetired).toBe(true);
       expect(retiredDetail.dossier).toMatchObject({ name: "" });
@@ -571,9 +567,8 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
 
       // Dynamic: a created clock response carries no completeness fields.
       // The frozen create shape (behavior/ownerKind/ownerId/purpose) is
-      // server-lag red (SC-O5 CLOCK-CREATE-015); when the runtime rejects it
-      // with VALIDATION, fall back to the legacy shape so this guard stays
-      // green across the lag.
+      // accepted; the fallback below only matters if a runtime ever rejects
+      // it, so this guard stays green regardless.
       const frozen = await api.post("clocks", {
         name: "Long Term Project",
         behavior: "bounded",

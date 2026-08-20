@@ -5,7 +5,7 @@ import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
 import { type CrewSummary, CrewSummary as CrewSummarySchema } from "../schema/campaign.js";
 import { decodeOperationResultEither } from "../schema/operation-result.js";
 import type { OperationResult } from "../schema/operation-result.js";
-import { type Clock, Clock as ClockSchema } from "../schema/clock.js";
+import { decodeClock, type Clock, type ClockSummary, ClockSummary as ClockSummarySchema } from "../schema/clock.js";
 // SC-F2 import/repair pipeline (same-origin client): the opId exports below
 // pin the contract URL and delegate the classification to import-repair.ts.
 import { importApply, repairApply, repairPreview } from "./import-repair.js";
@@ -1754,12 +1754,23 @@ export function fundLiquidate(
 }
 
 /** Stash deposit/withdrawal by delta; bounded below at 0 server-side. */
-/** GET /api/clocks — all campaign clocks (project + rollover). */
-export function listClocks(): Effect.Effect<readonly Clock[], ApiError | DecodeError> {
+/** GET /api/clocks — all standalone clocks as clockSummary rows (E11 total collections). */
+export function listClocks(): Effect.Effect<readonly ClockSummary[], ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson("/api/clocks");
     return yield* Effect.try({
-      try: () => Schema.decodeUnknownSync(Schema.Array(ClockSchema), { onExcessProperty: "error" })(raw),
+      try: () => Schema.decodeUnknownSync(Schema.Array(ClockSummarySchema), { onExcessProperty: "error" })(raw),
+      catch: (cause) => new DecodeError(cause),
+    });
+  });
+}
+
+/** GET /api/clocks/{id} — the full Clock DTO (raw stored bytes). */
+export function getClock(id: string): Effect.Effect<Clock, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/clocks/${id}`);
+    return yield* Effect.try({
+      try: () => decodeClock(raw),
       catch: (cause) => new DecodeError(cause),
     });
   });
@@ -1767,14 +1778,17 @@ export function listClocks(): Effect.Effect<readonly Clock[], ApiError | DecodeE
 
 /**
  * Generic clock mutator helper: POST to /api/clocks/{id}/{subpath} with an
- * If-Match header carrying the clock's own revision (clock ops take If-Match
- * like character ops do). Decodes the OperationResult and extracts the Clock
- * DTO. Stale-revision handling follows the F2h rule.
+ * If-Match header when the caller has an if-match value. The value is the
+ * clock's own revision for a full DTO, or the clockSummary row's deleteToken
+ * ("" for readable rows — the header is then omitted, and the server skips
+ * the check for ops that do not require If-Match). Decodes the
+ * OperationResult and extracts the Clock DTO. Stale-revision handling
+ * follows the F2h rule.
  */
 function clockMutate(
   id: string,
   subpath: string,
-  revision: number,
+  ifMatch: string,
   body: unknown = {},
 ): Effect.Effect<Clock | null, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
@@ -1783,7 +1797,7 @@ function clockMutate(
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        "If-Match": String(revision),
+        ...(ifMatch !== "" ? { "If-Match": ifMatch } : {}),
       },
       body: JSON.stringify(body),
     });
@@ -1818,10 +1832,10 @@ export function createClock(
 export function clockProgress(
   id: string,
   segments: number,
-  revision: number,
+  ifMatch: string,
 ): Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const maybe = yield* clockMutate(id, "ops/clock.progress", revision, { segments });
+    const maybe = yield* clockMutate(id, "ops/clock.progress", ifMatch, { segments });
     if (maybe === null) {
       return yield* Effect.fail(new ApiError(200, "Missing clock in OperationResult"));
     }
@@ -1832,10 +1846,10 @@ export function clockProgress(
 /** Reset a clock to zero; rollover clocks re-apply carried overflow after reset. */
 export function clockReset(
   id: string,
-  revision: number,
+  ifMatch: string,
 ): Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
-    const maybe = yield* clockMutate(id, "ops/clock.reset", revision);
+    const maybe = yield* clockMutate(id, "ops/clock.reset", ifMatch);
     if (maybe === null) {
       return yield* Effect.fail(new ApiError(200, "Missing clock in OperationResult"));
     }
@@ -1843,12 +1857,17 @@ export function clockReset(
   });
 }
 
-/** Delete a clock (confirm required per the contract); returns the deleted clock when the response includes it, else null. */
+/**
+ * Delete a clock (confirm required per the contract); returns the deleted
+ * clock when the response includes it, else null. The If-Match value is the
+ * clock's revision for a readable row, or the clockSummary row's deleteToken
+ * (sha256 content token) for a degraded row.
+ */
 export function deleteClock(
   id: string,
-  revision: number,
+  ifMatch: string,
 ): Effect.Effect<Clock | null, ApiError | DecodeError | StaleRevisionError> {
-  return clockMutate(id, "delete", revision, { confirm: true });
+  return clockMutate(id, "delete", ifMatch, { confirm: true });
 }
 
 // ---------------------------------------------------------------------------

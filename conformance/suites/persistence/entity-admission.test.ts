@@ -191,8 +191,8 @@ describe("persistence entity admission (SC-O2 recursive admission)", () => {
     "ADMIT-IMPORT-013",
     "importing an entity that fails admission returns 400 INVALID_ENTRY with pointer-level details",
     async () => {
-      // Raw create (no DTO decode): the current server's create response
-      // lacks the frozen SC-R5 lifecycle fields (separate known lag).
+      // Raw create (no DTO decode): the lifecycle fields are pinned by the
+      // lifecycle suite; admission cases only need the id/revision.
       const created = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
       expect(created.status).toBe(200);
       const createdBody = created.body as { character?: { id?: string; revision?: number } };
@@ -221,11 +221,8 @@ describe("persistence entity admission (SC-O2 recursive admission)", () => {
       // is classified as a needs-input pointer (D3), so the frozen preview
       // returns 409 NORMALIZATION_REQUIRED with the preview token; the apply
       // without caller values for that pointer then fails admission with
-      // 400 INVALID_ENTRY. RED today: no preview machinery — the
-      // contract-shaped envelope is rejected with 400 VALIDATION at the
-      // preview (and NORMALIZATION_REQUIRED 409 is absent), so the flow
-      // stops here; the /dossier/name pointer assertion below is reached
-      // when the preview lands.
+      // 400 INVALID_ENTRY. The full preview→apply flow is live, so the
+      // /dossier/name pointer assertion below is reached.
       const preview = await api.post(`characters/${targetId}/import?preview=1`, { entity: imported });
       expect(preview.status).toBe(409);
       const previewBody = JSON.parse(preview.rawBody) as {
@@ -245,9 +242,6 @@ describe("persistence entity admission (SC-O2 recursive admission)", () => {
       expect(result.error?.code).toBe("INVALID_ENTRY");
       expect(result.error?.details.issues.length).toBeGreaterThan(0);
       expect(result.error?.details.issues[0]?.pointer).toBe("/dossier/name");
-      // red today: no envelope/INVALID_ENTRY machinery — the server validates
-      // the raw body as the entity, so the contract-shaped request fails with
-      // generic 400 VALIDATION instead of pointer-level INVALID_ENTRY.
     },
   );
 
@@ -255,10 +249,9 @@ describe("persistence entity admission (SC-O2 recursive admission)", () => {
     "ADMIT-CONTROLS-014",
     "control: valid canonical character, crew (empty contacts/factions), and clock pass admission untouched",
     async () => {
-      // Raw assertions rather than full DTO decode: the current server does
-      // not yet emit the frozen SC-R5 lifecycle fields (traumaPending,
-      // isOutOfAction, stressClearPending) on create, a separate known
-      // server-lag red; admission itself must stay green here.
+      // Raw assertions rather than full DTO decode: the lifecycle fields
+      // (traumaPending, isOutOfAction, stressClearPending) are pinned by the
+      // lifecycle suite; admission itself must stay green here.
       const created = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
       expect(created.status).toBe(200);
       const createdBody = created.body as { ok?: boolean; character?: { id?: string; dossier?: { crewId?: string } } };
@@ -282,8 +275,8 @@ describe("persistence entity admission (SC-O2 recursive admission)", () => {
       const crewGet = await api.get(`crews/${crewCreatedBody.crew.id}`);
       expect(crewGet.status).toBe(200);
 
-      // Clock create uses the frozen request shape (SC-A7); the created
-      // clock must pass admission untouched (ADMIT-CONTROLS-014).
+      // Clock create uses the frozen request shape; the created clock must
+      // pass admission untouched (ADMIT-CONTROLS-014).
       const clockCreated = await api.createClock("SC-O2 control clock", "bounded", 4);
       expect(clockCreated.ok).toBe(true);
       if (!clockCreated.clock?.id) throw new Error("control clock creation returned no id");

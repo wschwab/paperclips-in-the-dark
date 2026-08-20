@@ -105,13 +105,32 @@ function toAdaIdentifier(name) {
 }
 
 const nameRegistry = new Map();
-function uniqueName(key, base) {
+function uniqueName(key, base, pathTokens = []) {
   const candidate = toAdaIdentifier(base);
-  if (nameRegistry.has(candidate) && nameRegistry.get(candidate) !== key) {
-    throw new Error(`Ada identifier collision: "${candidate}" for ${key} and ${nameRegistry.get(candidate)}`);
+  if (!nameRegistry.has(candidate) || nameRegistry.get(candidate) === key) {
+    nameRegistry.set(candidate, key);
+    return candidate;
   }
-  nameRegistry.set(candidate, key);
-  return candidate;
+  //  Identifier already claimed by a DIFFERENT schema node (e.g.
+  //  relatedClockIds exists in both clock.json and campaign.json#/clockSummary).
+  //  Disambiguate deterministically with the full JSON path (last-token
+  //  naming is the default; the path suffix only kicks in on collision), then
+  //  a numeric suffix for pathological repeats. Existing nodes never hit this
+  //  branch, so regeneration stays byte-identical for them.
+  const full = pathTokens.map(toAdaIdentifier).join("_");
+  if (!nameRegistry.has(full) || nameRegistry.get(full) === key) {
+    nameRegistry.set(full, key);
+    return full;
+  }
+  let n = 2;
+  while (true) {
+    const next = `${full}_${n}`;
+    if (!nameRegistry.has(next) || nameRegistry.get(next) === key) {
+      nameRegistry.set(next, key);
+      return next;
+    }
+    n += 1;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -205,7 +224,7 @@ function registerObject(key, schema, file, pathTokens) {
   if (!Array.isArray(schema.required)) {
     throw new Error(`${file}.json: object at ${key} must declare a required list`);
   }
-  const name = uniqueName(key, pathTokens[pathTokens.length - 1]);
+  const name = uniqueName(key, pathTokens[pathTokens.length - 1], pathTokens);
   const node = {
     key,
     kind: "object",
@@ -264,7 +283,7 @@ function parseConditional(schema, key, file) {
 function registerArray(key, schema, file, pathTokens) {
   if (nodeIndex.has(key)) return nodeIndex.get(key);
   const items = schema.items;
-  const name = uniqueName(key, pathTokens[pathTokens.length - 1]);
+  const name = uniqueName(key, pathTokens[pathTokens.length - 1], pathTokens);
   const node = { key, kind: "array", name };
 
   // Item object names derive from the array token via the singular form
@@ -503,6 +522,7 @@ package Pitd_Schema_Validators is
    procedure Validate_Character (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Character_Summary (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Clock (V : GNATCOLL.JSON.JSON_Value);
+   procedure Validate_Clock_Summary (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Crew (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Crew_Summary (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Campaign (V : GNATCOLL.JSON.JSON_Value);

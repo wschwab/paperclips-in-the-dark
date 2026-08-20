@@ -47,6 +47,7 @@ import {
   fundSpend,
   fundLiquidate,
   listClocks,
+  getClock,
   createClock,
   clockProgress,
   clockReset,
@@ -70,7 +71,7 @@ import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/f
 import { errorCard } from "../components/error-card.js";
 import type { Character } from "../schema/character.js";
 import type { CrewSummary } from "../schema/campaign.js";
-import type { Clock } from "../schema/clock.js";
+import type { Clock, ClockSummary } from "../schema/clock.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -403,7 +404,7 @@ interface RenderState {
   isGearCommitmentLoading: boolean;
   isGearLockLoading: boolean;
   // F2s Coin + Projects state
-  clocks: readonly Clock[] | null;
+  clocks: readonly ClockSummary[] | null;
   isCoinLoading: boolean;
   isClocksLoading: boolean;
   coinNotice: string | null;
@@ -2115,7 +2116,7 @@ export function mountCharacterDetailPage(
   let isGearLockLoading = false;
 
   // F2s Coin + Projects state
-  let clocks: readonly Clock[] | null = null;
+  let clocks: readonly ClockSummary[] | null = null;
   let isCoinLoading = false;
   let isClocksLoading = false;
   let coinNotice: string | null = null;
@@ -2340,13 +2341,33 @@ export function mountCharacterDetailPage(
     );
   };
 
-  /** Insert or replace a clock in the local list by id. */
+  /** Insert or replace a clock in the local list by id. The op results carry
+   *  the full Clock DTO; the list state keeps clockSummary rows, so the DTO
+   *  is projected down to the row shape (readable by construction). */
   const upsertClock = (updated: Clock) => {
+    const row: ClockSummary = {
+      kind: "clock",
+      id: updated.id,
+      name: updated.name,
+      ownerKind: updated.ownerKind,
+      ownerId: updated.ownerId,
+      purpose: updated.purpose,
+      behavior: updated.behavior,
+      segments: updated.segments,
+      size: updated.size,
+      rollover: updated.rollover,
+      relatedClockIds: updated.relatedClockIds,
+      isReadable: true,
+      isRepairable: true,
+      isComplete: true,
+      deleteToken: "",
+      clockKind: updated.clockKind,
+    };
     const list = clocks ?? [];
-    const idx = list.findIndex((x) => x.id === updated.id);
+    const idx = list.findIndex((x) => x.id === row.id);
     clocks = idx >= 0
-      ? list.map((x, i) => (i === idx ? updated : x))
-      : [...list, updated];
+      ? list.map((x, i) => (i === idx ? row : x))
+      : [...list, row];
   };
 
   const handlers = {
@@ -3538,7 +3559,11 @@ export function mountCharacterDetailPage(
       clearNotices();
       renderDetailWrapper();
 
-      const program = clockProgress(clockId, segments, clk.revision);
+      //  clockSummary rows carry the row's If-Match value in deleteToken
+      //  ("" for readable rows → the header is omitted and the server skips
+      //  the check; a degraded row's token would pass and the op then 422s
+      //  at admission).
+      const program = clockProgress(clockId, segments, clk.deleteToken);
       runClockMutate(
         program,
         (updated) => {
@@ -3558,7 +3583,7 @@ export function mountCharacterDetailPage(
       clearNotices();
       renderDetailWrapper();
 
-      const program = clockReset(clockId, clk.revision);
+      const program = clockReset(clockId, clk.deleteToken);
       runClockMutate(
         program,
         (updated) => {
@@ -3578,7 +3603,15 @@ export function mountCharacterDetailPage(
       clearNotices();
       renderDetailWrapper();
 
-      const program = deleteClock(clockId, clk.revision);
+      //  A degraded row deletes via its deleteToken (sha256 content token);
+      //  a readable row's token is "" and the delete requires the current
+      //  revision, so the full DTO is fetched for the revision first.
+      const program = clk.deleteToken
+        ? deleteClock(clockId, clk.deleteToken)
+        : Effect.gen(function* () {
+            const full = yield* getClock(clockId);
+            return yield* deleteClock(clockId, String(full.revision));
+          });
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => {

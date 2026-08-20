@@ -29,6 +29,12 @@ describe("getRoster", () => {
           isRetired: false,
           isDeadish: false,
           revision: 12,
+          isReadable: true,
+          isRepairable: false,
+          isComplete: true,
+          deleteToken: "",
+          canUndo: false,
+          historyCount: 0,
         },
       ],
       crews: [
@@ -46,6 +52,12 @@ describe("getRoster", () => {
           hold: "strong",
           memberCount: 1,
           revision: 5,
+          isReadable: true,
+          isRepairable: false,
+          isComplete: true,
+          deleteToken: "",
+          canUndo: false,
+          historyCount: 0,
         },
       ],
     };
@@ -2231,6 +2243,12 @@ describe("listCrews", () => {
         hold: "strong",
         memberCount: 1,
         revision: 5,
+        isReadable: true,
+        isRepairable: false,
+        isComplete: true,
+        deleteToken: "",
+        canUndo: false,
+        historyCount: 0,
       },
     ];
 
@@ -5256,6 +5274,28 @@ function makeClock(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/** A clockSummary list row (mirrors campaign.json#/$defs/clockSummary). */
+function makeClockSummary(overrides: Record<string, unknown> = {}) {
+  return {
+    kind: "clock",
+    id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
+    name: "Infiltrate the Bluecoats",
+    ownerKind: "campaign",
+    ownerId: "",
+    purpose: "custom",
+    behavior: "bounded",
+    segments: 2,
+    size: 6,
+    rollover: 0,
+    relatedClockIds: [],
+    isReadable: true,
+    isRepairable: true,
+    isComplete: true,
+    deleteToken: "",
+    ...overrides,
+  };
+}
+
 function clockOpOk(clock: unknown, opName: string) {
   return {
     ok: true,
@@ -5562,10 +5602,10 @@ describe("listClocks", () => {
     vi.clearAllMocks();
   });
 
-  it("fetches /api/clocks and decodes an array of Clock DTOs", async () => {
+  it("fetches /api/clocks and decodes an array of clockSummary rows", async () => {
     const clocks = [
-      makeClock({ id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", name: "Infiltrate the Bluecoats", clockKind: "project", segments: 3, size: 8 }),
-      makeClock({ id: "c0c1d2e3-4f5a-4b6c-9d8e-7f0a1b2c3d4e", name: "Tempest Approaches", clockKind: "rollover", segments: 4, size: 4, rollover: 2 }),
+      makeClockSummary({ id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", name: "Infiltrate the Bluecoats", behavior: "bounded", segments: 3, size: 8 }),
+      makeClockSummary({ id: "c0c1d2e3-4f5a-4b6c-9d8e-7f0a1b2c3d4e", name: "Tempest Approaches", behavior: "rollover", segments: 4, size: 4, rollover: 2 }),
     ];
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -5597,10 +5637,23 @@ describe("listClocks", () => {
     }
   });
 
-  it("exposes DecodeError when the response is not a Clock array", async () => {
+  it("exposes DecodeError when the response is not a clockSummary array", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       text: async () => JSON.stringify({ clocks: [] }),
+    });
+
+    const result = await Effect.runPromise(Effect.either(listClocks()));
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(DecodeError);
+    }
+  });
+
+  it("rejects a full Clock DTO row (revision is not a clockSummary field)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify([makeClock()]),
     });
 
     const result = await Effect.runPromise(Effect.either(listClocks()));
@@ -5710,7 +5763,7 @@ describe("clockProgress", () => {
     });
 
     const result = await Effect.runPromise(
-      clockProgress("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 1, 2),
+      clockProgress("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 1, "2"),
     );
     expect(result.segments).toBe(3);
     expect(result.revision).toBe(3);
@@ -5736,7 +5789,7 @@ describe("clockProgress", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(clockProgress("some-id", NaN, 1)),
+      Effect.either(clockProgress("some-id", NaN, "1")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
@@ -5752,7 +5805,7 @@ describe("clockProgress", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(clockProgress("some-id", 1, 2)),
+      Effect.either(clockProgress("some-id", 1, "2")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -5768,7 +5821,7 @@ describe("clockProgress", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(clockProgress("some-id", 1, 2)),
+      Effect.either(clockProgress("some-id", 1, "2")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
@@ -5791,7 +5844,7 @@ describe("clockReset", () => {
     });
 
     const result = await Effect.runPromise(
-      clockReset("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 2),
+      clockReset("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", "2"),
     );
     expect(result.segments).toBe(0);
     expect(global.fetch).toHaveBeenCalledWith(
@@ -5816,7 +5869,7 @@ describe("clockReset", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(clockReset("some-id", 2)),
+      Effect.either(clockReset("some-id", "2")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -5832,7 +5885,7 @@ describe("clockReset", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(clockReset("some-id", 2)),
+      Effect.either(clockReset("some-id", "2")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
@@ -5855,7 +5908,7 @@ describe("deleteClock", () => {
     });
 
     const result = await Effect.runPromise(
-      deleteClock("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 2),
+      deleteClock("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", "2"),
     );
     expect(result).not.toBeNull();
     expect(result?.id).toBe("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d");
@@ -5873,6 +5926,58 @@ describe("deleteClock", () => {
     );
   });
 
+  it("posts the deleteToken (sha256 content token) as If-Match for a degraded row", async () => {
+    const token = "sha256:" + "a".repeat(64);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        ok: true,
+        applied: { op: "delete" },
+        sideEffects: [],
+        error: null,
+      }),
+    });
+
+    const result = await Effect.runPromise(
+      deleteClock("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", token),
+    );
+    expect(result).toBeNull();
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/delete",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": token,
+        },
+        body: JSON.stringify({ confirm: true }),
+      },
+    );
+  });
+
+  it("omits the If-Match header when the row has no if-match value (readable row)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(clockOpOk(makeClock({ revision: 3 }), "clock.progress")),
+    });
+
+    await Effect.runPromise(
+      clockProgress("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 1, ""),
+    );
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ segments: 1 }),
+      },
+    );
+  });
+
   it("returns null when the OperationResult omits the clock", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -5885,7 +5990,7 @@ describe("deleteClock", () => {
     });
 
     const result = await Effect.runPromise(
-      deleteClock("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 2),
+      deleteClock("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", "2"),
     );
     expect(result).toBeNull();
   });
@@ -5898,7 +6003,7 @@ describe("deleteClock", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(deleteClock("some-id", 2)),
+      Effect.either(deleteClock("some-id", "2")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -5914,7 +6019,7 @@ describe("deleteClock", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(deleteClock("some-id", 2)),
+      Effect.either(deleteClock("some-id", "2")),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {

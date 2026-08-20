@@ -22,9 +22,10 @@ import { testCase } from "../../src/test-case.js";
 // approval and a reason.
 //
 // The manifest landed in Wave 2 (SC-C5), so PARITY-MANIFEST-001,
-// PARITY-AGENT-002, and PARITY-EXEMPT-004 are guards. PARITY-HUMAN-003 is red:
-// the frontend has no delete/retire/import/repair/end-of-score/end-of-downtime
-// controls and no notebook editor, so the required human set is not reachable.
+// PARITY-AGENT-002, and PARITY-EXEMPT-004 are guards. PARITY-HUMAN-003 is
+// green since Waves 4-7: the frontend exposes the required human controls
+// (delete/retire/import/repair/end-of-score/end-of-downtime and the notebook
+// editor), so the required human set is reachable.
 // ---------------------------------------------------------------------------
 
 const here = dirname(fileURLToPath(import.meta.url));

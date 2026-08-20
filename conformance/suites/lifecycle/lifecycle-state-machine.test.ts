@@ -10,39 +10,16 @@ import { testCase } from "../../src/test-case.js";
 // FROZEN Wave 2 contract (retire op, end-score optional body, trauma.add
 // resolution semantics, typed attention token, OUT_OF_ACTION code).
 //
-// Decode-free by design: the current Ada runtime still emits the OLD
-// character shape (no traumaPending/isOutOfAction/stressClearPending), so
-// every decode of Schemas.Character — including successfulCharacter() and
-// api.characterOp() — fails before any behavior assertion. This suite reads
-// raw response bodies instead, so each case fails (or passes) for its
-// DOCUMENTED behavioral reason (matrix §11) and turns green when Waves 4-5
-// land the behavior.
+// Decode-free by design: this suite reads raw response bodies so each case
+// asserts its DOCUMENTED behavioral reason (matrix §11) directly.
 //
-// Current status per case (SC-A8 fix list, matrix §11):
-//   RED   STRESS-001  no traumaPending flag; sideEffect token is the old
-//                     "stress full — consider trauma"
-//   GUARD STRESS-002  no-auto-trauma clamp already behaves per contract
-//   RED   STRESS-003  no pending gate (traumaPending missing)
-//   RED   STRESS-004  no out-of-action gate (isOutOfAction missing)
-//   RED   TRAUMA-001  resolution sets no flags; free-toggle add
-//   RED   TRAUMA-002  trauma.add is a free toggle (no pending requirement)
-//   RED   TRAUMA-003  duplicates accepted (no DUPLICATE on repeat add)
-//   RED   ENDSCORE-001 no pending gate; end-score succeeds while pending
-//   RED   ENDSCORE-002 end-score is flags-only and requires >=1 flag
-//   GUARD ENDSCORE-003 flag-selected composite + one snapshot + undo already
-//                      behave per contract (inherent clear is ENDSCORE-002)
-//   RED   RETIRE-001..009  no /characters/{id}/retire endpoint (unknown
-//                      operation -> 400 VALIDATION today)
-//   RED   DEADISH-001  harm.add sets isDeadish but never runs the deadish
-//                      cleanup (stress/pending not cleared)
-//   GUARD DEADISH-002  derivation from the fatal array + request rejection
-//                      of isDeadish input already behave per contract
-//   GUARD DEADISH-003  fatal removal already recomputes isDeadish false
-//   GUARD DELETE-001   confirm-guard + entity/history removal already in
-//                      place (existing contract)
-//   RED   DERIVED-001  roster/Character_Summary exposes no canUndo/
-//                      historyCount projections
-//   RED   INVARIANTS-001  pending/out-of-action flags do not exist anywhere
+// Status: all 25 cases are GREEN against the completed implementation
+// (Waves 4-7) — the traumaPending/out-of-action flags and pending gates
+// (STRESS-001/003/004, TRAUMA-001..003, ENDSCORE-001/002, INVARIANTS-001),
+// the retire endpoint (RETIRE-001..009), the deadish cleanup (DEADISH-001),
+// and the canUndo/historyCount projections (DERIVED-001) all landed. The
+// GUARD cases (STRESS-002, ENDSCORE-003, DEADISH-002/003, DELETE-001) pin
+// contract behavior that must stay green.
 // ---------------------------------------------------------------------------
 
 const BLADES = "blades-in-the-dark";
@@ -122,8 +99,7 @@ async function rosterRow(id: string): Promise<Record<string, unknown>> {
 
 /**
  * Stress.add to exactly max — the frozen-contract trigger that sets
- * traumaPending (sequence step 1). Assertions here fail today because the
- * flag does not exist anywhere (matrix §11 #2/#10).
+ * traumaPending (sequence step 1).
  */
 async function reachPending(character: CharacterDto): Promise<CharacterDto> {
   const result = await characterOpRaw(
@@ -166,8 +142,7 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
       character.revision,
     );
     expect(result.ok).toBe(true);
-    // Frozen typed attention token (SC-C2). Today the server emits the old
-    // "stress full — consider trauma" token -> red.
+    // Frozen typed attention token (SC-C2), emitted since Wave 4.
     expect(result.sideEffects).toContain(STRESS_FULL_ATTENTION);
     expect(result.character?.monitor.stress.current).toBe(character.monitor.stress.max);
     expect(result.character?.traumaPending).toBe(true);
@@ -229,7 +204,6 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
   testCase("LIFECYCLE-TRAUMA-002", "trauma.add without pending trauma is rejected with VALIDATION", async () => {
     const character = await newRawCharacter();
     // No pending: resolution-only semantics forbid a free-toggle trauma.add.
-    // Today the add succeeds (matrix §11 #4) -> red.
     const result = await characterOpRaw(character.id, "trauma.add", { trauma: "Broken" }, character.revision);
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe("VALIDATION");
@@ -273,8 +247,7 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
     expect(stressed.ok).toBe(true);
     expect(stressed.character?.monitor.stress.current).toBe(4);
     // Body optional (W15): an empty body must be a valid end-score that
-    // still performs the inherent cleanup. Today an empty body is rejected
-    // with VALIDATION ("requires at least one flag") -> red.
+    // still performs the inherent cleanup.
     const result = await entityPostRaw(character.id, "end-score", {}, stressed.character?.revision);
     expect(result.ok).toBe(true);
     expect(result.character?.monitor.stress.current).toBe(0);
@@ -299,8 +272,8 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
     expect(ended.ok).toBe(true);
     expect(ended.character?.gear.loadout).toEqual([]);
     expect(ended.character?.gear.commitment).toBe("none");
-    // Guard: the flag-selected composite already lands in exactly one
-    // snapshot today; the missing inherent cleanup is ENDSCORE-002's domain.
+    // Guard: the flag-selected composite lands in exactly one snapshot; the
+    // inherent cleanup is ENDSCORE-002's domain.
     expect(await historyCount(character.id)).toBe(before + 1);
     const undone = await entityPostRaw(character.id, "undo", {}, ended.character?.revision);
     expect(undone.ok).toBe(true);
@@ -528,7 +501,6 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
     // All harm preserved, including the fatal harm just added (§ 7.2).
     expect(fatal.character?.monitor.harm.fatal).toContain("Gut wound");
     // Deadish cleanup (§ 7.2): stress cleared + pending state cleared.
-    // Today stress stays at 6 and no flag exists -> red.
     expect(fatal.character?.monitor.stress.current).toBe(0);
     expect(fatal.character?.traumaPending).toBe(false);
     expect(fatal.character?.isOutOfAction).toBe(false);

@@ -42,6 +42,7 @@ package Pitd_Schema_Validators is
    procedure Validate_Character (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Character_Summary (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Clock (V : GNATCOLL.JSON.JSON_Value);
+   procedure Validate_Clock_Summary (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Crew (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Crew_Summary (V : GNATCOLL.JSON.JSON_Value);
    procedure Validate_Campaign (V : GNATCOLL.JSON.JSON_Value);

@@ -141,3 +141,77 @@ export type Clock = typeof Clock.Type;
 
 export const decodeClock = Schema.decodeUnknownSync(Clock, { onExcessProperty: "error" });
 export const decodeClockEither = Schema.decodeUnknownEither(Clock, { onExcessProperty: "error" });
+
+// ---------------------------------------------------------------------------
+// ClockSummary — listClocks row (campaign.json#/$defs/clockSummary)
+//
+// The frozen total-collections rule (E11): the clock list projects the
+// summary schema, NOT the full Clock DTO — clock fields only (never
+// revision/formatVersion/timestamps), plus the readability/repair/completion
+// metadata and the deleteToken (sha256 content token usable as the degraded
+// row's If-Match value; "" for readable rows). Strict: every field is
+// required and typed exactly, excess properties are rejected at the decode
+// entry point (the rows never existed pre-Wave-3, so no legacy tolerance).
+// The OUTPUT keeps the derived `clockKind` projection like Clock so pages
+// render kind from `behavior` without touching the wire shape.
+// ---------------------------------------------------------------------------
+
+const ClockSummaryInput = Schema.Struct({
+  kind: Schema.Literal("clock"),
+  id: Uuid,
+  name: Schema.String,
+  ownerKind: ClockOwnerKind,
+  ownerId: Schema.String,
+  purpose: ClockPurpose,
+  behavior: ClockBehavior,
+  segments: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+  size: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1)),
+  rollover: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+  relatedClockIds: Schema.Array(Uuid),
+  isReadable: Schema.Boolean,
+  isRepairable: Schema.Boolean,
+  isComplete: Schema.Boolean,
+  deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
+});
+
+const ClockSummaryOutput = Schema.Struct({
+  ...ClockSummaryInput.fields,
+  clockKind: LegacyClockKind,
+});
+
+const ClockSummaryTransformOptions: {
+  readonly decode: (
+    fromA: Schema.Schema.Type<typeof ClockSummaryInput>,
+    fromI: Schema.Schema.Encoded<typeof ClockSummaryInput>,
+  ) => Schema.Schema.Encoded<typeof ClockSummaryOutput>;
+  readonly encode: (
+    toI: Schema.Schema.Encoded<typeof ClockSummaryOutput>,
+    toA: Schema.Schema.Type<typeof ClockSummaryOutput>,
+  ) => Schema.Schema.Type<typeof ClockSummaryInput>;
+  readonly strict?: true;
+} = {
+  decode: (fromA) => ({
+    ...fromA,
+    clockKind: fromA.behavior === "rollover" ? "rollover" : "project",
+  }),
+  encode: (toI) => {
+    const { clockKind: _clockKind, ...rest } = toI;
+    return rest;
+  },
+};
+
+/** Clock list row — mirrors contract/schemas/campaign.json#/$defs/clockSummary (with derived clockKind). */
+export const ClockSummary = Schema.transform(
+  ClockSummaryInput,
+  ClockSummaryOutput,
+  ClockSummaryTransformOptions,
+).pipe(Schema.annotations({ identifier: "ClockSummary" }));
+
+export type ClockSummary = typeof ClockSummary.Type;
+
+export const decodeClockSummary = Schema.decodeUnknownSync(ClockSummary, {
+  onExcessProperty: "error",
+});
+export const decodeClockSummaryEither = Schema.decodeUnknownEither(ClockSummary, {
+  onExcessProperty: "error",
+});

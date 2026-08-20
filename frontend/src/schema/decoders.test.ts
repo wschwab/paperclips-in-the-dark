@@ -9,13 +9,14 @@ import {
   decodeHistoryEntry,
   decodeHistoryEntryEither,
   decodeRoster,
+  decodeRosterEither,
 } from "./campaign.js";
 import { decodeCharacter, decodeCharacterEither } from "./character.js";
 import {
   characterOutstandingFields,
   isCharacterComplete,
 } from "./character.js";
-import { decodeClock, decodeClockEither } from "./clock.js";
+import { decodeClock, decodeClockEither, decodeClockSummary, decodeClockSummaryEither } from "./clock.js";
 import { decodeCrew, decodeCrewEither } from "./crew.js";
 import { crewOutstandingFields, isCrewComplete } from "./crew.js";
 import {
@@ -103,6 +104,81 @@ describe("schema decoders against golden fixtures", () => {
   });
 });
 
+describe("ClockSummary decoder (campaign.json#/$defs/clockSummary)", () => {
+  const row = {
+    kind: "clock",
+    id: "a1b2c3d4-5e6f-47a8-9b0c-1d2e3f4a5b6c",
+    name: "Infiltrate the Bluecoats",
+    ownerKind: "campaign",
+    ownerId: "",
+    purpose: "custom",
+    behavior: "bounded",
+    segments: 3,
+    size: 8,
+    rollover: 0,
+    relatedClockIds: [],
+    isReadable: true,
+    isRepairable: true,
+    isComplete: true,
+    deleteToken: "",
+  };
+
+  it("decodes a readable summary row and derives clockKind from behavior", () => {
+    const summary = decodeClockSummary(row);
+    expect(summary.kind).toBe("clock");
+    expect(summary.id).toBe("a1b2c3d4-5e6f-47a8-9b0c-1d2e3f4a5b6c");
+    expect(summary.clockKind).toBe("project");
+    expect(summary.isReadable).toBe(true);
+    expect(summary.deleteToken).toBe("");
+  });
+
+  it("decodes a degraded row (canonical empties + sha256 deleteToken)", () => {
+    const token = "sha256:" + "c".repeat(64);
+    const degraded = decodeClockSummary({
+      ...row,
+      name: "",
+      ownerKind: "campaign",
+      ownerId: "",
+      purpose: "custom",
+      behavior: "bounded",
+      segments: 0,
+      size: 1,
+      rollover: 0,
+      relatedClockIds: [],
+      isReadable: false,
+      isRepairable: false,
+      isComplete: false,
+      deleteToken: token,
+    });
+    expect(degraded.isReadable).toBe(false);
+    expect(degraded.isComplete).toBe(false);
+    expect(degraded.deleteToken).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+
+  it("rejects a full Clock DTO (revision/formatVersion/timestamps are excess)", () => {
+    const full = loadFixture("golden-clock.json") as Record<string, unknown>;
+    const result = decodeClockSummaryEither(full);
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects a row missing the metadata (isReadable/isComplete/deleteToken)", () => {
+    const { isReadable: _isReadable, isComplete: _isComplete, deleteToken: _deleteToken, isRepairable: _isRepairable, ...bare } = row;
+    const result = decodeClockSummaryEither(bare);
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects a row with an empty deleteToken when isReadable is false (token required on degraded rows)", () => {
+    const result = decodeClockSummaryEither({
+      ...row,
+      isReadable: false,
+      isRepairable: false,
+      isComplete: false,
+      deleteToken: "nope",
+    });
+    expect(Either.isLeft(result)).toBe(true);
+  });
+});
+
 describe("Health decoder", () => {
   it("decodes a valid health payload", () => {
     const health = decodeHealth({
@@ -155,43 +231,77 @@ describe("Roster decoder", () => {
     expect(roster.crews).toEqual([]);
   });
 
-  it("decodes summaries matching contract fields", () => {
-    const roster = decodeRoster({
-      characters: [
-        {
-          kind: "character",
-          id: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
-          name: "Brenda Hilton",
-          alias: "Webweaver",
-          playbook: "Spider",
-          gameStem: "blades-in-the-dark",
-          crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
-          stress: 3,
-          traumas: ["Haunted"],
-          isRetired: false,
-          isDeadish: false,
-          revision: 12,
-        },
-      ],
-      crews: [
-        {
-          kind: "crew",
-          id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
-          name: "The Red Sashes",
-          crewType: "Assassins",
-          gameStem: "blades-in-the-dark",
-          tier: 0,
-          heat: 4,
-          wanted: 1,
-          rep: 3,
-          hold: "strong",
-          memberCount: 1,
-          revision: 5,
-        },
-      ],
+  // E11 frozen contract (campaign.json#/$defs/characterSummary|crewSummary):
+  // every row MUST carry the full collection-metadata set. The backend has
+  // emitted these fields since Waves 4-5, so the Wave-3-era tolerance for
+  // rows that omit them is gone — omission is a schema violation.
+  const strictRoster = {
+    characters: [
+      {
+        kind: "character",
+        id: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
+        name: "Brenda Hilton",
+        alias: "Webweaver",
+        playbook: "Spider",
+        gameStem: "blades-in-the-dark",
+        crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+        stress: 3,
+        traumas: ["Haunted"],
+        isRetired: false,
+        isDeadish: false,
+        revision: 12,
+        isReadable: true,
+        isRepairable: false,
+        isComplete: true,
+        deleteToken: "",
+        canUndo: false,
+        historyCount: 0,
+      },
+    ],
+    crews: [
+      {
+        kind: "crew",
+        id: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
+        name: "The Red Sashes",
+        crewType: "Assassins",
+        gameStem: "blades-in-the-dark",
+        tier: 0,
+        heat: 4,
+        wanted: 1,
+        rep: 3,
+        hold: "strong",
+        memberCount: 1,
+        revision: 5,
+        isReadable: true,
+        isRepairable: false,
+        isComplete: true,
+        deleteToken: "",
+        canUndo: false,
+        historyCount: 0,
+      },
+    ],
+  };
+
+  it("decodes summaries matching the strict contract fields", () => {
+    const result = decodeRosterEither(strictRoster);
+    expect(Either.isRight(result)).toBe(true);
+    if (Either.isRight(result)) {
+      expect(result.right.characters[0]?.playbook).toBe("Spider");
+      expect(result.right.crews[0]?.memberCount).toBe(1);
+      expect(result.right.characters[0]?.isReadable).toBe(true);
+      expect(result.right.crews[0]?.deleteToken).toBe("");
+      expect(result.right.crews[0]?.historyCount).toBe(0);
+    }
+  });
+
+  it("rejects summaries that omit the collection metadata fields", () => {
+    const { isReadable: _isReadable, isRepairable: _isRepairable, isComplete: _isComplete, deleteToken: _deleteToken, canUndo: _canUndo, historyCount: _historyCount, ...bareCharacter } = strictRoster.characters[0];
+    const { isReadable: _isReadable2, isRepairable: _isRepairable2, isComplete: _isComplete2, deleteToken: _deleteToken2, canUndo: _canUndo2, historyCount: _historyCount2, ...bareCrew } = strictRoster.crews[0];
+    const result = decodeRosterEither({
+      characters: [bareCharacter],
+      crews: [bareCrew],
     });
-    expect(roster.characters[0]?.playbook).toBe("Spider");
-    expect(roster.crews[0]?.memberCount).toBe(1);
+    expect(Either.isLeft(result)).toBe(true);
   });
 });
 

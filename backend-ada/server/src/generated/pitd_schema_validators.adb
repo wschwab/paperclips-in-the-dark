@@ -633,6 +633,11 @@ package body Pitd_Schema_Validators is
 
    Allowed_Character_Summary : constant String := Required_Character_Summary;
 
+   Required_Clock_Summary : constant String :=
+     "|kind|id|name|ownerKind|ownerId|purpose|behavior|segments|size|rollover|relatedClockIds|isReadable|isRepairable|isComplete|deleteToken|";
+
+   Allowed_Clock_Summary : constant String := Required_Clock_Summary;
+
    Required_Crew_Summary : constant String :=
      "|kind|id|name|crewType|gameStem|tier|heat|wanted|rep|hold|memberCount|revision|isReadable|isRepairable|isComplete|deleteToken|canUndo|historyCount|";
 
@@ -693,6 +698,21 @@ package body Pitd_Schema_Validators is
       Check_Enum (V, Ptr, "|ada|zero|");
    end Check_Enum_Health_Implementation;
 
+   procedure Check_Enum_Clock_Summary_Owner_Kind (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|campaign|character|crew|");
+   end Check_Enum_Clock_Summary_Owner_Kind;
+
+   procedure Check_Enum_Clock_Summary_Purpose (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|progress|danger|racing|linked|mission|tug-of-war|long-term-project|faction|score|custom|");
+   end Check_Enum_Clock_Summary_Purpose;
+
+   procedure Check_Enum_Clock_Summary_Behavior (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|bounded|rollover|");
+   end Check_Enum_Clock_Summary_Behavior;
+
    procedure Check_Const_Character_Kind (V : JSON_Value; Ptr : String) is
    begin
       Check_Const (V, Ptr, "character");
@@ -727,6 +747,11 @@ package body Pitd_Schema_Validators is
    begin
       Check_Const (V, Ptr, "character");
    end Check_Const_Character_Summary_Kind;
+
+   procedure Check_Const_Clock_Summary_Kind (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Const (V, Ptr, "clock");
+   end Check_Const_Clock_Summary_Kind;
 
    procedure Check_Const_Crew_Summary_Kind (V : JSON_Value; Ptr : String) is
    begin
@@ -1184,6 +1209,42 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "deleteToken", Check_Delete_Token'Access);
    end Check_Character_Summary;
 
+   procedure Check_Clock_Summary_Related_Clock_Ids (V : JSON_Value; Ptr : String) is
+      A : JSON_Array;
+   begin
+      Check_Unique_Strings (V, Ptr);
+      if V.Kind = JSON_Array_Type then
+         A := Get (V);
+         for I in 1 .. Length (A) loop
+            if Get (A, I).Kind = JSON_String_Type
+              and then not Is_Uuid (S (Get (A, I))) then
+               Report (Ptr & "/" & Idx (I),
+                       "pattern: not a v4 UUID");
+            end if;
+         end loop;
+      end if;
+   end Check_Clock_Summary_Related_Clock_Ids;
+
+   procedure Check_Clock_Summary (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Clock_Summary, Allowed_Clock_Summary);
+      Check_Prop (V, Ptr, "kind", Check_Const_Clock_Summary_Kind'Access);
+      Check_Prop (V, Ptr, "id", Check_Uuid'Access);
+      Check_Prop (V, Ptr, "name", Check_Str'Access);
+      Check_Prop (V, Ptr, "ownerKind", Check_Enum_Clock_Summary_Owner_Kind'Access);
+      Check_Prop (V, Ptr, "ownerId", Check_Str'Access);
+      Check_Prop (V, Ptr, "purpose", Check_Enum_Clock_Summary_Purpose'Access);
+      Check_Prop (V, Ptr, "behavior", Check_Enum_Clock_Summary_Behavior'Access);
+      Check_Prop (V, Ptr, "segments", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "size", Check_Int_Min_1'Access);
+      Check_Prop (V, Ptr, "rollover", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "relatedClockIds", Check_Clock_Summary_Related_Clock_Ids'Access);
+      Check_Prop (V, Ptr, "isReadable", Check_Bool'Access);
+      Check_Prop (V, Ptr, "isRepairable", Check_Bool'Access);
+      Check_Prop (V, Ptr, "isComplete", Check_Bool'Access);
+      Check_Prop (V, Ptr, "deleteToken", Check_Delete_Token'Access);
+   end Check_Clock_Summary;
+
    procedure Check_Crew_Summary (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Crew_Summary, Allowed_Crew_Summary);
@@ -1345,6 +1406,26 @@ package body Pitd_Schema_Validators is
       Check_Clock_Conditional (V, "");
       Check_Segments_Le_Size (V, "");
    end Validate_Clock;
+
+   procedure Validate_Clock_Summary (V : JSON_Value) is
+   begin
+      Check_Object (V, "", Required_Clock_Summary, Allowed_Clock_Summary);
+      Check_Prop (V, "", "kind", Check_Const_Clock_Summary_Kind'Access);
+      Check_Prop (V, "", "id", Check_Uuid'Access);
+      Check_Prop (V, "", "name", Check_Str'Access);
+      Check_Prop (V, "", "ownerKind", Check_Enum_Clock_Summary_Owner_Kind'Access);
+      Check_Prop (V, "", "ownerId", Check_Str'Access);
+      Check_Prop (V, "", "purpose", Check_Enum_Clock_Summary_Purpose'Access);
+      Check_Prop (V, "", "behavior", Check_Enum_Clock_Summary_Behavior'Access);
+      Check_Prop (V, "", "segments", Check_Int_Min_0'Access);
+      Check_Prop (V, "", "size", Check_Int_Min_1'Access);
+      Check_Prop (V, "", "rollover", Check_Int_Min_0'Access);
+      Check_Prop (V, "", "relatedClockIds", Check_Clock_Summary_Related_Clock_Ids'Access);
+      Check_Prop (V, "", "isReadable", Check_Bool'Access);
+      Check_Prop (V, "", "isRepairable", Check_Bool'Access);
+      Check_Prop (V, "", "isComplete", Check_Bool'Access);
+      Check_Prop (V, "", "deleteToken", Check_Delete_Token'Access);
+   end Validate_Clock_Summary;
 
    procedure Validate_Crew (V : JSON_Value) is
    begin

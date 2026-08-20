@@ -1,5 +1,16 @@
 # C0 operations audit — agent-api-spec §8–9 vs C# `Models/`
 
+> **Reconciliation (2026-08-14).** This page is the C0 audit record from the
+> original contract phase. The contract has since been corrected and frozen by
+> Waves 2–6: the current normative operation semantics (typed error union,
+> numeric result families, shared effective caps, lifecycle state machine with
+> resolution-only trauma and explicit retirement, preview/repair imports,
+> capability projections) live in `contract/openapi.yaml`, `contract/schemas/`,
+> `PAPERCLIPS.md`, and `docs/pages/contract/spec-change-work-spec.mdx`, which
+> are authoritative where this audit is stale (e.g. trauma.add resolution-only,
+> action.set-rating shared-cap enforcement, retirement as an explicit
+> confirmation-guarded operation).
+
 Audited 2026-07-19 against `blades-in-the-sheets/Models/` (authoritative).
 Verdicts: **adopted** (catalog matches source), **corrected** (catalog wrong or
 incomplete; contract follows source or spec §7.2), **diverged** (contract
