@@ -891,6 +891,50 @@ end Snapshot;
    --  the compact header to a sidecar _index.json; History reads that one
    --  small file when present and falls back to the per-file scan only when
    --  the sidecar is missing or corrupt.
+   --  OPT-007: summary projections (Character_Summary, Crew_Summary) only
+   --  need the snapshot COUNT, not the full entries.  This reads the
+   --  sidecar length or counts directory entries without parsing bodies.
+   function History_Count (Kind, Id : String) return Natural is
+      Base : constant String := Entity_Dir (Kind, Id) & "/history";
+   begin
+      if not Ada.Directories.Exists (Base) then return 0; end if;
+      declare
+         Sidecar : constant String := Base & "/_index.json";
+      begin
+         if Ada.Directories.Exists (Sidecar) then
+            begin
+               declare V : constant JSON_Value := Read (Read_File (Sidecar)); begin
+                  if Has_Field (V, "entries") then
+                     return GNATCOLL.JSON.Length (Get (V, "entries"));
+                  end if;
+               end;
+            exception
+               when others => null;  --  corrupt sidecar: fall through
+            end;
+         end if;
+      end;
+      --  Fallback: count *.json files excluding _index and baseline.
+      declare
+         Search : Ada.Directories.Search_Type;
+         Item   : Ada.Directories.Directory_Entry_Type;
+         Count  : Natural := 0;
+      begin
+         Ada.Directories.Start_Search
+           (Search, Base, "*.json",
+            (Ada.Directories.Ordinary_File => True, others => False));
+         while Ada.Directories.More_Entries (Search) loop
+            Ada.Directories.Get_Next_Entry (Search, Item);
+            if Ada.Directories.Simple_Name (Item) /= "_index.json"
+              and then not Is_Baseline_Snapshot (Ada.Directories.Simple_Name (Item))
+            then
+               Count := Count + 1;
+            end if;
+         end loop;
+         Ada.Directories.End_Search (Search);
+         return Count;
+      end;
+   end History_Count;
+
    function History (Kind, Id : String) return JSON_Array is
       Base : constant String := Entity_Dir (Kind, Id) & "/history";
       O    : JSON_Array := Empty_Array;
@@ -5869,10 +5913,11 @@ elsif Op = "harm.add" then
       --  § 9) — computed at response time from the retained snapshot count,
       --  never stored.  The create baseline is excluded from the count.
       declare
-         H : constant JSON_Array := History ("character", Str_Field (C, "id"));
+         Hc : constant Natural :=
+           History_Count ("character", Str_Field (C, "id"));
       begin
-         Set_Field (X, "canUndo", Length (H) > 0);
-         Set_Field (X, "historyCount", Integer (Length (H)));
+         Set_Field (X, "canUndo", Hc > 0);
+         Set_Field (X, "historyCount", Integer (Hc));
       end;
       return X;
    end Character_Summary;
@@ -5904,10 +5949,11 @@ elsif Op = "harm.add" then
       --  never stored.  Mirrors Character_Summary.  The create baseline is
       --  excluded from the count.
       declare
-         H : constant JSON_Array := History ("crew", Str_Field (C, "id"));
+         Hc : constant Natural :=
+           History_Count ("crew", Str_Field (C, "id"));
       begin
-         Set_Field (X, "canUndo", Length (H) > 0);
-         Set_Field (X, "historyCount", Integer (Length (H)));
+         Set_Field (X, "canUndo", Hc > 0);
+         Set_Field (X, "historyCount", Integer (Hc));
       end;
       return X;
    end Crew_Summary;
@@ -6145,7 +6191,22 @@ elsif Op = "harm.add" then
    function Crew_Rows (CC : JSON_Array) return JSON_Array is
       CR : constant JSON_Array := Entity_Ids ("crew");
       O  : JSON_Array := Empty_Array;
+      --  OPT-006: build a crewId -> memberCount map in ONE pass through
+      --  the character array, replacing the O(crews x characters) inner
+      --  loop with O(characters + crews).
+      Crew_Counts : JSON_Value := Create_Object;
    begin
+      for J in 1 .. Length (CC) loop
+         declare
+            Cid : constant String :=
+              Str_Field (Get (CC, J), "crewId");
+         begin
+            if Cid'Length > 0 then
+               Set_Field (Crew_Counts, Cid,
+                Int_Field (Crew_Counts, Cid, 0) + 1);
+            end if;
+         end;
+      end loop;
       for I in 1 .. Length (CR) loop
          declare
             Rid : constant String := Get (Get (CR, I));
@@ -6158,14 +6219,10 @@ elsif Op = "harm.add" then
                   Iss    : JSON_Array;
                   Can    : Boolean;
                   X      : JSON_Value;
-                  Members : Natural := 0;
+                  Members : constant Natural :=
+                    Int_Field (Crew_Counts, Rid, 0);
                begin
                   Classify_Stored ("crew", Rid, Bytes, E, Ctx, Iss, Can);
-                  for J in 1 .. Length (CC) loop
-                     if Str_Field (Get (CC, J), "crewId") = Rid then
-                        Members := Members + 1;
-                     end if;
-                  end loop;
                   if Can then
                      X := Crew_Summary (E, Empty_Array);
                      Set_Field (X, "kind", "crew");

@@ -395,4 +395,60 @@ describe("roster page (F2aa)", () => {
       expect(urls.filter((u) => u === "/api/campaign/roster").length).toBeGreaterThanOrEqual(2);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // OPT-008: roster search/filter and bounded rendering.  A search input
+  // filters visible rows by name/alias/playbook/crewType without removing
+  // degraded rows or changing the header counts.  aria-live is narrowed to
+  // a status region, not the whole root.
+  // -------------------------------------------------------------------------
+
+  it("renders a search input that filters characters by name", async () => {
+    const big = {
+      characters: [
+        ...rosterDTO.characters,
+        { ...rosterDTO.characters[0], id: "b2222222-2222-4222-8222-222222222222", name: "Alice Wonderland", alias: "Rabbit" },
+        { ...rosterDTO.characters[0], id: "c3333333-3333-4333-8333-333333333333", name: "Charlie", alias: "Bandersnatch" },
+      ],
+      crews: rosterDTO.crews,
+    };
+    global.fetch = vi.fn().mockResolvedValue(ok(big));
+    mountRosterPage(root);
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll("[data-character-id]").length).toBe(3);
+    });
+
+    const search = root.querySelector("input.roster-search") as HTMLInputElement;
+    expect(search).toBeTruthy();
+
+    // Type "Alice" — only one row should be visible
+    search.value = "Alice";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+
+    await vi.waitFor(() => {
+      const visible = Array.from(root.querySelectorAll("[data-character-id]")).filter(
+        (el) => (el as HTMLElement).style.display !== "none",
+      );
+      expect(visible.length).toBe(1);
+      expect(visible[0].querySelector("strong")?.textContent).toContain("Alice");
+    });
+
+    // Header count still shows the total, not the filtered count
+    expect(root.querySelector("h2")?.textContent).toContain("Characters (3)");
+  });
+  it("narrowly scopes aria-live to a status region, not the whole root", async () => {
+    global.fetch = vi.fn().mockResolvedValue(ok(rosterDTO));
+    mountRosterPage(root);
+    await vi.waitFor(() => {
+      expect(root.querySelector(".roster-search")).toBeTruthy();
+    });
+
+    // The root itself must not be an aria-live region (FV-031: a broad
+    // aria-live on the root announces every DOM mutation to AT users).
+    expect(root.getAttribute("aria-live")).toBeFalsy();
+    // A dedicated status region should carry the live region instead.
+    const liveRegion = root.querySelector("[aria-live]");
+    expect(liveRegion).toBeTruthy();
+    expect(liveRegion?.getAttribute("aria-live")).toBe("polite");
+  });
 });

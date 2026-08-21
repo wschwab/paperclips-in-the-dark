@@ -104,7 +104,25 @@ function renderCrew(cr: CrewSummary, onChanged: () => void): HTMLElement {
 }
 
 function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
-  const charactersSection =
+  // OPT-008: search/filter input. Filters by name/alias/playbook (characters)
+  // or name/crewType (crews). Degraded rows stay visible — their id is the
+  // only text and they remain reachable regardless of filter.
+  const searchInput = el("input", {
+    type: "search",
+    className: "roster-search",
+    placeholder: "Search roster…",
+    "aria-label": "Filter roster by name, alias, or playbook",
+    autocomplete: "off",
+  }) as HTMLInputElement;
+
+  // OPT-008: narrow aria-live to a status region that announces count
+  // changes only, not every DOM mutation in the roster.
+  const statusRegion = el("div", {
+    "aria-live": "polite",
+    className: "roster-status visually-hidden",
+  }, `Characters: ${roster.characters.length}. Crews: ${roster.crews.length}.`);
+
+  const charactersList =
     roster.characters.length === 0
       ? el("p", { className: "empty uneven" }, "No characters yet.")
       : el(
@@ -113,7 +131,7 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
           ...roster.characters.map((c) => renderCharacter(c, onChanged)),
         );
 
-  const crewsSection =
+  const crewsList =
     roster.crews.length === 0
       ? el("p", { className: "empty uneven" }, "No crews yet.")
       : el(
@@ -129,30 +147,48 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
   }, "Refresh");
   refreshBtn.addEventListener("click", onChanged);
 
-  return el(
+  const section = el(
     "section",
     { className: "roster" },
     el(
       "div",
       { className: "roster-header", style: "display: flex; align-items: center; gap: 0.75em; flex-wrap: wrap;" },
       el("h1", { className: "page-title" }, "Roster"),
+      searchInput,
       refreshBtn,
     ),
+    statusRegion,
     el(
       "div",
       { className: "roster-characters torn-foot" },
       el("h2", {}, `Characters (${roster.characters.length})`),
-      charactersSection,
+      charactersList,
       el("a", { href: "/character/create", className: "btn-primary" }, "+ Create Character"),
     ),
     el(
       "div",
       { className: "roster-crews torn-foot" },
       el("h2", {}, `Crews (${roster.crews.length})`),
-      crewsSection,
+      crewsList,
       el("a", { href: "/crew/create", className: "btn-primary" }, "+ Create Crew"),
     ),
   );
+
+  // OPT-008: filter handler — hide non-matching rows, keep degraded rows
+  // visible (they have no name text to match). Queries within the section
+  // element (not the root container) to avoid scope leakage.
+  const applyFilter = () => {
+    const q = searchInput.value.trim().toLowerCase();
+    section.querySelectorAll("[data-character-id], [data-crew-id]").forEach((node) => {
+      const e = node as HTMLElement;
+      if (!q) { e.style.display = ""; return; }
+      const text = (e.textContent || "").toLowerCase();
+      e.style.display = text.includes(q) ? "" : "none";
+    });
+  };
+  searchInput.addEventListener("input", applyFilter);
+
+  return section;
 }
 
 function renderLoading(): HTMLElement {
@@ -170,7 +206,9 @@ function renderLoading(): HTMLElement {
  */
 export function mountRosterPage(root: HTMLElement): () => void {
   let cancelled = false;
-  root.setAttribute("aria-live", "polite");
+  // OPT-008: aria-live moved to a narrow status region inside renderRoster.
+  // The root no longer carries aria-live (FV-031: a broad aria-live on the
+  // root announces every DOM mutation to AT users).
 
   const startLoad = () => {
     root.setAttribute("aria-busy", "true");
