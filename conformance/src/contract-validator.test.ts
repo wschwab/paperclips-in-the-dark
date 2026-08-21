@@ -60,8 +60,9 @@ describe("contract-validator oracle calibration", () => {
     const { canUndo: _omit, ...withoutCanUndo } = value;
     const result = validate("crewSummary", withoutCanUndo);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => /canUndo/.test(JSON.stringify(e))).toBe(true);
+    expect(result.errors.some((e) => JSON.stringify(e).includes("canUndo"))).toBe(true);
   });
+
 
   it("[ORACLE-CAL-002] rejects an excess property (characterSummary with extra 'foo')", () => {
     const value = makeCharacterSummary({ foo: "bar" });
@@ -88,7 +89,7 @@ describe("contract-validator oracle calibration", () => {
   });
 
   it("[ORACLE-CAL-006] rejects a full character DTO where a summary is declared", () => {
-    const value = makeCharacterSummary({ dossier: {}, monitor: {}, talent: {}, playbookNested: {} });
+    const value = makeCharacterSummary({ dossier: {}, monitor: {}, talent: {} });
     const result = validate("characterSummary", value);
     expect(result.valid).toBe(false);
   });
@@ -100,7 +101,7 @@ describe("contract-validator oracle calibration", () => {
       message: "boom",
       retryable: false,
       recovery: "retry",
-      details: { issues: [{ pointer: "/x", reason: "bad" }] },
+      details: {},
     };
     const result = validate("operationError", value);
     expect(result.valid).toBe(false);
@@ -112,7 +113,8 @@ describe("contract-validator oracle calibration", () => {
   });
 
   it("[ORACLE-CAL-009] accepts a valid crewSummary with canUndo:true, historyCount:1 (positive control)", () => {
-    const result = validate("crewSummary", makeCrewSummary({ canUndo: true, historyCount: 1 }));
+    const value = makeCrewSummary({ canUndo: true, historyCount: 1 });
+    const result = validate("crewSummary", value);
     expect(result.valid).toBe(true);
   });
 
@@ -128,35 +130,17 @@ describe("contract-validator oracle calibration", () => {
     expect(result.valid).toBe(false);
   });
 
-  it("[ORACLE-CAL-012] rejects a malformed timestamp (space instead of T)", () => {
-    const value = makeCharacterSummary({ ...makeCharacterSummaryAux(), createdAt: undefined });
-    const result = validate("character", value);
+  it("[ORACLE-CAL-012] rejects a malformed timestamp (space separator instead of T)", () => {
+    const validCampaign = {
+      kind: "campaign",
+      name: "You and Yours",
+      gameStem: "blades-in-the-dark",
+      createdAt: "2026-08-21T12:00:00Z",
+      formatVersion: 1,
+    };
+    expect(validate("campaign", validCampaign).valid).toBe(true);
+    const malformed = { ...validCampaign, createdAt: "2026-08-21 12:00:00Z" };
+    const result = validate("campaign", malformed);
     expect(result.valid).toBe(false);
   });
-
-  it("[ORACLE-CAL-012-alt] rejects a malformed timestamp in a health health.createdAt", () => {
-    const value = {
-      status: "ok",
-      implementation: "ada",
-      version: "1.0.0",
-      dataDir: "/tmp/pitd",
-      createdAt: "2026-08-21 12:00:00Z",
-    };
-    // health has no createdAt; instead use the campaign timestamp def via a full campaign value
-    expect(validate("health", value).valid).toBe(false);
-  });
-
 });
-
-// helper for CAL-012 malformed timestamp in a campaign.
-function makeCharacterSummaryAux() {
-  return {
-    kind: "characterSummary-invalid-root",
-    id: uuid,
-    name: "x",
-    alias: "x",
-    playbook: "Cutter",
-    gameStem: "blades-in-the-dark",
-    crewId: uuid,
-  };
-}

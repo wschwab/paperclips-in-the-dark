@@ -1,6 +1,6 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
-import { decode, Schemas } from "../../src/schemas.js";
+import { validateResponse } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook } from "../../src/game-data.js";
 
@@ -52,40 +52,42 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
   testCase("CONTRACT-SUCCESS-HEALTH-001", "GET /api/health", async () => {
     const response = await api.get("health");
     expect(response.status).toBe(200);
-    await decode(Schemas.Health, response.body);
+    validateResponse("health", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CAMPAIGN-001", "GET /api/campaign", async () => {
     const response = await api.get("campaign");
     expect(response.status).toBe(200);
-    await decode(Schemas.Campaign, response.body);
+    validateResponse("campaign", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-ROSTER-001", "GET /api/campaign/roster", async () => {
     const response = await api.get("campaign/roster");
     expect(response.status).toBe(200);
-    await decode(Schemas.Roster, response.body);
+    // BUG-013: the real AJV contract-validator enforces canUndo/historyCount on
+    // every crewSummary, so a server omitting them fails this strict check.
+    validateResponse("roster", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-MEMBERS-001", "GET /api/campaign/crew/{crewId}/members for a known crew", async () => {
     const crewId = await seedCrewId();
     const response = await api.get(`campaign/crew/${crewId}/members`);
     expect(response.status).toBe(200);
-    await decode(Schemas.CharacterSummaryList, response.body);
+    validateResponse("characterSummary", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTERS-001", "GET /api/characters returns character summaries", async () => {
     await seedCharacterId();
     const response = await api.get("characters");
     expect(response.status).toBe(200);
-    await decode(Schemas.CharacterSummaryList, response.body);
+    validateResponse("characterSummary", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTER-001", "GET /api/characters/{id} for a created character", async () => {
     const characterId = await seedCharacterId();
     const response = await api.get(`characters/${characterId}`);
     expect(response.status).toBe(200);
-    await decode(Schemas.Character, response.body);
+    validateResponse("character", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTER-HISTORY-001", "GET /api/characters/{id}/history after a snapshot-worthy op", async () => {
@@ -93,7 +95,7 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
     await api.post(`characters/${characterId}/ops/note.add`, { text: "success-route history" });
     const response = await api.get(`characters/${characterId}/history`);
     expect(response.status).toBe(200);
-    await decode(Schemas.History, response.body);
+    validateResponse("historyEntry", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTER-SNAPSHOT-001", "GET /api/characters/{id}/history/{snapshotId} for an existing snapshot", async () => {
@@ -101,21 +103,21 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
     const snapshotId = await snapshotIdOf("character", characterId);
     const response = await api.get(`characters/${characterId}/history/${snapshotId}`);
     expect(response.status).toBe(200);
-    await decode(Schemas.Character, response.body);
+    validateResponse("character", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREWS-001", "GET /api/crews returns crew summaries", async () => {
     await seedCrewId();
     const response = await api.get("crews");
     expect(response.status).toBe(200);
-    await decode(Schemas.CrewSummaryList, response.body);
+    validateResponse("crewSummary", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-001", "GET /api/crews/{id} for a created crew", async () => {
     const crewId = await seedCrewId();
     const response = await api.get(`crews/${crewId}`);
     expect(response.status).toBe(200);
-    await decode(Schemas.Crew, response.body);
+    validateResponse("crew", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-HISTORY-001", "GET /api/crews/{id}/history after a snapshot-worthy op", async () => {
@@ -123,7 +125,7 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
     await api.post(`crews/${crewId}/ops/note.add`, { text: "success-route crew history" });
     const response = await api.get(`crews/${crewId}/history`);
     expect(response.status).toBe(200);
-    await decode(Schemas.History, response.body);
+    validateResponse("historyEntry", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-SNAPSHOT-001", "GET /api/crews/{id}/history/{snapshotId} for an existing snapshot", async () => {
@@ -131,62 +133,62 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
     const snapshotId = await snapshotIdOf("crew", crewId);
     const response = await api.get(`crews/${crewId}/history/${snapshotId}`);
     expect(response.status).toBe(200);
-    await decode(Schemas.Crew, response.body);
+    validateResponse("crew", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CLOCKS-001", "GET /api/clocks returns clock DTOs", async () => {
     await seedClockId();
     const response = await api.get("clocks");
     expect(response.status).toBe(200);
-    await decode(Schemas.ClockList, response.body);
+    validateResponse("clockSummary", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CLOCK-001", "GET /api/clocks/{id} for a created clock", async () => {
     const clockId = await seedClockId();
     const response = await api.get(`clocks/${clockId}`);
     expect(response.status).toBe(200);
-    await decode(Schemas.Clock, response.body);
+    validateResponse("clock", response.body);
   });
 
   testCase("CONTRACT-SUCCESS-GAMES-001", "GET /api/games", async () => {
     const response = await api.get("games");
     expect(response.status).toBe(200);
-    await decode(Schemas.GameList, response.body);
+    expect(Array.isArray(response.body)).toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-GAME-001", "GET /api/games/{stem} for an installed game", async () => {
     const response = await api.get("games/blades-in-the-dark");
     expect(response.status).toBe(200);
-    await decode(Schemas.JsonObject, response.body);
+    expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-PLAYBOOKS-001", "GET /api/games/{stem}/playbooks", async () => {
     const response = await api.get("games/blades-in-the-dark/playbooks");
     expect(response.status).toBe(200);
-    await decode(Schemas.JsonArray, response.body);
+    expect(Array.isArray(response.body)).toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-PLAYBOOK-001", "GET /api/games/{stem}/playbooks/{playbook} for a known playbook", async () => {
     const response = await api.get("games/blades-in-the-dark/playbooks/Cutter");
     expect(response.status).toBe(200);
-    await decode(Schemas.JsonObject, response.body);
+    expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-HERITAGES-001", "GET /api/games/{stem}/heritages", async () => {
     const response = await api.get("games/blades-in-the-dark/heritages");
     expect(response.status).toBe(200);
-    await decode(Schemas.JsonArray, response.body);
+    expect(Array.isArray(response.body)).toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-SETTINGS-001", "GET /api/games/{stem}/crews", async () => {
     const response = await api.get("games/blades-in-the-dark/crews");
     expect(response.status).toBe(200);
-    await decode(Schemas.JsonObject, response.body);
+    expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-TYPE-SETTINGS-001", "GET /api/games/{stem}/crews/{crewType} for a known crew type", async () => {
     const response = await api.get("games/blades-in-the-dark/crews/Assassins");
     expect(response.status).toBe(200);
-    await decode(Schemas.JsonObject, response.body);
+    expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 });

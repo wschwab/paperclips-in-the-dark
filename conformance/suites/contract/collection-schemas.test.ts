@@ -1,6 +1,6 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
-import { decode, Schemas } from "../../src/schemas.js";
+import { decode, Schemas, validateResponse } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook } from "../../src/game-data.js";
 
@@ -39,6 +39,9 @@ describe("contract v1 collection summary schemas (AUDIT-0 BUG-012)", () => {
     await seedCharacterId();
     const response = await api.get("characters");
     expect(response.status).toBe(200);
+    // Strict AJV validation first; decode of validated data is then lossless for
+    // reading the typed summary fields below (no false-green tolerance).
+    validateResponse("characterSummary", response.body);
     const summaries = await decode(Schemas.CharacterSummaryList, response.body);
     expect(summaries.length).toBeGreaterThan(0);
     const items = response.body as Array<Record<string, unknown>>;
@@ -50,6 +53,7 @@ describe("contract v1 collection summary schemas (AUDIT-0 BUG-012)", () => {
     const crewId = await seedCrewId();
     const response = await api.get("crews");
     expect(response.status).toBe(200);
+    validateResponse("crewSummary", response.body);
     const summaries = await decode(Schemas.CrewSummaryList, response.body);
     const crew = summaries.find((item) => item.id === crewId);
     expect(crew).toBeDefined();
@@ -64,6 +68,7 @@ describe("contract v1 collection summary schemas (AUDIT-0 BUG-012)", () => {
     await linkCharacterToCrew(characterId, crewId);
     const response = await api.get(`campaign/crew/${crewId}/members`);
     expect(response.status).toBe(200);
+    validateResponse("characterSummary", response.body);
     const members = await decode(Schemas.CharacterSummaryList, response.body);
     expect(members.some((member) => member.id === characterId)).toBe(true);
   });
@@ -72,7 +77,9 @@ describe("contract v1 collection summary schemas (AUDIT-0 BUG-012)", () => {
     const characterId = await seedCharacterId();
     const crewId = await seedCrewId();
     await linkCharacterToCrew(characterId, crewId);
-    const roster = await decode(Schemas.Roster, (await api.get("campaign/roster")).body);
+    const response = await api.get("campaign/roster");
+    validateResponse("roster", response.body);
+    const roster = await decode(Schemas.Roster, response.body);
     const crew = roster.crews.find((item) => item.id === crewId);
     expect(crew?.memberCount).toBe(1);
     const character = roster.characters.find((item) => item.id === characterId);

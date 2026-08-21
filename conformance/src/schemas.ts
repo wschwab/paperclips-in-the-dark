@@ -1,5 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Effect from "effect/Effect";
+import { validateOrThrow } from "./contract-validator.js";
+import { getEndpointSchemaMap } from "./endpoint-schema-map.js";
 
 // ---------------------------------------------------------------------------
 // Frozen-contract primitives (contract/schemas/common.json)
@@ -600,4 +602,78 @@ export function decode<A>(schema: Schema.Schema<A, any, any>, value: unknown): P
   return Effect.runPromise(
     Schema.decodeUnknown(schema, { onExcessProperty: "error" })(value) as Effect.Effect<A, unknown, never>,
   );
+}
+
+// ---------------------------------------------------------------------------
+// Real-validator bridge (Oracle cutover, AUDIT-0 BUG-013)
+//
+// The Effect mirrors above (`decode`/`Schemas`) use optionalWith defaults that
+// silently fill missing required fields (e.g. canUndo/historyCount on crew
+// summaries), so a false-green strict-response run did not establish OpenAPI
+// response validation. These functions delegate to the AJV contract-validator
+// (conformance/src/contract-validator.ts) compiled from contract/schemas/*.json —
+// the source of truth. LIVE response assertions use these; the offline/negative
+// decoder tests keep using `decode` because they exercise the decoder itself.
+// ---------------------------------------------------------------------------
+
+
+/** Contract schema names (the contract-validator's registry of compiled AJV validators). */
+export const SchemaName = {
+  Campaign: "campaign",
+  Health: "health",
+  CharacterSummary: "characterSummary",
+  CrewSummary: "crewSummary",
+  ClockSummary: "clockSummary",
+  Roster: "roster",
+  HistoryEntry: "historyEntry",
+  Character: "character",
+  Crew: "crew",
+  Clock: "clock",
+  OperationResult: "operationResult",
+  OperationError: "operationError",
+} as const;
+
+/**
+ * Schema names that describe a single list ITEM rather than the whole response.
+ * The OpenAPI list endpoints map to the element schema (characterSummary etc.), so
+ * validating an array body against them means validating each element.
+ */
+const ITEM_SCOPED_SCHEMAS: Record<string, true> = {
+  characterSummary: true,
+  crewSummary: true,
+  clockSummary: true,
+  historyEntry: true,
+};
+
+/**
+ * Validate a live response body against the named contract schema. Throws on
+ * failure, listing the AJV error pointers/messages. Item-scoped schema names
+ * validate each element of an array body (the list-response shape).
+ */
+export function validateResponse(schemaName: string, value: unknown): void {
+  if (ITEM_SCOPED_SCHEMAS[schemaName] && Array.isArray(value)) {
+    for (const item of value) {
+      validateOrThrow(schemaName, item);
+    }
+    return;
+  }
+  validateOrThrow(schemaName, value);
+}
+
+/**
+ * Validate a live response body against the contract schema the OpenAPI spec
+ * declares for the given method + route pattern + status. Throws on failure, or
+ * when the schema map cannot resolve a schema for the endpoint.
+ */
+export function assertResponseValid(
+  method: string,
+  pathPattern: string,
+  statusValue: number,
+  value: unknown,
+): void {
+  const schemaName = getEndpointSchemaMap()[`${method.toUpperCase()} ${pathPattern}`]?.[String(statusValue)];
+  if (!schemaName || schemaName === "none") {
+    throw new Error(`no contract schema declared for ${method.toUpperCase()} ${pathPattern} ${statusValue}`);
+  }
+  validateResponse(schemaName, value);
 }

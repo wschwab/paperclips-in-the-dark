@@ -1,6 +1,6 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
-import { decode, Schemas } from "../../src/schemas.js";
+import { decode, Schemas, validateResponse } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook } from "../../src/game-data.js";
 
@@ -99,43 +99,57 @@ describe("strict decoders reject contract-invalid output (AUDIT-0 BUG-013)", () 
 });
 
 describe("live responses satisfy the frozen schemas (AUDIT-0 BUG-013)", () => {
-  testCase("CONTRACT-STRICT-CAMPAIGN-001", "the live campaign decodes with its required kind and RFC 3339 createdAt", async () => {
+  testCase("CONTRACT-STRICT-CAMPAIGN-001", "the live campaign satisfies the campaign schema with its required kind and RFC 3339 createdAt", async () => {
     const response = await api.get("campaign");
     expect(response.status).toBe(200);
-    const campaign = await decode(Schemas.Campaign, response.body);
+    validateResponse("campaign", response.body);
+    // validated above against campaign.json#/$defs/campaign (kind required)
+    const campaign = response.body as { kind: string };
     expect(campaign.kind).toBe("campaign");
   });
 
-  testCase("CONTRACT-STRICT-CREATE-TIMESTAMP-001", "created entities carry RFC 3339 timestamps", async () => {
+  testCase("CONTRACT-STRICT-CREATE-TIMESTAMP-001", "created entities carry RFC 3339 timestamps and satisfy the character schema", async () => {
     const characterId = await seedCharacterId();
     const response = await api.get(`characters/${characterId}`);
     expect(response.status).toBe(200);
-    const character = await decode(Schemas.Character, response.body);
+    validateResponse("character", response.body);
+    // validated above against character.json (createdAt/updatedAt required)
+    const character = response.body as { createdAt: string; updatedAt: string };
     expect(RFC3339_T.test(character.createdAt)).toBe(true);
     expect(RFC3339_T.test(character.updatedAt)).toBe(true);
   });
 
-  testCase("CONTRACT-STRICT-HISTORY-001", "live history entries decode with contract snapshot IDs", async () => {
+  testCase("CONTRACT-STRICT-HISTORY-001", "live history entries satisfy the historyEntry schema with contract snapshot IDs", async () => {
     const characterId = await seedCharacterId();
     await api.post(`characters/${characterId}/ops/note.add`, { text: "strict" });
     const response = await api.get(`characters/${characterId}/history`);
     expect(response.status).toBe(200);
-    const history = await decode(Schemas.History, response.body);
+    validateResponse("historyEntry", response.body);
+    // validated above against campaign.json#/$defs/historyEntry (array of entries)
+    const history = response.body as Array<{ snapshotId: string }>;
     expect(history.length).toBeGreaterThan(0);
     expect(SNAPSHOT_ID_PATTERN.test(history[0]!.snapshotId)).toBe(true);
   });
 
-  testCase("CONTRACT-STRICT-HEALTH-001", "health decodes with the typed implementation", async () => {
+  testCase("CONTRACT-STRICT-HEALTH-001", "health satisfies the health schema with the typed implementation", async () => {
     const response = await api.get("health");
     expect(response.status).toBe(200);
-    const health = await decode(Schemas.Health, response.body);
+    validateResponse("health", response.body);
+    // validated above against campaign.json#/$defs/health (status required: ok|degraded)
+    const health = response.body as { status: string };
     expect(health.status).toBe("ok");
   });
 
-  testCase("CONTRACT-STRICT-ROSTER-001", "the live roster decodes to summary DTOs", async () => {
+  testCase("CONTRACT-STRICT-ROSTER-001", "the live roster satisfies the roster schema, whose crew summaries require canUndo/historyCount", async () => {
+    // BUG-013: the tolerant Effect mirror defaulted canUndo/historyCount in, so a
+    // roster lacking them decoded green. The AJV contract-validator requires them on
+    // every crew summary (campaign.json#/$defs/crewSummary), so a server that
+    // omits them fails here.
     const response = await api.get("campaign/roster");
     expect(response.status).toBe(200);
-    const roster = await decode(Schemas.Roster, response.body);
+    validateResponse("roster", response.body);
+    // validated above against campaign.json#/$defs/roster (characters+crews required)
+    const roster = response.body as { characters: unknown[]; crews: unknown[] };
     expect(Array.isArray(roster.characters)).toBe(true);
     expect(Array.isArray(roster.crews)).toBe(true);
   });

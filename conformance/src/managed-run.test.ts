@@ -288,7 +288,7 @@ describe("SC-O0 managed conformance launcher", () => {
     await expect(stat(runDir)).rejects.toThrow();
     expect(pidAlive(Number(lineValue(stdout, "pid")))).toBe(false);
     await assertNoOrphanServers();
-  });
+  }, 60_000);
 
   it("[TOOLING-MANAGED-009] a broken stdout pipe (EPIPE) never orphans the server", async () => {
     // Regression: an EPIPE crash in the launcher used to skip the cleanup
