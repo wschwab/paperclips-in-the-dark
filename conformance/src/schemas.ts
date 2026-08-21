@@ -497,8 +497,8 @@ const CharacterSummary = Schema.Struct({
   deleteToken: Schema.optionalWith(Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)), {
     default: () => "",
   }),
-  canUndo: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  historyCount: Schema.optionalWith(NonNegativeInt, { default: () => 0 }),
+  canUndo: Schema.Boolean,
+  historyCount: NonNegativeInt,
 });
 
 const CrewSummary = Schema.Struct({
@@ -523,8 +523,8 @@ const CrewSummary = Schema.Struct({
   deleteToken: Schema.optionalWith(Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)), {
     default: () => "",
   }),
-  canUndo: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  historyCount: Schema.optionalWith(NonNegativeInt, { default: () => 0 }),
+  canUndo: Schema.Boolean,
+  historyCount: NonNegativeInt,
 });
 
 const HistoryEntry = Schema.Struct({

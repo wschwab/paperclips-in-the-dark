@@ -105,9 +105,10 @@ export const decodeRosterEither = Schema.decodeUnknownEither(Roster, {
 });
 
 export const HistoryEntry = Schema.Struct({
-  // C#-era snapshots were "<17-digit-ticks>-<id>"; the Ada server emits UUIDs
-  // (e.g. 22a96212-1d82-45c5-8116-245196a8150b). Accept any non-empty string.
-  snapshotId: Schema.String.pipe(Schema.minLength(1)),
+  // Contract: campaign.json#/$defs/historyEntry — snapshotId is
+  // ^[0-9]{17}-[A-Za-z0-9]+$ (17-digit tick prefix, hyphen, alphanumeric).
+  // The Ada server emits this format (Digits17(tick) & "-" & random string).
+  snapshotId: Schema.String.pipe(Schema.pattern(/^[0-9]{17}-[A-Za-z0-9]+$/)),
   takenAt: Timestamp,
   op: Schema.String,
 }).pipe(Schema.annotations({ identifier: "HistoryEntry" }));

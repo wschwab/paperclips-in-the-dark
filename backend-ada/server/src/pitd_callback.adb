@@ -2235,35 +2235,24 @@ elsif Op = "clock.progress" then
 
    --  Deterministic unknown-key iteration: GNATCOLL's object map order is
    --  not contractual, so keys are collected and sorted before reporting.
-   Max_Object_Keys : constant := 512;
-   type Key_Buffer is array (1 .. Max_Object_Keys) of Unbounded_String;
+   --  BUG-013 Wave 2B: replaced the fixed 512-key buffer with an unbounded
+   --  JSON_Array so objects with >512 keys never have their removals
+   --  silently truncated.
+   function Less_Keys (L, R : JSON_Value) return Boolean is
+     (L.Kind = JSON_String_Type and then R.Kind = JSON_String_Type
+      and then Get (L) < Get (R));
 
-   procedure Collect_Keys (O : JSON_Value; K : in out Key_Buffer; N : out Natural) is
+   function Collect_Keys (O : JSON_Value) return JSON_Array is
+      K : JSON_Array := Empty_Array;
       procedure Add (Name : UTF8_String; Value : JSON_Value) is
       begin
-         if N < Max_Object_Keys then
-            N := N + 1;
-            K (N) := To_Unbounded_String (String (Name));
-         end if;
+         Append (K, Create (String (Name)));
       end Add;
    begin
-      N := 0;
       if O.Kind = JSON_Object_Type then Map_JSON_Object (O, Add'Access); end if;
+      Sort (K, Less_Keys'Access);
+      return K;
    end Collect_Keys;
-
-   procedure Sort_Keys (K : in out Key_Buffer; N : Natural) is
-   begin
-      for I in 1 .. N - 1 loop
-         for J in I + 1 .. N loop
-            if To_String (K (J)) < To_String (K (I)) then
-               declare T : constant Unbounded_String := K (I); begin
-                  K (I) := K (J);
-                  K (J) := T;
-               end;
-            end if;
-         end loop;
-      end loop;
-   end Sort_Keys;
 
    function In_Allowed (Name : String; Allowed : String) return Boolean is
    begin
@@ -2278,14 +2267,11 @@ elsif Op = "clock.progress" then
      (O : JSON_Value; Ptr, Allowed : String; C : in out N_Ctx;
       Exempt : String := "")
    is
-      K : Key_Buffer;
-      N : Natural;
+      K : constant JSON_Array := Collect_Keys (O);
    begin
-      Collect_Keys (O, K, N);
-      Sort_Keys (K, N);
-      for I in 1 .. N loop
+      for I in 1 .. Length (K) loop
          declare
-            Name : constant String := To_String (K (I));
+            Name : constant String := Get (Get (K, I));
          begin
             if not In_Allowed (Name, Allowed)
               and then (Exempt = "" or else not In_Allowed (Name, Exempt))
@@ -3078,15 +3064,12 @@ elsif Op = "clock.progress" then
    --  L3: C# dictionary {name: item} -> canonical array with a "name"
    --  member; keys sorted, item fields copied with C# field-name aliases.
    function Dict_To_Array (V : JSON_Value; Ptr : String; C : in out N_Ctx) return JSON_Array is
-      K : Key_Buffer;
-      N : Natural;
+      K : constant JSON_Array := Collect_Keys (V);
       A : JSON_Array := Empty_Array;
    begin
-      Collect_Keys (V, K, N);
-      Sort_Keys (K, N);
-      for I in 1 .. N loop
+      for I in 1 .. Length (K) loop
          declare
-            Name : constant String := To_String (K (I));
+            Name : constant String := Get (Get (K, I));
             Src  : constant JSON_Value := Get (V, Name);
             Item : JSON_Value := Create_Object;
          begin
@@ -4724,13 +4707,11 @@ elsif Op = "clock.progress" then
 
    --  True when B contains only the pipe-wrapped allowed field names.
    function Only_Fields (B : JSON_Value; Allowed : String) return Boolean is
-      K : Key_Buffer;
-      N : Natural;
+      K : constant JSON_Array := Collect_Keys (B);
    begin
       if B.Kind /= JSON_Object_Type then return False; end if;
-      Collect_Keys (B, K, N);
-      for I in 1 .. N loop
-         if not In_Allowed (To_String (K (I)), Allowed) then return False; end if;
+      for I in 1 .. Length (K) loop
+         if not In_Allowed (Get (Get (K, I)), Allowed) then return False; end if;
       end loop;
       return True;
    end Only_Fields;
@@ -5918,6 +5899,16 @@ elsif Op = "harm.add" then
       Set_Field (X, "hold", Str_Field (C, "hold"));
       Set_Field (X, "memberCount", Integer (Members));
       Set_Field (X, "revision", Int_Field (C, "revision"));
+      --  BUG-013: derived canUndo/historyCount projections (lifecycle-matrix
+      --  § 9) — computed at response time from the retained snapshot count,
+      --  never stored.  Mirrors Character_Summary.  The create baseline is
+      --  excluded from the count.
+      declare
+         H : constant JSON_Array := History ("crew", Str_Field (C, "id"));
+      begin
+         Set_Field (X, "canUndo", Length (H) > 0);
+         Set_Field (X, "historyCount", Integer (Length (H)));
+      end;
       return X;
    end Crew_Summary;
 
@@ -7469,8 +7460,7 @@ if Kind = "crew" then
                         Ch       : JSON_Array := Get (Ctx, "changes");
                         Wn       : JSON_Array := Get (Ctx, "warnings");
                         Doc      : constant JSON_Value := Get (Ctx, "document");
-                        K : Key_Buffer;
-                        N : Natural;
+                        K : constant JSON_Array := Collect_Keys (B);
                      begin
                         for I in 1 .. Length (Needs_A) loop
                            declare
@@ -7517,10 +7507,9 @@ if Kind = "crew" then
                         end loop;
                         --  keys that do not resolve to a needs-input pointer
                         --  are ignored with a warning
-                        Collect_Keys (B, K, N);
-                        for J in 1 .. N loop
+                        for J in 1 .. Length (K) loop
                            declare
-                              Key_Name : constant String := To_String (K (J));
+                              Key_Name : constant String := Get (Get (K, J));
                               Is_Needs : Boolean := False;
                            begin
                               for I in 1 .. Length (Needs_A) loop

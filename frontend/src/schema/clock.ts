@@ -55,15 +55,15 @@ const ClockIdentity = {
 
 const ClockInput = Schema.Struct({
   ...ClockIdentity,
-  ownerKind: Schema.optionalWith(ClockOwnerKind, { default: () => "campaign" }),
-  ownerId: Schema.optionalWith(Schema.String, { default: () => "" }),
-  purpose: Schema.optionalWith(ClockPurpose, { default: () => "custom" }),
+  ownerKind: ClockOwnerKind,
+  ownerId: Schema.String,
+  purpose: ClockPurpose,
   behavior: Schema.optional(ClockBehavior),
   clockKind: Schema.optional(LegacyClockKind),
   segments: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   size: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1)),
   rollover: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
-  relatedClockIds: Schema.optionalWith(Schema.Array(Uuid), { default: () => [] }),
+  relatedClockIds: Schema.Array(Uuid),
 });
 
 const ClockOutput = Schema.Struct({

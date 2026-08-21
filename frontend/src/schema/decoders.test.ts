@@ -392,23 +392,23 @@ describe("OperationResult decoder", () => {
 });
 
 describe("HistoryEntry decoder (F2aa)", () => {
-  it("decodes a snapshotId emitted by the Ada server (UUID)", () => {
+  it("decodes a snapshotId emitted by the Ada server (17-digit tick format)", () => {
     const entry = decodeHistoryEntry({
-      snapshotId: "22a96212-1d82-45c5-8116-245196a8150b",
+      snapshotId: "63835568000000000-abc123def456",
       takenAt: "2026-08-09T12:00:00.000Z",
       op: "stress.add",
     });
-    expect(entry.snapshotId).toBe("22a96212-1d82-45c5-8116-245196a8150b");
+    expect(entry.snapshotId).toBe("63835568000000000-abc123def456");
     expect(entry.op).toBe("stress.add");
   });
 
-  it("still decodes a legacy C#-era snapshot id", () => {
+  it("decodes a 17-digit tick snapshot id with a long random suffix", () => {
     const entry = decodeHistoryEntry({
-      snapshotId: "638355680000000000-abc123",
+      snapshotId: "63835568000000000-AbCdEf1234567890",
       takenAt: "2026-08-09T12:00:00.000Z",
       op: "crew.undo",
     });
-    expect(entry.snapshotId).toBe("638355680000000000-abc123");
+    expect(entry.snapshotId).toBe("63835568000000000-AbCdEf1234567890");
   });
 
   it("rejects an empty snapshotId", () => {

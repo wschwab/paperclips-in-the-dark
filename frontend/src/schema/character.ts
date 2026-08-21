@@ -171,12 +171,9 @@ export const Character = Schema.Struct({
   updatedAt: Timestamp,
   isRetired: Schema.Boolean,
   isDeadish: Schema.Boolean,
-  // Wave 3 tolerance (frozen contract character.json): the lagging runtime's
-  // characters omit these Wave-2 lifecycle flags; canonical default false
-  // fills in, while a present value must still be a boolean.
-  traumaPending: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  isOutOfAction: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  stressClearPending: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  traumaPending: Schema.Boolean,
+  isOutOfAction: Schema.Boolean,
+  stressClearPending: Schema.Boolean,
   dossier: Dossier,
   monitor: Monitor,
   talent: Talent,

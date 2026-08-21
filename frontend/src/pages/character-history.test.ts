@@ -18,6 +18,9 @@ const characterDTO = {
   updatedAt: "2026-07-22T00:00:00.000Z",
   isRetired: false,
   isDeadish: false,
+  traumaPending: false,
+  isOutOfAction: false,
+  stressClearPending: false,
   dossier: {
     name: "Brenda Hilton",
     crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
@@ -81,13 +84,13 @@ describe("character-history page (F2aa)", () => {
     vi.clearAllMocks();
   });
 
-  it("renders history entries whose snapshotIds are Ada UUIDs", async () => {
+  it("renders history entries whose snapshotIds are Ada 17-digit tick IDs", async () => {
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (String(url).endsWith(`/characters/${CHARACTER_ID}/history`)) {
         return Promise.resolve(
           ok([
             {
-              snapshotId: "22a96212-1d82-45c5-8116-245196a8150b",
+              snapshotId: "63835568000000000-abc123def456",
               takenAt: "2026-08-09T12:00:00.000Z",
               op: "stress.add",
             },
@@ -104,7 +107,7 @@ describe("character-history page (F2aa)", () => {
       expect(entry).not.toBeNull();
       expect(entry?.querySelector(".history-op")?.textContent).toBe("stress.add");
       expect(entry?.querySelector(".history-snapshotid")?.textContent).toContain(
-        "22a96212-1d82-45c5-8116-245196a8150b",
+        "63835568000000000-abc123def456",
       );
     });
   });
@@ -156,7 +159,7 @@ describe("character-history page (F2aa)", () => {
         return Promise.resolve(
           ok([
             {
-              snapshotId: "22a96212-1d82-45c5-8116-245196a8150b",
+              snapshotId: "63835568000000000-abc123def456",
               takenAt: "2026-08-09T12:00:00.000Z",
               op: "stress.add",
             },

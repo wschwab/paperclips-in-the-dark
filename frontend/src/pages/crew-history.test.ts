@@ -54,13 +54,13 @@ describe("crew-history page (F2aa)", () => {
     vi.clearAllMocks();
   });
 
-  it("renders history entries whose snapshotIds are Ada UUIDs", async () => {
+  it("renders history entries whose snapshotIds are Ada 17-digit tick IDs", async () => {
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (String(url).endsWith(`/crews/${CREW_ID}/history`)) {
         return Promise.resolve(
           ok([
             {
-              snapshotId: "3f9e0c51-9a2b-4d7e-8c1f-6a5b4c3d2e1f",
+              snapshotId: "63835568000000001-xyz789abc012",
               takenAt: "2026-08-09T13:00:00.000Z",
               op: "heat.add",
             },
@@ -77,7 +77,7 @@ describe("crew-history page (F2aa)", () => {
       expect(entry).not.toBeNull();
       expect(entry?.querySelector(".history-op")?.textContent).toBe("heat.add");
       expect(entry?.querySelector(".history-snapshotid")?.textContent).toContain(
-        "3f9e0c51-9a2b-4d7e-8c1f-6a5b4c3d2e1f",
+        "63835568000000001-xyz789abc012",
       );
     });
   });
@@ -128,7 +128,7 @@ describe("crew-history page (F2aa)", () => {
         return Promise.resolve(
           ok([
             {
-              snapshotId: "3f9e0c51-9a2b-4d7e-8c1f-6a5b4c3d2e1f",
+              snapshotId: "63835568000000001-xyz789abc012",
               takenAt: "2026-08-09T13:00:00.000Z",
               op: "heat.add",
             },
