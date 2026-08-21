@@ -453,6 +453,18 @@ describe("recursive strictness matrix (FV-027 P27B)", () => {
     expect(Either.isLeft(decodeCrewEither({ ...goldenCrew, cohorts }))).toBe(true);
   });
 
+  it("rejects an unknown nested key on a clock (M03 killer)", () => {
+    const goldenClock = loadFixture("golden-clock.json") as object;
+    const withExcess = { ...goldenClock, extraClockKey: 1 };
+    expect(Either.isLeft(decodeClockEither(withExcess))).toBe(true);
+  });
+
+  it("rejects a clock missing relatedClockIds (M02 killer)", () => {
+    const goldenClock = loadFixture("golden-clock.json") as Record<string, unknown>;
+    const { relatedClockIds: _drop, ...missingField } = goldenClock;
+    expect(Either.isLeft(decodeClockEither(missingField))).toBe(true);
+  });
+
   it("rejects a missing required field", () => {
     const { id: _id, ...missingId } = goldenCharacter;
     expect(Either.isLeft(decodeCharacterEither(missingId))).toBe(true);
