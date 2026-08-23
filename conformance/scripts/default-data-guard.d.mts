@@ -8,9 +8,36 @@ export interface FileRow {
   sha256: string;
 }
 
+export interface CollectionCounts {
+  characters: number;
+  crews: number;
+  clocks: number;
+}
+
+export interface Summary {
+  exists: boolean;
+  totalFiles: number;
+  totalBytes: number;
+  collections: CollectionCounts;
+}
+
 export interface Manifest {
   dirs: string[];
   files: FileRow[];
+  summary: Summary;
+}
+
+export interface CampaignManifest {
+  artifact: "campaign-data-manifest";
+  timestamp: string;
+  root: string;
+  exists: boolean;
+  totalFiles: number;
+  totalBytes: number;
+  collections: CollectionCounts;
+  files: FileRow[];
+  dirs: string[];
+  suspectedPollution: Array<{ path: string; reason: string }>;
 }
 
 export type Row =
@@ -42,6 +69,11 @@ export function defaultManifestRoot(): string;
 export function snapshotRoot(root: string): Promise<Manifest>;
 
 export function compareManifests(before: Manifest, after: Manifest): ManifestDiff;
+export function buildCampaignManifest(
+  root: string,
+  options?: { timestamp?: string },
+): Promise<CampaignManifest>;
+
 
 export function realChildRunner(child: string[], cwd: string): Promise<number>;
 

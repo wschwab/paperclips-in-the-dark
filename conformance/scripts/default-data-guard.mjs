@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // RV-00 default-data write guard.
 //
-// A byte guard over the shipped default game data (data/games/) that proves a
+// A byte guard over repository-root campaign-data/ that proves a
 // run caused no default-data writes. It snapshots the guarded root before and
 // after a child command, diffs the two snapshots, and:
 //   - if any byte changed (added / removed / changed rows) it prints the diff
@@ -20,7 +20,7 @@
 //
 // Everything after `--` is the child command, run with inherited stdio and cwd
 // = the repo root. With no `--` (or no child) it prints usage to stderr and
-// exits 2. The guard root defaults to <repoRoot>/data/games.
+// exits 2. The guard root defaults to <repoRoot>/campaign-data.
 
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -39,29 +39,52 @@ export function repoRootOf(scriptUrl) {
 export const repoRoot = repoRootOf(import.meta.url);
 
 // The guarded default-data root, resolved against the repo root so it holds
-// whichever way the script is invoked.
+// whichever way the script is invoked. AUDIT-0 requires the byte guard over
+// user-owned repository-root `campaign-data/`, NOT the read-only shipped
+// `campaign-data/`. The isolation guard independently blocks `--data` paths under
+// data/ for automated launchers.
 export function defaultManifestRoot() {
-  return join(repoRoot, "data", "games");
+  return join(repoRoot, "campaign-data");
+}
+
+// The Blades entity collection directory names used for aggregate counts.
+const COLLECTION_DIRS = ["characters", "crews", "clocks"];
+
+// Aggregate summary of a snapshot: whether the root exists, total file count and
+// total bytes, and how many immediate entity directories are under
+// characters/crews/clocks. Used by the durable manifest artifact.
+function emptySummary() {
+  return {
+    exists: false,
+    totalFiles: 0,
+    totalBytes: 0,
+    collections: { characters: 0, crews: 0, clocks: 0 },
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Manifest snapshot
 // ---------------------------------------------------------------------------
 
-// Recursively collect directory rows and file rows under `root`. Rows are
-// returned sorted. A file row carries only `size` and `sha256` (the byte guard
-// contract); a directory row carries nothing else. A missing root (or any missing
-// directory along the walk) contributes nothing — an empty manifest.
+// Recursively collect directory rows and file rows under `root`, plus a summary
+// of the root's existence, total file count/bytes, and entity-collection counts.
+// Rows are returned sorted. A file row carries only `size` and `sha256` (the
+// byte guard contract); a directory row carries nothing else. A missing root (or any
+// missing directory along the walk) contributes nothing — an empty manifest whose
+// summary.exists is false.
 export async function snapshotRoot(root) {
   const dirs = [];
   const files = [];
-  await collect(root, root, dirs, files);
+  const summary = emptySummary();
+  await collect(root, root, dirs, files, summary);
   dirs.sort();
   files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
-  return { dirs, files };
+  summary.totalFiles = files.length;
+  summary.totalBytes = files.reduce((acc, f) => acc + f.size, 0);
+  return { dirs, files, summary };
 }
 
-async function collect(root, dir, dirs, files) {
+async function collect(root, dir, dirs, files, summary) {
   let entries;
   try {
     entries = await readdir(dir, { withFileTypes: true });
@@ -69,12 +92,17 @@ async function collect(root, dir, dirs, files) {
     if (error && error.code === "ENOENT") return;
     throw error;
   }
+  summary.exists = true;
   for (const entry of entries) {
     const abs = join(dir, entry.name);
     const rel = relative(root, abs);
     if (entry.isDirectory()) {
       dirs.push(rel);
-      await collect(root, abs, dirs, files);
+      if (relative(root, dir) === "" && COLLECTION_DIRS.includes(entry.name)) {
+        const children = await readdir(abs, { withFileTypes: true });
+        summary.collections[entry.name] = children.filter((child) => child.isDirectory()).length;
+      }
+      await collect(root, abs, dirs, files, summary);
     } else {
       // Files and symlinks are leaves; a symlink is hashed through the link
       // (readFile follows). Keeps the walk deterministic with no recursion risk.
@@ -87,6 +115,7 @@ async function collect(root, dir, dirs, files) {
     }
   }
 }
+
 
 // ---------------------------------------------------------------------------
 // Diff
@@ -129,6 +158,17 @@ export function compareManifests(before, after) {
         hadDir
           ? { path, type: "dir" }
           : { path, type: "file", size: beforeFile.size, sha256: beforeFile.sha256 },
+      );
+    } else if (hadDir !== hasDir) {
+      removed.push(
+        hadDir
+          ? { path, type: "dir" }
+          : { path, type: "file", size: beforeFile.size, sha256: beforeFile.sha256 },
+      );
+      added.push(
+        hasDir
+          ? { path, type: "dir" }
+          : { path, type: "file", size: afterFile.size, sha256: afterFile.sha256 },
       );
     } else if (
       beforeFile !== undefined &&
@@ -186,6 +226,12 @@ export async function runGuard(root, child, { cwd, childRunner = realChildRunner
   const diff = compareManifests(before, after);
   const changedCount =
     diff.added.length + diff.removed.length + diff.changed.length;
+  if (before.summary.exists !== after.summary.exists) {
+    process.stdout.write(
+      `[default-data-guard] root existence changed: ${before.summary.exists} -> ${after.summary.exists}\n`,
+    );
+    return 1;
+  }
   if (changedCount === 0) return childCode;
   printDiff(diff);
   return 1;
@@ -207,8 +253,40 @@ function printDiff(diff) {
         `sha ${row.before.sha256.slice(0, 12)}... -> ${row.sha256.slice(0, 12)}...)\n`,
     );
   }
-  process.stdout.write("[default-data-guard] default data restored; rerun or revert the child's write\n");
+  process.stdout.write("[default-data-guard] campaign-data changed; guard never restores or deletes entries\n");
 }
+// Build the durable campaign-data manifest artifact. Read-only: records the root's
+// existence, per-file path/size/sha256, and aggregate collection counts, plus a
+// human-readable suspected-pollution section for entries whose shape resembles prior
+// test/agent-created data. NEVER marks anything safe to delete.
+export async function buildCampaignManifest(root, { timestamp = new Date().toISOString() } = {}) {
+  const snapshot = await snapshotRoot(root);
+  const suspectedPollution = [];
+  for (const file of snapshot.files) {
+    const base = file.path.split("/").pop();
+    // Entity JSON created by automated runs is a plausible test artifact. This is a
+    // suspicion flag for human review, never an instruction to delete.
+    if (/\.(json)$/i.test(base) && /characters|crews|clocks/i.test(file.path)) {
+      suspectedPollution.push({
+        path: file.path,
+        reason: "entity JSON under a campaign collection; candidate for human review",
+      });
+    }
+  }
+  return {
+    artifact: "campaign-data-manifest",
+    timestamp,
+    root,
+    exists: snapshot.summary.exists,
+    totalFiles: snapshot.summary.totalFiles,
+    totalBytes: snapshot.summary.totalBytes,
+    collections: snapshot.summary.collections,
+    files: snapshot.files,
+    dirs: snapshot.dirs,
+    suspectedPollution,
+  };
+}
+
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -216,7 +294,7 @@ function printDiff(diff) {
 
 export function usage() {
   return [
-    "default-data-guard — RV-00 byte guard over the shipped default game data.",
+    "default-data-guard — RV-00 byte guard over user-owned campaign data.",
     "",
     "Usage:",
     "  node conformance/scripts/default-data-guard.mjs [--] <child...>",
@@ -225,10 +303,10 @@ export function usage() {
     "  --help     show this text and exit 0",
     "  --         separator; everything after it is the child command. Required.",
     "",
-    "The guarded root defaults to <repoRoot>/data/games. The child runs with",
-    "inherited stdio and cwd = the repo root. If the child's run changes any",
-    "byte under the root, this guards exits 1 (a write-guard violation);",
-    "otherwise it propagates the child's exit code. Missing root => empty manifest.",
+    "The guarded root defaults to <repoRoot>/campaign-data.",
+    "The child runs with inherited stdio and cwd = the repo root. If the child's",
+    "run changes any byte/dir under the root, this guard exits 1 (a write-guard",
+    "violation) otherwise it propagates the child's exit code.",
     "",
   ].join("\n");
 }
