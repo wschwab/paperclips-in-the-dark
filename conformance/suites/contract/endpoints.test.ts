@@ -1,6 +1,7 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
-import { validateResponse } from "../../src/schemas.js";
+import { assertResponseValid } from "../../src/schemas.js";
+import { getEndpointSchemaMap } from "../../src/endpoint-schema-map.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook } from "../../src/game-data.js";
 
@@ -15,6 +16,24 @@ const BLADES = "blades-in-the-dark";
 const unknownId = "00000000-0000-4000-8000-000000000000";
 const unknownClock = "00000000-0000-4000-8000-000000000001";
 const unknownCrew = "00000000-0000-4000-8000-000000000002";
+const contractOperations = Object.values(getEndpointSchemaMap());
+
+function operationIdForRequest(method: string, requestPath: string): string {
+  const requestSegments = requestPath.split("/");
+  const matches = contractOperations.filter((operation) => {
+    if (operation.method !== method) return false;
+    const templateSegments = operation.path.replace(/^\//, "").split("/");
+    return templateSegments.length === requestSegments.length
+      && templateSegments.every(
+        (segment, index) =>
+          (segment.startsWith("{") && segment.endsWith("}")) || segment === requestSegments[index],
+      );
+  });
+  if (matches.length !== 1) {
+    throw new Error(`expected one OpenAPI operation for ${method} ${requestPath}, found ${matches.length}`);
+  }
+  return matches[0]!.operationId;
+}
 
 type Seed = "character" | "crew" | "clock";
 
@@ -165,6 +184,7 @@ async function seed(seed: Seed): Promise<string> {
   if (seed === "character") {
     const response = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
     expect(response.status).toBe(200);
+    assertResponseValid("createCharacter", response.status, response.body);
     const body = response.body as { character?: { id?: string } };
     if (!body.character?.id) throw new Error("character seeding returned no id");
     return body.character.id;
@@ -172,13 +192,24 @@ async function seed(seed: Seed): Promise<string> {
   if (seed === "crew") {
     const response = await api.post("crews", { gameStem: BLADES, crewType: "Assassins" });
     expect(response.status).toBe(200);
+    assertResponseValid("createCrew", response.status, response.body);
     const body = response.body as { crew?: { id?: string } };
     if (!body.crew?.id) throw new Error("crew seeding returned no id");
     return body.crew.id;
   }
-  const result = await api.createClock("Contract clock", "bounded", 4);
-  expect(result.ok).toBe(true);
-  const clockId = result.clock?.id;
+  const response = await api.post("clocks", {
+    name: "Contract clock",
+    behavior: "bounded",
+    size: 4,
+    purpose: "custom",
+    ownerKind: "campaign",
+    ownerId: "",
+    relatedClockIds: [],
+  });
+  expect(response.status).toBe(200);
+  assertResponseValid("createClock", response.status, response.body);
+  const body = response.body as { clock?: { id?: string } };
+  const clockId = body.clock?.id;
   if (!clockId) throw new Error("clock seeding returned no id");
   return clockId;
 }
@@ -187,7 +218,14 @@ async function seed(seed: Seed): Promise<string> {
 async function snapshotIdOf(entityKind: "character" | "crew", entityId: string): Promise<string> {
   const response = await api.post(`${entityKind}s/${entityId}/ops/note.add`, { text: "contract snapshot" });
   expect(response.status).toBe(200);
+  assertResponseValid(entityKind === "character" ? "noteAdd" : "crewNoteAdd", response.status, response.body);
   const history = await api.get(`${entityKind}s/${entityId}/history`);
+  expect(history.status).toBe(200);
+  assertResponseValid(
+    entityKind === "character" ? "listCharacterHistory" : "listCrewHistory",
+    history.status,
+    history.body,
+  );
   const entries = history.body as Array<{ snapshotId?: string }>;
   if (!entries[0]?.snapshotId) throw new Error("history returned no snapshotId");
   return entries[0].snapshotId;
@@ -225,14 +263,21 @@ describe("contract v1 endpoint coverage", () => {
         if (entityId) {
           const response = await api.post(`${entityKind}s/${entityId}/ops/note.add`, { text: "contract history" });
           expect(response.status).toBe(200);
+          assertResponseValid(
+            entityKind === "character" ? "noteAdd" : "crewNoteAdd",
+            response.status,
+            response.body,
+          );
         }
       }
       const path = substitute(test.path, ids) as string;
       const body = test.body === undefined ? undefined : substitute(test.body, ids);
       const response = await api.request(test.method, path, body);
       expect(response.status).toBe(test.status ?? 200);
+      const operationId = operationIdForRequest(test.method, path);
+      assertResponseValid(operationId, response.status, response.body);
       if (test.errorCode) {
-        validateResponse("operationResult", response.body);
+        // The operation/status-derived oracle validates the typed error union.
         // response.body validated above against operation-result.json; the
         // operationError union carries a required code discriminator.
         const result = response.body as { error?: { code?: string } };
@@ -241,23 +286,13 @@ describe("contract v1 endpoint coverage", () => {
       }
       const resBody = response.body;
       switch (test.success) {
-        case "health": validateResponse("health", resBody); break;
-        case "campaign": validateResponse("campaign", resBody); break;
-        case "roster": validateResponse("roster", resBody); break;
-        case "character": validateResponse("character", resBody); break;
-        case "crew": validateResponse("crew", resBody); break;
-        case "clock": validateResponse("clock", resBody); break;
-        case "character-list": validateResponse("characterSummary", resBody); break;
-        case "crew-list": validateResponse("crewSummary", resBody); break;
-        case "clock-list": validateResponse("clockSummary", resBody); break;
-        case "history": validateResponse("historyEntry", resBody); break;
-        case "operation": validateResponse("operationResult", resBody); break;
-        // Authored game JSON has no contract schema (OpenAPI resolves these to
-        // inline content, not a $ref), so assert the declared transport type.
-        // No JsonObject/JsonArray escape hatch is used where a schema exists.
-        case "game-list": expect(Array.isArray(resBody)).toBe(true); break;
-        case "array": expect(Array.isArray(resBody)).toBe(true); break;
-        case "object": expect(resBody !== null && typeof resBody === "object").toBe(true); break;
+        case "game-list":
+        case "array":
+          expect(Array.isArray(resBody)).toBe(true);
+          break;
+        case "object":
+          expect(resBody !== null && typeof resBody === "object").toBe(true);
+          break;
       }
     });
   }

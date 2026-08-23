@@ -1,6 +1,6 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
-import { validateResponse } from "../../src/schemas.js";
+import { assertResponseValid } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook } from "../../src/game-data.js";
 
@@ -17,6 +17,7 @@ const BLADES = "blades-in-the-dark";
 async function seedCharacterId(): Promise<string> {
   const response = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
   expect(response.status).toBe(200);
+  assertResponseValid("createCharacter", response.status, response.body);
   const body = response.body as { character?: { id?: string } };
   if (!body.character?.id) throw new Error("character seeding returned no id");
   return body.character.id;
@@ -25,15 +26,26 @@ async function seedCharacterId(): Promise<string> {
 async function seedCrewId(): Promise<string> {
   const response = await api.post("crews", { gameStem: BLADES, crewType: "Assassins" });
   expect(response.status).toBe(200);
+  assertResponseValid("createCrew", response.status, response.body);
   const body = response.body as { crew?: { id?: string } };
   if (!body.crew?.id) throw new Error("crew seeding returned no id");
   return body.crew.id;
 }
 
 async function seedClockId(): Promise<string> {
-  const result = await api.createClock("Success-route clock", "bounded", 4);
-  expect(result.ok).toBe(true);
-  const clockId = result.clock?.id;
+  const response = await api.post("clocks", {
+    name: "Success-route clock",
+    behavior: "bounded",
+    size: 4,
+    purpose: "custom",
+    ownerKind: "campaign",
+    ownerId: "",
+    relatedClockIds: [],
+  });
+  expect(response.status).toBe(200);
+  assertResponseValid("createClock", response.status, response.body);
+  const body = response.body as { clock?: { id?: string } };
+  const clockId = body.clock?.id;
   if (!clockId) throw new Error("clock seeding returned no id");
   return clockId;
 }
@@ -42,7 +54,14 @@ async function seedClockId(): Promise<string> {
 async function snapshotIdOf(entityKind: "character" | "crew", entityId: string): Promise<string> {
   const response = await api.post(`${entityKind}s/${entityId}/ops/note.add`, { text: "success-route snapshot" });
   expect(response.status).toBe(200);
+  assertResponseValid(entityKind === "character" ? "noteAdd" : "crewNoteAdd", response.status, response.body);
   const history = await api.get(`${entityKind}s/${entityId}/history`);
+  expect(history.status).toBe(200);
+  assertResponseValid(
+    entityKind === "character" ? "listCharacterHistory" : "listCrewHistory",
+    history.status,
+    history.body,
+  );
   const entries = history.body as Array<{ snapshotId?: string }>;
   if (!entries[0]?.snapshotId) throw new Error("history returned no snapshotId");
   return entries[0].snapshotId;
@@ -52,13 +71,13 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
   testCase("CONTRACT-SUCCESS-HEALTH-001", "GET /api/health", async () => {
     const response = await api.get("health");
     expect(response.status).toBe(200);
-    validateResponse("health", response.body);
+    assertResponseValid("health", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CAMPAIGN-001", "GET /api/campaign", async () => {
     const response = await api.get("campaign");
     expect(response.status).toBe(200);
-    validateResponse("campaign", response.body);
+    assertResponseValid("getCampaign", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-ROSTER-001", "GET /api/campaign/roster", async () => {
@@ -66,36 +85,38 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
     expect(response.status).toBe(200);
     // BUG-013: the real AJV contract-validator enforces canUndo/historyCount on
     // every crewSummary, so a server omitting them fails this strict check.
-    validateResponse("roster", response.body);
+    assertResponseValid("getRoster", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-MEMBERS-001", "GET /api/campaign/crew/{crewId}/members for a known crew", async () => {
     const crewId = await seedCrewId();
     const response = await api.get(`campaign/crew/${crewId}/members`);
     expect(response.status).toBe(200);
-    validateResponse("characterSummary", response.body);
+    assertResponseValid("getCrewMembers", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTERS-001", "GET /api/characters returns character summaries", async () => {
     await seedCharacterId();
     const response = await api.get("characters");
     expect(response.status).toBe(200);
-    validateResponse("characterSummary", response.body);
+    assertResponseValid("listCharacters", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTER-001", "GET /api/characters/{id} for a created character", async () => {
     const characterId = await seedCharacterId();
     const response = await api.get(`characters/${characterId}`);
     expect(response.status).toBe(200);
-    validateResponse("character", response.body);
+    assertResponseValid("getCharacter", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTER-HISTORY-001", "GET /api/characters/{id}/history after a snapshot-worthy op", async () => {
     const characterId = await seedCharacterId();
-    await api.post(`characters/${characterId}/ops/note.add`, { text: "success-route history" });
+    const mutation = await api.post(`characters/${characterId}/ops/note.add`, { text: "success-route history" });
+    expect(mutation.status).toBe(200);
+    assertResponseValid("noteAdd", mutation.status, mutation.body);
     const response = await api.get(`characters/${characterId}/history`);
     expect(response.status).toBe(200);
-    validateResponse("historyEntry", response.body);
+    assertResponseValid("listCharacterHistory", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CHARACTER-SNAPSHOT-001", "GET /api/characters/{id}/history/{snapshotId} for an existing snapshot", async () => {
@@ -103,29 +124,31 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
     const snapshotId = await snapshotIdOf("character", characterId);
     const response = await api.get(`characters/${characterId}/history/${snapshotId}`);
     expect(response.status).toBe(200);
-    validateResponse("character", response.body);
+    assertResponseValid("getCharacterSnapshot", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREWS-001", "GET /api/crews returns crew summaries", async () => {
     await seedCrewId();
     const response = await api.get("crews");
     expect(response.status).toBe(200);
-    validateResponse("crewSummary", response.body);
+    assertResponseValid("listCrews", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-001", "GET /api/crews/{id} for a created crew", async () => {
     const crewId = await seedCrewId();
     const response = await api.get(`crews/${crewId}`);
     expect(response.status).toBe(200);
-    validateResponse("crew", response.body);
+    assertResponseValid("getCrew", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-HISTORY-001", "GET /api/crews/{id}/history after a snapshot-worthy op", async () => {
     const crewId = await seedCrewId();
-    await api.post(`crews/${crewId}/ops/note.add`, { text: "success-route crew history" });
+    const mutation = await api.post(`crews/${crewId}/ops/note.add`, { text: "success-route crew history" });
+    expect(mutation.status).toBe(200);
+    assertResponseValid("crewNoteAdd", mutation.status, mutation.body);
     const response = await api.get(`crews/${crewId}/history`);
     expect(response.status).toBe(200);
-    validateResponse("historyEntry", response.body);
+    assertResponseValid("listCrewHistory", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-SNAPSHOT-001", "GET /api/crews/{id}/history/{snapshotId} for an existing snapshot", async () => {
@@ -133,62 +156,69 @@ describe("contract v1 declared read routes return 200 for known resources (AUDIT
     const snapshotId = await snapshotIdOf("crew", crewId);
     const response = await api.get(`crews/${crewId}/history/${snapshotId}`);
     expect(response.status).toBe(200);
-    validateResponse("crew", response.body);
+    assertResponseValid("getCrewSnapshot", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CLOCKS-001", "GET /api/clocks returns clock DTOs", async () => {
     await seedClockId();
     const response = await api.get("clocks");
     expect(response.status).toBe(200);
-    validateResponse("clockSummary", response.body);
+    assertResponseValid("listClocks", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-CLOCK-001", "GET /api/clocks/{id} for a created clock", async () => {
     const clockId = await seedClockId();
     const response = await api.get(`clocks/${clockId}`);
     expect(response.status).toBe(200);
-    validateResponse("clock", response.body);
+    assertResponseValid("getClock", response.status, response.body);
   });
 
   testCase("CONTRACT-SUCCESS-GAMES-001", "GET /api/games", async () => {
     const response = await api.get("games");
     expect(response.status).toBe(200);
+    assertResponseValid("listGames", response.status, response.body);
     expect(Array.isArray(response.body)).toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-GAME-001", "GET /api/games/{stem} for an installed game", async () => {
     const response = await api.get("games/blades-in-the-dark");
     expect(response.status).toBe(200);
+    assertResponseValid("getGame", response.status, response.body);
     expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-PLAYBOOKS-001", "GET /api/games/{stem}/playbooks", async () => {
     const response = await api.get("games/blades-in-the-dark/playbooks");
     expect(response.status).toBe(200);
+    assertResponseValid("listPlaybooks", response.status, response.body);
     expect(Array.isArray(response.body)).toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-PLAYBOOK-001", "GET /api/games/{stem}/playbooks/{playbook} for a known playbook", async () => {
     const response = await api.get("games/blades-in-the-dark/playbooks/Cutter");
     expect(response.status).toBe(200);
+    assertResponseValid("getPlaybook", response.status, response.body);
     expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-HERITAGES-001", "GET /api/games/{stem}/heritages", async () => {
     const response = await api.get("games/blades-in-the-dark/heritages");
     expect(response.status).toBe(200);
+    assertResponseValid("listHeritages", response.status, response.body);
     expect(Array.isArray(response.body)).toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-SETTINGS-001", "GET /api/games/{stem}/crews", async () => {
     const response = await api.get("games/blades-in-the-dark/crews");
     expect(response.status).toBe(200);
+    assertResponseValid("getCrewSettings", response.status, response.body);
     expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 
   testCase("CONTRACT-SUCCESS-CREW-TYPE-SETTINGS-001", "GET /api/games/{stem}/crews/{crewType} for a known crew type", async () => {
     const response = await api.get("games/blades-in-the-dark/crews/Assassins");
     expect(response.status).toBe(200);
+    assertResponseValid("getCrewTypeSettings", response.status, response.body);
     expect(response.body !== null && typeof response.body === "object").toBe(true);
   });
 });

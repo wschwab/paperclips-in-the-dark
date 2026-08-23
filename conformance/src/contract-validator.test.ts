@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validate } from "./contract-validator.js";
+import { validate, validateOrThrow } from "./contract-validator.js";
 
 const uuid = "3f9c1c9a-2f6b-4e7f-8a1b-1c2d3e4f5a6b";
 const timestamp = "2026-08-21T12:00:00Z";
@@ -142,5 +142,16 @@ describe("contract-validator oracle calibration", () => {
     const malformed = { ...validCampaign, createdAt: "2026-08-21 12:00:00Z" };
     const result = validate("campaign", malformed);
     expect(result.valid).toBe(false);
+  });
+
+  it("[ORACLE-CAL-013] fails closed when initialization cannot resolve a required schema reference", async () => {
+    const { initializeContractValidator } = await import("./contract-validator.js");
+    expect(() => initializeContractValidator({
+      schemas: [{ $id: "urn:oracle:missing", type: "object", required: ["missing"], properties: { missing: { $ref: "urn:oracle:absent" } } }],
+    })).toThrow(/schema|reference|missing/i);
+  });
+
+  it("[ORACLE-CAL-014] never uses a permissive empty-schema fallback", () => {
+    expect(() => validateOrThrow("schema-that-cannot-be-compiled", {})).toThrow(/unknown schema|schema/i);
   });
 });

@@ -33,6 +33,12 @@ const execFileAsync = (
 const runGenerator = (script: string, args: string[] = []) =>
   execFileAsync(process.execPath, [resolve(repoRoot, "skill", script), ...args]);
 
+const runContractCoverageGenerator = (out: string) =>
+  execFileAsync(
+    resolve(repoRoot, "conformance/node_modules/.bin/tsx"),
+    [resolve(repoRoot, "conformance/scripts/generate-contract-coverage.mts"), "--out", out],
+  );
+
 const tmpDir = () => mkdtemp(join(tmpdir(), "sc-c5-generators-"));
 
 describe("SC-C5 generators", () => {
@@ -168,5 +174,61 @@ describe("SC-C5 generators", () => {
       expect(b, `${file} second run`).toBe(a);
       expect(committed, `${file} committed`).toBe(a);
     }
+  });
+
+  it("[ORACLE-01] contract coverage is deterministic, current, and complete", async () => {
+    const dir = await tmpDir();
+    const first = join(dir, "contract-coverage.json");
+    const second = join(dir, "contract-coverage-2.json");
+    await runContractCoverageGenerator(first);
+    await runContractCoverageGenerator(second);
+
+    const [a, b, committedText, contractText] = await Promise.all([
+      readFile(first),
+      readFile(second),
+      readFile(join(repoRoot, "conformance/generated/contract-coverage.json")),
+      readFile(join(repoRoot, "contract/openapi.yaml"), "utf8"),
+    ]);
+    expect(b).toEqual(a);
+    expect(committedText).toEqual(a);
+
+    const artifact = JSON.parse(a.toString()) as {
+      rows: Array<{
+        operationId: string;
+        method: string;
+        path: string;
+        status: string;
+        kind: string;
+      }>;
+    };
+    expect(Array.isArray(artifact.rows)).toBe(true);
+
+    const yaml = await import("yaml");
+    const contract = yaml.parse(contractText) as {
+      paths: Record<string, Record<string, {
+        operationId?: string;
+        responses?: Record<string, unknown>;
+      }>>;
+    };
+    const expected = Object.entries(contract.paths).flatMap(([path, item]) =>
+      Object.entries(item)
+        .filter(([method]) => ["get", "post", "put", "patch", "delete", "options", "head", "trace"].includes(method))
+        .flatMap(([method, operation]) =>
+          Object.keys(operation.responses ?? {}).map((status) => `${operation.operationId}:${method.toUpperCase()}:${path}:${status}`),
+        ),
+    );
+    const actual = artifact.rows.map((row) => `${row.operationId}:${row.method}:${row.path}:${row.status}`);
+    expect(new Set(actual).size).toBe(actual.length);
+    expect(actual.sort()).toEqual(expected.sort());
+
+    for (const row of artifact.rows) {
+      expect(row.operationId).toEqual(expect.any(String));
+      expect(row.method).toMatch(/^[A-Z]+$/);
+      expect(row.path).toEqual(expect.any(String));
+      expect(row.status).toEqual(expect.any(String));
+      expect(row.kind).toEqual(expect.any(String));
+    }
+    expect(artifact.rows.every((row) => ["schema", "inline", "no-body"].includes(row.kind))).toBe(true);
+    expect(artifact.rows.some((row) => row.kind === "unresolved")).toBe(false);
   });
 });

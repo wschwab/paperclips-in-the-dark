@@ -1,6 +1,6 @@
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
-import { decode, Schemas, validateResponse } from "../../src/schemas.js";
+import { assertResponseValid, decode, Schemas } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook } from "../../src/game-data.js";
 
@@ -31,6 +31,7 @@ async function goldenCrew(): Promise<Record<string, unknown>> {
 async function seedCharacterId(): Promise<string> {
   const response = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
   expect(response.status).toBe(200);
+  assertResponseValid("createCharacter", response.status, response.body);
   const body = response.body as { character?: { id?: string } };
   if (!body.character?.id) throw new Error("character seeding returned no id");
   return body.character.id;
@@ -102,7 +103,7 @@ describe("live responses satisfy the frozen schemas (AUDIT-0 BUG-013)", () => {
   testCase("CONTRACT-STRICT-CAMPAIGN-001", "the live campaign satisfies the campaign schema with its required kind and RFC 3339 createdAt", async () => {
     const response = await api.get("campaign");
     expect(response.status).toBe(200);
-    validateResponse("campaign", response.body);
+    assertResponseValid("getCampaign", response.status, response.body);
     // validated above against campaign.json#/$defs/campaign (kind required)
     const campaign = response.body as { kind: string };
     expect(campaign.kind).toBe("campaign");
@@ -112,7 +113,7 @@ describe("live responses satisfy the frozen schemas (AUDIT-0 BUG-013)", () => {
     const characterId = await seedCharacterId();
     const response = await api.get(`characters/${characterId}`);
     expect(response.status).toBe(200);
-    validateResponse("character", response.body);
+    assertResponseValid("getCharacter", response.status, response.body);
     // validated above against character.json (createdAt/updatedAt required)
     const character = response.body as { createdAt: string; updatedAt: string };
     expect(RFC3339_T.test(character.createdAt)).toBe(true);
@@ -121,10 +122,12 @@ describe("live responses satisfy the frozen schemas (AUDIT-0 BUG-013)", () => {
 
   testCase("CONTRACT-STRICT-HISTORY-001", "live history entries satisfy the historyEntry schema with contract snapshot IDs", async () => {
     const characterId = await seedCharacterId();
-    await api.post(`characters/${characterId}/ops/note.add`, { text: "strict" });
+    const mutation = await api.post(`characters/${characterId}/ops/note.add`, { text: "strict" });
+    expect(mutation.status).toBe(200);
+    assertResponseValid("noteAdd", mutation.status, mutation.body);
     const response = await api.get(`characters/${characterId}/history`);
     expect(response.status).toBe(200);
-    validateResponse("historyEntry", response.body);
+    assertResponseValid("listCharacterHistory", response.status, response.body);
     // validated above against campaign.json#/$defs/historyEntry (array of entries)
     const history = response.body as Array<{ snapshotId: string }>;
     expect(history.length).toBeGreaterThan(0);
@@ -134,7 +137,7 @@ describe("live responses satisfy the frozen schemas (AUDIT-0 BUG-013)", () => {
   testCase("CONTRACT-STRICT-HEALTH-001", "health satisfies the health schema with the typed implementation", async () => {
     const response = await api.get("health");
     expect(response.status).toBe(200);
-    validateResponse("health", response.body);
+    assertResponseValid("health", response.status, response.body);
     // validated above against campaign.json#/$defs/health (status required: ok|degraded)
     const health = response.body as { status: string };
     expect(health.status).toBe("ok");
@@ -147,7 +150,7 @@ describe("live responses satisfy the frozen schemas (AUDIT-0 BUG-013)", () => {
     // omits them fails here.
     const response = await api.get("campaign/roster");
     expect(response.status).toBe(200);
-    validateResponse("roster", response.body);
+    assertResponseValid("getRoster", response.status, response.body);
     // validated above against campaign.json#/$defs/roster (characters+crews required)
     const roster = response.body as { characters: unknown[]; crews: unknown[] };
     expect(Array.isArray(roster.characters)).toBe(true);

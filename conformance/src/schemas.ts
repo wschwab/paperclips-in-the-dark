@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Effect from "effect/Effect";
-import { validateOrThrow } from "./contract-validator.js";
-import { getEndpointSchemaMap } from "./endpoint-schema-map.js";
+import { validateInlineOrThrow, validateOrThrow } from "./contract-validator.js";
+import { getResponseDisposition } from "./endpoint-schema-map.js";
 
 // ---------------------------------------------------------------------------
 // Frozen-contract primitives (contract/schemas/common.json)
@@ -631,6 +631,7 @@ export const SchemaName = {
   Clock: "clock",
   OperationResult: "operationResult",
   OperationError: "operationError",
+  PreviewResult: "previewResult",
 } as const;
 
 /**
@@ -661,19 +662,33 @@ export function validateResponse(schemaName: string, value: unknown): void {
 }
 
 /**
- * Validate a live response body against the contract schema the OpenAPI spec
- * declares for the given method + route pattern + status. Throws on failure, or
- * when the schema map cannot resolve a schema for the endpoint.
+ * Validate a live response body against the disposition mechanically derived
+ * from the OpenAPI operation and response status.
  */
 export function assertResponseValid(
-  method: string,
-  pathPattern: string,
-  statusValue: number,
+  operationId: string,
+  statusValue: number | string,
   value: unknown,
 ): void {
-  const schemaName = getEndpointSchemaMap()[`${method.toUpperCase()} ${pathPattern}`]?.[String(statusValue)];
-  if (!schemaName || schemaName === "none") {
-    throw new Error(`no contract schema declared for ${method.toUpperCase()} ${pathPattern} ${statusValue}`);
+  const disposition = getResponseDisposition(operationId, statusValue);
+  if (disposition.kind === "no-body") {
+    if (value !== undefined && value !== null && value !== "") {
+      throw new Error(`response body is forbidden for ${operationId} status ${statusValue}`);
+    }
+    return;
   }
-  validateResponse(schemaName, value);
+  if (disposition.kind === "inline") {
+    validateInlineOrThrow(disposition.schema, value);
+    return;
+  }
+  if (disposition.collection) {
+    if (!Array.isArray(value)) {
+      throw new Error(`response for ${operationId} status ${statusValue} must be an array`);
+    }
+    for (const item of value) {
+      validateOrThrow(disposition.schemaName, item);
+    }
+    return;
+  }
+  validateOrThrow(disposition.schemaName, value);
 }

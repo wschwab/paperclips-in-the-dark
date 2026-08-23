@@ -1,0 +1,26 @@
+{
+  "task": "ORACLE-01",
+  "track": "contract",
+  "implementationAgent": "openai-codex/gpt-5.6-sol orchestrator; openai-codex/gpt-5.6-luna red calibration",
+  "reviewAgent": "none: requested openai-codex/gpt-5.6-luna dispatch failed at provider quota before work",
+  "date": "2026-08-23",
+  "iterationsToGreen": 2,
+  "wallClockMinutes": 13,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "18/18 selected oracle checks failed red for the intended missing APIs and generator",
+  "passRateAfterReview": "focused tooling 38/38; typecheck pass; canonical Track A 55 files/422 tests",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 1,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "fail-closed oracle calibrations",
+    "deterministic coverage artifact parity",
+    "canonical seeded Track A acceptance"
+  ],
+  "implementationLoc": 586,
+  "scaffoldingLoc": 0,
+  "notes": "The committed generated artifact has 331 exact operation/status rows. Luna quota exhaustion prevented the requested independent implementation/review dispatch; no review result is claimed. Token accounting was unavailable, so tokens is recorded as 0 rather than estimated."
+}
