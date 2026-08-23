@@ -1,0 +1,29 @@
+{
+  "task": "TEST-02",
+  "track": "contract",
+  "implementationAgent": "openai-codex/gpt-5.6-sol orchestrator",
+  "reviewAgent": "self-verified: controlled red/green mutation evidence per claim op; independent review pending Luna capacity reset",
+  "date": "2026-08-24",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 22,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "focused claims suite 3/3 clean after three controlled mutants each killed (claim.set, claim.customize, claim.reset)",
+  "passRateAfterReview": "focused 3/3; typecheck pass; canonical Track A 56 files/433 tests; coverage map 108/108 with empty uncoveredList",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 3,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "request-schema 400 rejection",
+    "strict OperationResult decode",
+    "state transition and reload persistence assertions",
+    "history[0].op snapshot assertion",
+    "stale-revision no-write assertion",
+    "controlled per-op mutants"
+  ],
+  "implementationLoc": 190,
+  "scaffoldingLoc": 0,
+  "notes": "Mutants were applied by hand to pitd_callback.adb and restored via jj restore after each kill; the binary was rebuilt between mutant runs. Coverage-map counts updated from 105/108 to 108/108. Token accounting unavailable, so tokens is 0 rather than estimated."
+}
