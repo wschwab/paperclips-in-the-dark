@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OpError,
@@ -6,6 +7,13 @@ import { OpError,
   decodeErrorText,
   NETWORK_ERROR_COPY,
   getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+
+const goldenCharacter = JSON.parse(
+  readFileSync(new URL("../../../conformance/fixtures/golden-character.json", import.meta.url), "utf8"),
+) as Record<string, unknown>;
+const goldenCrew = JSON.parse(
+  readFileSync(new URL("../../../conformance/fixtures/golden-crew.json", import.meta.url), "utf8"),
+) as Record<string, unknown>;
 
 describe("getRoster", () => {
   beforeEach(() => {
@@ -1046,7 +1054,12 @@ describe("undoCrew", () => {
       sideEffects: [],
       error: {
         code: "NO_HISTORY",
+        status: 200,
         message: "No history to undo",
+        retryable: false,
+        recovery: "refresh the crew",
+        details: {},
+        entity: goldenCrew,
       },
     };
 
@@ -1670,7 +1683,12 @@ describe("undoCharacter", () => {
       sideEffects: [],
       error: {
         code: "NO_HISTORY",
+        status: 200,
         message: "No history to undo",
+        retryable: false,
+        recovery: "refresh the character",
+        details: {},
+        entity: goldenCharacter,
       },
     };
 
@@ -2223,7 +2241,14 @@ describe("noteRemove", () => {
         ok: false,
         applied: { op: "note.remove" },
         sideEffects: [],
-        error: { code: "NOT_FOUND", message: "no note at index 99" },
+        error: {
+          code: "NOT_FOUND",
+          status: 404,
+          message: "no note at index 99",
+          retryable: false,
+          recovery: "refresh the character",
+          details: {},
+        },
       }),
     });
 
@@ -5285,7 +5310,7 @@ function makeClock(overrides: Record<string, unknown> = {}) {
     ownerId: "",
     purpose: "custom",
     relatedClockIds: [],
-    clockKind: "project",
+    behavior: "bounded",
     segments: 2,
     size: 6,
     rollover: 0,
@@ -5635,8 +5660,8 @@ describe("listClocks", () => {
     const result = await Effect.runPromise(listClocks());
     expect(result).toHaveLength(2);
     expect(result[0]?.name).toBe("Infiltrate the Bluecoats");
-    expect(result[0]?.clockKind).toBe("project");
-    expect(result[1]?.clockKind).toBe("rollover");
+    expect(result[0]?.behavior).toBe("bounded");
+    expect(result[1]?.behavior).toBe("rollover");
     expect(global.fetch).toHaveBeenCalledWith("/api/clocks", {
       headers: { Accept: "application/json" },
     });
@@ -5688,11 +5713,11 @@ describe("createClock", () => {
     vi.clearAllMocks();
   });
 
-  it("posts to /api/clocks with name/clockKind/size and decodes the clock from OperationResult", async () => {
+  it("posts the complete current clock-create shape and decodes the OperationResult clock", async () => {
     const created = makeClock({
       id: "d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f",
       name: "Secure the Docks",
-      clockKind: "rollover",
+      behavior: "rollover",
       segments: 0,
       size: 6,
       revision: 1,
@@ -5707,7 +5732,7 @@ describe("createClock", () => {
       createClock("Secure the Docks", "rollover", 6),
     );
     expect(result.id).toBe("d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f");
-    expect(result.clockKind).toBe("rollover");
+    expect(result.behavior).toBe("rollover");
     expect(result.size).toBe(6);
     // create has no If-Match: no revision precondition on a new entity
     expect(global.fetch).toHaveBeenCalledWith("/api/clocks", {
@@ -5716,7 +5741,15 @@ describe("createClock", () => {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: "Secure the Docks", clockKind: "rollover", size: 6 }),
+      body: JSON.stringify({
+        name: "Secure the Docks",
+        ownerKind: "campaign",
+        ownerId: "",
+        purpose: "custom",
+        behavior: "rollover",
+        size: 6,
+        relatedClockIds: [],
+      }),
     });
   });
 
@@ -5728,7 +5761,7 @@ describe("createClock", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(createClock("", "project", 4)),
+      Effect.either(createClock("", "bounded", 4)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
@@ -5744,7 +5777,7 @@ describe("createClock", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(createClock("X", "project", 4)),
+      Effect.either(createClock("X", "bounded", 4)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
@@ -5759,7 +5792,7 @@ describe("createClock", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(createClock("X", "project", 4)),
+      Effect.either(createClock("X", "bounded", 4)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {

@@ -15,15 +15,9 @@ import { firstPlaybook } from "../../src/game-data.js";
 // repair, and deletion" + "Stored-entity classification and HTTP errors",
 // cross-checked against the R0 canonicalization matrix (D1-D10, L1-L8).
 //
-// Setup note: the live Ada server still emits the pre-Wave-2 DTO shapes
-// (characters lack traumaPending/isOutOfAction/stressClearPending; clocks
-// still use the old clockKind shape), so the shared newCharacter() helper
-// (which decodes the response) throws today.  These cases therefore create
-// entities through the raw API and assert canonical shape on the SERVER'S RAW
-// OUTPUT (JSON.parse of the response body) — never through the tolerant
-// conformance decoders, which default the missing canonical fields and
-// transform legacy clocks, and would let a legacy response pass the frozen
-// shape checks (false green).
+// These persistence cases inspect raw API bodies and stored bytes deliberately:
+// ordinary response decoders are strict and are tested separately, while this
+// suite proves canonicalization itself without transforming the observed value.
 // ---------------------------------------------------------------------------
 
 let storageRootCache: string | undefined;

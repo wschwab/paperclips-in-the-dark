@@ -78,7 +78,7 @@ describe("schema decoders against golden fixtures", () => {
     expect(clock.kind).toBe("clock");
     expect(clock.id).toBe("a1b2c3d4-5e6f-47a8-9b0c-1d2e3f4a5b6c");
     expect(clock.name).toBe("Infiltrate the Bluecoats");
-    expect(clock.clockKind).toBe("project");
+    expect(clock.behavior).toBe("bounded");
     expect(clock.segments).toBe(3);
     expect(clock.size).toBe(8);
     expect(clock.rollover).toBe(0);
@@ -102,6 +102,30 @@ describe("schema decoders against golden fixtures", () => {
     const result = decodeClockEither(bad);
     expect(Either.isLeft(result)).toBe(true);
   });
+
+  it.each(["traumaPending", "isOutOfAction", "stressClearPending"])(
+    "rejects a current character missing required lifecycle property %s",
+    (property) => {
+      const data = loadFixture("golden-character.json") as Record<string, unknown>;
+      const { [property]: _missing, ...withoutProperty } = data;
+      expect(Either.isLeft(decodeCharacterEither(withoutProperty))).toBe(true);
+    },
+  );
+
+  it.each(["ownerKind", "ownerId", "purpose", "behavior", "relatedClockIds"])(
+    "rejects a current clock missing required property %s",
+    (property) => {
+      const data = loadFixture("golden-clock.json") as Record<string, unknown>;
+      const { [property]: _missing, ...withoutProperty } = data;
+      expect(Either.isLeft(decodeClockEither(withoutProperty))).toBe(true);
+    },
+  );
+
+  it("rejects the legacy clockKind wire shape in ordinary decoding", () => {
+    const data = loadFixture("golden-clock.json") as Record<string, unknown>;
+    const { behavior: _behavior, ...withoutBehavior } = data;
+    expect(Either.isLeft(decodeClockEither({ ...withoutBehavior, clockKind: "project" }))).toBe(true);
+  });
 });
 
 describe("ClockSummary decoder (campaign.json#/$defs/clockSummary)", () => {
@@ -123,11 +147,11 @@ describe("ClockSummary decoder (campaign.json#/$defs/clockSummary)", () => {
     deleteToken: "",
   };
 
-  it("decodes a readable summary row and derives clockKind from behavior", () => {
+  it("decodes a readable summary row with current behavior", () => {
     const summary = decodeClockSummary(row);
     expect(summary.kind).toBe("clock");
     expect(summary.id).toBe("a1b2c3d4-5e6f-47a8-9b0c-1d2e3f4a5b6c");
-    expect(summary.clockKind).toBe("project");
+    expect(summary.behavior).toBe("bounded");
     expect(summary.isReadable).toBe(true);
     expect(summary.deleteToken).toBe("");
   });
@@ -348,19 +372,57 @@ describe("OperationResult decoder", () => {
     expect(result.clock?.segments).toBe(3);
   });
 
-  it("decodes a failure with typed error", () => {
+  it("decodes a failure with the complete typed error contract", () => {
+    const character = loadFixture("golden-character.json");
     const result = decodeOperationResult({
       ok: false,
       applied: { op: "armor.use-special" },
       sideEffects: [],
       error: {
         code: "ARMOR_NOT_AVAILABLE",
+        status: 200,
         message: "special armor is not in loadout",
+        retryable: false,
+        recovery: "refresh the character",
+        details: {},
+        entity: character,
       },
     });
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe("ARMOR_NOT_AVAILABLE");
     expect(result.character).toBeUndefined();
+  });
+
+  it.each(["status", "retryable", "recovery", "details"] as const)(
+    "rejects an operation error missing required property %s",
+    (property) => {
+      const complete = {
+        code: "NOT_FOUND",
+        status: 404,
+        message: "missing",
+        retryable: false,
+        recovery: "refresh",
+        details: {},
+      };
+      const { [property]: _missing, ...error } = complete;
+      const result = decodeOperationResultEither({
+        ok: false,
+        applied: { op: "get" },
+        sideEffects: [],
+        error,
+      });
+      expect(Either.isLeft(result)).toBe(true);
+    },
+  );
+
+  it("rejects the legacy {code,message} error branch", () => {
+    const result = decodeOperationResultEither({
+      ok: false,
+      applied: { op: "get" },
+      sideEffects: [],
+      error: { code: "NOT_FOUND", message: "missing" },
+    });
+    expect(Either.isLeft(result)).toBe(true);
   });
 
   it("decodes harm spillover landing intensity", () => {

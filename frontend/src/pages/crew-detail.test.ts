@@ -191,7 +191,12 @@ describe("crew-detail page", () => {
         sideEffects: [],
         error: {
           code: "NO_HISTORY",
+          status: 200,
           message: "No history to undo",
+          retryable: false,
+          recovery: "refresh the crew",
+          details: {},
+          entity: crewDTO(),
         },
       };
 
@@ -416,7 +421,15 @@ describe("crew-detail page", () => {
         ok: false,
         applied: { op: "contact.add" },
         sideEffects: [],
-        error: { code: "DUPLICATE", message: "contact already exists" },
+        error: {
+          code: "DUPLICATE",
+          status: 200,
+          message: "contact already exists",
+          retryable: false,
+          recovery: "choose another contact",
+          details: {},
+          entity: crewDTO({ contacts: [{ name: "Rolan Wott", profession: "magistrate" }] }),
+        },
         crew: crewDTO({ contacts: [{ name: "Rolan Wott", profession: "magistrate" }] }),
       };
 
@@ -601,7 +614,14 @@ describe("crew-detail page", () => {
         ok: false,
         applied: { op: "faction.remove" },
         sideEffects: [],
-        error: { code: "NOT_FOUND", message: "faction not found" },
+        error: {
+          code: "NOT_FOUND",
+          status: 404,
+          message: "faction not found",
+          retryable: false,
+          recovery: "refresh the crew",
+          details: {},
+        },
         crew: crewDTO(),
       };
 
@@ -1129,7 +1149,15 @@ describe("crew-detail page", () => {
         ok: false,
         applied: { op: "heat.add" },
         sideEffects: [],
-        error: { code: "VALIDATION", message: "bad delta" },
+        error: {
+          code: "VALIDATION",
+          status: 400,
+          message: "bad delta",
+          retryable: false,
+          recovery: "enter a valid delta",
+          details: { issues: [{ pointer: "/delta", reason: "out of range", expected: "an integer" }] },
+          entity: crewDTO(),
+        },
         crew: crewDTO(),
       };
 
@@ -1253,11 +1281,19 @@ describe("crew-detail page", () => {
       error: null,
     });
 
-    const crewOpErr = (opName: string, code: string, message: string, crew: unknown) => ({
+    const crewOpErr = (opName: string, code: "ABILITY_MAXED" | "UPGRADE_MAXED", message: string, crew: unknown) => ({
       ok: false,
       applied: { op: opName },
       sideEffects: [],
-      error: { code, message },
+      error: {
+        code,
+        status: 200,
+        message,
+        retryable: false,
+        recovery: "choose another option",
+        details: { limit: 1, current: 1 },
+        entity: crew,
+      },
       crew,
     });
 
@@ -1822,7 +1858,14 @@ describe("crew-detail page", () => {
         ok: false,
         applied: { op: "cohort.remove" },
         sideEffects: [],
-        error: { code: "NOT_FOUND", message: "cohort not found" },
+        error: {
+          code: "NOT_FOUND",
+          status: 404,
+          message: "cohort not found",
+          retryable: false,
+          recovery: "refresh the crew",
+          details: {},
+        },
         crew: crewDTO({ cohorts: [cohortDTO()] }),
       };
 
@@ -2011,7 +2054,15 @@ describe("crew-detail page", () => {
         ok: false,
         applied: { op: "xp.add" },
         sideEffects: [],
-        error: { code: "VALIDATION", message: "delta out of range" },
+        error: {
+          code: "VALIDATION",
+          status: 400,
+          message: "delta out of range",
+          retryable: false,
+          recovery: "enter a valid delta",
+          details: { issues: [{ pointer: "/delta", reason: "out of range", expected: "an integer" }] },
+          entity: crewDTO(),
+        },
         crew: crewDTO(),
       };
 

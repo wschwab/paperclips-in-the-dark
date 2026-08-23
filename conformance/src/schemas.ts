@@ -77,12 +77,9 @@ const Character = Schema.Struct({
   updatedAt: Timestamp,
   isRetired: Schema.Boolean,
   isDeadish: Schema.Boolean,
-  // Wave 3 tolerance: the lagging runtime's characters omit the Wave-2
-  // flags; canonical default false fills in (PAPERCLIPS §4.6 rule 6),
-  // while a present value must still be a boolean.
-  traumaPending: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  isOutOfAction: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  stressClearPending: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+  traumaPending: Schema.Boolean,
+  isOutOfAction: Schema.Boolean,
+  stressClearPending: Schema.Boolean,
   dossier: Schema.Struct({
     name: Schema.String,
     crewId: Schema.String.pipe(
@@ -212,22 +209,12 @@ const Crew = Schema.Struct({
 });
 
 // ---------------------------------------------------------------------------
-// Clock (legacy-tolerant)
-//
-// Wave 3 tolerance: the lagging runtime still emits the pre-Wave-2 clock
-// shape — `clockKind` ("project"|"rollover") instead of `behavior`, and no
-// ownerKind/ownerId/purpose/relatedClockIds. Decoding fills the canonical
-// defaults (ownerKind: "campaign", ownerId: "", purpose: "custom",
-// relatedClockIds: []) and maps clockKind exactly like the contract's
-// write-boundary normalization (W3 rule: project → bounded, rollover →
-// rollover); a present canonical `behavior` always wins. Canonical
-// documents decode unchanged, unknown keys are still rejected, and
-// segments/size/rollover stay fully typed.
+// Clock — current contract response shape only.
+// Legacy clock conversion belongs to import/repair normalization, never to
+// ordinary response decoding.
 // ---------------------------------------------------------------------------
 
-const LegacyClockKind = Schema.Literal("project", "rollover");
-
-const ClockIdentity = {
+const Clock = Schema.Struct({
   kind: Schema.Literal("clock"),
   id: Uuid,
   revision: Revision,
@@ -235,23 +222,6 @@ const ClockIdentity = {
   createdAt: Timestamp,
   updatedAt: Timestamp,
   name: Schema.String,
-} as const;
-
-const ClockInput = Schema.Struct({
-  ...ClockIdentity,
-  ownerKind: Schema.optionalWith(ClockOwnerKind, { default: () => "campaign" }),
-  ownerId: Schema.optionalWith(Schema.String, { default: () => "" }),
-  purpose: Schema.optionalWith(ClockPurpose, { default: () => "custom" }),
-  behavior: Schema.optional(ClockBehavior),
-  clockKind: Schema.optional(LegacyClockKind),
-  segments: NonNegativeInt,
-  size: PositiveInt,
-  rollover: NonNegativeInt,
-  relatedClockIds: Schema.optionalWith(Schema.Array(Uuid), { default: () => [] }),
-});
-
-const ClockOutput = Schema.Struct({
-  ...ClockIdentity,
   ownerKind: ClockOwnerKind,
   ownerId: Schema.String,
   purpose: ClockPurpose,
@@ -261,58 +231,6 @@ const ClockOutput = Schema.Struct({
   rollover: NonNegativeInt,
   relatedClockIds: Schema.Array(Uuid),
 });
-
-/** Explicit options type: effect's overloaded `transform` cannot contextually
- * type an inline literal through its two signatures (TS overload quirk). */
-const ClockTransformOptions: {
-  readonly decode: (
-    fromA: Schema.Schema.Type<typeof ClockInput>,
-    fromI: Schema.Schema.Encoded<typeof ClockInput>,
-  ) => Schema.Schema.Encoded<typeof ClockOutput>;
-  readonly encode: (
-    toI: Schema.Schema.Encoded<typeof ClockOutput>,
-    toA: Schema.Schema.Type<typeof ClockOutput>,
-  ) => Schema.Schema.Type<typeof ClockInput>;
-  readonly strict?: true;
-} = {
-  decode: (fromA) => ({
-    kind: fromA.kind,
-    id: fromA.id,
-    revision: fromA.revision,
-    formatVersion: fromA.formatVersion,
-    createdAt: fromA.createdAt,
-    updatedAt: fromA.updatedAt,
-    name: fromA.name,
-    ownerKind: fromA.ownerKind ?? "campaign",
-    ownerId: fromA.ownerId ?? "",
-    purpose: fromA.purpose ?? "custom",
-    behavior: fromA.behavior ?? (fromA.clockKind === "rollover" ? "rollover" : "bounded"),
-    segments: fromA.segments,
-    size: fromA.size,
-    rollover: fromA.rollover,
-    relatedClockIds: fromA.relatedClockIds ?? [],
-  }),
-  encode: (toI) => ({
-    kind: toI.kind,
-    id: toI.id,
-    revision: toI.revision,
-    formatVersion: toI.formatVersion,
-    createdAt: toI.createdAt,
-    updatedAt: toI.updatedAt,
-    name: toI.name,
-    ownerKind: toI.ownerKind,
-    ownerId: toI.ownerId,
-    purpose: toI.purpose,
-    behavior: toI.behavior,
-    clockKind: toI.behavior === "rollover" ? "rollover" : "project",
-    segments: toI.segments,
-    size: toI.size,
-    rollover: toI.rollover,
-    relatedClockIds: toI.relatedClockIds,
-  }),
-};
-
-const Clock = Schema.transform(ClockInput, ClockOutput, ClockTransformOptions);
 
 // ---------------------------------------------------------------------------
 // Whole-error union (contract/schemas/operation-result.json#/$defs/operationError)
@@ -411,34 +329,7 @@ const OperationErrorNewShape = Schema.Union(
   opError("OUT_OF_ACTION", 200, EmptyDetails, "required"),
 );
 
-/**
- * Legacy pre-Wave-2 error shape (`{code, message}`) still emitted by the
- * lagging runtime: no status/retryable/recovery/details. Tolerated as the
- * LAST union branch so a full new-shape error never falls into it — this
- * branch rejects excess properties, so status/retryable/recovery stay
- * strictly validated whenever present, and `code` stays restricted to the
- * frozen operationError enum (unknown codes still fail the whole union).
- * `details` is declared as optional `never`: the union TYPE then carries
- * the property everywhere (TS consumers like suites/persistence/
- * entity-admission.test.ts access `error?.details`), while at runtime any
- * present `details` value fails this branch — only `{code, message}` is
- * actually tolerated.
- */
-const LegacyOperationError = Schema.Struct({
-  code: Schema.Literal(
-    "VALIDATION", "INVALID_ENTRY", "INVALID_ENTITY", "NORMALIZATION_REQUIRED",
-    "NOT_FOUND", "STALE_REVISION", "RETIRED", "CONFIRM_REQUIRED", "DUPLICATE",
-    "SLOT_FULL_FATAL", "CANNOT_HEAL", "ARMOR_NOT_AVAILABLE", "ABILITY_MAXED",
-    "CANNOT_LEVEL_UP", "RATING_MAXED", "UPGRADE_MAXED", "INSUFFICIENT_FUNDS",
-    "SATCHEL_FULL", "OVER_BULK", "NO_COMMITMENT", "COMMITMENT_LOCKED",
-    "NO_HISTORY", "GAME_NOT_FOUND", "PAYLOAD_TOO_LARGE", "TRAUMA_REQUIRED",
-    "OUT_OF_ACTION",
-  ),
-  message: Schema.String,
-  details: Schema.optional(Schema.Never),
-});
-
-const OperationError = Schema.Union(OperationErrorNewShape, LegacyOperationError);
+const OperationError = OperationErrorNewShape;
 
 const OperationResult = Schema.Struct({
   ok: Schema.Boolean,
@@ -486,17 +377,10 @@ const CharacterSummary = Schema.Struct({
   isRetired: Schema.Boolean,
   isDeadish: Schema.Boolean,
   revision: Revision,
-  // E11 total collections (campaign.json#/$defs/characterSummary): every row
-  // carries readability/repair/undo state; deleteToken is "" for readable rows.
-  // Wave 3 tolerance: the lagging runtime's roster rows omit these; canonical
-  // defaults fill in (a readable, repairable-free, complete-free row with no
-  // history), while present values must still be typed exactly.
-  isReadable: Schema.optionalWith(Schema.Boolean, { default: () => true }),
-  isRepairable: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  isComplete: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  deleteToken: Schema.optionalWith(Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)), {
-    default: () => "",
-  }),
+  isReadable: Schema.Boolean,
+  isRepairable: Schema.Boolean,
+  isComplete: Schema.Boolean,
+  deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
   canUndo: Schema.Boolean,
   historyCount: NonNegativeInt,
 });
@@ -514,15 +398,10 @@ const CrewSummary = Schema.Struct({
   hold: Hold,
   memberCount: NonNegativeInt,
   revision: Revision,
-  // E11 total collections (campaign.json#/$defs/crewSummary): every row
-  // carries readability/repair/undo state; deleteToken is "" for readable rows.
-  // Wave 3 tolerance: same canonical defaults as CharacterSummary.
-  isReadable: Schema.optionalWith(Schema.Boolean, { default: () => true }),
-  isRepairable: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  isComplete: Schema.optionalWith(Schema.Boolean, { default: () => false }),
-  deleteToken: Schema.optionalWith(Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)), {
-    default: () => "",
-  }),
+  isReadable: Schema.Boolean,
+  isRepairable: Schema.Boolean,
+  isComplete: Schema.Boolean,
+  deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
   canUndo: Schema.Boolean,
   historyCount: NonNegativeInt,
 });
@@ -605,15 +484,11 @@ export function decode<A>(schema: Schema.Schema<A, any, any>, value: unknown): P
 }
 
 // ---------------------------------------------------------------------------
-// Real-validator bridge (Oracle cutover, AUDIT-0 BUG-013)
+// Endpoint response oracle bridge.
 //
-// The Effect mirrors above (`decode`/`Schemas`) use optionalWith defaults that
-// silently fill missing required fields (e.g. canUndo/historyCount on crew
-// summaries), so a false-green strict-response run did not establish OpenAPI
-// response validation. These functions delegate to the AJV contract-validator
-// (conformance/src/contract-validator.ts) compiled from contract/schemas/*.json —
-// the source of truth. LIVE response assertions use these; the offline/negative
-// decoder tests keep using `decode` because they exercise the decoder itself.
+// Effect mirrors are strict ordinary decoders. Live response assertions still
+// use the mechanically derived OpenAPI disposition plus AJV so endpoint/status
+// coverage and the frozen JSON Schemas remain the single response oracle.
 // ---------------------------------------------------------------------------
 
 

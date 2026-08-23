@@ -1762,10 +1762,9 @@ function renderDetail(state: RenderState): HTMLElement {
 
     (() => {
       const clocks = state.clocks ?? [];
-      // Clock kinds come from the frozen contract enum (project | rollover) —
-      // game data has no clock-kind settings.
-      const kindOptions: Array<{ value: "project" | "rollover"; label: string }> = [
-        { value: "project", label: "project" },
+      // The create form exposes the current bounded/rollover contract behavior.
+      const kindOptions: Array<{ value: "bounded" | "rollover"; label: string }> = [
+        { value: "bounded", label: "project" },
         { value: "rollover", label: "rollover" },
       ];
 
@@ -1773,6 +1772,7 @@ function renderDetail(state: RenderState): HTMLElement {
         // Rendering size derived from the clock's own DTO size — the SVG clock
         // supports any segment count; no game maximum is hardcoded.
         const dialSize = Math.min(140, 60 + clk.size * 8);
+        const behaviorLabel = clk.behavior === "bounded" ? "project" : "rollover";
         const dial = clock({
           segments: clk.size,
           value: clk.segments,
@@ -1815,13 +1815,13 @@ function renderDetail(state: RenderState): HTMLElement {
         return el("div", {
           className: "project-clock",
           "data-clock-id": clk.id,
-          "data-clock-kind": clk.clockKind,
+          "data-clock-kind": behaviorLabel,
           style: "display: flex; align-items: center; gap: 0.75em; flex-wrap: wrap; margin: 0.5em 0;",
         },
           dial,
           el("div", { style: "display: flex; flex-direction: column; gap: 0.25em;" },
             el("span", { className: "project-clock-name" }, clk.name),
-            el("span", { className: "project-clock-kind lbl" }, clk.clockKind),
+            el("span", { className: "project-clock-kind lbl" }, behaviorLabel),
             el("span", { className: "project-clock-progress" },
               `${clk.segments} / ${clk.size}${clk.rollover > 0 ? ` (rollover ${clk.rollover})` : ""}`),
             el("div", { style: "display: flex; gap: 0.5em;" },
@@ -2361,7 +2361,6 @@ export function mountCharacterDetailPage(
       isRepairable: true,
       isComplete: true,
       deleteToken: "",
-      clockKind: updated.clockKind,
     };
     const list = clocks ?? [];
     const idx = list.findIndex((x) => x.id === row.id);
@@ -3524,15 +3523,14 @@ export function mountCharacterDetailPage(
       const kindSelect = root.querySelector('select[aria-label="Clock kind"]') as HTMLSelectElement;
       const sizeInput = root.querySelector('input[aria-label="Clock size"]') as HTMLInputElement;
       const name = nameInput?.value?.trim() || null;
-      const kind = kindSelect?.value as "project" | "rollover" | undefined;
+      const behavior = kindSelect?.value as "bounded" | "rollover" | undefined;
       const size = sizeInput ? Number(sizeInput.value) : NaN;
-      // name minLength 1 and size >= 1 per the frozen contract; kind is the contract enum
-      if (!name || !kind || !Number.isInteger(size) || size < 1) return;
+      if (!name || !behavior || !Number.isInteger(size) || size < 1) return;
       isClocksLoading = true;
       clearNotices();
       renderDetailWrapper();
 
-      const program = createClock(name, kind, size);
+      const program = createClock(name, behavior, size);
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => {

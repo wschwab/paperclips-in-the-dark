@@ -550,7 +550,12 @@ describe("character-detail page", () => {
         sideEffects: [],
         error: {
           code: "NO_HISTORY",
+          status: 200,
           message: "No history to undo",
+          retryable: false,
+          recovery: "refresh the character",
+          details: {},
+          entity: characterDTO(),
         },
       };
 
@@ -1614,7 +1619,15 @@ describe("character-detail page", () => {
         ok: false,
         applied: { op: "harm.heal" },
         sideEffects: [],
-        error: { code: "CANNOT_HEAL", message: "healing clock is not full" },
+        error: {
+          code: "CANNOT_HEAL",
+          status: 200,
+          message: "healing clock is not full",
+          retryable: false,
+          recovery: "fill the healing clock",
+          details: { limit: 4, current: 0 },
+          entity: healDTO(),
+        },
       };
 
       global.fetch = vi
@@ -1648,7 +1661,14 @@ describe("character-detail page", () => {
         ok: false,
         applied: { op: "harm.heal" },
         sideEffects: [],
-        error: { code: "NOT_FOUND", message: "no such harm" },
+        error: {
+          code: "NOT_FOUND",
+          status: 404,
+          message: "no such harm",
+          retryable: false,
+          recovery: "refresh the character",
+          details: {},
+        },
       };
 
       global.fetch = vi
@@ -3022,7 +3042,15 @@ describe("character-detail page", () => {
         ok: false,
         applied: { op: "ability.take" },
         sideEffects: [],
-        error: { code: "ABILITY_MAXED", message: "already taken to its limit" },
+        error: {
+          code: "ABILITY_MAXED",
+          status: 200,
+          message: "already taken to its limit",
+          retryable: false,
+          recovery: "choose another ability",
+          details: { limit: 1, current: 1 },
+          entity: playbookDTO(),
+        },
         character: playbookDTO(),
       };
 
@@ -3491,7 +3519,21 @@ describe("F2r Gear", () => {
         ok: false,
         applied: { op: "gear.set-commitment" },
         sideEffects: [],
-        error: { code: "COMMITMENT_LOCKED", message: "commitment is locked" },
+        error: {
+          code: "COMMITMENT_LOCKED",
+          status: 200,
+          message: "commitment is locked",
+          retryable: false,
+          recovery: "unlock the commitment",
+          details: {},
+          entity: gearDTO({ gear: {
+            loadout: [],
+            availableGear: [],
+            commitment: "normal",
+            isCommitmentLocked: true,
+            maxBulk: 5,
+          } }),
+        },
         character: gearDTO({ gear: {
           loadout: [],
           availableGear: [],
@@ -4069,7 +4111,15 @@ describe("F2s Coin", () => {
       character: fundDTO(),
       applied: { op: "fund.spend" },
       sideEffects: [],
-      error: { code: "INSUFFICIENT_FUNDS", message: "not enough coins" },
+      error: {
+        code: "INSUFFICIENT_FUNDS",
+        status: 200,
+        message: "not enough coins",
+        retryable: false,
+        recovery: "gain more coin",
+        details: { available: 0, needed: 1 },
+        entity: fundDTO(),
+      },
     };
     global.fetch = vi
       .fn()
@@ -4112,7 +4162,7 @@ describe("F2s Projects", () => {
       ownerId: "",
       purpose: "custom",
       relatedClockIds: [],
-      clockKind: "project",
+      behavior: "bounded",
       segments: 2,
       size: 6,
       rollover: 0,
@@ -4190,7 +4240,7 @@ describe("F2s Projects", () => {
     const created = clockDTO({
       id: "d0d1e2f3-4a5b-4c6d-8e7f-9a0b1c2d3e4f",
       name: "Secure the Docks",
-      clockKind: "rollover",
+      behavior: "rollover",
       segments: 0,
       size: 8,
       revision: 1,
@@ -4212,7 +4262,7 @@ describe("F2s Projects", () => {
 
     (root.querySelector('input[aria-label="Clock name"]') as HTMLInputElement).value = "Secure the Docks";
     const kindSelect = root.querySelector('select[aria-label="Clock kind"]') as HTMLSelectElement;
-    expect(Array.from(kindSelect.options).map((o) => o.value)).toEqual(["project", "rollover"]);
+    expect(Array.from(kindSelect.options).map((o) => o.value)).toEqual(["bounded", "rollover"]);
     kindSelect.value = "rollover";
     (root.querySelector('input[aria-label="Clock size"]') as HTMLInputElement).value = "8";
     (root.querySelector('button[title="Create clock"]') as HTMLButtonElement).click();
@@ -4221,7 +4271,15 @@ describe("F2s Projects", () => {
       expect(global.fetch).toHaveBeenCalledWith(
         "/api/clocks",
         expect.objectContaining({
-          body: JSON.stringify({ name: "Secure the Docks", clockKind: "rollover", size: 8 }),
+          body: JSON.stringify({
+            name: "Secure the Docks",
+            ownerKind: "campaign",
+            ownerId: "",
+            purpose: "custom",
+            behavior: "rollover",
+            size: 8,
+            relatedClockIds: [],
+          }),
         }),
       );
     });
@@ -4413,7 +4471,14 @@ describe("F2s Projects", () => {
       ok: false,
       applied: { op: "clock.create" },
       sideEffects: [],
-      error: { code: "VALIDATION", message: "name is required" },
+      error: {
+        code: "VALIDATION",
+        status: 400,
+        message: "name is required",
+        retryable: false,
+        recovery: "enter a name",
+        details: { issues: [{ pointer: "/name", reason: "required", expected: "a non-empty string" }] },
+      },
     };
     global.fetch = vi
       .fn()
@@ -4928,7 +4993,6 @@ describe("FV-012 focus restoration", () => {
       ownerId: "",
       purpose: "custom",
       behavior: "bounded",
-      clockKind: "project",
       segments: 2,
       size: 6,
       rollover: 0,

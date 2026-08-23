@@ -117,32 +117,7 @@ const OperationErrorNewShape = Schema.Union(
   opError("OUT_OF_ACTION", 200, EmptyDetails, "required"),
 );
 
-/**
- * Legacy pre-Wave-2 error shape (`{code, message}`) still emitted by the
- * lagging runtime: no status/retryable/recovery/details. Tolerated as the
- * LAST union branch so a full new-shape error never falls into it — this
- * branch rejects excess properties, so status/retryable/recovery stay
- * strictly validated whenever present, and `code` stays restricted to the
- * frozen operationError enum (unknown codes still fail the whole union).
- * `details` is declared as optional `never`: the union TYPE then carries the
- * property everywhere, while at runtime any present `details` value fails
- * this branch — only `{code, message}` is actually tolerated.
- */
-const LegacyOperationError = Schema.Struct({
-  code: Schema.Literal(
-    "VALIDATION", "INVALID_ENTRY", "INVALID_ENTITY", "NORMALIZATION_REQUIRED",
-    "NOT_FOUND", "STALE_REVISION", "RETIRED", "CONFIRM_REQUIRED", "DUPLICATE",
-    "SLOT_FULL_FATAL", "CANNOT_HEAL", "ARMOR_NOT_AVAILABLE", "ABILITY_MAXED",
-    "CANNOT_LEVEL_UP", "RATING_MAXED", "UPGRADE_MAXED", "INSUFFICIENT_FUNDS",
-    "SATCHEL_FULL", "OVER_BULK", "NO_COMMITMENT", "COMMITMENT_LOCKED",
-    "NO_HISTORY", "GAME_NOT_FOUND", "PAYLOAD_TOO_LARGE", "TRAUMA_REQUIRED",
-    "OUT_OF_ACTION",
-  ),
-  message: Schema.String,
-  details: Schema.optional(Schema.Never),
-});
-
-const OperationError = Schema.Union(OperationErrorNewShape, LegacyOperationError);
+const OperationError = OperationErrorNewShape;
 
 const Applied = Schema.Struct({
   op: Schema.String,

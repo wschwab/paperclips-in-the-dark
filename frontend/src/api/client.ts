@@ -1806,10 +1806,10 @@ function clockMutate(
   });
 }
 
-/** POST /api/clocks — create a project or rollover clock (no revision precondition on a new entity). */
+/** POST /api/clocks with the complete current create contract. */
 export function createClock(
   name: string,
-  clockKind: "project" | "rollover",
+  behavior: "bounded" | "rollover",
   size: number,
 ): Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
@@ -1819,7 +1819,15 @@ export function createClock(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, clockKind, size }),
+      body: JSON.stringify({
+        name,
+        ownerKind: "campaign",
+        ownerId: "",
+        purpose: "custom",
+        behavior,
+        size,
+        relatedClockIds: [],
+      }),
     });
     if (!opResult.clock) {
       return yield* Effect.fail(new DecodeError(new Error("Missing clock in OperationResult")));

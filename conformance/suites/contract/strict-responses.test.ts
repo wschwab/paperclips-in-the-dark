@@ -28,6 +28,10 @@ async function goldenCrew(): Promise<Record<string, unknown>> {
   return (await import("../../fixtures/golden-crew.json", { with: { type: "json" } })).default as Record<string, unknown>;
 }
 
+async function goldenClock(): Promise<Record<string, unknown>> {
+  return (await import("../../fixtures/golden-clock.json", { with: { type: "json" } })).default as Record<string, unknown>;
+}
+
 async function seedCharacterId(): Promise<string> {
   const response = await api.post("characters", { gameStem: BLADES, playbook: firstPlaybook(BLADES) });
   expect(response.status).toBe(200);
@@ -85,6 +89,56 @@ describe("strict decoders reject contract-invalid output (AUDIT-0 BUG-013)", () 
   testCase("CONTRACT-STRICT-DECODE-CREWSUMMARY-001", "a crew with object-valued heat does not decode as a crew summary", async () => {
     const crew = await goldenCrew();
     await expect(decode(Schemas.CrewSummary, crew)).rejects.toThrow();
+  });
+
+  testCase("EDGE-DECODER-LIFECYCLE-001", "current characters require every lifecycle flag", async () => {
+    const character = await goldenCharacter();
+    for (const property of ["traumaPending", "isOutOfAction", "stressClearPending"]) {
+      const { [property]: _missing, ...withoutProperty } = character;
+      await expect(decode(Schemas.Character, withoutProperty)).rejects.toThrow();
+    }
+  });
+
+  testCase("EDGE-DECODER-CLOCK-001", "ordinary clock decoding rejects missing metadata and the legacy clockKind shape", async () => {
+    const clock = await goldenClock();
+    for (const property of ["ownerKind", "ownerId", "purpose", "behavior", "relatedClockIds"]) {
+      const { [property]: _missing, ...withoutProperty } = clock;
+      await expect(decode(Schemas.Clock, withoutProperty)).rejects.toThrow();
+    }
+    const { behavior: _behavior, ...withoutBehavior } = clock;
+    await expect(decode(Schemas.Clock, { ...withoutBehavior, clockKind: "project" })).rejects.toThrow();
+  });
+
+  testCase("EDGE-DECODER-SUMMARY-001", "ordinary summary decoding rejects missing readability metadata", async () => {
+    const summary = {
+      kind: "character",
+      id: "c46ba7cb-993b-4fc7-974d-fb95eacd5446",
+      name: "Brenda Hilton",
+      alias: "Webweaver",
+      playbook: "Spider",
+      gameStem: BLADES,
+      crewId: "",
+      stress: 0,
+      traumas: [],
+      isRetired: false,
+      isDeadish: false,
+      revision: 1,
+      isRepairable: false,
+      isComplete: true,
+      deleteToken: "",
+      canUndo: false,
+      historyCount: 0,
+    };
+    await expect(decode(Schemas.CharacterSummary, summary)).rejects.toThrow();
+  });
+
+  testCase("EDGE-DECODER-ERROR-001", "ordinary operation decoding rejects legacy {code,message} errors", async () => {
+    await expect(decode(Schemas.OperationResult, {
+      ok: false,
+      applied: { op: "get" },
+      sideEffects: [],
+      error: { code: "NOT_FOUND", message: "missing" },
+    })).rejects.toThrow();
   });
 
   testCase("CONTRACT-STRICT-DECODE-ERRORCODE-001", "unknown error codes are rejected", async () => {
