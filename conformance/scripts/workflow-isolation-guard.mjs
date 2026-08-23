@@ -1,84 +1,55 @@
 #!/usr/bin/env node
 // OPT-010: workflow isolation guard.
 //
-// Checks that a command spawning the Ada server uses a managed temp data
-// directory, not the default campaign-data path. Fails if the command's
-// --data argument points at data/games/ or campaign-data/.
-//
-// Per AUDIT-0 Wave 6:
-// - "Generated agent/browser instructions must require a managed base URL
-//    and temp data directory."
-// - "Add a guard that fails test/smoke commands if they target the default
-//    campaign-data/ unless explicitly in human/manual mode."
+// Automated workflows may start the Ada server only through the canonical
+// managed launcher, which owns its port, data directory, and process tree.
+// Direct server commands require the explicit human/manual override because
+// an argument check cannot prove that a caller-provided directory is fresh or
+// launcher-owned.
 //
 // Usage:
 //   node conformance/scripts/workflow-isolation-guard.mjs -- <child...>
-//   node conformance/scripts/workflow-isolation-guard.mjs --check-command "pitd --data /tmp/..."
+//   node conformance/scripts/workflow-isolation-guard.mjs --check-command "node conformance/scripts/managed-run.mjs"
 //   node conformance/scripts/workflow-isolation-guard.mjs --help
-//
-// The guard inspects the child command's arguments for --data and verifies
-// the path is NOT under the repo root's data/ directory. The --manual flag
-// overrides the guard for human-authorized manual runs.
 
 import { spawn } from "node:child_process";
-import { resolve, join, relative } from "node:path";
+import { resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), "..", "..", "..");
+const managedRunPath = join(repoRoot, "conformance", "scripts", "managed-run.mjs");
 
-const FORBIDDEN_DATA_PATHS = [
-  "data/games",
-  "data/campaign",
-  "campaign-data",
-  "data/entities",
-];
 
-function isForbiddenDataPath(dataPath) {
-  const rel = relative(repoRoot, resolve(repoRoot, dataPath));
-  return FORBIDDEN_DATA_PATHS.some((p) => rel === p || rel.startsWith(p + "/"));
-}
-
-function extractDataArg(args) {
-  // Find --data <path> or --data=<path>
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--data" && i + 1 < args.length) {
-      return args[i + 1];
-    }
-    if (args[i].startsWith("--data=")) {
-      return args[i].slice("--data=".length);
-    }
-  }
-  return null;
+function isCanonicalManagedRun(args) {
+  if (args.length === 0) return false;
+  const candidate = args[0] === process.execPath || args[0] === "node" ? args[1] : args[0];
+  return candidate !== undefined && resolve(repoRoot, candidate) === managedRunPath;
 }
 
 export function checkCommand(args, { manual = false } = {}) {
   if (manual) return { ok: true, reason: "manual mode" };
 
-  const dataPath = extractDataArg(args);
-  if (!dataPath) {
-    return { ok: false, reason: "no --data argument found" };
+  if (isCanonicalManagedRun(args)) {
+    return { ok: true, reason: "canonical managed-run launcher" };
   }
-  if (isForbiddenDataPath(dataPath)) {
-    return { ok: false, reason: `--data path "${dataPath}" is a forbidden default path` };
-  }
-  return { ok: true, reason: `--data path "${dataPath}" is a managed temp directory` };
+
+  return { ok: false, reason: "automated commands must use the canonical managed-run launcher" };
 }
 
 function usage() {
   return [
-    "workflow-isolation-guard — verify commands use managed temp data dirs",
+    "workflow-isolation-guard — require the canonical managed launcher",
     "",
     "Usage:",
     "  node conformance/scripts/workflow-isolation-guard.mjs -- <child...>",
-    "  node conformance/scripts/workflow-isolation-guard.mjs --check-command 'pitd --data /tmp/...'",
+    "  node conformance/scripts/workflow-isolation-guard.mjs --check-command 'node conformance/scripts/managed-run.mjs'",
     "",
     "Options:",
-    "  --manual           allow forbidden paths (human-authorized manual mode)",
+    "  --manual           allow a direct command (human-authorized manual mode)",
     "  --check-command <cmd>  check a command string without running it",
     "  --help             this text",
     "",
-    "The guard inspects the child command's --data argument and fails if it",
-    "points at data/games/, campaign-data/, or similar default paths.",
+    "Automated commands must invoke the exact canonical managed-run launcher.",
   ].join("\n");
 }
 

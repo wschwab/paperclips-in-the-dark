@@ -1,0 +1,26 @@
+{
+  "task": "SC-SAFE-02",
+  "track": "contract",
+  "implementationAgent": "openai-codex/gpt-5.6-luna (codex, effort none)",
+  "reviewAgent": "openai-codex/gpt-5.6-luna (codex, effort none)",
+  "date": "2026-08-23",
+  "iterationsToGreen": 5,
+  "wallClockMinutes": 24,
+  "tokens": 548000,
+  "passRateAtFirstDoneClaim": "4/17 selected cases failed before implementation; first implementation run failed 13/20 managed-run cases",
+  "passRateAfterReview": "32/32 focused safety tests; typecheck pass; guarded npm smoke pass; independent safety review PASS",
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "focusedTests": 6,
+    "independentReview": 1,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "focused tooling behavior",
+    "guarded npm smoke",
+    "independent source review"
+  ],
+  "implementationLoc": 98,
+  "scaffoldingLoc": 0,
+  "notes": "Replaced fixed-port integrated CI with the canonical guarded managed launcher. Strict health ownership, exact process-tree cleanup, exact directory cleanup, arbitrary direct-command rejection, and port-9657 preservation are covered. Token total is approximate because some Codex result files did not retain usage totals."
+}

@@ -269,7 +269,7 @@ export async function seedDataDir(dataDir, seeds) {
 // signal aborts an in-flight poll immediately (used by waitForHealthOrExit so
 // an abandoned poll cannot keep fetching — and keep the event loop alive —
 // after the server process has already exited).
-export async function waitForHealth(baseUrl, timeoutMs, signal) {
+export async function waitForHealth(baseUrl, timeoutMs, signal, expectedDataDir) {
   const deadline = Date.now() + timeoutMs;
   let lastError;
   while (Date.now() < deadline) {
@@ -284,8 +284,19 @@ export async function waitForHealth(baseUrl, timeoutMs, signal) {
       const response = await fetch(`${baseUrl}/api/health`, {
         signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
       });
-      if (response.status === 200) return;
-      lastError = new Error(`health returned HTTP ${response.status}`);
+      if (response.status === 200) {
+        let health;
+        try {
+          health = await response.json();
+        } catch {
+          lastError = new Error("health returned invalid JSON");
+          continue;
+        }
+        if (health?.implementation === "ada" && resolve(health.dataDir) === resolve(expectedDataDir)) return;
+        lastError = new Error("health returned wrong implementation or dataDir");
+      } else {
+        lastError = new Error(`health returned HTTP ${response.status}`);
+      }
     } catch (error) {
       lastError = error;
     } finally {
@@ -324,7 +335,7 @@ async function readLogTail(logFile, maxBytes = 4096) {
 // never becomes healthy is a startup failure, not a collision). When the
 // exit branch wins, the losing health poll is aborted so it stops fetching
 // (and stops holding the event loop) instead of polling out its deadline.
-async function waitForHealthOrExit(baseUrl, timeoutMs, child) {
+async function waitForHealthOrExit(baseUrl, timeoutMs, child, expectedDataDir) {
   const pollController = new AbortController();
   const exited = new Promise((resolvePromise) => {
     child.once("exit", (code, signal) => {
@@ -332,7 +343,7 @@ async function waitForHealthOrExit(baseUrl, timeoutMs, child) {
       resolvePromise({ code, signal });
     });
   });
-  const healthy = waitForHealth(baseUrl, timeoutMs, pollController.signal).then(() => null);
+  const healthy = waitForHealth(baseUrl, timeoutMs, pollController.signal, expectedDataDir).then(() => null);
   return Promise.race([healthy, exited]);
 }
 
@@ -355,7 +366,7 @@ async function startServerForCycle(
     announce({ pid: child.pid });
     let earlyExit;
     try {
-      earlyExit = await waitForHealthOrExit(baseUrl, timeoutMs, child);
+      earlyExit = await waitForHealthOrExit(baseUrl, timeoutMs, child, dataDir);
     } catch (error) {
       await stopServer(child);
       throw error;
@@ -571,6 +582,7 @@ export async function main(argv = process.argv.slice(2)) {
   const runDir = join(defaults.managedRoot, runId);
   const logFile = join(runDir, "server.log");
   const dataDir = join(runDir, "data");
+  activeRunDirRef.current = runDir;
 
   let lastPort = null;
   let failure = null;
@@ -634,10 +646,6 @@ export async function main(argv = process.argv.slice(2)) {
       await stopServer(started.child);
     }
 
-    if (failure === null) {
-      await rm(runDir, { recursive: true, force: true });
-      console.error(`[managed-run] success; evidence removed (${runDir})`);
-    }
   } catch (error) {
     failure = { exitCode: 1, reason: error instanceof Error ? error.message : String(error) };
   } finally {
@@ -647,12 +655,25 @@ export async function main(argv = process.argv.slice(2)) {
     if (failure !== null) {
       console.error(`[managed-run] FAILED: ${failure.reason}`);
       console.error(
-        `[managed-run] evidence preserved: runDir=${runDir} dataDir=${dataDir} log=${logFile} port=${lastPort ?? "none"}`,
+        `[managed-run] failure evidence removed: runDir=${runDir} dataDir=${dataDir} log=${logFile} port=${lastPort ?? "none"}`,
       );
       process.exitCode = failure.exitCode;
     }
+    await rm(runDir, { recursive: true, force: true });
+    if (activeRunDirRef.current === runDir) activeRunDirRef.current = null;
+    if (failure === null) console.error(`[managed-run] success; evidence removed (${runDir})`);
   }
 }
+
+// Module-level references so the signal handler can reach the running
+// vitest tree, server, and build child even while main() is awaiting inside
+// its own try/finally. The server and build children are registered at spawn
+// (before readiness / before the build completes) and cleared on exit;
+// vitest is registered at spawn and cleared on exit.
+const activeServerRef = { current: null };
+const activeVitestRef = { current: null };
+const activeBuildRef = { current: null };
+const activeRunDirRef = { current: null };
 
 const isMain =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
@@ -673,13 +694,18 @@ if (isMain) {
       stopBuild(activeBuildRef.current),
     ])
       .catch(() => {})
+      .then(async () => {
+        if (typeof activeRunDirRef.current === "string") {
+          await rm(activeRunDirRef.current, { recursive: true, force: true }).catch(() => {});
+        }
+      })
       .finally(() => process.exit(1));
   };
   process.on("uncaughtException", fatal);
   process.on("unhandledRejection", fatal);
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => {
-      console.error(`[managed-run] received ${signal}; stopping vitest, server, and build child and preserving evidence`);
+      console.error(`[managed-run] received ${signal}; stopping vitest, server, and build child and removing owned evidence`);
       void mainCleanupAndExit(signal);
     });
   }
@@ -690,23 +716,17 @@ if (isMain) {
 }
 
 // Signal-path shutdown: stop the exact spawned vitest tree first (it is the
-// active consumer), then the exact spawned server and build child, then
-// exit. The run dir is left in place (abnormal termination counts as
-// failure). Server and build children are registered at spawn, so this also
+// active consumer), then the exact spawned server and build child, remove the
+// exact active run directory, then exit. Server and build children are
+// registered at spawn, so this also
 // works while startup (readiness poll or alr build) is still in flight.
 async function mainCleanupAndExit(signal) {
   await stopVitest(activeVitestRef.current);
   await stopServer(activeServerRef.current);
   await stopBuild(activeBuildRef.current);
+  if (typeof activeRunDirRef.current === "string") {
+    await rm(activeRunDirRef.current, { recursive: true, force: true }).catch(() => {});
+  }
   const code = 128 + (signal === "SIGHUP" ? 1 : signal === "SIGINT" ? 2 : 15);
   process.exit(code);
 }
-
-// Module-level references so the signal handler can reach the running
-// vitest tree, server, and build child even while main() is awaiting inside
-// its own try/finally. The server and build children are registered at
-// spawn (before readiness / before the build completes) and cleared on
-// exit; vitest is registered at spawn and cleared on exit.
-const activeServerRef = { current: null };
-const activeVitestRef = { current: null };
-const activeBuildRef = { current: null };

@@ -7,7 +7,7 @@
   "scripts": {
     "test": "vitest",
     "test:run": "vitest run",
-    "test:ada": "node scripts/managed-run.mjs --",
+    "test:ada": "node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --",
     "test:tooling": "vitest run --config vitest.tooling.config.ts",
     "typecheck": "tsc --noEmit"
   },

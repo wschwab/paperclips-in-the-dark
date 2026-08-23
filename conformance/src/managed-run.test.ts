@@ -15,7 +15,7 @@ import {
 // ---------------------------------------------------------------------------
 // SC-O0 tooling tests: the managed conformance launcher. Covers launcher
 // argument forwarding, byte-exact seeding, port isolation, temp-dir lifecycle
-// (success removes, failure preserves), controlled restarts (data dir fresh
+// (success and failure remove), controlled restarts (data dir fresh
 // per run but persisted across the restart, seed bytes re-applied before
 // every start), and exact-PID process-tree cleanup (no orphan pitd after
 // success or failure).
@@ -180,33 +180,18 @@ describe("SC-O0 managed conformance launcher", () => {
     await assertNoOrphanServers();
   });
 
-  it("[TOOLING-MANAGED-005] failure path preserves evidence and leaves no orphan process", async () => {
+  it("[TOOLING-MANAGED-005] failure path removes evidence and leaves no orphan process", async () => {
     const { code, stdout, stderr } = await runLauncher(["--run", "suites/__sc_o0_never__.test.ts"]);
     expect(code).toBe(1);
     const runDir = lineValue(stdout, "runDir");
     const pid = Number(lineValue(stdout, "pid"));
     const port = Number(lineValue(stdout, "port"));
 
-    const manifest = JSON.parse(await readFile(join(runDir, "run.json"), "utf8")) as {
-      pid: number;
-      cycle: { number: number; port: number; baseUrl: string; dataDir: string; logFile: string };
-      testHooks: boolean;
-    };
-    expect(manifest.pid).toBe(pid);
-    expect(manifest.cycle.number).toBe(1);
-    expect(manifest.cycle.port).toBe(port);
-    expect(manifest.cycle.dataDir).toBe(join(runDir, "data"));
-    expect(manifest.cycle.baseUrl).toBe(`http://127.0.0.1:${port}`);
-    expect(manifest.testHooks).toBe(true);
-
-    const log = await stat(join(runDir, "server.log"));
-    expect(log.size).toBeGreaterThan(0);
-    expect((await stat(join(runDir, "data"))).isDirectory()).toBe(true);
-    expect(stderr).toContain("evidence preserved");
-    expect(stderr).toContain(runDir);
+    expect(port).toBeGreaterThan(0);
+    expect(stderr).toContain("FAILED");
+    expect(stderr).not.toContain("evidence preserved");
+    await expect(stat(runDir)).rejects.toThrow();
     expect(pidAlive(pid)).toBe(false);
-
-    await rm(runDir, { recursive: true, force: true });
     await assertNoOrphanServers();
   });
 
@@ -222,8 +207,8 @@ describe("SC-O0 managed conformance launcher", () => {
     expect(port1).not.toBe(port2);
     expect(runDir1).not.toBe(runDir2);
     expect(runDir1).toContain("pitd-managed");
-    await rm(runDir1, { recursive: true, force: true });
-    await rm(runDir2, { recursive: true, force: true });
+    await expect(stat(runDir1)).rejects.toThrow();
+    await expect(stat(runDir2)).rejects.toThrow();
     await assertNoOrphanServers();
   });
 
@@ -255,21 +240,11 @@ describe("SC-O0 managed conformance launcher", () => {
       expect(dataDirs).toHaveLength(2);
       expect(dataDirs[0]).toBe(dataDirs[1]);
 
-      const manifest = JSON.parse(await readFile(join(runDir, "run.json"), "utf8")) as {
-        cycles: number;
-        seeds: string[];
-        cycle: { number: number; dataDir: string };
-      };
-      expect(manifest.cycles).toBe(2);
-      expect(manifest.seeds).toEqual([fixture]);
-      expect(manifest.cycle.number).toBe(2);
-      // Seed bytes are re-applied before every start, so the persisted dir
-      // still carries the exact fixture bytes.
-      expect(await readFile(join(manifest.cycle.dataDir, "campaign.json"), "utf8")).toBe(seedBytes);
-
-      expect(stderr).toContain("evidence preserved");
+      // Failure cleanup removes the run directory, so cycle announcements,
+      // stable dataDir announcements, and process cleanup are the observables.
+      expect(stderr).not.toContain("evidence preserved");
+      await expect(stat(runDir)).rejects.toThrow();
       for (const pid of pids) expect(pidAlive(Number(pid))).toBe(false);
-      await rm(runDir, { recursive: true, force: true });
       await assertNoOrphanServers();
     } finally {
       await rm(root, { recursive: true, force: true });
@@ -295,7 +270,7 @@ describe("SC-O0 managed conformance launcher", () => {
     // finally and leave the pitd running. Destroying stdout synchronously
     // guarantees every write after spawn fails; vitest inherits the broken
     // pipe and exits non-zero, so the launcher must take its failure path —
-    // stop the exact server PID, preserve evidence, exit promptly.
+    // stop the exact server PID, remove the run, and exit promptly.
     const before = await readdir(managedRoot);
     const code = await new Promise<number>((resolvePromise) => {
       const child = spawn(
@@ -347,8 +322,8 @@ if (attempt === 1) {
 }
 const server = createServer((req, res) => {
   if (req.url === "/api/health") {
-    res.writeHead(200);
-    res.end("ok");
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ implementation: "ada", dataDir: args[args.indexOf("--data") + 1] }));
     return;
   }
   res.writeHead(404);
@@ -421,12 +396,170 @@ process.exit(1);
       expect(lineValues(stdout, "port")).toHaveLength(1);
       expect(stderr).toContain("exited before readiness");
       expect(stderr).toContain("boom");
-      expect(stderr).toContain("evidence preserved");
+      expect(stderr).not.toContain("evidence preserved");
       const runDir = lineValue(stdout, "runDir");
-      await rm(runDir, { recursive: true, force: true });
+      await expect(stat(runDir)).rejects.toThrow();
       await assertNoOrphanServers();
     } finally {
       await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("[TOOLING-MANAGED-016] readiness rejects wrong implementation and removes the owned run", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sc-o0-readiness-impl-"));
+    const fakeServer = join(root, "wrong-implementation.mjs");
+    await writeFile(
+      fakeServer,
+      `#!/usr/bin/env node
+import { createServer } from "node:http";
+const port = Number(process.argv[process.argv.indexOf("--port") + 1]);
+const server = createServer((req, res) => {
+  if (req.url === "/api/health") {
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ implementation: "zero", dataDir: process.argv[process.argv.indexOf("--data") + 1] }));
+    return;
+  }
+  res.writeHead(404); res.end();
+});
+server.listen(port, "127.0.0.1");
+`,
+    );
+    await chmod(fakeServer, 0o755);
+    try {
+      const { code, stdout, stderr } = await runLauncher([
+        "--server", fakeServer, "--timeout", "250", "--", "--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts",
+      ]);
+      expect(code).toBe(1);
+      expect(stderr).toContain("server not ready");
+      const runDir = lineValue(stdout, "runDir");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("[TOOLING-MANAGED-017] readiness rejects a health response with the wrong data directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sc-o0-readiness-data-"));
+    const fakeServer = join(root, "wrong-data-dir.mjs");
+    await writeFile(
+      fakeServer,
+      `#!/usr/bin/env node
+import { createServer } from "node:http";
+const port = Number(process.argv[process.argv.indexOf("--port") + 1]);
+const server = createServer((req, res) => {
+  if (req.url === "/api/health") {
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ implementation: "ada", dataDir: "/wrong-owned-data-dir" }));
+    return;
+  }
+  res.writeHead(404); res.end();
+});
+server.listen(port, "127.0.0.1");
+`,
+    );
+    await chmod(fakeServer, 0o755);
+    try {
+      const { code, stdout, stderr } = await runLauncher([
+        "--server", fakeServer, "--timeout", "250", "--", "--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts",
+      ]);
+      expect(code).toBe(1);
+      expect(stderr).toContain("server not ready");
+      const runDir = lineValue(stdout, "runDir");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("[TOOLING-MANAGED-018] SIGTERM during startup stops the exact child and removes the run", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sc-o0-sigterm-"));
+    const fakeServer = join(root, "slow-server.mjs");
+    await writeFile(fakeServer, `#!/usr/bin/env node\nsetInterval(() => {}, 1_000_000);\n`);
+    await chmod(fakeServer, 0o755);
+    const child = spawn(process.execPath, [launcherPath, "--server", fakeServer, "--", "--run"], {
+      cwd: conformanceDir,
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => { stdout += String(chunk); });
+    child.stderr.on("data", (chunk) => { stderr += String(chunk); });
+    const exited = new Promise<number>((resolvePromise) => {
+      child.on("exit", (code, signal) => resolvePromise(code ?? (signal ? 128 : 1)));
+    });
+    const delay = (ms: number): Promise<void> => new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+    try {
+      const deadline = Date.now() + 90_000;
+      while (!/\[managed-run\] pid=\d+/.test(stdout)) {
+        if (Date.now() > deadline) throw new Error(`launcher never announced server pid; stdout:\n${stdout}\nstderr:\n${stderr}`);
+        await delay(50);
+      }
+      const serverPid = Number(/\[managed-run\] pid=(\d+)/.exec(stdout)![1]);
+      const runDir = lineValue(stdout, "runDir");
+      expect(pidAlive(serverPid)).toBe(true);
+      child.kill("SIGTERM");
+      const code = await Promise.race([
+        exited,
+        new Promise<number>((resolvePromise) => setTimeout(() => { child.kill("SIGKILL"); resolvePromise(99); }, 60_000)),
+      ]);
+      expect(code).toBe(143);
+      expect(stderr).toContain("received SIGTERM");
+      while (pidAlive(serverPid) && Date.now() < deadline) await delay(50);
+      expect(pidAlive(serverPid)).toBe(false);
+      await expect(stat(runDir)).rejects.toThrow();
+    } finally {
+      if (child.exitCode === null) child.kill("SIGKILL");
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("[TOOLING-MANAGED-019] readiness timeout stops a live unhealthy child and removes the run", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sc-o0-readiness-timeout-"));
+    const fakeServer = join(root, "unhealthy-server.mjs");
+    await writeFile(fakeServer, `#!/usr/bin/env node\nsetInterval(() => {}, 1_000_000);\n`);
+    await chmod(fakeServer, 0o755);
+    try {
+      const started = Date.now();
+      const { code, stdout, stderr } = await runLauncher([
+        "--server", fakeServer, "--timeout", "250", "--", "--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts",
+      ], 10_000);
+      expect(code).not.toBe(0);
+      expect(Date.now() - started).toBeLessThan(10_000);
+      expect(stderr).toContain("server not ready");
+      const serverPid = Number(lineValue(stdout, "pid"));
+      const runDir = lineValue(stdout, "runDir");
+      expect(pidAlive(serverPid)).toBe(false);
+      await expect(stat(runDir)).rejects.toThrow();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("[TOOLING-MANAGED-020] preserves an unrelated loopback 9657 listener", async () => {
+    const unrelated = spawn(process.execPath, ["--input-type=module", "-e", `import { createServer } from "node:net"; const s=createServer(); s.once("error", (error) => { console.error(error.message); process.exit(1); }); s.listen(9657,"127.0.0.1", () => console.log("READY"));`], { stdio: ["ignore", "pipe", "pipe"] });
+    let output = "";
+    unrelated.stdout!.setEncoding("utf8");
+    unrelated.stdout!.on("data", (chunk) => { output += chunk; });
+    const outcome = await Promise.race([
+      new Promise<"ready" | "exit">((resolvePromise) => {
+        unrelated.stdout!.on("data", () => { if (output.includes("READY")) resolvePromise("ready"); });
+        unrelated.once("exit", () => resolvePromise("exit"));
+      }),
+      new Promise<"timeout">((resolvePromise) => setTimeout(() => resolvePromise("timeout"), 5_000)),
+    ]);
+    if (outcome !== "ready") {
+      if (unrelated.exitCode === null) unrelated.kill("SIGTERM");
+      return;
+    }
+    try {
+      const { code, stdout } = await runLauncher(["--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts"]);
+      expect(code).toBe(0);
+      expect(Number(lineValue(stdout, "port"))).not.toBe(9657);
+      expect(pidAlive(unrelated.pid!)).toBe(true);
+    } finally {
+      unrelated.kill("SIGTERM");
+      await new Promise<void>((resolvePromise) => unrelated.once("exit", () => resolvePromise()));
     }
   });
 
@@ -453,9 +586,9 @@ process.exit(1);
       expect(code).toBe(1);
       expect(lineValues(stdout, "port")).toHaveLength(PORT_RETRY_ATTEMPTS);
       expect(stderr).toContain("consecutive port collisions");
-      expect(stderr).toContain("evidence preserved");
+      expect(stderr).not.toContain("evidence preserved");
       const runDir = lineValue(stdout, "runDir");
-      await rm(runDir, { recursive: true, force: true });
+      await expect(stat(runDir)).rejects.toThrow();
       await assertNoOrphanServers();
     } finally {
       await rm(root, { recursive: true, force: true });

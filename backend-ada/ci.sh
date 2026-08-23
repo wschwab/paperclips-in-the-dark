@@ -25,51 +25,12 @@ echo "==> proving core"
    gnatprove -P paperclips_core.gpr --level=2 --checks-as-errors=on)
 
 if [ "${RUN_CONFORMANCE:-0}" = "1" ]; then
-   server_pid=""
-   stop_server () {
-      if [ -n "$server_pid" ]; then
-         kill "$server_pid" 2>/dev/null || true
-         wait "$server_pid" 2>/dev/null || true
-      fi
-   }
-   trap stop_server EXIT INT TERM
-
    # AUDIT-0 BUG-014: the SPA smoke needs a real frontend build.  Build it
    # (source maps off by default) so a clean checkout has no ignored-dist gap.
    echo "==> building frontend (SPA smoke prerequisite)"
    (cd "$SCRIPT_DIR/../frontend" && npm ci && npm run build)
 
-   rm -rf /tmp/pitd-campaign-data
-   # Seed the standard oracle fixtures (same as the managed harness
-   # --seed-defaults) so the seeded suites run against fresh state.
-   mkdir -p /tmp/pitd-campaign-data
-   for seed in "$SCRIPT_DIR/../conformance/fixtures/sc-o2-seeds" "$SCRIPT_DIR/../conformance/fixtures/completeness-seeds"; do
-      if [ -d "$seed" ]; then
-         cp -R "$seed"/. /tmp/pitd-campaign-data/
-      fi
-   done
-   "$SCRIPT_DIR/server/bin/pitd" --port 9657 --data /tmp/pitd-campaign-data \
-      --static "$SCRIPT_DIR/../frontend/dist" \
-      --games "$SCRIPT_DIR/../data/games" &
-   server_pid=$!
-
-   ready=0
-   attempt=1
-   while [ "$attempt" -le 50 ]; do
-      if curl --fail --silent http://localhost:9657/api/health >/dev/null 2>&1; then
-         ready=1
-         break
-      fi
-      sleep 0.1
-      attempt=$((attempt + 1))
-   done
-   if [ "$ready" -ne 1 ]; then
-      echo "server did not become ready" >&2
-      exit 1
-   fi
-
    # AUDIT-0 BUG-014: RUN_CONFORMANCE=1 must run the FULL conformance suite
    # against fresh state, not a single smoke test.
-   (cd "$SCRIPT_DIR/../conformance" && \
-      BASE_URL=http://localhost:9657 npm test -- --run)
+   (cd "$SCRIPT_DIR/../conformance" && npm run test:ada -- --run)
 fi
