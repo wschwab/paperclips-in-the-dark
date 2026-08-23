@@ -58,7 +58,7 @@
 // it is removed. All machine-readable facts (port, pid, paths) are printed
 // to stdout as `[managed-run] key=value` lines.
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { copyFile, cp, mkdir, open, rm, stat, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { createServer } from "node:net";
@@ -112,6 +112,32 @@ Launcher options (before the final --; via npm run: npm run test:ada -- <options
   --help              this text
 
 Everything after the final -- is forwarded to vitest verbatim.`;
+}
+
+function sourceRevision() {
+  for (const value of [process.env.PITD_REVISION, process.env.GITHUB_SHA, process.env.CI_COMMIT_SHA]) {
+    const revision = value?.trim();
+    if (revision) return revision;
+  }
+
+  for (const [command, args] of [
+    ["jj", ["log", "--ignore-working-copy", "-r", "@", "--no-graph", "-T", "commit_id.short()"]],
+    ["git", ["rev-parse", "--short", "HEAD"]],
+  ]) {
+    try {
+      const revision = execFileSync(command, args, {
+        cwd: repoRoot,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+        timeout: 5_000,
+      }).trim();
+      if (revision) return revision;
+    } catch {
+      // Try the portable fallback, then report unknown if neither is available.
+    }
+  }
+
+  return "unknown";
 }
 
 export function parseArgs(argv) {
@@ -611,7 +637,17 @@ export async function main(argv = process.argv.slice(2)) {
       createdAt: new Date().toISOString(),
     };
 
-    announce({ runId, server: exe, cycles: opts.cycles, staticDir, gamesDir });
+    const revision = sourceRevision();
+    announce({
+      runId,
+      server: exe,
+      cycles: opts.cycles,
+      staticDir,
+      gamesDir,
+      revision,
+      testCommand: vitestArgs.join(" "),
+      seedSet: opts.seeds.map((source) => resolve(source)).join(","),
+    });
 
     for (let cycle = 1; cycle <= opts.cycles; cycle++) {
       // The data dir is created fresh once per run and persists across
@@ -641,19 +677,20 @@ export async function main(argv = process.argv.slice(2)) {
       announce({ vitestPid: vitest.child.pid });
       const code = await vitest.promise;
       if (code !== 0 && failure === null) {
-        failure = { exitCode: code, reason: `vitest exited with code ${code} (cycle ${cycle})` };
+        failure = { kind: "test", exitCode: code, reason: `vitest exited with code ${code} (cycle ${cycle})` };
       }
       await stopServer(started.child);
     }
 
   } catch (error) {
-    failure = { exitCode: 1, reason: error instanceof Error ? error.message : String(error) };
+    failure ??= { kind: "setup", exitCode: 1, reason: error instanceof Error ? error.message : String(error) };
   } finally {
     await stopVitest(activeVitestRef.current);
     await stopServer(activeServerRef.current);
     await stopBuild(activeBuildRef.current);
     if (failure !== null) {
-      console.error(`[managed-run] FAILED: ${failure.reason}`);
+      const label = failure.kind === "test" ? "TEST FAILED" : "SETUP FAILED";
+      console.error(`[managed-run] ${label}: ${failure.reason}`);
       console.error(
         `[managed-run] failure evidence removed: runDir=${runDir} dataDir=${dataDir} log=${logFile} port=${lastPort ?? "none"}`,
       );

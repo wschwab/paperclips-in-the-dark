@@ -563,6 +563,110 @@ server.listen(port, "127.0.0.1");
     }
   });
 
+  it("[TOOLING-MANAGED-021] forwards npm launcher options before the final separator and Vitest args after it exactly", () => {
+    const forwarded = [
+      "--",
+      "--seed",
+      "fixture one",
+      "--seed-defaults",
+      "--timeout",
+      "4500",
+      "--",
+      "--run",
+      "suites/semantics/completeness.test.ts",
+      "-t",
+      "COMPLETE-EMPTY-001",
+      "--reporter",
+      "verbose",
+    ];
+    const opts = parseArgs(forwarded);
+    expect(opts.seeds).toEqual([
+      "fixture one",
+      resolve(conformanceDir, "fixtures", "sc-o2-seeds"),
+      resolve(conformanceDir, "fixtures", "completeness-seeds"),
+    ]);
+    expect(opts.timeoutMs).toBe(4500);
+    expect(opts.vitestArgs).toEqual(forwarded.slice(forwarded.lastIndexOf("--") + 1));
+  });
+
+  it("[TOOLING-MANAGED-022] announces revision, URL, owned data, default seed sets, child PID, and exact test command", async () => {
+    const args = ["--seed-defaults", "--", "--run", "suites/semantics/completeness.test.ts", "-t", "COMPLETE-EMPTY-001"];
+    const { code, stdout, stderr } = await execFileAsync(
+      process.execPath,
+      [launcherPath, ...args],
+      conformanceDir,
+      120_000,
+      { PITD_REVISION: "gate-test-revision" },
+    );
+    expect(code).toBe(0);
+    expect(stdout).toContain("[managed-run] revision=gate-test-revision");
+    expect(stdout).toMatch(/\[managed-run\] baseUrl=http:\/\/127\.0\.0\.1:\d+/);
+    const dataDir = lineValue(stdout, "dataDir");
+    expect(dataDir).toContain("pitd-managed");
+    expect(lineValues(stdout, "seed")).toHaveLength(2);
+    expect(Number(lineValue(stdout, "pid"))).toBeGreaterThan(0);
+    expect(stdout).toContain("testCommand=--run suites/semantics/completeness.test.ts -t COMPLETE-EMPTY-001");
+    expect(stderr).toContain("evidence removed");
+  }, 120_000);
+
+  it("[TOOLING-MANAGED-023] labels an early fake child exit as SETUP FAILED only", async () => {
+    const root = await mkdtemp(join(tmpdir(), "gate-01-early-exit-"));
+    const fakeServer = join(root, "early-exit.mjs");
+    await writeFile(fakeServer, "#!/usr/bin/env node\nprocess.exit(1);\n");
+    await chmod(fakeServer, 0o755);
+    try {
+      const { code, stderr } = await runLauncher(["--server", fakeServer, "--timeout", "250", "--", "--run"], 10_000);
+      expect(code).not.toBe(0);
+      expect(stderr).toContain("SETUP FAILED");
+      expect(stderr).not.toContain("TEST FAILED");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  it("[TOOLING-MANAGED-024] labels a post-readiness no-test failure as TEST FAILED only", async () => {
+    const { code, stderr } = await runLauncher(["--run", "suites/__sc_o0_never__.test.ts"], 60_000);
+    expect(code).toBe(1);
+    expect(stderr).toContain("TEST FAILED");
+    expect(stderr).not.toContain("SETUP FAILED");
+  }, 75_000);
+
+  it("[TOOLING-MANAGED-025] canonical no-default seeding fails while npm test:ada default seeding passes", async () => {
+    const direct = await runLauncher(["--run", "suites/semantics/completeness.test.ts", "-t", "COMPLETE-ALL-003"], 60_000);
+    expect(direct.code).toBe(1);
+
+    const npmRun = await execFileAsync(
+      "npm",
+      ["run", "test:ada", "--", "--run", "suites/semantics/completeness.test.ts", "-t", "COMPLETE-ALL-003"],
+      conformanceDir,
+      60_000,
+    );
+    expect(npmRun.code).toBe(0);
+  }, 135_000);
+
+  it("[TOOLING-MANAGED-026] falls back to the current jj revision when revision environment variables are empty", async () => {
+    const repoRoot = resolve(conformanceDir, "..");
+    const revisionResult = await execFileAsync(
+      "jj",
+      ["log", "--ignore-working-copy", "-r", "@", "--no-graph", "-T", "commit_id.short()"],
+      repoRoot,
+      60_000,
+    );
+    expect(revisionResult.code).toBe(0);
+    const expectedRevision = revisionResult.stdout.trim();
+    expect(expectedRevision).not.toBe("");
+
+    const { code, stdout } = await execFileAsync(
+      process.execPath,
+      [launcherPath, "--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts"],
+      conformanceDir,
+      60_000,
+      { PITD_REVISION: "", GITHUB_SHA: "", CI_COMMIT_SHA: "" },
+    );
+    expect(code).toBe(0);
+    expect(lineValue(stdout, "revision")).toBe(expectedRevision);
+  }, 60_000);
+
   it("[TOOLING-MANAGED-012] repeated port collisions give up after a bounded number of attempts", async () => {
     const root = await mkdtemp(join(tmpdir(), "sc-o0-collide-all-"));
     const fakeServer = join(root, "always-collide.mjs");

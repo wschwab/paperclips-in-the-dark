@@ -1,0 +1,26 @@
+{
+  "task": "SC-GATE-01",
+  "track": "contract",
+  "implementationAgent": "openai-codex/gpt-5.6-luna (codex, effort none)",
+  "reviewAgent": "openai-codex/gpt-5.6-luna (codex, effort none)",
+  "date": "2026-08-23",
+  "iterationsToGreen": 4,
+  "wallClockMinutes": 9,
+  "tokens": 351000,
+  "passRateAtFirstDoneClaim": "4/5 selected cases failed; forwarding already passed",
+  "passRateAfterReview": "managed tooling 26/26; typecheck pass; canonical Track A 55 files/422 tests; calibrated independent review PASS",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 3,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "seeded gate cases",
+    "canonical Track A acceptance",
+    "calibrated independent source review"
+  ],
+  "implementationLoc": 65,
+  "scaffoldingLoc": 0,
+  "notes": "Defects were bad seeded-case calibration, a phase-classification bug, and unknown revision handling. Green used fresh owned temporary data, two standard seeds, and verified cleanup removed the run. The exact canonical conformance package is consumed by CI/mutation. Counts and token total are approximate where noted."
+}
