@@ -9,6 +9,7 @@
     "test:run": "vitest run",
     "test:ada": "node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults --",
     "test:tooling": "vitest run --config vitest.tooling.config.ts",
+    "test:mutation": "vitest run --config vitest.tooling.config.ts src/mutation-harness.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "bin": {

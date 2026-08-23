@@ -1,0 +1,26 @@
+{
+  "task": "MUT-01",
+  "track": "contract",
+  "implementationAgent": "openai-codex/gpt-5.6-sol orchestrator",
+  "reviewAgent": "none: requested openai-codex/gpt-5.6-luna capacity was exhausted before this card",
+  "date": "2026-08-23",
+  "iterationsToGreen": 2,
+  "wallClockMinutes": 11,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "red import executed the legacy top-level CLI; run stopped before classification",
+  "passRateAfterReview": "mutation methodology 12/12; complete tooling 150/150; typecheck pass; source restoration clean",
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "focusedTests": 2,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "import-side-effect calibration",
+    "byte-anchor and restoration calibrations",
+    "complete tooling suite"
+  ],
+  "implementationLoc": 290,
+  "scaffoldingLoc": 0,
+  "notes": "The interrupted red import altered only pitd_callback.adb; it was immediately restored from the parent revision and jj status confirmed no residual source change. All catalog-anchor probes operate on temp copies. Token accounting was unavailable, so tokens is 0 rather than estimated."
+}

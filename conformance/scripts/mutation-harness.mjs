@@ -18,13 +18,160 @@
  * Output: agent-docs/test-audit/mutation-baseline.json
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readFileSync, writeFileSync, mkdirSync, renameSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
 const CATALOG_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-catalog.json");
 const OUTPUT_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-baseline.json");
+function hash(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+function replaceExactlyOnce(content, search, replacement, context) {
+  if (search === replacement) throw new Error(`${context}: replacement is byte-identical`);
+  const first = content.indexOf(search);
+  const second = first === -1 ? -1 : content.indexOf(search, first + search.length);
+  if (first === -1 || second !== -1) {
+    throw new Error(`${context}: expected anchor exactly once`);
+  }
+  return `${content.slice(0, first)}${replacement}${content.slice(first + search.length)}`;
+}
+
+/**
+ * Apply exact, uniquely anchored edits and retain byte snapshots for restoration.
+ * Validation completes for every edit before the first file is written.
+ */
+export async function applyVerifiedEdits(repoRoot, edits) {
+  if (!Array.isArray(edits) || edits.length === 0) {
+    throw new Error("mutation has no verified edits");
+  }
+  const byFile = new Map();
+  for (const edit of edits) {
+    if (!edit.file || !edit.symbol || typeof edit.search !== "string" || typeof edit.replacement !== "string") {
+      throw new Error("mutation edit requires file, symbol, search, and replacement");
+    }
+    if (edit.search === edit.replacement) {
+      throw new Error(`${edit.file} ${edit.symbol}: replacement is byte-identical`);
+    }
+    const absolute = resolve(repoRoot, edit.file);
+    let entry = byFile.get(absolute);
+    if (!entry) {
+      const bytes = readFileSync(absolute);
+      entry = { absolute, original: bytes, content: bytes.toString("utf8"), regions: [] };
+      byFile.set(absolute, entry);
+    }
+    const first = entry.content.indexOf(edit.search);
+    const second = first === -1 ? -1 : entry.content.indexOf(edit.search, first + edit.search.length);
+    if (first === -1 || second !== -1) {
+      throw new Error(
+        `${edit.file} ${edit.symbol}: expected mutation anchor to match exactly once; found ${first === -1 ? 0 : "multiple"}`,
+      );
+    }
+    entry.content = `${entry.content.slice(0, first)}${edit.replacement}${entry.content.slice(first + edit.search.length)}`;
+    entry.regions.push({ symbol: edit.symbol, offset: first });
+  }
+  const snapshots = [];
+  try {
+    for (const entry of byFile.values()) {
+      const changed = Buffer.from(entry.content);
+      if (hash(changed) === hash(entry.original)) {
+        throw new Error(`${entry.absolute}: mutation changed no bytes`);
+      }
+      writeFileSync(entry.absolute, changed);
+      snapshots.push({
+        path: entry.absolute,
+        bytes: entry.original,
+        hash: hash(entry.original),
+        regions: entry.regions,
+      });
+    }
+  } catch (error) {
+    for (const snapshot of snapshots) writeFileSync(snapshot.path, snapshot.bytes);
+    throw error;
+  }
+  return snapshots;
+}
+
+export function classifyMutant({ baseline, mutant, expectedFailureIds, runState }) {
+  const baselineFailures = new Set(baseline.filter((test) => test.status === "failed").map((test) => test.id));
+  const mutantFailures = mutant.filter((test) => test.status === "failed").map((test) => test.id);
+  const newFailureIds = mutantFailures.filter((id) => !baselineFailures.has(id));
+  const expected = new Set(expectedFailureIds);
+  const expectedNewFailures = newFailureIds.filter((id) => expected.has(id));
+  if (expectedNewFailures.length > 0) {
+    return { state: "killed", killed: true, newFailureIds: expectedNewFailures.sort() };
+  }
+  if (runState === "completed" || (runState === "test-failure" && mutant.length > 0)) {
+    return { state: "survived", killed: false, newFailureIds: newFailureIds.sort() };
+  }
+  return { state: runState, killed: false, newFailureIds: newFailureIds.sort() };
+}
+
+export async function executeMutant({ repoRoot, mutant, baselineTests, runMutant }) {
+  let snapshots = [];
+  let classified;
+  let restorationError;
+  try {
+    snapshots = await applyVerifiedEdits(repoRoot, mutant.edits);
+    const run = await runMutant();
+    classified = classifyMutant({
+      baseline: baselineTests,
+      mutant: run.tests ?? [],
+      expectedFailureIds: mutant.expectedFailureIds,
+      runState: run.state,
+    });
+  } catch (error) {
+    classified = { state: "harness-error", killed: false, newFailureIds: [], error: String(error) };
+  } finally {
+    for (const snapshot of snapshots) {
+      writeFileSync(snapshot.path, snapshot.bytes);
+      if (hash(readFileSync(snapshot.path)) !== snapshot.hash) {
+        restorationError = new Error(`failed byte-exact restoration of ${snapshot.path}`);
+      }
+    }
+  }
+  if (restorationError) throw restorationError;
+  return { ...classified, restored: snapshots.length > 0 };
+}
+
+export async function executeCampaign({ mutants: campaignMutants, runBaseline, runMutant, onApply, repoRoot = REPO_ROOT }) {
+  const baseline = await runBaseline();
+  const failures = (baseline.tests ?? []).filter((test) => test.status !== "passed");
+  if (baseline.state !== "completed" || failures.length > 0) {
+    throw new Error("unmodified mutation baseline must be green before classification");
+  }
+  const results = [];
+  for (const mutant of campaignMutants) {
+    if (onApply) await onApply(mutant);
+    results.push(await executeMutant({
+      repoRoot,
+      mutant,
+      baselineTests: baseline.tests,
+      runMutant: () => runMutant(mutant),
+    }));
+  }
+  return results;
+}
+
+export async function writeMutationArtifact({ mode, fullPath, diagnosticsDir, runId, artifact }) {
+  const text = `${JSON.stringify(artifact, null, 2)}\n`;
+  if (mode === "targeted") {
+    mkdirSync(diagnosticsDir, { recursive: true });
+    const target = join(diagnosticsDir, `${runId}.json`);
+    const temporary = `${target}.tmp-${process.pid}`;
+    writeFileSync(temporary, text);
+    renameSync(temporary, target);
+    return target;
+  }
+  mkdirSync(resolve(fullPath, ".."), { recursive: true });
+  const temporary = `${fullPath}.tmp-${process.pid}`;
+  writeFileSync(temporary, text);
+  renameSync(temporary, fullPath);
+  return fullPath;
+}
 
 // Parse args
 const args = process.argv.slice(2);
@@ -51,28 +198,20 @@ if (backendOnly) {
 // `files` is the list of files to restore after the test.
 
 const mutations = {
-  // M01: Remove canUndo/historyCount from Crew_Summary (reverse the Wave 2A fix)
+  // M01: suppress crew history projections at their History_Count source.
   M01: {
     files: ["backend-ada/server/src/pitd_callback.adb"],
     apply: (repoRoot) => {
       const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
-      let content = readFileSync(file, "utf8");
-      const block = `      --  BUG-013: derived canUndo/historyCount projections (lifecycle-matrix
-      --  § 9) — computed at response time from the retained snapshot count,
-      --  never stored.  Mirrors Character_Summary.  The create baseline is
-      --  excluded from the count.
-      declare
-         H : constant JSON_Array := History ("crew", Str_Field (C, "id"));
-      begin
-         Set_Field (X, "canUndo", Length (H) > 0);
-         Set_Field (X, "historyCount", Integer (Length (H)));
-      end;`;
-      if (!content.includes(block)) {
-        throw new Error("M01: Could not find canUndo/historyCount block to remove");
-      }
-      content = content.replace(block, "      --  MUTANT M01: canUndo/historyCount omitted");
-      writeFileSync(file, content);
-      return "Removed canUndo/historyCount from Crew_Summary";
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        'History_Count ("crew", Str_Field (C, "id"))',
+        "0",
+        "M01 Crew_Summary History_Count",
+      );
+      writeFileSync(file, changed);
+      return "Forced Crew_Summary History_Count projection to zero";
     },
   },
 
@@ -158,22 +297,23 @@ const mutations = {
     },
   },
 
-  // M06: Write during GET (inject a write in Classify_Stored read path)
+  // M06: introduce the forbidden persistence write in Classify_Stored.
   M06: {
     files: ["backend-ada/server/src/pitd_callback.adb"],
     apply: (repoRoot) => {
       const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
-      let content = readFileSync(file, "utf8");
-      // Find the mutation handler's snapshot call and skip it
-      if (!content.includes("if Snapshots (Op) then Snapshot (Kind, Id, Op, Before); end if;")) {
-        throw new Error("M06: Could not find snapshot call");
-      }
-      content = content.replace(
-        "if Snapshots (Op) then Snapshot (Kind, Id, Op, Before); end if;",
-        "null; -- MUTANT M06: skipped pre-mutation snapshot"
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `         E := Read (Bytes);
+      exception`,
+        `         E := Read (Bytes);
+         Write_Entity (Kind, Id, E); -- MUTANT M06: write during classification
+      exception`,
+        "M06 Classify_Stored",
       );
-      writeFileSync(file, content);
-      return "Skipped pre-mutation snapshot (simplified M06/M08 hybrid)";
+      writeFileSync(file, changed);
+      return "Injected a persistence write into Classify_Stored";
     },
   },
 
@@ -362,22 +502,26 @@ const mutations = {
     },
   },
 
-  // M17: Omit focus/alert recovery
+  // M17: omit recovery in the typed exported focus functions.
   M17: {
     files: ["frontend/src/lib/focus.ts"],
     apply: (repoRoot) => {
       const file = join(repoRoot, "frontend/src/lib/focus.ts");
-      if (!existsSync(file)) {
-        throw new Error("M17: focus.ts not found");
-      }
       let content = readFileSync(file, "utf8");
-      // Replace all exported function bodies with no-ops
-      content = content.replace(
-        /export function (\w+)\s*\([^)]*\)\s*\{[^}]*\}/g,
-        'export function $1() { /* MUTANT M17: no-op */ }'
+      content = replaceExactlyOnce(
+        content,
+        "export function captureFocusTarget(root: HTMLElement): FocusTarget | null {",
+        "export function captureFocusTarget(root: HTMLElement): FocusTarget | null {\n  return null; // MUTANT M17",
+        "M17 captureFocusTarget",
+      );
+      content = replaceExactlyOnce(
+        content,
+        "export function applyFocusTarget(root: HTMLElement, target: FocusTarget): boolean {",
+        "export function applyFocusTarget(root: HTMLElement, target: FocusTarget): boolean {\n  return false; // MUTANT M17",
+        "M17 applyFocusTarget",
       );
       writeFileSync(file, content);
-      return "Replaced exported focus functions with no-ops";
+      return "Disabled capture and apply focus recovery";
     },
   },
 
@@ -433,6 +577,12 @@ const mutations = {
     },
   },
 };
+export function applyCatalogMutation(id, repoRoot) {
+  const definition = mutations[id];
+  if (!definition) throw new Error(`unknown catalog mutation ${id}`);
+  const description = definition.apply(repoRoot);
+  return { files: [...definition.files], description };
+}
 
 // ─── Harness ──────────────────────────────────────────────────────────────
 
@@ -554,38 +704,41 @@ function runMutation(mutant) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 
-console.log(`\nAUDIT-0 Wave 3 — Mutation Harness`);
-console.log(`Running ${mutants.length} mutants: ${mutants.map(m => m.id).join(", ")}`);
-console.log(`Repository: ${REPO_ROOT}`);
+export function main() {
+  console.log(`\nAUDIT-0 Wave 3 — Mutation Harness`);
+  console.log(`Running ${mutants.length} mutants: ${mutants.map(m => m.id).join(", ")}`);
+  console.log(`Repository: ${REPO_ROOT}`);
 
-const results = [];
-for (const mutant of mutants) {
-  const result = runMutation(mutant);
-  results.push(result);
+  const results = [];
+  for (const mutant of mutants) {
+    const result = runMutation(mutant);
+    results.push(result);
+  }
+
+  console.log(`\n${"=".repeat(70)}`);
+  console.log("  MUTATION BASELINE SUMMARY");
+  console.log(`${"=".repeat(70)}`);
+  const killed = results.filter(r => r.killed);
+  const survived = results.filter(r => r.status === "survived");
+  const failed = results.filter(r => r.status === "build-failed" || r.status === "apply-failed" || r.status === "no-mutation-defined");
+  console.log(`  Total: ${results.length}`);
+  console.log(`  Killed: ${killed.length} (${killed.map(r => r.id).join(", ")})`);
+  console.log(`  Survived: ${survived.length} (${survived.map(r => r.id).join(", ")})`);
+  console.log(`  Failed/Undefined: ${failed.length} (${failed.map(r => r.id).join(", ")})`);
+
+  const baseline = {
+    generatedAt: new Date().toISOString(),
+    totalMutants: results.length,
+    killedCount: killed.length,
+    survivedCount: survived.length,
+    failedCount: failed.length,
+    results,
+  };
+  mkdirSync(join(REPO_ROOT, "agent-docs/test-audit"), { recursive: true });
+  writeFileSync(OUTPUT_PATH, JSON.stringify(baseline, null, 2));
+  console.log(`\nBaseline written to ${OUTPUT_PATH}`);
 }
 
-// Summary
-console.log(`\n${"=".repeat(70)}`);
-console.log("  MUTATION BASELINE SUMMARY");
-console.log(`${"=".repeat(70)}`);
-const killed = results.filter(r => r.killed);
-const survived = results.filter(r => r.status === "survived");
-const failed = results.filter(r => r.status === "build-failed" || r.status === "apply-failed" || r.status === "no-mutation-defined");
-console.log(`  Total: ${results.length}`);
-console.log(`  Killed: ${killed.length} (${killed.map(r => r.id).join(", ")})`);
-console.log(`  Survived: ${survived.length} (${survived.map(r => r.id).join(", ")})`);
-console.log(`  Failed/Undefined: ${failed.length} (${failed.map(r => r.id).join(", ")})`);
-
-// Write output
-const baseline = {
-  generatedAt: new Date().toISOString(),
-  totalMutants: results.length,
-  killedCount: killed.length,
-  survivedCount: survived.length,
-  failedCount: failed.length,
-  results,
-};
-
-mkdirSync(join(REPO_ROOT, "agent-docs/test-audit"), { recursive: true });
-writeFileSync(OUTPUT_PATH, JSON.stringify(baseline, null, 2));
-console.log(`\nBaseline written to ${OUTPUT_PATH}`);
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main();
+}
