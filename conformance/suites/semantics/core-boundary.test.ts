@@ -209,23 +209,6 @@ describe("§5.1 core-boundary invariants (AUDIT-0 BUG-004/006/010)", () => {
     expect(after.monitor.armor.heavyUsed).toBe(true);
   });
 
-  testCase("SEMANTICS-CORE-BOUNDARY-005", "rollover clock overflow is carried and applied on reset", async () => {
-    const created = await api.createClock("AUDIT-0 rollover clock", "rollover", 4);
-    expect(created.ok).toBe(true);
-    const id = created.clock?.id;
-    if (!id) throw new Error("clock creation returned no clock");
-
-    const progressed = await api.operation(await api.post(`clocks/${id}/ops/clock.progress`, { segments: 6 }));
-    expect(progressed.ok).toBe(true);
-    expect(progressed.clock?.segments).toBe(4);
-    expect(progressed.clock?.rollover).toBe(2);
-
-    const reset = await api.operation(await api.post(`clocks/${id}/ops/clock.reset`));
-    expect(reset.ok).toBe(true);
-    expect(reset.clock?.segments).toBe(2);
-    expect(reset.clock?.rollover).toBe(0);
-  });
-
   testCase("SEMANTICS-CORE-BOUNDARY-006", "rollover overflow larger than one clock carries across successive resets", async () => {
     const created = await api.createClock("AUDIT-0 large overflow clock", "rollover", 4);
     expect(created.ok).toBe(true);

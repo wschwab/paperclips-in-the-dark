@@ -308,7 +308,13 @@ describe("TA00 sort order", () => {
       row({ id: "pr", name: "P.Add", file: "backend-ada/core/src/p.ads", layer: "spark-proof", line: 1 }),
       row({ id: "t1", name: "tool", file: "conformance/src/t.test.ts", layer: "tooling" }),
     ];
-    expect(sortRows(rows).map((r) => r.id)).toEqual(sortRows(rows).map((r) => r.id));
+    // Upgrade (tooling.decisions.json): the body used to compare sortRows(rows)
+    // with itself, which any pure function satisfies. Pin the exact expected
+    // permutation in canonical layer order (contract < tooling < ada-runtime
+    // < spark-proof) like TA00-SORT-001 does, and require idempotence —
+    // sorting an already-sorted list is a fixpoint.
+    expect(sortRows(rows).map((r) => r.id)).toEqual(["c1", "t1", "ada", "pr"]);
+    expect(sortRows(sortRows(rows)).map((r) => r.id)).toEqual(["c1", "t1", "ada", "pr"]);
   });
 });
 

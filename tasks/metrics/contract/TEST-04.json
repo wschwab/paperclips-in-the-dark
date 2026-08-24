@@ -1,0 +1,26 @@
+{
+  "task": "TEST-04",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (bounded brief, yolo, max thinking)",
+  "reviewAgent": "orchestrator independent full managed run + typecheck re-run; deletion spot-checks via jj st/grep",
+  "date": "2026-08-24",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 34,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "matrix+endpoints focused 117/117 (pre/post/final); 20/20 isolation runs; 3x full managed runs 432/432",
+  "passRateAfterReview": "orchestrator re-run: typecheck clean, full managed run 54 files/432 tests green",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 1,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "red-green order (matrix green before deletion)",
+    "body-by-body duplicate verification before each delete",
+    "PERSISTENCE-ATOMIC-001 rewrite made a previously unfalsifiable test falsifiable"
+  ],
+  "implementationLoc": 420,
+  "scaffoldingLoc": 0,
+  "notes": "Net suite delta +1 test (431 to 432): deleted 27 ledger-approved rows, added the generated matrix plus two M01 carry-over cases. conformance-classification.json is stale relative to the Wave-3 decisions and should be regenerated or retired in DOC-01. Token accounting unavailable, so tokens is 0 rather than estimated."
+}

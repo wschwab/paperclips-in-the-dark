@@ -28,14 +28,6 @@ describe("§5.1 gear commitment is a contract enum value", () => {
     expect(cleared.character?.gear.loadout).toHaveLength(0);
   });
 
-  testCase("SEMANTICS-COMMITMENT-003", 'gear.commit with unset commitment → NO_COMMITMENT', async () => {
-    const character = await newCharacter();
-    await api.characterOp(character.id, "gear.add", { name: "Fine sword", bulk: 2 });
-    const noCommit = await api.characterOp(character.id, "gear.commit", { name: "Fine sword" });
-    expect(noCommit.ok).toBe(false);
-    expect(noCommit.error?.code).toBe("NO_COMMITMENT");
-  });
-
   testCase("SEMANTICS-COMMITMENT-004", "commitment always decodes to the contract enum across set/commit/clear cycles", async () => {
     const character = await newCharacter();
     for (const opt of ["light", "normal", "heavy", "encumbered"]) {
