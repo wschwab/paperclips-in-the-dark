@@ -2001,6 +2001,17 @@ function New_Character (Stem, Playbook : String) return JSON_Value is
       if Op = "character.create" then
          return Check_Fields (B, (Spec ("gameStem", JSON_String_Type),
                                   Spec ("playbook", JSON_String_Type)), Bad);
+      elsif Op = "character.createPc" then
+         --  CONTRACT-01: frozen request shape (contract/openapi.yaml
+         --  /characters/pc POST): additionalProperties false; playbook has
+         --  minLength 1; actionRatings is an object of integer ratings >= 0
+         --  keyed by every action name the game publishes.  The
+         --  settings-derived bounds (budget, cap, name set, playbook
+         --  existence) are enforced by Handle_Pc_Create once the stem
+         --  resolves to loaded game settings.
+         return Check_Fields (B, (Spec ("gameStem", JSON_String_Type),
+                                  Spec ("playbook", JSON_String_Type, MnL => 1),
+                                  Spec ("actionRatings", JSON_Object_Type)), Bad);
       elsif Op = "crew.create" then
          return Check_Fields (B, (Spec ("gameStem", JSON_String_Type),
                                   Spec ("crewType", JSON_String_Type)), Bad);
@@ -2183,6 +2194,285 @@ elsif Op = "clock.progress" then
       end if;
       return True;
    end Validate_Request;
+
+   ---------------------------------------------------------------------------
+   --  CONTRACT-01 stage 2 (DEC-01 ruling): dedicated validated PC creation
+   --  path, POST /api/characters/pc.  Mirrors the sibling createCharacter
+   --  flow (shared template -> schema validator gate -> atomic write ->
+   --  baseline snapshot; no If-Match, x-snapshot false) and ADDS
+   --  settings-derived Talent validation before anything is written:
+   --    V1  sum(actionRatings) = StartingActionDots exactly
+   --    V2  every rating <= StartingActionDotMax
+   --    V3  playbook exists in the game's Playbooks
+   --    V4  actionRatings names exactly the game's published actions
+   --  Every bound is read from the requested game's loaded settings JSON at
+   --  request time -- no constant may appear here (spec 5).  A game whose
+   --  settings omit either budget key has not published a PC allocation
+   --  budget: 404 NOT_FOUND naming the absent keys
+   --  (C1PC-SETTING-ABSENT-001).  Unknown stems keep the shared create
+   --  semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).
+   --  The unvalidated POST /characters path is untouched (grandfathering).
+   function Handle_Pc_Create (Request : AWS.Status.Data) return AWS.Response.Data is
+      Op : constant String := "character.createPc";
+   begin
+      if AWS.Status.Method (Request) /= AWS.Status.POST then
+         return Fail (AWS.Messages.S404, "request", "NOT_FOUND");
+      end if;
+      declare
+         B   : constant JSON_Value :=
+           Parse_Body (To_String (AWS.Status.Binary_Data (Request)));
+         Bad : Unbounded_String;
+      begin
+         if not Validate_Request ("character", Op, B, Bad) then
+            return Fail (AWS.Messages.S400, Op, "VALIDATION",
+                         Message => To_String (Bad));
+         end if;
+         declare
+            Stem     : constant String := Str_Field (B, "gameStem");
+            Playbook : constant String := Str_Field (B, "playbook");
+            G        : constant JSON_Value := Game (Stem);
+         begin
+            if G.Kind /= JSON_Object_Type then
+               --  SC-A3: GAME_NOT_FOUND is a 200-status domain failure,
+               --  not a request-shape error.
+               return Json_Response
+                 (Game_Not_Found_Error (Op, "unknown game stem: " & Stem));
+            end if;
+
+            --  Setting-absent behavior (C1PC-SETTING-ABSENT-001): a game
+            --  that omits either budget key has not published a PC
+            --  allocation budget, so this endpoint is unavailable for it.
+            --  NOT_FOUND rather than VALIDATION: the gap is not fixable by
+            --  changing the request body.
+            declare
+               Has_Dots : constant Boolean :=
+                 Has_Field (G, "StartingActionDots")
+                 and then Get (G, "StartingActionDots").Kind = JSON_Int_Type;
+               Has_Max : constant Boolean :=
+                 Has_Field (G, "StartingActionDotMax")
+                 and then Get (G, "StartingActionDotMax").Kind = JSON_Int_Type;
+               Missing : Unbounded_String := Null_Unbounded_String;
+            begin
+               if not Has_Dots then Append (Missing, "StartingActionDots"); end if;
+               if not Has_Max then
+                  if Length (Missing) > 0 then Append (Missing, ", "); end if;
+                  Append (Missing, "StartingActionDotMax");
+               end if;
+               if Length (Missing) > 0 then
+                  return Fail
+                    (AWS.Messages.S404, Op, "NOT_FOUND",
+                     Message => "game """ & Stem
+                       & """ has not published a PC allocation budget: missing settings "
+                       & To_String (Missing));
+               end if;
+            end;
+
+            --  V3: playbook must exist in the game's Playbooks list.
+            declare
+               Known : Boolean := False;
+            begin
+               if Has_Field (G, "Playbooks") then
+                  declare
+                     PBs : constant JSON_Array := Get (G, "Playbooks");
+                  begin
+                     for I in 1 .. Length (PBs) loop
+                        exit when Known;
+                        Known := Str_Field (Get (PBs, I), "Name") = Playbook;
+                     end loop;
+                  end;
+               end if;
+               if not Known then
+                  return Fail
+                    (AWS.Messages.S400, Op, "VALIDATION",
+                     Message => "unknown playbook """ & Playbook
+                       & """: the game's Playbooks do not list it");
+               end if;
+            end;
+
+            --  V4/V2/V1 over actionRatings; both bounds come from settings.
+            declare
+               Budget  : constant Integer := Integer'(Get (G, "StartingActionDots"));
+               Max     : constant Integer := Integer'(Get (G, "StartingActionDotMax"));
+               Ratings : constant JSON_Value := Get (B, "actionRatings");
+               Bad_Name  : Unbounded_String := Null_Unbounded_String;
+               Bad_Value : Unbounded_String := Null_Unbounded_String;
+               Over_Cap  : Unbounded_String := Null_Unbounded_String;
+               Sum       : Natural := 0;
+
+               function Published_Action (Name : String) return Boolean is
+               begin
+                  if not Has_Field (G, "Attributes") then return False; end if;
+                  declare
+                     Attrs : constant JSON_Array := Get (G, "Attributes");
+                  begin
+                     for I in 1 .. Length (Attrs) loop
+                        if Has_Field (Get (Attrs, I), "Actions") then
+                           declare
+                              Acts : constant JSON_Array :=
+                                Get (Get (Attrs, I), "Actions");
+                           begin
+                              for J in 1 .. Length (Acts) loop
+                                 if Str_Field (Get (Acts, J), "Name") = Name then
+                                    return True;
+                                 end if;
+                              end loop;
+                           end;
+                        end if;
+                     end loop;
+                  end;
+                  return False;
+               end Published_Action;
+
+               procedure Scan_Rating (Key : UTF8_String; Value : JSON_Value) is
+               begin
+                  if not Published_Action (String (Key)) then
+                     if Length (Bad_Name) = 0 then
+                        Bad_Name := To_Unbounded_String (String (Key));
+                     end if;
+                  elsif Value.Kind /= JSON_Int_Type
+                    or else Integer'(Get (Value)) < 0
+                  then
+                     if Length (Bad_Value) = 0 then
+                        Bad_Value := To_Unbounded_String (String (Key));
+                     end if;
+                  else
+                     Sum := Sum + Integer'(Get (Value));
+                     if Integer'(Get (Value)) > Max and then Length (Over_Cap) = 0
+                     then
+                        Over_Cap := To_Unbounded_String (String (Key));
+                     end if;
+                  end if;
+               end Scan_Rating;
+
+               Missing_Name : Unbounded_String := Null_Unbounded_String;
+            begin
+               Map_JSON_Object (Ratings, Scan_Rating'Access);
+               if Length (Bad_Name) > 0 then
+                  return Fail
+                    (AWS.Messages.S400, Op, "VALIDATION",
+                     Message => "unknown action """ & To_String (Bad_Name)
+                       & """: actionRatings names must match the actions published by the game's Attributes");
+               end if;
+               if Length (Bad_Value) > 0 then
+                  return Fail
+                    (AWS.Messages.S400, Op, "VALIDATION",
+                     Message => "actionRatings.""" & To_String (Bad_Value)
+                       & """ must be a non-negative integer");
+               end if;
+               --  V4 completeness: every published action must be keyed.
+               if Has_Field (G, "Attributes") then
+                  declare
+                     Attrs : constant JSON_Array := Get (G, "Attributes");
+                  begin
+                     for I in 1 .. Length (Attrs) loop
+                        exit when Length (Missing_Name) > 0;
+                        if Has_Field (Get (Attrs, I), "Actions") then
+                           declare
+                              Acts : constant JSON_Array :=
+                                Get (Get (Attrs, I), "Actions");
+                           begin
+                              for J in 1 .. Length (Acts) loop
+                                 declare
+                                    Nm : constant String :=
+                                      Str_Field (Get (Acts, J), "Name");
+                                 begin
+                                    if not Has_Field (Ratings, Nm) then
+                                       Missing_Name := To_Unbounded_String (Nm);
+                                       exit;
+                                    end if;
+                                 end;
+                              end loop;
+                           end;
+                        end if;
+                     end loop;
+                  end;
+               end if;
+               if Length (Missing_Name) > 0 then
+                  return Fail
+                    (AWS.Messages.S400, Op, "VALIDATION",
+                     Message => "missing action """ & To_String (Missing_Name)
+                       & """: actionRatings must map every action published by the game's Attributes");
+               end if;
+               --  V2: every rating <= StartingActionDotMax.
+               if Length (Over_Cap) > 0 then
+                  return Fail
+                    (AWS.Messages.S400, Op, "VALIDATION",
+                     Message => "actionRatings.""" & To_String (Over_Cap) & """ is "
+                       & Trim_Image (Integer'(Get (Ratings, To_String (Over_Cap))))
+                       & "; StartingActionDotMax is " & Trim_Image (Max)
+                       & ": starting ratings must not exceed the cap");
+               end if;
+               --  V1: sum(actionRatings) = StartingActionDots exactly.
+               if Sum /= Budget then
+                  return Fail
+                    (AWS.Messages.S400, Op, "VALIDATION",
+                     Message => "sum of actionRatings is " & Trim_Image (Sum)
+                       & ", but StartingActionDots is " & Trim_Image (Budget)
+                       & ": starting allocation must equal the budget exactly");
+               end if;
+            end;
+
+            --  Validation passed: build through the shared template, apply
+            --  the submitted FINAL starting ratings (V4 guarantees every
+            --  stored action is keyed; DefaultActionPoints contributions are
+            --  already included in them), then run the exact sibling-create
+            --  canonical-write pipeline (SC-A1 gate, atomic write, baseline
+            --  snapshot).
+            declare
+               E         : JSON_Value := New_Character (Stem, Playbook);
+               --  Re-derived from the request body: the validation block's
+               --  local is out of scope here; V4 already proved completeness.
+               R         : constant JSON_Value := Get (B, "actionRatings");
+               Out_Attrs : JSON_Array := Empty_Array;
+               Old_Attrs : constant JSON_Array :=
+                 Get (Get (E, "talent"), "attributes");
+            begin
+               for I in 1 .. Length (Old_Attrs) loop
+                  declare
+                     A0       : constant JSON_Value := Get (Old_Attrs, I);
+                     Old_Acts : constant JSON_Array := Get (A0, "actions");
+                     New_Acts : JSON_Array := Empty_Array;
+                     A        : JSON_Value := Create_Object;
+                  begin
+                     for J in 1 .. Length (Old_Acts) loop
+                        declare
+                           X : JSON_Value := Create_Object;
+                        begin
+                           Set_Field (X, "name",
+                             Str_Field (Get (Old_Acts, J), "name"));
+                           Set_Field (X, "rating",
+                             Integer'(Get (R,
+                               Str_Field (Get (Old_Acts, J), "name"))));
+                           Set_Field (X, "maxRating",
+                             Int_Field (Get (Old_Acts, J), "maxRating"));
+                           Append (New_Acts, X);
+                        end;
+                     end loop;
+                     Set_Field (A, "name", Str_Field (A0, "name"));
+                     Set_Field (A, "experience", Clone (Get (A0, "experience")));
+                     Set_Field (A, "actions", New_Acts);
+                     Append (Out_Attrs, A);
+                  end;
+               end loop;
+               Set_Field (Get (E, "talent"), "attributes", Out_Attrs);
+
+               declare
+                  Created_Ok : Boolean;
+               begin
+                  Validator_Gate.Check ("character", E, Created_Ok);
+                  if not Created_Ok then
+                     return Fail (AWS.Messages.S500, Op, "INTERNAL",
+                                  Message =>
+                                    "created entity fails schema validation");
+                  end if;
+               end;
+               Write_Entity ("character", Str_Field (E, "id"), E);
+               Write_Baseline_Snapshot ("character", Str_Field (E, "id"), Op, E);
+               return Json_Response (Success_Result (Op, E));
+            end;
+         end;
+      end;
+   end Handle_Pc_Create;
 
    ---------------------------------------------------------------------------
    --  SC-A1 canonicalizer (R0 matrix).  Pure: never writes.
@@ -8749,6 +9039,9 @@ if Kind = "crew" then
             end if;
          end;
       elsif Part(Path,1)="api" and then Part(Path,2)="games" then Response:=Handle_Games(Path);
+      elsif Part(Path,1)="api" and then Part(Path,2)="characters"
+              and then Part(Path,3)="pc" and then Part(Path,4)=""
+      then Response:=Handle_Pc_Create(Request);
       elsif Part(Path,1)="api" and then (Part(Path,2)="characters" or else Part(Path,2)="crews" or else Part(Path,2)="clocks") then Response:=Handle_Entity(Request,Path);
       elsif Path="/api/test-hooks/crash-mid-write" then
          --  SC-A2: crash probe (REPAIR-ATOMIC-004).  Armed only when the
