@@ -70,7 +70,7 @@ const characterOpCases: Array<[string, unknown]> = [
   ["import", {}],
   ["undo", undefined],
   ["ops/stress.add", operationBody],
-  ["ops/stress.clear", undefined],
+  ["ops/stress.clear", { amount: 1 }],
   ["ops/trauma.add", { trauma: "Test" }],
   ["ops/trauma.remove", { trauma: "Test" }],
   ["ops/harm.add", { description: "Test", intensity: "lesser" }],

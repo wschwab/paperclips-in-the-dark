@@ -1505,10 +1505,10 @@ describe("character-detail page", () => {
       const select = picker.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
       // Haunted is already stamped on the fixture — only unstamped traumas are offered.
       expect(Array.from(select.options).map((o) => o.value)).toEqual(["", "Cold", "Obsessed", "Paranoid"]);
-      expect(picker.querySelector('button[title="Take trauma to resolve pending stress (stress stays full)"]')).not.toBeNull();
+      expect(picker.querySelector('button[title="Take trauma to resolve pending stress (clears stress)"]')).not.toBeNull();
     });
 
-    it("hits max via the + button, then resolving keeps stress full and marks out-of-action (no stress.clear)", async () => {
+    it("hits max via the + button, then resolving clears stress to 0 and marks out-of-action (CONTRACT-02)", async () => {
       const nearFull = characterDTO({
         monitor: {
           ...characterDTO().monitor,
@@ -1527,7 +1527,7 @@ describe("character-detail page", () => {
         revision: 14,
         monitor: {
           ...characterDTO().monitor,
-          stress: { current: 9, max: 9 },
+          stress: { current: 0, max: 9 },
           trauma: { traumas: ["Haunted", "Cold"], max: 4 },
         },
         traumaPending: false,
@@ -1578,12 +1578,12 @@ describe("character-detail page", () => {
 
       const pickerSelect = root.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
       pickerSelect.value = "Cold";
-      (root.querySelector('button[title="Take trauma to resolve pending stress (stress stays full)"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Take trauma to resolve pending stress (clears stress)"]') as HTMLButtonElement).click();
 
-      // Q42: resolving keeps stress FULL (no stress.clear chain) and marks
-      // out-of-action — the sheet explains it instead.
+      // CONTRACT-02: resolving clears stress to 0 and marks out-of-action —
+      // the sheet explains the out-of-action state instead.
       await vi.waitFor(() => {
-        expect(root.textContent).toContain("9 / 9");
+        expect(root.textContent).toContain("0 / 9");
         expect(root.textContent).toContain("Cold");
       });
       await vi.waitFor(() => {
@@ -2173,7 +2173,7 @@ describe("character-detail page", () => {
       });
     });
 
-    it("renders Indulge Vice button that calls stressClear", async () => {
+    it("renders the amount input + Indulge Vice button that posts {amount} to stressClear", async () => {
       const cleared = characterDTO({
         revision: 13,
         monitor: {
@@ -2185,7 +2185,7 @@ describe("character-detail page", () => {
       const clearOk = {
         ok: true,
         character: cleared,
-        applied: { op: "stress.clear" },
+        applied: { op: "stress.clear", requested: 5, effective: 5 },
         sideEffects: [],
         error: null,
       };
@@ -2206,12 +2206,119 @@ describe("character-detail page", () => {
         expect(root.textContent).toContain("Gambling");
       });
 
-      const indulgeBtn = root.querySelector('button[title="Clear all stress (Indulge Vice)"]') as HTMLButtonElement;
+      const indulgeBtn = root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement;
       expect(indulgeBtn).not.toBeNull();
+      // The input defaults to the currently marked stress (3 on the fixture).
+      const amountInput = root.querySelector('input[aria-label="Stress to clear (Indulge Vice)"]') as HTMLInputElement;
+      expect(amountInput).not.toBeNull();
+      expect(amountInput.value).toBe("3");
+      amountInput.value = "3";
       indulgeBtn.click();
 
       await vi.waitFor(() => {
         expect(root.textContent).toContain("0 / 9");
+      });
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const clearCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.clear"));
+      expect(clearCall).toBeTruthy();
+      expect(clearCall![1].body).toBe(JSON.stringify({ amount: 3 }));
+    });
+
+    it("falls back to all marked stress on a non-integer amount instead of truncating", async () => {
+      const cleared = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          stress: { current: 0, max: 9 },
+        },
+      });
+      const clearOk = {
+        ok: true,
+        character: cleared,
+        applied: { op: "stress.clear", requested: 3, effective: 3 },
+        sideEffects: [],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))
+        .mockResolvedValueOnce(ok(clearOk));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Gambling");
+      });
+
+      const indulgeBtn = root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement;
+      const amountInput = root.querySelector('input[aria-label="Stress to clear (Indulge Vice)"]') as HTMLInputElement;
+      amountInput.value = "1.5";
+      indulgeBtn.click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("0 / 9");
+      });
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const clearCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.clear"));
+      expect(clearCall).toBeTruthy();
+      // "1.5" must NOT be truncated to 1 — the whole marked stress (3) clears.
+      expect(clearCall![1].body).toBe(JSON.stringify({ amount: 3 }));
+    });
+
+    it("shows a clearable OVERINDULGED notice when the sideEffect returns", async () => {
+      const cleared = characterDTO({
+        revision: 13,
+        monitor: {
+          ...characterDTO().monitor,
+          stress: { current: 0, max: 9 },
+        },
+      });
+
+      const overindulged = {
+        ok: true,
+        character: cleared,
+        applied: { op: "stress.clear", requested: 9, effective: 5 },
+        sideEffects: ["overindulged — indulgence exceeded remaining stress"],
+        error: null,
+      };
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))
+        .mockResolvedValueOnce(ok(overindulged));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Gambling");
+      });
+
+      const indulgeBtn = root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement;
+      const amountInput = root.querySelector('input[aria-label="Stress to clear (Indulge Vice)"]') as HTMLInputElement;
+      amountInput.value = "9"; // exceeds the fixture's 5 marked
+      indulgeBtn.click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("OVERINDULGED");
+      });
+      expect(root.textContent).toContain("Attract Trouble");
+      expect(root.textContent).toContain("SRD §Overindulgence");
+
+      // Clearable: dismissing removes the notice.
+      (root.querySelector('button[title="Dismiss the overindulged notice"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.textContent).not.toContain("OVERINDULGED");
       });
     });
   });
@@ -4635,7 +4742,7 @@ describe("F4 lifecycle UI", () => {
   };
 
   const getStressPlus = (r: HTMLElement) => r.querySelector('button[title="Add 1 stress"]') as HTMLButtonElement | null;
-  const getIndulge = (r: HTMLElement) => r.querySelector('button[title="Clear all stress (Indulge Vice)"]') as HTMLButtonElement | null;
+  const getIndulge = (r: HTMLElement) => r.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement | null;
   const getEndScore = (r: HTMLElement) => r.querySelector('button[title^="End the score"], button[title^="Resolve the pending trauma before ending the score"]') as HTMLButtonElement | null;
   const getRetire = (r: HTMLElement) => r.querySelector('button[title="Retire this character (confirmation required)"]') as HTMLButtonElement | null;
   const getDelete = (r: HTMLElement) => r.querySelector('button[title="Delete this character (confirmation required, not undoable)"]') as HTMLButtonElement | null;

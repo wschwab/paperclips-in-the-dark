@@ -116,9 +116,9 @@ async function reachPending(character: CharacterDto): Promise<CharacterDto> {
 }
 
 /**
- * Resolves the pending trauma via trauma.add — the frozen-contract
- * resolution that keeps stress full and sets isOutOfAction +
- * stressClearPending (sequence step 2).
+ * Resolves the pending trauma via trauma.add — the CONTRACT-02 resolution
+ * that clears stress to 0 and sets isOutOfAction + stressClearPending
+ * (sequence step 2).
  */
 async function resolvePending(pending: CharacterDto, trauma: string): Promise<CharacterDto> {
   const result = await characterOpRaw(pending.id, "trauma.add", { trauma }, pending.revision);
@@ -181,7 +181,7 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
     const add = await characterOpRaw(resolved.id, "stress.add", { delta: 1 }, resolved.revision);
     expect(add.ok).toBe(false);
     expect(add.error?.code).toBe("OUT_OF_ACTION");
-    const clear = await characterOpRaw(resolved.id, "stress.clear", {}, resolved.revision);
+    const clear = await characterOpRaw(resolved.id, "stress.clear", { amount: 1 }, resolved.revision);
     expect(clear.ok).toBe(false);
     expect(clear.error?.code).toBe("OUT_OF_ACTION");
   });
@@ -190,12 +190,13 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
   // Trauma resolution (sequence step 2; Q42)
   // -------------------------------------------------------------------------
 
-  testCase("LIFECYCLE-TRAUMA-001", "trauma resolution keeps stress full, clears pending, marks out-of-action and stressClearPending", async () => {
+  testCase("LIFECYCLE-TRAUMA-001", "trauma resolution records the trauma, clears stress to 0, clears pending, marks out-of-action and stressClearPending", async () => {
     const character = await newRawCharacter();
     const pending = await reachPending(character);
     const resolved = await resolvePending(pending, "Broken");
-    // Q42: stress stays at max, untouched by the resolution.
-    expect(resolved.monitor.stress.current).toBe(character.monitor.stress.max);
+    // CONTRACT-02 (DEC-02 ruling 2026-08-24): resolution clears Stress to 0
+    // in the same atomic apply (previously it stayed full until end-score).
+    expect(resolved.monitor.stress.current).toBe(0);
     expect(resolved.traumaPending).toBe(false);
     expect(resolved.isOutOfAction).toBe(true);
     expect(resolved.stressClearPending).toBe(true);

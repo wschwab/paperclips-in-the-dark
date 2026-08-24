@@ -433,6 +433,8 @@ interface RenderState {
   noticeMsg: string | null;
   undoNotice: string | null;
   harmSpillNotice: string | null;
+  /** CONTRACT-02: a vice indulgence returned the overindulged sideEffect. */
+  overindulgedNotice: boolean;
   /** CONTRACT-01 stage 3: dismissed completion-cue section keys. */
   dismissedCues: ReadonlySet<string>;
   // Editing
@@ -444,12 +446,15 @@ interface RenderState {
   handlers: {
     onStressTrack: (next: number) => void;
     onStressDelta: (delta: number) => void;
-    onStressClear: () => void;
+    /** CONTRACT-02: reads the amount input from the Vice panel. */
+    onStressClear: (amountInput: HTMLInputElement) => void;
     onTraumaAdd: () => void;
     onTraumaRemove: (name: string) => void;
     onDossierEdit: (field: DossierField) => void;
     onDossierSave: () => void;
     onDossierCancel: () => void;
+    /** CONTRACT-02: dismisses the clearable OVERINDULGED notice. */
+    onOverindulgedDismiss: () => void;
     onNamedEdit: (key: "heritage" | "background" | "vice") => void;
     onNamedSave: () => void;
     onNamedCancel: () => void;
@@ -642,12 +647,26 @@ function renderDetail(state: RenderState): HTMLElement {
 
   // -- Vice section ---------------------------------------------------------
 
+  // CONTRACT-02 (DEC-02 ruling, 2026-08-24): indulgence is amount-based.
+  // The input defaults to the currently marked stress — one click keeps the
+  // familiar clear-everything behavior, and raising it above the marked
+  // stress is exactly how a caller expresses overindulgence.
+  const indulgeAmountInput = el("input", {
+    type: "number",
+    min: "0",
+    step: "1",
+    "aria-label": "Stress to clear (Indulge Vice)",
+    value: String(c.monitor.stress.current),
+    disabled: stressDisabled,
+    style: "width: 4.5em;",
+  }) as HTMLInputElement;
+
   const indulgeBtn = el("button", {
     type: "button",
     disabled: stressDisabled || c.monitor.stress.current === 0,
-    title: "Clear all stress (Indulge Vice)",
+    title: "Indulge Vice — clear the chosen amount of stress",
   }, state.isStressClearLoading ? "…" : "Indulge Vice");
-  indulgeBtn.addEventListener("click", handlers.onStressClear);
+  indulgeBtn.addEventListener("click", () => handlers.onStressClear(indulgeAmountInput));
 
   // -- Undo button ----------------------------------------------------------
   // Lifecycle-recovery is on the retired allow-list; the button reflects the
@@ -815,9 +834,10 @@ function renderDetail(state: RenderState): HTMLElement {
 
   /**
    * F4: the pending-trauma prompt (Q42, lifecycle-matrix §8). Shown while
-   * traumaPending is set — when stress reached maximum. Resolving records the
-   * trauma, keeps stress FULL, and marks the character out-of-action for the
-   * remainder of the score (end-score is the only sanctioned release).
+   * traumaPending is set — when stress reached maximum. Resolving records
+   * the trauma, clears stress to 0 (CONTRACT-02, DEC-02 ruling 2026-08-24),
+   * and marks the character out-of-action for the remainder of the score
+   * (end-score is the only sanctioned release).
    */
   function renderTraumaPicker() {
     const pickerSelect = el("select", {
@@ -830,7 +850,7 @@ function renderDetail(state: RenderState): HTMLElement {
     const takeBtn = el("button", {
       type: "button",
       disabled: anyLoading || availableTraumas.length === 0,
-      title: "Take trauma to resolve pending stress (stress stays full)",
+      title: "Take trauma to resolve pending stress (clears stress)",
     }, state.isTraumaPickerLoading ? "…" : "Take trauma");
     takeBtn.addEventListener("click", handlers.onTraumaFromStress);
 
@@ -839,7 +859,7 @@ function renderDetail(state: RenderState): HTMLElement {
       style: "margin-top: 0.5em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
     },
       el("p", { className: "notice", style: "margin: 0; width: 100%;" },
-        "Stress is at its maximum — resolve the pending trauma to continue. Taking a trauma keeps stress full, and the character is out of action for the rest of the score (ending the score releases them)."),
+        "Stress is at its maximum — resolve the pending trauma to continue. Taking a trauma clears stress to 0, and the character is out of action for the rest of the score (ending the score releases them)."),
       pickerSelect,
       takeBtn,
       availableTraumas.length === 0
@@ -865,6 +885,12 @@ function renderDetail(state: RenderState): HTMLElement {
         title: "Edit Vice",
       }, "✎");
       editBtn.addEventListener("click", () => handlers.onNamedEdit("vice"));
+      const overindulgedDismiss = el("button", {
+        type: "button",
+        title: "Dismiss the overindulged notice",
+        style: "margin-left: 0.5em;",
+      }, "✕");
+      overindulgedDismiss.addEventListener("click", handlers.onOverindulgedDismiss);
       return el("div", { className: "character-vice", "data-focus-key": "vice" },
         el("h3", { className: "lbl" }, "Vice"),
         el("p", {}, el("strong", {}, v.name || "(not set)")),
@@ -878,8 +904,16 @@ function renderDetail(state: RenderState): HTMLElement {
                 : null,
             )
           : null,
+        state.overindulgedNotice
+          ? el("p", { className: "notice", role: "status", style: "margin: 0; width: 100%;" },
+              "OVERINDULGED — you took more vice than your remaining stress could absorb. ",
+              "Resolve it at the table per SRD §Overindulgence: Attract Trouble / Brag (+2 heat) / Lost / Tapped.",
+              overindulgedDismiss,
+            )
+          : null,
         el("div", { style: "display: flex; gap: 0.5em; align-items: center;" },
           editBtn,
+          indulgeAmountInput,
           indulgeBtn,
         ),
       );
@@ -1108,10 +1142,11 @@ function renderDetail(state: RenderState): HTMLElement {
         stressMinusBtn,
         stressPlusBtn,
       ),
-      // F4: pending-trauma prompt (resolve keeps stress full + out-of-action).
+      // F4: pending-trauma prompt (CONTRACT-02: resolution clears stress to 0
+      // and marks out-of-action).
       pendingTrauma ? renderTraumaPicker() : null,
       // F4: out-of-action explanation — the client obligation is to explain
-      // the state, not to clear stress (Q42; stress stays full until end-score).
+      // the state (Q42; end-score remains the release).
       outOfAction
         ? el("p", { className: "notice", style: "margin-top: 0.5em;" },
             "This character is out of action for the remainder of the score — stress can't change until the score ends.")
@@ -2133,6 +2168,9 @@ export function mountCharacterDetailPage(
   let noticeMsg: string | null = null;
   let undoNotice: string | null = null;
   let harmSpillNotice: string | null = null;
+  // CONTRACT-02: set when a vice indulgence returns the overindulged
+  // sideEffect; clearable by the user (SRD §Overindulgence consequences).
+  let overindulgedNotice: boolean = false;
   let editing: EditingState | null = null;
   // CONTRACT-01 stage 3: per-section cue dismissal (session-scoped).
   const dismissedCues = new Set<string>();
@@ -2193,6 +2231,7 @@ export function mountCharacterDetailPage(
     undoNotice = null;
     harmSpillNotice = null;
     clampNotice = null;
+    overindulgedNotice = false;
     abilityNotice = null;
     coinNotice = null;
     clocksNotice = null;
@@ -2488,14 +2527,24 @@ export function mountCharacterDetailPage(
       );
     },
 
-    onStressClear: () => {
+    onStressClear: (amountInput: HTMLInputElement) => {
       if (!currentCharacter || isStressClearLoading) return;
       if (currentCharacter.monitor.stress.current === 0) return;
+      // CONTRACT-02: the amount is caller-supplied and must be an integer
+      // >= 0 (the contract rejects anything else with VALIDATION). A blank
+      // or non-integer field ("1.5", "-2") falls back to all currently
+      // marked stress rather than silently truncating. The server clamps to
+      // the marked stress and reports applied.effective — the client never
+      // enforces game maxima.
+      const parsed = Number(amountInput.value);
+      const amount = Number.isInteger(parsed) && parsed >= 0
+        ? parsed
+        : currentCharacter.monitor.stress.current;
       isStressClearLoading = true;
       clearNotices();
       renderDetailWrapper();
 
-      const program = stressClear(characterId, currentCharacter.revision);
+      const program = stressClear(characterId, amount, currentCharacter.revision);
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => {
@@ -2509,14 +2558,20 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
             }
           },
-          onSuccess: (character) => {
+          onSuccess: ({ character, overindulged }) => {
             if (cancelled) return;
             isStressClearLoading = false;
             currentCharacter = character;
+            overindulgedNotice = overindulged;
             renderDetailWrapper();
           },
         }),
       );
+    },
+
+    onOverindulgedDismiss: () => {
+      overindulgedNotice = false;
+      renderDetailWrapper();
     },
 
     onTraumaAdd: () => {
@@ -2717,9 +2772,10 @@ export function mountCharacterDetailPage(
     },
 
     // -- F4: pending-trauma resolution (Q42, lifecycle-matrix §8) ----------
-    // Resolving records the trauma, keeps stress FULL, and marks the
-    // character out-of-action for the remainder of the score. The stress.clear
-    // chain is gone — stress stays full until end-score (the only release).
+    // Resolving records the trauma and marks the character out-of-action for
+    // the remainder of the score. CONTRACT-02 (DEC-02 ruling, 2026-08-24):
+    // resolution also clears stress to 0 in the same apply; end-score
+    // remains the release from out-of-action.
     onTraumaFromStress: () => {
       if (!currentCharacter || isTraumaPickerLoading) return;
       const sel = root.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
@@ -2739,7 +2795,7 @@ export function mountCharacterDetailPage(
             if (cancelled) return;
             isTraumaPickerLoading = false;
             currentCharacter = withTrauma;
-            noticeMsg = `${trauma} taken — stress stays full; out of action until the score ends`;
+            noticeMsg = `${trauma} taken — stress cleared to 0; out of action until the score ends`;
             setTimeout(() => {
               if (!cancelled) {
                 noticeMsg = null;
@@ -3751,6 +3807,7 @@ export function mountCharacterDetailPage(
       noticeMsg,
       undoNotice,
       harmSpillNotice,
+      overindulgedNotice,
       editing,
       namedEditor,
       rerender: renderDetailWrapper,

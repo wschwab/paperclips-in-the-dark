@@ -1,0 +1,26 @@
+{
+  "task": "CONTRACT-01",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (3 staged briefs) + orchestrator repairs",
+  "reviewAgent": "orchestrator independent re-runs of all gates; Sol review of the full contract-decisions wave scheduled as its own gate task",
+  "date": "2026-08-25",
+  "iterationsToGreen": 4,
+  "wallClockMinutes": 120,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "pc oracle 10/10; canonical 55/442; frontend 19/656; browser journeys 2/2 PASS; build clean",
+  "passRateAfterReview": "same, re-run by orchestrator",
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "focusedTests": 0,
+    "independentReview": 2,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "tsc caught missing getGame import and unused param after manual rewiring",
+    "orchestrator found worker's killed run left broken tests (missing fixtures, wrong expected sum)",
+    "chargen test exposed real UI bug: stale dot fills on playbook switch inverted next click into a clear"
+  ],
+  "implementationLoc": 900,
+  "scaffoldingLoc": 0,
+  "notes": "Stage-3 worker was killed mid-run by broker shutdown (exit 143); orchestrator completed and repaired its work manually. Radicle push failed with missing ssh-agent socket (once-per-boot ritual needed); GitHub mirror pushed. Token accounting unavailable, so tokens is 0 rather than estimated."
+}

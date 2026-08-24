@@ -1,9 +1,9 @@
 /**
  * Stress track — a row (or grid) of heavy boxes.
  *
- * Spec §12: "stress track as a row of heavy boxes". Default max is 9
- * (Blades default) but the number is always a parameter — never hardcode
- * a game maximum (spec §5).
+ * Spec §12: "stress track as a row of heavy boxes". `max` is required —
+ * capacity always comes from the caller (DTO / game settings); a game
+ * maximum is never hardcoded here (spec §5, §5.5).
  */
 
 import { el } from "../lib/dom.js";
@@ -11,8 +11,8 @@ import { el } from "../lib/dom.js";
 export interface StressTrackOptions {
   /** Current stress (0..max, values past max render with accent). */
   value?: number;
-  /** Capacity. Default 9. */
-  max?: number;
+  /** Capacity (game-settings derived, e.g. character.monitor.stress.max). */
+  max: number;
   /** Optional label shown under the track. */
   label?: string;
   /** When set, boxes are buttons. */
@@ -21,7 +21,7 @@ export interface StressTrackOptions {
 }
 
 export function stressTrack(opts: StressTrackOptions): HTMLElement {
-  const max = opts.max ?? 9;
+  const max = opts.max;
   const value = Math.max(0, opts.value ?? 0);
   const interactive = typeof opts.onChange === "function";
 

@@ -268,6 +268,12 @@ package body Pitd_Callback is
    --  ServiceCapabilities.maxBatchOperations): the campaign/batch planner is
    --  sized and bounded by this single constant.
    Max_Batch_Operations : constant := 50;
+   --  CONTRACT-02 (DEC-02 ruling, 2026-08-24): the typed sideEffect emitted by
+   --  the amount-based stress.clear op when the requested amount exceeded the
+   --  marked stress and Stress landed at 0.  Frozen vocabulary: clients match
+   --  this exact string to render the SRD Overindulgence notice.
+   OVERINDULGED_SIDEEFFECT : constant String :=
+     "overindulged — indulgence exceeded remaining stress";
    type Level_Array is array (Positive range <>) of Unbounded_String;
 
    --  SC-A5: game settings are loaded once at startup (Configure), validated
@@ -2037,6 +2043,12 @@ elsif Op = "clock.create" then
                                   Spec ("intensity", JSON_String_Type, En => "lesser|moderate|severe|fatal")), Bad);
       elsif Op = "stress.add" then
          return Check_Fields (B, Spec_List'(1 => Spec ("delta", JSON_Int_Type)), Bad);
+      elsif Op = "stress.clear" then
+         --  CONTRACT-02 (DEC-02 ruling 2026-08-24): amount-based vice
+         --  indulgence — the formerly bodyless op now requires `amount`
+         --  (integer >= 0).  Missing/invalid amount -> VALIDATION before any
+         --  lifecycle gate runs (BUG-011 ordering).
+         return Check_Fields (B, Spec_List'(1 => Spec ("amount", JSON_Int_Type, MnI => 0)), Bad);
       elsif Op = "trauma.add" or else Op = "trauma.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("trauma", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "armor.set" then
@@ -5241,7 +5253,30 @@ begin
             return Out_Of_Action_Error
               (Op, "character is out of action until end-score", E);
          end if;
-         declare X : constant JSON_Value := Get (Get (E,"monitor"),"stress"); begin Set_Field (X,"current",Integer'(0)); end;
+         --  CONTRACT-02 (DEC-02 ruling, 2026-08-24): amount-based vice
+         --  indulgence.  Quantity result family: applied.requested is the
+         --  requested amount, applied.effective the amount actually cleared
+         --  after clamping to the currently marked stress.  A request larger
+         --  than the marked stress lands Stress at 0 and returns the typed
+         --  OVERINDULGED_SIDEEFFECT so clients can render the SRD
+         --  Overindulgence notice; an exact-amount clear does not signal it.
+         declare
+            M   : constant JSON_Value := Get (Get (E, "monitor"), "stress");
+            Req : constant Integer := Int_Field (B, "amount");
+            Old : constant Natural := Natural (Int_Field (M, "current"));
+         begin
+            Requested := Req;
+            Core_Clamp_Subtract
+              (Old, Natural (Int_Field (M, "max")), Natural (Req),
+               New_Value, Applied);
+            Set_Field (M, "current", Integer (New_Value));
+            Effective := Integer (Applied);
+            if Applied < Natural (Req) then
+               return Success_Result
+                 (Op, E, Requested, Effective,
+                  Side => OVERINDULGED_SIDEEFFECT);
+            end if;
+         end;
       elsif Op = "trauma.add" or else Op = "trauma.remove" then
          declare
             T     : constant JSON_Value := Get(Get(E,"monitor"),"trauma");
@@ -5267,10 +5302,14 @@ begin
                O := A; Append (O, Create (Name));
                Set_Field (T,"traumas",O);
                --  LIFECYCLE-TRAUMA-001: resolution clears the pending flag
-               --  and puts the character out of action (stress stays full).
+               --  and puts the character out of action; CONTRACT-02
+               --  (DEC-02 ruling, 2026-08-24): it ALSO clears Stress to 0
+               --  in this same atomic apply.
                Set_Field (E, "traumaPending", False);
                Set_Field (E, "isOutOfAction", True);
                Set_Field (E, "stressClearPending", True);
+               Set_Field (Get (Get (E, "monitor"), "stress"),
+                          "current", Integer'(0));
                --  resolving the max-th trauma runs the shared retirement
                --  cleanup in the SAME transition (LIFECYCLE-TRAUMA-001/002)
                if Length (O) >= Natural (Int_Field (T, "max")) then

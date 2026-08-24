@@ -1,0 +1,101 @@
+---
+title: CONTRACT-02 — Amount-based Vice indulgence + trauma-clears-stress
+description: Normative statement of the amount-based stress.clear op and trauma-resolution stress clear (DEC-02 human ruling, 2026-08-24)
+---
+
+# CONTRACT-02 — Amount-based Vice indulgence + trauma-clears-stress
+
+**Status:** Normative contract change. Backend and frontend implementation are stages of the same card.
+**Decision provenance:** DEC-02 human rulings, 2026-08-24 (`agent-docs/test-audit/decisions/DEC-02.md` §7–8) — overriding the earlier "keep contracted semantics unchanged" disposition of the same decision.
+**Rulebook anchor:** Blades in the Dark SRD, §Overindulgence (consequences: Attract Trouble / Brag +2 heat / Lost / Tapped). Cited only — never reproduced into storage or computed by the server.
+
+## Ruling (binding)
+
+1. **Vice indulgence is amount-based.** The character op `stress.clear`
+   (`POST /api/characters/{id}/ops/stress.clear`, `operationId: stressClear`)
+   takes an explicit `amount` of Stress to clear.
+2. **Trauma resolution clears Stress to 0.** The pending-trauma resolution op
+   `trauma.add` (`POST /api/characters/{id}/ops/trauma.add`) also sets
+   `monitor.stress.current` to 0 in the same atomic apply, visible in the
+   returned character and persisted.
+3. `stress.clear` **remains exposed for agents**: same path, same operationId,
+   same gates, still `x-snapshot: false`. It is not removed or replaced; only
+   its request shape changes (below).
+
+## Contract surface
+
+### `stress.clear` — request (breaking)
+
+```json
+{ "amount": 3 }
+```
+
+- `amount`: integer ≥ 0, **required** (`additionalProperties: false`).
+- **Breaking change:** the op was previously bodyless. Requests omitting
+  `amount` (or sending a negative/non-integer value) return `400 VALIDATION`.
+  Old callers must be updated; this is documented here first, per the strict
+  contract-change order.
+- Removing N stress without clearing all remains available via
+  `stress.add` with a negative delta (unchanged).
+
+### `stress.clear` — result semantics
+
+Quantity result family (same family as `fund.gain`):
+
+- `applied.requested` = the requested amount;
+- `applied.effective` = the amount actually cleared after clamping to the
+  currently marked stress (`0 ≤ effective ≤ min(amount, previous stress)`).
+- When `requested > effective` the clamp is detectable from the result
+  (requested ≠ effective), per SC-O4.
+
+**Overindulgence signal.** When the requested amount exceeds the marked stress
+and Stress lands at 0 (i.e. the clamped-to-zero case), the response carries the
+typed sideEffect string
+
+```
+"overindulged — indulgence exceeded remaining stress"
+```
+
+so the FRONTEND can render a clearable OVERINDULGED notice citing the SRD
+§Overindulgence consequences (Attract Trouble / Brag +2 heat / Lost / Tapped).
+The server computes nothing rules-like: it only reports that more vice was
+consumed than there was stress to absorb — GM judgment stays outside
+(PAPERCLIPS.md §1.1). An exact-amount clear (requested == marked) lands at 0
+without the signal; nothing is overindulged.
+
+Gates unchanged: retired → `RETIRED`; traumaPending → `TRAUMA_REQUIRED`;
+isOutOfAction → `OUT_OF_ACTION`; degraded entity → `422 INVALID_ENTITY`.
+Request-shape validation precedes the lifecycle gates (BUG-011 ordering), so a
+body missing `amount` returns `VALIDATION` even when a gate would also fire.
+Snapshots/history unchanged (`x-snapshot: false`).
+
+### `trauma.add` — result semantics
+
+Unchanged request shape (`{trauma}`, resolution-only W14). Resolution post-state
+gains one effect: **Stress → 0** in the same atomic apply (previously "keeps
+stress full"). `traumaPending` clears, `isOutOfAction` + `stressClearPending`
+set as before; resolving the max-th trauma still runs the shared retirement
+cleanup (which already zeroes stress). End-score remains the release from
+out-of-action.
+
+## Frontend obligations
+
+- Vice panel: an amount input sits next to the Indulge button. **Default =
+  the character's currently marked stress** (chosen over default 1: one click
+  keeps the familiar clear-all behavior, and raising the amount above the
+  marked stress is exactly how a caller expresses overindulgence; the DTO
+  accepts any integer ≥ 0).
+- The panel renders the OVERINDULGED notice when the sideEffect returns,
+  citing SRD §Overindulgence; the notice is manually dismissable ("clearable").
+- Trauma resolution UI is unchanged mechanically; copy updates from "keeps
+  stress full" to the new clears-stress-to-zero reality.
+
+## Conformance
+
+`suites/lifecycle/vice-amount.test.ts` is the red-first oracle for this card:
+partial clear, clamp + overindulged signal, zero no-op, VALIDATION shapes
+(negative/non-integer/missing amount — the documented breaking change), and
+trauma-resolution stress reset observed in the response AND after reload.
+Existing cases that pinned the old contract (`NUM-NONUM-005` non-numeric
+stress.clear, `LIFECYCLE-STRESS-004` bodyless gate probe) were updated by this
+contract-change task, not silently bent.

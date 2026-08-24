@@ -234,12 +234,8 @@ describe("§ numeric operation families (SC-O4)", () => {
       expect(note.applied?.effective).toBeUndefined();
       expect(note.applied?.visibleApplied).toBeUndefined();
       expect(note.applied?.overflowAdded).toBeUndefined();
-
-      const clear = await rawCharacterOp(character.id, "stress.clear");
-      expect(clear.applied?.op).toBe("stress.clear");
-      expect(clear.applied?.requested).toBeUndefined();
-      expect(clear.applied?.effective).toBeUndefined();
-
+      // CONTRACT-02: stress.clear became a quantity-family numeric op;
+      // its requested/effective coverage lives in lifecycle/vice-amount.test.ts.
       const crew = await newCrew(BLADES, "Assassins");
       const hold = await api.crewOp(crew.id, "hold.set", { hold: "strong" });
       expect(hold.applied?.op).toBe("hold.set");

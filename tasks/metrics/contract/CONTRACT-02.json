@@ -1,0 +1,24 @@
+{
+  "task": "CONTRACT-02",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (full-card brief, yolo, max thinking)",
+  "reviewAgent": "orchestrator independent gate re-runs (typecheck, focused 8/8, canonical 56/450, frontend 19/659, build); worker's own browser screenshots at 3 viewport/theme combos present in /tmp/contract02-luna",
+  "date": "2026-08-25",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 90,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "all gates green on first completion claim; verified independently",
+  "passRateAfterReview": "identical results on orchestrator re-run",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 0,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "8-row vice oracle (clamp, overindulge signal, missing-amount VALIDATION, resolve-clears-stress with reload persistence)"
+  ],
+  "implementationLoc": 620,
+  "scaffoldingLoc": 0,
+  "notes": "Worker did not write its report before exiting (1h30m run); completion evidence re-derived from gates and working-copy diff. Breaking change documented: vice op now requires amount, old callers receive VALIDATION. Token accounting unavailable, so tokens is 0 rather than estimated."
+}

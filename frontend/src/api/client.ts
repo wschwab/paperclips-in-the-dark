@@ -893,11 +893,45 @@ export function dossierUpdate(
   return characterMutate(id, "dossier.update", revision, fields);
 }
 
+/**
+ * CONTRACT-02 (DEC-02 ruling, 2026-08-24): amount-based vice indulgence.
+ * POSTs {amount} marked-stress-to-clear; the server clamps to the currently
+ * marked stress (quantity family, applied.requested/effective). The frozen
+ * sideEffect OVERINDULGED_SIDEEFFECT in the response means the requested
+ * amount exceeded the remaining stress — clients render the SRD
+ * §Overindulgence notice (Attract Trouble / Brag +2 heat / Lost / Tapped).
+ */
+export const OVERINDULGED_SIDEEFFECT =
+  "overindulged — indulgence exceeded remaining stress";
+
+export interface StressClearResult {
+  character: Character;
+  overindulged: boolean;
+}
+
 export function stressClear(
   id: string,
+  amount: number,
   revision: number,
-): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
-  return characterMutate(id, "stress.clear", revision);
+): Effect.Effect<StressClearResult, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation(`/api/characters/${id}/ops/stress.clear`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "If-Match": String(revision),
+      },
+      body: JSON.stringify({ amount }),
+    });
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
+    }
+    return {
+      character: opResult.character,
+      overindulged: opResult.sideEffects.includes(OVERINDULGED_SIDEEFFECT),
+    };
+  });
 }
 
 export function traumaAdd(

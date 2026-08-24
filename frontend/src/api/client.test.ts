@@ -7,6 +7,7 @@ import { OpError,
   decodeErrorText,
   NETWORK_ERROR_COPY,
   getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, createPcCharacter, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+import { OVERINDULGED_SIDEEFFECT } from "./client.js";
 
 const goldenCharacter = JSON.parse(
   readFileSync(new URL("../../../conformance/fixtures/golden-character.json", import.meta.url), "utf8"),
@@ -1363,9 +1364,10 @@ describe("stressClear", () => {
     });
 
     const result = await Effect.runPromise(
-      stressClear("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 12),
+      stressClear("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 3, 12),
     );
-    expect(result.monitor.stress.current).toBe(0);
+    expect(result.character.monitor.stress.current).toBe(0);
+    expect(result.overindulged).toBe(false);
     expect(global.fetch).toHaveBeenCalledWith(
       "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/stress.clear",
       {
@@ -1375,9 +1377,36 @@ describe("stressClear", () => {
           "Content-Type": "application/json",
           "If-Match": "12",
         },
-        body: "{}",
+        body: '{"amount":3}',
       },
     );
+  });
+
+  it("flags overindulged when the frozen sideEffect returns", async () => {
+    const cleared = makeChar({
+      revision: 13,
+      monitor: {
+        ...makeChar().monitor,
+        stress: { current: 0, max: 9 },
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          ok: true,
+          character: cleared,
+          applied: { op: "stress.clear", requested: 9, effective: 5 },
+          sideEffects: [OVERINDULGED_SIDEEFFECT],
+          error: null,
+        }),
+    });
+
+    const result = await Effect.runPromise(
+      stressClear("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 9, 12),
+    );
+    expect(result.overindulged).toBe(true);
   });
 
   it("exposes StaleRevisionError on 409", async () => {
@@ -1386,9 +1415,8 @@ describe("stressClear", () => {
       status: 409,
       text: async () => JSON.stringify(staleResp("stress.clear", 15)),
     });
-
     const result = await Effect.runPromise(
-      Effect.either(stressClear("some-id", 1)),
+      Effect.either(stressClear("some-id", 1, 1)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
@@ -1404,7 +1432,7 @@ describe("stressClear", () => {
     });
 
     const result = await Effect.runPromise(
-      Effect.either(stressClear("nonexistent", 1)),
+      Effect.either(stressClear("nonexistent", 1, 1)),
     );
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
