@@ -9,7 +9,7 @@
     "test:run": "vitest run",
     "test:ada": "node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults --",
     "test:tooling": "vitest run --config vitest.tooling.config.ts",
-    "test:browser": "node scripts/browser-suite.mjs",
+    "test:benchmark": "node scripts/dataset-benchmark.mjs",
     "typecheck": "tsc --noEmit"
   },
   "bin": {

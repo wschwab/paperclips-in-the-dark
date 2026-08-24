@@ -1,0 +1,25 @@
+{
+  "task": "PERF-01",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (bounded brief, yolo, max thinking)",
+  "reviewAgent": "orchestrator independent green run (PASS, budgets honored, cleanup line per scale); drill outputs reviewed with sha-verified restores",
+  "date": "2026-08-24",
+  "iterationsToGreen": 2,
+  "wallClockMinutes": 51,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "counts equal scale at 0/10/100/1000; degraded exactly 70/10/10/10; over-budget and mid-run drills behave; budgets frozen at ee303c8e",
+  "passRateAfterReview": "orchestrator re-run PASS within frozen budgets; no data/ changes",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 2,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "live-API verification corrected two wrong fixture assumptions before freeze (createdAt classification; isRepairable flag semantics)",
+    "count gate rejected the old script's always-zero entity accounting"
+  ],
+  "implementationLoc": 780,
+  "scaffoldingLoc": 40,
+  "notes": "Latency budget headroom x3 (+5ms floor) instead of brief's example x1.5 — justified by measured ~2.4x run-to-run p95 variance; documented in-code. Contract-docs discrepancies (createdAt/needs-input, isRepairable flag breadth) deferred to a docs pass rather than worked around. Token accounting unavailable, so tokens is 0 rather than estimated."
+}

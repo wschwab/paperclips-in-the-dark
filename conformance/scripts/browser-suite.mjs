@@ -43,6 +43,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
+import { resolveChromiumExecutable } from "./lib/chromium-resolve.mjs";
 
 const scriptDir = dirnameOf(import.meta.url);
 const conformanceDir = resolve(scriptDir, "..");
@@ -256,31 +257,6 @@ const DECODE_NOTICE_NEEDLES = [
   "The server answered in an unexpected format",
 ];
 
-function resolveChromiumExecutable() {
-  const override = process.env.PITD_BROWSER_EXECUTABLE;
-  if (override) {
-    if (!existsSync(override)) throw new Error(`PITD_BROWSER_EXECUTABLE does not exist: ${override}`);
-    return override;
-  }
-  const msPlaywright = join(process.env.HOME ?? "", ".cache", "ms-playwright");
-  if (existsSync(msPlaywright)) {
-    const candidates = readdirSync(msPlaywright)
-      .filter((name) => /^chromium-\d+$/.test(name))
-      .sort((a, b) => Number(b.slice("chromium-".length)) - Number(a.slice("chromium-".length)));
-    for (const dir of candidates) {
-      for (const layout of ["chrome-linux64", "chrome-linux"]) {
-        const exe = join(msPlaywright, dir, layout, "chrome");
-        if (existsSync(exe)) return exe;
-      }
-    }
-  }
-  for (const systemPath of ["/usr/bin/chromium", "/usr/bin/chromium-browser", "/usr/bin/google-chrome"]) {
-    if (existsSync(systemPath)) return systemPath;
-  }
-  throw new Error(
-    "no Chromium executable found; set PITD_BROWSER_EXECUTABLE or install playwright browsers",
-  );
-}
 
 async function loadJourneys() {
   let files;
