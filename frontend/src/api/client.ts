@@ -541,6 +541,36 @@ export function createCharacter(gameStem: string, playbook: string): Effect.Effe
   });
 }
 
+/**
+ * Dedicated PC creation path with server-side Talent validation
+ * (CONTRACT-01 / DEC-01): POST /api/characters/pc with the FINAL starting
+ * action ratings (any playbook DefaultActionPoints contribution is already
+ * included in them). The server validates against game settings — sum ===
+ * StartingActionDots exactly, every rating ≤ StartingActionDotMax — and
+ * rejects violations with VALIDATION (400) / NOT_FOUND (404, budget keys
+ * absent), surfacing here as typed OpErrors like every sibling create.
+ */
+export function createPcCharacter(
+  gameStem: string,
+  playbook: string,
+  actionRatings: Record<string, number>,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return Effect.gen(function* () {
+    const opResult = yield* fetchOperation("/api/characters/pc", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ gameStem, playbook, actionRatings }),
+    });
+    if (!opResult.character) {
+      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
+    }
+    return opResult.character;
+  });
+}
+
 export function getCrewHistory(id: string): Effect.Effect<readonly HistoryEntry[], ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/crews/${id}/history`);

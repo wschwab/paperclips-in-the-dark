@@ -99,7 +99,7 @@ describe("create-page game-data error cards (FV-020)", () => {
     // One page-level h1, from the error card.
     const h1s = document.querySelectorAll("h1");
     expect(h1s.length).toBe(1);
-    expect(h1s[0]?.textContent).toBe("Couldn't load the playbooks");
+    expect(h1s[0]?.textContent).toBe("Couldn't load the creation options");
 
     // Retry + roster escape are present.
     expect(document.querySelector("button.btn-primary")?.textContent).toBe("Retry");
@@ -114,21 +114,38 @@ describe("create-page game-data error cards (FV-020)", () => {
   });
 
   it("retries the playbook load from the error card and reaches the create form", async () => {
-    global.fetch = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 503,
-        text: async () => "service unavailable",
-      })
-      .mockResolvedValue(
-        ok([{ Name: "Spider" }, { Name: "Cutter" }]),
-      );
+    const playbookList = [{ Name: "Spider" }, { Name: "Cutter" }];
+    const gameSettings = {
+      Name: "Blades in the Dark",
+      StressMax: 9,
+      StartingActionDots: 7,
+      StartingActionDotMax: 2,
+      Attributes: [
+        { Name: "Insight", Actions: [{ Name: "Hunt" }, { Name: "Study" }] },
+        { Name: "Prowess", Actions: [{ Name: "Finesse" }, { Name: "Prowl" }] },
+        { Name: "Resolve", Actions: [{ Name: "Attune" }, { Name: "Sway" }] },
+      ],
+    };
+    let calls = 0;
+    const responseLike = (body: unknown): Response =>
+      ({ ok: true, status: 200, text: async () => JSON.stringify(body) }) as unknown as Response;
+    global.fetch = vi.fn((input: RequestInfo | URL): Promise<Response> => {
+      const url = typeof input === "string" ? input : String(input);
+      if (calls === 0) {
+        calls += 1;
+        return Promise.resolve({ ok: false, status: 503, text: async () => "service unavailable" } as unknown as Response);
+      }
+      if (url.endsWith("/playbooks")) return Promise.resolve(responseLike(playbookList));
+      if (url.endsWith("/crews")) return Promise.resolve(responseLike({ CrewTypes: [{ Name: "Assassins" }] }));
+      return Promise.resolve(responseLike(gameSettings));
+    });
 
     window.history.replaceState({}, "", "/character/create");
     window.dispatchEvent(new PopStateEvent("popstate"));
 
     await vi.waitFor(() => {
+      if (!document.querySelector(".error-card")) {
+      }
       expect(document.querySelector(".error-card")).not.toBeNull();
     });
 

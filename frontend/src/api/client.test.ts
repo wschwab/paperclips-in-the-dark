@@ -6,7 +6,7 @@ import { OpError,
   transportErrorText,
   decodeErrorText,
   NETWORK_ERROR_COPY,
-  getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+  getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, createPcCharacter, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
 
 const goldenCharacter = JSON.parse(
   readFileSync(new URL("../../../conformance/fixtures/golden-character.json", import.meta.url), "utf8"),
@@ -6938,5 +6938,129 @@ describe("crewRepAdd clamp reporting", () => {
     const result = await Effect.runPromise(crewRepAdd(CREW_ID_F2Y, 2, 5));
     expect(result.requested).toBe(2);
     expect(result.effective).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CONTRACT-01 PC creation client
+// ---------------------------------------------------------------------------
+
+/** OperationResult body carrying a full valid created character. */
+function pcOpOk(characterOverrides: Record<string, unknown> = {}) {
+  return {
+    ok: true,
+    character: makeChar(characterOverrides),
+    applied: { op: "character.createPc" },
+    sideEffects: [],
+    error: null,
+  };
+}
+
+describe("createPcCharacter", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  // Wire assertions, table-driven: method, URL, headers, and exact JSON body
+  // for representative payloads (every action keyed, as the UI must send).
+  const wireCases: Array<{
+    name: string;
+    gameStem: string;
+    playbook: string;
+    ratings: Record<string, number>;
+  }> = [
+    {
+      name: "posts gameStem/playbook/actionRatings to /api/characters/pc",
+      gameStem: "blades-in-the-dark",
+      playbook: "Cutter",
+      ratings: { Hunt: 1, Study: 0, Survey: 0, Tinker: 0 },
+    },
+    {
+      name: "passes through a full 12-action final-ratings map verbatim",
+      gameStem: "blades-in-the-dark",
+      playbook: "Spider",
+      ratings: {
+        Hunt: 0, Study: 2, Survey: 1, Tinker: 0,
+        Finesse: 1, Prowl: 0, Skirmish: 0, Wreck: 0,
+        Attune: 0, Command: 1, Consort: 1, Sway: 1,
+      },
+    },
+    {
+      name: "keeps zero-valued keys (V4 requires every published action)",
+      gameStem: "scum-and-villainy",
+      playbook: "Stark",
+      ratings: { Move: 0, Twist: 0, Shoot: 0, Hack: 0 },
+    },
+  ];
+
+  it.each(wireCases)("$name", async ({ gameStem, playbook, ratings }) => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(pcOpOk({ id: "1c9c3f7e-6f2a-4b8e-9d0a-5f4e2d3c1b00" })),
+    });
+
+    await Effect.runPromise(createPcCharacter(gameStem, playbook, ratings));
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledWith("/api/characters/pc", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ gameStem, playbook, actionRatings: ratings }),
+    });
+  });
+
+  it("decodes the created character from the OperationResult envelope", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(pcOpOk(goldenCharacter)),
+    });
+
+    const result = await Effect.runPromise(
+      createPcCharacter("blades-in-the-dark", "Cutter", { Hunt: 2 }),
+    );
+    expect(result.id).toBe(goldenCharacter.id);
+  });
+
+  it("surfaces a rejected allocation as a typed OpError naming VALIDATION", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          ok: false,
+          applied: { op: "character.createPc" },
+          sideEffects: [],
+          error: {
+            code: "VALIDATION",
+            status: 400,
+            message: "sum of actionRatings is 6, but StartingActionDots is 7",
+            retryable: false,
+            recovery: "allocate exactly the starting dots",
+            details: {
+              issues: [
+                {
+                  pointer: "/actionRatings",
+                  reason: "allocation does not match StartingActionDots",
+                  expected: "sum of 7",
+                },
+              ],
+            },
+          },
+        }),
+    });
+
+    const result = await Effect.runPromise(
+      Effect.either(createPcCharacter("blades-in-the-dark", "Cutter", { Hunt: 6 })),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(OpError);
+      if (result.left instanceof OpError) {
+        expect(result.left.error.code).toBe("VALIDATION");
+        expect(result.left.status).toBe(400);
+      }
+    }
   });
 });

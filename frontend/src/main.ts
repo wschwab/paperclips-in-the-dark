@@ -1,6 +1,6 @@
 import { el, setChildren } from "./lib/dom.js";
 import { initTheme } from "./lib/theme.js";
-import { ApiError, DecodeError, transportErrorText, decodeErrorText, getPlaybookList, getCrewTypeList, getCharacter, getCrew } from "./api/client.js";
+import { ApiError, DecodeError, transportErrorText, decodeErrorText, getPlaybookList, getCrewTypeList, getGame, getCharacter, getCrew } from "./api/client.js";
 import { errorCard } from "./components/error-card.js";
 import { mountRosterPage } from "./pages/roster.js";
 import { mountImportPage } from "./pages/import.js";
@@ -125,38 +125,51 @@ function render(): void {
 
     // FV-020: a failed game-data load renders the recoverable error card
     // (one h1, Retry, roster escape) instead of plain developer text.
-    const loadPlaybooks = () => {
+    // CONTRACT-01 stage 3: playbooks + game settings + crew types load
+    // together; settings drive the validated PC chargen (budget present) or
+    // the unvalidated-only fallback (setting-absent ruling).
+    const loadCreateData = () => {
       if (cancelled) return;
-      createOutlet.textContent = "Loading playbooks…";
+      createOutlet.textContent = "Loading character options…";
       void Effect.runPromise(
-        Effect.match(getPlaybookList("blades-in-the-dark"), {
-          onFailure: (err) => {
-            if (cancelled) return;
-            setChildren(
-              createOutlet,
-              errorCard({
-                headline: "Couldn't load the playbooks",
-                detail: createLoadErrorText(err),
-                onRetry: loadPlaybooks,
-              }),
-            );
+        Effect.match(
+          Effect.all({
+            playbooks: getPlaybookList("blades-in-the-dark"),
+            settings: getGame("blades-in-the-dark"),
+            crewTypes: getCrewTypeList("blades-in-the-dark"),
+          }),
+          {
+            onFailure: (err) => {
+              if (cancelled) return;
+              setChildren(
+                createOutlet,
+                errorCard({
+                  headline: "Couldn't load the creation options",
+                  detail: createLoadErrorText(err),
+                  onRetry: loadCreateData,
+                }),
+              );
+            },
+            onSuccess: ({ playbooks, settings, crewTypes }) => {
+              if (cancelled) return;
+              disposePage = mountCharacterCreatePage(createOutlet, {
+                gameStem: "blades-in-the-dark",
+                playbooks: Array.from(playbooks),
+                settings,
+                crewTypes: Array.from(crewTypes),
+                onCreated: (character) => {
+                  navigate(`/character/${character.id}`);
+                },
+                onCrewCreated: (crew) => {
+                  navigate(`/crew/${crew.id}`);
+                },
+              });
+            },
           },
-          onSuccess: (playbooks) => {
-            if (cancelled) return;
-            const createDisposer = mountCharacterCreatePage(
-              createOutlet,
-              "blades-in-the-dark",
-              Array.from(playbooks),
-              (character) => {
-                navigate(`/character/${character.id}`);
-              },
-            );
-            disposePage = createDisposer;
-          },
-        }),
+        ),
       );
     };
-    loadPlaybooks();
+    loadCreateData();
     return;
   }
 

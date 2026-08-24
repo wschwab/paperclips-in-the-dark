@@ -68,6 +68,7 @@ import type { HarmLevel } from "../components/harm-table.js";
 import { traumaStamps } from "../components/trauma-stamps.js";
 import { el, setChildren } from "../lib/dom.js";
 import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
+import { completionCues, type CompletionCue } from "../lib/completion-cues.js";
 import { errorCard } from "../components/error-card.js";
 import type { Character } from "../schema/character.js";
 import type { CrewSummary } from "../schema/campaign.js";
@@ -432,6 +433,8 @@ interface RenderState {
   noticeMsg: string | null;
   undoNotice: string | null;
   harmSpillNotice: string | null;
+  /** CONTRACT-01 stage 3: dismissed completion-cue section keys. */
+  dismissedCues: ReadonlySet<string>;
   // Editing
   editing: EditingState | null;
   namedEditor: NamedEditorState | null;
@@ -456,6 +459,8 @@ interface RenderState {
     onNotebookSave: () => void;
     onCrewJoin: () => void;
     onCrewLeave: () => void;
+    /** Dismiss one completion-cue section (CONTRACT-01 stage 3). */
+    onDismissCue: (key: string) => void;
     onUndo: () => void;
     onEndScore: () => void;
     onEndDowntime: () => void;
@@ -481,6 +486,7 @@ interface RenderState {
     onGearCommit: () => void;
     onGearUncommit: () => void;
     onGearSetCommitment: () => void;
+
     onGearToggleLock: () => void;
     onGearClearCommitments: () => void;
     onFundDelta: (delta: number) => void;
@@ -490,6 +496,46 @@ interface RenderState {
     onClockReset: (clockId: string) => void;
     onClockDelete: (clockId: string) => void;
   };
+}
+
+/**
+ * CONTRACT-01 stage 3 — completion-cue panel on the sheet: DTO-derived
+ * prompts, visible and non-blocking, dismissible per section. Returns null
+ * when nothing is outstanding or every cue was dismissed, so an incomplete
+ * character is never blocked from play by this panel.
+ */
+function renderCompletionCues(
+  cues: readonly CompletionCue[],
+  dismissed: ReadonlySet<string>,
+  onDismiss: (key: string) => void,
+): HTMLElement | null {
+  const active = cues.filter((cue) => !dismissed.has(cue.key));
+  if (active.length === 0) return null;
+  const rows = active.map((cue) => {
+    const btn = el(
+      "button",
+      {
+        type: "button",
+        className: "completion-cue-dismiss",
+        title: "Dismiss",
+        "aria-label": `Dismiss: ${cue.label}`,
+      },
+      "×",
+    );
+    btn.addEventListener("click", () => onDismiss(cue.key));
+    return el(
+      "p",
+      { className: "completion-cue", "data-cue": cue.key },
+      el("span", { className: "completion-cue-label" }, cue.label),
+      btn,
+    );
+  });
+  return el(
+    "div",
+    { className: "completion-cues", role: "status", "aria-label": "Completion prompts" },
+    el("h2", {}, "Complete your character"),
+    ...rows,
+  );
 }
 
 function renderDetail(state: RenderState): HTMLElement {
@@ -986,6 +1032,11 @@ function renderDetail(state: RenderState): HTMLElement {
             "A trauma is pending — resolve it before continuing. Gameplay and ending the score are blocked until then."),
         )
       : null,
+
+    // CONTRACT-01 stage 3: completion cues — visible, dismissible per
+    // section, non-blocking. Derived from the DTO, never a checklist file;
+    // renders nothing when the character is complete or all dismissed.
+    renderCompletionCues(completionCues(c), state.dismissedCues, state.handlers.onDismissCue),
 
     // Personal (Dossier) — inline editable
     el(
@@ -2083,6 +2134,8 @@ export function mountCharacterDetailPage(
   let undoNotice: string | null = null;
   let harmSpillNotice: string | null = null;
   let editing: EditingState | null = null;
+  // CONTRACT-01 stage 3: per-section cue dismissal (session-scoped).
+  const dismissedCues = new Set<string>();
 
   // F4 lifecycle state
   let isEndScoreLoading = false;
@@ -2796,6 +2849,13 @@ export function mountCharacterDetailPage(
         },
         () => { isCrewsLoading = false; },
       );
+    },
+
+    onDismissCue: (key: string) => {
+      if (!dismissedCues.has(key)) {
+        dismissedCues.add(key);
+        renderDetailWrapper();
+      }
     },
 
     onUndo: () => {
@@ -3681,6 +3741,7 @@ export function mountCharacterDetailPage(
       isGearLoading,
       isGearCommitmentLoading,
       isGearLockLoading,
+      dismissedCues,
       clocks,
       isCoinLoading,
       isClocksLoading,
