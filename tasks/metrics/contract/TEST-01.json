@@ -1,0 +1,27 @@
+{
+  "task": "TEST-01",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free x5 parallel classifiers + orchestrator integration",
+  "reviewAgent": "orchestrator machine-validation (row parity, blank fields, cluster links, decision vocabulary); independent human/reviewer sampling still open per card",
+  "date": "2026-08-24",
+  "iterationsToGreen": 3,
+  "wallClockMinutes": 95,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "1307/1307 rows classified; independent enumeration 616+433+150+78+30 = 1307 matches generator",
+  "passRateAfterReview": "merge links 25/25 valid against clusters (incl. appended DC-005); deletes 6/6 name replacements; coverage map 108/108",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 0,
+    "independentReview": 4,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "machine validation of decision files vs inventory row parity",
+    "duplicate-id merge collision (MUT-CAL-007 x4)",
+    "unclustered merges caught and regularized as DC-005 with evidence",
+    "delete rows missing replacement targets caught and retargeted"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "notes": "Classification-only card: no test or source edits. Physical merge/upgrade/delete lands in Wave-4 surgery. Two dispatch attempts failed on harness config (no subagent model role; omp stdin stall) before the working sh -c </dev/null pattern. Token accounting unavailable, so tokens is 0 rather than estimated."
+}
