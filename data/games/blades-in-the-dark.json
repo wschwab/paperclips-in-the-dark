@@ -1016,6 +1016,8 @@
 	},
 	"RecoveryClockSize": 4,
 	"ActionPointMaximum": 4,
+	"StartingActionDots": 7,
+	"StartingActionDotMax": 2,
 	"FactionStatus": {
 		"Min": -3,
 		"Max": 3

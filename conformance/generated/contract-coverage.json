@@ -433,6 +433,33 @@
       "collection": false
     },
     {
+      "operationId": "createPcCharacter",
+      "method": "POST",
+      "path": "/characters/pc",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "createPcCharacter",
+      "method": "POST",
+      "path": "/characters/pc",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "createPcCharacter",
+      "method": "POST",
+      "path": "/characters/pc",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewAbilityRemove",
       "method": "POST",
       "path": "/crews/{id}/ops/ability.remove",

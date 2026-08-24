@@ -703,6 +703,14 @@
 			},
 			"uniqueItems": true
 		},
+		"StartingActionDots": {
+			"type": "integer",
+			"minimum": 1
+		},
+		"StartingActionDotMax": {
+			"type": "integer",
+			"minimum": 1
+		},
 		"StartingAbility": {
 			"type": [
 				"object"

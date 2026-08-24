@@ -1,0 +1,128 @@
+---
+title: CONTRACT-01 — PC creation with Talent validation
+description: Normative statement of the dedicated validated PC creation endpoint (DEC-01 human ruling, 2026-08-24)
+---
+
+# CONTRACT-01 — PC creation with Talent validation
+
+**Status:** Stage 1 normative (spec + settings + contract + red oracle). Backend and frontend implementation are later stages of the same card.
+**Decision provenance:** DEC-01 human ruling, 2026-08-24 (`agent-docs/test-audit/product-decisions.md`, §DEC-01 Disposition) — "APPROVED (overriding the earlier keep-minimal recommendation)."
+**Stage 1 changes:** `data/games/game-settings-schema.json`, `data/games/blades-in-the-dark.json`, `contract/openapi.yaml`, conformance oracle registration.
+
+## Ruling (binding)
+
+A **distinct PC creation path** exists next to the existing unvalidated create:
+
+- `POST /api/characters/pc` — fresh PCs **with** server-side validation.
+- `POST /api/characters` (`createCharacter`) — unchanged; the unvalidated path for experienced characters and NPCs. Stored characters are untouched: no completeness predicate changes, no retroactive validation. The new validation runs at the `/characters/pc` endpoint only.
+
+### Request
+
+```json
+{ "gameStem": "blades-in-the-dark", "playbook": "Cutter",
+  "actionRatings": { "Hunt": 0, "Study": 1, … } }
+```
+
+`actionRatings` maps **every** action name published by the game's `Attributes`
+to a starting rating. Submitted values are **final ratings** (any per-playbook
+`DefaultActionPoints` contribution is already included in them), not
+additional dots on top.
+
+### Validation — settings-derived only
+
+Every bound below is read from the requested game's game-settings JSON. No
+constant may appear in any backend, client, or test expectation (spec §5.5).
+
+| # | Rule | Settings source | Blades value |
+|---|---|---|---|
+| V1 | `sum(actionRatings) === StartingActionDots` exactly | new optional integer setting `StartingActionDots` (≥1) | 7 |
+| V2 | every rating ≤ `StartingActionDotMax` | new optional integer setting `StartingActionDotMax` (≥1) | 2 |
+| V3 | `playbook` exists in the game's `Playbooks` list | existing `Playbooks[].Name` | — |
+
+Failure ⇒ typed error **`VALIDATION` (400)** whose message names the violated
+rule and the numbers involved (requested sum vs budget, offending rating vs
+cap, or the unknown playbook name). Success ⇒ standard OpResult envelope with
+the created character (`ok`, `character`, `applied`, `sideEffects`, `error`).
+
+### Unknown game stem
+
+Identical to `createCharacter`: `GAME_NOT_FOUND` as a **200-status domain
+failure** (SC-A3 locked status table) — not a request-shape error.
+
+## Setting-absent behavior — decision
+
+The two new settings are **optional** in `game-settings-schema.json`. A game
+whose settings file omits either key has **not published** a PC allocation
+budget; `POST /api/characters/pc` for such a game returns **`404 NOT_FOUND`**
+with the message naming the absent keys.
+
+Why NOT_FOUND rather than VALIDATION:
+
+- VALIDATION is reserved for client-fixable request problems (allocation
+  mistakes). A missing server-side setting is not fixable by changing the
+  request body.
+- Precedent: settings-driven projections return 404 for resources a game does
+  not publish (`GET /api/games/{stem}/playbooks/{playbook}` → 404 NOT_FOUND).
+- The error union's `NOT_FOUND` branch carries an empty details object plus
+  message — sufficient to name both missing keys; `VALIDATION` details are
+  JSON-pointer issues into the request body, which has no pointer for a
+  missing settings entry.
+
+## Scum & Villainy — left absent (decision)
+
+`scum-and-villainy.json` deliberately does **not** carry the two new keys yet:
+
+- Its creation *flow* genuinely differs from Blades: the S&V rulebook grants 3
+  playbook dots before 4 free dots (7 total, max rating 2 numerically), and it
+  is the one installed game that populates the optional `StartingAbility`
+  setting. How stage 2 pre-applies per-playbook `DefaultActionPoints`
+  (present in **both** games' data, e.g. Cutter = Skirmish 2 + Command 1)
+  interacts with the submitted final-ratings map still needs a dedicated
+  ruling before S&V numbers are authored.
+- Until then, S&V exercises the setting-absent behavior above: the endpoint
+  returns `404 NOT_FOUND` naming `StartingActionDots`/`StartingActionDotMax`.
+- Populating S&V is a future data-authoring change; this page will be amended
+  when that lands.
+
+## C# reference anchors
+
+The reference UI hardcodes what Paperclips now treats as settings data:
+
+- `blades-in-the-sheets/UI/ViewModels/V4ActionDots.cs:42` —
+  `public const int FinalDots = 7;` with `TotalDots` (line 44, sum of filled
+  dots incl. playbook defaults) and `RemainingDots => FinalDots - TotalDots`
+  (line 48); dot-wise gating at lines 48–63. In Paperclips the 7 becomes the
+  `StartingActionDots` setting; the per-action cap becomes
+  `StartingActionDotMax`.
+- `blades-in-the-sheets/Models/Settings/GameSetting.cs:23-31` — playbook
+  settings carry `DefaultActionPointSetting[]`; applied pre-create by
+  `GameSettingExtensions.cs:38`.
+
+Both budgets are **game-settings data**, never constants (PAPERCLIPS.md §5,
+"all numeric maxima and lists come from here").
+
+## Contract surface (stage 1)
+
+`POST /characters/pc` (`operationId: createPcCharacter`, `x-snapshot: false`
+per the character-create convention):
+
+- Request: `{gameStem, playbook, actionRatings}`, `additionalProperties:
+  false`; `actionRatings` is an object with `additionalProperties: {type:
+  integer, minimum: 0}` — JSON Schema cannot express the per-game cap
+  (0..`StartingActionDotMax`) statically, so the cap is documented on the
+  schema and enforced server-side from settings; exact property-name matching
+  against the game's actions is likewise enforced server-side (unknown or
+  missing action names ⇒ `VALIDATION`).
+- Responses: `200` (success or `GAME_NOT_FOUND` domain failure), `400`
+  (`VALIDATION`), `404` (`NOT_FOUND` — setting absent), mirroring the sibling
+  create paths' OpResult declarations. `409`/`422` are intentionally **not**
+  declared: creation accepts no `If-Match` and touches no stored entity, so
+  `STALE_REVISION`/`INVALID_ENTITY` are unreachable (the brief's
+  "200/400/404/409/422" list was normalized against actual sibling create
+  declarations: `/characters` declares 200, `/clocks` 200+400).
+
+## Grandfathering
+
+Existing stored characters are untouched. No completeness predicate changes;
+completeness remains derived from `x-requiredWhenComplete` at response time.
+The unvalidated path keeps accepting zero-rating characters.

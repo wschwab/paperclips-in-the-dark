@@ -16,6 +16,10 @@ export interface GameSetting {
   TraumaMax: number;
   RecoveryClockSize: number;
   ActionPointMaximum: number;
+  /** Optional PC-allocation budget (CONTRACT-01); absent until a game publishes it. */
+  StartingActionDots?: number;
+  /** Optional per-action starting cap (CONTRACT-01); absent until a game publishes it. */
+  StartingActionDotMax?: number;
   FundMaxima: { SatchelMax: number; StashMax: number };
   Attributes: Array<{ Name: string; Actions: Array<{ Name: string }> }>;
 }

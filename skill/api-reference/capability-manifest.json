@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 108,
+  "operationCount": 109,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -109,6 +109,14 @@
       "path": "/characters",
       "agentReference": "api-reference/README.md#createcharacter",
       "summary": "",
+      "flagged": true
+    },
+    "createPcCharacter": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/pc",
+      "agentReference": "api-reference/README.md#createpccharacter",
+      "summary": "Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes (unknown or missing names are VALIDATION); values are FINAL ratings, including any per-playbook DefaultActionPoints contribution. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).",
       "flagged": true
     },
     "getCharacter": {
@@ -864,6 +872,7 @@
   "flaggedCandidates": [
     "batch",
     "createCharacter",
+    "createPcCharacter",
     "stressAdd",
     "harmAdd",
     "harmRemove",

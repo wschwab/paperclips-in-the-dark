@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 108
+Operations: 109
 
 ## Conventions
 
@@ -125,6 +125,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | GET | `/games/{stem}/crews/{crewType}` | [`getCrewTypeSettings`](#getcrewtypesettings) | — |
 | GET | `/characters` | [`listCharacters`](#listcharacters) | — |
 | POST | `/characters` | [`createCharacter`](#createcharacter) | false |
+| POST | `/characters/pc` | [`createPcCharacter`](#createpccharacter) | false |
 | GET | `/characters/{id}` | [`getCharacter`](#getcharacter) | — |
 | GET | `/characters/{id}/capabilities` | [`getCharacterCapabilities`](#getcharactercapabilities) | — |
 | POST | `/characters/{id}/delete` | [`deleteCharacter`](#deletecharacter) | false |
@@ -495,6 +496,47 @@ schema:
 Responses:
 
 - `200`: OperationResult
+
+## createPcCharacter
+
+`POST /characters/pc`
+
+Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes (unknown or missing names are VALIDATION); values are FINAL ratings, including any per-playbook DefaultActionPoints contribution. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).
+
+Parameters: `idempotencyKey`
+
+Snapshot: `false`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [gameStem, playbook, actionRatings]
+  additionalProperties: false
+  properties:
+    gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+    playbook: { type: string, minLength: 1 }
+    actionRatings:
+      type: object
+      description: >
+        Map of every action name from the game's Attributes to its
+        starting rating. Property names are enforced server-side
+        to match exactly the published action set; each value is
+        an integer clamped by settings to 0..StartingActionDotMax
+        (the per-game maximum cannot be static here — it is
+        enforced from game settings, spec §5.5), and the values'
+        sum must equal StartingActionDots.
+      additionalProperties:
+        type: integer
+        minimum: 0
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
 
 ## getCharacter
 

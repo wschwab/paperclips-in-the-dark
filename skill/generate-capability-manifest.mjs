@@ -130,6 +130,7 @@ const TABLE = {
   harmRemove: { disposition: "agent", flagged: true },
   batch: { disposition: "agent", flagged: true },
   createCharacter: { disposition: "agent", flagged: true },
+  createPcCharacter: { disposition: "agent", flagged: true },
   createCrew: { disposition: "agent", flagged: true },
   createClock: { disposition: "agent", flagged: true },
 };

@@ -7960,7 +7960,8 @@ if Kind = "crew" then
          "ActionPointMaximum|FactionStatus|StressMax|TraumaMax|HarmCapacities|" &
          "XpTrackMaxima|FundMaxima|CrewTrackerMaxima|TurfMax|LoadMaxima|" &
          "ActionCap|SessionExpressionMax|DevelopCoinCostMultiplier|" &
-         "ClockPurposes|StartingAbility|ExtraDescription|",
+         "ClockPurposes|StartingAbility|ExtraDescription|" &
+         "StartingActionDots|StartingActionDotMax|",
          Where);
       S_Require_Str (V, "Name", Where);
       S_Require_Arr (V, "Playbooks", Where);

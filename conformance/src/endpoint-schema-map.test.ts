@@ -22,7 +22,7 @@ describe("endpoint schema map", () => {
     const openapiPath = path.join(here, "..", "..", "contract", "openapi.yaml");
     const spec = YAML.parse(fs.readFileSync(openapiPath, "utf8"));
     const routes = Object.keys(spec.paths);
-    expect(routes.length).toBe(105);
+    expect(routes.length).toBe(106);
     // Every declared operation appears in the map under its operationId.
     for (const route of routes) {
       const methods = Object.keys(spec.paths[route]).filter((m) =>
@@ -129,6 +129,13 @@ describe("endpoint schema map", () => {
     expect(() => getEndpointSchemaMapFromSpec({ paths: {
       "/one": { get: { responses: { "200": { description: "no body" } } } },
     } })).toThrow(/operationId/i);
+  });
+
+  it("[ENDPOINT-MAP-014] POST /characters/pc maps 200/400/404 to 'operationResult'", () => {
+    const map = getEndpointSchemaMap();
+    expect(map.createPcCharacter.responses["200"]).toEqual({ kind: "schema", schemaName: "operationResult", collection: false });
+    expect(map.createPcCharacter.responses["400"]).toEqual({ kind: "schema", schemaName: "operationResult", collection: false });
+    expect(map.createPcCharacter.responses["404"]).toEqual({ kind: "schema", schemaName: "operationResult", collection: false });
   });
 
   it("[ORACLE-CAL-021] includes a newly supplied fake endpoint automatically", async () => {
