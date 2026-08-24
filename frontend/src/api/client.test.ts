@@ -2510,6 +2510,18 @@ describe("armorSet", () => {
       armorSet("c46ba7cb-993b-4fc7-974d-fb95eacd5446", "standard", false, 12),
     );
     expect(result.monitor.armor.standardUsed).toBe(false);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/armor.set",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ armor: "standard", used: false }),
+      },
+    );
   });
 
   it("exposes StaleRevisionError on 409", async () => {
@@ -5880,6 +5892,28 @@ describe("clockProgress", () => {
       expect(result.left.status).toBe(400);
     }
   });
+
+  it("clockProgress omits the If-Match header when the row has no if-match value (readable row)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(clockOpOk(makeClock({ revision: 3 }), "clock.progress")),
+    });
+
+    await Effect.runPromise(
+      clockProgress("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 1, ""),
+    );
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ segments: 1 }),
+      },
+    );
+  });
 });
 
 describe("clockReset", () => {
@@ -6004,28 +6038,6 @@ describe("deleteClock", () => {
           "If-Match": token,
         },
         body: JSON.stringify({ confirm: true }),
-      },
-    );
-  });
-
-  it("omits the If-Match header when the row has no if-match value (readable row)", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      text: async () => JSON.stringify(clockOpOk(makeClock({ revision: 3 }), "clock.progress")),
-    });
-
-    await Effect.runPromise(
-      clockProgress("b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d", 1, ""),
-    );
-    expect(global.fetch).toHaveBeenCalledWith(
-      "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/ops/clock.progress",
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ segments: 1 }),
       },
     );
   });

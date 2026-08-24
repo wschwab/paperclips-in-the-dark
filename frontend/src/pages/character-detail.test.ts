@@ -739,12 +739,30 @@ describe("character-detail page", () => {
       mountCharacterDetailPage(root, CHARACTER_ID);
 
       await vi.waitFor(() => {
-        expect(root.textContent).toContain("Brenda Hilton");
+        expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
       });
 
-      // Find the edit button for name field and click it
-      const editBtns = root.querySelectorAll('button[title^="Edit"]');
-      expect(editBtns.length).toBeGreaterThan(0);
+      // Drive a real edit of one dossier field: open the editor, change the
+      // value, save via the checkmark button.
+      (root.querySelector('button[title="Edit Name"]') as HTMLButtonElement).click();
+
+      const input = root.querySelector('input[aria-label="Name"]') as HTMLInputElement;
+      expect(input).not.toBeNull();
+      input.value = "Edited Name";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const calls = (global.fetch as Mock).mock.calls;
+        const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
+        expect(updateCall).toBeTruthy();
+        expect(updateCall![0]).toBe(
+          "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/dossier.update",
+        );
+        expect(updateCall![1].body).toBe(JSON.stringify({ name: "Edited Name" }));
+        expect(updateCall![1].headers["If-Match"]).toBe("12");
+        expect(root.querySelector("h1")?.textContent).toContain("Edited Name");
+      });
     });
 
     it("ENTER in a dossier input saves the typed value (same as the checkmark) — F2aa", async () => {
@@ -1272,6 +1290,16 @@ describe("character-detail page", () => {
       // delta = target (5) - current (3) = +2
       await vi.waitFor(() => {
         expect(root.textContent).toContain("3 / 9");
+        const calls = (global.fetch as Mock).mock.calls;
+        const addCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.add"));
+        expect(addCall).toBeTruthy();
+        // The body carries the computed delta (target 5 − current 3), not
+        // an absolute count or echoed UI text.
+        expect(addCall![0]).toBe(
+          "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/stress.add",
+        );
+        expect(addCall![1].body).toBe(JSON.stringify({ delta: 2 }));
+        expect(addCall![1].headers["If-Match"]).toBe("12");
       });
     });
 
@@ -1366,6 +1394,23 @@ describe("character-detail page", () => {
         error: null,
       };
 
+      const withoutCold = characterDTO({
+        revision: 14,
+        monitor: {
+          ...characterDTO().monitor,
+          trauma: { traumas: ["Haunted"], max: 4 },
+        },
+        traumaPending: false,
+      });
+
+      const traumaRemoveOk = {
+        ok: true,
+        character: withoutCold,
+        applied: { op: "trauma.remove" },
+        sideEffects: [],
+        error: null,
+      };
+
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(pending))
@@ -1374,21 +1419,56 @@ describe("character-detail page", () => {
         .mockResolvedValueOnce(ok([]))
         .mockResolvedValueOnce(ok(CREWS_DATA))
         .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
-        .mockResolvedValueOnce(ok(traumaAddOk));
+        .mockResolvedValueOnce(ok(traumaAddOk))
+        .mockResolvedValueOnce(ok(traumaRemoveOk));
 
       mountCharacterDetailPage(root, CHARACTER_ID);
-
       await vi.waitFor(() => {
         expect(root.textContent).toContain("Haunted");
       });
 
-      // Click add button
+      // Resolve the pending trauma: pick "Cold" in the select, then click the
+      // resolve button. The handler reads the selected value at click time.
+      const sel = root.querySelector('select[aria-label="Add trauma"]') as HTMLSelectElement;
+      expect(sel).not.toBeNull();
+      sel.value = "Cold";
       const addBtn = root.querySelector('button[title="Resolve pending trauma"]') as HTMLButtonElement;
       expect(addBtn).not.toBeNull();
       addBtn.click();
 
+      // Stamped via trauma.add with the chosen name and the pre-op revision.
       await vi.waitFor(() => {
-        expect(root.textContent).toContain("Cold");
+        const calls = (global.fetch as Mock).mock.calls;
+        const addCall = calls.find((c) => String(c[0]).endsWith("/ops/trauma.add"));
+        expect(addCall).toBeTruthy();
+        expect(addCall![0]).toBe(
+          "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/trauma.add",
+        );
+        expect(addCall![1].body).toBe(JSON.stringify({ trauma: "Cold" }));
+        expect(addCall![1].headers["If-Match"]).toBe("12");
+      });
+
+      // Remove half: the stamped trauma gets a remove button once the
+      // updated DTO re-renders; clicking it posts trauma.remove against the
+      // post-add revision.
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[aria-label="Remove trauma: Cold"]')).not.toBeNull();
+      });
+      const removeBtn = root.querySelector(
+        'button[aria-label="Remove trauma: Cold"]',
+      ) as HTMLButtonElement;
+      removeBtn.click();
+
+      await vi.waitFor(() => {
+        const calls = (global.fetch as Mock).mock.calls;
+        const removeCall = calls.find((c) => String(c[0]).endsWith("/ops/trauma.remove"));
+        expect(removeCall).toBeTruthy();
+        expect(removeCall![0]).toBe(
+          "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/trauma.remove",
+        );
+        expect(removeCall![1].body).toBe(JSON.stringify({ trauma: "Cold" }));
+        expect(removeCall![1].headers["If-Match"]).toBe("13");
+        expect(root.querySelector('button[aria-label="Remove trauma: Cold"]')).toBeNull();
       });
     });
   });
@@ -1942,8 +2022,19 @@ describe("character-detail page", () => {
       standardCheck!.dispatchEvent(new Event('change', { bubbles: true }));
 
       await vi.waitFor(() => {
-        // After toggle to true, the character should be updated
-        expect(global.fetch).toHaveBeenCalledTimes(7); // + caps projection on mount
+        const calls = (global.fetch as Mock).mock.calls;
+        const setCall = calls.find((c) => String(c[0]).endsWith("/ops/armor.set"));
+        expect(setCall).toBeTruthy();
+        expect(setCall![0]).toBe(
+          "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/armor.set",
+        );
+        expect(setCall![1].body).toBe(JSON.stringify({ armor: "standard", used: true }));
+        expect(setCall![1].headers["If-Match"]).toBe("12");
+        // The returned DTO re-renders the checkbox as used.
+        expect(
+          (root.querySelector('input[data-armor-kind="standard"]') as HTMLInputElement | null)
+            ?.checked,
+        ).toBe(true);
       });
     });
 

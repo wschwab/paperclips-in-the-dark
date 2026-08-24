@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { mountCharacterCreatePage } from "./character-create.js";
 import { renderShell } from "./shell.js";
 import { loadStylesheets, assertFirstH1ClearsSeam } from "./seam.js";
@@ -115,6 +115,11 @@ describe("character-create page (Design Audit F-12 two-step naming)", () => {
     await vi.waitFor(() => {
       expect(onCreated).toHaveBeenCalledWith(named);
     });
+    // Single-post guarantee (absorbed from the deleted duplicate): exactly
+    // one POST to /api/characters — the name rides dossier.update alone.
+    expect(
+      (global.fetch as Mock).mock.calls.filter((c) => c[0] === "/api/characters").length,
+    ).toBe(1);
   });
 
   it("places the first h1 below the app bar's torn seam (FV-031)", () => {
@@ -148,27 +153,6 @@ describe("character-create page (Design Audit F-12 two-step naming)", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(onCreated).toHaveBeenCalledWith(created);
     });
-  });
-
-  it("does not re-POST a second character when dossier.update fails", async () => {
-    const created = characterDTO();
-    global.fetch = vi
-      .fn()
-      .mockResolvedValueOnce(ok(createdResp(created)))
-      .mockResolvedValueOnce(err500());
-
-    const onCreated = vi.fn();
-    mountCharacterCreatePage(root, "blades-in-the-dark", ["Spider"], onCreated);
-
-    submit("Ives");
-
-    await vi.waitFor(() => {
-      expect(root.querySelector(".character-create-error")).not.toBeNull();
-    });
-    // Exactly one POST to /api/characters — the dossier.update failure must
-    // not trigger a second character creation on a retry-shaped path.
-    const posts = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[0] === "/api/characters");
-    expect(posts.length).toBe(1);
   });
 
   it("keeps the created character and retries only dossier.update across two failures (FV-017)", async () => {

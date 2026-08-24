@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { mountCrewCreatePage } from "./crew-create.js";
 import { renderShell } from "./shell.js";
 import { loadStylesheets, assertFirstH1ClearsSeam } from "./seam.js";
@@ -114,6 +114,11 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
     await vi.waitFor(() => {
       expect(onCreated).toHaveBeenCalledWith(named);
     });
+    // Single-post guarantee (absorbed from the deleted duplicate): exactly
+    // one POST to /api/crews — the name rides fields.update alone.
+    expect(
+      (global.fetch as Mock).mock.calls.filter((c) => c[0] === "/api/crews").length,
+    ).toBe(1);
   });
 
   it("skips fields.update when no name is given", async () => {
@@ -129,25 +134,6 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
       expect(onCreated).toHaveBeenCalledWith(created);
     });
-  });
-
-  it("does not re-POST a second crew when fields.update fails", async () => {
-    const created = crewDTO();
-    global.fetch = vi
-      .fn()
-      .mockResolvedValueOnce(ok(createdResp(created)))
-      .mockResolvedValueOnce(err500());
-
-    const onCreated = vi.fn();
-    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], onCreated);
-
-    submit("The Red Sashes");
-
-    await vi.waitFor(() => {
-      expect(root.querySelector(".crew-create-error")).not.toBeNull();
-    });
-    const posts = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[0] === "/api/crews");
-    expect(posts.length).toBe(1);
   });
 
   it("keeps the created crew and retries only fields.update across two failures (FV-017)", async () => {
