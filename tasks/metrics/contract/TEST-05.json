@@ -1,0 +1,25 @@
+{
+  "task": "TEST-05",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (bounded brief, yolo, max thinking)",
+  "reviewAgent": "orchestrator independent re-run: core binary exit 0, gnatprove 246/246 via ci.sh convention",
+  "date": "2026-08-24",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 19,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "core tests 109/109 named cases; gnatprove 246 checks proved; M13 drill killed with named failure; named-failure demo observed then restored",
+  "passRateAfterReview": "identical results on orchestrator re-run; working copy diff limited to core_tests.adb",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 1,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "named runtime assertions (M13 killer demonstrated)",
+    "SPARK proof gate at unchanged check count"
+  ],
+  "implementationLoc": 160,
+  "scaffoldingLoc": 0,
+  "notes": "Zero deletions — the ledger's delete gate (proof fully covers AND execution adds no boundary signal) qualified no row; recorded explicitly. Suggestion surfaced for a future wave: add proofCoversFully to decision rows to make the gate mechanical. Token accounting unavailable, so tokens is 0 rather than estimated."
+}
