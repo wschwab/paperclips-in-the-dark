@@ -1,0 +1,24 @@
+{
+  "task": "BROWSER-01",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (bounded brief, yolo, max thinking)",
+  "reviewAgent": "orchestrator independent green run (exit 0, launcher cleanup line, artifacts present); drill outputs reviewed in report with byte-exact restore evidence",
+  "date": "2026-08-24",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 37,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "green run exit 0; drills a/c/d named failures; drill b premise corrected via E11 finding and detector proven by route interception",
+  "passRateAfterReview": "orchestrator re-run identical: PASS roster-smoke, evidence removed line, artifacts written",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 0,
+    "independentReview": 1,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "drill-b contradiction caught against locked decision E11 (degraded rows keep roster contract-shaped)"
+  ],
+  "implementationLoc": 640,
+  "scaffoldingLoc": 0,
+  "notes": "Spec question for BROWSER-02: no seed can produce a whole-page decode failure under E11; decode-failure journeys must use request interception. package-lock refresh also bumped tsx/vitest/vite/esbuild devDeps in range — tooling suite re-verified 150/150. Token accounting unavailable, so tokens is 0 rather than estimated."
+}

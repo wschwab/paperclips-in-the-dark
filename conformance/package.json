@@ -9,7 +9,7 @@
     "test:run": "vitest run",
     "test:ada": "node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults --",
     "test:tooling": "vitest run --config vitest.tooling.config.ts",
-    "test:mutation": "vitest run --config vitest.tooling.config.ts src/mutation-harness.test.ts",
+    "test:browser": "node scripts/browser-suite.mjs",
     "typecheck": "tsc --noEmit"
   },
   "bin": {
@@ -23,6 +23,7 @@
     "@types/node": "^22.15.21",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "playwright-core": "^1.62.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
     "vitest": "^3.1.2",
