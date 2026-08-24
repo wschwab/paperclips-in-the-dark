@@ -37,13 +37,14 @@
 // and every declared checkpoint recorded.
 
 import { spawn } from "node:child_process";
-import { existsSync, readdirSync, statSync } from "node:fs";
-import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { existsSync, statSync } from "node:fs";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { resolveChromiumExecutable } from "./lib/chromium-resolve.mjs";
+import { ensureFreshFrontendBuild } from "./lib/frontend-fresh.mjs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { resolveChromiumExecutable } from "./lib/chromium-resolve.mjs";
 
 const scriptDir = dirnameOf(import.meta.url);
 const conformanceDir = resolve(scriptDir, "..");
@@ -96,73 +97,14 @@ Artifacts land in \${tmpdir()}/pitd-browser/<runId>/ and the final path is print
 // Parent mode
 // ---------------------------------------------------------------------------
 
-async function newestMtimeUnder(dir) {
-  let newest = 0;
-  const stack = [dir];
-  while (stack.length > 0) {
-    const current = stack.pop();
-    let entries;
-    try {
-      entries = await readdir(current, { withFileTypes: true });
-    } catch {
-      continue; // vanished mid-scan; treat as no signal
-    }
-    for (const entry of entries) {
-      const full = join(current, entry.name);
-      if (entry.isDirectory()) stack.push(full);
-      else newest = Math.max(newest, statSync(full).mtimeMs);
-    }
-  }
-  return newest;
-}
-
-// Freshness rule: vite build rewrites every output, so dist/index.html's mtime
-// approximates the last build time. Rebuild when that marker is missing or
-// older than ANY source input (frontend/src recursively, index.html, tsconfig,
-// package.json, vite config). Documented tradeoff: a touched-but-semantically
-// identical source file triggers one extra build; a stale dist never goes
-// unnoticed.
-async function frontendDistIsFresh() {
-  const marker = join(frontendDir, "dist", "index.html");
-  if (!existsSync(marker)) return false;
-  const builtAt = statSync(marker).mtimeMs;
-  const srcNewest = await newestMtimeUnder(join(frontendDir, "src"));
-  let configNewest = 0;
-  for (const name of ["index.html", "package.json", "tsconfig.json"]) {
-    const full = join(frontendDir, name);
-    if (existsSync(full)) configNewest = Math.max(configNewest, statSync(full).mtimeMs);
-  }
-  for (const name of await readdir(frontendDir)) {
-    if (/^vite\.config\./.test(name)) {
-      configNewest = Math.max(configNewest, statSync(join(frontendDir, name)).mtimeMs);
-    }
-  }
-  return builtAt >= Math.max(srcNewest, configNewest);
-}
-
-async function buildFrontend() {
-  console.log("[browser-suite] building frontend (npm run build in frontend/)…");
-  const result = await new Promise((resolvePromise) => {
-    const child = spawn("npm", ["run", "build"], { cwd: frontendDir, stdio: ["ignore", "pipe", "pipe"] });
-    let out = "";
-    child.stdout.on("data", (chunk) => { out += chunk; });
-    child.stderr.on("data", (chunk) => { out += chunk; });
-    child.once("error", (error) => resolvePromise({ code: 1, output: String(error) }));
-    child.once("exit", (code) => resolvePromise({ code: code ?? 1, output: out }));
-  });
-  if (result.code !== 0) {
-    const tail = result.output.split("\n").slice(-40).join("\n");
-    throw new Error(`frontend build failed (exit ${result.code}); tail of output:\n${tail}`);
-  }
-}
 
 async function runParent(opts) {
   const runId = `${new Date().toISOString().replace(/[:.]/g, "-")}-${randomBytes(4).toString("hex")}`;
   const artifactsDir = join(tmpdir(), "pitd-browser", runId);
   await mkdir(join(artifactsDir, "screenshots"), { recursive: true });
 
-  if (opts.forceFrontendBuild || !(await frontendDistIsFresh())) {
-    await buildFrontend();
+  if (await ensureFreshFrontendBuild("[browser-suite]", opts.forceFrontendBuild)) {
+    // build performed; nothing further to check
   } else {
     console.log("[browser-suite] frontend/dist is newer than src; skipping vite build");
   }

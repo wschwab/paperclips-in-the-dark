@@ -68,6 +68,7 @@ import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = dirnameOf(import.meta.url);
 const SELF_PATH = fileURLToPath(import.meta.url);
+import { ensureFreshFrontendBuild } from "./lib/frontend-fresh.mjs";
 const CONFORMANCE_DIR = resolve(SCRIPT_DIR, "..");
 const REPO_ROOT = resolve(CONFORMANCE_DIR, "..");
 const SMOKE_LAUNCHER = join(SCRIPT_DIR, "managed-browser-smoke.mjs");
@@ -95,6 +96,7 @@ const BUDGETS_SCHEMA = "perf01-performance-budgets/1";
 // Temp dirs created by THIS parent run (drill verification input). Only ever
 // appended to by runParent before its finally removes them.
 const tempDirsCreatedByRun = [];
+let lastRunOwnedDirs = [];
 
 function dirnameOf(url) {
   return fileURLToPath(new URL(".", url));
@@ -927,10 +929,11 @@ function runLauncher(scale, stageDir, planFile, outFile) {
   });
 }
 
-function ensureFrontendBuild() {
-  if (existsSync(join(FRONTEND_DIST, "index.html"))) return;
-  console.log("[dataset-benchmark] building frontend (frontend/dist missing)...");
-  execFileSync("npm", ["run", "build"], { cwd: FRONTEND_DIR, stdio: "inherit" });
+async function ensureFrontendBuild() {
+  // Wave-5 review fix: freshness check shared with BROWSER-01 — a stale dist
+  // (sources newer than the last build) must be rebuilt before browser
+  // metrics are collected, not just an absent one.
+  await ensureFreshFrontendBuild("[dataset-benchmark]");
 }
 
 async function runParent(opts) {
@@ -946,7 +949,7 @@ async function runParent(opts) {
     return;
   }
 
-  ensureFrontendBuild();
+  await ensureFrontendBuild();
   if (!existsSync(GOLDEN_CHARACTER)) throw new Error(`missing fixture ${GOLDEN_CHARACTER}`);
 
   const stageRoot = mkdtempSync(join(tmpdir(), "pitd-bench-stage-"));
@@ -1039,6 +1042,10 @@ async function runParent(opts) {
     }
     console.log("[dataset-benchmark] PASS — all scales within frozen budgets");
   } finally {
+    // Snapshot the owned paths BEFORE removing them, so a post-failure drill
+    // can verify the exact list rather than an array already emptied by this
+    // cleanup (Wave-5 review fix).
+    lastRunOwnedDirs = [...tempDirsCreatedByRun];
     for (const dir of tempDirsCreatedByRun.splice(0)) {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -1051,6 +1058,8 @@ async function runParent(opts) {
 // fired.
 async function runDrillBetweenScales(opts) {
   let drillError = null;
+  // runParent's finally clears tempDirsCreatedByRun; verify against the
+  // snapshot it records before cleanup instead.
   try {
     await runParent({ ...opts, drillBetweenScales: true });
   } catch (error) {
@@ -1062,10 +1071,10 @@ async function runDrillBetweenScales(opts) {
     return;
   }
   const problems = [];
-  for (const dir of tempDirsCreatedByRun) {
+  for (const dir of lastRunOwnedDirs) {
     if (existsSync(dir)) problems.push(`leftover temp dir: ${dir}`);
   }
-  problems.push(...verifyProcReferences(tempDirsCreatedByRun));
+  problems.push(...verifyProcReferences(lastRunOwnedDirs));
   if (problems.length > 0) {
     console.error(`[dataset-benchmark] DRILL FAIL (${drillError.message}):`);
     for (const p of problems) console.error(`[dataset-benchmark]   ${p}`);
