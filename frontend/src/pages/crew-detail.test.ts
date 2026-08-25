@@ -1128,13 +1128,13 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("0");
+        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("0 / 4");
         expect(root.querySelector(".crew-stash-count")?.textContent).toBe("2 / 4");
       });
 
       (root.querySelector('button[title="Add 1 coin"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("1");
+        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("1 / 4");
       });
 
       (root.querySelector('button[title="Add 1 stash"]') as HTMLButtonElement).click();
@@ -1162,7 +1162,7 @@ describe("crew-detail page", () => {
       global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ tier: 5 })));
       mountCrewDetailPage(root, CREW_ID);
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("5");
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("V");
       });
 
       // Stash header shows current against the server-computed capacity;
@@ -1171,7 +1171,7 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
       await vi.waitFor(() => {
         expect(root.querySelector(".crew-stash-count")?.textContent).toBe("16 / 16");
-        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("9");
+        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("9 / 16");
       });
     });
 
@@ -2462,7 +2462,7 @@ describe("crew-detail page", () => {
       });
       expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("0 of 12");
       expect(root.querySelector('button[data-hold="weak"]')?.getAttribute("aria-pressed")).toBe("true");
-      expect(root.querySelector(".crew-coin-count")?.textContent).toBe("4");
+      expect(root.querySelector(".crew-coin-count")?.textContent).toBe("4 / 4");
 
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/coin.add`,

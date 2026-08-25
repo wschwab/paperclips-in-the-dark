@@ -66,10 +66,15 @@ const CREW_FIELD_LABELS: Record<CrewField, string> = {
 // CONTRACT-04 (2026-08-25): Tier renders in Roman numerals like the printed
 // crew sheet — 0 stays "0"; a legacy value above the printed scale falls
 // back to decimal digits. Pure display: the wire format is the DTO integer.
-const TIER_ROMAN = ["I", "II", "III", "IV"] as const;
-const formatTier = (tier: number): string =>
-  tier >= 1 && tier <= TIER_ROMAN.length ? TIER_ROMAN[tier - 1] : String(tier);
-
+// CONTRACT-04 review fix: numeral scale derives from the loaded capabilities
+// tierMax (settings-derived server-side) — never a hardcoded list length.
+// Values outside the known scale fall back to decimal digits, matching legacy
+// stored crews; a missing scale renders decimal too.
+const TIER_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+const formatTier = (tier: number, tierMax?: number | null): string =>
+  tier >= 1 && (!tierMax || tier <= tierMax)
+    ? (TIER_ROMAN[tier - 1] ?? String(tier))
+    : String(tier);
 interface ProfileEditingState {
   field: CrewField;
   value: string;
@@ -1817,7 +1822,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       el("p", { className: "crew-kicker" }, c.gameName),
       el("h1", {}, c.name || `Unnamed ${c.crewTypeName}`),
       el("p", { className: "crew-type uneven" }, c.crewTypeName),
-      el("p", { className: "crew-tier-badge", title: "Tier" }, `Tier ${formatTier(c.tier)}`),
+      el("p", { className: "crew-tier-badge", title: "Tier" }, `Tier ${formatTier(c.tier, state.crewCaps?.tierMax)}`),
       el(
         "nav",
         { className: "crew-nav" },
@@ -1864,7 +1869,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       wantedTracker,
       el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Tier"),
       el("div", { className: "crew-tier", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.6em 0;" },
-        el("span", { className: "crew-tier-value" }, formatTier(c.tier)),
+        el("span", { className: "crew-tier-value" }, formatTier(c.tier, state.crewCaps?.tierMax)),
         tierMinusBtn,
         tierPlusBtn,
       ),
@@ -1879,7 +1884,10 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       el("h2", {}, "Fund"),
       el("div", { className: "crew-coin", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.35em 0;" },
         el("span", { className: "lbl" }, "Coin:"),
-        el("span", { className: "crew-coin-count" }, String(c.coin)),
+        el("span", {
+          className: "crew-coin-count",
+          title: "Coin beyond the lair's vault-derived capacity must be spent or distributed (SRD \u00a7Coin and Stash)",
+        }, `${c.coin} / ${c.stashCapacity}`),
         coinMinusBtn,
         coinPlusBtn,
       ),
@@ -2452,7 +2460,7 @@ export function mountCrewDetailPage(
       const cost = (crew.tier + 1) * 8;
       if (crew.coin < cost) {
         clearNotices();
-        noticeMsg = `INSUFFICIENT_FUNDS: developing to Tier ${formatTier(crew.tier + 1)} costs ${cost} coin (have ${crew.coin})`;
+        noticeMsg = `INSUFFICIENT_FUNDS: developing to Tier ${formatTier(crew.tier + 1, crewCaps?.tierMax ?? null)} costs ${cost} coin (have ${crew.coin})`;
         renderDetail();
         return;
       }
@@ -2470,7 +2478,7 @@ export function mountCrewDetailPage(
       runCrewOp(
         (v) => { isDevelopLoading = v; },
         program,
-        `Tier advanced to ${formatTier(crew.tier + 1)} — hold weakened, rep reset`,
+        `Tier advanced to ${formatTier(crew.tier + 1, crewCaps?.tierMax ?? null)} — hold weakened, rep reset`,
       );
     },
 
