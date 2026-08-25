@@ -5,9 +5,11 @@ import { newCrew, newCharacter } from "../../src/suite-helpers.js";
 
 /**
  * A11: the remaining missing ops — crew cohorts (add/remove/update), crew
- * coin/stash/tier deltas, crew xp add/clear, and character rolodex.remove.
+ * coin/stash/tier deltas, and crew xp add/clear. (The character
+ * relationship row became the CONTRACT-05 contacts family; see
+ * suites/semantics/character-contacts.test.ts.)
  */
-describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove", () => {
+describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp", () => {
   testCase("SEMANTICS-COHORT-001", "cohort.add appends a cohort with an id; update mutates; remove drops; unknown → NOT_FOUND", async () => {
     const crew = await newCrew();
     const added = await api.crewOp(crew.id, "cohort.add", {
@@ -76,20 +78,4 @@ describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove", 
     expect(cleared.crew?.experience.points).toBe(0);
   });
 
-  testCase("SEMANTICS-ROLODEX-REMOVE-001", "character rolodex.remove drops a friend; unknown → NOT_FOUND", async () => {
-    const character = await newCharacter();
-    const added = await api.characterOp(character.id, "rolodex.add", { entry: "Marlane" });
-    expect(added.ok).toBe(true);
-    expect(added.character?.rolodex.friends).toContainEqual(
-      expect.objectContaining({ entry: "Marlane" }),
-    );
-
-    const removed = await api.characterOp(character.id, "rolodex.remove", { entry: "Marlane" });
-    expect(removed.ok).toBe(true);
-    expect(removed.character?.rolodex.friends.find((f) => f.entry === "Marlane")).toBeUndefined();
-
-    const unknown = await api.characterOp(character.id, "rolodex.remove", { entry: "Nobody" });
-    expect(unknown.ok).toBe(false);
-    expect(unknown.error?.code).toBe("NOT_FOUND");
-  });
 });

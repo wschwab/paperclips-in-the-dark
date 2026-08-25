@@ -45,7 +45,7 @@ describe("schema decoders against golden fixtures", () => {
     expect(character.playbook.name).toBe("Spider");
     expect(character.gear.commitment).toBe("light");
     expect(character.fund.satchel.coins).toBe(4);
-    expect(character.rolodex.friends).toHaveLength(3);
+    expect(character.contacts).toHaveLength(3);
     expect(character.isRetired).toBe(false);
     expect(character.revision).toBe(12);
   });

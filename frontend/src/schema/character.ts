@@ -1,7 +1,6 @@
 import { Schema } from "effect";
 import {
   BoundedInteger,
-  Closeness,
   Commitment,
   ContactCloseness,
   CrewIdRef,
@@ -134,16 +133,12 @@ const Fund = Schema.Struct({
   stash: CoinPurse,
 });
 
-const Friend = Schema.Struct({
-  entry: Schema.String.pipe(Schema.minLength(1)),
-  closeness: Closeness,
-});
 
-const Rolodex = Schema.Struct({
-  friends: Schema.Array(Friend),
-});
-
-/** CONTRACT-05: one per-scoundrel contact. */
+/**
+ * CONTRACT-05 (2026-08-25 correction): one per-scoundrel contact — the
+ * single relationship family evolved from the former rolodex surface.
+ * closeness: friend | contact | rival.
+ */
 export const Contact = Schema.Struct({
   id: Uuid,
   name: Schema.String.pipe(Schema.minLength(1)),
@@ -188,10 +183,10 @@ export const Character = Schema.Struct({
   playbook: Playbook,
   gear: Gear,
   fund: Fund,
-  rolodex: Rolodex,
-  // CONTRACT-05: the sanctioned sparse overlay — absence on stored
-  // characters decodes as the empty list; present values validate strictly.
-  contacts: Schema.optionalWith(Schema.Array(Contact), { default: () => [] }),
+  // CONTRACT-05 (2026-08-25 correction): REQUIRED canonical array — the
+  // single relationship family; absence fails ordinary decoding like any
+  // other required property.
+  contacts: Schema.Array(Contact),
   session: Session,
   notebook: Schema.String,
 }).pipe(Schema.annotations({ identifier: "Character" }));

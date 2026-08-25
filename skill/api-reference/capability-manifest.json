@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 113,
+  "operationCount": 110,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -116,7 +116,7 @@
       "method": "POST",
       "path": "/characters/pc",
       "agentReference": "api-reference/README.md#createpccharacter",
-      "summary": "Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes (unknown or missing names are VALIDATION); values are FINAL ratings, including any per-playbook DefaultActionPoints contribution. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).",
+      "summary": "Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes, except that actions carrying the chosen playbook's DefaultActionPoints may be omitted and take the default. Per-playbook DefaultActionPoints are enforced from settings (DEC-01 ruling; GameSettingExtensions reference): the final allocation = defaults ∪ submissions — a submitted value for a defaulted action must MATCH the default, a conflicting value => VALIDATION naming the action and the default; budget (StartingActionDots) and cap (StartingActionDotMax) checks run against the overlaid final map. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).",
       "flagged": true
     },
     "getCharacter": {
@@ -431,40 +431,19 @@
       "agentReference": "api-reference/README.md#fundliquidate",
       "summary": "Quantity (quantity result family): applied.requested is the requested coin amount, applied.effective the amount processed. Stash → satchel at 2 stash per 1 coin. Satchel can't fit → SATCHEL_FULL; stash short → INSUFFICIENT_FUNDS."
     },
-    "rolodexAdd": {
-      "disposition": "agent",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.add",
-      "agentReference": "api-reference/README.md#rolodexadd",
-      "summary": "Duplicate entry → DUPLICATE. New friends start at closeness \"friend\"."
-    },
-    "rolodexRemove": {
-      "disposition": "agent",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.remove",
-      "agentReference": "api-reference/README.md#rolodexremove",
-      "summary": ""
-    },
-    "rolodexSetCloseness": {
-      "disposition": "agent",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.set-closeness",
-      "agentReference": "api-reference/README.md#rolodexsetcloseness",
-      "summary": "Full transition set (friend/close-friend/rival) — supersedes the reference's four named upgrade/downgrade methods with one total operation."
-    },
     "characterContactAdd": {
       "disposition": "agent",
       "method": "POST",
       "path": "/characters/{id}/ops/contact.add",
       "agentReference": "api-reference/README.md#charactercontactadd",
-      "summary": "CONTRACT-05 (2026-08-24, human-authorized): per-scoundrel Contacts. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \\\"contact\\\" and a server-generated id."
+      "summary": "CONTRACT-05 (2026-08-24 card; 2026-08-25 correction — evolved from the former rolodex surface by human ruling, exactly one relationship family): add a per-scoundrel contact by name. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \\\"contact\\\" and a server-generated id."
     },
     "characterContactCloseness": {
       "disposition": "agent",
       "method": "POST",
       "path": "/characters/{id}/ops/contact.closeness",
       "agentReference": "api-reference/README.md#charactercontactcloseness",
-      "summary": "CONTRACT-05: set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION."
+      "summary": "CONTRACT-05 (2026-08-25 correction): set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION."
     },
     "characterContactRemove": {
       "disposition": "agent",
@@ -811,7 +790,7 @@
       "method": "POST",
       "path": "/crews/{id}/ops/faction.set-status",
       "agentReference": "api-reference/README.md#factionsetstatus",
-      "summary": "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result."
+      "summary": "C3 contract change. Total op mirroring contact.closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result."
     },
     "factionRemove": {
       "disposition": "agent",

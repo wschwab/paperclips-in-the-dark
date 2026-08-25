@@ -18,8 +18,7 @@
     "talent",
     "playbook",
     "gear",
-    "fund",
-    "rolodex",
+    "contacts",
     "session",
     "notebook",
     "isRetired",
@@ -419,37 +418,8 @@
         }
       }
     },
-    "rolodex": {
-      "type": "object",
-      "required": [
-        "friends"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "friends": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "entry",
-              "closeness"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "entry": {
-                "type": "string",
-                "minLength": 1
-              },
-              "closeness": {
-                "$ref": "common.json#/$defs/closeness"
-              }
-            }
-          }
-        }
-      }
-    },
     "contacts": {
-      "description": "CONTRACT-05 (2026-08-24): per-scoundrel contacts. Deliberately NOT required — the sanctioned sparse overlay: absence on stored characters means the empty list (no migration, no legacy fill). New writes materialize the array canonically.",
+      "description": "CONTRACT-05 (2026-08-25 correction of the 2026-08-24 card): the per-scoundrel relationship list, EVOLVED from the former BitS rolodex surface by human ruling ('instead of calling it Rolodex, let's just call it Contacts') — exactly one family. Required canonical array; empty means no entries. Closeness vocabulary is exactly friend | contact | rival; legacy close-friend values are NOT auto-migrated (update stored documents; see docs/pages/contract/contract-c5-character-contacts.mdx).",
       "type": "array",
       "items": {
         "type": "object",
@@ -468,7 +438,7 @@
             "minLength": 1
           },
           "closeness": {
-            "$ref": "common.json#/$defs/contactCloseness"
+            "$ref": "common.json#/$defs/closeness"
           }
         }
       }

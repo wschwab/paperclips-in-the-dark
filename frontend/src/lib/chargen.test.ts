@@ -3,6 +3,7 @@ import {
   actionGroupsFromSettings,
   pcAllocationReady,
   pcBudgetFromSettings,
+  playbookDefaultsFromSettings,
   sumRatings,
   unspentDots,
 } from "./chargen.js";
@@ -88,6 +89,54 @@ describe("unspent Talent counter math", () => {
   it("sumRatings ignores unselected actions", () => {
     expect(sumRatings({})).toBe(0);
     expect(sumRatings({ A: 1, B: 2 })).toBe(3);
+  });
+});
+
+describe("playbookDefaultsFromSettings", () => {
+  // Values mirror data/games/blades-in-the-dark.json (Cutter/Spider rows).
+  const WITH_PLAYBOOKS = {
+    Playbooks: [
+      {
+        Name: "Cutter",
+        DefaultActionPoints: [
+          { Action: "Skirmish", Points: 2 },
+          { Action: "Command", Points: 1 },
+        ],
+      },
+      { Name: "Spider", DefaultActionPoints: [{ Action: "Consort", Points: 2 }] },
+      { Name: "Whisper" }, // no DefaultActionPoints block
+      {
+        Name: "Hound",
+        DefaultActionPoints: [
+          { Action: "Hunt", Points: 2 },
+          { Action: "Scuffle", Points: 0 }, // zero points are not a default
+          "garbage",
+        ],
+      },
+    ],
+  };
+
+  it("extracts the named playbook's nonzero defaults", () => {
+    expect(playbookDefaultsFromSettings(WITH_PLAYBOOKS, "Cutter")).toEqual({
+      Skirmish: 2,
+      Command: 1,
+    });
+    expect(playbookDefaultsFromSettings(WITH_PLAYBOOKS, "Spider")).toEqual({
+      Consort: 2,
+    });
+  });
+
+  it("returns an empty map when nothing is published — never a hardcoded default", () => {
+    expect(playbookDefaultsFromSettings(WITH_PLAYBOOKS, "Whisper")).toEqual({});
+    expect(playbookDefaultsFromSettings(WITH_PLAYBOOKS, "Lurk")).toEqual({});
+    expect(playbookDefaultsFromSettings({}, "Cutter")).toEqual({});
+    expect(playbookDefaultsFromSettings(null, "Cutter")).toEqual({});
+  });
+
+  it("skips malformed and zero-point entries", () => {
+    expect(playbookDefaultsFromSettings(WITH_PLAYBOOKS, "Hound")).toEqual({
+      Hunt: 2,
+    });
   });
 });
 

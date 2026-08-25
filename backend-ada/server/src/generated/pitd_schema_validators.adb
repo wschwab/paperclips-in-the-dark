@@ -458,10 +458,10 @@ package body Pitd_Schema_Validators is
    end Check_Prop;
 
    Required_Character : constant String :=
-     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|dossier|monitor|talent|playbook|gear|fund|rolodex|session|notebook|isRetired|isDeadish|traumaPending|isOutOfAction|stressClearPending|";
+     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|dossier|monitor|talent|playbook|gear|contacts|session|notebook|isRetired|isDeadish|traumaPending|isOutOfAction|stressClearPending|";
 
    Allowed_Character : constant String :=
-     Required_Character & "|contacts|";
+     Required_Character & "|fund|";
 
    Required_Dossier : constant String :=
      "|name|crewId|alias|look|notes|background|heritage|vice|";
@@ -563,16 +563,6 @@ package body Pitd_Schema_Validators is
 
    Allowed_Stash : constant String := Required_Stash;
 
-   Required_Rolodex : constant String :=
-     "|friends|";
-
-   Allowed_Rolodex : constant String := Required_Rolodex;
-
-   Required_Friend : constant String :=
-     "|entry|closeness|";
-
-   Allowed_Friend : constant String := Required_Friend;
-
    Required_Contact : constant String :=
      "|id|name|closeness|";
 
@@ -666,13 +656,8 @@ package body Pitd_Schema_Validators is
 
    procedure Check_Enum_Closeness (V : JSON_Value; Ptr : String) is
    begin
-      Check_Enum (V, Ptr, "|friend|close-friend|rival|");
-   end Check_Enum_Closeness;
-
-   procedure Check_Enum_Contact_Closeness (V : JSON_Value; Ptr : String) is
-   begin
       Check_Enum (V, Ptr, "|friend|contact|rival|");
-   end Check_Enum_Contact_Closeness;
+   end Check_Enum_Closeness;
 
    procedure Check_Enum_Hold (V : JSON_Value; Ptr : String) is
    begin
@@ -952,30 +937,12 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "stash", Check_Stash'Access);
    end Check_Fund;
 
-   procedure Check_Friend (V : JSON_Value; Ptr : String) is
-   begin
-      Check_Object (V, Ptr, Required_Friend, Allowed_Friend);
-      Check_Prop (V, Ptr, "entry", Check_Min_Length_1'Access);
-      Check_Prop (V, Ptr, "closeness", Check_Enum_Closeness'Access);
-   end Check_Friend;
-
-   procedure Check_Friends (V : JSON_Value; Ptr : String) is
-   begin
-      Check_Array (V, Ptr, Check_Friend'Access);
-   end Check_Friends;
-
-   procedure Check_Rolodex (V : JSON_Value; Ptr : String) is
-   begin
-      Check_Object (V, Ptr, Required_Rolodex, Allowed_Rolodex);
-      Check_Prop (V, Ptr, "friends", Check_Friends'Access);
-   end Check_Rolodex;
-
    procedure Check_Contact (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Contact, Allowed_Contact);
       Check_Prop (V, Ptr, "id", Check_Uuid'Access);
       Check_Prop (V, Ptr, "name", Check_Min_Length_1'Access);
-      Check_Prop (V, Ptr, "closeness", Check_Enum_Contact_Closeness'Access);
+      Check_Prop (V, Ptr, "closeness", Check_Enum_Closeness'Access);
    end Check_Contact;
 
    procedure Check_Contacts (V : JSON_Value; Ptr : String) is
@@ -1015,7 +982,6 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "playbook", Check_Playbook'Access);
       Check_Prop (V, Ptr, "gear", Check_Gear'Access);
       Check_Prop (V, Ptr, "fund", Check_Fund'Access);
-      Check_Prop (V, Ptr, "rolodex", Check_Rolodex'Access);
       Check_Prop (V, Ptr, "contacts", Check_Contacts'Access);
       Check_Prop (V, Ptr, "session", Check_Session'Access);
       Check_Prop (V, Ptr, "notebook", Check_Str'Access);
@@ -1383,7 +1349,6 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "playbook", Check_Playbook'Access);
       Check_Prop (V, "", "gear", Check_Gear'Access);
       Check_Prop (V, "", "fund", Check_Fund'Access);
-      Check_Prop (V, "", "rolodex", Check_Rolodex'Access);
       Check_Prop (V, "", "contacts", Check_Contacts'Access);
       Check_Prop (V, "", "session", Check_Session'Access);
       Check_Prop (V, "", "notebook", Check_Str'Access);

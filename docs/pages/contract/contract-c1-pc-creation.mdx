@@ -49,6 +49,23 @@ the created character (`ok`, `character`, `applied`, `sideEffects`, `error`).
 Identical to `createCharacter`: `GAME_NOT_FOUND` as a **200-status domain
 failure** (SC-A3 locked status table) — not a request-shape error.
 
+### Playbook defaults overlay (V4/V5)
+
+`Playbooks[].DefaultActionPoints` (e.g. the Cutter's Skirmish 2 + Command 1,
+read from `data/games/blades-in-the-dark.json`) are **enforced**, not merely
+advisory:
+
+- **V4** — the FINAL rating map (`defaults ∪ submissions`) must key every
+  action published by the game's `Attributes`. An omitted action that carries
+  a nonzero playbook default takes the default; any other omission is
+  `VALIDATION`.
+- **V5** — a *submitted* value for a defaulted action must equal its
+  `DefaultActionPoints` exactly; a conflicting submission is `VALIDATION`
+  naming the action and the default.
+
+The chargen UI prefills the chosen playbook's defaults as locked dots and
+counts them against the same budget; switching playbooks re-derives them.
+
 ## Setting-absent behavior — decision
 
 The two new settings are **optional** in `game-settings-schema.json`. A game

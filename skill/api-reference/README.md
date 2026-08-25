@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 113
+Operations: 110
 
 ## Conventions
 
@@ -165,9 +165,6 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/fund.gain` | [`fundGain`](#fundgain) | true |
 | POST | `/characters/{id}/ops/fund.spend` | [`fundSpend`](#fundspend) | true |
 | POST | `/characters/{id}/ops/fund.liquidate` | [`fundLiquidate`](#fundliquidate) | true |
-| POST | `/characters/{id}/ops/rolodex.add` | [`rolodexAdd`](#rolodexadd) | true |
-| POST | `/characters/{id}/ops/rolodex.remove` | [`rolodexRemove`](#rolodexremove) | true |
-| POST | `/characters/{id}/ops/rolodex.set-closeness` | [`rolodexSetCloseness`](#rolodexsetcloseness) | true |
 | POST | `/characters/{id}/ops/contact.add` | [`characterContactAdd`](#charactercontactadd) | true |
 | POST | `/characters/{id}/ops/contact.closeness` | [`characterContactCloseness`](#charactercontactcloseness) | true |
 | POST | `/characters/{id}/ops/contact.remove` | [`characterContactRemove`](#charactercontactremove) | true |
@@ -505,7 +502,7 @@ Responses:
 
 `POST /characters/pc`
 
-Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes (unknown or missing names are VALIDATION); values are FINAL ratings, including any per-playbook DefaultActionPoints contribution. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).
+Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes, except that actions carrying the chosen playbook's DefaultActionPoints may be omitted and take the default. Per-playbook DefaultActionPoints are enforced from settings (DEC-01 ruling; GameSettingExtensions reference): the final allocation = defaults ∪ submissions — a submitted value for a defaulted action must MATCH the default, a conflicting value => VALIDATION naming the action and the default; budget (StartingActionDots) and cap (StartingActionDotMax) checks run against the overlaid final map. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).
 
 Parameters: `idempotencyKey`
 
@@ -526,11 +523,14 @@ schema:
       description: >
         Map of every action name from the game's Attributes to its
         starting rating. Property names are enforced server-side
-        to match exactly the published action set; each value is
-        an integer clamped by settings to 0..StartingActionDotMax
-        (the per-game maximum cannot be static here — it is
-        enforced from game settings, spec §5.5), and the values'
-        sum must equal StartingActionDots.
+        to match the published action set (actions with a
+        playbook DefaultActionPoints default may be omitted);
+        each value is an integer clamped by settings to
+        0..StartingActionDotMax (the per-game maximum cannot be
+        static here — it is enforced from game settings, spec
+        §5.5), submitted values for defaulted actions must equal
+        the default, and the overlaid values' sum must equal
+        StartingActionDots.
       additionalProperties:
         type: integer
         minimum: 0
@@ -1488,91 +1488,11 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 
-## rolodexAdd
-
-`POST /characters/{id}/ops/rolodex.add`
-
-Duplicate entry → DUPLICATE. New friends start at closeness "friend".
-
-Parameters: `id`, `ifMatch`, `idempotencyKey`
-
-Snapshot: `true`
-
-Request body schema:
-
-```yaml
-schema:
-  type: object
-  required: [entry]
-  additionalProperties: false
-  properties:
-    entry: { type: string, minLength: 1 }
-```
-
-Responses:
-
-- `200`: OperationResult
-- `404`: OperationResult
-- `409`: OperationResult
-
-## rolodexRemove
-
-`POST /characters/{id}/ops/rolodex.remove`
-
-Parameters: `id`, `ifMatch`, `idempotencyKey`
-
-Snapshot: `true`
-
-Request body schema:
-
-```yaml
-schema:
-  type: object
-  required: [entry]
-  additionalProperties: false
-  properties:
-    entry: { type: string, minLength: 1 }
-```
-
-Responses:
-
-- `200`: OperationResult
-- `404`: OperationResult
-- `409`: OperationResult
-
-## rolodexSetCloseness
-
-`POST /characters/{id}/ops/rolodex.set-closeness`
-
-Full transition set (friend/close-friend/rival) — supersedes the reference's four named upgrade/downgrade methods with one total operation.
-
-Parameters: `id`, `ifMatch`, `idempotencyKey`
-
-Snapshot: `true`
-
-Request body schema:
-
-```yaml
-schema:
-  type: object
-  required: [entry, closeness]
-  additionalProperties: false
-  properties:
-    entry: { type: string, minLength: 1 }
-    closeness: { $ref: "./schemas/common.json#/$defs/closeness" }
-```
-
-Responses:
-
-- `200`: OperationResult
-- `404`: OperationResult
-- `409`: OperationResult
-
 ## characterContactAdd
 
 `POST /characters/{id}/ops/contact.add`
 
-CONTRACT-05 (2026-08-24, human-authorized): per-scoundrel Contacts. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \"contact\" and a server-generated id.
+CONTRACT-05 (2026-08-24 card; 2026-08-25 correction — evolved from the former rolodex surface by human ruling, exactly one relationship family): add a per-scoundrel contact by name. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \"contact\" and a server-generated id.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1594,12 +1514,14 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `400`: OperationResult
+- `422`: OperationResult
 
 ## characterContactCloseness
 
 `POST /characters/{id}/ops/contact.closeness`
 
-CONTRACT-05: set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION.
+CONTRACT-05 (2026-08-25 correction): set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1614,7 +1536,7 @@ schema:
   additionalProperties: false
   properties:
     name: { type: string, minLength: 1 }
-    closeness: { $ref: "./schemas/common.json#/$defs/contactCloseness" }
+    closeness: { $ref: "./schemas/common.json#/$defs/closeness" }
 ```
 
 Responses:
@@ -1622,6 +1544,8 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `400`: OperationResult
+- `422`: OperationResult
 
 ## characterContactRemove
 
@@ -1649,6 +1573,8 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `400`: OperationResult
+- `422`: OperationResult
 
 ## dossierUpdate
 
@@ -2640,7 +2566,7 @@ Responses:
 
 `POST /crews/{id}/ops/faction.set-status`
 
-C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result.
+C3 contract change. Total op mirroring contact.closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 

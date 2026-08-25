@@ -32,37 +32,51 @@ them under a new `ContactsNames` block would create a second source for the
 same names; the card's conditional ("if BitS carries lists as constants, copy
 them into game settings") does not trigger.
 
-## Relationship to the existing character rolodex
+## Relationship to the former character rolodex
 
-The card's premise ("today contacts exist only on crews") is contradicted by
-the codebase: characters already carry a BitS-derived **rolodex**
+The card's premise ("today contacts exist only on crews") was contradicted by
+the codebase: characters already carried a BitS-derived **rolodex**
 (`/rolodex/friends[]` with `entry` + closeness `friend|close-friend|rival`,
-ops `rolodex.add` / `rolodex.set-closeness` / `rolodex.remove`). CONTRACT-05
-is implemented **additively** per the card's surface section ("Character DTO
-gains `contacts`", "no migration required"): the rolodex stays untouched, and
-contacts are a second, independently curated list. Consolidating the two
-features (rename/re-level or merge) is a follow-up contract decision, not part
-of this card.
+ops `rolodex.add` / `rolodex.set-closeness` / `rolodex.remove`). An initial
+implementation added `contacts` as a second, parallel list; the human ruling
+of 2026-08-25 resolved the contradiction against that reading —
+**"instead of calling it Rolodex, let's just call it 'Contacts'"** — i.e.
+EVOLVE the existing surface, exactly one relationship family. The clean
+cutover renamed the model field to `contacts` and replaced both the
+`rolodex.*` ops **and** the parallel set with a single op family:
+`contact.add` / `contact.closeness` / `contact.remove`. The old ops have no
+compatibility path (rejected-decision rule).
+
+### Value migration
+
+The closeness vocabulary changed from `friend | close-friend | rival` to
+exactly `friend | contact | rival` (`contact` = default level for new
+entries). Migration is **deliberately not automatic**: a stored legacy value
+(e.g. `"close-friend"`) fails ordinary decoding as needs-input rather than
+being silently rewritten. Stored seeds/fixtures in this repository were
+migrated in place (`close-friend` → `friend`; `friend`/`rival` unchanged).
+Deployments with stored characters carrying legacy values must apply the same
+one-line-per-entry rewrite before upgrade.
 
 ## DTO shape
 
 ```
-contacts?: Array<{ id: uuid, name: string (minLength 1), closeness: "friend" | "contact" | "rival" }>
+contacts: Array<{ id: uuid, name: string (minLength 1), closeness: "friend" | "contact" | "rival" }>
 ```
 
 - `id` is server-generated (UUIDv4, like cohorts) so clients can key rows;
   ops address entries by unique `name`.
 - Names are unique within the list.
-- **Sparse overlay (second sanctioned sparse field beside crew
-  `claimOverrides` item fields):** `contacts` is deliberately NOT in the
-  character schema's `required` list, and absence on stored characters means
-  the empty list — no migration, no legacy fill rule, no repair-preview noise.
-  Pre-C5 stored characters decode and mutate exactly as before. New writes
-  materialize the array canonically: character creation emits `"contacts":[]`,
-  and every contact op stores the full array.
+- **`contacts` is a REQUIRED canonical property** of the character schema,
+  like every other current-version list: absence fails ordinary decoding
+  (canonical-total rule, PAPERCLIPS.md §4.6/§6). There is **no** sparse-overlay
+  exception here — `claimOverrides` item fields remain the only sanctioned
+  one. Character creation emits `"contacts":[]`, and every contact op stores
+  the full array.
 - Error codes diverge from the crew contact ops **by ruling**: duplicate name
   and unknown name are both `VALIDATION` here (crew uses `DUPLICATE` /
-  `NOT_FOUND`).
+  `NOT_FOUND`). All three ops declare `400 VALIDATION` and `422
+  INVALID_ENTITY` responses in OpenAPI alongside `200/404/409`.
 
 ## Operations
 
@@ -77,8 +91,8 @@ standard OpResult envelope with the full character:
 
 Lifecycle: contact ops are gameplay-adjacent mutations and fall under the
 retired deny-list by default (a retired character returns `RETIRED`, same as
-`rolodex.*`). History entries are labelled with the op id (`contact.add`,
-`contact.closeness`, `contact.remove`).
+the former `rolodex.*` family). History entries are labelled with the op id
+(`contact.add`, `contact.closeness`, `contact.remove`).
 
 ## Frontend
 

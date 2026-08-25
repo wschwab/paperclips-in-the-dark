@@ -38,9 +38,9 @@ const PositiveInt = Schema.Int.pipe(Schema.greaterThanOrEqualTo(1));
 const NonEmptyString = Schema.String.pipe(Schema.minLength(1));
 
 const HarmIntensity = Schema.Literal("lesser", "moderate", "severe", "fatal");
-const Closeness = Schema.Literal("friend", "close-friend", "rival");
-// CONTRACT-05 (character.json, 2026-08-24): per-scoundrel contacts closeness.
-const ContactCloseness = Schema.Literal("friend", "contact", "rival");
+// CONTRACT-05 (2026-08-25 correction): single closeness vocabulary — the
+// character contacts list evolved from the former rolodex surface.
+const Closeness = Schema.Literal("friend", "contact", "rival");
 const Commitment = Schema.Literal("none", "light", "normal", "heavy", "encumbered");
 const Hold = Schema.Literal("strong", "weak");
 const CohortType = Schema.Literal("gang", "expert");
@@ -139,24 +139,18 @@ const Character = Schema.Struct({
     satchel: Schema.Struct({ coins: NonNegativeInt, max: NonNegativeInt }),
     stash: Schema.Struct({ coins: NonNegativeInt, max: NonNegativeInt }),
   }),
-  rolodex: Schema.Struct({
-    friends: Schema.Array(Schema.Struct({ entry: NonEmptyString, closeness: Closeness })),
-  }),
+  // CONTRACT-05 (2026-08-25 correction): the per-scoundrel relationship list,
+  // evolved from the former rolodex surface — exactly one family, required
+  // canonical array (ordinary current-version responses reject absence).
+  contacts: Schema.Array(
+    Schema.Struct({ id: Uuid, name: NonEmptyString, closeness: Closeness }),
+  ),
   session: Schema.Struct({
     playbookExpressions: NonNegativeInt,
     characterExpressions: NonNegativeInt,
     struggleExpressions: NonNegativeInt,
     max: NonNegativeInt,
   }),
-  // CONTRACT-05 (character.json, 2026-08-24): per-scoundrel contacts. The
-  // sanctioned sparse overlay — absence on stored characters decodes as the
-  // empty list (no migration); present values are validated strictly.
-  contacts: Schema.optionalWith(
-    Schema.Array(
-      Schema.Struct({ id: Uuid, name: NonEmptyString, closeness: ContactCloseness }),
-    ),
-    { default: () => [] },
-  ),
   notebook: Schema.String,
 });
 

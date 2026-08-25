@@ -11,6 +11,7 @@ import {
   actionGroupsFromSettings,
   pcAllocationReady,
   pcBudgetFromSettings,
+  playbookDefaultsFromSettings,
   unspentDots,
   type ChargenGroup,
   type PcBudget,
@@ -155,16 +156,18 @@ interface PcChargenRefs {
   unspentEl: HTMLElement;
   submitBtn: HTMLButtonElement;
 }
-
 /**
  * Build the validated PC flow: playbook select first, then per-action dot
  * pickers grouped by attribute, both budget numbers visible, and a Create
- * button gated on "exactly 0 unspent AND every rating ≤ cap".
+ * button gated on "exactly 0 unspent AND every rating ≤ cap". The chosen
+ * playbook's DefaultActionPoints prefill from settings as LOCKED dots
+ * (DEC-01 ruling); switching playbooks re-derives them from scratch.
  */
 function buildPcChargenForm(
   playbooks: string[],
   budget: PcBudget,
   groups: ChargenGroup[],
+  settings: Record<string, unknown>,
   onSubmit: (playbook: string, ratings: Record<string, number>) => void,
 ): PcChargenRefs {
   let selectedPlaybook = "";
@@ -198,12 +201,15 @@ function buildPcChargenForm(
       dotHosts[action] = el("div", { className: "chargen-dots" });
     }
   }
-  const mountActionDots = (action: string): HTMLElement => {
+  const mountActionDots = (action: string, locked: boolean): HTMLElement => {
     const host = dotHosts[action];
     host.replaceChildren(
       actionDots({
         name: action,
         max: budget.startingActionDotMax,
+        value: ratings[action] ?? 0,
+        locked,
+        title: locked ? "Fixed by the playbook's DefaultActionPoints" : undefined,
         onChange: (next) => {
           ratings[action] = next;
           refresh();
@@ -212,7 +218,7 @@ function buildPcChargenForm(
     );
     return host;
   };
-  for (const action of allActions) mountActionDots(action);
+  for (const action of allActions) mountActionDots(action, false);
 
   const groupEls = groups.map((group) =>
     el(
@@ -241,7 +247,7 @@ function buildPcChargenForm(
     el(
       "div",
       { className: "chargen-groups" },
-      el("p", { className: "chargen-hint" }, "Pick a playbook, then distribute your starting dots."),
+      el("p", { className: "chargen-hint" }, "Pick a playbook — its default dots prefill and lock; distribute the rest."),
       ...groupEls,
     ),
     counter,
@@ -265,8 +271,18 @@ function buildPcChargenForm(
   playbookSelect.addEventListener("change", () => {
     selectedPlaybook = playbookSelect.value;
     // A fresh playbook means a fresh allocation — never carry dots across.
+    // Its DefaultActionPoints come from the settings payload (DEC-01
+    // ruling): prefilled, LOCKED, and counted against the same
+    // StartingActionDots budget, so unspent shows budget − defaults
+    // immediately.
     for (const action of allActions) delete ratings[action];
-    for (const action of allActions) mountActionDots(action);
+    const defaults = playbookDefaultsFromSettings(settings, selectedPlaybook);
+    for (const [action, points] of Object.entries(defaults)) {
+      ratings[action] = points;
+    }
+    for (const action of allActions) {
+      mountActionDots(action, action in defaults);
+    }
     refresh();
   });
 
@@ -402,7 +418,6 @@ export function mountCharacterCreatePage(
   // it so the create endpoint is never POSTed twice for the same entity.
   let phaseTwo: PhaseTwo | null = null;
   root.setAttribute("aria-live", "polite");
-
   const budget = pcBudgetFromSettings(settings);
   const groups = actionGroupsFromSettings(settings);
   const pcFlowReady = budget !== null && groups !== null;
@@ -415,7 +430,7 @@ export function mountCharacterCreatePage(
 
   // -- Validated PC chargen --------------------------------------------------
   if (pcFlowReady && budget && groups) {
-    const refs = buildPcChargenForm(playbooks, budget, groups, (playbook, ratings) => {
+    const refs = buildPcChargenForm(playbooks, budget, groups, settings, (playbook, ratings) => {
       if (cancelled) return;
       phaseTwo = null;
       root.setAttribute("aria-busy", "true");

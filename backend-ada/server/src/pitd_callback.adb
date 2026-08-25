@@ -1204,8 +1204,6 @@ end Snapshot;
         or else Op = "attribute.levelup"
         or else Op = "ability.take" or else Op = "ability.remove"
         or else Op = "fund.gain" or else Op = "fund.spend" or else Op = "fund.liquidate"
-        or else Op = "rolodex.add" or else Op = "rolodex.remove"
-        or else Op = "rolodex.set-closeness"
         or else Op = "dossier.update"
         or else Op = "note.add" or else Op = "note.remove"
         or else Op = "heat.add" or else Op = "wanted.add" or else Op = "rep.add"
@@ -1907,7 +1905,7 @@ function New_Character (Stem, Playbook : String) return JSON_Value is
         & Trim_Image (Settings_Int (S, "FundMaxima.SatchelMax", 0))
         & "},""stash"":{""coins"":0,""max"":"
         & Trim_Image (Settings_Int (S, "FundMaxima.StashMax", 0))
-        & "}},""rolodex"":{""friends"":[]},""contacts"":[],""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":"
+        & "}},""contacts"":[],""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":"
         & Trim_Image (Settings_Int (S, "SessionExpressionMax", 0))
         & "},""notebook"":""""}";
    begin
@@ -2153,11 +2151,6 @@ elsif Op = "clock.create" then
          return Check_Fields (B, Spec_List'(1 => Spec ("commitment", JSON_String_Type, En => "none|light|normal|heavy|encumbered")), Bad);
       elsif Op = "fund.gain" or else Op = "fund.spend" or else Op = "fund.liquidate" then
          return Check_Fields (B, Spec_List'(1 => Spec ("coins", JSON_Int_Type, MnI => 1)), Bad);
-      elsif Op = "rolodex.add" or else Op = "rolodex.remove" then
-         return Check_Fields (B, Spec_List'(1 => Spec ("entry", JSON_String_Type, MnL => 1)), Bad);
-      elsif Op = "rolodex.set-closeness" then
-         return Check_Fields (B, (Spec ("entry", JSON_String_Type, MnL => 1),
-                                  Spec ("closeness", JSON_String_Type, En => "friend|close-friend|rival")), Bad);
       elsif Op = "note.add" then
          return Check_Fields (B, Spec_List'(1 => Spec ("text", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "note.remove" then
@@ -2342,6 +2335,51 @@ elsif Op = "clock.progress" then
             Stem     : constant String := Str_Field (B, "gameStem");
             Playbook : constant String := Str_Field (B, "playbook");
             G        : constant JSON_Value := Game (Stem);
+            --  CONTRACT-01 / DEC-01 ruling: per-playbook starting dots are
+            --  settings data (C# reference GameSettingExtensions.cs:38
+            --  DefaultActionPoints(gameSetting, playbook, action)). Returns
+            --  0 when the playbook carries no entry for the action — the
+            --  same "absent means zero" convention as the C# source.
+            function Default_Points_For (Action_Name : String) return Natural is
+            begin
+               if Has_Field (G, "Playbooks") then
+                  declare
+                     PBs : constant JSON_Array := Get (G, "Playbooks");
+                  begin
+                     for I in 1 .. Length (PBs) loop
+                        declare
+                           PB : constant JSON_Value := Get (PBs, I);
+                        begin
+                           if Str_Field (PB, "Name") = Playbook
+                             and then Has_Field (PB, "DefaultActionPoints")
+                             and then Get (PB, "DefaultActionPoints").Kind = JSON_Array_Type
+                           then
+                              declare
+                                 DAPs : constant JSON_Array :=
+                                   Get (PB, "DefaultActionPoints");
+                              begin
+                                 for J in 1 .. Length (DAPs) loop
+                                    declare
+                                       D : constant JSON_Value := Get (DAPs, J);
+                                    begin
+                                       if Str_Field (D, "Action") = Action_Name
+                                         and then D.Kind = JSON_Object_Type
+                                         and then Has_Field (D, "Points")
+                                         and then Get (D, "Points").Kind = JSON_Int_Type
+                                       then
+                                          return Integer'Max
+                                            (0, Integer'(Get (D, "Points")));
+                                       end if;
+                                    end;
+                                 end loop;
+                              end;
+                           end if;
+                        end;
+                     end loop;
+                  end;
+               end if;
+               return 0;
+            end Default_Points_For;
          begin
             if G.Kind /= JSON_Object_Type then
                --  SC-A3: GAME_NOT_FOUND is a 200-status domain failure,
@@ -2400,15 +2438,21 @@ elsif Op = "clock.progress" then
                end if;
             end;
 
-            --  V4/V2/V1 over actionRatings; both bounds come from settings.
+            --  V4/V5/V2/V1 over actionRatings; every bound and default
+            --  comes from settings (DEC-01: DefaultActionPoints enforced).
             declare
                Budget  : constant Integer := Integer'(Get (G, "StartingActionDots"));
                Max     : constant Integer := Integer'(Get (G, "StartingActionDotMax"));
                Ratings : constant JSON_Value := Get (B, "actionRatings");
                Bad_Name  : Unbounded_String := Null_Unbounded_String;
                Bad_Value : Unbounded_String := Null_Unbounded_String;
-               Over_Cap  : Unbounded_String := Null_Unbounded_String;
-               Sum       : Natural := 0;
+                 --  V5 conflict: submitted value for a defaulted action that
+                 --  does not match the playbook default.
+               Conflict_Name    : Unbounded_String := Null_Unbounded_String;
+               Conflict_Default : Integer := 0;
+               Over_Cap_Name   : Unbounded_String := Null_Unbounded_String;
+               Over_Cap_Value : Integer := 0;
+               Sum            : Natural := 0;
 
                function Published_Action (Name : String) return Boolean is
                begin
@@ -2446,12 +2490,6 @@ elsif Op = "clock.progress" then
                      if Length (Bad_Value) = 0 then
                         Bad_Value := To_Unbounded_String (String (Key));
                      end if;
-                  else
-                     Sum := Sum + Integer'(Get (Value));
-                     if Integer'(Get (Value)) > Max and then Length (Over_Cap) = 0
-                     then
-                        Over_Cap := To_Unbounded_String (String (Key));
-                     end if;
                   end if;
                end Scan_Rating;
 
@@ -2470,13 +2508,17 @@ elsif Op = "clock.progress" then
                      Message => "actionRatings.""" & To_String (Bad_Value)
                        & """ must be a non-negative integer");
                end if;
-               --  V4 completeness: every published action must be keyed.
+               --  V4/V5 over the FINAL map (defaults ∪ submissions): every
+               --  published action must be keyed after the overlay; a
+               --  submitted value for a defaulted action must MATCH the
+               --  playbook's DefaultActionPoints (DEC-01 ruling).
                if Has_Field (G, "Attributes") then
                   declare
                      Attrs : constant JSON_Array := Get (G, "Attributes");
                   begin
                      for I in 1 .. Length (Attrs) loop
-                        exit when Length (Missing_Name) > 0;
+                        exit when Length (Missing_Name) > 0
+                          or else Length (Conflict_Name) > 0;
                         if Has_Field (Get (Attrs, I), "Actions") then
                            declare
                               Acts : constant JSON_Array :=
@@ -2484,10 +2526,42 @@ elsif Op = "clock.progress" then
                            begin
                               for J in 1 .. Length (Acts) loop
                                  declare
-                                    Nm : constant String :=
+                                    Nm  : constant String :=
                                       Str_Field (Get (Acts, J), "Name");
+                                    Def : constant Natural :=
+                                      Default_Points_For (Nm);
                                  begin
-                                    if not Has_Field (Ratings, Nm) then
+                                    if Has_Field (Ratings, Nm) then
+                                       declare
+                                          V : constant Integer :=
+                                            Integer'(Get (Ratings, Nm));
+                                       begin
+                                          if Def > 0 and then V /= Def then
+                                             Conflict_Name :=
+                                               To_Unbounded_String (Nm);
+                                             Conflict_Default := Def;
+                                          else
+                                             Sum := Sum + V;
+                                             if V > Max
+                                               and then Length (Over_Cap_Name) = 0
+                                             then
+                                                Over_Cap_Name :=
+                                                  To_Unbounded_String (Nm);
+                                                Over_Cap_Value := V;
+                                             end if;
+                                          end if;
+                                       end;
+                                    elsif Def > 0 then
+                                       --  Union fill: the default stands in.
+                                       Sum := Sum + Def;
+                                       if Def > Max
+                                         and then Length (Over_Cap_Name) = 0
+                                       then
+                                          Over_Cap_Name :=
+                                            To_Unbounded_String (Nm);
+                                          Over_Cap_Value := Def;
+                                       end if;
+                                    else
                                        Missing_Name := To_Unbounded_String (Nm);
                                        exit;
                                     end if;
@@ -2498,18 +2572,28 @@ elsif Op = "clock.progress" then
                      end loop;
                   end;
                end if;
+               if Length (Conflict_Name) > 0 then
+                  return Fail
+                    (AWS.Messages.S400, Op, "VALIDATION",
+                     Message => "actionRatings.""" & To_String (Conflict_Name)
+                       & """ is " & Trim_Image (Integer'(Get (Ratings, To_String (Conflict_Name))))
+                       & ", but the playbook's DefaultActionPoints give "
+                       & Trim_Image (Conflict_Default)
+                       & ": starting dots for a defaulted action must match the default exactly");
+               end if;
                if Length (Missing_Name) > 0 then
                   return Fail
                     (AWS.Messages.S400, Op, "VALIDATION",
                      Message => "missing action """ & To_String (Missing_Name)
-                       & """: actionRatings must map every action published by the game's Attributes");
+                       & """: actionRatings must map every action published by the game's Attributes"
+                       & " (actions without a playbook DefaultActionPoints default cannot be omitted)");
                end if;
                --  V2: every rating <= StartingActionDotMax.
-               if Length (Over_Cap) > 0 then
+               if Length (Over_Cap_Name) > 0 then
                   return Fail
                     (AWS.Messages.S400, Op, "VALIDATION",
-                     Message => "actionRatings.""" & To_String (Over_Cap) & """ is "
-                       & Trim_Image (Integer'(Get (Ratings, To_String (Over_Cap))))
+                     Message => "actionRatings.""" & To_String (Over_Cap_Name) & """ is "
+                       & Trim_Image (Over_Cap_Value)
                        & "; StartingActionDotMax is " & Trim_Image (Max)
                        & ": starting ratings must not exceed the cap");
                end if;
@@ -2524,15 +2608,16 @@ elsif Op = "clock.progress" then
             end;
 
             --  Validation passed: build through the shared template, apply
-            --  the submitted FINAL starting ratings (V4 guarantees every
-            --  stored action is keyed; DefaultActionPoints contributions are
-            --  already included in them), then run the exact sibling-create
-            --  canonical-write pipeline (SC-A1 gate, atomic write, baseline
-            --  snapshot).
+            --  the FINAL starting ratings (defaults ∪ submissions; V4/V5
+            --  guarantee every stored action is keyed and defaulted actions
+            --  carry exactly their DefaultActionPoints), then run the exact
+            --  sibling-create canonical-write pipeline (SC-A1 gate, atomic
+            --  write, baseline snapshot).
             declare
                E         : JSON_Value := New_Character (Stem, Playbook);
                --  Re-derived from the request body: the validation block's
-               --  local is out of scope here; V4 already proved completeness.
+               --  locals are out of scope here; V4/V5 already proved
+               --  completeness and default matching.
                R         : constant JSON_Value := Get (B, "actionRatings");
                Out_Attrs : JSON_Array := Empty_Array;
                Old_Attrs : constant JSON_Array :=
@@ -2552,8 +2637,10 @@ elsif Op = "clock.progress" then
                            Set_Field (X, "name",
                              Str_Field (Get (Old_Acts, J), "name"));
                            Set_Field (X, "rating",
-                             Integer'(Get (R,
-                               Str_Field (Get (Old_Acts, J), "name"))));
+                             (if Has_Field (R, Str_Field (Get (Old_Acts, J), "name"))
+                              then Integer'(Get (R, Str_Field (Get (Old_Acts, J), "name")))
+                              else Default_Points_For
+                                     (Str_Field (Get (Old_Acts, J), "name"))));
                            Set_Field (X, "maxRating",
                              Int_Field (Get (Old_Acts, J), "maxRating"));
                            Append (New_Acts, X);
@@ -2603,7 +2690,7 @@ elsif Op = "clock.progress" then
    Allowed_Character : constant String :=
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|" &
      "updatedAt|isRetired|isDeadish|traumaPending|isOutOfAction|" &
-     "stressClearPending|dossier|monitor|talent|playbook|gear|fund|rolodex|" &
+     "stressClearPending|dossier|monitor|talent|playbook|gear|fund|" &
      "contacts|session|notebook|";
    Allowed_Named_Desc : constant String := "|name|description|";
    Allowed_Vice : constant String := "|name|description|purveyor|";
@@ -2627,8 +2714,7 @@ elsif Op = "clock.progress" then
    Allowed_Gear_Item : constant String := "|name|bulk|";
    Allowed_Fund : constant String := "|satchel|stash|";
    Allowed_Satchel : constant String := "|coins|max|";
-   Allowed_Rolodex : constant String := "|friends|";
-   Allowed_Friend : constant String := "|entry|closeness|";
+   Allowed_Char_Contact : constant String := "|id|name|closeness|";
    Allowed_Session : constant String :=
      "|playbookExpressions|characterExpressions|struggleExpressions|max|";
    Allowed_Crew : constant String :=
@@ -2837,10 +2923,6 @@ elsif Op = "clock.progress" then
    Hold_Legacy : constant Legacy_Map :=
      ((To_Unbounded_String ("Strong"), To_Unbounded_String ("strong")),
       (To_Unbounded_String ("Weak"),   To_Unbounded_String ("weak")));
-   Closeness_Legacy : constant Legacy_Map :=
-     ((To_Unbounded_String ("Friend"),      To_Unbounded_String ("friend")),
-      (To_Unbounded_String ("CloseFriend"), To_Unbounded_String ("close-friend")),
-      (To_Unbounded_String ("Rival"),       To_Unbounded_String ("rival")));
    Commitment_Legacy : constant Legacy_Map :=
      ((To_Unbounded_String ("None"),       To_Unbounded_String ("none")),
       (To_Unbounded_String ("Light"),      To_Unbounded_String ("light")),
@@ -3666,17 +3748,37 @@ elsif Op = "clock.progress" then
       return X;
    end Gear_Item;
 
-   function Friend_Item (V : JSON_Value; Ptr : String; S : Settings_Ref;
-                         C : in out N_Ctx) return JSON_Value is
+   function Char_Contact_Item (V : JSON_Value; Ptr : String; S : Settings_Ref;
+                               C : in out N_Ctx) return JSON_Value is
       X : JSON_Value := Create_Object;
    begin
-      List_Removals (V, Ptr, Allowed_Friend, C);
-      Set_Field (X, "entry", N_Str_Required (V, "entry", Ptr & "/entry", C));
+      List_Removals (V, Ptr, Allowed_Char_Contact, C);
+      --  identity: contact ids are server-generated; a missing or invalid
+      --  id gets a fresh UUID as a previewed fill (no schema references
+      --  them), the same rule as cohort ids.
+      if Has_Field (V, "id") and then Get (V, "id").Kind = JSON_String_Type
+        and then Is_Uuid (Str_Field (V, "id"))
+      then
+         Set_Field (X, "id", Clone (Get (V, "id")));
+      else
+         declare Nid : constant String := New_Id; begin
+            Add_Change (C, Ptr & "/id", "identity normalization",
+                        (if Has_Field (V, "id") then Get (V, "id") else JSON_Null),
+                        Create (Nid),
+                        "Missing or invalid contact id at " & Ptr
+                        & "/id: filled with server-generated UUID " & Nid);
+            Set_Field (X, "id", Create (Nid));
+         end;
+      end if;
+      Set_Field (X, "name", N_Str_Required (V, "name", Ptr & "/name", C));
+      --  CONTRACT-05 correction: closeness is exactly friend|contact|rival.
+      --  Legacy close-friend values are NOT auto-migrated — a stored legacy
+      --  value is needs-input (documented value migration, spec page).
       Set_Field (X, "closeness", N_Enum (V, "closeness", Ptr & "/closeness", C,
-                                         "|friend|close-friend|rival|",
-                                         Closeness_Legacy));
+                                         "|friend|contact|rival|",
+                                         No_Legacy));
       return X;
-   end Friend_Item;
+   end Char_Contact_Item;
 
    --  Crew array items ------------------------------------------------------
 
@@ -4184,29 +4286,16 @@ elsif Op = "clock.progress" then
       return X;
    end N_Fund;
 
-   function N_Rolodex (O : JSON_Value; C : in out N_Ctx) return JSON_Value is
-      X : JSON_Value := Create_Object;
-      Src : JSON_Value;
-      Missing : Boolean := False;
+   --  CONTRACT-05 correction: the character relationship list is the
+   --  REQUIRED canonical contacts array (the evolved rolodex surface).
+   --  Missing/null fills with the empty array like every other required
+   --  property; items normalize through Char_Contact_Item.
+   function N_Char_Contacts (O : JSON_Value; C : in out N_Ctx) return JSON_Value is
       No_Settings : Settings_Ref;
    begin
-      if not Has_Field (O, "rolodex") or else Get (O, "rolodex").Kind = JSON_Null_Type then
-         Missing := True; Src := Create_Object;
-      elsif Get (O, "rolodex").Kind = JSON_Object_Type then
-         Src := Get (O, "rolodex");
-         List_Removals (Src, "/rolodex", Allowed_Rolodex, C);
-      else
-         Add_Needs (C, "/rolodex", "wrong type: expected an object", "an object");
-         Src := Create_Object;
-      end if;
-      Set_Field (X, "friends", N_Items (Src, "friends", "", "/rolodex/friends",
-                                        No_Settings, C, Friend_Item'Access));
-      if Missing then
-         Add_Change (C, "/rolodex", "missing/null fill", JSON_Null, Clone (X),
-                     "Missing required property /rolodex: filled with canonical empty rolodex");
-      end if;
-      return X;
-   end N_Rolodex;
+      return N_Items (O, "contacts", "", "/contacts", No_Settings, C,
+                      Char_Contact_Item'Access);
+   end N_Char_Contacts;
 
    function N_Session (O : JSON_Value; S : Settings_Ref; C : in out N_Ctx) return JSON_Value is
       X : JSON_Value := Create_Object;
@@ -4323,7 +4412,7 @@ elsif Op = "clock.progress" then
       Set_Field (O, "playbook", N_Playbook (V, S, C));
       Set_Field (O, "gear", N_Gear (V, S, C));
       Set_Field (O, "fund", N_Fund (V, S, C));
-      Set_Field (O, "rolodex", N_Rolodex (V, C));
+      Set_Field (O, "contacts", N_Char_Contacts (V, C));
       Set_Field (O, "session", N_Session (V, S, C));
       Set_Field (O, "notebook", N_Str (V, "notebook", "/notebook", "", C));
       return O;
@@ -4407,14 +4496,26 @@ elsif Op = "clock.progress" then
       Set_Field (O, "reputation", N_Str (V, "reputation", "/reputation", "", C));
       Set_Field (O, "huntingGrounds", N_Str (V, "huntingGrounds", "/huntingGrounds", "", C));
       --  CONTRACT-04: tier clamps to [0, CrewTierMax] (D5 clamp semantics,
-      --  same shape as turf; permissive literal only for unresolved settings).
+      --  same shape as turf).  CrewTierMax is startup-required for every
+      --  supported game; when it is absent or unresolvable here the
+      --  normalizer fails loudly on /tier instead of guessing a literal
+      --  ceiling (no hardcoded game maxima — spec §5.5).
       declare
-         Tier_Max : constant Integer :=
-           (if S.G.Kind = JSON_Object_Type
-            then Settings_Int (S, "CrewTierMax", 4) else 4);
+         Have_Max : constant Boolean :=
+           S.G.Kind = JSON_Object_Type
+           and then Has_Field (S.G, "CrewTierMax")
+           and then Get (S.G, "CrewTierMax").Kind = JSON_Int_Type;
       begin
-         Set_Field (O, "tier", N_Int (V, "tier", "/tier", 0, C,
-                                      Min => 0, Max => Tier_Max));
+         if Have_Max then
+            Set_Field (O, "tier", N_Int (V, "tier", "/tier", 0, C,
+                                         Min => 0,
+                                         Max => Integer'(Get (S.G, "CrewTierMax"))));
+         else
+            Add_Needs (C, "/tier",
+                       "game settings do not publish a CrewTierMax integer",
+                       "loaded game settings with an integer CrewTierMax");
+            Set_Field (O, "tier", N_Int (V, "tier", "/tier", 0, C, Min => 0));
+         end if;
       end;
       Set_Field (O, "hold", N_Enum (V, "hold", "/hold", C, "|strong|weak|",
                                     Hold_Legacy, Default => "strong"));
@@ -5716,15 +5817,14 @@ elsif Op = "harm.add" then
          end;
       end if;
       end;
-      elsif Op="rolodex.add" then declare R:constant JSON_Value:=Get(E,"rolodex");A:constant JSON_Array:=Get(R,"friends");O:JSON_Array:=A;Entry_Name:constant String:=Str_Field(B,"entry");X:JSON_Value:=Create_Object;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Entry_Name then return Duplicate_Error(Op,"rolodex entry already exists",E);end if;end loop;Set_Field(X,"entry",Entry_Name);Set_Field(X,"closeness","friend");Append(O,X);Set_Field(R,"friends",O);end;
-      elsif Op="rolodex.set-closeness" then declare A:constant JSON_Array:=Get(Get(E,"rolodex"),"friends");begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Str_Field(B,"entry") then Set_Field(Get(A,I),"closeness",Str_Field(B,"closeness","friend"));end if;end loop;end;
-      elsif Op="rolodex.remove" then declare A:constant JSON_Array:=Get(Get(E,"rolodex"),"friends");O:JSON_Array:=Empty_Array;Entry_Name:constant String:=Str_Field(B,"entry");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Entry_Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Not_Found_Error(Op,"rolodex entry not found",E);end if;Set_Field(Get(E,"rolodex"),"friends",O);end;
       elsif Op="contact.add" and then Kind="character" then
-         --  CONTRACT-05: per-scoundrel contacts. Sparse overlay: absent
-         --  /contacts means []. Duplicate name -> VALIDATION (human ruling;
-         --  the crew op keeps DUPLICATE). New entries carry a
-         --  server-generated id and closeness "contact".
-         declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);Name:constant String:=Str_Field(B,"name");begin
+         --  CONTRACT-05 correction: the REQUIRED canonical /contacts array.
+         --  Duplicate name -> VALIDATION (human ruling; the crew op keeps
+         --  DUPLICATE). New entries carry a server-generated id and
+         --  closeness "contact". Stored documents are admission-gated
+         --  (422 INVALID_ENTITY) before any mutation, so /contacts is
+         --  always present here.
+         declare A:constant JSON_Array:=Get(E,"contacts");Name:constant String:=Str_Field(B,"name");begin
             for I in 1..Length(A) loop
                if Str_Field(Get(A,I),"name")=Name then return Validation_Error(Op,"contact already exists",Root_Issues("contact already exists"),E);end if;
             end loop;
@@ -5736,7 +5836,7 @@ elsif Op = "harm.add" then
       elsif Op="contact.closeness" and then Kind="character" then
          --  CONTRACT-05: set the named contact's closeness
          --  (friend|contact|rival). Unknown name -> VALIDATION (ruling).
-         declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);Found:Boolean:=False;begin
+         declare A:constant JSON_Array:=Get(E,"contacts");Found:Boolean:=False;begin
             for I in 1..Length(A) loop
                if Str_Field(Get(A,I),"name")=Str_Field(B,"name") then Set_Field(Get(A,I),"closeness",Str_Field(B,"closeness"));Found:=True;end if;
             end loop;
@@ -5745,7 +5845,7 @@ elsif Op = "harm.add" then
       elsif Op="contact.remove" and then Kind="character" then
          --  CONTRACT-05: drop the named contact. Unknown name -> VALIDATION
          --  (ruling; the crew op keeps NOT_FOUND).
-         declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin
+         declare A:constant JSON_Array:=Get(E,"contacts");O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin
             for I in 1..Length(A) loop
                if Str_Field(Get(A,I),"name")=Name then Found:=True;else Append(O,Get(A,I));end if;
             end loop;
@@ -7158,6 +7258,18 @@ elsif Op = "harm.add" then
       Set_Field (X, "effectiveTurf", Turf_Effective);
       Set_Field (X, "developThreshold",
                  Integer'Max (0, Int_Field (Get (E, "rep"), "max") - Turf_Effective));
+      --  CONTRACT-04 review fix: publish the settings-derived Tier maximum
+      --  so the frontend derives its display scale from data, never a
+      --  hardcoded numeral list.  CrewTierMax is startup-required for every
+      --  supported game, so this is always present once settings load.
+      declare
+         Stem : constant String := Str_Field (E, "gameStem");
+         S    : constant Settings_Ref := (To_Unbounded_String (Stem), Game (Stem));
+      begin
+         if Settings_Int (S, "CrewTierMax", 0) > 0 then
+            Set_Field (X, "tierMax", Settings_Int (S, "CrewTierMax", 0));
+         end if;
+      end;
 return X;
    end Crew_Capabilities;
 

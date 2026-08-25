@@ -21,12 +21,15 @@ export interface ActionDotsOptions {
   id?: string;
   /** Optional tooltip on the action-name label (e.g. a short description). */
   title?: string;
+  /** Display-only dots (PC chargen playbook DefaultActionPoints prefills):
+   *  onChange is ignored and the row renders non-interactive spans. */
+  locked?: boolean;
 }
 
 export function actionDots(opts: ActionDotsOptions): HTMLElement {
   const max = opts.max ?? 4;
   const value = clamp(opts.value ?? 0, 0, max);
-  const interactive = typeof opts.onChange === "function";
+  const interactive = typeof opts.onChange === "function" && !opts.locked;
 
   const dots = el("div", {
     className: "action-dots",

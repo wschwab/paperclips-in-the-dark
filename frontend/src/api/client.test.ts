@@ -179,7 +179,7 @@ describe("getCharacter", () => {
         maxBulk: 8,
       },
       fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
-      rolodex: { friends: [] },
+      contacts: [],
       session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
       notebook: "",
     };
@@ -570,7 +570,7 @@ describe("createCharacter", () => {
       playbook: { name: "Cutter", experience: { points: 0, max: 8 }, abilities: [] },
       gear: { loadout: [], availableGear: [], commitment: "none", isCommitmentLocked: false, maxBulk: 6 },
       fund: { satchel: { coins: 0, max: 12 }, stash: { coins: 0, max: 16 } },
-      rolodex: { friends: [] },
+      contacts: [],
       session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5 },
       notebook: "",
     };
@@ -859,7 +859,7 @@ describe("stressAdd", () => {
         maxBulk: 8,
       },
       fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
-      rolodex: { friends: [] },
+      contacts: [],
       session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
       notebook: "",
     };
@@ -1232,7 +1232,7 @@ function makeChar(overrides: Record<string, unknown> = {}) {
       maxBulk: 8,
     },
     fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
-    rolodex: { friends: [] },
+    contacts: [],
     session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
     notebook: "",
     ...overrides,
@@ -1724,7 +1724,7 @@ describe("undoCharacter", () => {
         maxBulk: 8,
       },
       fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
-      rolodex: { friends: [] },
+      contacts: [],
       session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
       notebook: "",
     };

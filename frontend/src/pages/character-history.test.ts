@@ -60,7 +60,7 @@ const characterDTO = {
     maxBulk: 8,
   },
   fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
-  rolodex: { friends: [] },
+  contacts: [],
   session: {
     playbookExpressions: 0,
     characterExpressions: 0,

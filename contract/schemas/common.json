@@ -101,13 +101,6 @@
     "closeness": {
       "enum": [
         "friend",
-        "close-friend",
-        "rival"
-      ]
-    },
-    "contactCloseness": {
-      "enum": [
-        "friend",
         "contact",
         "rival"
       ]

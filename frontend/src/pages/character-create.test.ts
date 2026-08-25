@@ -110,9 +110,7 @@ function characterDTO(overrides: Record<string, unknown> = {}): Record<string, u
     playbook: { name: "Cutter", experience: { points: 0, max: 8 }, abilities: [] },
     gear: { loadout: [], availableGear: [], commitment: "none", isCommitmentLocked: false, maxBulk: 6 },
     fund: { satchel: { coins: 0, max: 12 }, stash: { coins: 0, max: 16 } },
-    rolodex: { friends: [] },
-    // CONTRACT-05: canonical create emits the empty contacts array; the
-    // sparse decoder default materializes it identically on decode.
+    // CONTRACT-05: canonical create emits the REQUIRED empty contacts array.
     contacts: [],
     session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5 },
     notebook: "",
@@ -169,6 +167,24 @@ const SETTINGS_WITH_BUDGET: Record<string, unknown> = {
     { Name: "Insight", Actions: ACTIONS.slice(0, 4).map((n) => ({ Name: n })) },
     { Name: "Prowess", Actions: ACTIONS.slice(4, 8).map((n) => ({ Name: n })) },
     { Name: "Resolve", Actions: ACTIONS.slice(8, 12).map((n) => ({ Name: n })) },
+  ],
+  // DefaultActionPoints mirror data/games/blades-in-the-dark.json
+  // (Cutter: Skirmish 2 + Command 1; Spider: Consort 2 + Study 1).
+  Playbooks: [
+    {
+      Name: "Cutter",
+      DefaultActionPoints: [
+        { Action: "Skirmish", Points: 2 },
+        { Action: "Command", Points: 1 },
+      ],
+    },
+    {
+      Name: "Spider",
+      DefaultActionPoints: [
+        { Action: "Consort", Points: 2 },
+        { Action: "Study", Points: 1 },
+      ],
+    },
   ],
 };
 
@@ -250,20 +266,30 @@ describe("PC chargen flow", () => {
     }
   });
 
-  it("shows both budget numbers and keeps the unspent counter live", () => {
+  it("prefills and locks the chosen playbook's DefaultActionPoints (DEC-01)", () => {
     mountCharacterCreatePage(root, baseDeps());
     expect(root.querySelector("[data-chargen-budget]")!.textContent).toBe("7");
     expect(unspent()).toBe(7);
 
     pickPlaybook("Cutter");
-    dot("Skirmish", 2).click();
+    // Cutter's Skirmish 2 + Command 1 come from settings, already spent.
+    expect(unspent()).toBe(4);
+    // Locked rows render non-interactive spans — the fixed dots cannot be
+    // clicked away.
+    const skirmishRow = root.querySelector<HTMLElement>(
+      '.pc-chargen-form .action-dots[aria-label="Skirmish rating 2 of 2"]',
+    );
+    expect(skirmishRow).not.toBeNull();
+    expect(skirmishRow!.querySelectorAll("span.action-dot[data-fill='1']").length).toBe(2);
+    expect(skirmishRow!.querySelectorAll("button").length).toBe(0);
+
     dot("Hunt", 2).click();
-    dot("Study", 2).click();
+    dot("Study", 1).click();
     expect(unspent()).toBe(1);
     dot("Survey", 1).click();
     expect(unspent()).toBe(0);
 
-    // Un-picking (clicking the filled terminal dot) returns the point.
+    // Un-picking a chosen unlocked dot returns the point.
     dot("Survey", 1).click();
     expect(unspent()).toBe(1);
     expect(submitBtn().disabled).toBe(true);
@@ -276,15 +302,38 @@ describe("PC chargen flow", () => {
     allocateAll();
     expect(unspent()).toBe(0);
     expect(submitBtn().disabled).toBe(true);
-    // …and choosing a playbook resets the allocation (fresh sheet).
+    // …and choosing a playbook resets the allocation to its defaults
+    // (fresh sheet): Cutter leaves exactly 4 dots to distribute.
     pickPlaybook("Cutter");
-    expect(unspent()).toBe(7);
+    expect(unspent()).toBe(4);
     expect(submitBtn().disabled).toBe(true);
 
-    allocateAll();
+    dot("Hunt", 2).click();
+    dot("Study", 2).click();
     expect(unspent()).toBe(0);
     expect(submitBtn().disabled).toBe(false);
   });
+
+  it("re-derives defaults when the playbook changes and never carries dots across", () => {
+    mountCharacterCreatePage(root, baseDeps());
+    pickPlaybook("Cutter");
+    dot("Hunt", 2).click();
+    dot("Study", 2).click();
+    expect(unspent()).toBe(0);
+
+    pickPlaybook("Spider");
+    // Fresh allocation: Spider's Consort 2 + Study 1 replace Cutter's set;
+    // the manually picked Hunt/Study dots did not survive the switch.
+    expect(unspent()).toBe(4);
+    expect(
+      root.querySelector('.pc-chargen-form .action-dots[aria-label="Hunt rating 0 of 2"]'),
+    ).not.toBeNull();
+    const consortRow = root.querySelector<HTMLElement>(
+      '.pc-chargen-form .action-dots[aria-label="Consort rating 2 of 2"]',
+    );
+    expect(consortRow!.querySelectorAll("button").length).toBe(0);
+  });
+
 
   it("POSTs the full final-ratings map to /api/characters/pc and delivers the DTO", async () => {
     const created = characterDTO();
@@ -293,12 +342,11 @@ describe("PC chargen flow", () => {
     mountCharacterCreatePage(root, baseDeps({ onCreated }));
 
     pickPlaybook("Cutter");
+    // Defaults are locked in; distribute the remaining four dots.
     dot("Hunt", 2).click();
-    dot("Hunt", 1).click(); // terminal-dot click steps back down to 1
     dot("Study", 2).click();
-    dot("Survey", 2).click();
+    dot("Study", 1).click(); // terminal-dot click steps back down to 1
     dot("Finesse", 1).click();
-    dot("Command", 1).click();
     expect(unspent()).toBe(0);
     submitPc();
 
@@ -313,8 +361,8 @@ describe("PC chargen flow", () => {
           gameStem: "blades-in-the-dark",
           playbook: "Cutter",
           actionRatings: {
-            Hunt: 1, Study: 2, Survey: 2, Tinker: 0,
-            Finesse: 1, Prowl: 0, Skirmish: 0, Wreck: 0,
+            Hunt: 2, Study: 1, Survey: 0, Tinker: 0,
+            Finesse: 1, Prowl: 0, Skirmish: 2, Wreck: 0,
             Attune: 0, Command: 1, Consort: 0, Sway: 0,
           },
         }),

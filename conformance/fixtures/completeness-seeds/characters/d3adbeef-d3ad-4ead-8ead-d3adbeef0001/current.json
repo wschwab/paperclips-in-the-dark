@@ -218,22 +218,23 @@
       "max": 40
     }
   },
-  "rolodex": {
-    "friends": [
-      {
-        "entry": "Salia, an information broker",
-        "closeness": "friend"
-      },
-      {
-        "entry": "Jennah, a servant",
-        "closeness": "close-friend"
-      },
-      {
-        "entry": "Riven, a chemist",
-        "closeness": "rival"
-      }
-    ]
-  },
+  "contacts": [
+    {
+      "id": "830d8e61-a616-4442-bd47-fb1af2d51669",
+      "name": "Salia, an information broker",
+      "closeness": "friend"
+    },
+    {
+      "id": "273dbb97-c904-4039-b011-cfaf8c3f738b",
+      "name": "Jennah, a servant",
+      "closeness": "friend"
+    },
+    {
+      "id": "503f9354-b94b-4cdf-be8a-184ed868e9e4",
+      "name": "Riven, a chemist",
+      "closeness": "rival"
+    }
+  ],
   "session": {
     "playbookExpressions": 1,
     "characterExpressions": 2,

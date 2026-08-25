@@ -97,9 +97,11 @@ const characterOpCases: Array<[string, unknown]> = [
   ["ops/fund.gain", { coins: 1 }],
   ["ops/fund.spend", { coins: 1 }],
   ["ops/fund.liquidate", { coins: 1 }],
-  ["ops/rolodex.add", { entry: "Test" }],
-  ["ops/rolodex.remove", { entry: "Test" }],
-  ["ops/rolodex.set-closeness", { entry: "Test", closeness: "friend" }],
+  // CONTRACT-05 (2026-08-25 correction): the single per-scoundrel
+  // relationship family (evolved from the former rolodex ops).
+  ["ops/contact.add", { name: "Test" }],
+  ["ops/contact.remove", { name: "Test" }],
+  ["ops/contact.closeness", { name: "Test", closeness: "friend" }],
   ["ops/dossier.update", { name: "Test" }],
   ["ops/session.set", { playbookExpressions: 0 }],
   ["ops/notebook.set", { text: "Test" }],

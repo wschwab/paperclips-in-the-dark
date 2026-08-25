@@ -33,6 +33,37 @@ export function pcBudgetFromSettings(
   return { startingActionDots: dots, startingActionDotMax: max };
 }
 
+/**
+ * The playbook's nonzero DefaultActionPoints from raw game-settings JSON
+ * (DEC-01 ruling; C# reference GameSettingExtensions.cs:38 — per-playbook,
+ * per-action defaults, "absent entry means 0"). Empty map when the game or
+ * playbook publishes none: never a hardcoded default (spec §5.5).
+ */
+export function playbookDefaultsFromSettings(
+  settings: Record<string, unknown> | null | undefined,
+  playbook: string,
+): Record<string, number> {
+  if (!settings || !Array.isArray(settings["Playbooks"])) return {};
+  for (const entry of settings["Playbooks"] as unknown[]) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const pb = entry as Record<string, unknown>;
+    if (pb["Name"] !== playbook) continue;
+    if (!Array.isArray(pb["DefaultActionPoints"])) return {};
+    const defaults: Record<string, number> = {};
+    for (const raw of pb["DefaultActionPoints"] as unknown[]) {
+      if (typeof raw !== "object" || raw === null) continue;
+      const dap = raw as Record<string, unknown>;
+      const action = dap["Action"];
+      const points = dap["Points"];
+      if (typeof action === "string" && typeof points === "number" && points > 0) {
+        defaults[action] = points;
+      }
+    }
+    return defaults;
+  }
+  return {};
+}
+
 /** One attribute group for the chargen pickers: attribute name + ordered actions. */
 export interface ChargenGroup {
   attribute: string;

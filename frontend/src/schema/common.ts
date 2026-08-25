@@ -71,10 +71,10 @@ export const HarmIntensity = Schema.Literal(
 );
 export type HarmIntensity = typeof HarmIntensity.Type;
 
-export const Closeness = Schema.Literal("friend", "close-friend", "rival");
-export type Closeness = typeof Closeness.Type;
-
-/** common.json#/$defs/contactCloseness — CONTRACT-05 per-scoundrel contacts. */
+/**
+ * common.json#/$defs/closeness — CONTRACT-05 (2026-08-25 correction): the
+ * single relationship vocabulary, exactly friend | contact | rival.
+ */
 export const ContactCloseness = Schema.Literal("friend", "contact", "rival");
 export type ContactCloseness = typeof ContactCloseness.Type;
 

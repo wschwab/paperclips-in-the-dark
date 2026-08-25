@@ -571,14 +571,20 @@ paths:
         actionRatings must equal the game's StartingActionDots exactly, every
         rating must be <= the game's StartingActionDotMax, and playbook must
         exist in the game's Playbooks. actionRatings property names must
-        exactly match every action name published by the game's Attributes
-        (unknown or missing names are VALIDATION); values are FINAL ratings,
-        including any per-playbook DefaultActionPoints contribution. Failure
-        => VALIDATION (400) naming the violated rule and the numbers. A game
-        whose settings omit StartingActionDots or StartingActionDotMax has
-        not published a PC allocation budget: NOT_FOUND (404) naming the
-        absent keys. Unknown game stem keeps the shared create semantics:
-        GAME_NOT_FOUND as a 200-status domain failure (SC-A3).
+        exactly match every action name published by the game's Attributes,
+        except that actions carrying the chosen playbook's DefaultActionPoints
+        may be omitted and take the default. Per-playbook DefaultActionPoints
+        are enforced from settings (DEC-01 ruling; GameSettingExtensions
+        reference): the final allocation = defaults ∪ submissions — a
+        submitted value for a defaulted action must MATCH the default, a
+        conflicting value => VALIDATION naming the action and the default;
+        budget (StartingActionDots) and cap (StartingActionDotMax) checks run
+        against the overlaid final map. Failure => VALIDATION (400) naming
+        the violated rule and the numbers. A game whose settings omit
+        StartingActionDots or StartingActionDotMax has not published a PC
+        allocation budget: NOT_FOUND (404) naming the absent keys. Unknown
+        game stem keeps the shared create semantics: GAME_NOT_FOUND as a
+        200-status domain failure (SC-A3).
       parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -596,11 +602,14 @@ paths:
                   description: >
                     Map of every action name from the game's Attributes to its
                     starting rating. Property names are enforced server-side
-                    to match exactly the published action set; each value is
-                    an integer clamped by settings to 0..StartingActionDotMax
-                    (the per-game maximum cannot be static here — it is
-                    enforced from game settings, spec §5.5), and the values'
-                    sum must equal StartingActionDots.
+                    to match the published action set (actions with a
+                    playbook DefaultActionPoints default may be omitted);
+                    each value is an integer clamped by settings to
+                    0..StartingActionDotMax (the per-game maximum cannot be
+                    static here — it is enforced from game settings, spec
+                    §5.5), submitted values for defaulted actions must equal
+                    the default, and the overlaid values' sum must equal
+                    StartingActionDots.
                   additionalProperties:
                     type: integer
                     minimum: 0
@@ -1421,71 +1430,11 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
-  /characters/{id}/ops/rolodex.add:
-    post:
-      operationId: rolodexAdd
-      x-snapshot: true
-      description: Duplicate entry → DUPLICATE. New friends start at closeness "friend".
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [entry]
-              additionalProperties: false
-              properties:
-                entry: { type: string, minLength: 1 }
-      responses:
-        "200": { $ref: "#/components/responses/OpResult" }
-        "404": { $ref: "#/components/responses/OpResult" }
-        "409": { $ref: "#/components/responses/OpResult" }
-  /characters/{id}/ops/rolodex.remove:
-    post:
-      operationId: rolodexRemove
-      x-snapshot: true
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [entry]
-              additionalProperties: false
-              properties:
-                entry: { type: string, minLength: 1 }
-      responses:
-        "200": { $ref: "#/components/responses/OpResult" }
-        "404": { $ref: "#/components/responses/OpResult" }
-        "409": { $ref: "#/components/responses/OpResult" }
-  /characters/{id}/ops/rolodex.set-closeness:
-    post:
-      operationId: rolodexSetCloseness
-      x-snapshot: true
-      description: "Full transition set (friend/close-friend/rival) — supersedes the reference's four named upgrade/downgrade methods with one total operation."
-      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [entry, closeness]
-              additionalProperties: false
-              properties:
-                entry: { type: string, minLength: 1 }
-                closeness: { $ref: "./schemas/common.json#/$defs/closeness" }
-      responses:
-        "200": { $ref: "#/components/responses/OpResult" }
-        "404": { $ref: "#/components/responses/OpResult" }
-        "409": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/contact.add:
     post:
       operationId: characterContactAdd
       x-snapshot: true
-      description: "CONTRACT-05 (2026-08-24, human-authorized): per-scoundrel Contacts. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \"contact\" and a server-generated id."
+      description: "CONTRACT-05 (2026-08-24 card; 2026-08-25 correction — evolved from the former rolodex surface by human ruling, exactly one relationship family): add a per-scoundrel contact by name. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \"contact\" and a server-generated id."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1501,11 +1450,13 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/contact.closeness:
     post:
       operationId: characterContactCloseness
       x-snapshot: true
-      description: "CONTRACT-05: set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION."
+      description: "CONTRACT-05 (2026-08-25 correction): set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1517,11 +1468,13 @@ paths:
               additionalProperties: false
               properties:
                 name: { type: string, minLength: 1 }
-                closeness: { $ref: "./schemas/common.json#/$defs/contactCloseness" }
+                closeness: { $ref: "./schemas/common.json#/$defs/closeness" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/contact.remove:
     post:
       operationId: characterContactRemove
@@ -1542,6 +1495,8 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/dossier.update:
     post:
       operationId: dossierUpdate
@@ -2348,7 +2303,7 @@ paths:
     post:
       operationId: factionSetStatus
       x-snapshot: true
-      description: "C3 contract change. Total op mirroring rolodex.set-closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result."
+      description: "C3 contract change. Total op mirroring contact.closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true

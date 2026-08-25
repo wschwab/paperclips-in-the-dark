@@ -399,7 +399,7 @@ describe("§ Completeness — derived, never stored (SC-O3)", () => {
     "legitimate empties outside the list leave a fully-named entity complete",
     async () => {
       // Character: all 8 pointers satisfied; crewId "", notes [], notebook "",
-      // zero monitor/talent/gear/fund/rolodex/session state — all legitimate
+      // zero monitor/talent/gear/fund/contacts/session state — all legitimate
       // permanent states (wave0 audit exclusion table).
       const character = await createRawCharacter();
       const filled = await rawCharacterOp(character.id, "dossier.update", DOSSIER_FULL);

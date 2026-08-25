@@ -199,6 +199,141 @@
       "collection": false
     },
     {
+      "operationId": "characterContactAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.add",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.add",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.add",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.add",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.add",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactCloseness",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.closeness",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactCloseness",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.closeness",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactCloseness",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.closeness",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactCloseness",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.closeness",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactCloseness",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.closeness",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.remove",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.remove",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.remove",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.remove",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.remove",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "clockProgress",
       "method": "POST",
       "path": "/clocks/{id}/ops/clock.progress",
@@ -2393,87 +2528,6 @@
       "method": "POST",
       "path": "/characters/{id}/retire",
       "status": "422",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexAdd",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.add",
-      "status": "200",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexAdd",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.add",
-      "status": "404",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexAdd",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.add",
-      "status": "409",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexRemove",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.remove",
-      "status": "200",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexRemove",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.remove",
-      "status": "404",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexRemove",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.remove",
-      "status": "409",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexSetCloseness",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.set-closeness",
-      "status": "200",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexSetCloseness",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.set-closeness",
-      "status": "404",
-      "kind": "schema",
-      "schemaName": "operationResult",
-      "collection": false
-    },
-    {
-      "operationId": "rolodexSetCloseness",
-      "method": "POST",
-      "path": "/characters/{id}/ops/rolodex.set-closeness",
-      "status": "409",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false

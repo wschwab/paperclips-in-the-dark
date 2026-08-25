@@ -374,11 +374,14 @@ function branches(): Branch[] {
       status: 200,
       family: "empty",
       entity: "required",
-      note: "duplicate rolodex entry",
+      // CONTRACT-05 (2026-08-25 correction): character contact.add returns
+      // VALIDATION on duplicates by ruling, so DUPLICATE is exercised on the
+      // crew contact op, which keeps the C3 code.
+      note: "duplicate crew contact name",
       run: async () => {
-        const { id } = await createRawCharacter();
-        await api.post(`characters/${id}/ops/rolodex.add`, { entry: "Marlane" });
-        return api.post(`characters/${id}/ops/rolodex.add`, { entry: "Marlane" });
+        const { id } = await createRawCrew();
+        await api.post(`crews/${id}/ops/contact.add`, { name: "Marlane", profession: "pugilist" });
+        return api.post(`crews/${id}/ops/contact.add`, { name: "Marlane", profession: "pugilist" });
       },
     },
     {

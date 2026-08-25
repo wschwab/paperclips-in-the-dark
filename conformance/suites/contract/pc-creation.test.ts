@@ -16,10 +16,13 @@ import { firstPlaybook, gameSetting } from "../../src/game-data.js";
 // before and after stage 2, so they may pass while the file is red.
 //
 // Stage-2 contract enforced here:
-//   V1  sum(actionRatings) === StartingActionDots        → else VALIDATION
-//   V2  every rating <= StartingActionDotMax             → else VALIDATION
-//   V3  playbook exists in the game's Playbooks          → else VALIDATION
-//   V4  actionRatings names exactly the game's actions   → else VALIDATION
+//   V1  sum(final actionRatings) === StartingActionDots      → else VALIDATION
+//   V2  every rating <= StartingActionDotMax                 → else VALIDATION
+//   V3  playbook exists in the game's Playbooks              → else VALIDATION
+//   V4  final map keys exactly the game's actions            → else VALIDATION
+//   V5  submitted values for playbook DefaultActionPoints    → else VALIDATION
+//       actions must match the default (omitted keys take
+//       the default: final = defaults ∪ submissions)
 //   Setting absent → 404 NOT_FOUND naming the missing keys.
 
 const BLADES = "blades-in-the-dark";
@@ -40,23 +43,42 @@ function actionNames(stem: string): string[] {
 function sum(ratings: Record<string, number>): number {
   return Object.values(ratings).reduce((a, b) => a + b, 0);
 }
+/**
+ * The chosen playbook's nonzero DefaultActionPoints, read from the game
+ * settings file at runtime (DEC-01 ruling; C# GameSettingExtensions.cs:38
+ * reference). Blades' Cutter carries Skirmish 2 + Command 1; every Blades
+ * playbook defaults 3 of the 7 starting dots.
+ */
+function defaultActionPoints(stem: string, playbook: string): Record<string, number> {
+  const setting = gameSetting(stem);
+  const pb = setting.Playbooks.find((candidate) => candidate.Name === playbook);
+  const defaults: Record<string, number> = {};
+  for (const dap of pb?.DefaultActionPoints ?? []) {
+    if (dap.Points > 0) defaults[dap.Action] = dap.Points;
+  }
+  return defaults;
+}
 
 /**
- * Deterministic valid allocation: cycle the action list raising each rating by
- * one until the settings budget is spent, never exceeding the settings cap.
+ * Deterministic valid allocation for a playbook: start from its
+ * DefaultActionPoints (locked contributions), then cycle the remaining
+ * actions raising each rating by one until the settings budget is spent,
+ * never exceeding the settings cap.
  */
-function allocate(stem: string): Record<string, number> {
+function allocate(stem: string, playbook: string = firstPlaybook(stem)): Record<string, number> {
   const setting = gameSetting(stem);
   if (setting.StartingActionDots === undefined || setting.StartingActionDotMax === undefined) {
     throw new Error(`${stem} publishes no PC allocation budget`);
   }
   const names = actionNames(stem);
-  const ratings = Object.fromEntries(names.map((name) => [name, 0]));
-  let remaining = setting.StartingActionDots;
+  const defaults = defaultActionPoints(stem, playbook);
+  const ratings = Object.fromEntries(names.map((name) => [name, defaults[name] ?? 0]));
+  let remaining = setting.StartingActionDots - sum(defaults);
   while (remaining > 0) {
     let progressed = false;
     for (const name of names) {
       if (remaining === 0) break;
+      if (name in defaults) continue; // defaulted dots are fixed, never raised
       if (ratings[name] < setting.StartingActionDotMax) {
         ratings[name] += 1;
         remaining -= 1;
@@ -213,6 +235,75 @@ expectValidation(
   { gameStem: BLADES, playbook: "No Such Playbook", actionRatings: allocate(BLADES) },
   ["No Such Playbook"],
 );
+
+// V5 playbook-specific cases: the Blades Cutter's DefaultActionPoints are
+// read from data/games/blades-in-the-dark.json at runtime (Skirmish 2,
+// Command 1 — cited here because every Blades playbook defaults exactly
+// these 3 of the StartingActionDots budget).
+const CUTTER = firstPlaybook(BLADES); // Playbooks[0].Name in the settings file
+const cutterDefaults = defaultActionPoints(BLADES, CUTTER);
+if (Object.keys(cutterDefaults).length === 0) {
+  throw new Error(`${BLADES} ${CUTTER} must publish nonzero DefaultActionPoints for this oracle`);
+}
+
+testCase("C1PC-DEFAULTS-HONORED-001", `valid allocation honoring the ${CUTTER} defaults (Skirmish ${cutterDefaults["Skirmish"] ?? "?"}, Command ${cutterDefaults["Command"] ?? "?"}) creates and persists`, async () => {
+  const ratings = allocate(BLADES, CUTTER);
+  for (const [action, points] of Object.entries(cutterDefaults)) {
+    expect(ratings[action]).toBe(points);
+  }
+  const response = await api.post("characters/pc", { gameStem: BLADES, playbook: CUTTER, actionRatings: ratings });
+  expect(response.status).toBe(200);
+  assertResponseValid("createPcCharacter", response.status, response.body);
+  const created = await decode(Schemas.OperationResult, response.body);
+  const id = created.character?.id;
+  if (!id) throw new Error("PC creation returned no character id");
+  const detail = await api.get(`characters/${id}`);
+  const character = await decode(Schemas.Character, detail.body);
+  const stored: Record<string, number> = {};
+  for (const attribute of character.talent.attributes) {
+    for (const action of attribute.actions) stored[action.name] = action.rating;
+  }
+  expect(stored).toEqual(ratings);
+});
+
+expectValidation(
+  "C1PC-DEFAULTS-CONFLICT-001",
+  `a submitted value conflicting with a defaulted action is rejected naming the action and its default`,
+  (() => {
+    const ratings = allocate(BLADES, CUTTER);
+    // Move one defaulted dot onto an unlocked action: budget and cap stay
+    // satisfied; only the match-with-default rule is violated.
+    const [conflictAction, defaultValue] = Object.entries(cutterDefaults)[0];
+    const receiver = actionNames(BLADES).find(
+      (name) => !(name in cutterDefaults) && ratings[name] < STARTING_MAX,
+    );
+    if (!receiver) throw new Error("no receiver action available for conflict case");
+    ratings[conflictAction] = defaultValue - 1;
+    ratings[receiver] += 1;
+    return { gameStem: BLADES, playbook: CUTTER, actionRatings: ratings };
+  })(),
+  [Object.keys(cutterDefaults)[0], String(Object.values(cutterDefaults)[0])],
+);
+
+testCase("C1PC-DEFAULTS-OMITTED-001", "omitted defaulted actions take their DefaultActionPoints via the overlay", async () => {
+  const ratings = allocate(BLADES, CUTTER);
+  for (const action of Object.keys(cutterDefaults)) delete ratings[action];
+  const response = await api.post("characters/pc", { gameStem: BLADES, playbook: CUTTER, actionRatings: ratings });
+  expect(response.status).toBe(200);
+  assertResponseValid("createPcCharacter", response.status, response.body);
+  const created = await decode(Schemas.OperationResult, response.body);
+  const id = created.character?.id;
+  if (!id) throw new Error("PC creation returned no character id");
+  const detail = await api.get(`characters/${id}`);
+  const character = await decode(Schemas.Character, detail.body);
+  const stored: Record<string, number> = {};
+  for (const attribute of character.talent.attributes) {
+    for (const action of attribute.actions) stored[action.name] = action.rating;
+  }
+  const expected = { ...ratings, ...cutterDefaults };
+  expect(Object.values(expected).reduce((a, b) => a + b, 0)).toBe(STARTING_DOTS);
+  expect(stored).toEqual(expected);
+});
 
 testCase("C1PC-GAME-NOT-FOUND-001", "unknown game stem keeps the shared create semantics (GAME_NOT_FOUND domain failure)", async () => {
   const { status, body } = await postPc({
