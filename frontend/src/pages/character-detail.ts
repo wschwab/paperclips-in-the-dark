@@ -389,6 +389,46 @@ function clockOpErrorText(err: OpError): string {
   return opErrorFriendlyText(err);
 }
 
+
+/**
+ * CHAR-06: clickable heavy-box XP track in the stress-track idiom (the
+ * character twin of the crew sheet's boxTrack). Clicking box N asks to set
+ * the value to N; the caller turns that into a delta over the same bounded
+ * op. Max always comes from the DTO (settings-derived server-side).
+ */
+function xpBoxes(opts: {
+  value: number;
+  max: number;
+  label: string;
+  disabled: boolean;
+  onChange: (next: number) => void;
+}): HTMLElement {
+  const { value, max, label, disabled, onChange } = opts;
+  const row = el(
+    "div",
+    {
+      className: "stress-track",
+      role: "group",
+      "aria-label": `${label}: ${Math.min(value, max)} of ${max}`,
+    },
+  );
+  for (let i = 1; i <= max; i++) {
+    const filled = i <= value;
+    const btn = el("button", {
+      type: "button",
+      className: "stress-box",
+      "data-stress": filled ? "1" : "0",
+      "data-index": String(i),
+      "aria-label": `${label} ${i}`,
+      "aria-pressed": filled ? "true" : "false",
+      disabled,
+    });
+    btn.addEventListener("click", () => onChange(i));
+    row.append(btn);
+  }
+  return row;
+}
+
 // ---------------------------------------------------------------------------
 // Render
 // ---------------------------------------------------------------------------
@@ -638,7 +678,7 @@ function renderDetail(state: RenderState): HTMLElement {
     type: "button",
     disabled: stressDisabled || c.monitor.stress.current <= 0,
     title: "Remove 1 stress",
-  }, "−");
+  }, "−1");
   stressMinusBtn.addEventListener("click", () => handlers.onStressDelta(-1));
 
   const stressPlusBtn = el("button", {
@@ -703,7 +743,7 @@ function renderDetail(state: RenderState): HTMLElement {
   });
 
   const traumaSelect = el("select", { "aria-label": "Add trauma", disabled: gameplayDisabled || !pendingTrauma || availableTraumas.length === 0 },
-    el("option", { value: "" }, "--"),
+    el("option", { value: "" }, "Trauma"),
     ...availableTraumas.map((t) => el("option", { value: t }, t)),
   );
 
@@ -920,7 +960,7 @@ function renderDetail(state: RenderState): HTMLElement {
       "aria-label": "Trauma when stressed",
       disabled: anyLoading || availableTraumas.length === 0,
     },
-      el("option", { value: "" }, "--"),
+      el("option", { value: "" }, "Trauma"),
       ...availableTraumas.map((t) => el("option", { value: t }, t)),
     ) as HTMLSelectElement;
     const takeBtn = el("button", {
@@ -1042,7 +1082,7 @@ function renderDetail(state: RenderState): HTMLElement {
       "aria-label": "Vice purveyor (choose)",
       disabled: anyLoading || sources.length === 0,
     },
-      el("option", { value: "" }, "--"),
+      el("option", { value: "" }, "Purveyor"),
       ...sources.map((src) => el("option", { value: src }, src)),
     ) as HTMLSelectElement;
     purveyorSelect.value = sources.includes(editor.purveyorName) ? editor.purveyorName : "";
@@ -1168,7 +1208,7 @@ function renderDetail(state: RenderState): HTMLElement {
           "aria-label": "Join crew",
           disabled: anyLoading || state.crews === null || crewsList.length === 0,
         },
-          el("option", { value: "" }, "--"),
+          el("option", { value: "" }, "Crew"),
           ...crewsList.map((cr) => el("option", { value: cr.id }, cr.name)),
         ) as HTMLSelectElement;
         const joinBtn = el("button", {
@@ -1290,7 +1330,7 @@ function renderDetail(state: RenderState): HTMLElement {
       // Add harm controls
       el("div", { className: "harm-add-row", style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
         el("select", { "aria-label": "Harm intensity", disabled: gameplayDisabled },
-          el("option", { value: "" }, "--"),
+          el("option", { value: "" }, "Severity"),
           el("option", { value: "lesser" }, "Lesser"),
           el("option", { value: "moderate" }, "Moderate"),
           el("option", { value: "severe" }, "Severe"),
@@ -1364,7 +1404,7 @@ function renderDetail(state: RenderState): HTMLElement {
           "aria-label": "Harm to heal",
           disabled: gameplayDisabled || harms.length === 0,
         },
-          el("option", { value: "" }, "--"),
+          el("option", { value: "" }, "Harm"),
           ...harms.map((h, idx) =>
             el("option", { value: String(idx) }, `${h.intensity}: ${h.description}`)),
         ) as HTMLSelectElement;
@@ -1460,13 +1500,13 @@ function renderDetail(state: RenderState): HTMLElement {
               type: "button",
               disabled: gameplayDisabled || xp.points <= 0,
               title: `Remove 1 XP (${attr.name})`,
-            }, "−");
+            }, "−1");
             minusBtn.addEventListener("click", () => handlers.onAttributeXpDelta(attr.name, -1));
             const plusBtn = el("button", {
               type: "button",
               disabled: gameplayDisabled || xp.points >= xp.max,
               title: `Add 1 XP (${attr.name})`,
-            }, "+");
+            }, "+1");
             plusBtn.addEventListener("click", () => handlers.onAttributeXpDelta(attr.name, 1));
             const clearBtn = el("button", {
               type: "button",
@@ -1474,6 +1514,18 @@ function renderDetail(state: RenderState): HTMLElement {
               title: `Clear XP (${attr.name})`,
             }, "clear");
             clearBtn.addEventListener("click", () => handlers.onAttributeXpClear(attr.name));
+            // CHAR-06: heavy-box XP furniture in the stress-track idiom.
+            // Clicking box N sends the computed delta over attribute-xp.add.
+            const xpTrackEl = xpBoxes({
+              value: xp.points,
+              max: xp.max,
+              label: `${attr.name} XP`,
+              disabled: gameplayDisabled,
+              onChange: (next) => {
+                const delta = next - xp.points;
+                if (delta !== 0) handlers.onAttributeXpDelta(attr.name, delta);
+              },
+            });
 
             // Level up: pick an action below its effective cap, spend the full XP track
             const levelable = attr.actions.filter((a) => a.rating < (effCapByName.get(a.name)?.effectiveMax ?? a.maxRating));
@@ -1496,6 +1548,7 @@ function renderDetail(state: RenderState): HTMLElement {
             },
               el("span", { className: "lbl" }, "XP:"),
               el("span", {}, `${xp.points} / ${xp.max}`),
+              xpTrackEl,
               minusBtn,
               plusBtn,
               clearBtn,
@@ -1525,13 +1578,13 @@ function renderDetail(state: RenderState): HTMLElement {
           type: "button",
           disabled: gameplayDisabled || c.session[t.key] <= 0,
           title: `Remove 1 ${t.label}`,
-        }, "−");
+        }, "−1");
         minusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, -1));
         const plusBtn = el("button", {
           type: "button",
           disabled: gameplayDisabled || c.session[t.key] >= c.session.max,
           title: `Add 1 ${t.label}`,
-        }, "+");
+        }, "+1");
         plusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, 1));
         return el("div", {
           className: "session-track",
@@ -1606,13 +1659,13 @@ function renderDetail(state: RenderState): HTMLElement {
         type: "button",
         disabled: gameplayDisabled || xp.points <= 0,
         title: "Remove 1 playbook XP",
-      }, "−");
+      }, "−1");
       xpMinusBtn.addEventListener("click", () => handlers.onPlaybookXpDelta(-1));
       const xpPlusBtn = el("button", {
         type: "button",
         disabled: gameplayDisabled || xp.points >= xp.max,
         title: "Add 1 playbook XP",
-      }, "+");
+      }, "+1");
       xpPlusBtn.addEventListener("click", () => handlers.onPlaybookXpDelta(1));
       const xpClearBtn = el("button", {
         type: "button",
@@ -1620,6 +1673,17 @@ function renderDetail(state: RenderState): HTMLElement {
         title: "Clear playbook XP",
       }, "clear");
       xpClearBtn.addEventListener("click", handlers.onPlaybookXpClear);
+      // CHAR-06: heavy-box Score XP furniture; box clicks post deltas.
+      const xpTrackEl = xpBoxes({
+        value: xp.points,
+        max: xp.max,
+        label: "Playbook XP",
+        disabled: gameplayDisabled,
+        onChange: (next) => {
+          const delta = next - xp.points;
+          if (delta !== 0) handlers.onPlaybookXpDelta(delta);
+        },
+      });
 
       // Taken abilities from the DTO: name, timesTaken, description, remove
       const abilityEntries = c.playbook.abilities.map((a) =>
@@ -1655,7 +1719,7 @@ function renderDetail(state: RenderState): HTMLElement {
         "aria-label": "Take ability",
         disabled: gameplayDisabled || eligible.length === 0,
       },
-        el("option", { value: "" }, "--"),
+        el("option", { value: "" }, "Ability"),
         ...eligible.map((sa) => el("option", { value: String(sa.Name) }, String(sa.Name))),
       ) as HTMLSelectElement;
 
@@ -1693,6 +1757,7 @@ function renderDetail(state: RenderState): HTMLElement {
         },
           el("span", { className: "lbl" }, "Playbook XP:"),
           el("span", {}, `${xp.points} / ${xp.max}`),
+          xpTrackEl,
           xpMinusBtn,
           xpPlusBtn,
           xpClearBtn,
@@ -1757,7 +1822,7 @@ function renderDetail(state: RenderState): HTMLElement {
         "aria-label": "Add gear item",
         disabled: gameplayDisabled || gearMenu.length === 0,
       },
-        el("option", { value: "" }, "--"),
+        el("option", { value: "" }, "Item"),
         ...gearMenu.map((m) => el("option", { value: m.name }, `${m.name} (bulk ${m.bulk})`)),
       );
       const addBtn = el("button", {
@@ -1818,7 +1883,7 @@ function renderDetail(state: RenderState): HTMLElement {
         "aria-label": "Select gear item",
         disabled: gameplayDisabled || gear.availableGear.length === 0,
       },
-        el("option", { value: "" }, "--"),
+        el("option", { value: "" }, "Item"),
         ...gear.availableGear.map((item) =>
           el("option", { value: item.name }, `${item.name} (bulk ${item.bulk})${loadoutNames.has(item.name) ? " — in loadout" : ""}`)),
       );
@@ -1869,19 +1934,22 @@ function renderDetail(state: RenderState): HTMLElement {
       const stash = c.fund.stash;
       // Lifestyle is derived, display-only: stash ÷ 10 (sheet plan decision 4).
       const lifestyle = Math.floor(stash.coins / 10);
+      // CHAR-06: display-only heavy-box track for the stash (no onChange ⇒
+      // spans, not buttons). Bounds from the DTO max — never hardcoded.
+      const stashTrackEl = stressTrack({ value: stash.coins, max: stash.max, label: "Stash" });
 
       const spendBtn = el("button", {
         type: "button",
         disabled: gameplayDisabled || state.isCoinLoading,
         title: "Spend 1 coin",
-      }, state.isCoinLoading ? "…" : "−");
+      }, state.isCoinLoading ? "…" : "−1");
       spendBtn.addEventListener("click", () => handlers.onFundDelta(-1));
 
       const gainBtn = el("button", {
         type: "button",
         disabled: gameplayDisabled || state.isCoinLoading,
         title: "Gain 1 coin",
-      }, state.isCoinLoading ? "…" : "+");
+      }, state.isCoinLoading ? "…" : "+1");
       gainBtn.addEventListener("click", () => handlers.onFundDelta(1));
 
 
@@ -1908,10 +1976,20 @@ function renderDetail(state: RenderState): HTMLElement {
           spendBtn,
           gainBtn,
         ),
-        el("div", { className: "coin-stash", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
-          el("span", { className: "lbl" }, "Stash:"),
-          el("span", { className: "coin-stash-count" }, `${stash.coins} / ${stash.max}`),
-          el("span", { className: "coin-lifestyle" }, `Lifestyle ${lifestyle}`),
+        // CHAR-06: the stash is the long-term ledger — tangible heavy-box
+        // furniture bounded by the DTO max, inset as its own sub-block with
+        // the derived Lifestyle figure beneath it (display-only; there is no
+        // writable Lifestyle stat).
+        el("div", { className: "coin-stash", style: "border-left: var(--border-thick) solid var(--fill-border); padding-left: 0.75em; margin: 0.6em 0;" },
+          el("div", { style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap;" },
+            el("span", { className: "lbl" }, "Stash:"),
+            el("span", { className: "coin-stash-count" }, `${stash.coins} / ${stash.max}`),
+          ),
+          stashTrackEl,
+          el("div", { className: "coin-lifestyle", style: "display: flex; align-items: baseline; gap: 0.5em; flex-wrap: wrap; margin-top: 0.35em;" },
+            el("span", { className: "lbl" }, `Lifestyle ${lifestyle}`),
+            el("span", { className: "serif", style: "font-size: 0.9em;" }, "derived from stash ÷ 10 — never written directly"),
+          ),
         ),
         el("div", { className: "coin-liquidate", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;" },
           el("span", { className: "lbl" }, "Liquidate:"),
@@ -1953,14 +2031,14 @@ function renderDetail(state: RenderState): HTMLElement {
           type: "button",
           disabled: gameplayDisabled || state.isClocksLoading || clk.segments <= 0,
           title: `Remove 1 segment: ${clk.name}`,
-        }, "−");
+        }, "−1");
         minusBtn.addEventListener("click", () => handlers.onClockProgress(clk.id, -1));
 
         const plusBtn = el("button", {
           type: "button",
           disabled: gameplayDisabled || state.isClocksLoading,
           title: `Add 1 segment: ${clk.name}`,
-        }, state.isClocksLoading ? "…" : "+");
+        }, state.isClocksLoading ? "…" : "+1");
         plusBtn.addEventListener("click", () => handlers.onClockProgress(clk.id, 1));
 
         const resetBtn = el("button", {

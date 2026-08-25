@@ -1,0 +1,13 @@
+{
+  "task": "PERF-02",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "gpt-5.6-luna (openai-codex CLI, xhigh) + orchestrator-owned real-browser probe",
+  "date": "2026-08-26",
+  "iterationsToGreen": 4,
+  "iterationNotes": "red tests (5) -> plate rewrite for sound generics -> bulk fixture uuid fix (decoder rejected 10-hex group) -> showMore announcement hook + hidden-vs-absent pager pins",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 3, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "1000-row real-Chromium DOM nodes 5188 -> 1190 (committed budget 2000, pinned); degraded rows visible under nonmatching query 0/100 -> 100/100; 16/16 roster tests, 697/697 frontend suite; shared npm build gate blocked by sibling agent's in-flight action-dots.test.ts (unrelated files), tsc clean outside it"
+}

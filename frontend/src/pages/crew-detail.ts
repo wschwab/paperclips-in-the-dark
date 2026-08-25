@@ -337,7 +337,7 @@ function renderTracker(
     type: "button",
     disabled: state.anyLoading || opts.current <= 0,
     title: `Remove 1 ${opts.label.toLowerCase()}`,
-  }, "−");
+  }, "−1");
   minusBtn.addEventListener("click", () => opts.onDelta(-1));
 
   const plusBtn = el("button", {
@@ -346,7 +346,7 @@ function renderTracker(
     // server would otherwise clamp the delta silently.
     disabled: state.anyLoading || opts.current >= opts.max,
     title: `Add 1 ${opts.label.toLowerCase()}`,
-  }, opts.isLoading ? "…" : "+");
+  }, opts.isLoading ? "…" : "+1");
   plusBtn.addEventListener("click", () => opts.onDelta(1));
 
   return el(
@@ -841,13 +841,13 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     type: "button",
     disabled: state.anyLoading || c.turf <= 0,
     title: "Remove 1 turf",
-  }, "−");
+  }, "−1");
   turfMinusBtn.addEventListener("click", () => handlers.onTurfDelta(-1));
   const turfPlusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading || c.turf >= 6,
     title: "Add 1 turf",
-  }, state.isTurfLoading ? "…" : "+");
+  }, state.isTurfLoading ? "…" : "+1");
   turfPlusBtn.addEventListener("click", () => handlers.onTurfDelta(1));
 
   const developBtn = el("button", {
@@ -886,13 +886,13 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     type: "button",
     disabled: state.anyLoading || c.tier <= 0,
     title: "Remove 1 tier",
-  }, "−");
+  }, "−1");
   tierMinusBtn.addEventListener("click", () => handlers.onTierDelta(-1));
   const tierPlusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading,
     title: "Add 1 tier",
-  }, state.isTierLoading ? "…" : "+");
+  }, state.isTierLoading ? "…" : "+1");
   tierPlusBtn.addEventListener("click", () => handlers.onTierDelta(1));
 
   // Hold: two-state segmented control (WEAK / STRONG) committing on click
@@ -925,26 +925,26 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     type: "button",
     disabled: state.anyLoading || c.coin <= 0,
     title: "Remove 1 coin",
-  }, "−");
+  }, "−1");
   coinMinusBtn.addEventListener("click", () => handlers.onCoinDelta(-1));
   const coinPlusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading,
     title: "Add 1 coin",
-  }, state.isCoinLoading ? "…" : "+");
+  }, state.isCoinLoading ? "…" : "+1");
   coinPlusBtn.addEventListener("click", () => handlers.onCoinDelta(1));
 
   const stashMinusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading || c.stash <= 0,
     title: "Remove 1 stash",
-  }, "−");
+  }, "−1");
   stashMinusBtn.addEventListener("click", () => handlers.onStashDelta(-1));
   const stashPlusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading,
     title: "Add 1 stash",
-  }, state.isStashLoading ? "…" : "+");
+  }, state.isStashLoading ? "…" : "+1");
   stashPlusBtn.addEventListener("click", () => handlers.onStashDelta(1));
 
   // -- Contacts & Factions (F2y) ---------------------------------------------
@@ -1112,7 +1112,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       "aria-label": "Take ability",
       disabled: anyLoading || eligible.length === 0,
     },
-      el("option", { value: "" }, "--"),
+      el("option", { value: "" }, "Ability"),
       ...eligible.map((sa) => el("option", { value: String(sa.Name) }, String(sa.Name))),
     ) as HTMLSelectElement;
 
@@ -1197,7 +1197,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       "aria-label": "Mark upgrade",
       disabled: anyLoading || markable.length === 0,
     },
-      el("option", { value: "" }, "--"),
+      el("option", { value: "" }, "Upgrade"),
       ...markable.map((u) => el("option", { value: String(u.Name) }, String(u.Name))),
     ) as HTMLSelectElement;
     const markBtn = el("button", {
@@ -1517,7 +1517,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   const gangTypeSelect = el("select", {
     "aria-label": "Cohort gang type",
     disabled: state.anyLoading,
-  }, el("option", { value: "" }, "--")) as HTMLSelectElement;
+  }, el("option", { value: "" }, "Gang type")) as HTMLSelectElement;
   for (const value of extractCohortGangTypes(state.crewGameData)) {
     gangTypeSelect.append(el("option", { value }, value) as HTMLOptionElement);
   }
@@ -1525,7 +1525,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   const expertTypeSelect = el("select", {
     "aria-label": "Cohort expert type",
     disabled: state.anyLoading,
-  }, el("option", { value: "" }, "--")) as HTMLSelectElement;
+  }, el("option", { value: "" }, "Expert type")) as HTMLSelectElement;
   for (const value of extractCohortExpertTypes(state.crewGameData)) {
     expertTypeSelect.append(el("option", { value }, value) as HTMLOptionElement);
   }
@@ -1643,13 +1643,13 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     type: "button",
     disabled: state.anyLoading || xp.points <= 0,
     title: "Remove 1 crew XP",
-  }, "−");
+  }, "−1");
   xpMinusBtn.addEventListener("click", () => handlers.onXpDelta(-1));
   const xpPlusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading || xp.points >= xp.max,
     title: "Add 1 crew XP",
-  }, state.isXpLoading ? "…" : "+");
+  }, state.isXpLoading ? "…" : "+1");
   xpPlusBtn.addEventListener("click", () => handlers.onXpDelta(1));
   const xpClearBtn = el("button", {
     type: "button",

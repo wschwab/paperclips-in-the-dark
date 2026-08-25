@@ -11,3 +11,30 @@ the roster data contract.
 
 F2a is deliberately read-only. Creating, editing, detail pages, history,
 undo, and stale-revision handling remain later F2 slices.
+
+## Bounded rendering and degraded reachability (PERF-02)
+
+At campaign scale the roster no longer maps every row into the DOM. Each
+entity plate renders at most `ROSTER_PAGE_SIZE` (100) readable rows initially
+and a `Show more` control reveals further batches, moving focus to the first
+newly revealed row so keyboard and screen-reader users land in the new
+content.
+
+Two invariants are deliberate:
+
+- **Counts and search describe the full result set, not the rendered
+  window.** The `Characters (N)` / `Crews (N)` headings always show total
+  collection sizes, and search filters over every readable row's data (name,
+  alias, playbook / crew type) before paging — matches beyond the rendered
+  window stay discoverable.
+- **Degraded rows are exempt from both paging and filtering.** A row with
+  `isReadable: false` is the recovery path; it is always rendered at the top
+  of its list with repair/delete controls mounted, and no query can hide it.
+  Paging only ever bounds the readable bulk, so a degraded row can never be
+  stranded behind a window boundary or hidden by non-matching fallback text.
+
+The initial render is committed to ≤ `ROSTER_DOM_BUDGET_NODES` (2000) DOM
+nodes at the 1000-row benchmark scale; both numbers are pinned by tests so
+raising them is an explicit decision rather than drift. Announcements remain
+narrowed to the single polite `.roster-status` region (window/match counts),
+never a live region over the lists themselves (FV-031).

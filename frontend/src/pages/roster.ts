@@ -103,10 +103,179 @@ function renderCrew(cr: CrewSummary, onChanged: () => void): HTMLElement {
   );
 }
 
+// PERF-02: bounded rendering. The readable bulk is mapped into the DOM one
+// page at a time; degraded rows are exempt — they are the recovery path, are
+// always rendered immediately, and a query never hides them (their only text
+// is fallback copy that would otherwise never match). Counts and search
+// always run over the FULL result set, never just the rendered window.
+export const ROSTER_PAGE_SIZE = 100;
+
+/**
+ * PERF-02 committed DOM budget for the sanctioned 1000-row benchmark mix
+ * (70% readable / 10% unreadable / ~3% crews), measured against real
+ * Chromium. Raising it means editing the pin in roster.test.ts deliberately,
+ * not quietly.
+ */
+export const ROSTER_DOM_BUDGET_NODES = 2000;
+
+/** Fields a roster row is searchable by; mirrors the visible row copy. */
+function characterHaystack(c: CharacterSummary): string {
+  return `${c.name} ${c.alias} ${c.playbook}`.toLowerCase();
+}
+
+function crewHaystack(cr: CrewSummary): string {
+  return `${cr.name} ${cr.crewType}`.toLowerCase();
+}
+
+/**
+ * Count surface shared by the status announcer; no DOM access.
+ */
+interface PlateCounts {
+  readonly shownCount: number;
+  matchCount(): number;
+}
+
+/**
+ * One entity plate (list + pager) as a bounded-rendering controller.
+ * The readable bulk is paged; degraded rows are always rendered.
+ */
+interface RosterPlate<T extends CharacterSummary | CrewSummary> extends PlateCounts {
+  readonly listEl: HTMLElement;
+  /** No-match message, rendered outside the <ul> for valid list semantics. */
+  readonly noteEl: HTMLElement;
+  readonly moreBtn: HTMLButtonElement;
+  readonly readable: T[];
+  readonly degraded: T[];
+  /** Rendered window size, clamped to the current match count. */
+  readonly shownCount: number;
+  matchCount(): number;
+  setQuery(q: string): void;
+  renderWindow(): void;
+}
+
+function createPlate<T extends CharacterSummary | CrewSummary>(
+  kind: EntityKind,
+  all: readonly T[],
+  haystack: (row: T) => string,
+  renderRow: (row: T) => HTMLElement,
+  onChanged: () => void,
+  /** Invoked when this plate's rendered window changes outside a filter
+   * cycle (Show more), so the composite announcer can update. */
+  onWindowChange: () => void,
+): RosterPlate<T> {
+  const noun = kind === "character" ? "characters" : "crews";
+  const readable: T[] = all.filter((row) => row.isReadable);
+  const degraded: T[] = all.filter((row) => !row.isReadable);
+  const listEl = el("ul", {
+    className: kind === "character" ? "character-list" : "crew-list",
+  });
+  const moreBtn = el(
+    "button",
+    { type: "button", className: "btn-secondary roster-more" },
+  ) as HTMLButtonElement;
+  let shown = ROSTER_PAGE_SIZE;
+  // Query lives outside the plate so one keystroke re-plates both kinds.
+  const state = { query: "" };
+
+  function matches(): T[] {
+    if (!state.query) return readable;
+    return readable.filter((row) => haystack(row).includes(state.query));
+  }
+
+  function rowFor(row: T): HTMLElement {
+    const li = renderRow(row);
+    li.tabIndex = -1;
+    return li;
+  }
+
+  /** No-match note lives OUTSIDE the <ul>: a <p> is invalid as a list
+   * child, and the recovery group must keep clean list semantics. */
+  const noteEl = el("p", { className: "empty uneven roster-note" });
+
+  /** Rebuild the list: recovery group first, then the rendered window. */
+  function renderWindow(): void {
+    setChildren(listEl);
+    for (const d of degraded) {
+      listEl.append(renderDegradedRow(kind, d, onChanged));
+    }
+    const pool = matches();
+    for (const row of pool.slice(0, shown)) listEl.append(rowFor(row));
+    if (state.query && pool.length === 0) {
+      noteEl.textContent = `No ${noun} match “${state.query}”.`;
+      noteEl.hidden = false;
+    } else {
+      noteEl.textContent = "";
+      noteEl.hidden = true;
+    }
+    syncPager();
+  }
+
+  function syncPager(): void {
+    const remaining = Math.max(0, matches().length - shown);
+    moreBtn.hidden = remaining === 0;
+    if (remaining > 0) {
+      moreBtn.textContent = `Show ${Math.min(ROSTER_PAGE_SIZE, remaining)} more ${noun}`;
+    }
+  }
+
+  function showMore(): void {
+    const pool = matches();
+    const before = Math.min(shown, pool.length);
+    shown += ROSTER_PAGE_SIZE;
+    const after = Math.min(shown, pool.length);
+    let firstNew: HTMLElement | null = null;
+    for (const row of pool.slice(before, after)) {
+      const li = rowFor(row);
+      if (!firstNew) firstNew = li;
+      listEl.append(li);
+    }
+    // PERF-02 accessibility contract: keyboard/SR users land on the first
+    // newly revealed row (rows carry tabindex="-1"); the compact status
+    // region announces the new window — never the mutation itself.
+    firstNew?.focus();
+    syncPager();
+    onWindowChange();
+  }
+
+  moreBtn.addEventListener("click", showMore);
+
+  return {
+    listEl,
+    noteEl,
+    moreBtn,
+    readable,
+    degraded,
+    get shownCount() {
+      return Math.min(shown, matches().length);
+    },
+    matchCount: () => matches().length,
+    setQuery(q: string): void {
+      state.query = q;
+      shown = ROSTER_PAGE_SIZE;
+      renderWindow();
+    },
+    renderWindow,
+  };
+}
+
+
+/** Composite status-line text across both plates (single polite region). */
+function statusText(
+  charPlate: PlateCounts,
+  crewPlate: PlateCounts,
+  totalChars: number,
+  totalCrews: number,
+  query: string,
+): string {
+  if (query) {
+    return `${charPlate.matchCount()} of ${totalChars} characters match. ` +
+      `${crewPlate.matchCount()} of ${totalCrews} crews match.`;
+  }
+  return `Showing ${charPlate.shownCount} of ${totalChars} characters. ` +
+    `Showing ${crewPlate.shownCount} of ${totalCrews} crews.`;
+}
+
 function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
-  // OPT-008: search/filter input. Filters by name/alias/playbook (characters)
-  // or name/crewType (crews). Degraded rows stay visible — their id is the
-  // only text and they remain reachable regardless of filter.
   const searchInput = el("input", {
     type: "search",
     className: "roster-search",
@@ -115,30 +284,13 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
     autocomplete: "off",
   }) as HTMLInputElement;
 
-  // OPT-008: narrow aria-live to a status region that announces count
-  // changes only, not every DOM mutation in the roster.
+  // OPT-008/PERF-02: narrow aria-live region announcing window/match counts.
+  // Never attach aria-live to the root or lists (FV-031: a broad live region
+  // announces every DOM mutation to AT users).
   const statusRegion = el("div", {
     "aria-live": "polite",
     className: "roster-status visually-hidden",
-  }, `Characters: ${roster.characters.length}. Crews: ${roster.crews.length}.`);
-
-  const charactersList =
-    roster.characters.length === 0
-      ? el("p", { className: "empty uneven" }, "No characters yet.")
-      : el(
-          "ul",
-          { className: "character-list" },
-          ...roster.characters.map((c) => renderCharacter(c, onChanged)),
-        );
-
-  const crewsList =
-    roster.crews.length === 0
-      ? el("p", { className: "empty uneven" }, "No crews yet.")
-      : el(
-          "ul",
-          { className: "crew-list" },
-          ...roster.crews.map((cr) => renderCrew(cr, onChanged)),
-        );
+  });
 
   const refreshBtn = el("button", {
     type: "button",
@@ -147,7 +299,43 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
   }, "Refresh");
   refreshBtn.addEventListener("click", onChanged);
 
-  const section = el(
+  const charPlate = createPlate(
+    "character",
+    roster.characters,
+    characterHaystack,
+    (c) => renderCharacter(c, onChanged),
+    onChanged,
+    () => syncStatus(),
+  );
+  const crewPlate = createPlate(
+    "crew",
+    roster.crews,
+    crewHaystack,
+    (cr) => renderCrew(cr, onChanged),
+    onChanged,
+    () => syncStatus(),
+  );
+  const totalChars = roster.characters.length;
+  const totalCrews = roster.crews.length;
+
+  const syncStatus = () => {
+    statusRegion.textContent = statusText(charPlate, crewPlate, totalChars, totalCrews, query);
+  };
+
+  let query = "";
+  const applyFilter = () => {
+    query = searchInput.value.trim().toLowerCase();
+    charPlate.setQuery(query);
+    crewPlate.setQuery(query);
+    syncStatus();
+  };
+  searchInput.addEventListener("input", applyFilter);
+
+  charPlate.renderWindow();
+  crewPlate.renderWindow();
+  syncStatus();
+
+  return el(
     "section",
     { className: "roster" },
     el(
@@ -161,34 +349,24 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
     el(
       "div",
       { className: "roster-characters torn-foot" },
-      el("h2", {}, `Characters (${roster.characters.length})`),
-      charactersList,
-      el("a", { href: "/character/create", className: "btn-primary" }, "+ Create Character"),
+      el("h2", {}, `Characters (${totalChars})`),
+      totalChars === 0
+        ? el("p", { className: "empty uneven" }, "No characters yet.")
+        : charPlate.listEl,
+      charPlate.noteEl,
+      charPlate.moreBtn,
     ),
     el(
       "div",
       { className: "roster-crews torn-foot" },
-      el("h2", {}, `Crews (${roster.crews.length})`),
-      crewsList,
-      el("a", { href: "/crew/create", className: "btn-primary" }, "+ Create Crew"),
+      el("h2", {}, `Crews (${totalCrews})`),
+      totalCrews === 0
+        ? el("p", { className: "empty uneven" }, "No crews yet.")
+        : crewPlate.listEl,
+      crewPlate.noteEl,
+      crewPlate.moreBtn,
     ),
   );
-
-  // OPT-008: filter handler — hide non-matching rows, keep degraded rows
-  // visible (they have no name text to match). Queries within the section
-  // element (not the root container) to avoid scope leakage.
-  const applyFilter = () => {
-    const q = searchInput.value.trim().toLowerCase();
-    section.querySelectorAll("[data-character-id], [data-crew-id]").forEach((node) => {
-      const e = node as HTMLElement;
-      if (!q) { e.style.display = ""; return; }
-      const text = (e.textContent || "").toLowerCase();
-      e.style.display = text.includes(q) ? "" : "none";
-    });
-  };
-  searchInput.addEventListener("input", applyFilter);
-
-  return section;
 }
 
 function renderLoading(): HTMLElement {

@@ -3260,3 +3260,70 @@ describe("FV-012 focus restoration", () => {
     expect(document.activeElement).toBe(addContact());
   });
 });
+
+// ---------------------------------------------------------------------------
+// CHAR-06 — tracker and field affordances
+// ---------------------------------------------------------------------------
+
+describe("CHAR-06 crew tracker affordances", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  it("labels every ±1 stepper with the +1/−1 convention", async () => {
+    global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".crew-rep")).not.toBeNull();
+    });
+
+    const pairs: Array<[string, string]> = [
+      ["Add 1 rep", "+1"],
+      ["Remove 1 rep", "−1"],
+      ["Add 1 heat", "+1"],
+      ["Remove 1 heat", "−1"],
+      ["Add 1 wanted", "+1"],
+      ["Remove 1 wanted", "−1"],
+      ["Add 1 tier", "+1"],
+      ["Remove 1 tier", "−1"],
+      ["Add 1 turf", "+1"],
+      ["Remove 1 turf", "−1"],
+      ["Add 1 coin", "+1"],
+      ["Remove 1 coin", "−1"],
+      ["Add 1 stash", "+1"],
+      ["Remove 1 stash", "−1"],
+      ["Add 1 crew XP", "+1"],
+      ["Remove 1 crew XP", "−1"],
+    ];
+    for (const [title, expected] of pairs) {
+      const btn = root.querySelector(`button[title="${title}"]`);
+      expect(btn, title).not.toBeNull();
+      expect(btn!.textContent, title).toBe(expected);
+    }
+  });
+
+  it("uses semantic default option text instead of -- in pickers", async () => {
+    global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('select[aria-label="Take ability"]')).not.toBeNull();
+    });
+
+    const firstOption = (ariaLabel: string): { text: string | null; value: string | null } => {
+      const select = root.querySelector(`select[aria-label="${ariaLabel}"]`) as HTMLSelectElement;
+      return { text: select.options[0]?.textContent ?? null, value: select.options[0]?.value ?? null };
+    };
+
+    // Placeholder text names what is being chosen; values stay "" so form
+    // logic keyed on the empty value is unaffected.
+    expect(firstOption("Take ability")).toEqual({ text: "Ability", value: "" });
+    expect(firstOption("Mark upgrade")).toEqual({ text: "Upgrade", value: "" });
+    expect(firstOption("Cohort gang type")).toEqual({ text: "Gang type", value: "" });
+    expect(firstOption("Cohort expert type")).toEqual({ text: "Expert type", value: "" });
+  });
+});

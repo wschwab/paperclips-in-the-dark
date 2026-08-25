@@ -451,4 +451,248 @@ describe("roster page (F2aa)", () => {
     expect(liveRegion).toBeTruthy();
     expect(liveRegion?.getAttribute("aria-live")).toBe("polite");
   });
+
+  // -------------------------------------------------------------------------
+  // PERF-02: bounded roster rendering with degraded reachability. Initial
+  // render maps at most ROSTER_PAGE_SIZE readable rows per list into the DOM;
+  // "Show more" reveals further batches. Header counts always describe the
+  // FULL result set, search runs over the full readable result set (not just
+  // rendered rows), and degraded rows are always rendered and never hidden by
+  // a query — they are the recovery path.
+  //
+  // The committed numbers below are pins: raising the page size or DOM
+  // budget is a deliberate decision that must edit these tests, not a
+  // constant quietly moved in roster.ts.
+  // -------------------------------------------------------------------------
+
+  let bulkSeq = 0;
+  // Contract uuid pattern: 8-4-4-4-12 hex, version 4, variant [89ab].
+  const bulkId = (prefix: string, i: number): string =>
+    `${prefix}${String(i).padStart(5, "0")}-0000-4000-8000-${String(i).padStart(12, "0")}`;
+  const bulkChar = (overrides: Record<string, unknown> = {}) => {
+    bulkSeq += 1;
+    return {
+      ...rosterDTO.characters[0],
+      id: bulkId("7c0", bulkSeq),
+      name: `Bulk ${String(bulkSeq).padStart(4, "0")}`,
+      alias: `bulk-${bulkSeq}`,
+      ...overrides,
+    };
+  };
+  const bulkUnreadable = () =>
+    bulkChar({
+      isReadable: false,
+      isRepairable: false,
+      isComplete: false,
+      deleteToken: `sha256:${"ab".repeat(32)}`,
+    });
+  const bulkCrew = (overrides: Record<string, unknown> = {}) => {
+    bulkSeq += 1;
+    return {
+      ...rosterDTO.crews[0],
+      id: bulkId("9d0", bulkSeq),
+      name: `Bulk Crew ${String(bulkSeq).padStart(4, "0")}`,
+      ...overrides,
+    };
+  };
+
+  const readableRows = (container: HTMLElement): HTMLElement[] =>
+    Array.from(
+      container.querySelectorAll<HTMLElement>("li[data-character-id]:not([data-degraded])"),
+    );
+  const degradedRows = (container: HTMLElement): HTMLElement[] =>
+    Array.from(container.querySelectorAll<HTMLElement>("li[data-character-id][data-degraded]"));
+
+  it("bounds the initial render at 1000 rows: one page of readable rows, all degraded rows, full-set counts", async () => {
+    const big = {
+      characters: [
+        ...Array.from({ length: 900 }, () => bulkChar()),
+        ...Array.from({ length: 100 }, () => bulkUnreadable()),
+      ],
+      crews: Array.from({ length: 30 }, () => bulkCrew()),
+    };
+    global.fetch = vi.fn().mockResolvedValue(ok(big));
+    mountRosterPage(root);
+    await vi.waitFor(() => {
+      expect(readableRows(root).length).toBe(100);
+    });
+
+    // Readable rows are paged; degraded rows are the recovery path and are
+    // all rendered immediately.
+    expect(readableRows(root).length).toBe(100);
+    expect(degradedRows(root).length).toBe(100);
+    expect(root.querySelectorAll("li[data-crew-id]").length).toBe(30);
+
+    // Counts describe the full result set, not the rendered window.
+    expect(root.querySelector(".roster-characters h2")?.textContent).toContain(
+      "Characters (1000)",
+    );
+    expect(root.querySelector(".roster-crews h2")?.textContent).toContain("Crews (30)");
+
+    // Committed PERF-02 DOM budget for the sanctioned 1000-row mix
+    // (70% readable / 10% unreadable benchmark proportions, here worst-cased
+    // to 900 readable + 100 unreadable + 30 crews).
+    expect(root.getElementsByTagName("*").length).toBeLessThanOrEqual(2000);
+  });
+
+  it("Show more reveals the next batch, moves focus to it, and announces progress in the status region", async () => {
+    document.body.append(root);
+    try {
+      global.fetch = vi.fn().mockResolvedValue(
+        ok({ characters: Array.from({ length: 250 }, () => bulkChar()), crews: [] }),
+      );
+      mountRosterPage(root);
+      await vi.waitFor(() => {
+        expect(readableRows(root).length).toBe(100);
+      });
+
+      const statusRegion = () => root.querySelector<HTMLElement>(".roster-status");
+      expect(statusRegion()?.getAttribute("aria-live")).toBe("polite");
+      expect(statusRegion()?.textContent).toContain("Showing 100 of 250 characters");
+
+      const moreBtn = root.querySelector<HTMLButtonElement>(
+        ".roster-characters button.roster-more",
+      );
+      expect(moreBtn).toBeTruthy();
+      moreBtn!.click();
+
+      await vi.waitFor(() => {
+        expect(readableRows(root).length).toBe(200);
+      });
+      // Keyboard/screen-reader users land on the first newly revealed row…
+      const firstNewRow = readableRows(root)[100];
+      expect(document.activeElement).toBe(firstNewRow);
+      // …and the compact status region announces the new window, not the
+      // roster mutation itself.
+      expect(statusRegion()?.textContent).toContain("Showing 200 of 250 characters");
+
+      // Exhausting the result set retires the control.
+      const exhausted = root.querySelector<HTMLButtonElement>(
+        ".roster-characters button.roster-more",
+      );
+      exhausted!.click();
+      await vi.waitFor(() => {
+        expect(readableRows(root).length).toBe(250);
+        expect(exhausted!.hidden).toBe(true);
+      });
+    } finally {
+      root.remove();
+    }
+  });
+
+  it("search reaches readable rows outside the rendered window and reports match counts", async () => {
+    const needle = bulkChar({ name: "Zed Quillfinder", alias: "the needle" });
+    global.fetch = vi.fn().mockResolvedValue(
+      ok({
+        characters: [...Array.from({ length: 299 }, () => bulkChar()), needle],
+        crews: [],
+      }),
+    );
+    mountRosterPage(root);
+    await vi.waitFor(() => {
+      expect(readableRows(root).length).toBe(100);
+    });
+
+    const search = root.querySelector<HTMLInputElement>("input.roster-search")!;
+    search.value = "Quillfinder";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+
+    await vi.waitFor(() => {
+      const visible = readableRows(root).filter((r) => r.style.display !== "none");
+      expect(visible.length).toBe(1);
+      expect(visible[0].textContent).toContain("Zed Quillfinder");
+    });
+    expect(root.querySelector(".roster-status")?.textContent).toContain(
+      "1 of 300 characters match",
+    );
+    // The match fits one page: no pager while filtered.
+    const pager = root.querySelector<HTMLButtonElement>(
+      ".roster-characters button.roster-more",
+    );
+    expect(pager?.hidden).toBe(true);
+  });
+
+  it("keeps degraded rows visible and controllable under a query that matches nothing", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      ok({
+        characters: [
+          bulkChar(),
+          bulkChar(),
+          bulkChar(),
+          bulkUnreadable(),
+          bulkUnreadable(),
+        ],
+        crews: [],
+      }),
+    );
+    mountRosterPage(root);
+    await vi.waitFor(() => {
+      expect(readableRows(root).length).toBe(3);
+      expect(degradedRows(root).length).toBe(2);
+    });
+
+    const search = root.querySelector<HTMLInputElement>("input.roster-search")!;
+    search.value = "zzz-no-such-row";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+
+    await vi.waitFor(() => {
+      const visibleReadable = readableRows(root).filter((r) => r.style.display !== "none");
+      expect(visibleReadable.length).toBe(0);
+    });
+    const degraded = degradedRows(root);
+    expect(degraded.length).toBe(2);
+    for (const li of degraded) {
+      // Degraded rows are the recovery group: a nonmatching query must never
+      // hide them or strand their repair/delete controls.
+      expect(li.style.display).not.toBe("none");
+      expect(li.querySelector("button")).toBeTruthy();
+    }
+
+    // The no-match message stays OUTSIDE the <ul> (a <p> is invalid as a
+    // list child — review finding), and the note names the empty state.
+    const charList = root.querySelector("ul.character-list")!;
+    expect(Array.from(charList.children).every((c) => c.tagName === "LI")).toBe(true);
+    const note = root.querySelector<HTMLElement>(".roster-characters .roster-note")!;
+    expect(note.hidden).toBe(false);
+    expect(note.textContent).toContain("No characters match");
+
+    // Clearing the query hides the note and restores the paged view.
+    search.value = "";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.waitFor(() => {
+      expect(readableRows(root).length).toBe(3);
+      expect((root.querySelector(".roster-characters .roster-note") as HTMLElement).hidden).toBe(
+        true,
+      );
+    });
+  });
+
+  it("restores the paged view when the query is cleared", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      ok({ characters: Array.from({ length: 250 }, () => bulkChar()), crews: [] }),
+    );
+    mountRosterPage(root);
+    await vi.waitFor(() => {
+      expect(readableRows(root).length).toBe(100);
+    });
+
+    const search = root.querySelector<HTMLInputElement>("input.roster-search")!;
+    search.value = "Bulk";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.waitFor(() => {
+      expect(root.querySelector(".roster-status")?.textContent).toContain(
+        "250 of 250 characters match",
+      );
+    });
+
+    search.value = "";
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.waitFor(() => {
+      expect(readableRows(root).length).toBe(100);
+    });
+    const pager = root.querySelector<HTMLButtonElement>(
+      ".roster-characters button.roster-more",
+    );
+    expect(pager?.hidden).toBe(false);
+  });
 });

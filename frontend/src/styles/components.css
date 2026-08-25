@@ -35,6 +35,12 @@
   gap: 6px;
   flex-wrap: wrap;
 }
+/* A11Y-01: interactive rows spread their pitch so the expanded hit zones
+ * below keep clear air between neighboring targets. Display-only rows keep
+ * the original rhythm untouched. */
+.action-dots.is-interactive {
+  gap: 10px;
+}
 .action-dot {
   width: 16px;
   height: 16px;
@@ -53,6 +59,25 @@
 }
 .action-dot:focus-visible {
   outline-color: var(--accent);
+}
+/* A11Y-01: invisible 24×24 hit zone centred on each interactive ink dot
+ * (24px WCAG 2.5.8 target minimum). A pseudo-element's pixels belong to its
+ * button's hit-testing region, so the visible ink never grows. Sized
+ * explicitly and centred via transform because the button's border makes
+ * its padding box (the abs containing block) smaller than 16px — inset
+ * bleed would silently under-shoot the minimum. Static transform, so
+ * prefers-reduced-motion is unaffected. */
+.action-dots.is-interactive button.action-dot::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+}
+.action-dot[aria-disabled="true"] {
+  cursor: default;
 }
 
 /* ── Stress track (heavy boxes) ──────────────────────────────── */

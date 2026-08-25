@@ -1635,7 +1635,7 @@ describe("character-detail page", () => {
         const select = root.querySelector('select[aria-label="Harm to heal"]') as HTMLSelectElement;
         expect(select).not.toBeNull();
         expect(Array.from(select.options).map((o) => o.textContent)).toEqual([
-          "--", "lesser: Battered", "moderate: Stabbed",
+          "Harm", "lesser: Battered", "moderate: Stabbed",
         ]);
       });
     });
@@ -2462,6 +2462,120 @@ describe("character-detail page", () => {
       expect(nameEls[0]?.getAttribute("title")).toContain("When you Hunt");
     });
 
+    // CHAR-06: XP trackers get the same heavy-box furniture as the stress
+    // track — boxes derive from the DTO max, clicks send computed deltas
+    // over the same attribute-xp.add op, and accessible names stay on the
+    // existing title attributes.
+    it("renders attribute XP as a heavy-box track with DTO bounds", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Brenda Hilton");
+      });
+
+      const insightTrack = root.querySelector('.talent-xp[data-attribute="Insight"] .stress-track') as HTMLElement;
+      expect(insightTrack).not.toBeNull();
+      expect(insightTrack.getAttribute("aria-label")).toBe("Insight XP: 2 of 6");
+      expect(insightTrack.querySelectorAll(".stress-box").length).toBe(6);
+      expect(insightTrack.querySelectorAll('[data-stress="1"]').length).toBe(2);
+
+      const prowessTrack = root.querySelector('.talent-xp[data-attribute="Prowess"] .stress-track') as HTMLElement;
+      expect(prowessTrack.getAttribute("aria-label")).toBe("Prowess XP: 6 of 6");
+
+      // Existing accessible names survive the new furniture; the ±1 steppers
+      // follow the +1/−1 convention.
+      expect(root.querySelector('button[title="Add 1 XP (Insight)"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Remove 1 XP (Insight)"]')).not.toBeNull();
+      expect((root.querySelector('button[title="Add 1 XP (Insight)"]') as HTMLButtonElement).textContent).toBe("+1");
+      expect((root.querySelector('button[title="Remove 1 XP (Insight)"]') as HTMLButtonElement).textContent).toBe("−1");
+    });
+
+    it("XP box click posts attribute-xp.add with the computed delta", async () => {
+      const updated = talentDTO({
+        revision: 13,
+        talent: {
+          attributes: [
+            {
+              name: "Insight",
+              experience: { points: 4, max: 6 },
+              actions: [
+                { name: "Hunt", rating: 1, maxRating: 4 },
+                { name: "Study", rating: 2, maxRating: 4 },
+                { name: "Survey", rating: 0, maxRating: 4 },
+                { name: "Tinker", rating: 1, maxRating: 4 },
+              ],
+            },
+            ...talentDTO().talent.attributes.slice(1),
+          ],
+        },
+      });
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))
+        .mockResolvedValueOnce(ok(charOpOk(updated, "attribute-xp.add")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Brenda Hilton");
+      });
+
+      const boxes = root.querySelectorAll<HTMLButtonElement>('.talent-xp[data-attribute="Insight"] .stress-box');
+      boxes[3]?.click(); // box 4 at points 2 → delta +2
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/attribute-xp.add`,
+          expect.objectContaining({
+            body: JSON.stringify({ attribute: "Insight", delta: 2 }),
+            headers: expect.objectContaining({ "If-Match": "12" }),
+          }),
+        );
+      });
+      await vi.waitFor(() => {
+        const track = root.querySelector('.talent-xp[data-attribute="Insight"] .stress-track') as HTMLElement;
+        expect(track.getAttribute("aria-label")).toBe("Insight XP: 4 of 6");
+      });
+    });
+
+    it("clicking the current XP box sends no op (delta 0)", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Brenda Hilton");
+      });
+
+      const callsBefore = vi.mocked(global.fetch).mock.calls.length;
+      const boxes = root.querySelectorAll<HTMLButtonElement>('.talent-xp[data-attribute="Prowess"] .stress-box');
+      boxes[5]?.click(); // box 6 at points 6 → delta 0
+
+      await new Promise((r) => setTimeout(r, 25));
+      expect(vi.mocked(global.fetch).mock.calls.length).toBe(callsBefore);
+    });
+
     // SC-F3/P21: the UI respects the server-computed effective action cap —
     // a crewless DTO at DTO max 4 whose effective cap is 3 renders 3 dots
     // (never offering a dot the server would reject with RATING_MAXED).
@@ -3151,6 +3265,53 @@ describe("character-detail page", () => {
       });
       await vi.waitFor(() => {
         expect(root.querySelector(".playbook-xp")?.textContent).toContain("0 / 8");
+      });
+    });
+
+    // CHAR-06: the Score XP track gets the same heavy-box furniture; box
+    // clicks post computed deltas over the existing playbook-xp.add op.
+    it("renders the playbook XP tracker as a heavy-box track and box clicks post deltas", async () => {
+      const added = playbookDTO({
+        revision: 13,
+        playbook: { name: "Spider", experience: { points: 7, max: 8 }, abilities: [] },
+      });
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}))
+        .mockResolvedValueOnce(ok(charOpOk(added, "playbook-xp.add")));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".playbook-xp")?.textContent).toContain("4 / 8");
+      });
+
+      const track = root.querySelector(".playbook-xp .stress-track") as HTMLElement;
+      expect(track.getAttribute("aria-label")).toBe("Playbook XP: 4 of 8");
+      expect(track.querySelectorAll(".stress-box").length).toBe(8);
+      expect(track.querySelectorAll('[data-stress="1"]').length).toBe(4);
+
+      // Accessible names preserved; steppers follow the +1/−1 convention.
+      expect((root.querySelector('button[title="Add 1 playbook XP"]') as HTMLButtonElement).textContent).toBe("+1");
+      expect((root.querySelector('button[title="Remove 1 playbook XP"]') as HTMLButtonElement).textContent).toBe("−1");
+
+      const boxes = root.querySelectorAll<HTMLButtonElement>(".playbook-xp .stress-box");
+      boxes[6]?.click(); // box 7 at points 4 → delta +3
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/playbook-xp.add`,
+          expect.objectContaining({ body: JSON.stringify({ delta: 3 }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        const updatedTrack = root.querySelector(".playbook-xp .stress-track") as HTMLElement;
+        expect(updatedTrack.getAttribute("aria-label")).toBe("Playbook XP: 7 of 8");
       });
     });
 
@@ -5530,5 +5691,103 @@ describe("CONTRACT-05 per-scoundrel contacts", () => {
     await vi.waitFor(() => {
       expect(root.textContent).not.toContain("Marlane, a pugilist");
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CHAR-06 — tracker and field affordances
+// ---------------------------------------------------------------------------
+
+describe("CHAR-06 field affordances", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  /** Standard six-response load sequence (char, game, playbook, clocks, crews, caps). */
+  function mountWith(dto: unknown) {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}));
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  }
+
+  it("uses semantic default option text instead of -- in every picker", async () => {
+    mountWith(characterDTO());
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Brenda Hilton");
+    });
+
+    const firstOptionText = (ariaLabel: string): string | null => {
+      const select = root.querySelector(`select[aria-label="${ariaLabel}"]`) as HTMLSelectElement | null;
+      return select?.options[0]?.textContent ?? null;
+    };
+
+    // The placeholder names what is being chosen; values stay "" so form
+    // logic keyed on the empty value is unaffected.
+    expect(firstOptionText("Harm intensity")).toBe("Severity");
+    expect(firstOptionText("Add trauma")).toBe("Trauma");
+    expect(firstOptionText("Join crew")).toBe("Crew");
+    expect(firstOptionText("Harm to heal")).toBe("Harm");
+    expect(firstOptionText("Take ability")).toBe("Ability");
+    expect(firstOptionText("Add gear item")).toBe("Item");
+    expect(firstOptionText("Select gear item")).toBe("Item");
+  });
+
+  it("pending-trauma picker and vice purveyor picker use semantic defaults too", async () => {
+    mountWith(characterDTO({ traumaPending: true }));
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".stress-trauma-picker")).not.toBeNull();
+    });
+    const picker = root.querySelector('select[aria-label="Trauma when stressed"]') as HTMLSelectElement;
+    expect(picker.options[0].textContent).toBe("Trauma");
+    expect(picker.options[0].value).toBe("");
+
+    // Vice edit mode renders the purveyor dropdown from Vices[].Sources.
+    (root.querySelector('button[title="Edit Vice"]') as HTMLButtonElement).click();
+    const purveyor = root.querySelector('select[aria-label="Vice purveyor (choose)"]') as HTMLSelectElement;
+    expect(purveyor).not.toBeNull();
+    expect(purveyor.options[0].textContent).toBe("Purveyor");
+  });
+
+  it("labels the stress ±1 steppers with the +1/−1 convention", async () => {
+    mountWith(characterDTO());
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Add 1 stress"]')).not.toBeNull();
+    });
+    expect((root.querySelector('button[title="Add 1 stress"]') as HTMLButtonElement).textContent).toBe("+1");
+    expect((root.querySelector('button[title="Remove 1 stress"]') as HTMLButtonElement).textContent).toBe("−1");
+  });
+
+  it("gives the stash tangible furniture and keeps Lifestyle derived display-only", async () => {
+    mountWith(characterDTO({
+      fund: { satchel: { coins: 2, max: 12 }, stash: { coins: 25, max: 40 } },
+    }));
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".coin-stash-count")?.textContent).toContain("25 / 40");
+    });
+
+    // The stash renders in the same heavy-box idiom, bounded by the DTO max.
+    const stashTrack = root.querySelector(".coin-stash .stress-track") as HTMLElement;
+    expect(stashTrack).not.toBeNull();
+    expect(stashTrack.getAttribute("aria-label")).toBe("Stash: 25 of 40");
+    expect(stashTrack.querySelectorAll(".stress-box").length).toBe(40);
+    expect(stashTrack.querySelectorAll('[data-stress="1"]').length).toBe(25);
+
+    // Hierarchy: the stash block carries no write control — Lifestyle stays
+    // a derived read-only figure beneath it.
+    expect(root.querySelectorAll(".coin-stash button").length).toBe(0);
+    expect(root.querySelector(".coin-lifestyle")?.textContent).toContain("Lifestyle 2");
   });
 });
