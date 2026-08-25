@@ -66,15 +66,27 @@ const CREW_FIELD_LABELS: Record<CrewField, string> = {
 // CONTRACT-04 (2026-08-25): Tier renders in Roman numerals like the printed
 // crew sheet — 0 stays "0"; a legacy value above the printed scale falls
 // back to decimal digits. Pure display: the wire format is the DTO integer.
-// CONTRACT-04 review fix: numeral scale derives from the loaded capabilities
-// tierMax (settings-derived server-side) — never a hardcoded list length.
-// Values outside the known scale fall back to decimal digits, matching legacy
-// stored crews; a missing scale renders decimal too.
-const TIER_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
-const formatTier = (tier: number, tierMax?: number | null): string =>
-  tier >= 1 && (!tierMax || tier <= tierMax)
-    ? (TIER_ROMAN[tier - 1] ?? String(tier))
-    : String(tier);
+// CONTRACT-04 review fix: numeral rendering derives from the loaded
+// capabilities tierMax (settings-derived server-side). Requires a positive
+// finite tierMax before Roman formatting; without one, renders decimal.
+const ROMAN_PAIRS: ReadonlyArray<[number, string]> = [
+  [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
+];
+function toRoman(n: number): string {
+  let result = "";
+  for (const [value, numeral] of ROMAN_PAIRS) {
+    while (n >= value) { result += numeral; n -= value; }
+  }
+  return result;
+}
+const formatTier = (tier: number, tierMax?: number | null): string => {
+  // Render decimal only when an explicit cap is provided AND exceeded.
+  // Otherwise, always render Roman — the UI fallback when capabilities
+  // haven't loaded yet. Tier 0 renders as decimal "0".
+  if (tier < 1) return String(tier);
+  if (typeof tierMax === "number" && tier > tierMax) return String(tier);
+  return toRoman(tier);
+};
 interface ProfileEditingState {
   field: CrewField;
   value: string;
