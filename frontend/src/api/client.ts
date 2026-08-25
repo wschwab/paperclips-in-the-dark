@@ -391,6 +391,9 @@ export interface CrewCapabilities {
   abilities: readonly AbilityCapability[];
   effectiveTurf: number;
   developThreshold: number;
+  /** CONTRACT-04 review fix: settings-derived Tier maximum (absent only if
+   *  the loaded game fails to publish an integer CrewTierMax). */
+  tierMax?: number | null;
 }
 
 export interface UpgradeCapability {
@@ -457,6 +460,7 @@ const AbilityCapabilitySchema = Schema.Struct({
 });
 
 const CrewCapabilitiesSchema = Schema.Struct({
+  tierMax: Schema.optional(Schema.Number.pipe(Schema.int())),
   crewId: Schema.String,
   upgrades: Schema.Array(UpgradeCapabilitySchema),
   abilities: Schema.Array(AbilityCapabilitySchema),
