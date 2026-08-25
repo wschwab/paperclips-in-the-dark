@@ -5399,3 +5399,136 @@ describe("CONTRACT-03 gated corrections", () => {
 });
 
 
+
+// ---------------------------------------------------------------------------
+// CONTRACT-05: per-scoundrel Contacts (add / cycle closeness / remove)
+// ---------------------------------------------------------------------------
+
+let root: HTMLElement;
+
+beforeEach(() => {
+  root = document.createElement("div");
+  vi.clearAllMocks();
+});
+
+describe("CONTRACT-05 per-scoundrel contacts", () => {
+  const CONTACT_ID = "c05c05cd-c05c-4c05-8c05-c05c05cdc001";
+  const withContacts = characterDTO({
+    contacts: [{ id: CONTACT_ID, name: "Marlane, a pugilist", closeness: "contact" }],
+  });
+  /** Playbook fixture carrying BitS rolodex names for the add suggestions. */
+  const PLAYBOOK_WITH_ROLODEX = {
+    ...PLAYBOOK_DATA,
+    Rolodex: { Name: "Shrewd Friends", Friends: ["Salia, an information broker"] },
+  };
+
+  it("adds a contact via contact.add with the typed name", async () => {
+    const added = characterDTO({
+      revision: 13,
+      contacts: [{ id: CONTACT_ID, name: "Salia, an information broker", closeness: "contact" }],
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_WITH_ROLODEX))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(
+        ok({ ok: true, character: added, applied: { op: "contact.add" }, sideEffects: [], error: null }),
+      );
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('input[aria-label="New contact"]')).not.toBeNull();
+    });
+    // Add picker suggestions come from the playbook's BitS rolodex names.
+    expect(root.querySelector('#contact-name-suggestions option[value="Salia, an information broker"]')).not.toBeNull();
+
+    const input = root.querySelector('input[aria-label="New contact"]') as HTMLInputElement;
+    input.value = "Salia, an information broker";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    (root.querySelector('button[title="Add contact"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const addCall = calls.find((c) => String(c[0]).endsWith("/ops/contact.add"));
+      expect(addCall).toBeTruthy();
+      expect(addCall![0]).toBe(`/api/characters/${CHARACTER_ID}/ops/contact.add`);
+      expect(addCall![1].method).toBe("POST");
+      expect(addCall![1].body).toBe(JSON.stringify({ name: "Salia, an information broker" }));
+      expect(addCall![1].headers["If-Match"]).toBe("12");
+    });
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Salia, an information broker");
+    });
+  });
+
+  it("cycles closeness via contact.closeness with the next level", async () => {
+    const cycled = characterDTO({
+      revision: 13,
+      contacts: [{ id: CONTACT_ID, name: "Marlane, a pugilist", closeness: "friend" }],
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(withContacts))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(
+        ok({ ok: true, character: cycled, applied: { op: "contact.closeness" }, sideEffects: [], error: null }),
+      );
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Cycle closeness for Marlane, a pugilist"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Cycle closeness for Marlane, a pugilist"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const cycleCall = calls.find((c) => String(c[0]).endsWith("/ops/contact.closeness"));
+      expect(cycleCall).toBeTruthy();
+      expect(cycleCall![1].body).toBe(JSON.stringify({ name: "Marlane, a pugilist", closeness: "friend" }));
+      expect(cycleCall![1].headers["If-Match"]).toBe("12");
+    });
+  });
+
+  it("removes a contact via contact.remove with the entry name", async () => {
+    const removed = characterDTO({ revision: 13, contacts: [] });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(withContacts))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(
+        ok({ ok: true, character: removed, applied: { op: "contact.remove" }, sideEffects: [], error: null }),
+      );
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Remove Marlane, a pugilist"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Remove Marlane, a pugilist"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const rmCall = calls.find((c) => String(c[0]).endsWith("/ops/contact.remove"));
+      expect(rmCall).toBeTruthy();
+      expect(rmCall![1].body).toBe(JSON.stringify({ name: "Marlane, a pugilist" }));
+      expect(rmCall![1].headers["If-Match"]).toBe("12");
+    });
+    await vi.waitFor(() => {
+      expect(root.textContent).not.toContain("Marlane, a pugilist");
+    });
+  });
+});

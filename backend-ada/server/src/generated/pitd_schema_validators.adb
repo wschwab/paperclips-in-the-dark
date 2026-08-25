@@ -460,7 +460,8 @@ package body Pitd_Schema_Validators is
    Required_Character : constant String :=
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|dossier|monitor|talent|playbook|gear|fund|rolodex|session|notebook|isRetired|isDeadish|traumaPending|isOutOfAction|stressClearPending|";
 
-   Allowed_Character : constant String := Required_Character;
+   Allowed_Character : constant String :=
+     Required_Character & "|contacts|";
 
    Required_Dossier : constant String :=
      "|name|crewId|alias|look|notes|background|heritage|vice|";
@@ -572,6 +573,11 @@ package body Pitd_Schema_Validators is
 
    Allowed_Friend : constant String := Required_Friend;
 
+   Required_Contact : constant String :=
+     "|id|name|closeness|";
+
+   Allowed_Contact : constant String := Required_Contact;
+
    Required_Session : constant String :=
      "|playbookExpressions|characterExpressions|struggleExpressions|max|";
 
@@ -597,10 +603,10 @@ package body Pitd_Schema_Validators is
 
    Allowed_Cohort : constant String := Required_Cohort;
 
-   Required_Contact : constant String :=
+   Required_Crew_Contact : constant String :=
      "|name|profession|";
 
-   Allowed_Contact : constant String := Required_Contact;
+   Allowed_Crew_Contact : constant String := Required_Crew_Contact;
 
    Required_Faction : constant String :=
      "|name|status|";
@@ -662,6 +668,11 @@ package body Pitd_Schema_Validators is
    begin
       Check_Enum (V, Ptr, "|friend|close-friend|rival|");
    end Check_Enum_Closeness;
+
+   procedure Check_Enum_Contact_Closeness (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|friend|contact|rival|");
+   end Check_Enum_Contact_Closeness;
 
    procedure Check_Enum_Hold (V : JSON_Value; Ptr : String) is
    begin
@@ -959,6 +970,19 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "friends", Check_Friends'Access);
    end Check_Rolodex;
 
+   procedure Check_Contact (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Contact, Allowed_Contact);
+      Check_Prop (V, Ptr, "id", Check_Uuid'Access);
+      Check_Prop (V, Ptr, "name", Check_Min_Length_1'Access);
+      Check_Prop (V, Ptr, "closeness", Check_Enum_Contact_Closeness'Access);
+   end Check_Contact;
+
+   procedure Check_Contacts (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Contact'Access);
+   end Check_Contacts;
+
    procedure Check_Session (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Session, Allowed_Session);
@@ -992,6 +1016,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "gear", Check_Gear'Access);
       Check_Prop (V, Ptr, "fund", Check_Fund'Access);
       Check_Prop (V, Ptr, "rolodex", Check_Rolodex'Access);
+      Check_Prop (V, Ptr, "contacts", Check_Contacts'Access);
       Check_Prop (V, Ptr, "session", Check_Session'Access);
       Check_Prop (V, Ptr, "notebook", Check_Str'Access);
    end Check_Character;
@@ -1041,17 +1066,17 @@ package body Pitd_Schema_Validators is
       Check_Array (V, Ptr, Check_Cohort'Access);
    end Check_Cohorts;
 
-   procedure Check_Contact (V : JSON_Value; Ptr : String) is
+   procedure Check_Crew_Contact (V : JSON_Value; Ptr : String) is
    begin
-      Check_Object (V, Ptr, Required_Contact, Allowed_Contact);
+      Check_Object (V, Ptr, Required_Crew_Contact, Allowed_Crew_Contact);
       Check_Prop (V, Ptr, "name", Check_Min_Length_1'Access);
       Check_Prop (V, Ptr, "profession", Check_Str'Access);
-   end Check_Contact;
+   end Check_Crew_Contact;
 
-   procedure Check_Contacts (V : JSON_Value; Ptr : String) is
+   procedure Check_Crew_Contacts (V : JSON_Value; Ptr : String) is
    begin
-      Check_Array (V, Ptr, Check_Contact'Access);
-   end Check_Contacts;
+      Check_Array (V, Ptr, Check_Crew_Contact'Access);
+   end Check_Crew_Contacts;
 
    procedure Check_Faction (V : JSON_Value; Ptr : String) is
    begin
@@ -1125,7 +1150,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "stash", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "stashCapacity", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "notes", Check_String_Array'Access);
-      Check_Prop (V, Ptr, "contacts", Check_Contacts'Access);
+      Check_Prop (V, Ptr, "contacts", Check_Crew_Contacts'Access);
       Check_Prop (V, Ptr, "factions", Check_Factions'Access);
       Check_Prop (V, Ptr, "turf", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "claimedClaimIds", Check_Claimed_Claim_Ids'Access);
@@ -1359,6 +1384,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "gear", Check_Gear'Access);
       Check_Prop (V, "", "fund", Check_Fund'Access);
       Check_Prop (V, "", "rolodex", Check_Rolodex'Access);
+      Check_Prop (V, "", "contacts", Check_Contacts'Access);
       Check_Prop (V, "", "session", Check_Session'Access);
       Check_Prop (V, "", "notebook", Check_Str'Access);
    end Validate_Character;
@@ -1458,7 +1484,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "stash", Check_Int_Min_0'Access);
       Check_Prop (V, "", "stashCapacity", Check_Int_Min_0'Access);
       Check_Prop (V, "", "notes", Check_String_Array'Access);
-      Check_Prop (V, "", "contacts", Check_Contacts'Access);
+      Check_Prop (V, "", "contacts", Check_Crew_Contacts'Access);
       Check_Prop (V, "", "factions", Check_Factions'Access);
       Check_Prop (V, "", "turf", Check_Int_Min_0'Access);
       Check_Prop (V, "", "claimedClaimIds", Check_Claimed_Claim_Ids'Access);

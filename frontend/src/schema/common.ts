@@ -74,6 +74,10 @@ export type HarmIntensity = typeof HarmIntensity.Type;
 export const Closeness = Schema.Literal("friend", "close-friend", "rival");
 export type Closeness = typeof Closeness.Type;
 
+/** common.json#/$defs/contactCloseness — CONTRACT-05 per-scoundrel contacts. */
+export const ContactCloseness = Schema.Literal("friend", "contact", "rival");
+export type ContactCloseness = typeof ContactCloseness.Type;
+
 export const Commitment = Schema.Literal(
   "none",
   "light",

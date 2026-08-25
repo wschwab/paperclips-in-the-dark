@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 110
+Operations: 113
 
 ## Conventions
 
@@ -168,6 +168,9 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/rolodex.add` | [`rolodexAdd`](#rolodexadd) | true |
 | POST | `/characters/{id}/ops/rolodex.remove` | [`rolodexRemove`](#rolodexremove) | true |
 | POST | `/characters/{id}/ops/rolodex.set-closeness` | [`rolodexSetCloseness`](#rolodexsetcloseness) | true |
+| POST | `/characters/{id}/ops/contact.add` | [`characterContactAdd`](#charactercontactadd) | true |
+| POST | `/characters/{id}/ops/contact.closeness` | [`characterContactCloseness`](#charactercontactcloseness) | true |
+| POST | `/characters/{id}/ops/contact.remove` | [`characterContactRemove`](#charactercontactremove) | true |
 | POST | `/characters/{id}/ops/dossier.update` | [`dossierUpdate`](#dossierupdate) | true |
 | POST | `/characters/{id}/ops/session.set` | [`sessionSet`](#sessionset) | false |
 | POST | `/characters/{id}/ops/notebook.set` | [`notebookSet`](#notebookset) | false |
@@ -1557,6 +1560,88 @@ schema:
   properties:
     entry: { type: string, minLength: 1 }
     closeness: { $ref: "./schemas/common.json#/$defs/closeness" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+
+## characterContactAdd
+
+`POST /characters/{id}/ops/contact.add`
+
+CONTRACT-05 (2026-08-24, human-authorized): per-scoundrel Contacts. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \"contact\" and a server-generated id.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [name]
+  additionalProperties: false
+  properties:
+    name: { type: string, minLength: 1 }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+
+## characterContactCloseness
+
+`POST /characters/{id}/ops/contact.closeness`
+
+CONTRACT-05: set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [name, closeness]
+  additionalProperties: false
+  properties:
+    name: { type: string, minLength: 1 }
+    closeness: { $ref: "./schemas/common.json#/$defs/contactCloseness" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+
+## characterContactRemove
+
+`POST /characters/{id}/ops/contact.remove`
+
+CONTRACT-05: remove the named contact. Unknown name → VALIDATION (ruling; crew contact.remove uses NOT_FOUND).
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [name]
+  additionalProperties: false
+  properties:
+    name: { type: string, minLength: 1 }
 ```
 
 Responses:

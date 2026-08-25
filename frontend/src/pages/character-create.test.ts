@@ -111,6 +111,9 @@ function characterDTO(overrides: Record<string, unknown> = {}): Record<string, u
     gear: { loadout: [], availableGear: [], commitment: "none", isCommitmentLocked: false, maxBulk: 6 },
     fund: { satchel: { coins: 0, max: 12 }, stash: { coins: 0, max: 16 } },
     rolodex: { friends: [] },
+    // CONTRACT-05: canonical create emits the empty contacts array; the
+    // sparse decoder default materializes it identically on decode.
+    contacts: [],
     session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5 },
     notebook: "",
     ...overrides,

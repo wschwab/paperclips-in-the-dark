@@ -3,6 +3,7 @@ import {
   BoundedInteger,
   Closeness,
   Commitment,
+  ContactCloseness,
   CrewIdRef,
   Experience,
   Notes,
@@ -142,6 +143,13 @@ const Rolodex = Schema.Struct({
   friends: Schema.Array(Friend),
 });
 
+/** CONTRACT-05: one per-scoundrel contact. */
+export const Contact = Schema.Struct({
+  id: Uuid,
+  name: Schema.String.pipe(Schema.minLength(1)),
+  closeness: ContactCloseness,
+});
+
 const Session = Schema.Struct({
   playbookExpressions: Schema.Number.pipe(
     Schema.int(),
@@ -181,6 +189,9 @@ export const Character = Schema.Struct({
   gear: Gear,
   fund: Fund,
   rolodex: Rolodex,
+  // CONTRACT-05: the sanctioned sparse overlay — absence on stored
+  // characters decodes as the empty list; present values validate strictly.
+  contacts: Schema.optionalWith(Schema.Array(Contact), { default: () => [] }),
   session: Session,
   notebook: Schema.String,
 }).pipe(Schema.annotations({ identifier: "Character" }));

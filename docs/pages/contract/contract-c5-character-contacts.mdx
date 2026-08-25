@@ -1,0 +1,91 @@
+---
+title: CONTRACT-05 — Per-scoundrel Contacts
+description: Human-authorized 2026-08-24 contract change giving individual characters their own Contacts list (name pickers from the BitS playbook rolodex data)
+---
+
+# CONTRACT-05: Per-scoundrel Contacts
+
+Contract-change card **CONTRACT-05** (human ruling 2026-08-24, binding):
+individual characters get their own **Contacts** list, modeled on BitS
+`Models/Characters/Rolodex.cs` / `RolodexFriend.cs` with human-approved
+changes — the feature is named **Contacts** (not Rolodex), and closeness has
+three levels `friend | contact | rival` with `contact` as the default for new
+entries.
+
+## Naming and provenance of the name lists
+
+The card asked where BitS carries its contact-name lists. Findings:
+
+- BitS `Models/Settings/Constants.cs` (`Constants.DefaultNames`) holds only UI
+  label synonyms (`Alias`, `Coin`, `Bulk`) — **not** name lists.
+- The real lists are **game-settings data**: every playbook in the BitS game
+  JSON carries a `Rolodex` block (`PlaybookSetting.Rolodex : RolodexSetting {
+  Name, string[] Friends }`, `GameSetting.cs`) — e.g. the Cutter's "Dangerous
+  Friends": *Marlane, a pugilist; Chael, a vicious thug; …*.
+
+Because BitS carries them as data (not code constants), and Paperclips already
+salvaged that data verbatim (spec §2), **no new settings block was added**.
+The picker source of truth is the existing
+`Playbooks[].Rolodex.Friends` arrays in `data/games/*.json`, surfaced through
+the existing projection `GET /api/games/{stem}/playbooks/{name}`. Duplicating
+them under a new `ContactsNames` block would create a second source for the
+same names; the card's conditional ("if BitS carries lists as constants, copy
+them into game settings") does not trigger.
+
+## Relationship to the existing character rolodex
+
+The card's premise ("today contacts exist only on crews") is contradicted by
+the codebase: characters already carry a BitS-derived **rolodex**
+(`/rolodex/friends[]` with `entry` + closeness `friend|close-friend|rival`,
+ops `rolodex.add` / `rolodex.set-closeness` / `rolodex.remove`). CONTRACT-05
+is implemented **additively** per the card's surface section ("Character DTO
+gains `contacts`", "no migration required"): the rolodex stays untouched, and
+contacts are a second, independently curated list. Consolidating the two
+features (rename/re-level or merge) is a follow-up contract decision, not part
+of this card.
+
+## DTO shape
+
+```
+contacts?: Array<{ id: uuid, name: string (minLength 1), closeness: "friend" | "contact" | "rival" }>
+```
+
+- `id` is server-generated (UUIDv4, like cohorts) so clients can key rows;
+  ops address entries by unique `name`.
+- Names are unique within the list.
+- **Sparse overlay (second sanctioned sparse field beside crew
+  `claimOverrides` item fields):** `contacts` is deliberately NOT in the
+  character schema's `required` list, and absence on stored characters means
+  the empty list — no migration, no legacy fill rule, no repair-preview noise.
+  Pre-C5 stored characters decode and mutate exactly as before. New writes
+  materialize the array canonically: character creation emits `"contacts":[]`,
+  and every contact op stores the full array.
+- Error codes diverge from the crew contact ops **by ruling**: duplicate name
+  and unknown name are both `VALIDATION` here (crew uses `DUPLICATE` /
+  `NOT_FOUND`).
+
+## Operations
+
+All on `/characters/{id}/ops/`, all `x-snapshot: true`, all returning the
+standard OpResult envelope with the full character:
+
+| Op | Body | Errors | Notes |
+|---|---|---|---|
+| `contact.add` | `{ name }` (minLength 1) | `VALIDATION` on duplicate name | New entry gets `closeness: "contact"` |
+| `contact.closeness` | `{ name, closeness }` (enum `friend\|contact\|rival`) | `VALIDATION` on unknown name | Absolute setter; no numeric family (non-numeric op omits requested/effective) |
+| `contact.remove` | `{ name }` | `VALIDATION` on unknown name | |
+
+Lifecycle: contact ops are gameplay-adjacent mutations and fall under the
+retired deny-list by default (a retired character returns `RETIRED`, same as
+`rolodex.*`). History entries are labelled with the op id (`contact.add`,
+`contact.closeness`, `contact.remove`).
+
+## Frontend
+
+The character-detail page gains a Contacts section: rows with closeness
+badges, an add control whose suggestion list comes from the character's own
+playbook rolodex names (`Rolodex.Friends` of `GET
+/api/games/{stem}/playbooks/{playbook}` — free-text entry remains valid, the
+list is suggestions only), a closeness cycle control
+(contact → friend → rival → contact), and remove. Page tests wire-assert each
+op (URL, body, If-Match).

@@ -39,6 +39,8 @@ const NonEmptyString = Schema.String.pipe(Schema.minLength(1));
 
 const HarmIntensity = Schema.Literal("lesser", "moderate", "severe", "fatal");
 const Closeness = Schema.Literal("friend", "close-friend", "rival");
+// CONTRACT-05 (character.json, 2026-08-24): per-scoundrel contacts closeness.
+const ContactCloseness = Schema.Literal("friend", "contact", "rival");
 const Commitment = Schema.Literal("none", "light", "normal", "heavy", "encumbered");
 const Hold = Schema.Literal("strong", "weak");
 const CohortType = Schema.Literal("gang", "expert");
@@ -146,6 +148,15 @@ const Character = Schema.Struct({
     struggleExpressions: NonNegativeInt,
     max: NonNegativeInt,
   }),
+  // CONTRACT-05 (character.json, 2026-08-24): per-scoundrel contacts. The
+  // sanctioned sparse overlay — absence on stored characters decodes as the
+  // empty list (no migration); present values are validated strictly.
+  contacts: Schema.optionalWith(
+    Schema.Array(
+      Schema.Struct({ id: Uuid, name: NonEmptyString, closeness: ContactCloseness }),
+    ),
+    { default: () => [] },
+  ),
   notebook: Schema.String,
 });
 

@@ -96,9 +96,11 @@ Launcher options (before the final --; via npm run: npm run test:ada -- <options
   --build-dir <dir>   alr project dir (default backend-ada/server)
   --seed <path>       copy fixture bytes into the data dir; repeatable
   --seed-defaults     seed the standard oracle trees (conformance/fixtures/sc-o2-seeds
-                      + conformance/fixtures/completeness-seeds) before start; the
+                      + conformance/fixtures/completeness-seeds
+                      + conformance/fixtures/c5-seeds) before start; the
                       seed-dependent oracle suites (entity-admission, total-collections,
-                      completeness) document their seeded commands in their file headers
+                      completeness, character-contacts) document their seeded commands
+                      in their file headers
   --cycles <n>        controlled restarts with re-seed (default 1; the data
                       dir is fresh once per run and persists across restarts
                       so earlier cycles' writes stay visible; every cycle
@@ -192,6 +194,7 @@ export function parseArgs(argv) {
         const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
         opts.seeds.push(join(repoRoot, "conformance/fixtures/sc-o2-seeds"));
         opts.seeds.push(join(repoRoot, "conformance/fixtures/completeness-seeds"));
+        opts.seeds.push(join(repoRoot, "conformance/fixtures/c5-seeds"));
         break;
       }
       case "--cycles": {

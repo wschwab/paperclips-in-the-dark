@@ -1220,6 +1220,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "fields.update"
         or else Op = "update"
         or else Op = "contact.add" or else Op = "contact.remove"
+        or else Op = "contact.closeness"
         or else Op = "faction.set-status" or else Op = "faction.remove"
         or else Op = "end-score" or else Op = "end-downtime"
         or else Op = "retire"
@@ -1906,7 +1907,7 @@ function New_Character (Stem, Playbook : String) return JSON_Value is
         & Trim_Image (Settings_Int (S, "FundMaxima.SatchelMax", 0))
         & "},""stash"":{""coins"":0,""max"":"
         & Trim_Image (Settings_Int (S, "FundMaxima.StashMax", 0))
-        & "}},""rolodex"":{""friends"":[]},""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":"
+        & "}},""rolodex"":{""friends"":[]},""contacts"":[],""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":"
         & Trim_Image (Settings_Int (S, "SessionExpressionMax", 0))
         & "},""notebook"":""""}";
    begin
@@ -2226,8 +2227,17 @@ elsif Op = "clock.create" then
          end;
          return True;
       elsif Op = "contact.add" then
+         --  CONTRACT-05: on characters the body is {name} only (per-scoundrel
+         --  contacts); crews keep the C3 {name, profession} shape.
+         if Kind = "character" then
+            return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
+         end if;
          return Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
                                   Spec ("profession", JSON_String_Type)), Bad);
+      elsif Op = "contact.closeness" and then Kind = "character" then
+         --  CONTRACT-05: set closeness friend|contact|rival on the named contact.
+         return Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
+                                  Spec ("closeness", JSON_String_Type, En => "friend|contact|rival")), Bad);
       elsif Op = "contact.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "faction.set-status" then
@@ -2594,9 +2604,7 @@ elsif Op = "clock.progress" then
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|" &
      "updatedAt|isRetired|isDeadish|traumaPending|isOutOfAction|" &
      "stressClearPending|dossier|monitor|talent|playbook|gear|fund|rolodex|" &
-     "session|notebook|";
-   Allowed_Dossier : constant String :=
-     "|name|crewId|alias|look|notes|background|heritage|vice|";
+     "contacts|session|notebook|";
    Allowed_Named_Desc : constant String := "|name|description|";
    Allowed_Vice : constant String := "|name|description|purveyor|";
    Allowed_Monitor : constant String := "|stress|trauma|harm|armor|";
@@ -2606,6 +2614,8 @@ elsif Op = "clock.progress" then
    Allowed_Healing : constant String := "|segments|size|rollover|";
    Allowed_Armor : constant String :=
      "|standardUsed|heavyUsed|specialUsed|hasStandard|hasHeavy|hasSpecial|";
+   Allowed_Dossier : constant String :=
+     "|name|crewId|alias|look|notes|background|heritage|vice|";
    Allowed_Talent : constant String := "|attributes|";
    Allowed_Attribute : constant String := "|name|experience|actions|";
    Allowed_Action : constant String := "|name|rating|maxRating|";
@@ -5709,6 +5719,39 @@ elsif Op = "harm.add" then
       elsif Op="rolodex.add" then declare R:constant JSON_Value:=Get(E,"rolodex");A:constant JSON_Array:=Get(R,"friends");O:JSON_Array:=A;Entry_Name:constant String:=Str_Field(B,"entry");X:JSON_Value:=Create_Object;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Entry_Name then return Duplicate_Error(Op,"rolodex entry already exists",E);end if;end loop;Set_Field(X,"entry",Entry_Name);Set_Field(X,"closeness","friend");Append(O,X);Set_Field(R,"friends",O);end;
       elsif Op="rolodex.set-closeness" then declare A:constant JSON_Array:=Get(Get(E,"rolodex"),"friends");begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Str_Field(B,"entry") then Set_Field(Get(A,I),"closeness",Str_Field(B,"closeness","friend"));end if;end loop;end;
       elsif Op="rolodex.remove" then declare A:constant JSON_Array:=Get(Get(E,"rolodex"),"friends");O:JSON_Array:=Empty_Array;Entry_Name:constant String:=Str_Field(B,"entry");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"entry")=Entry_Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Not_Found_Error(Op,"rolodex entry not found",E);end if;Set_Field(Get(E,"rolodex"),"friends",O);end;
+      elsif Op="contact.add" and then Kind="character" then
+         --  CONTRACT-05: per-scoundrel contacts. Sparse overlay: absent
+         --  /contacts means []. Duplicate name -> VALIDATION (human ruling;
+         --  the crew op keeps DUPLICATE). New entries carry a
+         --  server-generated id and closeness "contact".
+         declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);Name:constant String:=Str_Field(B,"name");begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name")=Name then return Validation_Error(Op,"contact already exists",Root_Issues("contact already exists"),E);end if;
+            end loop;
+            declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin
+               Set_Field(X,"id",New_Id);Set_Field(X,"name",Name);Set_Field(X,"closeness","contact");
+               Append(O,X);Set_Field(E,"contacts",O);
+            end;
+         end;
+      elsif Op="contact.closeness" and then Kind="character" then
+         --  CONTRACT-05: set the named contact's closeness
+         --  (friend|contact|rival). Unknown name -> VALIDATION (ruling).
+         declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);Found:Boolean:=False;begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name")=Str_Field(B,"name") then Set_Field(Get(A,I),"closeness",Str_Field(B,"closeness"));Found:=True;end if;
+            end loop;
+            if not Found then return Validation_Error(Op,"contact not found",Root_Issues("contact not found"),E);end if;
+         end;
+      elsif Op="contact.remove" and then Kind="character" then
+         --  CONTRACT-05: drop the named contact. Unknown name -> VALIDATION
+         --  (ruling; the crew op keeps NOT_FOUND).
+         declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin
+            for I in 1..Length(A) loop
+               if Str_Field(Get(A,I),"name")=Name then Found:=True;else Append(O,Get(A,I));end if;
+            end loop;
+            if not Found then return Validation_Error(Op,"contact not found",Root_Issues("contact not found"),E);end if;
+            Set_Field(E,"contacts",O);
+         end;
       elsif Op="contact.add" then declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);Name:constant String:=Str_Field(B,"name");begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then return Duplicate_Error(Op,"contact already exists",E);end if;end loop;declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin Set_Field(X,"name",Name);Set_Field(X,"profession",Str_Field(B,"profession"));Append(O,X);Set_Field(E,"contacts",O);end;end;
       elsif Op="contact.remove" then declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Not_Found_Error(Op,"contact not found",E);end if;Set_Field(E,"contacts",O);end;
       elsif Op="faction.set-status" then declare G:constant JSON_Value:=Game(Str_Field(E,"gameStem"));Lo:Integer:=Integer'First;Hi:Integer:=Integer'Last;begin if G.Kind=JSON_Object_Type and then Has_Field(G,"FactionStatus") then declare FS:constant JSON_Value:=Get(G,"FactionStatus");begin Lo:=Int_Field(FS,"Min",Integer'First);Hi:=Int_Field(FS,"Max",Integer'Last);end;end if;declare A:constant JSON_Array:=(if Has_Field(E,"factions") then Get(E,"factions") else Empty_Array);Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin Requested:=Int_Field(B,"status");Effective:=Integer'Min(Integer'Max(Requested,Lo),Hi);for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Set_Field(Get(A,I),"status",Effective);Found:=True;end if;end loop;if not Found then declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin Set_Field(X,"name",Name);Set_Field(X,"status",Effective);Append(O,X);Set_Field(E,"factions",O);end;end if;end;return Success_Result(Op,E,Requested,Effective);end;

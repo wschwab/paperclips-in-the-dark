@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 110,
+  "operationCount": 113,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -451,6 +451,27 @@
       "path": "/characters/{id}/ops/rolodex.set-closeness",
       "agentReference": "api-reference/README.md#rolodexsetcloseness",
       "summary": "Full transition set (friend/close-friend/rival) — supersedes the reference's four named upgrade/downgrade methods with one total operation."
+    },
+    "characterContactAdd": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.add",
+      "agentReference": "api-reference/README.md#charactercontactadd",
+      "summary": "CONTRACT-05 (2026-08-24, human-authorized): per-scoundrel Contacts. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \\\"contact\\\" and a server-generated id."
+    },
+    "characterContactCloseness": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.closeness",
+      "agentReference": "api-reference/README.md#charactercontactcloseness",
+      "summary": "CONTRACT-05: set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION."
+    },
+    "characterContactRemove": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.remove",
+      "agentReference": "api-reference/README.md#charactercontactremove",
+      "summary": "CONTRACT-05: remove the named contact. Unknown name → VALIDATION (ruling; crew contact.remove uses NOT_FOUND)."
     },
     "dossierUpdate": {
       "disposition": "human",

@@ -105,6 +105,13 @@
         "rival"
       ]
     },
+    "contactCloseness": {
+      "enum": [
+        "friend",
+        "contact",
+        "rival"
+      ]
+    },
     "commitment": {
       "enum": [
         "none",

@@ -448,6 +448,31 @@
         }
       }
     },
+    "contacts": {
+      "description": "CONTRACT-05 (2026-08-24): per-scoundrel contacts. Deliberately NOT required — the sanctioned sparse overlay: absence on stored characters means the empty list (no migration, no legacy fill). New writes materialize the array canonically.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "closeness"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "common.json#/$defs/uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "closeness": {
+            "$ref": "common.json#/$defs/contactCloseness"
+          }
+        }
+      }
+    },
     "session": {
       "type": "object",
       "required": [

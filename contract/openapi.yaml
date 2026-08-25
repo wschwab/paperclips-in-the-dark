@@ -1481,6 +1481,67 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/contact.add:
+    post:
+      operationId: characterContactAdd
+      x-snapshot: true
+      description: "CONTRACT-05 (2026-08-24, human-authorized): per-scoundrel Contacts. Duplicate name → VALIDATION (deliberately not DUPLICATE; ruling diverges from the crew contact op). New entries get closeness \"contact\" and a server-generated id."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/contact.closeness:
+    post:
+      operationId: characterContactCloseness
+      x-snapshot: true
+      description: "CONTRACT-05: set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, closeness]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+                closeness: { $ref: "./schemas/common.json#/$defs/contactCloseness" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/contact.remove:
+    post:
+      operationId: characterContactRemove
+      x-snapshot: true
+      description: "CONTRACT-05: remove the named contact. Unknown name → VALIDATION (ruling; crew contact.remove uses NOT_FOUND)."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/dossier.update:
     post:
       operationId: dossierUpdate

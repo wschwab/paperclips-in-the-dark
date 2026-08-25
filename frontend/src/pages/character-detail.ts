@@ -56,6 +56,9 @@ import {
   noteAdd,
   noteRemove,
   notebookSet,
+  contactAdd,
+  contactCloseness,
+  contactRemove,
   listCrews,
   type SessionFields,
   type FundOpResult,
@@ -72,6 +75,7 @@ import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/f
 import { completionCues, type CompletionCue } from "../lib/completion-cues.js";
 import { errorCard } from "../components/error-card.js";
 import type { Character } from "../schema/character.js";
+import type { ContactCloseness } from "../schema/common.js";
 import type { CrewSummary } from "../schema/campaign.js";
 import type { Clock, ClockSummary } from "../schema/clock.js";
 
@@ -174,6 +178,18 @@ function extractSpecialAbilities(
     }
   }
   return [];
+}
+
+/** CONTRACT-05: the playbook's BitS rolodex names as add-contact suggestions. */
+function extractContactNameSuggestions(
+  playbookData: Record<string, unknown> | null,
+): string[] {
+  if (!playbookData) return [];
+  const rolodex = playbookData.Rolodex;
+  if (!rolodex || typeof rolodex !== "object") return [];
+  const friends = (rolodex as Record<string, unknown>).Friends;
+  if (!Array.isArray(friends)) return [];
+  return friends.filter((f): f is string => typeof f === "string");
 }
 
 /** Game-data option lists for the heritage / background / vice dropdowns. */
@@ -421,6 +437,9 @@ interface RenderState {
   crewNotice: string | null;
   isNotesLoading: boolean;
   notesNotice: string | null;
+  // CONTRACT-05 Contacts state
+  isContactsLoading: boolean;
+  contactsNotice: string | null;
   isNotebookLoading: boolean;
   notebookNotice: string | null;
   isTraumaPickerLoading: boolean;
@@ -472,6 +491,10 @@ interface RenderState {
     onNoteRemove: (index: number) => void;
     onNotebookSave: () => void;
     onCrewJoin: () => void;
+    /** CONTRACT-05: per-scoundrel contacts. */
+    onContactAdd: () => void;
+    onContactCycle: (name: string, current: ContactCloseness) => void;
+    onContactRemove: (name: string) => void;
     onCrewLeave: () => void;
     /** Dismiss one completion-cue section (CONTRACT-01 stage 3). */
     onDismissCue: (key: string) => void;
@@ -573,6 +596,7 @@ function renderDetail(state: RenderState): HTMLElement {
     state.isGearLoading || state.isGearCommitmentLoading || state.isGearLockLoading ||
     state.isCoinLoading || state.isClocksLoading ||
     state.isCrewsLoading || state.isNotesLoading || state.isNotebookLoading ||
+    state.isContactsLoading ||
     state.isTraumaPickerLoading || state.isEndScoreLoading || state.isDowntimeLoading ||
     state.isRetireLoading || state.isDeleteLoading || state.isStressFixLoading;
 
@@ -2153,6 +2177,83 @@ function renderDetail(state: RenderState): HTMLElement {
       );
     })(),
 
+    // CONTRACT-05: per-scoundrel Contacts. Add suggestions come from the
+    // playbook's BitS rolodex names (data, not code); free text stays valid.
+    (() => {
+      const contacts = c.contacts ?? [];
+      const badgeStyle: Record<ContactCloseness, string> = {
+        contact: "background: #4a5568; color: #fff;",
+        friend: "background: #2f855a; color: #fff;",
+        rival: "background: #9b2c2c; color: #fff;",
+      };
+      const rows = contacts.map((contact) => {
+        const cycle = el("button", {
+          type: "button",
+          className: "btn-secondary",
+          disabled: anyLoading,
+          title: `Cycle closeness for ${contact.name}`,
+          style: badgeStyle[contact.closeness],
+        }, contact.closeness);
+        cycle.addEventListener("click", () => handlers.onContactCycle(contact.name, contact.closeness));
+        const rm = el("button", {
+          type: "button",
+          disabled: anyLoading,
+          title: `Remove ${contact.name}`,
+        }, "✕");
+        rm.addEventListener("click", () => handlers.onContactRemove(contact.name));
+        return el("li", {
+          className: "contact-entry",
+          style: "display: flex; gap: 0.5em; align-items: center;",
+        },
+          el("span", { style: "flex: 1;" }, contact.name),
+          cycle,
+          rm,
+        );
+      });
+      const nameInput = el("input", {
+        type: "text",
+        "aria-label": "New contact",
+        list: "contact-name-suggestions",
+        disabled: anyLoading,
+        placeholder: "add a contact",
+      }) as HTMLInputElement;
+      nameInput.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          handlers.onContactAdd();
+        }
+      });
+      const datalist = el("datalist", { id: "contact-name-suggestions" },
+        ...extractContactNameSuggestions(playbookData).map((n) => el("option", { value: n })),
+      );
+      const addBtn = el("button", {
+        type: "button",
+        disabled: anyLoading,
+        title: "Add contact",
+      }, state.isContactsLoading ? "…" : "+ Add");
+      addBtn.addEventListener("click", handlers.onContactAdd);
+
+      return el(
+        "div",
+        { className: "character-contacts", "data-section": "contacts" },
+        el("h2", {}, "Contacts"),
+        contacts.length > 0
+          ? el("ul", { className: "contact-list" }, ...rows)
+          : el("p", {}, "(no contacts)"),
+        el("div", {
+          className: "contact-add-row",
+          style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;",
+        },
+          nameInput,
+          datalist,
+          addBtn,
+        ),
+        state.contactsNotice
+          ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.contactsNotice)
+          : null,
+      );
+    })(),
+
     // Notebook (contract /ops/notebook.set): free-text sheet notes, saved on
     // demand. Stays on the retired allow-list (dossier/notes/notebook).
     (() => {
@@ -2280,6 +2381,9 @@ export function mountCharacterDetailPage(
   let notesNotice: string | null = null;
   let isNotebookLoading = false;
   let notebookNotice: string | null = null;
+  // CONTRACT-05 Contacts state
+  let isContactsLoading = false;
+  let contactsNotice: string | null = null;
   let namedEditor: NamedEditorState | null = null;
   let isTraumaPickerLoading = false;
   let healNotice: string | null = null;
@@ -2295,6 +2399,7 @@ export function mountCharacterDetailPage(
     coinNotice = null;
     clocksNotice = null;
     crewNotice = null;
+    contactsNotice = null;
     notesNotice = null;
     notebookNotice = null;
     healNotice = null;
@@ -2966,6 +3071,64 @@ export function mountCharacterDetailPage(
           renderDetailWrapper();
         },
         () => { isNotebookLoading = false; },
+      );
+    },
+
+    // -- CONTRACT-05: per-scoundrel contacts -------------------------------
+
+    onContactAdd: () => {
+      if (!currentCharacter || isContactsLoading) return;
+      const input = root.querySelector('input[aria-label="New contact"]') as HTMLInputElement;
+      const name = input?.value?.trim() ?? "";
+      if (!name) return;
+      isContactsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = contactAdd(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isContactsLoading = false; },
+      );
+    },
+
+    onContactCycle: (name: string, current: ContactCloseness) => {
+      if (!currentCharacter || isContactsLoading) return;
+      const next: ContactCloseness =
+        current === "contact" ? "friend" : current === "friend" ? "rival" : "contact";
+      isContactsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = contactCloseness(characterId, name, next, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isContactsLoading = false; },
+      );
+    },
+
+    onContactRemove: (name: string) => {
+      if (!currentCharacter || isContactsLoading) return;
+      isContactsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = contactRemove(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isContactsLoading = false; },
       );
     },
 
@@ -3873,6 +4036,8 @@ export function mountCharacterDetailPage(
       notesNotice,
       isNotebookLoading,
       notebookNotice,
+      isContactsLoading,
+      contactsNotice,
       isTraumaPickerLoading,
       healNotice,
       isEndScoreLoading,

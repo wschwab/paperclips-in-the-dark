@@ -1,0 +1,24 @@
+{
+  "task": "CONTRACT-05",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (full-card brief, yolo, max thinking)",
+  "reviewAgent": "orchestrator independent gate re-runs after worker provider-timeout (typecheck, focused 9/9, canonical 59/470, frontend 19/668, build, browser suite all journeys green)",
+  "date": "2026-08-25",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 69,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "all gates green on orchestrator verification; work was complete when the worker's final turn hit a stream timeout",
+  "passRateAfterReview": "same results re-run by orchestrator",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 0,
+    "independentReview": 1,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "orchestrator liveness check distinguished a finished-but-unyielded worker from a genuinely stuck one before any destructive action"
+  ],
+  "implementationLoc": 850,
+  "scaffoldingLoc": 0,
+  "notes": "Worker completed all edits including browser journey and seed fixture wiring but its closing turn died on 'OpenAI completions stream timed out waiting for first event'. No rework needed. Token accounting unavailable, so tokens is 0 rather than estimated."
+}

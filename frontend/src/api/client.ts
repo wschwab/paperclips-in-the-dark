@@ -1,6 +1,7 @@
 import { Effect, Either, Schema } from "effect";
 import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema, type HistoryEntry, HistoryEntry as HistoryEntrySchema } from "../schema/campaign.js";
 import { type Character, Character as CharacterSchema } from "../schema/character.js";
+import { type ContactCloseness } from "../schema/common.js";
 import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
 import { type CrewSummary, CrewSummary as CrewSummarySchema } from "../schema/campaign.js";
 import { decodeOperationResultEither } from "../schema/operation-result.js";
@@ -1095,6 +1096,38 @@ export function notebookSet(
   revision: number,
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return characterMutate(id, "notebook.set", revision, { text });
+}
+
+// ---------------------------------------------------------------------------
+// CONTRACT-05 operations — contactAdd, contactCloseness, contactRemove
+// ---------------------------------------------------------------------------
+
+/** Per-scoundrel Contacts: add by name (server defaults closeness to "contact"). */
+export function contactAdd(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "contact.add", revision, { name });
+}
+
+/** Per-scoundrel Contacts: set the named contact's closeness level. */
+export function contactCloseness(
+  id: string,
+  name: string,
+  closeness: ContactCloseness,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "contact.closeness", revision, { name, closeness });
+}
+
+/** Per-scoundrel Contacts: remove the named contact. */
+export function contactRemove(
+  id: string,
+  name: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "contact.remove", revision, { name });
 }
 
 // ---------------------------------------------------------------------------
