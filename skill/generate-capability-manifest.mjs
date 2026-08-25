@@ -67,6 +67,8 @@ const HUMAN_CONTROL = {
     "Reachable trauma-resolution control for pending trauma (never auto-trauma).",
   traumaRemove:
     "Reachable trauma-history correction control (never clears isRetired).",
+  stressFix:
+    "Reachable gated correction control behind the explicit Enable-corrections edit-mode toggle (CONTRACT-03); explains clerical-error intent.",
   importCharacter:
     "Reachable import control with preview/apply confirmation (preview first; apply requires the preview token + If-Match).",
   importCrew:
@@ -121,6 +123,10 @@ const TABLE = {
   crewFieldsUpdate: { disposition: "human", categories: ["sheet-management"] },
   crewNoteAdd: { disposition: "human", categories: ["sheet-management"] },
   crewNoteRemove: { disposition: "human", categories: ["sheet-management"] },
+  // CONTRACT-03 (DEC-03 ruling): the FIX_ correction family is a designated
+  // sheet-management surface with its own gating — reachable only behind the
+  // frontend corrections toggle.
+  stressFix: { disposition: "human", categories: ["correction"] },
 
   // Flagged candidates: gameplay ops that can trigger lifecycle transitions,
   // composite ops, and creation — classified agent by default, but the

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 109,
+  "operationCount": 110,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -227,6 +227,17 @@
       "path": "/characters/{id}/ops/stress.clear",
       "agentReference": "api-reference/README.md#stressclear",
       "summary": "CONTRACT-02 (DEC-02 human ruling, 2026-08-24): amount-based vice indulgence. Clears `amount` marked stress. Quantity result family: applied.requested is the requested amount, applied.effective the amount actually cleared after clamping to the currently marked stress — a clamp is detectable from requested ≠ effective. When the requested amount exceeds the marked stress and Stress lands at 0, the typed sideEffect \"overindulged — indulgence exceeded remaining stress\" is returned so clients can render the SRD §Overindulgence notice (Attract Trouble / Brag +2 heat / Lost / Tapped); an exact-amount clear does not signal overindulgence. BREAKING: the previously bodyless op now requires `amount`; requests without it → 400 VALIDATION (request-shape validation precedes the lifecycle gates). Gates: retired → RETIRED; traumaPending → TRAUMA_REQUIRED (resolve the pending trauma first); isOutOfAction → OUT_OF_ACTION — out of action until end-score, which is the only sanctioned release (LIFECYCLE-STRESS-004). Degraded entity → 422 INVALID_ENTITY."
+    },
+    "stressFix": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.fix",
+      "agentReference": "api-reference/README.md#stressfix",
+      "summary": "CONTRACT-03 (DEC-03 human ruling, 2026-08-24): gated clerical-error correction — intended for correcting clerical errors, not play. Absolute-setter result family: applied.requested is the requested target for monitor.stress.current, applied.effective the stored target after clamping into [0, StressMax] (game settings — never a literal); a clamp is detectable from requested ≠ effective. A correction records state and never plays: it never raises traumaPending and returns no sideEffects (LIFECYCLE-STRESS-001 does not fire). Gates follow the sibling stress ops: retired → RETIRED; traumaPending → TRAUMA_REQUIRED; isOutOfAction → OUT_OF_ACTION; degraded entity → 422 INVALID_ENTITY (request-shape validation precedes the gates, BUG-011). Snapshot-worthy: undo restores the pre-fix document. History label: \"stress.fix\".",
+      "categories": [
+        "correction"
+      ],
+      "humanControl": "Reachable gated correction control behind the explicit Enable-corrections edit-mode toggle (CONTRACT-03); explains clerical-error intent."
     },
     "traumaAdd": {
       "disposition": "human",

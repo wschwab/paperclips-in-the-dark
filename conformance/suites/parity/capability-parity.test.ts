@@ -54,7 +54,9 @@ interface Manifest {
  * The required human set, per the work spec ("Client obligations and parity")
  * and the manifest generator's classification table:
  * destructive (3) + lifecycle (7) + data-management (2) + repair (4) +
- * designated sheet-management subset (7).
+ * designated sheet-management subset (7) + gated corrections (1,
+ * CONTRACT-03 — DEC-03 ruling: reachable only behind the frontend
+ * Enable-corrections toggle).
  */
 const REQUIRED_HUMAN_OPS: readonly string[] = [
   "deleteCharacter", "deleteCrew", "deleteClock",
@@ -62,6 +64,7 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   "importCharacter", "importCrew",
   "repairCharacterPreview", "repairCharacterApply", "repairCrewPreview", "repairCrewApply",
   "dossierUpdate", "noteAdd", "noteRemove", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove",
+  "stressFix",
 ];
 
 /** Runtime narrowing for JSON bodies: object and not an array. */

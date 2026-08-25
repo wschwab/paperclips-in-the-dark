@@ -909,6 +909,41 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/stress.fix:
+    post:
+      operationId: stressFix
+      x-snapshot: true
+      description: >
+        CONTRACT-03 (DEC-03 human ruling, 2026-08-24): gated clerical-error
+        correction — intended for correcting clerical errors, not play.
+        Absolute-setter result family: applied.requested is the requested
+        target for monitor.stress.current, applied.effective the stored target
+        after clamping into [0, StressMax] (game settings — never a literal);
+        a clamp is detectable from requested ≠ effective. A correction records
+        state and never plays: it never raises traumaPending and returns no
+        sideEffects (LIFECYCLE-STRESS-001 does not fire). Gates follow the
+        sibling stress ops: retired → RETIRED; traumaPending →
+        TRAUMA_REQUIRED; isOutOfAction → OUT_OF_ACTION; degraded entity → 422
+        INVALID_ENTITY (request-shape validation precedes the gates,
+        BUG-011). Snapshot-worthy: undo restores the pre-fix document.
+        History label: "stress.fix".
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              additionalProperties: false
+              properties:
+                value: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/trauma.add:
     post:
       operationId: traumaAdd

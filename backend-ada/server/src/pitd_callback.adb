@@ -1195,7 +1195,8 @@ end Snapshot;
    --  set-commitment/commit/uncommit, notebook.set, session.set.
    function Snapshots (Op : String) return Boolean is
    begin
-      if Op = "stress.add" or else Op = "trauma.add" or else Op = "trauma.remove"
+      if Op = "stress.add" or else Op = "stress.fix"
+        or else Op = "trauma.add" or else Op = "trauma.remove"
         or else Op = "harm.add" or else Op = "harm.remove" or else Op = "harm.heal"
         or else Op = "playbook-xp.add" or else Op = "playbook-xp.clear"
         or else Op = "action.set-rating"
@@ -2049,6 +2050,12 @@ elsif Op = "clock.create" then
          --  (integer >= 0).  Missing/invalid amount -> VALIDATION before any
          --  lifecycle gate runs (BUG-011 ordering).
          return Check_Fields (B, Spec_List'(1 => Spec ("amount", JSON_Int_Type, MnI => 0)), Bad);
+      elsif Op = "stress.fix" then
+         --  CONTRACT-03 (DEC-03 ruling 2026-08-24): gated clerical-error
+         --  correction — {value} sets monitor.stress.current directly.
+         --  Missing/invalid value -> VALIDATION before any lifecycle gate
+         --  runs (BUG-011 ordering).
+         return Check_Fields (B, Spec_List'(1 => Spec ("value", JSON_Int_Type, MnI => 0)), Bad);
       elsif Op = "trauma.add" or else Op = "trauma.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("trauma", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "armor.set" then
@@ -5276,6 +5283,34 @@ begin
                  (Op, E, Requested, Effective,
                   Side => OVERINDULGED_SIDEEFFECT);
             end if;
+         end;
+      elsif Op = "stress.fix" then
+         --  CONTRACT-03 (DEC-03 ruling, 2026-08-24): gated clerical-error
+         --  correction.  Absolute-setter family: applied.requested is the
+         --  requested target, applied.effective the stored target after
+         --  clamping into [0, StressMax] (game settings).  A correction
+         --  records state and never plays: no traumaPending raise and no
+         --  sideEffects (LIFECYCLE-STRESS-001 does not fire).  Gates are the
+         --  sibling stress ops'; retired is handled by the shared deny-list
+         --  above.
+         if Bool_Field (E, "traumaPending") then
+            return Trauma_Required_Error
+              (Op, "pending trauma must be resolved before correcting stress", E);
+         end if;
+         if Bool_Field (E, "isOutOfAction") then
+            return Out_Of_Action_Error
+              (Op, "character is out of action until end-score", E);
+         end if;
+         declare
+            M   : constant JSON_Value := Get (Get (E, "monitor"), "stress");
+            Req : constant Integer := Int_Field (B, "value");
+         begin
+            Requested := Req;
+            Core_Clamp_Add
+              (0, Natural (Int_Field (M, "max")), Natural (Req),
+               New_Value, Applied);
+            Set_Field (M, "current", Integer (New_Value));
+            Effective := Integer (Applied);
          end;
       elsif Op = "trauma.add" or else Op = "trauma.remove" then
          declare

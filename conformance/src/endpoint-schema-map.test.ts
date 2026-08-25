@@ -22,7 +22,8 @@ describe("endpoint schema map", () => {
     const openapiPath = path.join(here, "..", "..", "contract", "openapi.yaml");
     const spec = YAML.parse(fs.readFileSync(openapiPath, "utf8"));
     const routes = Object.keys(spec.paths);
-    expect(routes.length).toBe(106);
+    // CONTRACT-03 added /characters/{id}/ops/stress.fix (106 → 107).
+    expect(routes.length).toBe(107);
     // Every declared operation appears in the map under its operationId.
     for (const route of routes) {
       const methods = Object.keys(spec.paths[route]).filter((m) =>

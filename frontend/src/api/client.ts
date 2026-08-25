@@ -949,6 +949,24 @@ export function traumaRemove(
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return characterMutate(id, "trauma.remove", revision, { trauma });
 }
+// ---------------------------------------------------------------------------
+// CONTRACT-03 (DEC-03 ruling, 2026-08-24) — gated clerical-error corrections
+// ---------------------------------------------------------------------------
+
+/**
+ * CONTRACT-03: correction path for clerical errors — sets
+ * monitor.stress.current directly to `value` (absolute-setter family,
+ * clamped into [0, StressMax] server-side). Intended for correcting clerical
+ * errors, not play; history/audit label the entry "stress.fix". The UI
+ * surfaces this only behind the explicit Enable-corrections toggle.
+ */
+export function stressFix(
+  id: string,
+  value: number,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "stress.fix", revision, { value });
+}
 
 // ---------------------------------------------------------------------------
 // F2n operations — harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet

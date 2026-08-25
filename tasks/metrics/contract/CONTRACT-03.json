@@ -1,0 +1,26 @@
+{
+  "task": "CONTRACT-03",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (full-card brief, strict order: spec page → OpenAPI → red tests → Ada → frontend → gates)",
+  "reviewAgent": "orchestrator independent gate re-runs (typecheck, focused 7/7, full test:ada 57/457, tooling 11/151, frontend 19/664, build); parity oracle PARITY-HUMAN-003 independently re-verified the reachable human control",
+  "date": "2026-08-25",
+  "iterationsToGreen": 2,
+  "wallClockMinutes": 25,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "focused corrections 6/7 on first green run (test-side snapshot-count assertion wrong: two snapshots exist before undo, one remains); fixed assertion, then all gates green",
+  "passRateAfterReview": "full test:ada first run caught REQUIRED_HUMAN_OPS pin missing stressFix (suites/parity/capability-parity.test.ts); added to the frozen set with CONTRACT-03 provenance, rerun green 457/457",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 1,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "CORRECTIONS-FIX-001..007 (absolute-setter clamp without lifecycle side effects, VALIDATION shapes, stress.fix history label, undo restores pre-fix state)",
+    "PARITY-HUMAN-003 required-human-set pin (manifest classification must match the frozen work-spec set)",
+    "ENDPOINT-MAP-001 route-count pin (106 → 107)"
+  ],
+  "implementationLoc": 430,
+  "scaffoldingLoc": 0,
+  "notes": "Contract change adds /characters/{id}/ops/stress.fix (x-snapshot true, absolute-setter family, {value} integer >= 0 clamped into [0, StressMax]); correction never raises traumaPending and emits no sideEffects; gates identical to sibling stress ops. Frontend exposes it only behind a session-local Enable-corrections toggle in the stress section. Derived artifacts regenerated from the contract, not hand-edited: contract-coverage.json, capability-manifest.json (stressFix = human/correction), api-reference README.md. Trauma escape hatch noted as candidate only per ruling. No VCS mutation commands used."
+}

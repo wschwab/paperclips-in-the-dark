@@ -2623,6 +2623,51 @@
       "collection": false
     },
     {
+      "operationId": "stressFix",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.fix",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "stressFix",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.fix",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "stressFix",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.fix",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "stressFix",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.fix",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "stressFix",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.fix",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "tierAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/tier.add",

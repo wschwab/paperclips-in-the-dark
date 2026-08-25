@@ -6,7 +6,7 @@ import { OpError,
   transportErrorText,
   decodeErrorText,
   NETWORK_ERROR_COPY,
-  getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, createPcCharacter, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError } from "./client.js";
+  getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, createPcCharacter, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError, stressFix } from "./client.js";
 import { OVERINDULGED_SIDEEFFECT } from "./client.js";
 
 const goldenCharacter = JSON.parse(
@@ -1437,6 +1437,59 @@ describe("stressClear", () => {
     expect(result._tag).toBe("Left");
     if (result._tag === "Left" && result.left instanceof ApiError) {
       expect(result.left.status).toBe(404);
+    }
+  });
+});
+
+// CONTRACT-03 (DEC-03 ruling, 2026-08-24): gated clerical-error corrections.
+describe("stressFix", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts {value} to /api/characters/{id}/ops/stress.fix with If-Match", async () => {
+    const fixed = makeChar({
+      revision: 13,
+      monitor: { ...makeChar().monitor, stress: { current: 2, max: 9 } },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          ok: true,
+          character: fixed,
+          applied: { op: "stress.fix", requested: 2, effective: 2 },
+          sideEffects: [],
+          error: null,
+        }),
+    });
+
+    const result = await Effect.runPromise(
+      stressFix("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 2, 12),
+    );
+    expect(result.monitor.stress.current).toBe(2);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/stress.fix",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ value: 2 }),
+      }),
+    );
+  });
+
+  it("exposes StaleRevisionError on 409", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      text: async () => JSON.stringify(staleResp("stress.fix", 15)),
+    });
+    const result = await Effect.runPromise(
+      Effect.either(stressFix("some-id", 1, 1)),
+    );
+    expect(result._tag).toBe("Left");
+    if (result._tag === "Left") {
+      expect(result.left).toBeInstanceOf(StaleRevisionError);
     }
   });
 });

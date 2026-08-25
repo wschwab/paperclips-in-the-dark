@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 109
+Operations: 110
 
 ## Conventions
 
@@ -138,6 +138,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/retire` | [`retireCharacter`](#retirecharacter) | true |
 | POST | `/characters/{id}/ops/stress.add` | [`stressAdd`](#stressadd) | true |
 | POST | `/characters/{id}/ops/stress.clear` | [`stressClear`](#stressclear) | false |
+| POST | `/characters/{id}/ops/stress.fix` | [`stressFix`](#stressfix) | true |
 | POST | `/characters/{id}/ops/trauma.add` | [`traumaAdd`](#traumaadd) | true |
 | POST | `/characters/{id}/ops/trauma.remove` | [`traumaRemove`](#traumaremove) | true |
 | POST | `/characters/{id}/ops/harm.add` | [`harmAdd`](#harmadd) | true |
@@ -797,6 +798,35 @@ schema:
   additionalProperties: false
   properties:
     amount: { type: integer, minimum: 0 }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+
+## stressFix
+
+`POST /characters/{id}/ops/stress.fix`
+
+CONTRACT-03 (DEC-03 human ruling, 2026-08-24): gated clerical-error correction — intended for correcting clerical errors, not play. Absolute-setter result family: applied.requested is the requested target for monitor.stress.current, applied.effective the stored target after clamping into [0, StressMax] (game settings — never a literal); a clamp is detectable from requested ≠ effective. A correction records state and never plays: it never raises traumaPending and returns no sideEffects (LIFECYCLE-STRESS-001 does not fire). Gates follow the sibling stress ops: retired → RETIRED; traumaPending → TRAUMA_REQUIRED; isOutOfAction → OUT_OF_ACTION; degraded entity → 422 INVALID_ENTITY (request-shape validation precedes the gates, BUG-011). Snapshot-worthy: undo restores the pre-fix document. History label: "stress.fix".
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [value]
+  additionalProperties: false
+  properties:
+    value: { type: integer, minimum: 0 }
 ```
 
 Responses:

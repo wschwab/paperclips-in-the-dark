@@ -12,6 +12,7 @@ import {
   getCharacterCapabilities,
   stressAdd,
   stressClear,
+  stressFix,
   traumaAdd,
   traumaRemove,
   dossierUpdate,
@@ -385,6 +386,10 @@ interface RenderState {
   // Loading flags
   isStressLoading: boolean;
   isStressClearLoading: boolean;
+  isStressFixLoading: boolean;
+  // CONTRACT-03: session-local corrections edit mode (never persisted
+  // server-side); when false no fix controls render at all.
+  correctionsMode: boolean;
   isTraumaLoading: boolean;
   isDossierLoading: boolean;
   isUndoLoading: boolean;
@@ -448,6 +453,10 @@ interface RenderState {
     onStressDelta: (delta: number) => void;
     /** CONTRACT-02: reads the amount input from the Vice panel. */
     onStressClear: (amountInput: HTMLInputElement) => void;
+    /** CONTRACT-03: toggles the session-local corrections edit mode. */
+    onCorrectionsToggle: () => void;
+    /** CONTRACT-03: reads the corrected-value input and posts stress.fix. */
+    onStressFix: (valueInput: HTMLInputElement) => void;
     onTraumaAdd: () => void;
     onTraumaRemove: (name: string) => void;
     onDossierEdit: (field: DossierField) => void;
@@ -565,7 +574,7 @@ function renderDetail(state: RenderState): HTMLElement {
     state.isCoinLoading || state.isClocksLoading ||
     state.isCrewsLoading || state.isNotesLoading || state.isNotebookLoading ||
     state.isTraumaPickerLoading || state.isEndScoreLoading || state.isDowntimeLoading ||
-    state.isRetireLoading || state.isDeleteLoading;
+    state.isRetireLoading || state.isDeleteLoading || state.isStressFixLoading;
 
   // Retired: every gameplay mutation is on the deny-list (→ RETIRED); the
   // allow-list (dossier/notes/notebook/trauma.remove/undo/delete/reads) stays
@@ -614,6 +623,49 @@ function renderDetail(state: RenderState): HTMLElement {
     title: "Add 1 stress",
   }, state.isStressLoading ? "…" : "+1");
   stressPlusBtn.addEventListener("click", () => handlers.onStressDelta(1));
+
+  // CONTRACT-03 (DEC-03 ruling, 2026-08-24): gated clerical-error
+  // corrections. The toggle is session-local component state — never
+  // persisted server-side. Fix controls exist only while edit mode is on,
+  // and disable under the same conditions the server would reject.
+  const correctionsToggleBtn = el("button", {
+    type: "button",
+    className: "corrections-toggle",
+    "aria-pressed": String(state.correctionsMode),
+    title: state.correctionsMode
+      ? "Disable corrections — hide clerical-error fixes"
+      : "Enable corrections — reveal gated clerical-error fixes",
+  }, state.correctionsMode ? "Disable corrections" : "Enable corrections");
+  correctionsToggleBtn.addEventListener("click", () => handlers.onCorrectionsToggle());
+
+  const stressFixInput = el("input", {
+    type: "number",
+    min: "0",
+    step: "1",
+    "aria-label": "Corrected stress value",
+    value: String(c.monitor.stress.current),
+    disabled: stressDisabled,
+    style: "width: 4.5em;",
+  }) as HTMLInputElement;
+
+  const stressFixBtn = el("button", {
+    type: "button",
+    disabled: stressDisabled,
+    title: "Apply correction — sets stress directly (clerical-error fix, not play)",
+  }, state.isStressFixLoading ? "…" : "Apply correction");
+  stressFixBtn.addEventListener("click", () => handlers.onStressFix(stressFixInput));
+
+  const stressFixControls = state.correctionsMode
+    ? el("div", {
+        className: "stress-fix-controls",
+        "data-corrections": "enabled",
+        style: "display: flex; gap: 0.5em; align-items: center; margin-top: 0.25em;",
+      },
+        el("span", { className: "lbl" }, "Correct stress to:"),
+        stressFixInput,
+        stressFixBtn,
+      )
+    : null;
 
   // -- Trauma list ----------------------------------------------------------
   // Routed through the shared component (Design Audit F-05) so the sheet and
@@ -1142,6 +1194,10 @@ function renderDetail(state: RenderState): HTMLElement {
         stressMinusBtn,
         stressPlusBtn,
       ),
+      // CONTRACT-03: gated corrections edit mode (session-local). Locked by
+      // default; the toggle reveals the fix control, toggling off hides it.
+      el("div", { style: "margin-top: 0.5em;" }, correctionsToggleBtn),
+      stressFixControls,
       // F4: pending-trauma prompt (CONTRACT-02: resolution clears stress to 0
       // and marks out-of-action).
       pendingTrauma ? renderTraumaPicker() : null,
@@ -2161,6 +2217,9 @@ export function mountCharacterDetailPage(
   // State
   let isStressLoading = false;
   let isStressClearLoading = false;
+  let isStressFixLoading = false;
+  // CONTRACT-03: session-local corrections edit mode (never persisted).
+  let correctionsMode = false;
   let isTraumaLoading = false;
   let isDossierLoading = false;
   let isUndoLoading = false;
@@ -2563,6 +2622,49 @@ export function mountCharacterDetailPage(
             isStressClearLoading = false;
             currentCharacter = character;
             overindulgedNotice = overindulged;
+            renderDetailWrapper();
+          },
+        }),
+      );
+    },
+
+    // CONTRACT-03 (DEC-03 ruling, 2026-08-24): the corrections toggle is
+    // session-local component state only — never persisted server-side.
+    onCorrectionsToggle: () => {
+      correctionsMode = !correctionsMode;
+      renderDetailWrapper();
+    },
+
+    onStressFix: (valueInput: HTMLInputElement) => {
+      if (!currentCharacter || isStressFixLoading) return;
+      // CONTRACT-03: the contract rejects anything but an integer >= 0 with
+      // VALIDATION; a blank or non-integer field does nothing rather than
+      // guessing a replacement. The server clamps into [0, StressMax] and
+      // reports applied.effective — the client never enforces game maxima.
+      const parsed = Number(valueInput.value);
+      if (!Number.isInteger(parsed) || parsed < 0) return;
+      isStressFixLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+
+      const program = stressFix(characterId, parsed, currentCharacter.revision);
+      void Effect.runPromise(
+        Effect.match(program, {
+          onFailure: (err) => {
+            if (cancelled) return;
+            isStressFixLoading = false;
+            if (err instanceof StaleRevisionError) {
+              renderDetailWrapper();
+              refreshAndShowNotice();
+            } else {
+              errorMsg = opErrorText(err);
+              renderDetailWrapper();
+            }
+          },
+          onSuccess: (character) => {
+            if (cancelled) return;
+            isStressFixLoading = false;
+            currentCharacter = character;
             renderDetailWrapper();
           },
         }),
@@ -3781,6 +3883,8 @@ export function mountCharacterDetailPage(
       historyCount: historyCountState,
       isStressLoading,
       isStressClearLoading,
+      isStressFixLoading,
+      correctionsMode,
       isTraumaLoading,
       isDossierLoading,
       isUndoLoading,

@@ -5299,4 +5299,103 @@ describe("FV-012 focus restoration", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// CONTRACT-03 (DEC-03 ruling, 2026-08-24): gated corrections edit mode.
+// Stress/trauma stay locked by default; an explicit session-local toggle
+// reveals the stress.fix control; toggling off hides it again.
+// ---------------------------------------------------------------------------
+
+describe("CONTRACT-03 gated corrections", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.append(root);
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    root.remove();
+  });
+
+  /** Mount with the standard 6 load fetches + extra op mocks. */
+  const mountWith = (dto: Record<string, unknown>, extraMocks: readonly unknown[] = []) => {
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({})); // capabilities (decode-fail => fallback)
+    for (const m of extraMocks) mocked.mockResolvedValueOnce(m);
+    global.fetch = mocked;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  };
+
+  const correctionsToggle = () =>
+    root.querySelector("button.corrections-toggle") as HTMLButtonElement | null;
+  const fixInput = () =>
+    root.querySelector('input[aria-label="Corrected stress value"]') as HTMLInputElement | null;
+  const fixButton = () =>
+    root.querySelector('button[title="Apply correction — sets stress directly (clerical-error fix, not play)"]') as HTMLButtonElement | null;
+
+  it("keeps corrections locked by default: toggle present, no fix controls, play controls intact", async () => {
+    mountWith(characterDTO());
+    await vi.waitFor(() => expect(root.textContent).toContain("Brenda Hilton"));
+    expect(correctionsToggle()).not.toBeNull();
+    expect(fixInput()).toBeNull();
+    expect(fixButton()).toBeNull();
+    // Normal play controls are untouched by corrections mode.
+    expect(root.querySelector('button[title="Add 1 stress"]')).not.toBeNull();
+    expect(root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]')).not.toBeNull();
+  });
+
+  it("reveals fix controls when enabled and hides them again when disabled", async () => {
+    mountWith(characterDTO());
+    await vi.waitFor(() => expect(correctionsToggle()).not.toBeNull());
+
+    correctionsToggle()!.click();
+    await vi.waitFor(() => expect(fixInput()).not.toBeNull());
+    expect(fixButton()).not.toBeNull();
+    // Session-local default: the input pre-fills with the marked stress.
+    expect(fixInput()!.value).toBe(String(characterDTO().monitor.stress.current));
+
+    correctionsToggle()!.click();
+    await vi.waitFor(() => expect(fixInput()).toBeNull());
+    expect(fixButton()).toBeNull();
+  });
+
+  it("posts {value} to /ops/stress.fix with If-Match from the revealed control", async () => {
+    const fixedDto = characterDTO({
+      revision: 13,
+      monitor: { ...characterDTO().monitor, stress: { current: 2, max: 9 } },
+    });
+    mountWith(characterDTO(), [
+      ok({
+        ok: true,
+        character: fixedDto,
+        applied: { op: "stress.fix", requested: 2, effective: 2 },
+        sideEffects: [],
+        error: null,
+      }),
+    ]);
+    await vi.waitFor(() => expect(correctionsToggle()).not.toBeNull());
+
+    correctionsToggle()!.click();
+    await vi.waitFor(() => expect(fixInput()).not.toBeNull());
+    fixInput()!.value = "2";
+    fixButton()!.click();
+
+    await vi.waitFor(() => expect(root.textContent).toContain("2 / 9"));
+    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const fixCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.fix"));
+    expect(fixCall).toBeTruthy();
+    expect(fixCall![0]).toBe(`/api/characters/${CHARACTER_ID}/ops/stress.fix`);
+    expect(fixCall![1].method).toBe("POST");
+    expect(fixCall![1].body).toBe(JSON.stringify({ value: 2 }));
+    expect(fixCall![1].headers["If-Match"]).toBe("12");
+  });
+});
+
 

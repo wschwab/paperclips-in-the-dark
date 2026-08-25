@@ -1,0 +1,125 @@
+---
+title: CONTRACT-03 — Gated clerical-error corrections (the FIX_ op family)
+description: Normative statement of the stress.fix correction op and the frontend corrections edit mode (DEC-03 human ruling, 2026-08-24)
+---
+
+# CONTRACT-03 — Gated clerical-error corrections (the FIX_ op family)
+
+**Status:** Normative contract change. Backend and frontend implementation are stages of the same card.
+**Decision provenance:** DEC-03 human ruling, 2026-08-24 (`agent-docs/test-audit/decisions/DEC-03.md` §7) — out-of-resolution correction is wanted, but gated; routed to CONTRACT-03.
+**Rulebook anchor:** none. Corrections are bookkeeping for the sheet manager, not rules mechanics; the server computes no GM judgment (PAPERCLIPS.md §1.1).
+
+## Why a distinctly named family (audit rationale)
+
+Every mutation lands in per-entity history as its op id. A play write ("the
+scoundrel took 4 stress") and a bookkeeping write ("someone fat-fingered 9
+into the stress box at the table") are different *events* even when they
+produce identical stored bytes. Collapsing them into the play ops would make
+an audit trail unable to answer "was this value ever corrected?" without
+guessing from context.
+
+The FIX_ family therefore exists to be **self-labeling**: an op id that
+contains `fix` appears in history/audit as itself (`"op": "stress.fix"`), so
+correction writes are distinguishable from normal play ops by inspection of
+any history entry or request log line, forever, on both tracks. This is the
+same audit reasoning that made `trauma.remove` a separate snapshotted
+correction path rather than an overload of some play op (DEC-03 §5).
+
+Corrections are **gated**, not free:
+
+1. **Backend gate = naming + snapshots.** The op lives outside the play-op
+   naming space, is snapshot-worthy like every other mutation (undo restores
+   the pre-correction state), and carries an OpenAPI description stating it
+   is intended for correcting clerical errors, not play.
+2. **Frontend gate = edit mode.** Stress/trauma sections stay locked by
+   default; corrections surface only behind an explicit unlock (below).
+
+## Ruling (binding)
+
+1. **Backend:** correction variants of stress-setting ops exist as a
+   distinctly named family — `stress.fix` on characters.
+2. **Frontend:** character-sheet stress/trauma sections stay locked by
+   default. An explicit **"Enable corrections" toggle (edit mode)** reveals
+   fix controls; toggling off hides them again. The toggle state is
+   **session-local** (component state only — never persisted server-side,
+   never in localStorage).
+
+## Contract surface
+
+### `stress.fix` — request
+
+```json
+{ "value": 3 }
+```
+
+`POST /api/characters/{id}/ops/stress.fix`, `operationId: stressFix`,
+`x-snapshot: true` (like other mutations).
+
+- `value`: integer ≥ 0, **required** (`additionalProperties: false`). The
+  requested *target* for `monitor.stress.current`.
+- Negative / non-integer / missing `value` → `400 VALIDATION`
+  (request-shape validation precedes the lifecycle gates, BUG-011 ordering).
+
+### `stress.fix` — result semantics
+
+**Absolute setter** result family (same family as `session.set`):
+
+- `applied.requested` = the requested target;
+- `applied.effective` = the stored target after clamping into
+  `[0, StressMax]` (StressMax from game settings — never a literal). A clamp
+  is detectable from requested ≠ effective.
+
+A correction **records state; it does not play**:
+
+- It never raises `traumaPending`, never emits the typed attention strings
+  ("stress full — trauma pending" / "stress full — consider trauma"), and
+  returns no sideEffects. Landing at max through `stress.fix` is a data
+  statement about the sheet, not the LIFECYCLE-STRESS-001 transition.
+- It never clears pending/out-of-action flags or touches any other field.
+
+**Gates follow the sibling stress ops exactly** (handler pattern parity):
+retired → `RETIRED`; traumaPending → `TRAUMA_REQUIRED`;
+isOutOfAction → `OUT_OF_ACTION`; degraded entity → `422 INVALID_ENTITY`.
+Rationale: mis-marked stress can only arise while normal play ops run, and
+normal play ops run precisely when these gates are silent — so gating the
+correction identically blocks no legitimate correction while avoiding any new
+lifecycle semantics.
+
+History: one entry labelled `"stress.fix"` (snapshot taken before the apply);
+undo restores the exact pre-fix document and consumes the snapshot.
+
+### Trauma escape hatch — noted candidate, deliberately NOT implemented
+
+If trauma count ever needs the same hatch, it is a candidate for a future
+card — but the pattern is **not trivially identical**: `trauma.add` is
+resolution-only (W14) and `trauma.remove` already is the snapshotted
+trauma-history correction path, so a `trauma.fix` would overlap two existing
+ops instead of cloning one numeric setter. Per the DEC-03 ruling's own
+constraint this card implements nothing beyond stress.
+
+## Frontend obligations
+
+- The stress section renders **no fix controls by default** — normal play
+  controls (+1/−1, track click, Indulge Vice) unchanged.
+- An explicit **"Enable corrections"** toggle sits in the stress section.
+  Turning it on reveals a small correction control next to the tracker: a
+  value input plus a button that calls `stress.fix`. Turning it off hides
+  the control again.
+- Toggle state is session-local: component state only, reset by reload, never
+  sent to or stored by the server.
+- The control is disabled under the same conditions the server would reject:
+  loading, retired, pending trauma, out of action.
+
+## Conformance
+
+`suites/persistence/corrections.test.ts` is the red-first oracle for this
+card: set-stress-then-fix-to-zero (persisted), clamp above StressMax
+(settings-derived maximum, no lifecycle side effects), VALIDATION shapes
+(negative / non-integer / missing `value`), the `"stress.fix"` history label,
+and undo restoring the pre-fix state. Derived artifacts updated by the same
+card, not hand-bent: `ENDPOINT-MAP-001` route count 106 → 107;
+`conformance/generated/contract-coverage.json`,
+`skill/api-reference/capability-manifest.json` (stressFix classified
+`human`/`correction` — the gated edit-mode control is its required reachable
+human path), and `skill/api-reference/README.md` all regenerated from the
+changed contract.
