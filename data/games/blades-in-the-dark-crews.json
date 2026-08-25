@@ -68,6 +68,7 @@
 				{
 					"Name": "Vault",
 					"TotalBoxes": 2,
+					"StashCapacities": [4, 8, 16],
 					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
 				},
 				{
@@ -444,6 +445,7 @@
 				{
 					"Name": "Vault",
 					"TotalBoxes": 2,
+					"StashCapacities": [4, 8, 16],
 					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
 				},
 				{
@@ -841,6 +843,7 @@
 				{
 					"Name": "Vault",
 					"TotalBoxes": 2,
+					"StashCapacities": [4, 8, 16],
 					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
 				},
 				{
@@ -1230,6 +1233,7 @@
 				{
 					"Name": "Vault",
 					"TotalBoxes": 2,
+					"StashCapacities": [4, 8, 16],
 					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
 				},
 				{
@@ -1620,6 +1624,7 @@
 				{
 					"Name": "Vault",
 					"TotalBoxes": 2,
+					"StashCapacities": [4, 8, 16],
 					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
 				},
 				{
@@ -2016,6 +2021,7 @@
 				{
 					"Name": "Vault",
 					"TotalBoxes": 2,
+					"StashCapacities": [4, 8, 16],
 					"Description": "Your lair has a secure vault, increasing your storage capacity for coin to 8. A second upgrade increases your capacity to 16."
 				},
 				{

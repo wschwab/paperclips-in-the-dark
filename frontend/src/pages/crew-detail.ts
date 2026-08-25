@@ -63,6 +63,13 @@ const CREW_FIELD_LABELS: Record<CrewField, string> = {
   huntingGrounds: "Hunting grounds",
 };
 
+// CONTRACT-04 (2026-08-25): Tier renders in Roman numerals like the printed
+// crew sheet — 0 stays "0"; a legacy value above the printed scale falls
+// back to decimal digits. Pure display: the wire format is the DTO integer.
+const TIER_ROMAN = ["I", "II", "III", "IV"] as const;
+const formatTier = (tier: number): string =>
+  tier >= 1 && tier <= TIER_ROMAN.length ? TIER_ROMAN[tier - 1] : String(tier);
+
 interface ProfileEditingState {
   field: CrewField;
   value: string;
@@ -855,7 +862,9 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     onTrack: handlers.onWantedTrack,
   });
 
-  // Tier: unbounded integer (no max) — value + -/+ only.
+  // Tier: value + -/+ only. The server clamps at the settings-derived
+  // CrewTierMax (CONTRACT-04) and reports the applied delta; display is
+  // Roman via formatTier.
   const tierMinusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading || c.tier <= 0,
@@ -1808,7 +1817,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       el("p", { className: "crew-kicker" }, c.gameName),
       el("h1", {}, c.name || `Unnamed ${c.crewTypeName}`),
       el("p", { className: "crew-type uneven" }, c.crewTypeName),
-      el("p", { className: "crew-tier-badge", title: "Tier" }, `Tier ${c.tier}`),
+      el("p", { className: "crew-tier-badge", title: "Tier" }, `Tier ${formatTier(c.tier)}`),
       el(
         "nav",
         { className: "crew-nav" },
@@ -1855,7 +1864,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       wantedTracker,
       el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Tier"),
       el("div", { className: "crew-tier", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.6em 0;" },
-        el("span", { className: "crew-tier-value" }, String(c.tier)),
+        el("span", { className: "crew-tier-value" }, formatTier(c.tier)),
         tierMinusBtn,
         tierPlusBtn,
       ),
@@ -1876,7 +1885,7 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       ),
       el("div", { className: "crew-stash", style: "display: flex; gap: 0.5em; align-items: center; margin: 0.35em 0;" },
         el("span", { className: "lbl" }, "Stash:"),
-        el("span", { className: "crew-stash-count" }, String(c.stash)),
+        el("span", { className: "crew-stash-count" }, `${c.stash} / ${c.stashCapacity}`),
         stashMinusBtn,
         stashPlusBtn,
       ),
@@ -2443,7 +2452,7 @@ export function mountCrewDetailPage(
       const cost = (crew.tier + 1) * 8;
       if (crew.coin < cost) {
         clearNotices();
-        noticeMsg = `INSUFFICIENT_FUNDS: developing to tier ${crew.tier + 1} costs ${cost} coin (have ${crew.coin})`;
+        noticeMsg = `INSUFFICIENT_FUNDS: developing to Tier ${formatTier(crew.tier + 1)} costs ${cost} coin (have ${crew.coin})`;
         renderDetail();
         return;
       }
@@ -2461,7 +2470,7 @@ export function mountCrewDetailPage(
       runCrewOp(
         (v) => { isDevelopLoading = v; },
         program,
-        `Tier advanced to ${crew.tier + 1} — hold weakened, rep reset`,
+        `Tier advanced to ${formatTier(crew.tier + 1)} — hold weakened, rep reset`,
       );
     },
 

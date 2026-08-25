@@ -146,6 +146,7 @@ function crewDTO(overrides: Record<string, unknown> = {}): Record<string, unknow
     factions: [],
     coin: 0,
     stash: 0,
+    stashCapacity: 4,
     notes: [],
     turf: 0,
     claimedClaimIds: [],

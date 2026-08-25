@@ -29,6 +29,7 @@
     "cohorts",
     "coin",
     "stash",
+    "stashCapacity",
     "notes",
     "turf",
     "contacts",
@@ -83,7 +84,8 @@
     },
     "tier": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "description": "CONTRACT-04 (2026-08-25): bounded above by game-settings CrewTierMax, enforced server-side at normalization and by tier.add. This schema deliberately declares no hardcoded upper bound."
     },
     "hold": {
       "$ref": "common.json#/$defs/hold"
@@ -211,7 +213,13 @@
     },
     "stash": {
       "type": "integer",
-      "minimum": 0
+      "minimum": 0,
+      "description": "CONTRACT-04 (2026-08-25): positive stash.add deltas clamp at the derived /stashCapacity; a legacy balance above a reduced capacity stays readable until the next stash write."
+    },
+    "stashCapacity": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "CONTRACT-04 (2026-08-25): write-time derived from the crew's own vault-capacity upgrade marks and validated game settings (CrewStashBaseCapacity base; an upgrade whose crew-type entry declares StashCapacities indexes capacity by boxes marked). Persisted canonical integer recomputed at every write boundary — never accepted as input; supplied values are overwritten with the server-computed derivation."
     },
     "notes": {
       "$ref": "common.json#/$defs/notes"

@@ -32,6 +32,7 @@ const crewDTO = {
   cohorts: [],
   coin: 0,
   stash: 2,
+  stashCapacity: 4,
   notes: [],
   turf: 0,
   claimedClaimIds: [],

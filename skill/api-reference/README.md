@@ -2064,7 +2064,7 @@ Responses:
 
 `POST /crews/{id}/ops/tier.add`
 
-Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported.
+Signed delta (signed-delta result family): requested/effective are signed changes. Bounded to [0, CrewTierMax] from game settings (CONTRACT-04, 2026-08-25 — supersedes the recorded unbounded-above correction); applied delta reported.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2610,7 +2610,7 @@ Responses:
 
 `POST /crews/{id}/ops/coin.add`
 
-Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported.
+Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; no ceiling — loose crew coin is kept for Blades in the Sheets parity and clients present it against the same vault-derived capacity as an advisory display bound only (CONTRACT-04, 2026-08-25). Applied delta reported.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2632,7 +2632,7 @@ Responses:
 
 `POST /crews/{id}/ops/stash.add`
 
-Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0; applied delta reported.
+Signed delta (signed-delta result family): requested/effective are signed changes. Bounded below at 0 and above by the vault-derived crew field stashCapacity (CONTRACT-04, 2026-08-25); applied delta reported.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 

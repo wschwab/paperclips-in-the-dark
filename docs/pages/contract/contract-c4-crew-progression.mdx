@@ -1,0 +1,61 @@
+---
+title: CONTRACT-04 — Crew progression semantics corrections
+description: Normative statement of the settings-derived crew Tier ceiling, the vault-derived Stash capacity with the stashCapacity DTO field, and the loose-crew-coin display decision (DEC-04 human ruling, 2026-08-25)
+---
+
+# CONTRACT-04 — Crew progression semantics corrections
+
+**Status:** Normative contract change. Backend and frontend implementation are stages of the same card.
+**Decision provenance:** DEC-04 human ruling, 2026-08-24 (`agent-docs/test-audit/product-decisions.md` §DEC-04 §7, source detail in `agent-docs/test-audit/decisions/DEC-04.md` §8), executing the human's crew review of 2026-08-21 (`Crew Sheet` findings 2 and 6). The DEC-04 disposition's Option A (ratify unbounded tier/stash) is **overridden** by the human ruling for the parts below; Option B's stated prerequisite — structured capacity data added to game data by a sanctioned contract change before any enforcement — is exactly what this card does.
+**Rulebook anchor:** Blades in the Dark SRD, *Coin and Stash*: a crew stores 4 coin in its lair by default; the Vault upgrade expands storage to 8, then 16. The numbers enter the codebase only as game-data values, never as literals (PAPERCLIPS.md §5).
+
+## 1. Tier ceiling from settings (`CrewTierMax`)
+
+The ops-audit correction "tier unbounded above" (ops-audit.mdx:59) is **superseded**: crews now have a settings-declared Tier ceiling.
+
+1. Game settings gain two required integer keys (game-settings-schema.json `properties` + `required`; all four supported settings files carry them, matching the TurfMax precedent):
+
+   | Key | blades-in-the-dark | rus / français (BitD translations) | scum-and-villainy | Basis |
+   |---|---|---|---|---|
+   | `CrewTierMax` | 4 | 4 | 4 | SRD Tier 0–IV (Tier IV is the printed ceiling); FitD-shared progression, same value across games per TurfMax precedent |
+   | `CrewStashBaseCapacity` | 4 | 4 | 4 | SRD Coin and Stash: 4 coin in the lair by default |
+
+2. `tier` normalization clamps stored values to `[0, CrewTierMax]` (D5 clamp semantics, same shape as turf), reporting the clamp as a change entry.
+3. `tier.add` remains a signed-delta operation but is now bounded at both ends: negative deltas floor at 0 (unchanged), positive deltas clamp at `CrewTierMax`. The applied delta is reported as before.
+
+## 2. Stash capacity derived from Vault marks
+
+Effective capacity is **derived from the crew's own upgrade marks**, never a constant:
+
+1. The capacity numbers live on the upgrade that grants them, as a structured array in the crews game data (`blades-in-the-dark-crews.json`), validated by `crew-settings-schema.json`: the Vault upgrade carries `"StashCapacities": [4, 8, 16]` — capacity indexed by boxes marked, first entry = base. The SRD progression 4 → 8 → 16 means the increments are **non-uniform** (+4, then +8); the C# reference formula `4 + boxes × 4` (which yields 12 at two boxes) contradicts the SRD prose and is deliberately **not** ported. Parsing upgrade prose is prohibited (DEC-04 §5); this structured field is the sanctioned replacement.
+2. Derivation: `capacity = max over marked upgrades carrying StashCapacities of Steps[min(boxesMarked, len(Steps)-1)]`, or `CrewStashBaseCapacity` when the crew has no such upgrade. Scum & Villainy's "Vault" is ship security (1 box) and deliberately carries **no** `StashCapacities` — S&V crews sit at the settings base.
+3. The derived capacity is exposed on the crew DTO as **`stashCapacity`** (computed server-side; clients must not hardcode it):
+   - It is a **write-time derived, persisted canonical integer** — recomputed from the crew's upgrade marks at every write boundary (create, canonicalization/import/repair, every mutation that changes marks). This extends the §5.5 exception list for write-derived persisted fields (armor availability booleans, `isDeadish`) with one more entry; it is not a capability projection, so byte-identical GETs are preserved.
+   - It is **never accepted as input**: create/canonicalization always overwrite a supplied value with the server-computed one. Legacy documents missing the field get a `derived fill` change entry through import/repair normalization; until repaired they are non-canonical and mutations return `INVALID_ENTITY` per the standing rule.
+
+## 3. Stash writes clamp to capacity
+
+`stash.add` remains signed-delta but positive deltas clamp at the current derived `stashCapacity`; negative deltas still floor at 0. Two deliberate consequences:
+
+- Unmarking a Vault box lowers future capacity but **never destroys stashed coin**: an existing balance above the reduced capacity stays readable (the sheet records what happened; PAPERCLIPS.md §5.1.8 forbids silently dropping coin). The next `stash.add` reconciles downward against the new capacity.
+- Legacy over-capacity balances behave identically: readable, reconciled on the next stash write.
+
+## 4. Loose crew coin — kept, display-bounded
+
+The human ruling detail floated dropping loose crew `coin`; resolved here: **keep it** (Blades in the Sheets parity, DEC-04 evidence §"Loose crew coin validity"). Its API bounds are unchanged (floor at 0, no ceiling — any non-negative integer remains valid stored state). The **frontend presents crew coin against the same vault-derived capacity as an advisory display bound**; the server does not enforce a coin ceiling. Documented here so the asymmetry (bounded stash writes, advisory coin display) is a recorded decision, not an accident.
+
+## 5. Roman numeral Tier display (presentation-only)
+
+The sheet renders Tier in Roman numerals: `0 → "0"`, `1..4 → I II III IV`. A legacy stored value above `CrewTierMax` renders as plain decimal digits rather than guessing beyond the printed scale. This is a pure frontend formatter over the DTO integer — the wire format is unchanged, and there is no contract assertion for it.
+
+## 6. Wave-7 pointers (no contract change here)
+
+Recorded per the review as presentation-scope cards, not part of this card:
+
+- Unified Rep/Turf tracker (Rep fills top-left, Turf bottom-right, next-Turf outline hint) — review `Crew Sheet` §1.
+- Claim click-to-confirm pathing with edit-mode removal and connected-claim warning — review §3 and §7.
+- Edit-mode gating for removing playbook abilities and upgrades — review §8.
+
+## 7. Acceptance
+
+Conformance typecheck green; focused `suites/semantics/crew-progression.test.ts` green (tier clamp at `CrewTierMax`; `stashCapacity` across 0/1/2 Vault boxes; stash write clamp at capacity); full `npm run test:ada` green; frontend `npm test -- --run` and `npm run build` green. Coverage artifacts regenerated from the contract (generated Ada validators, contract-coverage.json, api-reference, capability manifest).

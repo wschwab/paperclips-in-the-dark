@@ -1038,6 +1038,8 @@
 		"RepMax": 12
 	},
 	"TurfMax": 6,
+	"CrewTierMax": 4,
+	"CrewStashBaseCapacity": 4,
 	"LoadMaxima": {
 		"MaxBulk": 9,
 		"CommitmentMaxBulk": {

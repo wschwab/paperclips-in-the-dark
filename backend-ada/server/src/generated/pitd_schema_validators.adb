@@ -578,7 +578,7 @@ package body Pitd_Schema_Validators is
    Allowed_Session : constant String := Required_Session;
 
    Required_Crew : constant String :=
-     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|stash|notes|turf|contacts|factions|claimedClaimIds|claimOverrides|";
+     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|stash|stashCapacity|notes|turf|contacts|factions|claimedClaimIds|claimOverrides|";
 
    Allowed_Crew : constant String := Required_Crew;
 
@@ -1123,6 +1123,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "cohorts", Check_Cohorts'Access);
       Check_Prop (V, Ptr, "coin", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "stash", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "stashCapacity", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "notes", Check_String_Array'Access);
       Check_Prop (V, Ptr, "contacts", Check_Contacts'Access);
       Check_Prop (V, Ptr, "factions", Check_Factions'Access);
@@ -1455,6 +1456,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "cohorts", Check_Cohorts'Access);
       Check_Prop (V, "", "coin", Check_Int_Min_0'Access);
       Check_Prop (V, "", "stash", Check_Int_Min_0'Access);
+      Check_Prop (V, "", "stashCapacity", Check_Int_Min_0'Access);
       Check_Prop (V, "", "notes", Check_String_Array'Access);
       Check_Prop (V, "", "contacts", Check_Contacts'Access);
       Check_Prop (V, "", "factions", Check_Factions'Access);

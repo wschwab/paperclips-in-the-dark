@@ -38,7 +38,7 @@ describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove", 
     expect(unknown.error?.code).toBe("NOT_FOUND");
   });
 
-  testCase("SEMANTICS-CREW-FUND-001", "crew coin.add / stash.add / tier.add report applied deltas; tier floors at 0", async () => {
+  testCase("SEMANTICS-CREW-FUND-001", "crew coin.add / stash.add / tier.add report applied deltas; stash clamps at derived capacity; tier floors at 0", async () => {
     const crew = await newCrew();
     const coin = await api.crewOp(crew.id, "coin.add", { delta: 5 });
     expect(coin.ok).toBe(true);
@@ -46,9 +46,14 @@ describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp, rolodex.remove", 
     expect(coin.applied.requested).toBe(5);
     expect(coin.applied.effective).toBe(5);
 
-    const stash = await api.crewOp(crew.id, "stash.add", { delta: 7 });
+    // CONTRACT-04 (2026-08-25): positive stash deltas clamp at the
+    // vault-derived stashCapacity the server computed at creation.
+    const cap = crew.stashCapacity;
+    const stash = await api.crewOp(crew.id, "stash.add", { delta: cap + 3 });
     expect(stash.ok).toBe(true);
-    expect(stash.crew?.stash).toBe(7);
+    expect(stash.applied.requested).toBe(cap + 3);
+    expect(stash.applied.effective).toBe(cap);
+    expect(stash.crew?.stash).toBe(cap);
 
     const tier = await api.crewOp(crew.id, "tier.add", { delta: 1 });
     expect(tier.ok).toBe(true);

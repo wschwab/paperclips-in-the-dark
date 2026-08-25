@@ -670,6 +670,14 @@
 		"TurfMax": {
 			"type": "integer"
 		},
+		"CrewTierMax": {
+			"type": "integer",
+			"minimum": 0
+		},
+		"CrewStashBaseCapacity": {
+			"type": "integer",
+			"minimum": 0
+		},
 		"LoadMaxima": {
 			"$ref": "#/definitions/LoadMaximaSetting"
 		},
@@ -744,6 +752,8 @@
 		"FundMaxima",
 		"CrewTrackerMaxima",
 		"TurfMax",
+		"CrewTierMax",
+		"CrewStashBaseCapacity",
 		"LoadMaxima",
 		"ActionCap",
 		"SessionExpressionMax",

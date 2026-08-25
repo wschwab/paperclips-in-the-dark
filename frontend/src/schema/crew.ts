@@ -96,6 +96,9 @@ export const Crew = Schema.Struct({
   factions: Schema.Array(Faction),
   coin: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   stash: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+  // CONTRACT-04 (2026-08-25): write-time derived from the crew's own Vault
+  // marks and validated settings — server-computed, never a client constant.
+  stashCapacity: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   notes: Notes,
   claimedClaimIds: Schema.Array(ClaimId),
   claimOverrides: Schema.Array(ClaimOverride),

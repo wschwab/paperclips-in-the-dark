@@ -35,10 +35,11 @@ function crewDTO(overrides: Record<string, unknown> = {}) {
     specialAbilities: [],
     upgrades: [],
     cohorts: [],
-    contacts: [],
-    factions: [],
     coin: 0,
     stash: 2,
+    stashCapacity: 4,
+    contacts: [],
+    factions: [],
     notes: "Up-and-coming crew",
     turf: 0,
     claimedClaimIds: [],
@@ -96,9 +97,7 @@ describe("crew-detail page", () => {
 
   it("renders the crew name after initial load", async () => {
     global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
-
     mountCrewDetailPage(root, CREW_ID);
-
     await vi.waitFor(() => {
       expect(root.querySelector("h1")?.textContent).toContain(
         "The Red Sashes",
@@ -734,7 +733,7 @@ describe("crew-detail page", () => {
         expect(developBtn).not.toBeNull();
         expect(developBtn.disabled).toBe(true);
         // Tier value + hold segmented control from contract enum values
-        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("I");
         const holdButtons = [...root.querySelectorAll('button[data-hold]')] as HTMLButtonElement[];
         expect(holdButtons.length).toBe(2);
         expect(holdButtons.map((b) => b.getAttribute("data-hold"))).toEqual(["weak", "strong"]);
@@ -1051,17 +1050,17 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("I");
       });
 
       (root.querySelector('button[title="Add 1 tier"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("2");
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("II");
       });
 
       (root.querySelector('button[title="Remove 1 tier"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("1");
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("I");
       });
     });
 
@@ -1130,7 +1129,7 @@ describe("crew-detail page", () => {
 
       await vi.waitFor(() => {
         expect(root.querySelector(".crew-coin-count")?.textContent).toBe("0");
-        expect(root.querySelector(".crew-stash-count")?.textContent).toBe("2");
+        expect(root.querySelector(".crew-stash-count")?.textContent).toBe("2 / 4");
       });
 
       (root.querySelector('button[title="Add 1 coin"]') as HTMLButtonElement).click();
@@ -1140,7 +1139,39 @@ describe("crew-detail page", () => {
 
       (root.querySelector('button[title="Add 1 stash"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-stash-count")?.textContent).toBe("3");
+        expect(root.querySelector(".crew-stash-count")?.textContent).toBe("3 / 4");
+      });
+    });
+
+    it("CONTRACT-04: renders Tier in Roman numerals (0 stays 0, over-scale falls back to decimal)", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ tier: 0, stashCapacity: 4 })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("0");
+        expect(root.querySelector(".crew-tier-badge")?.textContent).toBe("Tier 0");
+      });
+
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ tier: 3 })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("III");
+        expect(root.querySelector(".crew-tier-badge")?.textContent).toBe("Tier III");
+      });
+
+      // Legacy stored values above the printed scale render as decimal.
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ tier: 5 })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("5");
+      });
+
+      // Stash header shows current against the server-computed capacity;
+      // loose coin keeps its own unbounded count (display-bounded advisory).
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ coin: 9, stash: 16, stashCapacity: 16 })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-stash-count")?.textContent).toBe("16 / 16");
+        expect(root.querySelector(".crew-coin-count")?.textContent).toBe("9");
       });
     });
 
@@ -2427,7 +2458,7 @@ describe("crew-detail page", () => {
       (root.querySelector('button[title^="Develop"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("2");
+        expect(root.querySelector(".crew-tier-value")?.textContent).toBe("II");
       });
       expect(root.querySelector(".crew-rep .stress-track")?.getAttribute("aria-label")).toContain("0 of 12");
       expect(root.querySelector('button[data-hold="weak"]')?.getAttribute("aria-pressed")).toBe("true");

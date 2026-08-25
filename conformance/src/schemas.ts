@@ -189,6 +189,9 @@ const Crew = Schema.Struct({
   ),
   coin: NonNegativeInt,
   stash: NonNegativeInt,
+  // CONTRACT-04 (crew.json, 2026-08-25): write-time derived from the crew's
+  // own Vault marks and validated settings — persisted canonical integer.
+  stashCapacity: NonNegativeInt,
   notes: Notes,
   turf: NonNegativeInt, // crew.json (2026-08-09): no hardcoded upper bound — TurfMax is authoritative from game settings (R4)
   // Wave 2 contract (crew.json, 2026-08-10): contacts/factions are required

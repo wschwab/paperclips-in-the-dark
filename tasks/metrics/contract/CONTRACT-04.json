@@ -1,0 +1,25 @@
+{
+  "task": "CONTRACT-04",
+  "track": "contract",
+  "implementationAgent": "opencode-go/ox-alpha-free (full-card brief, strict order: spec page → settings/schema → OpenAPI → red tests → Ada → frontend → gates; card written in one session, continued after a context rollover — second context verified every layer against the brief/DEC-04/review.md, regenerated stale derived artifacts, and ran all gates)",
+  "reviewAgent": "orchestrator independent gate re-runs (conformance typecheck, focused 4/4, full test:ada 461/461 across 58 files, frontend 665/665 across 19 files, frontend build); artifact drift check by re-running all four generators",
+  "date": "2026-08-25",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 20,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "all gates green on first continuation run (typecheck exit 0; crew-progression 4/4; full ada 461/461; frontend 665/665; vite build ok)",
+  "passRateAfterReview": "same — no failures surfaced by any gate",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 0,
+    "independentReview": 2,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "artifact-drift re-check: skill/api-reference/README.md + capability-manifest.json still carried pre-CONTRACT-04 tier.add/stash.add/coin.add summaries until regenerated",
+    "artifact-drift re-check: generated pitd_schema_validators.adb did not yet require/check stashCapacity on the Crew shape until regenerated"
+  ],
+  "implementationLoc": 539,
+  "scaffoldingLoc": 0,
+  "notes": "Semantics card executing the DEC-04 human ruling (2026-08-24, overriding that decision card's Option A disposition): CrewTierMax=4 and CrewStashBaseCapacity=4 enter game-settings schema + all four settings files (TurfMax precedent, top-level keys); Vault upgrade in blades-in-the-dark-crews.json carries structured StashCapacities [4,8,16] validated by crew-settings-schema.json (non-uniform SRD increments +4/+8; C# formula 4+boxes*4 deliberately not ported); stashCapacity is a write-time derived persisted canonical integer on the shared Crew shape (derived fill / derived recompute change entries; never accepted as input); tier normalization clamps [0, CrewTierMax]; tier.add/stash.add clamp at settings/vault-derived ceilings with requested/effective reported; coin.add keeps floor-only bounds (loose crew coin kept for BitS parity, advisory display bound documented); unmarking never destroys stashed coin. Frontend renders Tier I..IV (0 stays '0', over-scale legacy falls back to decimal) and stash as current/capacity. Wave-7 presentation items recorded as spec-page pointers only. No VCS mutation commands used."
+}

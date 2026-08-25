@@ -1632,6 +1632,84 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
       return 4;
    end Upgrade_Total_Boxes;
 
+   --  CONTRACT-04 (2026-08-25): crew stash capacity.  The base is the
+   --  validated setting CrewStashBaseCapacity; an upgrade whose crew-type
+   --  game-data entry declares StashCapacities (capacity indexed by boxes
+   --  marked, last entry repeated) raises it to that table's value for its
+   --  current marks.  Only the crew's own upgrade marks feed the
+   --  derivation — never a literal.  Missing game data keeps the base
+   --  (unknown stems keep the historical permissive fallback shape).
+   function Crew_Stash_Capacity (E : JSON_Value) return Integer is
+      Stem : constant String := Str_Field (E, "gameStem");
+      S    : constant Settings_Ref := (To_Unbounded_String (Stem), Game (Stem));
+      Cap  : Integer := Settings_Int (S, "CrewStashBaseCapacity", 0);
+      G    : constant JSON_Value := Game (Stem & "-crews");
+   begin
+      if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes")
+        and then Has_Field (E, "upgrades")
+      then
+         declare
+            Ups : constant JSON_Array := Get (E, "upgrades");
+         begin
+            for I in 1 .. Length (Ups) loop
+               declare
+                  U      : constant JSON_Value := Get (Ups, I);
+                  Marked : constant Integer := Int_Field (U, "boxesMarked", 0);
+                  Name   : constant String := Str_Field (U, "name");
+               begin
+                  if Marked >= 1 and then Name'Length > 0 then
+                     declare
+                        Types : constant JSON_Array := Get (G, "CrewTypes");
+                     begin
+                        for J in 1 .. Length (Types) loop
+                           declare
+                              T : constant JSON_Value := Get (Types, J);
+                           begin
+                             if Has_Field (T, "Upgrades") then
+                               declare
+                                 GD : constant JSON_Array := Get (T, "Upgrades");
+                               begin
+                                 for K in 1 .. Length (GD) loop
+                                   declare
+                                     D : constant JSON_Value := Get (GD, K);
+                                   begin
+                                     if Str_Field (D, "Name") = Name
+                                       and then Has_Field (D, "StashCapacities")
+                                     then
+                                       declare
+                                         Steps : constant JSON_Array :=
+                                           Get (D, "StashCapacities");
+                                         --  GNAT arrays are 1-based: marked
+                                         --  boxes m indexes element m+1,
+                                         --  clamped to the last entry.
+                                         Idx : constant Integer :=
+                                           Integer'Min (Marked + 1,
+                                                        Length (Steps));
+                                         SV : constant JSON_Value :=
+                                           Get (Steps, Idx);
+                                       begin
+                                         if SV.Kind = JSON_Int_Type
+                                           and then Integer'(Get (SV)) > Cap
+                                         then
+                                           Cap := Integer'(Get (SV));
+                                         end if;
+                                       end;
+                                     end if;
+                                   end;
+                                 end loop;
+                               end;
+                             end if;
+                           end;
+                        end loop;
+                     end;
+                  end if;
+               end;
+            end loop;
+         end;
+      end if;
+      return Cap;
+   end Crew_Stash_Capacity;
+
 
    --  BUG-006: armor availability is DERIVED from the committed loadout and
    --  ability descriptions (authoritative C# CharacterArmor.cs), never a
@@ -1876,7 +1954,11 @@ function New_Character (Stem, Playbook : String) return JSON_Value is
         & Trim_Image (Settings_Int (S, "CrewTrackerMaxima.RepMax", 0))
         & "},""experience"":{""points"":0,""max"":"
         & Trim_Image (Settings_Int (S, "XpTrackMaxima.Crew", 0))
-        & "},""specialAbilities"":[],""upgrades"":[],""cohorts"":[],""contacts"":[],""factions"":[],""coin"":0,""stash"":0,""turf"":0,""notes"":[],""claimedClaimIds"":[],""claimOverrides"":[]}");
+        & "},""specialAbilities"":[],""upgrades"":[],""cohorts"":[],""contacts"":[],""factions"":[],""coin"":0,""stash"":0,""stashCapacity"":"
+        --  CONTRACT-04: the derived vault capacity is part of the canonical
+        --  create shape (base until Vault boxes are marked).
+        & Trim_Image (Settings_Int (S, "CrewStashBaseCapacity", 0))
+        & ",""turf"":0,""notes"":[],""claimedClaimIds"":[],""claimOverrides"":[]}");
    end New_Crew;
 
    --  SC-A1: the frozen clock create writes the Wave-2 canonical shape
@@ -2542,8 +2624,9 @@ elsif Op = "clock.progress" then
    Allowed_Crew : constant String :=
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|" &
      "updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|" &
-     "heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|" &
-     "stash|notes|turf|contacts|factions|claimedClaimIds|claimOverrides|";
+    "heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|" &
+    "stash|stashCapacity|notes|turf|contacts|factions|claimedClaimIds|" &
+    "claimOverrides|";
    Allowed_Spec_Ability : constant String := "|name|timesTaken|";
    Allowed_Upgrade : constant String := "|name|boxesMarked|";
    Allowed_Cohort : constant String :=
@@ -4313,7 +4396,16 @@ elsif Op = "clock.progress" then
       Set_Field (O, "lair", N_Str (V, "lair", "/lair", "", C));
       Set_Field (O, "reputation", N_Str (V, "reputation", "/reputation", "", C));
       Set_Field (O, "huntingGrounds", N_Str (V, "huntingGrounds", "/huntingGrounds", "", C));
-      Set_Field (O, "tier", N_Int (V, "tier", "/tier", 0, C, Min => 0));
+      --  CONTRACT-04: tier clamps to [0, CrewTierMax] (D5 clamp semantics,
+      --  same shape as turf; permissive literal only for unresolved settings).
+      declare
+         Tier_Max : constant Integer :=
+           (if S.G.Kind = JSON_Object_Type
+            then Settings_Int (S, "CrewTierMax", 4) else 4);
+      begin
+         Set_Field (O, "tier", N_Int (V, "tier", "/tier", 0, C,
+                                      Min => 0, Max => Tier_Max));
+      end;
       Set_Field (O, "hold", N_Enum (V, "hold", "/hold", C, "|strong|weak|",
                                     Hold_Legacy, Default => "strong"));
       Set_Field (O, "heat", N_Bounded (V, "heat", "/heat", S,
@@ -4333,6 +4425,34 @@ elsif Op = "clock.progress" then
                                         Cohort_Item'Access));
       Set_Field (O, "coin", N_Int (V, "coin", "/coin", 0, C, Min => 0));
       Set_Field (O, "stash", N_Int (V, "stash", "/stash", 0, C, Min => 0));
+      --  CONTRACT-04: stashCapacity is write-time derived from the crew's own
+      --  vault marks and validated settings — never accepted as input.  The
+      --  computed value always wins over any supplied one; a missing field is
+      --  a derived fill, a stale supplied value is a derived recompute.
+      declare
+         Computed : constant Integer := Crew_Stash_Capacity (O);
+      begin
+         if not Has_Field (V, "stashCapacity")
+           or else Get (V, "stashCapacity").Kind = JSON_Null_Type
+         then
+            Add_Change (C, "/stashCapacity", "derived fill", JSON_Null,
+                        Create (Computed),
+                        "Missing required property /stashCapacity: filled with "
+                        & "the settings/vault-derived capacity "
+                        & Trim_Image (Computed)
+                        & " (CONTRACT-04)");
+         elsif Get (V, "stashCapacity").Kind /= JSON_Int_Type
+           or else Integer'(Get (Get (V, "stashCapacity"))) /= Computed
+         then
+            Add_Change (C, "/stashCapacity", "derived recompute",
+                        Clone (Get (V, "stashCapacity")),
+                        Create (Computed),
+                        "Property /stashCapacity was not the server-computed "
+                        & "vault-derived capacity: recomputed to "
+                        & Trim_Image (Computed) & " (CONTRACT-04)");
+         end if;
+         Set_Field (O, "stashCapacity", Create (Computed));
+      end;
       Set_Field (O, "notes", N_Notes (V, "notes", "/notes", C));
       --  turf: L7 (pre-C4 crews lack it) + D5 clamp to [0, TurfMax]
       declare
@@ -5021,6 +5141,8 @@ elsif Op = "clock.progress" then
          Check ("/wanted/max", "CrewTrackerMaxima.WantedMax");
          Check ("/rep/max", "CrewTrackerMaxima.RepMax");
          Check ("/turf", "TurfMax");
+         --  CONTRACT-04: the crew tier ceiling is settings-derived too.
+         Check ("/tier", "CrewTierMax");
       end if;
       return Out_A;
    end Settings_Maxima_Issues;
@@ -5619,10 +5741,22 @@ elsif Op = "harm.add" then
          if Kind /= "crew" then return Validation_Error(Op,"crew-only operation",Root_Issues("crew-only operation"),E); end if;
          declare Name : constant String := (if Op="coin.add" then "coin" elsif Op="stash.add" then "stash" else "tier");
             Cur : constant Integer := Int_Field(E,Name); Req : constant Integer := Int_Field(B,"delta");
+            --  CONTRACT-04: tier.add is bounded above by the validated
+            --  CrewTierMax; stash.add by the vault-derived stashCapacity.
+            --  coin.add keeps the historical floor-only bounds.  Fallback 0
+            --  for unresolved settings mirrors the turf.add shape (SC-A6).
+            Max : constant Integer :=
+              (if Op = "tier.add" then
+                 Settings_Int ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                                Game (Str_Field (E, "gameStem"))),
+                               "CrewTierMax", 0)
+               elsif Op = "stash.add" then Crew_Stash_Capacity (E)
+               else Integer'Last);
          begin
             Requested := Req;
             if Req >= 0 then
                New_Value := (if Cur > Integer'Last - Req then Integer'Last else Cur + Req);
+               New_Value := Integer'Min (New_Value, Max);
                Effective := Integer(New_Value) - Cur;
             else
                New_Value := (if Cur < Integer'First - Req or else Cur + Req <= 0 then 0 else Cur + Req);
@@ -5921,7 +6055,12 @@ elsif Op = "harm.add" then
             end if;
             return Success_Result (Op, E, Requested, Effective);
          end;
-      elsif Op="upgrade.mark" or else Op="upgrade.unmark" then declare A:constant JSON_Array:=Get(E,"upgrades");O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop declare X:constant JSON_Value:=Get(A,I);begin if Str_Field(X,"name")=Name then Found:=True;if Op="upgrade.mark" and then Int_Field(X,"boxesMarked")>=Upgrade_Total_Boxes(E,Name) then return Upgrade_Maxed_Error(Op,"upgrade is at its total box count",Upgrade_Total_Boxes(E,Name),Int_Field(X,"boxesMarked"),E);end if;declare N:constant Integer:=Int_Field(X,"boxesMarked")+(if Op="upgrade.mark" then 1 else -1);begin if N>0 then Set_Field(X,"boxesMarked",N);Append(O,X);end if;end;else Append(O,X);end if;end;end loop;if Op="upgrade.mark" and then not Found then declare X:JSON_Value:=Create_Object;begin Set_Field(X,"name",Name);Set_Field(X,"boxesMarked",Integer'(1));Append(O,X);end;end if;Set_Field(E,"upgrades",O);end;
+      elsif Op="upgrade.mark" or else Op="upgrade.unmark" then declare A:constant JSON_Array:=Get(E,"upgrades");O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop declare X:constant JSON_Value:=Get(A,I);begin if Str_Field(X,"name")=Name then Found:=True;if Op="upgrade.mark" and then Int_Field(X,"boxesMarked")>=Upgrade_Total_Boxes(E,Name) then return Upgrade_Maxed_Error(Op,"upgrade is at its total box count",Upgrade_Total_Boxes(E,Name),Int_Field(X,"boxesMarked"),E);end if;declare N:constant Integer:=Int_Field(X,"boxesMarked")+(if Op="upgrade.mark" then 1 else -1);begin if N>0 then Set_Field(X,"boxesMarked",N);Append(O,X);end if;end;else Append(O,X);end if;end;end loop;if Op="upgrade.mark" and then not Found then declare X:JSON_Value:=Create_Object;begin Set_Field(X,"name",Name);Set_Field(X,"boxesMarked",Integer'(1));Append(O,X);end;end if;Set_Field(E,"upgrades",O);
+         --  CONTRACT-04: marks changed, so the derived vault capacity moves
+         --  with them.  An existing stash above a reduced capacity stays
+         --  readable (never silently drop coin); the next stash.add
+         --  reconciles downward.
+         Set_Field(E,"stashCapacity",Crew_Stash_Capacity(E));end;
       elsif Op = "fields.update" then
          declare procedure Copy_Field (Name : UTF8_String; Value : JSON_Value) is begin if Has_Field(E,Name) then Set_Field(E,Name,Clone(Value)); end if; end; begin Map_JSON_Object(B,Copy_Field'Access); end;
       elsif Op = "update" then
@@ -8322,7 +8461,8 @@ if Kind = "crew" then
          "|Name|Language|Playbooks|Traumas|Heritages|Vices|Attributes|" &
          "Backgrounds|SharedItems|Thesaurus|RecoveryClockSize|" &
          "ActionPointMaximum|FactionStatus|StressMax|TraumaMax|HarmCapacities|" &
-         "XpTrackMaxima|FundMaxima|CrewTrackerMaxima|TurfMax|LoadMaxima|" &
+         "XpTrackMaxima|FundMaxima|CrewTrackerMaxima|TurfMax|CrewTierMax|" &
+         "CrewStashBaseCapacity|LoadMaxima|" &
          "ActionCap|SessionExpressionMax|DevelopCoinCostMultiplier|" &
          "ClockPurposes|StartingAbility|ExtraDescription|" &
          "StartingActionDots|StartingActionDotMax|",
@@ -8380,6 +8520,15 @@ if Kind = "crew" then
          S_Require_Int (CTM, "RepMax", Where);
       end;
       S_Require_Int (V, "TurfMax", Where);
+      --  CONTRACT-04: required crew progression bounds (all four games).
+      S_Require_Int (V, "CrewTierMax", Where);
+      if S_Int (V, "CrewTierMax", Where) < 0 then
+         Settings_Error (Where, "CrewTierMax must not be negative");
+      end if;
+      S_Require_Int (V, "CrewStashBaseCapacity", Where);
+      if S_Int (V, "CrewStashBaseCapacity", Where) < 0 then
+         Settings_Error (Where, "CrewStashBaseCapacity must not be negative");
+      end if;
       declare
          LM  : constant JSON_Value := S_Obj (V, "LoadMaxima", Where);
          CMB : constant JSON_Value := S_Obj (LM, "CommitmentMaxBulk", Where);
@@ -8554,10 +8703,38 @@ if Kind = "crew" then
                            Settings_Error
                              (Where, "Upgrades[" & Trim_Image (J) & "] must be an object");
                         end if;
-                        S_No_Extra (UP, "|Name|TotalBoxes|Description|", Where);
+                        S_No_Extra
+                          (UP, "|Name|TotalBoxes|Description|StashCapacities|",
+                           Where);
                         S_Require_Str (UP, "Name", Where);
                         if S_Int (UP, "TotalBoxes", Where) < 1 then
                            Settings_Error (Where, "TotalBoxes must be at least 1");
+                        end if;
+                        --  CONTRACT-04: optional vault capacity table,
+                        --  indexed by boxes marked (non-empty positive ints).
+                        if Has_Field (UP, "StashCapacities") then
+                           declare
+                              SCs : constant JSON_Array :=
+                                S_Arr (UP, "StashCapacities", Where);
+                           begin
+                              if Length (SCs) < 1 then
+                                 Settings_Error
+                                   (Where, "StashCapacities must not be empty");
+                              end if;
+                              for K in 1 .. Length (SCs) loop
+                                 declare SV : constant JSON_Value := Get (SCs, K);
+                                 begin
+                                    if SV.Kind /= JSON_Int_Type
+                                      or else Integer'(Get (SV)) < 1
+                                    then
+                                       Settings_Error
+                                         (Where,
+                                          "StashCapacities entries must be "
+                                          & "positive integers");
+                                    end if;
+                                 end;
+                              end loop;
+                           end;
                         end if;
                      end;
                   end loop;
