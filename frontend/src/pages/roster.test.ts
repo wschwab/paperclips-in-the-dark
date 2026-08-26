@@ -696,3 +696,329 @@ describe("roster page (F2aa)", () => {
     expect(pager?.hidden).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// RECOVERY-01: degraded rows visibly classify `repairable` / `needs-input` /
+// `unreadable` with the correct recovery path, and general Character/Crew
+// Import moves from per-row links to roster-level actions. The import flow —
+// not an ordinary row — decides create vs replace under the preview-token,
+// confirmation, and stale-token rules of the existing import page module.
+// ---------------------------------------------------------------------------
+
+describe("RECOVERY-01 degraded-row classification and roster-level import", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  const R_ID = "c46ba7cb-993b-4fc7-974d-fb95eacd5446";
+  const D_REPAIRABLE = "cafe0001-0000-4000-8000-000000000001";
+  const D_UNREADABLE = "dead0001-0000-4000-8000-000000000002";
+
+  const summaryChar = (overrides: Record<string, unknown> = {}) => ({
+    kind: "character",
+    id: R_ID,
+    name: "Brenda Hilton",
+    alias: "Webweaver",
+    playbook: "Spider",
+    gameStem: "blades-in-the-dark",
+    crewId: "",
+    stress: 3,
+    traumas: [],
+    isRetired: false,
+    isDeadish: false,
+    revision: 12,
+    isReadable: true,
+    isRepairable: false,
+    isComplete: true,
+    deleteToken: "",
+    canUndo: false,
+    historyCount: 0,
+    ...overrides,
+  });
+
+  const degraded = (id: string, isRepairable: boolean) =>
+    summaryChar({
+      id,
+      name: "",
+      alias: "",
+      playbook: "",
+      gameStem: "",
+      revision: 1,
+      isReadable: false,
+      isRepairable,
+      isComplete: false,
+      deleteToken: `sha256:${"ab".repeat(32)}`,
+    });
+
+  const mixedRoster = (overrides: Record<string, unknown> = {}) => ({
+    characters: [
+      summaryChar(),
+      degraded(D_REPAIRABLE, true),
+      degraded(D_UNREADABLE, false),
+    ],
+    crews: [],
+    ...overrides,
+  });
+
+  const repairNeedsInput409 = () =>
+    json(409, {
+      ok: false,
+      error: {
+        code: "NORMALIZATION_REQUIRED",
+        status: 409,
+        message: "Normalization required",
+        retryable: true,
+        recovery: "Provide values",
+        details: { warnings: [], previewToken: "tok-ni" },
+        preview: {
+          changes: [],
+          warnings: [],
+          needsInputPointers: ["/dossier/name"],
+          previewToken: "tok-ni",
+          canonical: false,
+          document: {},
+        },
+        token: "tok-ni",
+      },
+    });
+
+  const canonicalPreview200 = (token: string) =>
+    json(200, { changes: [], warnings: [], canonical: true, previewToken: token, document: {} });
+
+  const applyOk = (id: string) =>
+    ok({
+      ok: true,
+      applied: { op: "importCharacter" },
+      sideEffects: [],
+      character: { id, revision: 13, dossier: { name: "Sable Verity" } },
+      error: null,
+    });
+
+  interface MockResponse {
+    ok: boolean;
+    status: number;
+    text: () => Promise<string>;
+  }
+
+  /** Mount the roster behind a scripted fetch surface and wait for first paint. */
+  async function mountWith(
+    mocks: (url: string, init?: RequestInit) => Promise<MockResponse>,
+  ): Promise<void> {
+    global.fetch = vi.fn().mockImplementation(mocks) as unknown as typeof fetch;
+    mountRosterPage(root);
+    await vi.waitFor(() => expect(root.querySelector(".roster")).not.toBeNull());
+  }
+
+  /**
+   * Open the characters import panel and return its target select. Test seam:
+   * several flow tests exercise identical toggle mechanics lockstep.
+   */
+  function openCharImport(): HTMLSelectElement {
+    const panel = root.querySelector<HTMLDetailsElement>(
+      ".roster-characters details.roster-import-panel",
+    );
+    expect(panel).not.toBeNull();
+    panel!.open = true;
+    panel!.dispatchEvent(new Event("toggle"));
+    const select = panel!.querySelector<HTMLSelectElement>("select.import-target");
+    expect(select).not.toBeNull();
+    return select!;
+  }
+
+  it("classifies a repairable row as data-recovery-class=repairable with Repair + Delete and visible explanation", async () => {
+    await mountWith((url) =>
+      url === "/api/campaign/roster"
+        ? Promise.resolve(ok(mixedRoster()))
+        : Promise.resolve(json(404, { ok: false, error: { code: "NOT_FOUND", message: "nope" } })),
+    );
+    const li = root.querySelector(
+      `li[data-character-id="${D_REPAIRABLE}"][data-degraded]`,
+    );
+    expect(li).not.toBeNull();
+    expect(li?.getAttribute("data-recovery-class")).toBe("repairable");
+    expect(li?.textContent).toContain("Repairable character");
+    // Explanation names the recovery path without exposing raw error JSON.
+    expect(li?.textContent).toContain("normalized");
+    const buttons = Array.from(li!.querySelectorAll("button"));
+    expect(buttons.some((b) => b.textContent === "Repair")).toBe(true);
+    expect(buttons.some((b) => b.textContent === "Delete")).toBe(true);
+    // No detail link — direct reads stay strict at 422.
+    expect(li?.querySelector("a")).toBeNull();
+  });
+
+  it("classifies an unreadable row as data-recovery-class=unreadable — delete-only, with re-import guidance", async () => {
+    await mountWith((url) =>
+      url === "/api/campaign/roster"
+        ? Promise.resolve(ok(mixedRoster()))
+        : Promise.resolve(json(404, { ok: false, error: { code: "NOT_FOUND", message: "nope" } })),
+    );
+    const li = root.querySelector(
+      `li[data-character-id="${D_UNREADABLE}"][data-degraded]`,
+    );
+    expect(li).not.toBeNull();
+    expect(li?.getAttribute("data-recovery-class")).toBe("unreadable");
+    expect(li?.textContent).toContain("Unreadable character");
+    expect(li?.textContent).toContain("re-import");
+    const buttons = Array.from(li!.querySelectorAll("button"));
+    expect(buttons.some((b) => b.textContent === "Repair")).toBe(false);
+    expect(buttons.some((b) => b.textContent === "Delete")).toBe(true);
+  });
+  it("flips a repairable row to needs-input while its repair awaits values, and back after Cancel", async () => {
+    await mountWith((url) => {
+      if (url === "/api/campaign/roster") return Promise.resolve(ok(mixedRoster()));
+      if (url === `/api/characters/${D_REPAIRABLE}/repair-preview`) {
+        return Promise.resolve(repairNeedsInput409());
+      }
+      return Promise.resolve(json(404, { ok: false, error: { code: "NOT_FOUND", message: "nope" } }));
+    });
+    const li = root.querySelector(
+      `li[data-character-id="${D_REPAIRABLE}"][data-degraded]`,
+    )!;
+    expect(li.getAttribute("data-recovery-class")).toBe("repairable");
+
+    clickByText(root.querySelector(".character-list"), "Repair");
+    await vi.waitFor(() =>
+      expect(li.getAttribute("data-recovery-class")).toBe("needs-input"),
+    );
+    expect(li.textContent).toContain("values");
+
+    clickByText(li.querySelector(".norm-preview"), "Cancel");
+    await vi.waitFor(() =>
+      expect(li.getAttribute("data-recovery-class")).toBe("repairable"),
+    );
+  });
+
+  it("keeps no per-row Import anchors; every readable row is link-only", async () => {
+    await mountWith((url) =>
+      url === "/api/campaign/roster"
+        ? Promise.resolve(ok(mixedRoster()))
+        : Promise.resolve(json(404, { ok: false, error: { code: "NOT_FOUND", message: "nope" } })),
+    );
+    expect(root.querySelector("a.roster-import")).toBeNull();
+  });
+
+  it("offers roster-level Import panels per kind that decide create vs replace", async () => {
+    await mountWith((url) =>
+      url === "/api/campaign/roster"
+        ? Promise.resolve(ok(mixedRoster()))
+        : Promise.resolve(json(404, { ok: false, error: { code: "NOT_FOUND", message: "nope" } })),
+    );
+    const charPanel = root.querySelector<HTMLDetailsElement>(
+      ".roster-characters details.roster-import-panel",
+    );
+    const crewPanel = root.querySelector<HTMLDetailsElement>(
+      ".roster-crews details.roster-import-panel",
+    );
+    expect(charPanel).not.toBeNull();
+    expect(crewPanel).not.toBeNull();
+    expect(charPanel?.textContent).toContain("Import characters");
+    expect(crewPanel?.textContent).toContain("Import crews");
+    // Create leg: flows out to the existing creation routes.
+    expect(charPanel?.querySelector('a[href="/character/create"]')).not.toBeNull();
+    expect(crewPanel?.querySelector('a[href="/crew/create"]')).not.toBeNull();
+
+    charPanel!.open = true;
+    charPanel!.dispatchEvent(new Event("toggle"));
+    const options = Array.from(
+      charPanel!.querySelectorAll<HTMLSelectElement>("select.import-target option"),
+    ).map((o) => ({ value: o.value, label: o.textContent ?? "" }));
+    // Placeholder + every existing entry (readable AND degraded) is offered.
+    expect(options.some((o) => o.value === "")).toBe(true);
+    expect(options.find((o) => o.value === R_ID)?.label).toContain("Brenda Hilton");
+    expect(options.find((o) => o.value === D_REPAIRABLE)?.value).toBe(D_REPAIRABLE);
+    expect(options.find((o) => o.value === D_UNREADABLE)?.label).toContain("Unreadable");
+  });
+
+  it("replace target = readable row: inline importer previews and applies with If-Match = revision", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    await mountWith((url, init) => {
+      calls.push({ url, init });
+      if (url === "/api/campaign/roster") return Promise.resolve(ok(mixedRoster()));
+      if (url === `/api/characters/${R_ID}/import?preview=1`) {
+        return Promise.resolve(canonicalPreview200("tok-p"));
+      }
+      if (url === `/api/characters/${R_ID}/import`) {
+        return Promise.resolve(applyOk(R_ID));
+      }
+      return Promise.resolve(json(404, { ok: false, error: { code: "NOT_FOUND", message: "nope" } }));
+    });
+
+    const select = openCharImport();
+    select.value = R_ID;
+    select.dispatchEvent(new Event("change"));
+    clickByText(root.querySelector(".roster-characters"), "Open import");
+
+    const textarea = await vi.waitFor(() => {
+      const t = root.querySelector<HTMLTextAreaElement>("#import-doc");
+      expect(t).not.toBeNull();
+      return t!;
+    });
+    textarea.value = '{"dossier":{"name":"Sable Verity"}}';
+    root.querySelector<HTMLButtonElement>("#import-preview-btn")!.click();
+
+    await vi.waitFor(() => {
+      expect(calls.some((c) => c.url === `/api/characters/${R_ID}/import?preview=1`)).toBe(true);
+      // The preview panel renders after the fiber resolves; wait for the
+      // control, not just the request.
+      const confirm = Array.from(root.querySelectorAll("button")).find(
+        (b) => b.textContent?.trim() === "Confirm import",
+      );
+      expect(confirm).toBeTruthy();
+    });
+    clickByText(root.querySelector(".import-preview"), "Confirm import");
+    await vi.waitFor(() => {
+      const applyCall = calls.find((c) => c.url === `/api/characters/${R_ID}/import`);
+      expect(applyCall).toBeTruthy();
+      expect((applyCall!.init?.headers as Record<string, string>)["If-Match"]).toBe("12");
+    });
+  });
+
+  it("replace target = degraded row: the confirming apply sends the sha256 deleteToken as If-Match", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    await mountWith((url, init) => {
+      calls.push({ url, init });
+      if (url === "/api/campaign/roster") return Promise.resolve(ok(mixedRoster()));
+      if (url === `/api/characters/${D_UNREADABLE}/import?preview=1`) {
+        return Promise.resolve(canonicalPreview200("tok-d"));
+      }
+      if (url === `/api/characters/${D_UNREADABLE}/import`) {
+        return Promise.resolve(applyOk(D_UNREADABLE));
+      }
+      return Promise.resolve(json(404, { ok: false, error: { code: "NOT_FOUND", message: "nope" } }));
+    });
+
+    const select = openCharImport();
+    select.value = D_UNREADABLE;
+    select.dispatchEvent(new Event("change"));
+    clickByText(root.querySelector(".roster-characters"), "Open import");
+
+    const textarea = await vi.waitFor(() => {
+      const t = root.querySelector<HTMLTextAreaElement>("#import-doc");
+      expect(t).not.toBeNull();
+      return t!;
+    });
+    textarea.value = "{}";
+    root.querySelector<HTMLButtonElement>("#import-preview-btn")!.click();
+    await vi.waitFor(() => {
+      expect(calls.some((c) => c.url === `/api/characters/${D_UNREADABLE}/import?preview=1`)).toBe(true);
+      const confirm = Array.from(root.querySelectorAll("button")).find(
+        (b) => b.textContent?.trim() === "Confirm import",
+      );
+      expect(confirm).toBeTruthy();
+    });
+    clickByText(root.querySelector(".import-preview"), "Confirm import");
+    await vi.waitFor(() => {
+      const applyCall = calls.find(
+        (c) => c.url === `/api/characters/${D_UNREADABLE}/import`,
+      );
+      expect(applyCall).toBeTruthy();
+      expect((applyCall!.init?.headers as Record<string, string>)["If-Match"]).toBe(
+        `sha256:${"ab".repeat(32)}`,
+      );
+    });
+  });
+});
+

@@ -119,8 +119,15 @@ interface RenderState {
   isTurfLoading: boolean;
   isNoteLoading: boolean;
   isDevelopLoading: boolean;
+  /** CREW-04: session-local advancement-edit mode — ability-remove /
+   * upgrade-unmark controls only exist while it's on. Component state only,
+   * never persisted server-side. */
+  advancementEdit: boolean;
   editingProfile: ProfileEditingState | null;
   editingCohortId: string | null;
+  /** CREW-02: removal (relinquish) lives behind this explicit session-local
+   *  toggle; acquisition stays available in normal mode. */
+  claimsEditMode: boolean;
   errorMsg: string | null;
   noticeMsg: string | null;
   undoNotice: string | null;
@@ -167,6 +174,8 @@ interface RenderState {
     onXpDelta: (delta: number) => void;
     onXpTrack: (next: number) => void;
     onXpClear: () => void;
+    onClaimsEditToggle: () => void;
+    onAdvancementEditToggle: () => void;
     onClaimToggle: (claimId: string, claimed: boolean) => void;
     onClaimCustomize: (claimId: string) => void;
     onClaimReset: (claimId: string) => void;
@@ -1030,6 +1039,15 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   const playbookSection = (() => {
     const { anyLoading } = state;
 
+    // CREW-02/CREW-04 shared pattern (CONTRACT-03): session-local edit-mode
+    // toggle that reveals removal/decrement controls only while it is on.
+    const advancementToggleBtn = el("button", {
+      className: "advancement-toggle",
+      "aria-pressed": state.advancementEdit ? "true" : "false",
+      disabled: anyLoading,
+    }, state.advancementEdit ? "Done editing" : "Edit advancements");
+    advancementToggleBtn.addEventListener("click", () => handlers.onAdvancementEditToggle());
+
     // Game-data sources: per-crew-type endpoint preferred, CrewTypes list
     // fallback (both fetched in parallel on load; see mountCrewDetailPage).
     const specialAbilities = extractCrewAbilities(
@@ -1090,11 +1108,14 @@ function renderCrewDetail(state: RenderState): HTMLElement {
         el("p", { className: "serif", style: "flex: 1; margin: 0; font-size: 0.95em;" },
           abilityDescription(a.name),
         ),
-        el("button", {
-          type: "button",
-          disabled: anyLoading,
-          title: `Remove ability: ${a.name}`,
-        }, "✕"),
+        // CREW-04: removal only exists in advancement-edit mode.
+        state.advancementEdit
+          ? el("button", {
+              type: "button",
+              disabled: anyLoading,
+              title: `Remove ability: ${a.name}`,
+            }, "✕")
+          : null,
       ),
     );
     abilityEntries.forEach((entry, idx) => {
@@ -1106,8 +1127,6 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       }
     });
 
-    // Take menu: native <select> from game data + <details>/<summary>
-    // description (mirrors F2p's character section).
     const abilitySelect = el("select", {
       "aria-label": "Take ability",
       disabled: anyLoading || eligible.length === 0,
@@ -1115,16 +1134,17 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       el("option", { value: "" }, "Ability"),
       ...eligible.map((sa) => el("option", { value: String(sa.Name) }, String(sa.Name))),
     ) as HTMLSelectElement;
-
-    const abilityDetails = el("details", { className: "ability-description" },
-      el("summary", {}, ""),
-      el("p", {}, ""),
-    );
-    const detailsSummary = abilityDetails.querySelector("summary") as HTMLElement;
-    const detailsBody = abilityDetails.querySelector("p") as HTMLElement;
+    // CREW-04 (UX-010): native <select> picker; its description block lives
+    // BELOW this row (see abilityDetails below).
+    // CREW-04 (UX-010): the selected ability's description renders as a
+    // full-width block BELOW the picker row — not inside the picker flex row,
+    // and without repeating the name the select already shows.
+    const abilityDetails = el("p", {
+      className: "ability-description",
+      style: "width: 100%; margin: 0.25em 0 0; font-size: 0.95em;",
+    });
     const showAbilityDescription = (name: string) => {
-      detailsSummary.textContent = name || "—";
-      detailsBody.textContent = abilityDescription(name) || "No description available.";
+      abilityDetails.textContent = abilityDescription(name);
       abilityDetails.hidden = name === "";
     };
     abilitySelect.addEventListener("change", () => showAbilityDescription(abilitySelect.value));
@@ -1157,12 +1177,17 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       const game = findUpgrade(u.name);
       const total = totalFor(u.name);
       const atMax = u.boxesMarked >= total;
-      const unmarkBtn = el("button", {
-        type: "button",
-        disabled: anyLoading || u.boxesMarked <= 0,
-        title: `Unmark upgrade: ${u.name}`,
-      }, "−");
-      unmarkBtn.addEventListener("click", () => handlers.onUpgradeUnmark(u.name));
+      // CREW-04: unmarking a box only exists in advancement-edit mode.
+      const unmarkBtn = state.advancementEdit
+        ? el("button", {
+            type: "button",
+            disabled: anyLoading || u.boxesMarked <= 0,
+            title: `Unmark upgrade: ${u.name}`,
+          }, "−")
+        : null;
+      if (unmarkBtn) {
+        unmarkBtn.addEventListener("click", () => handlers.onUpgradeUnmark(u.name));
+      }
       const markBtn = el("button", {
         type: "button",
         disabled: anyLoading || atMax,
@@ -1235,11 +1260,12 @@ function renderCrewDetail(state: RenderState): HTMLElement {
               marked: u.boxesMarked,
             })),
         ];
-
     const chartRowsEl = chartRows.map((row) => {
       const boxes = [];
       for (let i = 1; i <= row.total; i++) {
         const filled = i <= row.marked;
+        // CREW-04: a filled chart box is an unmark in disguise — inert until
+        // advancement-edit mode is on.
         const box = el("button", {
           type: "button",
           className: "chart-box",
@@ -1247,8 +1273,10 @@ function renderCrewDetail(state: RenderState): HTMLElement {
           "data-index": String(i),
           "aria-label": `${row.name} box ${i}`,
           "aria-pressed": filled ? "true" : "false",
-          disabled: anyLoading,
-          title: filled ? `Unmark ${row.name}` : `Mark ${row.name}`,
+          disabled: anyLoading || (filled && !state.advancementEdit),
+          title: filled
+            ? (state.advancementEdit ? `Unmark ${row.name}` : `${row.name} box ${i}`)
+            : `Mark ${row.name}`,
         });
         box.addEventListener("click", () => handlers.onChartBox(row.name, i));
         boxes.push(box);
@@ -1265,16 +1293,21 @@ function renderCrewDetail(state: RenderState): HTMLElement {
     });
 
     return el("div", { className: "crew-playbook", "data-section": "playbook" },
-      el("h2", {}, "Playbook"),
+      el("div", { style: "display: flex; gap: 0.75em; align-items: baseline; flex-wrap: wrap;" },
+        el("h2", {}, "Playbook"),
+        // CREW-02/CREW-04 pattern (CONTRACT-03): session-local edit-mode
+        // toggle; removal/decrement controls exist only while it's on.
+        advancementToggleBtn,
+      ),
       el("h3", { className: "lbl", style: "margin-top: 0.5em;" }, "Special Abilities"),
       c.specialAbilities.length === 0
         ? el("p", {}, "(none)")
         : el("div", { style: "display: flex; flex-direction: column;" }, ...abilityEntries),
-      el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
+      el("div", { className: "ability-picker-row", style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
         abilitySelect,
         takeBtn,
-        abilityDetails,
       ),
+      abilityDetails,
       el("div", { className: "crew-upgrades" },
         el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Upgrades"),
         c.upgrades.length === 0
@@ -1503,6 +1536,10 @@ function renderCrewDetail(state: RenderState): HTMLElement {
   // cohortType $defs). Optional fields are sent only when filled.
   const cohortKindSelect = el("select", {
     "aria-label": "Cohort kind",
+    // CREW-05: cohortKind is the only field openapi requires on cohort.add;
+    // mark it, and gate Add only on contract requirements (never on invented
+    // ones — the backend is authoritative).
+    "aria-required": "true",
     disabled: state.anyLoading,
   }) as HTMLSelectElement;
   for (const value of CohortType.literals) {
@@ -1610,7 +1647,21 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       : el("div", { className: "cohort-list" }, ...cohortEntries),
     el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Add Cohort"),
     el("div", { className: "cohort-add", style: "display: flex; flex-wrap: wrap; gap: 0.75em; align-items: flex-end;" },
-      cohortField("Kind", cohortKindSelect),
+      el(
+        "label",
+        { className: "cohort-field" },
+        el(
+          "span",
+          { className: "lbl" },
+          "Kind",
+          el("span", {
+            className: "required-marker",
+            title: "Required by the contract (cohort.add)",
+            "aria-hidden": "true",
+          }, "*"),
+        ),
+        cohortKindSelect,
+      ),
       gangTypeField,
       expertTypeField,
       expertCustomField,
@@ -1719,11 +1770,21 @@ function renderCrewDetail(state: RenderState): HTMLElement {
       for (const n of neighbors.get(id) ?? []) connected.add(n);
     }
 
-    // cell click: acquire/relinquish
-    const onToggle = (claimId: string, isClaimed: boolean) => {
-      if (state.anyLoading) return;
-      handlers.onClaimToggle(claimId, !isClaimed);
-    };
+    // CREW-02 (UX-008): every acquisition asks first — a clearly worded
+    // dialog is the primary interaction for connecting a claim node;
+    // disconnecting one (relinquish) additionally requires the explicit
+    // claim-edit mode. Out-of-sequence acquisition remains permitted via its
+    // dedicated warning (contract allows acquiring past missing links).
+    const acquireMessage = (name: string, benefit: string, isConnected: boolean): string =>
+      isConnected
+        ? `Acquire the claim "${name}"${benefit ? ` — ${benefit}` : ""}?`
+        : `WARNING — out-of-sequence acquisition. "${name}" is NOT connected to your controlled network ` +
+          `(the Lair or any acquired claim), and crews usually expand claim by claim.\n\n` +
+          `Acquire "${name}" anyway?`;
+
+    const relinquishMessage = (name: string): string =>
+      `Relinquish "${name}"? This removes the claim from your crew and its benefit stops applying. ` +
+      `If it was linking further territory, that ground may become unreachable. You can re-acquire it later.`;
     const onCustomize = (claimId: string) => {
       if (state.anyLoading) return;
       handlers.onClaimCustomize(claimId);
@@ -1751,18 +1812,38 @@ function renderCrewDetail(state: RenderState): HTMLElement {
           el("span", {}, "Always controlled"),
         );
       }
+      // Normal mode keeps acquisition front and center; an owned cell is
+      // inert until claim-edit mode reveals removal.
+      const removalLocked = isClaimed && !state.claimsEditMode;
       const btn = el("button", {
         className: classes.join(" "),
         style: cellStyle(node),
         "aria-pressed": isClaimed ? "true" : "false",
-        disabled: state.anyLoading,
-        title: isClaimed ? "Relinquish claim" : "Acquire claim",
+        disabled: state.anyLoading || removalLocked,
+        title: removalLocked
+          ? 'Enable "Edit claims" to relinquish'
+          : isClaimed
+            ? "Relinquish claim"
+            : isConnected
+              ? "Acquire claim"
+              : "Acquire claim — not connected to your network",
       },
         el("strong", {}, name),
         description ? el("span", {}, description) : null,
+        // CREW-02 #2: the disconnection warning is visible before clicking,
+        // not only in the confirmation dialog.
+        !isConnected ? el("span", { className: "claim-not-connected lbl" }, "not connected") : null,
         customized ? el("em", { className: "claim-custom-badge" }, "custom") : null,
       );
-      btn.addEventListener("click", () => onToggle(node.id, isClaimed));
+      btn.addEventListener("click", () => {
+        if (state.anyLoading) return;
+        if (isClaimed) {
+          if (!state.claimsEditMode) return;
+          if (window.confirm(relinquishMessage(name))) handlers.onClaimToggle(node.id, false);
+        } else {
+          if (window.confirm(acquireMessage(name, description, isConnected))) handlers.onClaimToggle(node.id, true);
+        }
+      });
       return btn;
     });
 
@@ -1789,12 +1870,24 @@ function renderCrewDetail(state: RenderState): HTMLElement {
 
     const activeList = effective.filter((e) => controlled.has(e.node.id) && e.node.kind !== "lair");
 
+    // CREW-02: session-local claim-edit mode; removal exists only while on.
+    const editToggleBtn = el("button", {
+      className: "claims-edit-toggle",
+      "aria-pressed": state.claimsEditMode ? "true" : "false",
+      disabled: state.anyLoading,
+      title: state.claimsEditMode
+        ? "Leave claim-edit mode"
+        : "Enter claim-edit mode to relinquish acquired claims",
+    }, state.claimsEditMode ? "Done editing" : "Edit claims");
+    editToggleBtn.addEventListener("click", () => handlers.onClaimsEditToggle());
+
     return el(
       "section",
       { className: "crew-claims", "data-section": "claims" },
       el("h2", {}, "Claims"),
+      editToggleBtn,
       el("p", { className: "rules-note", style: "margin-top: 0.35em;" },
-        "Acquired claims are marked. Connected claims are highlighted; out-of-sequence acquisition remains allowed. The Lair is always controlled.",
+        "Click a claim to acquire it — every acquisition asks first, and a claim not connected to your network warns before joining. Relinquishing an acquired claim lives inside Edit claims.",
       ),
       el("div", { className: "claims-map", style: "position: relative;" },
         el("div", {
@@ -1818,6 +1911,15 @@ function renderCrewDetail(state: RenderState): HTMLElement {
                 const resetBtn = el("button", { disabled: state.anyLoading }, "Reset to default");
                 resetBtn.addEventListener("click", () => onReset(e.node.id));
                 li.appendChild(resetBtn);
+              }
+              // CREW-02: removal only inside claim-edit mode, with its own
+              // strong confirmation.
+              if (state.claimsEditMode) {
+                const relBtn = el("button", { disabled: state.anyLoading }, "Relinquish");
+                relBtn.addEventListener("click", () => {
+                  if (window.confirm(relinquishMessage(e.name))) handlers.onClaimToggle(e.node.id, false);
+                });
+                li.appendChild(relBtn);
               }
               return li;
             })),
@@ -2008,6 +2110,12 @@ export function mountCrewDetailPage(
   let crewCaps: CrewCapabilities | null = null;
   let editingProfile: ProfileEditingState | null = null;
   let editingCohortId: string | null = null;
+  // CREW-04: advancement-edit mode gates ability removal / upgrade unmarking;
+  // session-local like claimsEditMode, starts off on every fresh mount.
+  let advancementEditMode = false;
+  // CREW-02: claim-edit mode gates relinquish; session-local, resets on reload
+  // (a fresh mount intentionally starts in the safe normal mode).
+  let claimsEditMode = false;
   let errorMsg: string | null = null;
   let noticeMsg: string | null = null;
   let undoNotice: string | null = null;
@@ -2019,17 +2127,18 @@ export function mountCrewDetailPage(
     undoNotice = null;
     refreshNotice = null;
   };
-
-  /** Re-fetch the crew capability projection after a mutation so the
-   * capability-driven controls never keep stale limits (SC-F3). Advisory and
-   * best-effort: keep the last good projection on failure. */
+  /** CREW-04 fix (surfaced by the browser journey): rapid mutations each
+   * trigger a capability refresh; a slow in-flight GET must never overwrite a
+   * newer projection — the last ISSUED refresh wins, not the last delivered. */
+  let capsRefreshSeq = 0;
   const refreshCaps = () => {
     if (cancelled || !currentCrew) return;
+    const seq = ++capsRefreshSeq;
     void Effect.runPromise(
       Effect.match(getCrewCapabilities(crewId), {
         onFailure: () => undefined,
         onSuccess: (caps) => {
-          if (cancelled) return;
+          if (cancelled || seq !== capsRefreshSeq) return;
           crewCaps = caps;
           renderDetail();
         },
@@ -2177,6 +2286,8 @@ export function mountCrewDetailPage(
       crewGameData,
       crewCaps,
       editingProfile,
+      claimsEditMode,
+      advancementEdit: advancementEditMode,
       editingCohortId,
       errorMsg,
       noticeMsg,
@@ -2610,6 +2721,15 @@ export function mountCrewDetailPage(
       runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimReset(crewId, claimId, currentCrew.revision));
     },
 
+    onClaimsEditToggle: () => {
+      claimsEditMode = !claimsEditMode;
+      renderDetail();
+    },
+
+    onAdvancementEditToggle: () => {
+      advancementEditMode = !advancementEditMode;
+      renderDetail();
+    },
     // Chart boxes are sugar over the same +1/−1 ops (no set-to-N op exists):
     // clicking an empty box marks one box, clicking a filled box unmarks one.
     onChartBox: (name: string, index: number) => {

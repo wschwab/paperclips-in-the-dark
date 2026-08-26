@@ -1,0 +1,48 @@
+---
+title: Open Contract Issue — Cohort Quality/Scale bounds are not published
+---
+
+# Open contract issue: cohort Quality/Scale bounds are not published
+
+Raised by **CREW-05** (finding UX-011), 2026-08-27. Status: **open** — no
+source change can close it without a contract change.
+
+## The gap
+
+The crew-sheet cohort add form needs to constrain Quality and Scale inputs
+(min/max attributes, readiness feedback) from published data, per the
+governing rule that the client never hardcodes domain maxima ("all supported
+game-setting files carry the complete domain-bound set … never embed a
+game-specific maximum").
+
+No publication source exists:
+
+| Candidate source | Published? |
+| --- | --- |
+| `data/games/*.json` (game settings) | No `Cohort*` keys at all (`CohortGangTypes`/`CohortExpertTypes` are also absent; the sheet falls back to canonical task-specified lists) |
+| `data/games/*-crews.json` + `crew-settings-schema.json` | No cohort quality/scale fields (per-crew-type catalogs only) |
+| `GET /api/crews/{id}/capabilities` → `CrewCapabilities` | `additionalProperties: false`, required `[crewId, upgrades, abilities, effectiveTurf, developThreshold]` — no cohort member |
+| `contract/openapi.yaml` `cohort.add` / `cohort.update` bodies and `crew.json` `cohorts[]` | Only `minimum: 0`; **no maximum**, and nothing machine-readable the client can render |
+
+The Ada backend matches this exactly: `cohort.add` validates
+`quality`/`scale` as integers with `MnI => 0` and no upper bound.
+
+## Why this is a contract issue, not a frontend bug
+
+Hardcoding a maximum in `frontend/src/pages/crew-detail.ts` would violate the
+settings-derived-maxima invariant (Scum & Villainy or homebrew settings could
+differ). Constraining the form beyond what the backend enforces would diverge
+client and server. So CREW-05 closed everything else (conditional kind
+fields retained live, `cohortKind` marked as the one contract-required add
+field, browser regression) and stopped here by design.
+
+## Options for resolution
+
+1. Add `CohortQualityMax`/`CohortScaleMax` to the game-settings schema + all
+   game-setting files, and to the spec's "complete domain-bound set" list.
+2. Extend `CrewCapabilities` with cohort limit members (derived projection).
+3. Decide cohorts carry no maximum by contract; then the openapi request-body
+   descriptions should say so explicitly so clients stop looking.
+
+Recommended: option 1 — it matches how every other crew/character numeric
+bound is delivered.

@@ -1014,6 +1014,10 @@
   align-self: flex-start;
   margin-top: 0.4em;
 }
+.cohort-field .required-marker {
+  color: var(--text-muted);
+  font-weight: bold;
+}
 
 /* rules explanations — body prose, not label furniture (Design Audit F-16) */
 .rules-note {

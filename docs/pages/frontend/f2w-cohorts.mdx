@@ -84,6 +84,17 @@ button → `cohortAdd`. Only filled fields are sent: the kind-relevant type,
 parsed quality/scale when non-empty, `hasArmor` (always, explicit
 true/false), edges/flaws when non-empty, description when non-empty.
 
+CREW-05 (2026-08-27): the add form marks `cohortKind` — the only field
+openapi requires on `cohort.add` (`required: [cohortKind]`) — with
+`aria-required` and a visible marker, and Add is gated **only** on
+contract requirements: a blank gang/expert type is contract-legal (the
+backend stores canonical empties), so it never disables Add. Quality/Scale
+inputs carry no min/max because no bounds are published anywhere
+capability/settings — tracked as
+[open contract issue](/contract/open-issue-cohort-bounds). The live
+conditional-field behavior is locked by
+`crew01-cohort-add.journey.mjs`.
+
 ## Error notices
 
 - `NOT_FOUND` (remove/update of an unknown cohort id) →

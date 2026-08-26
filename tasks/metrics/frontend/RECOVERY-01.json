@@ -1,0 +1,13 @@
+{
+  "task": "RECOVERY-01",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator-owned verification (unit suite + managed-Chromium conformance run); no Luna gate required — no visual-only frontend change beyond existing degraded-row styling",
+  "date": "2026-08-27",
+  "iterationsToGreen": 2,
+  "iterationNotes": "resumed an interrupted attempt in the shared wave-7 working copy (implementation + unit tests were present but the browser journey was half-applied): fixed duplicate repairableCount/unreadableCount declarations in roster-recovery.journey.mjs, restored the lost Repair-confirm click and readableLink locator lost mid-edit",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 1, "review": 0, "human": 0 },
+  "notes": "23/23 roster unit tests incl. 7 RECOVERY-01 cases; npm run build clean; roster-recovery journey PASS on live backend-ada with zero console errors. Known non-blocking sibling failure: crew04-advance (crew-detail.ts card owned by another crew agent) fails deterministically at 'unmark did not land: 1 -> 1' — outside this card's edit surface, reported in /tmp/w7-recovery01-report.md"
+}

@@ -13,6 +13,7 @@ import { errorCard } from "../components/error-card.js";
 import { mountDegradedControls } from "../components/degraded-row.js";
 import type { EntityKind } from "../api/import-repair.js";
 import type { Roster, CharacterSummary, CrewSummary } from "../schema/campaign.js";
+import { mountImportPage } from "./import.js";
 
 /**
  * E11 total collections: an unreadable row (bytes that cannot be parsed) is
@@ -20,38 +21,83 @@ import type { Roster, CharacterSummary, CrewSummary } from "../schema/campaign.j
  * degraded but recoverable. Both render without a detail link (direct GET
  * would 422) and get the degraded repair/delete controls instead.
  */
+type RecoveryClass = "repairable" | "needs-input" | "unreadable";
+
+const NOUN: Record<EntityKind, string> = { character: "character", crew: "crew" };
+
+/**
+ * RECOVERY-01: one line of visible, class-specific recovery copy per
+ * degraded state. Rendered into the row's existing label span so the
+ * PERF-02 DOM budget never grows with per-row explanation nodes.
+ */
+function recoveryNote(kind: EntityKind, state: RecoveryClass): string {
+  const noun = NOUN[kind];
+  switch (state) {
+    case "repairable":
+      return `Repairable ${noun} — stored data can be normalized once you preview and confirm Repair below.`;
+    case "needs-input":
+      return `Repairable ${noun} (needs input) — this repair waits for values. Fill in the fields below to continue.`;
+    case "unreadable":
+      return `Unreadable ${noun} — bytes cannot be parsed or normalized. Delete below, then use the Import ${noun}s action above to re-import.`;
+  }
+}
+
+function classifyRow(row: Pick<CharacterSummary | CrewSummary, "isRepairable">): RecoveryClass {
+  return row.isRepairable ? "repairable" : "unreadable";
+}
+
+/**
+ * Degraded rows carry a `data-recovery-class` attribute plus matching copy:
+ * repairable at rest; needs-input while its mounted controls await caller
+ * values; unreadable otherwise.
+ */
 function renderDegradedRow(
   kind: EntityKind,
   row: Pick<CharacterSummary | CrewSummary, "id" | "isRepairable" | "deleteToken">,
   onChanged: () => void,
 ): HTMLElement {
-  const label = kind === "character" ? "Unreadable character" : "Unreadable crew";
   const attr = kind === "character" ? "data-character-id" : "data-crew-id";
+  const labelEl = el("span", { className: "unnamed" });
   const controlsEl = el("div", { className: "degraded-controls-container" });
   const li = el(
     "li",
     { [attr]: row.id, "data-degraded": "", className: "degraded-row" },
-    el("span", { className: "unnamed" }, label),
+    labelEl,
     controlsEl,
   );
-  // Kind-bound opId exports (repairCharacterPreview/Apply for characters,
-  // repairCrewPreview/Apply for crews) drive the degraded-row controls so the
-  // reachable human repair path runs through the operationId-named client API.
-  const ops =
-    kind === "character"
-      ? { preview: repairCharacterPreview, apply: repairCharacterApply }
-      : { preview: repairCrewPreview, apply: repairCrewApply };
+  let state = classifyRow(row);
+  const applyState = (next: RecoveryClass) => {
+    state = next;
+    li.setAttribute("data-recovery-class", next);
+    labelEl.textContent = recoveryNote(kind, next);
+  };
+  applyState(state);
+
+  // The needs-input state emerges inside the mounted controls when a repair
+  // preview demands caller values (a .norm-inputs block) and ends when those
+  // controls are cleared. Watch the container and keep the row's visible
+  // class in step — including Cancel, stale-token failures, or re-preview.
+  new MutationObserver(() => {
+    const waitingForValues = !!controlsEl.querySelector(".norm-inputs");
+    if (state === (waitingForValues ? "needs-input" : classifyRow(row))) return;
+    applyState(waitingForValues ? "needs-input" : classifyRow(row));
+  }).observe(controlsEl, { childList: true, subtree: true });
+
   mountDegradedControls(controlsEl, {
     kind,
     id: row.id,
     isRepairable: row.isRepairable,
     deleteToken: row.deleteToken,
     onChanged,
-    ...ops,
+    preview: kind === "character" ? repairCharacterPreview : repairCrewPreview,
+    apply: kind === "character" ? repairCharacterApply : repairCrewApply,
   });
   return li;
 }
 
+// RECOVERY-01: per-row Character/Crew Import links are gone — general import
+// moved to roster-level panels (createImportPanel below); a readable row
+// carries only its detail link.
 function renderCharacter(c: CharacterSummary, onChanged: () => void): HTMLElement {
   if (!c.isReadable) {
     return renderDegradedRow("character", c, onChanged);
@@ -72,7 +118,6 @@ function renderCharacter(c: CharacterSummary, onChanged: () => void): HTMLElemen
       nameEl,
       el("span", {}, ` ${c.alias} • ${c.playbook}${status}`),
     ),
-    el("a", { href: `/character/${c.id}/import`, className: "roster-import" }, "Import"),
   );
 }
 
@@ -99,7 +144,6 @@ function renderCrew(cr: CrewSummary, onChanged: () => void): HTMLElement {
         ` ${cr.crewType} • tier ${cr.tier} • heat ${cr.heat} • ${cr.memberCount} members`,
       ),
     ),
-    el("a", { href: `/crew/${cr.id}/import`, className: "roster-import" }, "Import"),
   );
 }
 
@@ -125,6 +169,101 @@ function characterHaystack(c: CharacterSummary): string {
 
 function crewHaystack(cr: CrewSummary): string {
   return `${cr.name} ${cr.crewType}`.toLowerCase();
+}
+
+
+/** Friendly headline for a readable summary row (mirrors the F-12/FV-018 fallbacks). */
+function summaryHeadline(row: CharacterSummary | CrewSummary): string {
+  if ("crewType" in row) {
+    return row.name || `Unnamed ${row.crewType}`;
+  }
+  return row.name || row.alias || `Unnamed ${row.playbook}`;
+}
+
+/**
+ * RECOVERY-01 roster-level general import: one disclosure panel per entity
+ * kind. The flow — not an ordinary row — decides create vs replace: create
+ * links to the existing creation route; replace mounts the shared import
+ * page inline against a picked summary (readable rows key the confirming
+ * apply by revision, degraded rows by their sha256 content token, so even an
+ * unreadable row is re-importable without deleting it first). Options are
+ * rebuilt when the disclosure opens, keeping closed-panel rendering inside
+ * the PERF-02 DOM budget regardless of row count.
+ */
+function createImportPanel(
+  kind: EntityKind,
+  rows: readonly (CharacterSummary | CrewSummary)[],
+  flowContainer: HTMLElement,
+): HTMLDetailsElement {
+  const noun = NOUN[kind];
+  const select = el("select", {
+    className: "import-target",
+    "aria-label": `Choose an existing ${noun} entry to replace`,
+  }) as HTMLSelectElement;
+  const openBtn = el(
+    "button",
+    { type: "button", className: "btn-secondary import-open" },
+    "Open import",
+  ) as HTMLButtonElement;
+  // Disabled until a replace target is chosen.
+  openBtn.disabled = true;
+
+  select.addEventListener("change", () => {
+    openBtn.disabled = select.value === "";
+  });
+
+  openBtn.addEventListener("click", () => {
+    if (openBtn.disabled) return;
+    const target = rows.find((r) => r.id === select.value);
+    if (!target) return;
+    setChildren(flowContainer);
+    // Contract: the confirming apply keys by entity revision for readable
+    // targets and by the sha256 raw-byte content token for degraded ones.
+    mountImportPage(
+      flowContainer,
+      kind,
+      target.id,
+      target.isReadable ? String(target.revision) : target.deleteToken,
+    );
+  });
+
+  const panel = el(
+    "details",
+    { className: "roster-import-panel" },
+    el("summary", {}, `Import ${noun}s…`),
+    el(
+      "p",
+      { className: "roster-import-hint" },
+      `Pick where this document goes — the flow previews it and confirms before writing.`,
+      el("br"),
+      el("a", { href: kind === "character" ? "/character/create" : "/crew/create" }, `Create a new ${noun}…`),
+      " — or replace an existing entry:",
+    ),
+    select,
+    el("div", { className: "form-actions" }, openBtn),
+    flowContainer,
+  ) as HTMLDetailsElement;
+
+  panel.addEventListener("toggle", () => {
+    if (panel.open) {
+      setChildren(
+        select,
+        el("option", { value: "" }, `Replace an existing ${noun}…`),
+        ...rows.map((row) =>
+          el(
+            "option",
+            { value: row.id },
+            row.isReadable
+              ? `${summaryHeadline(row)} — replace (If-Match: revision ${row.revision})`
+              : `Unreadable entry (${row.id}) — re-import via its content token`,
+          ),
+        ),
+      );
+      openBtn.disabled = select.value === "";
+    }
+  });
+
+  return panel;
 }
 
 /**
@@ -317,6 +456,11 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
   );
   const totalChars = roster.characters.length;
   const totalCrews = roster.crews.length;
+  // RECOVERY-01: per-kind general-import panels; flow containers live inside
+  // the panels so a re-fetch (onChanged) tears the inline importer away with
+  // the rest of the page.
+  const charImportFlow = el("div", { className: "plate-import-flow" });
+  const crewImportFlow = el("div", { className: "plate-import-flow" });
 
   const syncStatus = () => {
     statusRegion.textContent = statusText(charPlate, crewPlate, totalChars, totalCrews, query);
@@ -350,6 +494,7 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
       "div",
       { className: "roster-characters torn-foot" },
       el("h2", {}, `Characters (${totalChars})`),
+      createImportPanel("character", roster.characters, charImportFlow),
       totalChars === 0
         ? el("p", { className: "empty uneven" }, "No characters yet.")
         : charPlate.listEl,
@@ -360,6 +505,7 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
       "div",
       { className: "roster-crews torn-foot" },
       el("h2", {}, `Crews (${totalCrews})`),
+      createImportPanel("crew", roster.crews, crewImportFlow),
       totalCrews === 0
         ? el("p", { className: "empty uneven" }, "No crews yet.")
         : crewPlate.listEl,

@@ -6331,6 +6331,10 @@ elsif Op = "harm.add" then
                   end;
                end loop;
                if Claimed and then not Found then
+                  --  CRW-02 fix (UX-008 proof path): acquiring ONE node must
+                  --  keep every previously held claim — the crew's claim set
+                  --  accumulates across ops, so start from the held list.
+                  O := A;
                   Append (O, Create (Claim_Id));
                   Set_Field (E, "claimedClaimIds", O);
                elsif not Claimed and then Found then

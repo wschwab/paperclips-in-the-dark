@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock, type MockInstance } from "vitest";
 import { mountCrewDetailPage } from "./crew-detail.js";
 import { loadStylesheets } from "./seam.js";
 
@@ -1355,10 +1355,81 @@ describe("crew-detail page", () => {
       const options = Array.from(select.options).map((o) => o.value);
       expect(options).toEqual(["", "Deadly", "Patron"]);
 
-      // <details>/<summary> shows the description of the pre-selected ability
-      const details = root.querySelector(".ability-description");
-      expect(details?.querySelector("summary")?.textContent).toBe("Deadly");
-      expect(details?.textContent).toContain("Each PC may add +1 action rating");
+      // CREW-04 (UX-010): the selected ability's description renders as a
+      // full-width block BELOW the picker row — not inside the picker flex
+      // row, and without repeating the name as a cramped summary.
+      const desc = root.querySelector(".crew-playbook .ability-description") as HTMLElement;
+      expect(desc).not.toBeNull();
+      expect(desc.tagName).toBe("P");
+      expect(desc.querySelector("summary")).toBeNull();
+      expect(desc.textContent).toContain("Each PC may add +1 action rating");
+      expect(desc.getAttribute("style")).toContain("width: 100%");
+      const pickerRow = (root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement)
+        .closest("div") as HTMLElement;
+      expect(pickerRow.contains(desc)).toBe(false);
+      expect(pickerRow.nextElementSibling).toBe(desc);
+      // Selecting another option updates the block below the picker.
+      const selectForDesc = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+      selectForDesc.value = "Patron";
+      selectForDesc.dispatchEvent(new Event("change", { bubbles: true }));
+      expect((root.querySelector(".crew-playbook .ability-description") as HTMLElement).textContent)
+        .toContain("half the coin");
+    });
+
+    it("gates ability removal / upgrade unmarking behind an advancement-edit mode (CREW-04)", async () => {
+      global.fetch = vi.fn().mockResolvedValueOnce(ok(playbookDTO())).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        text: async () => "games.crew: NOT_FOUND",
+      }).mockResolvedValueOnce(ok(CREW_TYPES_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".crew-playbook")).not.toBeNull();
+      });
+
+      // Acquisition stays available in normal mode.
+      expect((root.querySelector('button[title="Take ability"]') as HTMLButtonElement).disabled).toBe(false);
+      expect((root.querySelector('button[title="Mark selected upgrade"]') as HTMLButtonElement).disabled).toBe(false);
+
+      // Removal / decrement controls do not exist until edit mode is on.
+      const toggle = root.querySelector("button.advancement-toggle") as HTMLButtonElement;
+      expect(toggle).not.toBeNull();
+      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+      expect(root.querySelector('button[title="Remove ability: Predators"]')).toBeNull();
+      expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).toBeNull();
+
+      // A filled chart box (an unmark in disguise) is disabled in normal mode
+      // and its click never reaches the wire.
+      const secureRow = root.querySelector('.lair-chart [data-upgrade="Secure Lair"]') as HTMLElement;
+      const filledBox = secureRow.querySelector('.chart-box[data-stress="1"]') as HTMLButtonElement;
+      const emptyBox = secureRow.querySelector('.chart-box[data-stress="0"]') as HTMLButtonElement;
+      expect(filledBox.disabled).toBe(true);
+      expect(emptyBox.disabled).toBe(false);
+      filledBox.click();
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        expect.stringContaining("/ops/upgrade"),
+        expect.anything(),
+      );
+
+      // Toggling edit mode on reveals every removal/decrement control...
+      toggle.click();
+      await vi.waitFor(() => {
+        expect((root.querySelector("button.advancement-toggle") as HTMLButtonElement).getAttribute("aria-pressed")).toBe("true");
+      });
+      expect(root.querySelector('button[title="Remove ability: Predators"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).not.toBeNull();
+      expect(
+        (root.querySelector('.lair-chart [data-upgrade="Secure Lair"] .chart-box[data-stress="1"]') as HTMLButtonElement).disabled,
+      ).toBe(false);
+
+      // ...and toggling off hides them again.
+      (root.querySelector("button.advancement-toggle") as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove ability: Predators"]')).toBeNull();
+      });
+      expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).toBeNull();
     });
 
     it("take posts crewAbilityTake with the selected ability and renders the new entry", async () => {
@@ -1412,15 +1483,19 @@ describe("crew-detail page", () => {
 
       mountCrewDetailPage(root, CREW_ID);
 
+      // CREW-04: removal requires the explicit advancement-edit mode
+      // (session-local toggle); the control doesn't exist in normal mode.
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Remove ability: Predators"]')).toBeNull();
+        expect(root.querySelector("button.advancement-toggle")).not.toBeNull();
+      });
+      (root.querySelector("button.advancement-toggle") as HTMLButtonElement).click();
+
       await vi.waitFor(() => {
         expect(root.querySelector('button[title="Remove ability: Predators"]')).not.toBeNull();
       });
 
       (root.querySelector('button[title="Remove ability: Predators"]') as HTMLButtonElement).click();
-
-      await vi.waitFor(() => {
-        expect(root.querySelector('button[title="Remove ability: Predators"]')).toBeNull();
-      });
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/ability.remove`,
         expect.objectContaining({ body: JSON.stringify({ name: "Predators" }) }),
@@ -1471,9 +1546,17 @@ describe("crew-detail page", () => {
       // boxesMarked from DTO, total + description from game data
       expect(entry?.textContent).toContain("1 / 2");
       expect(entry?.textContent).toContain("locks, alarms, and traps");
-      // mark button enabled (1 < 2), unmark enabled (1 > 0)
+      // CREW-04: acquisition allowed; unmark gated behind the advancement-edit
+      // toggle and enabled (1 > 0) once it's on.
       expect(root.querySelector('button[title="Mark upgrade: Secure Lair"]')).not.toBeNull();
-      expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).toBeNull();
+      (root.querySelector("button.advancement-toggle") as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        const unmarkBtn = root.querySelector('button[title="Unmark upgrade: Secure Lair"]') as HTMLButtonElement;
+        expect(unmarkBtn).not.toBeNull();
+        expect(unmarkBtn.disabled).toBe(false);
+      });
     });
 
     it("mark menu lists eligible upgrades from game data and posts upgradeMark", async () => {
@@ -1527,6 +1610,14 @@ describe("crew-detail page", () => {
         .mockResolvedValueOnce(ok(crewOpOk(unmarked, "upgrade.unmark")));
 
       mountCrewDetailPage(root, CREW_ID);
+
+      // CREW-04: unmark lives behind the advancement-edit mode; nothing to
+      // click until the toggle reveals it.
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).toBeNull();
+        expect(root.querySelector("button.advancement-toggle")).not.toBeNull();
+      });
+      (root.querySelector("button.advancement-toggle") as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
         expect(root.querySelector('button[title="Unmark upgrade: Secure Lair"]')).not.toBeNull();
@@ -1595,6 +1686,11 @@ describe("crew-detail page", () => {
       expect(secureRow?.textContent).toContain("1 / 2");
       const trainingRow = root.querySelector<HTMLElement>('.lair-chart [data-upgrade="Training"]');
       expect(trainingRow?.querySelectorAll('.chart-box[data-stress="1"]').length).toBe(0);
+
+      // CREW-04: a filled chart box (an unmark in disguise) is disabled
+      // until advancement-edit mode is on.
+      const filledChartBox = secureRow?.querySelector('.chart-box[data-stress="1"]') as HTMLButtonElement;
+      expect(filledChartBox.disabled).toBe(true);
 
       // Chart box click posts a single mark step (no set op exists)
       const emptyBox = secureRow?.querySelectorAll<HTMLButtonElement>(".chart-box")[1];
@@ -2688,6 +2784,33 @@ describe("crew-detail page", () => {
       expect(field(customInput).hidden).toBe(false);
     });
 
+    it("marks cohortKind as the one contract-required add-form field and does not over-gate Add", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(GAME_DATA));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Cohort kind"]')).not.toBeNull();
+      });
+      // CREW-05: openapi /crews/{id}/ops/cohort.add declares
+      // required: [cohortKind] and nothing else — no other add-form field is
+      // contract-required (quality/scale have only minimum: 0, never maxima).
+      const kindSelect = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement;
+      expect(kindSelect.getAttribute("aria-required")).toBe("true");
+      const kindField = kindSelect.closest(".cohort-field") as HTMLElement;
+      expect(kindField.querySelector(".required-marker")).not.toBeNull();
+
+      // The backend stores cohorts with empty types/defaults happily, so a
+      // blank gang/expert type must NOT disable Add (client-side gating may
+      // only reflect contract requirements).
+      const addBtn = root.querySelector('button[title="Add cohort"]') as HTMLButtonElement;
+      expect(addBtn.disabled).toBe(false);
+    });
+
     it("adds an expert cohort with a custom type (Custom → text input → expertType)", async () => {
       const added = crewDTO({
         revision: 6,
@@ -3184,6 +3307,9 @@ describe("FV-012 focus restoration", () => {
     await vi.waitFor(() => {
       expect(root.querySelector('button[title="Take ability"]')).not.toBeNull();
     });
+    // CREW-04: enabling advancement edits so the remove control exists and
+    // can receive focus after the take re-render.
+    (root.querySelector("button.advancement-toggle") as HTMLButtonElement).click();
     const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
     select.value = "Deadly";
     select.focus();
@@ -3325,5 +3451,186 @@ describe("CHAR-06 crew tracker affordances", () => {
     expect(firstOption("Mark upgrade")).toEqual({ text: "Upgrade", value: "" });
     expect(firstOption("Cohort gang type")).toEqual({ text: "Gang type", value: "" });
     expect(firstOption("Cohort expert type")).toEqual({ text: "Expert type", value: "" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CREW-02 — intentional claim acquisition and removal
+// ---------------------------------------------------------------------------
+
+/** Crew-type game data with a small claims graph:
+ *  lair (3,2) — north-markets (2,2) — forgery-office (1,1).
+ *  With nothing claimed, only north-markets is connected to the network. */
+const ASSASSIN_TYPE = {
+  Name: "Assassins",
+  Claims: {
+    Columns: 5,
+    Rows: 3,
+    Nodes: [
+      { Id: "lair", Name: "Lair", Description: "", Kind: "lair", Column: 3, Row: 2 },
+      { Id: "north-markets", Name: "North Markets", Description: "smuggling route", Kind: "claim", Column: 2, Row: 2 },
+      { Id: "forgery-office", Name: "Forgery Office", Description: "counterfeit papers", Kind: "claim", Column: 1, Row: 1 },
+    ],
+    Edges: [
+      { From: "lair", To: "north-markets" },
+      { From: "north-markets", To: "forgery-office" },
+    ],
+  },
+};
+
+function claimSetResult(claimedIds: string[], revision = 6) {
+  return fetchResponse({
+    ok: true,
+    crew: crewDTO({ revision, claimedClaimIds: claimedIds }),
+    applied: { op: "claim.set" },
+    sideEffects: [],
+    error: null,
+    canUndo: true,
+    historyCount: 4,
+  });
+}
+
+describe("CREW-02 claim acquisition and removal gating", () => {
+  let root: HTMLElement;
+  let confirmSpy: MockInstance;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+    confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+  });
+
+  afterEach(() => {
+    confirmSpy.mockRestore();
+  });
+
+  function mountWithClaims(crewOverrides: Record<string, unknown> = {}) {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === `/api/crews/${CREW_ID}`) return Promise.resolve(ok(crewDTO(crewOverrides)));
+      if (url === `/api/crews/${CREW_ID}/capabilities`) return Promise.resolve(ok({}));
+      if (url.endsWith("/ops/claim.set")) return Promise.resolve(claimSetResult(["north-markets"]));
+      if (url === "/api/games/blades-in-the-dark/crews") {
+        return Promise.resolve(ok({ Name: "Blades in the Dark", CrewTypes: [ASSASSIN_TYPE] }));
+      }
+      // /api/games/blades-in-the-dark/crews/Assassins and anything else
+      return Promise.resolve(ok(ASSASSIN_TYPE));
+    });
+    mountCrewDetailPage(root, CREW_ID);
+    return vi.waitFor(() => {
+      expect(root.querySelector(".claims-grid")).not.toBeNull();
+    });
+  }
+
+  const cell = (name: string) =>
+    Array.from(root.querySelectorAll<HTMLButtonElement>(".claims-grid button.claim-node")).find(
+      (b) => b.textContent?.includes(name),
+    )!;
+
+  it("renders the claims map and keeps removal behind an Edit claims toggle that starts off", async () => {
+    await mountWithClaims({ claimedClaimIds: ["north-markets"] });
+
+    expect(cell("North Markets")).toBeTruthy();
+    expect(cell("Forgery Office")).toBeTruthy();
+
+    const toggle = root.querySelector<HTMLButtonElement>(".claims-edit-toggle");
+    expect(toggle).not.toBeNull();
+    expect(toggle!.textContent).toBe("Edit claims");
+
+    // Active list has no Relinquish control outside edit mode.
+    const list = root.querySelector(".active-claim-list");
+    expect(list?.textContent).toContain("North Markets");
+    expect(list?.textContent).not.toContain("Relinquish");
+  });
+
+  it("asks confirmation before acquiring; cancel writes nothing, accept posts ops/claim.set", async () => {
+    await mountWithClaims();
+
+    const postsClaimOps = () =>
+      (global.fetch as Mock).mock.calls.filter((c: unknown[]) =>
+        String(c[0]).includes("/ops/"),
+      ).length;
+
+    // Cancel — no write.
+    cell("North Markets").click();
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy.mock.calls[0]?.[0]).toContain("North Markets");
+    expect(postsClaimOps()).toBe(0);
+
+    // Accept — acquire.
+    confirmSpy.mockReturnValueOnce(true);
+    cell("North Markets").click();
+
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/claim.set`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ claimId: "north-markets", claimed: true }),
+        }),
+      );
+    });
+  });
+
+  it("strengthens the acquisition warning for a claim disconnected from the network", async () => {
+    await mountWithClaims();
+
+    cell("Forgery Office").click();
+
+    const msg = confirmSpy.mock.calls[0]?.[0] ?? "";
+    expect(msg).toContain("Forgery Office");
+    expect(msg.toLowerCase()).toContain("not connected");
+    // The same message must still offer the acquisition itself.
+    expect(msg.toLowerCase()).toContain("acquire");
+
+    // And the warning is visible on the cell before clicking.
+    expect(cell("Forgery Office").textContent.toLowerCase()).toContain("not connected");
+    expect(cell("North Markets").textContent.toLowerCase()).not.toContain("not connected");
+  });
+
+  it("keeps owned cells inert outside edit mode with an explanatory hint", async () => {
+    await mountWithClaims({ claimedClaimIds: ["north-markets"] });
+
+    const owned = cell("North Markets");
+    expect(owned.disabled).toBe(true);
+    expect(owned.getAttribute("title")).toMatch(/Edit claims/i);
+
+    owned.click();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect((global.fetch as Mock).mock.calls.some((c: unknown[]) => String(c[0]).includes("/ops/"))).toBe(false);
+  });
+
+  it("in edit mode, relinquishing confirms with strong wording then posts claimed:false", async () => {
+    await mountWithClaims({ claimedClaimIds: ["north-markets"] });
+
+    root.querySelector<HTMLButtonElement>(".claims-edit-toggle")!.click();
+    const toggle = root.querySelector<HTMLButtonElement>(".claims-edit-toggle")!;
+    expect(toggle.textContent).toBe("Done editing");
+
+    // Active list exposes Relinquish only inside edit mode.
+    const relBtn = Array.from(root.querySelectorAll(".active-claim-list button")).find(
+      (b) => b.textContent === "Relinquish",
+    ) as HTMLButtonElement;
+    expect(relBtn).toBeTruthy();
+
+    // Cancel first.
+    relBtn.click();
+    const ownedMsg = confirmSpy.mock.calls.at(-1)?.[0] ?? "";
+    expect(ownedMsg).toContain("North Markets");
+    expect(ownedMsg.toLowerCase()).toContain("relinquish");
+    expect(ownedMsg.toLowerCase()).toContain("remove");
+    expect((global.fetch as Mock).mock.calls.some((c: unknown[]) => String(c[0]).includes("/ops/"))).toBe(false);
+
+    // Accept via the active-list path.
+    confirmSpy.mockReturnValueOnce(true);
+    relBtn.click();
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        `/api/crews/${CREW_ID}/ops/claim.set`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ claimId: "north-markets", claimed: false }),
+        }),
+      );
+    });
   });
 });
