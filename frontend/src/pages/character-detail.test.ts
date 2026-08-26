@@ -808,7 +808,7 @@ describe("character-detail page", () => {
       );
 
       await vi.waitFor(() => {
-        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const calls = (global.fetch as Mock).mock.calls;
         const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
         expect(updateCall).toBeTruthy();
         expect(updateCall![1].body).toBe(JSON.stringify({ name: "Renamed" }));
@@ -922,7 +922,7 @@ describe("character-detail page", () => {
       (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const calls = (global.fetch as Mock).mock.calls;
         const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
         expect(updateCall).toBeTruthy();
         expect(updateCall![1].body).toBe(JSON.stringify({
@@ -976,7 +976,7 @@ describe("character-detail page", () => {
       (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const calls = (global.fetch as Mock).mock.calls;
         const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
         expect(updateCall).toBeTruthy();
         expect(updateCall![1].body).toBe(JSON.stringify({ heritage: { name: "My Homeland", description: "" } }));
@@ -1021,7 +1021,7 @@ describe("character-detail page", () => {
       (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const calls = (global.fetch as Mock).mock.calls;
         const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
         expect(updateCall).toBeTruthy();
         expect(updateCall![1].body).toBe(JSON.stringify({
@@ -1143,7 +1143,7 @@ describe("character-detail page", () => {
       (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const calls = (global.fetch as Mock).mock.calls;
         const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
         expect(updateCall).toBeTruthy();
         expect(updateCall![1].body).toBe(JSON.stringify({
@@ -1213,7 +1213,7 @@ describe("character-detail page", () => {
       (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const calls = (global.fetch as Mock).mock.calls;
         const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
         expect(updateCall).toBeTruthy();
         expect(updateCall![1].body).toBe(JSON.stringify({
@@ -1603,7 +1603,7 @@ describe("character-detail page", () => {
       // Out-of-action explained (not the picker's copy, which is now gone).
       expect(root.textContent).toContain("out of action for the remainder");
 
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const traumaCall = calls.find((c) => String(c[0]).endsWith("/ops/trauma.add"));
       expect(traumaCall).toBeTruthy();
       expect(traumaCall![1].body).toBe(JSON.stringify({ trauma: "Cold" }));
@@ -1694,7 +1694,7 @@ describe("character-detail page", () => {
       (root.querySelector('button[title="Heal harm (requires full clock)"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+        const calls = (global.fetch as Mock).mock.calls;
         const healCall = calls.find((c) => String(c[0]).endsWith("/ops/harm.heal"));
         expect(healCall).toBeTruthy();
         expect(healCall![1].body).toBe(JSON.stringify({ intensity: "moderate", description: "Stabbed" }));
@@ -2260,7 +2260,7 @@ describe("character-detail page", () => {
       await vi.waitFor(() => {
         expect(root.textContent).toContain("0 / 9");
       });
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const clearCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.clear"));
       expect(clearCall).toBeTruthy();
       expect(clearCall![1].body).toBe(JSON.stringify({ amount: 3 }));
@@ -2306,7 +2306,7 @@ describe("character-detail page", () => {
       await vi.waitFor(() => {
         expect(root.textContent).toContain("0 / 9");
       });
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const clearCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.clear"));
       expect(clearCall).toBeTruthy();
       // "1.5" must NOT be truncated to 1 — the whole marked stress (3) clears.
@@ -4170,7 +4170,7 @@ describe("F2ab Notes", () => {
     (root.querySelector('button[title="Add note"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const addCall = calls.find((c) => String(c[0]).endsWith("/ops/note.add"));
       expect(addCall).toBeTruthy();
       expect(addCall![1].body).toBe(JSON.stringify({ text: "Watch the Lamplighters" }));
@@ -4218,7 +4218,7 @@ describe("F2ab Notes", () => {
     (root.querySelector('button[title="Remove note 1"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const removeCall = calls.find((c) => String(c[0]).endsWith("/ops/note.remove"));
       expect(removeCall).toBeTruthy();
       expect(removeCall![1].body).toBe(JSON.stringify({ index: 0 }));
@@ -4289,7 +4289,7 @@ describe("F2ab Crew membership", () => {
     (root.querySelector('button[title="Join crew"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const joinCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
       expect(joinCall).toBeTruthy();
       expect(joinCall![1].body).toBe(JSON.stringify({ crewId: "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2" }));
@@ -4328,7 +4328,7 @@ describe("F2ab Crew membership", () => {
     (root.querySelector('button[title="Leave crew"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const leaveCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
       expect(leaveCall).toBeTruthy();
       expect(leaveCall![1].body).toBe(JSON.stringify({ crewId: "" }));
@@ -5011,7 +5011,7 @@ describe("F4 lifecycle UI", () => {
       expect(root.textContent).toContain("0 / 9");
       expect(root.textContent).toContain("Score ended");
     });
-    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const calls = (global.fetch as Mock).mock.calls;
     const endCall = calls.find((c) => String(c[0]).endsWith("/end-score"));
     expect(endCall).toBeTruthy();
     expect(endCall![1].headers["If-Match"]).toBe("12");
@@ -5043,7 +5043,7 @@ describe("F4 lifecycle UI", () => {
     await vi.waitFor(() => {
       expect(root.textContent).toContain("has retired");
     });
-    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const calls = (global.fetch as Mock).mock.calls;
     const retireCall = calls.find((c) => String(c[0]).endsWith("/retire"));
     expect(retireCall).toBeTruthy();
     expect(retireCall![1].body).toBe(JSON.stringify({ confirm: true }));
@@ -5091,7 +5091,7 @@ describe("F4 lifecycle UI", () => {
     getDelete(root)!.click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const delCall = calls.find((c) => String(c[0]).endsWith("/delete"));
       expect(delCall).toBeTruthy();
       expect(delCall![1].body).toBe(JSON.stringify({ confirm: true }));
@@ -5597,7 +5597,7 @@ describe("CONTRACT-03 gated corrections", () => {
     fixButton()!.click();
 
     await vi.waitFor(() => expect(root.textContent).toContain("2 / 9"));
-    const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+    const calls = (global.fetch as Mock).mock.calls;
     const fixCall = calls.find((c) => String(c[0]).endsWith("/ops/stress.fix"));
     expect(fixCall).toBeTruthy();
     expect(fixCall![0]).toBe(`/api/characters/${CHARACTER_ID}/ops/stress.fix`);
@@ -5662,7 +5662,7 @@ describe("CONTRACT-05 per-scoundrel contacts", () => {
     (root.querySelector('button[title="Add contact"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const addCall = calls.find((c) => String(c[0]).endsWith("/ops/contact.add"));
       expect(addCall).toBeTruthy();
       expect(addCall![0]).toBe(`/api/characters/${CHARACTER_ID}/ops/contact.add`);
@@ -5700,7 +5700,7 @@ describe("CONTRACT-05 per-scoundrel contacts", () => {
     (root.querySelector('button[title="Cycle closeness for Marlane, a pugilist"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const cycleCall = calls.find((c) => String(c[0]).endsWith("/ops/contact.closeness"));
       expect(cycleCall).toBeTruthy();
       expect(cycleCall![1].body).toBe(JSON.stringify({ name: "Marlane, a pugilist", closeness: "friend" }));
@@ -5730,7 +5730,7 @@ describe("CONTRACT-05 per-scoundrel contacts", () => {
     (root.querySelector('button[title="Remove Marlane, a pugilist"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const calls = (global.fetch as Mock).mock.calls;
       const rmCall = calls.find((c) => String(c[0]).endsWith("/ops/contact.remove"));
       expect(rmCall).toBeTruthy();
       expect(rmCall![1].body).toBe(JSON.stringify({ name: "Marlane, a pugilist" }));
@@ -6041,5 +6041,407 @@ describe("CHAR-05 gated trauma removal", () => {
     });
     expect((root.querySelector('select[aria-label="Add trauma"]') as HTMLSelectElement).disabled).toBe(true);
     expect((root.querySelector('button[title="Resolve pending trauma"]') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CHAR-02 — live option-editor regression coverage (Hound)
+//
+// Drives every game-data-driven editor on the sheet for a Hound playbook
+// character: ability take (+ live description preview), heritage/background/
+// vice canonical-option saves with a fresh-load persistence check, the vice
+// free-text description editors, game-data fetch failure recovery, and the
+// accessible expanded/labelled state of the ability preview.
+// ---------------------------------------------------------------------------
+
+describe("CHAR-02 live option editors (Hound)", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    vi.clearAllMocks();
+  });
+
+  /** Playbook settings fixture mirroring data/games/blades-in-the-dark.json Hound. */
+  const HOUND_PLAYBOOK_DATA = {
+    Name: "Hound",
+    Hook: "Hounds are good at tracking things down and also long-distance combat.",
+    ExperienceCondition: "You tracked a target or chose the ground for a fight",
+    SpecialAbilities: [
+      {
+        TimesTakeable: 1,
+        Name: "Sharpshooter",
+        Description:
+          "You can push yourself to do one of the following: make a ranged attack at extreme distance—unleash a barrage of rapid fire to suppress the enemy.",
+      },
+      {
+        TimesTakeable: 2,
+        Name: "Ghost Hunter",
+        Description:
+          "Your hunting pet is imbued with spirit energy. Take this ability again to choose an additional arcane ability for your pet.",
+      },
+      {
+        TimesTakeable: 1,
+        Name: "Scout",
+        Description:
+          "When you gather info to locate a target, you get +1 effect.",
+      },
+    ],
+    Items: [],
+    Rolodex: { Name: "Deadly Friends", Friends: [] },
+    DefaultActionPoints: [],
+  };
+
+  // Option names/descriptions mirror the shared GAME_DATA fixture above —
+  // the editors can only offer what that fixture publishes.
+  const GAME_DESC_HERITAGE = "Skovlan is a conquered island nation of farmers and miners.";
+  const GAME_DESC_BACKGROUND = "A servant, a factory worker, a coach driver, etc.";
+  const GAME_DESC_VICE = "You crave games of chance, betting on sport, etc.";
+  const PURVEYOR = "The Crows' Nest, Brightstone.";
+
+  /** Hound PC DTO — fresh character with unset named fields unless overridden. */
+  function houndDTO(overrides: Record<string, unknown> = {}) {
+    return characterDTO({
+      playbook: {
+        name: "Hound",
+        experience: { points: 2, max: 8 },
+        abilities: [],
+      },
+      dossier: {
+        ...characterDTO().dossier,
+        heritage: { name: "", description: "" },
+        background: { name: "", description: "" },
+        vice: { name: "", description: "", purveyor: { name: "", description: "" } },
+      },
+      ...overrides,
+    });
+  }
+
+  const dossierOk = (character: unknown) => ({
+    ok: true,
+    character,
+    applied: { op: "dossier.update" },
+    sideEffects: [],
+    error: null,
+  });
+
+  /** Standard six-response load sequence (char, game, playbook, clocks, crews, caps). */
+  function mountWith(dto: unknown, extraMocks: readonly unknown[] = [], overrides?: {
+    game?: unknown;
+    playbook?: unknown;
+  }) {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(overrides?.game ?? GAME_DATA))
+      .mockResolvedValueOnce(ok(overrides?.playbook ?? HOUND_PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}));
+    for (const m of extraMocks) {
+      (global.fetch as Mock).mockResolvedValueOnce(m as never);
+    }
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  }
+
+  async function waitRendered() {
+    await vi.waitFor(() => {
+      expect(root.querySelector('select[aria-label="Take ability"]')).not.toBeNull();
+    });
+  }
+
+  it("ability select previews the live option's name + description", async () => {
+    mountWith(houndDTO());
+    await waitRendered();
+
+    const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+    expect(Array.from(select.options).map((o) => o.value)).toEqual([
+      "",
+      "Sharpshooter",
+      "Ghost Hunter",
+      "Scout",
+    ]);
+
+    // First eligible option is pre-selected; its game-data description shows.
+    const details = root.querySelector("details.ability-description") as HTMLDetailsElement;
+    expect(details).not.toBeNull();
+    expect(details.hidden).toBe(false);
+    expect(details.querySelector("summary")?.textContent).toBe("Sharpshooter");
+    expect(details.querySelector("p")?.textContent).toBe(HOUND_PLAYBOOK_DATA.SpecialAbilities[0].Description);
+
+    // Changing the selection updates the preview live.
+    select.value = "Ghost Hunter";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    expect(root.querySelector("details.ability-description summary")?.textContent).toBe("Ghost Hunter");
+    expect(root.querySelector("details.ability-description p")?.textContent).toBe(
+      HOUND_PLAYBOOK_DATA.SpecialAbilities[1].Description,
+    );
+  });
+
+  it("take posts ability.take and renders the new entry with name + description", async () => {
+    const taken = houndDTO({
+      revision: 13,
+      playbook: {
+        name: "Hound",
+        experience: { points: 2, max: 8 },
+        abilities: [
+          { name: "Sharpshooter", description: HOUND_PLAYBOOK_DATA.SpecialAbilities[0].Description, timesTaken: 1 },
+        ],
+      },
+    });
+    mountWith(houndDTO(), [ok({ ok: true, character: taken, applied: { op: "ability.take" }, sideEffects: [], error: null })]);
+    await waitRendered();
+
+    const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+    select.value = "Sharpshooter";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    (root.querySelector('button[title="Take ability"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const takeCall = calls.find((c) => String(c[0]).endsWith("/ops/ability.take"));
+      expect(takeCall).toBeTruthy();
+      expect(takeCall![1].body).toBe(JSON.stringify({ name: "Sharpshooter" }));
+    });
+    await vi.waitFor(() => {
+      const entry = root.querySelector('.ability-entry[data-ability="Sharpshooter"]');
+      expect(entry).not.toBeNull();
+      expect(entry?.querySelector("p")?.textContent).toBe(HOUND_PLAYBOOK_DATA.SpecialAbilities[0].Description);
+    });
+  });
+
+  it("heritage editor: canonical option saves name + game-data description; fresh load shows the persisted value", async () => {
+    const updated = houndDTO({
+      revision: 13,
+      dossier: {
+        ...houndDTO().dossier,
+        heritage: { name: "Skovlan", description: GAME_DESC_HERITAGE },
+      },
+    });
+    mountWith(houndDTO(), [ok(dossierOk(updated))]);
+    await waitRendered();
+
+    (root.querySelector('button[title="Edit Heritage"]') as HTMLButtonElement).click();
+    const select = root.querySelector('select[aria-label="Heritage (choose)"]') as HTMLSelectElement;
+    select.value = "Skovlan";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    (root.querySelector('.field-editing button[title="Save"]') as HTMLButtonElement).click();
+
+    let body = "";
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
+      expect(updateCall).toBeTruthy();
+      body = updateCall![1].body;
+      expect(body).toBe(JSON.stringify({ heritage: { name: "Skovlan", description: GAME_DESC_HERITAGE } }));
+      expect(updateCall![1].headers["If-Match"]).toBe("12");
+    });
+
+    // Reload: a fresh mount must render the persisted server state.
+    mountWith(updated);
+    await waitRendered();
+    const personal = root.querySelector(".character-personal") as HTMLElement;
+    expect(personal.textContent).toContain("Heritage:");
+    expect(personal.textContent).toContain("Skovlan");
+    expect(personal.textContent).toContain(GAME_DESC_HERITAGE);
+    expect(root.querySelector('button[title="Edit Heritage"]')).not.toBeNull();
+  });
+
+  it("background editor: canonical option saves example as description; fresh load shows the persisted value", async () => {
+    const updated = houndDTO({
+      revision: 13,
+      dossier: {
+        ...houndDTO().dossier,
+        background: { name: "Labor", description: GAME_DESC_BACKGROUND },
+      },
+    });
+    mountWith(houndDTO(), [ok(dossierOk(updated))]);
+    await waitRendered();
+
+    (root.querySelector('button[title="Edit Background"]') as HTMLButtonElement).click();
+    const select = root.querySelector('select[aria-label="Background (choose)"]') as HTMLSelectElement;
+    select.value = "Labor";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    (root.querySelector('.field-editing button[title="Save"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
+      expect(updateCall).toBeTruthy();
+      expect(updateCall![1].body).toBe(JSON.stringify({ background: { name: "Labor", description: GAME_DESC_BACKGROUND } }));
+    });
+
+    mountWith(updated);
+    await waitRendered();
+    const personal = root.querySelector(".character-personal") as HTMLElement;
+    expect(personal.textContent).toContain("Background:");
+    expect(personal.textContent).toContain("Labor");
+    expect(personal.textContent).toContain(GAME_DESC_BACKGROUND);
+  });
+
+  it("vice editor: canonical type + purveyor from Sources + typed purveyor description save; fresh load shows all persisted values", async () => {
+    const updated = houndDTO({
+      revision: 13,
+      dossier: {
+        ...houndDTO().dossier,
+        vice: {
+          name: "Gambling",
+          description: GAME_DESC_VICE,
+          purveyor: { name: PURVEYOR, description: "Backroom tables; she waters the drinks." },
+        },
+      },
+    });
+    mountWith(houndDTO(), [ok(dossierOk(updated))]);
+    await waitRendered();
+
+    (root.querySelector('button[title="Edit Vice"]') as HTMLButtonElement).click();
+    const viceSelect = root.querySelector('select[aria-label="Vice (choose)"]') as HTMLSelectElement;
+    viceSelect.value = "Gambling";
+    viceSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // Re-query after the re-render: purveyor options come from Vices[].Sources.
+    const purveyorSelect = root.querySelector('select[aria-label="Vice purveyor (choose)"]') as HTMLSelectElement;
+    expect(purveyorSelect).not.toBeNull();
+    expect(Array.from(purveyorSelect.options).map((o) => o.value)).toContain(PURVEYOR);
+    purveyorSelect.value = PURVEYOR;
+    purveyorSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // The purveyor description stays free-text even for a canonical vice type.
+    const purveyorDesc = root.querySelector('input[aria-label="Vice purveyor description"]') as HTMLInputElement;
+    purveyorDesc.value = "Backroom tables; she waters the drinks.";
+    purveyorDesc.dispatchEvent(new Event("input", { bubbles: true }));
+    (root.querySelector('.vice-editor button[title="Save"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
+      expect(updateCall).toBeTruthy();
+      expect(updateCall![1].body).toBe(JSON.stringify({
+        vice: {
+          name: "Gambling",
+          description: GAME_DESC_VICE,
+          purveyor: { name: PURVEYOR, description: "Backroom tables; she waters the drinks." },
+        },
+      }));
+    });
+
+    mountWith(updated);
+    await waitRendered();
+    const viceBlock = root.querySelector(".character-vice") as HTMLElement;
+    expect(viceBlock.textContent).toContain("Gambling");
+    expect(viceBlock.textContent).toContain(GAME_DESC_VICE);
+    expect(viceBlock.textContent).toContain(PURVEYOR);
+    expect(viceBlock.textContent).toContain("Backroom tables; she waters the drinks.");
+  });
+
+  it("custom-branch description editors save the typed text through", async () => {
+    const updated = houndDTO({
+      revision: 13,
+      dossier: {
+        ...houndDTO().dossier,
+        vice: {
+          name: "Fence-running",
+          description: "Running contraband ledgers for the Leaky Bucket.",
+          purveyor: { name: "Mardin Gull", description: "Keeps the books, keeps the door." },
+        },
+      },
+    });
+    mountWith(houndDTO(), [ok(dossierOk(updated))]);
+    await waitRendered();
+
+    (root.querySelector('button[title="Edit Vice"]') as HTMLButtonElement).click();
+    const viceSelect = root.querySelector('select[aria-label="Vice (choose)"]') as HTMLSelectElement;
+    viceSelect.value = "__custom__";
+    viceSelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+    const nameInput = root.querySelector('input[aria-label="Vice custom name"]') as HTMLInputElement;
+    nameInput.value = "Fence-running";
+    nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const descInput = root.querySelector('input[aria-label="Vice custom description"]') as HTMLInputElement;
+    descInput.value = "Running contraband ledgers for the Leaky Bucket.";
+    descInput.dispatchEvent(new Event("input", { bubbles: true }));
+    const purveyorName = root.querySelector('input[aria-label="Vice purveyor name"]') as HTMLInputElement;
+    purveyorName.value = "Mardin Gull";
+    purveyorName.dispatchEvent(new Event("input", { bubbles: true }));
+    const purveyorDesc = root.querySelector('input[aria-label="Vice purveyor description"]') as HTMLInputElement;
+    purveyorDesc.value = "Keeps the books, keeps the door.";
+    purveyorDesc.dispatchEvent(new Event("input", { bubbles: true }));
+    (root.querySelector('.vice-editor button[title="Save"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const updateCall = calls.find((c) => String(c[0]).endsWith("/ops/dossier.update"));
+      expect(updateCall).toBeTruthy();
+      expect(updateCall![1].body).toBe(JSON.stringify({
+        vice: {
+          name: "Fence-running",
+          description: "Running contraband ledgers for the Leaky Bucket.",
+          purveyor: { name: "Mardin Gull", description: "Keeps the books, keeps the door." },
+        },
+      }));
+    });
+
+    mountWith(updated);
+    await waitRendered();
+    const viceBlock = root.querySelector(".character-vice") as HTMLElement;
+    expect(viceBlock.textContent).toContain("Fence-running");
+    expect(viceBlock.textContent).toContain("Running contraband ledgers for the Leaky Bucket.");
+    expect(viceBlock.textContent).toContain("Mardin Gull");
+  });
+
+  it("game-data fetch failure recovery: sheet stays operable, editors degrade to Custom…, playbook endpoint still feeds abilities", async () => {
+    // GET /api/games/{stem} fails (500); everything else loads normally.
+    mountWith(houndDTO(), [], { game: fetchResponse("game data unavailable", 500) });
+    await waitRendered();
+
+    // No error card — the sheet itself renders.
+    expect(root.querySelector(".error-card")).toBeNull();
+    expect(root.textContent).toContain("Brenda Hilton");
+
+    // Named editors have no live options: only the Custom… branch remains.
+    (root.querySelector('button[title="Edit Heritage"]') as HTMLButtonElement).click();
+    const heritageSelect = root.querySelector('select[aria-label="Heritage (choose)"]') as HTMLSelectElement;
+    expect(Array.from(heritageSelect.options).map((o) => o.value)).toEqual(["__custom__"]);
+    expect(heritageSelect.value).toBe("__custom__");
+    const customName = root.querySelector('input[aria-label="Heritage custom name"]') as HTMLInputElement;
+    expect(customName).not.toBeNull();
+    (root.querySelector('.field-editing button[title="Cancel"]') as HTMLButtonElement).click();
+
+    // Abilities still come from the playbook settings endpoint (graceful join).
+    const takeSelect = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+    expect(takeSelect.disabled).toBe(false);
+    expect(Array.from(takeSelect.options).map((o) => o.value)).toContain("Ghost Hunter");
+    const details = root.querySelector("details.ability-description") as HTMLDetailsElement;
+    expect(details.querySelector("p")?.textContent).toBe(HOUND_PLAYBOOK_DATA.SpecialAbilities[0].Description);
+  });
+
+  it("ability preview exposes accessible expanded/labelled state via native details semantics", async () => {
+    mountWith(houndDTO());
+    await waitRendered();
+
+    const details = root.querySelector("details.ability-description") as HTMLDetailsElement;
+    const summary = details.querySelector("summary") as HTMLElement;
+
+    // Labelled: the summary carries the selected ability's name (its
+    // accessible name), the body carries its description.
+    expect(summary.textContent).toBe("Sharpshooter");
+    expect(summary.textContent!.length).toBeGreaterThan(0);
+    expect(details.querySelector("p")?.textContent).toContain("ranged attack");
+
+    // Expandable: clicking the summary toggles the native expanded state and
+    // reveals the description body.
+    expect(details.open).toBe(false);
+    summary.click();
+    expect(details.open).toBe(true);
+    summary.click();
+    expect(details.open).toBe(false);
+
+    // Every live option editor exposes an accessible label.
+    expect(root.querySelector('select[aria-label="Take ability"]')).not.toBeNull();
+    for (const editTitle of ["Edit Heritage", "Edit Background", "Edit Vice"]) {
+      (root.querySelector(`button[title="${editTitle}"]`) as HTMLButtonElement).click();
+      expect(root.querySelector(".field-editing select, .vice-editor select")).not.toBeNull();
+      (root.querySelector('.field-editing button[title="Cancel"], .vice-editor button[title="Cancel"]') as HTMLButtonElement).click();
+    }
   });
 });
