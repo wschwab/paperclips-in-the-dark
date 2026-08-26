@@ -1753,18 +1753,23 @@ function renderDetail(state: RenderState): HTMLElement {
       const specialAbilities = extractSpecialAbilities(playbookData, gameData, c.playbook.name);
 
       // Eligible = a catalog ability with remaining takes; the server enforces
-      // ABILITY_MAXED at 0. Comes from the capability projection (SC-F3), with
-      // a graceful fallback to the game-data join when it's unavailable.
-      const eligible = state.caps
-        ? state.caps.availableAbilityTakes
-            .filter((a) => a.remaining > 0)
-            .map((a) => ({ Name: a.name }))
-        : specialAbilities.filter((sa) => {
-            const name = String(sa.Name);
-            const timesTakeable = typeof sa.TimesTakeable === "number" ? sa.TimesTakeable : 1;
-            const taken = takenByName.get(name);
-            return !taken || taken.timesTaken < timesTakeable;
-          });
+      // ABILITY_MAXED at 0. The capability projection (SC-F3) reports remaining
+      // takes only for abilities already taken on the DTO (timesTaken >= 1 per
+      // contract), so an empty array means "nothing taken yet", not "nothing
+      // takeable". Start from the full game-data catalog and drop any ability
+      // whose projection entry shows 0 remaining; fall back to the local join
+      // when the projection is unavailable.
+      const capRemaining = new Map(
+        (state.caps?.availableAbilityTakes ?? []).map((a) => [a.name, a.remaining]),
+      );
+      const eligible = specialAbilities.filter((sa) => {
+        const name = String(sa.Name);
+        const projectedRemaining = capRemaining.get(name);
+        if (projectedRemaining !== undefined) return projectedRemaining > 0;
+        const timesTakeable = typeof sa.TimesTakeable === "number" ? sa.TimesTakeable : 1;
+        const taken = takenByName.get(name);
+        return !taken || taken.timesTaken < timesTakeable;
+      });
 
       // Playbook XP tracker: points/max with +/− and clear
       const xpMinusBtn = el("button", {

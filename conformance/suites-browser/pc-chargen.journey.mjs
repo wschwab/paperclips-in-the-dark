@@ -50,12 +50,12 @@ export async function run(page, ctx) {
   ctx.checkpoint("chargen-unspent-initial", initial);
 
   await page.locator(PLAYBOOK).selectOption("Cutter");
-  // Allocate exactly the 7-dot budget without exceeding the per-action cap:
-  // Hunt 2 + Study 2 + Survey 2 + Tinker 1 = 7.
+  // Blades settings give Cutter DefaultActionPoints {Skirmish: 2, Command: 1}
+  // — prefilled, LOCKED, and counted against the same 7-dot budget (DEC-01).
+  // Allocate only the remaining 4 dots without exceeding the per-action cap:
+  // Hunt 2 + Study 2 = 4.
   await clickDot(page, "Hunt", 2);
   await clickDot(page, "Study", 2);
-  await clickDot(page, "Survey", 2);
-  await clickDot(page, "Tinker", 1);
 
   const atSubmit = await unspentValue(page);
   ctx.checkpoint("chargen-unspent-at-submit", atSubmit);

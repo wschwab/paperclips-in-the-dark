@@ -214,7 +214,7 @@ async function loadJourneys() {
   const seenIds = new Set();
   for (const file of files) {
     const mod = await import(`${suitesBrowserDir}/${file}`);
-    const { id, checkpoints, run } = mod;
+    const { id, checkpoints, run, expectedConsoleNoise } = mod;
     if (typeof id !== "string" || id.length === 0) throw new Error(`${file}: must export a non-empty string id`);
     if (seenIds.has(id)) throw new Error(`${file}: duplicate journey id ${id}`);
     seenIds.add(id);
@@ -222,7 +222,10 @@ async function loadJourneys() {
       throw new Error(`${file}: must export checkpoints: [{ id, description? }]`);
     }
     if (typeof run !== "function") throw new Error(`${file}: must export async run(page, ctx)`);
-    journeys.push({ id, checkpoints, run, file });
+    if (expectedConsoleNoise !== undefined && !Array.isArray(expectedConsoleNoise)) {
+      throw new Error(`${file}: expectedConsoleNoise must be an array of { urlPattern, text } when declared`);
+    }
+    journeys.push({ id, checkpoints, run, file, expectedConsoleNoise: expectedConsoleNoise ?? [] });
   }
   return journeys;
 }
@@ -385,6 +388,14 @@ async function runChild(opts) {
           record.faviconSuppressed += 1;
           return;
         }
+        // A journey that deliberately injects failing responses (forced 422
+        // fault injection) also injects the browser's "Failed to load
+        // resource" chrome noise for them; journeys declare those allowances
+        // so "zero console errors" keeps measuring the app.
+        const allowance = journey.expectedConsoleNoise.some(
+          (n) => text.includes(n.text) && url.includes(n.urlPattern),
+        );
+        if (allowance) return;
         record.consoleErrors.push({ text, location: url || null });
       });
       page.on("pageerror", (error) => {

@@ -1,0 +1,34 @@
+{
+  "task": "PERF-03",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator-owned real-Chromium probe (managed-browser-smoke) + alert-routing mutant calibration",
+  "date": "2026-08-26",
+  "iterationsToGreen": 4,
+  "iterationNotes": "red: no browser journey exercised mutation continuity at scrolled positions -> added conformance/suites-browser/char03-continuity.journey.mjs (stress add at scrolled position + forced 422 gear.add via route interception); green after journey runner learned journey-declared expectedConsoleNoise (injected fault responses log Chromium's own 'Failed to load resource' noise, same class as the favicon allowance)",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "browsersGate": {
+    "command": "cd conformance && npm run test:browser",
+    "result": "PASS — all 5 journeys green (char02-option-editors, char03-continuity, character-contacts, pc-chargen, roster-smoke)",
+    "artifacts": "/tmp/pitd-browser/2026-08-26T20-13-39-637Z-2f190764"
+  },
+  "measuredBudgets": {
+    "source": "live-Chromium probe against backend-ada server + frontend/dist (fresh Hound, viewport 1280x720)",
+    "operationMs": 13.2,
+    "renderToStableMs": 80.4,
+    "renderToStableNote": "80ms quiet-window idiom bounds the metric from below; measured just above the floor",
+    "scrollDriftPx": 0,
+    "scrollBudgetPinned": "postScrollY within ±220px of preScrollY across a mutation (journey assertion char03-continuity.journey.mjs)",
+    "focusRestored": true,
+    "alertRoutingVerifiedDomAndRecord": true
+  },
+  "alertRoutingMutantResult": {
+    "mutant": "frontend/src/pages/character-detail.ts onGearAdd: runCharacterMutate section 'gear' -> 'personal' (error routed to wrong section)",
+    "procedure": "applied mutant -> npm run build -> cd conformance && npm run test:browser",
+    "observed": "char03-continuity FAILED exactly at the routing assertions: locator('[data-section=\"gear\"] .error.section-error') never became visible; checkpoint gear-failure-alert-routed unmet; all other journeys stayed PASS",
+    "conclusion": "mutant killed by the new journey; reverted ('gear') -> rebuilt -> full suite PASS again"
+  },
+  "notes": "Continuity records come from window.__paperclipsContinuity installed by character-detail mount; the forced 422 is injected by route interception on /ops/gear.add so real UI handlers exercise the failure path."
+}

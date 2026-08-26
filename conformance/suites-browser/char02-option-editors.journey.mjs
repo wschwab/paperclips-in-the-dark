@@ -37,7 +37,27 @@ export const checkpoints = [
     id: "vice-saved-reloaded",
     description: "1 when the saved canonical vice + purveyor survive a page reload",
   },
+  {
+    id: "editor-accessible-state",
+    description: "1 when the ability select has an accessible label and the description details/summary toggles its ARIA expanded state",
+  },
+  {
+    id: "editor-survives-rerender",
+    description: "1 when an open option editor keeps its selection and stays saveable across an intervening mutation re-render",
+  },
+  {
+    id: "game-data-fetch-degrades",
+    description: "1 when a failed game-data fetch leaves the sheet crash-free and the heritage editor usable through its Custom fallback",
+  },
 ];
+// The deliberately injected 500 on the game-settings endpoint (section 7)
+// makes Chromium log its standard "Failed to load resource" chrome noise;
+// the app degrades gracefully. Declare it so "zero console errors" keeps
+// measuring the app, not this journey's own fault injection.
+export const expectedConsoleNoise = [
+  { urlPattern: "/api/games/blades-in-the-dark", text: "Failed to load resource" },
+];
+
 
 const ABILITY_SELECT = 'select[aria-label="Take ability"]';
 const ABILITY_DETAILS = "details.ability-description";
@@ -102,14 +122,14 @@ export async function run(page, ctx) {
   await saveOpenEditor(page, ".field-editing");
   await page
     .locator(".character-personal")
-    .getByText("Skovlan")
+    .getByText("Skovlan", { exact: true })
     .waitFor({ state: "visible", timeout: 10_000 });
 
   await page.reload();
   await page.locator(".character-detail").waitFor({ state: "visible", timeout: 10_000 });
   await page
     .locator(".character-personal")
-    .getByText(/conquered island nation/)
+    .getByText(/Unity War/)
     .waitFor({ state: "visible", timeout: 10_000 });
   ctx.checkpoint("heritage-saved-reloaded", 1);
 
@@ -162,4 +182,86 @@ export async function run(page, ctx) {
     .getByText("Backroom tables; she waters the drinks.")
     .waitFor({ state: "visible", timeout: 10_000 });
   ctx.checkpoint("vice-saved-reloaded", 1);
+
+  // -- 5. Accessible expanded/labelled state ---------------------------------
+  // The ability select names itself for AT (aria-label), and the description
+  // <details>/<summary> toggles its ARIA expanded state when activated.
+  const ariaLabel = await page
+    .locator(ABILITY_SELECT)
+    .getAttribute("aria-label");
+  if (!ariaLabel || ariaLabel.trim().length === 0) {
+    throw new Error("ability select must expose a non-empty accessible label");
+  }
+  const detailsLoc = page.locator(ABILITY_DETAILS);
+  // Native <details>/<summary> conveys expanded/collapsed to AT through the
+  // open attribute; the accessibility tree hides the body while collapsed.
+  if (await detailsLoc.evaluate((d) => d.open)) {
+    throw new Error("ability description details should start collapsed");
+  }
+  const collapsed = await detailsLoc.ariaSnapshot();
+  await detailsLoc.locator("summary").click();
+  if (!(await detailsLoc.evaluate((d) => d.open))) {
+    throw new Error("ability description summary click did not expand the details");
+  }
+  // Expanded: the game-data description joins the accessibility tree as a
+  // paragraph while it was absent when collapsed.
+  const expanded = await detailsLoc.ariaSnapshot();
+  if (!/- paragraph:/.test(expanded) || /- paragraph:/.test(collapsed)) {
+    throw new Error(
+      `details toggle must expose its description content to AT\ncollapsed: ${collapsed}\nexpanded: ${expanded}`,
+    );
+  }
+  ctx.checkpoint("editor-accessible-state", 1);
+
+  // -- 6. Editor survival across an intervening re-render --------------------
+  // An open option editor lives across the wholesale sheet replacement a
+  // mutation triggers: selection preserved, Save still functional.
+  await page.locator('button[title="Edit Heritage"]').click();
+  const heritSelect = page.locator('select[aria-label="Heritage (choose)"]');
+  await heritSelect.waitFor({ state: "visible", timeout: 10_000 });
+  await heritSelect.selectOption("Iruvia");
+  // Intervening real op (+1 stress) re-renders the whole sheet.
+  await page.locator('button[title="Add 1 stress"]').click();
+  await heritSelect.waitFor({ state: "visible", timeout: 10_000 });
+  if ((await heritSelect.inputValue()) !== "Iruvia") {
+    throw new Error("open heritage editor lost its selection across a rerender");
+  }
+  await saveOpenEditor(page, ".field-editing");
+  await page
+    .locator(".character-personal")
+    .getByText("Iruvia", { exact: true })
+    .waitFor({ state: "visible", timeout: 10_000 });
+  ctx.checkpoint("editor-survives-rerender", 1);
+
+  // -- 7. Game-data fetch failure degrades gracefully ------------------------
+  // Block only the game-settings endpoint (not /playbooks — the ability list
+  // rides on it): the sheet must still render crash-free and the heritage
+  // editor must fall back to its Custom branch.
+  let blockedGameData = false;
+  await page.route(/\/api\/games\/blades-in-the-dark$/, (route) => {
+    blockedGameData = true;
+    return route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "INJECTED_OUTAGE" } }),
+    });
+  });
+  try {
+    await page.reload();
+    await page.locator(".character-detail").waitFor({ state: "visible", timeout: 10_000 });
+    if (!blockedGameData) {
+      throw new Error("injected game-data outage was never hit");
+    }
+    await page.locator('button[title="Edit Heritage"]').click();
+    const degradedSelect = page.locator('select[aria-label="Heritage (choose)"]');
+    await degradedSelect.waitFor({ state: "visible", timeout: 10_000 });
+    const customOption = degradedSelect.locator('option[value="__custom__"]');
+    if ((await customOption.count()) === 0) {
+      throw new Error("heritage editor lacks the Custom fallback after game-data failure");
+    }
+    ctx.checkpoint("game-data-fetch-degrades", 1);
+    await ctx.screenshot("char02-game-data-degraded");
+  } finally {
+    await page.unroute(/\/api\/games\/blades-in-the-dark$/);
+  }
 }

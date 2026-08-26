@@ -1,0 +1,22 @@
+{
+  "task": "CHAR-02",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator-owned real-Chromium probe (managed-browser-smoke); committed suite output is the acceptance evidence",
+  "date": "2026-08-26",
+  "iterationsToGreen": 5,
+  "iterationNotes": "red: committed journey failed - take-ability select never enabled -> root cause in frontend/src/pages/character-detail.ts eligible menu trusted state.caps.availableAbilityTakes as the full eligibility list, but the contract defines that array as remaining takes of ALREADY-TAKEN abilities only (timesTaken minimum 1), so a fresh character got an empty array and a permanently disabled select; fix joins the game-data catalog with projected 0-remaining overrides. Also fixed stale journey fixtures: heritage description regex now matches real game data (Unity War), playbook default dots are locked in chargen (pc-chargen fixture). Then added the three required cases.",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 1, "review": 1, "human": 0 },
+  "browsersGate": {
+    "command": "cd conformance && npm run test:browser",
+    "result": "PASS — 9 checkpoints in char02-option-editors (6 happy-path + editor-accessible-state + editor-survives-rerender + game-data-fetch-degrades); all other journeys green"
+  },
+  "addedCases": [
+    "game-data-fetch-failure: page.route blocks GET /api/games/blades-in-the-dark with 500 across a reload; sheet renders crash-free and the heritage editor falls back to its Custom branch",
+    "accessible expanded/labelled state: ability select exposes non-empty aria-label; details/summary toggles open attribute and the description paragraph joins the accessibility tree only when expanded (ariaSnapshot collapsed vs expanded comparison)",
+    "editor survival across intervening rerender: open heritage editor keeps its Iruvia selection through a real +1 stress mutation re-render and stays saveable"
+  ],
+  "notes": "The CharCapabilities contract misreading was a Wave 6 SC-F3 regression class bug; crew-detail already received the full catalog shape from the server, so only the character page needed the join fix. expectedConsoleNoise declared for the injected 500's Chromium resource-error noise."
+}

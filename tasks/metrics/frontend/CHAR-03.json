@@ -1,0 +1,22 @@
+{
+  "task": "CHAR-03",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator-owned real-Chromium probe (managed-browser-smoke)",
+  "date": "2026-08-26",
+  "iterationsToGreen": 2,
+  "iterationNotes": "journey landed in the same change as the PERF-03 metrics; red states covered there. First run surfaced two fixes: predicate serialization into the page (source strings instead of closures) and the harness console-noise allowance for deliberately injected 422s",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "browsersGate": {
+    "command": "cd conformance && npm run test:browser",
+    "result": "PASS — char03-continuity records both checkpoints (stress-continuity-record, gear-failure-alert-routed); all journeys green"
+  },
+  "assertedEvidence": [
+    "settled onStressDelta success record: outcome/outcomeStatus 200, initiatorDescriptor ends @stress, initiatorRect + focusBefore/focusAfter present, operationMs and renderToStableMs measured, scroll telemetry present and within budget",
+    "forced 422 on POST /ops/gear.add settles as a failure record attributed to @gear whose alert renders inside [data-section=\"gear\"] as .error.section-error, is visible in the viewport (DOM geometry check and record.anyAlertVisible), with a visible alert snapshot recorded",
+    "alert-routing mutant (gear -> personal) verified to fail this journey before being reverted — see PERF-03.json mutant result"
+  ],
+  "notes": "Companion CHAR-02/PERF-03 metrics carry shared context. The journey drives everything through real UI controls (+ stress button, gear-add details menu) at scrolled positions."
+}
