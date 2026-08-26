@@ -1,0 +1,13 @@
+{
+  "task": "CHAR-04",
+  "track": "frontend",
+  "implementationAgent": "opencode-go worker",
+  "reviewAgent": "gpt-5.6-luna (openai-codex CLI, xhigh) + orchestrator browser probe",
+  "date": "2026-08-26",
+  "iterationsToGreen": 1,
+  "iterationNotes": "renamed bare stress-clear control to honest label (no false 'Indulge Vice'); surfaced overindulged signal; phase helpers advisory/non-persistent",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "character-detail tests green (706/706); build clean; browser suite PASS; pending final xhigh Luna gate"
+}

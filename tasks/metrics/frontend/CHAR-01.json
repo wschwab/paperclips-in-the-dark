@@ -1,0 +1,13 @@
+{
+  "task": "CHAR-01",
+  "track": "frontend",
+  "implementationAgent": "opencode-go worker",
+  "reviewAgent": "gpt-5.6-luna (openai-codex CLI, xhigh) + orchestrator browser probe",
+  "date": "2026-08-26",
+  "iterationsToGreen": 2,
+  "iterationNotes": "verified DEC-01 CONTRACT-01 requirements: settings-derived unspent Talent counter, required-field state, atomic POST /characters/pc, escape/override behind disclosure, persistent finish path",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "notes": "character-create tests + pc-chargen browser journey green; browser suite all journeys PASS; build clean; pending final xhigh Luna gate"
+}
