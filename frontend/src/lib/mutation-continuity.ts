@@ -252,16 +252,28 @@ export function installMutationContinuity(options: InstallOptions): MutationCont
 
   // -- network boundary -----------------------------------------------------
 
-  const originalFetchRef = window.fetch;
-  const originalFetch = window.fetch.bind(window);
+  // The recorder does NOT permanently replace window.fetch: in environments
+  // where window and global alias (happy-dom, test runners), a persistent
+  // wrapper would clobber a freshly assigned fetch spy and break callers that
+  // assert through the global reference. Instead the patch is active only for
+  // the synchronous issuance window of each wrapped handler — mutation fetches
+  // are issued synchronously inside handlers, completion classification runs
+  // in the promise closures created during that window, so settling responses
+  // need no live patch. The delegate is resolved at CALL time so spies or
+  // layered instrumentation assigned before or after install keep receiving
+  // every call.
+  let originalFetchRef: typeof window.fetch | null = null;
+  let boundaryDepth = 0;
   const patchedFetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const span = open;
+    const current = window.fetch;
+    const delegate = current === patchedFetch ? originalFetchRef ?? current : current;
     const method = String(init?.method ?? (input instanceof Request ? input.method : "GET"))
       .toUpperCase();
     if (!span || span.completedPerf !== null || method === "GET" || method === "HEAD") {
-      return originalFetch(input, init);
+      return delegate(input, init);
     }
-    return originalFetch(input, init).then(
+    return delegate(input, init).then(
       (res) => {
         completeSpan(res.ok ? "success" : "failure", res.status);
         return res;
@@ -272,7 +284,20 @@ export function installMutationContinuity(options: InstallOptions): MutationCont
       },
     );
   };
-  window.fetch = patchedFetch as typeof window.fetch;
+  const openFetchBoundary = (): void => {
+    if (boundaryDepth === 0 && window.fetch !== patchedFetch) {
+      originalFetchRef = window.fetch;
+      window.fetch = patchedFetch as typeof window.fetch;
+    }
+    boundaryDepth++;
+  };
+  const closeFetchBoundary = (): void => {
+    boundaryDepth--;
+    if (boundaryDepth === 0 && window.fetch === patchedFetch) {
+      window.fetch = originalFetchRef!;
+      originalFetchRef = null;
+    }
+  };
 
   function completeSpan(outcome: MutationOutcome, status: number | null): void {
     const span = open;
@@ -445,10 +470,12 @@ export function installMutationContinuity(options: InstallOptions): MutationCont
         const original = handlers[key];
         out[key] = (...args: never[]) => {
           begin(key);
+          openFetchBoundary();
           try {
             return original(...args);
           } finally {
             pendingInitiator = null;
+            closeFetchBoundary();
           }
         };
       }
@@ -468,9 +495,6 @@ export function installMutationContinuity(options: InstallOptions): MutationCont
       if (stabilityTimer !== null) clearTimeout(stabilityTimer);
       if (maxWaitTimer !== null) clearTimeout(maxWaitTimer);
       observer.disconnect();
-      if (window.fetch === patchedFetch) {
-        window.fetch = originalFetchRef;
-      }
       for (const type of EVENT_TYPES) {
         root.removeEventListener(type, captureInitiator, true);
         root.removeEventListener(type, clearInitiator, false);

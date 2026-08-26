@@ -917,6 +917,21 @@
   margin: 0.5em 0;
 }
 
+/* CHAR-03: section-local operation errors — the alert renders inside the
+ * card whose control failed, in the app's error token (accent-strong) so
+ * read as danger, not emphasis. Recovery copy sits under it, muted. */
+.character-detail [data-section] .error {
+  border: var(--border-thin) solid var(--rule);
+  border-left: var(--border-thick) solid var(--accent-strong);
+  background: var(--surface-raised);
+  padding: 0.55em 0.7em;
+  font-size: 0.95rem;
+}
+.character-detail [data-section] .error-recovery {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 /* history list — op name, timestamp, snapshot as ruled ledger rows */
 .history-list {
   list-style: none;

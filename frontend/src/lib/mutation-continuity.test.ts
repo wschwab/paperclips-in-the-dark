@@ -413,18 +413,28 @@ describe("installMutationContinuity", () => {
     expect(api.drain()).toHaveLength(0);
   });
 
-  it("exposes itself on window and dispose() unpatches fetch", async () => {
+  it("exposes itself on window and never leaves window.fetch patched", async () => {
     const original = window.fetch;
-    stubFetch([]);
+    stubFetch([{ match: "/ops/tap", respond: async () => jsonResponse(true, 200) }]);
     const stubbed = window.fetch;
     const api = installMutationContinuity({
       root, quietMs: QUIET_MS, maxWaitMs: MAX_WAIT_MS, readScrollY: () => 0,
     });
     expect(window.__paperclipsContinuity).toBe(api);
-    expect(window.fetch).not.toBe(stubbed); // patched
+    // The fetch patch is transient (active only inside a wrapped handler's
+    // synchronous issuance window): outside it, window.fetch keeps whatever
+    // was last assigned, so spies and layered instrumentation stay intact.
+    expect(window.fetch).toBe(stubbed);
+
+    const handlers = api.wrapHandlers({
+      onTap: () => { void window.fetch("/api/ops/tap", { method: "POST" }); },
+    });
+    expect(window.fetch).toBe(stubbed); // not yet inside a span
+    handlers.onTap();
+    expect(window.fetch).toBe(stubbed); // boundary closed again
 
     api.dispose();
-    expect(window.fetch).toBe(stubbed); // restored to the pre-install stub
+    expect(window.fetch).toBe(stubbed);
     expect(original).toBeDefined();
     expect(window.__paperclipsContinuity).toBeUndefined();
   });

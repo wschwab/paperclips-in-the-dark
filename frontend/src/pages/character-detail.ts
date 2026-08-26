@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { installMutationContinuity } from "../lib/mutation-continuity.js";
 import {
   ApiError,
   OpError,
@@ -105,6 +106,107 @@ interface NamedEditorState {
   customDesc: string;
   purveyorName: string;
   purveyorDesc: string;
+}
+
+/**
+ * CHAR-03: identity of a sheet card (`data-section` attribute). Operation
+ * failures route their error to the section whose control initiated the
+ * mutation, so the alert appears (and is announced) where the user acted.
+ */
+type SectionKey =
+  | "header" | "personal" | "stress" | "traumas" | "health" | "talents"
+  | "playbook" | "gear" | "coin" | "projects" | "lifecycle" | "high-impact"
+  | "actions" | "notes" | "contacts" | "notebook";
+
+/**
+ * CHAR-03: a routed operation error. `section` is the initiating card, or
+ * null for sheet-level problems that have no originating control (e.g. a
+ * background refresh failure) — those keep the legacy sheet-bottom alert.
+ */
+interface SheetError {
+  section: SectionKey | null;
+  text: string;
+  recovery: string;
+}
+
+/** Recovery copy shown under a routed error, per section family. */
+const DEFAULT_RECOVERY = "Nothing was changed — you can safely retry.";
+
+const SECTION_RECOVERY: Partial<Record<SectionKey, string>> = {
+  personal: "Fix the field and save again.",
+  stress: "The sheet is unchanged — adjust the amount and try again.",
+  traumas: "The sheet is unchanged — choose a different removal.",
+  health: "The sheet is unchanged — adjust the harm entry and try again.",
+  talents: "The sheet is unchanged — pick a different action or value.",
+  playbook: "The sheet is unchanged — pick another ability.",
+  gear: "Free up load or commitments, then try again.",
+  coin: "Check your coins and try again.",
+  projects: "Adjust the clock values and try again.",
+  lifecycle: "Resolve pending conditions and try again.",
+  "high-impact": DEFAULT_RECOVERY,
+  actions: "Nothing was undone — you can retry.",
+  notes: "Retry the change.",
+  notebook: "Retry the change.",
+  contacts: "Retry the change.",
+};
+
+const SECTION_LABELS: Record<SectionKey, string> = {
+  header: "Sheet header",
+  personal: "Personal",
+  stress: "Stress",
+  traumas: "Traumas",
+  health: "Health",
+  talents: "Talents",
+  playbook: "Playbook",
+  gear: "Gear",
+  coin: "Coin",
+  projects: "Projects",
+  lifecycle: "Lifecycle",
+  "high-impact": "Permanent actions",
+  actions: "Actions",
+  notes: "Notes",
+  contacts: "Contacts",
+  notebook: "Notebook",
+};
+
+/**
+ * CHAR-03: the one concise assistive-technology summary of a routed error.
+ * Rendered into a persistent visually-hidden role=status region so a text
+ * change announces exactly once; it never duplicates the visual bottom
+ * error (sectioned errors render no second visual copy anywhere).
+ */
+export function formatErrorSummary(error: SheetError): string {
+  const label = error.section ? SECTION_LABELS[error.section] : "Sheet";
+  return `${label}: ${error.text}. ${error.recovery}`.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * CHAR-03 scroll guard: scroll the routed alert into view only when it is
+ * fully off screen; otherwise preserve the user's scroll position. Layout-
+ * less environments (unit tests) report zero rects — skipped there.
+ */
+export function ensureSectionAlertVisible(scope: ParentNode): boolean {
+  const alert = scope.querySelector(".section-error");
+  if (!(alert instanceof HTMLElement)) return false;
+  let rect: DOMRect;
+  try {
+    rect = alert.getBoundingClientRect();
+  } catch {
+    return false;
+  }
+  if (rect.width === 0 && rect.height === 0) return false;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (!vw || !vh) return false;
+  const fullyOffScreen =
+    rect.bottom <= 0 || rect.top >= vh || rect.right <= 0 || rect.left >= vw;
+  if (!fullyOffScreen) return false;
+  try {
+    alert.scrollIntoView({ block: "nearest" });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -493,7 +595,8 @@ interface RenderState {
   canUndo: boolean | null;
   historyCount: number | null;
   // Error / notice
-  errorMsg: string | null;
+  /** CHAR-03: routed operation error (section=null keeps the legacy sheet-level alert). */
+  error: SheetError | null;
   noticeMsg: string | null;
   undoNotice: string | null;
   harmSpillNotice: string | null;
@@ -1148,7 +1251,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
   // -- Assemble -------------------------------------------------------------
 
-  return el(
+  const sheet = el(
     "section",
     { className: "character-detail" },
 
@@ -2132,10 +2235,10 @@ function renderDetail(state: RenderState): HTMLElement {
       );
     })(),
 
-    // Info
-    // Messages
-    state.errorMsg
-      ? el("p", { className: "error", style: "margin-top: 1em;", role: "alert" }, state.errorMsg)
+    // CHAR-03: sectioned operation errors render inside their card; only
+    // sheet-level problems (no originating control) keep this bottom alert.
+    state.error && !state.error.section
+      ? el("p", { className: "error", style: "margin-top: 1em;", role: "alert" }, state.error.text)
       : null,
     state.noticeMsg
       ? el("p", { className: "notice", style: "margin-top: 1em;" }, state.noticeMsg)
@@ -2396,7 +2499,39 @@ function renderDetail(state: RenderState): HTMLElement {
       );
     })(),
   );
-}
+
+  // CHAR-03: route the operation error into the card whose control initiated
+  // the failed mutation — alert + recovery copy live where the user acted,
+  // and the scroll only moves when the alert is fully off screen. Sheet-level
+  // problems (no originating control) keep the legacy bottom alert above.
+  // The AT summary is a single concise role=status line naming the section;
+  // it is the only global announcement and never duplicates the visual error
+  // at the sheet bottom (sectioned errors render no bottom copy at all).
+  const error = state.error;
+  if (error && error.section) {
+    const host = sheet.querySelector(`[data-section="${error.section}"]`);
+    if (host instanceof HTMLElement) {
+      host.append(
+        el("p", { className: "error section-error", style: "margin-top: 0.5em;", role: "alert" }, error.text),
+        el("p", { className: "error-recovery", style: "margin-top: 0.25em;" }, error.recovery),
+      );
+      // Scroll guard runs post-attach (renderDetailWrapper) — geometry is
+      // unavailable while the sheet tree is detached.
+    } else {
+      sheet.append(
+        el("p", { className: "error", style: "margin-top: 1em;", role: "alert" }, error.text),
+        el("p", { className: "error-recovery", style: "margin-top: 0.25em;" }, error.recovery),
+      );
+    }
+    sheet.append(
+      el("p", {
+        className: "sheet-live-summary visually-hidden",
+        role: "status",
+      }, formatErrorSummary(error)),
+    );
+  }
+  return sheet;
+ }
 
 function renderLoading(): HTMLElement {
   return el(
@@ -2419,6 +2554,13 @@ export function mountCharacterDetailPage(
   root: HTMLElement,
   characterId: string,
 ): () => void {
+  // CHAR-03/PERF-03 diagnostics: every page handler invocation opens a
+  // mutation-continuity span; the live recorder is exposed on window for
+  // browser probes (`records()` / `drain()`). A prior mount's install is
+  // disposed first so remounts never double-install.
+  window.__paperclipsContinuity?.dispose();
+  const continuity = installMutationContinuity({ root });
+
   let cancelled = false;
   let currentCharacter: Character | null = null;
   let gameData: Record<string, unknown> | null = null;
@@ -2432,7 +2574,20 @@ export function mountCharacterDetailPage(
   let isTraumaLoading = false;
   let isDossierLoading = false;
   let isUndoLoading = false;
-  let errorMsg: string | null = null;
+  let error: SheetError | null = null;
+
+  /** CHAR-03: record an operation failure routed to its initiating card. */
+  const failSection = (
+    section: SectionKey | null,
+    err: unknown,
+    onOpError?: (err: OpError) => string,
+  ): void => {
+    error = {
+      section,
+      text: opErrorText(err, onOpError),
+      recovery: SECTION_RECOVERY[section ?? "header"] ?? DEFAULT_RECOVERY,
+    };
+  };
   let noticeMsg: string | null = null;
   let undoNotice: string | null = null;
   let harmSpillNotice: string | null = null;
@@ -2497,7 +2652,7 @@ export function mountCharacterDetailPage(
   let healNotice: string | null = null;
 
   const clearNotices = () => {
-    errorMsg = null;
+    error = null;
     noticeMsg = null;
     undoNotice = null;
     harmSpillNotice = null;
@@ -2539,7 +2694,7 @@ export function mountCharacterDetailPage(
       Effect.match(recoverProgram, {
         onFailure: (recoverErr) => {
           if (cancelled) return;
-          errorMsg = `Sheet refresh failed — ${opErrorText(recoverErr)}`;
+          failSection(null, recoverErr);
           renderDetailWrapper();
         },
         onSuccess: (character) => {
@@ -2561,6 +2716,7 @@ export function mountCharacterDetailPage(
 
   /** Shared F2o mutation runner: standard error paths + stale-revision recovery (F2h rule). */
   const runCharacterMutate = (
+    section: SectionKey,
     program: Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError>,
     onSuccess: (character: Character) => void,
     clearLoading: () => void,
@@ -2575,7 +2731,7 @@ export function mountCharacterDetailPage(
             renderDetailWrapper();
             refreshAndShowNotice();
           } else {
-            errorMsg = opErrorText(err, onApiError);
+            failSection(section, err, onApiError);
             renderDetailWrapper();
           }
         },
@@ -2607,23 +2763,22 @@ export function mountCharacterDetailPage(
 
   /**
    * Standard failure path for a character mutation: clears the loading flag,
-   * recovers from stale revisions, and surfaces API/decode errors. Used by
-   * the F2ab handlers (trauma-from-stress flow needs it twice in a chain).
+   * recovers from stale revisions, and surfaces API/decode errors (F2ab).
+   * CHAR-03: failures route to `section`'s card.
    */
-  const failMutate = (err: unknown, clearLoading: () => void) => {
+  const failMutate = (section: SectionKey, err: unknown, clearLoading: () => void) => {
     if (cancelled) return;
     clearLoading();
     if (err instanceof StaleRevisionError) {
       renderDetailWrapper();
       refreshAndShowNotice();
     } else {
-      errorMsg = opErrorText(err);
+      failSection(section, err);
       renderDetailWrapper();
     }
   };
-
-  /** F2s fund/stash mutation runner: same standard error paths + stale-revision recovery, FundOpResult payload. */
   const runFundMutate = (
+    section: SectionKey,
     program: Effect.Effect<FundOpResult, ApiError | DecodeError | StaleRevisionError>,
     onSuccess: (result: FundOpResult) => void,
     clearLoading: () => void,
@@ -2638,7 +2793,7 @@ export function mountCharacterDetailPage(
             renderDetailWrapper();
             refreshAndShowNotice();
           } else {
-            errorMsg = opErrorText(err, onApiError);
+            failSection(section, err, onApiError);
             renderDetailWrapper();
           }
         },
@@ -2653,6 +2808,7 @@ export function mountCharacterDetailPage(
 
   /** F2s clock mutation runner: same standard error paths + stale-revision recovery (refetches the clock list). */
   const runClockMutate = (
+    section: SectionKey,
     program: Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError>,
     onSuccess: (clock: Clock) => void,
     clearLoading: () => void,
@@ -2667,7 +2823,7 @@ export function mountCharacterDetailPage(
             renderDetailWrapper();
             refreshClocksAndNotice();
           } else {
-            errorMsg = opErrorText(err, onApiError);
+            failSection(section, err, onApiError);
             renderDetailWrapper();
           }
         },
@@ -2752,7 +2908,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("stress", err);
               renderDetailWrapper();
             }
           },
@@ -2785,7 +2941,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("stress", err);
               renderDetailWrapper();
             }
           },
@@ -2826,7 +2982,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("stress", err);
               renderDetailWrapper();
             }
           },
@@ -2870,7 +3026,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("stress", err);
               renderDetailWrapper();
             }
           },
@@ -2909,7 +3065,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("traumas", err);
               renderDetailWrapper();
             }
           },
@@ -2939,7 +3095,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("traumas", err);
               renderDetailWrapper();
             }
           },
@@ -2979,7 +3135,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("personal", err);
               renderDetailWrapper();
             }
           },
@@ -3072,6 +3228,7 @@ export function mountCharacterDetailPage(
 
       const program = dossierUpdate(characterId, payload, currentCharacter.revision);
       runCharacterMutate(
+        "personal",
         program,
         (character) => {
           currentCharacter = character;
@@ -3104,7 +3261,7 @@ export function mountCharacterDetailPage(
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => {
-            failMutate(err, () => { isTraumaPickerLoading = false; });
+            failMutate("stress", err, () => { isTraumaPickerLoading = false; });
           },
           onSuccess: (withTrauma) => {
             if (cancelled) return;
@@ -3136,6 +3293,7 @@ export function mountCharacterDetailPage(
 
       const program = noteAdd(characterId, text, currentCharacter.revision);
       runCharacterMutate(
+        "notes",
         program,
         (character) => {
           currentCharacter = character;
@@ -3153,6 +3311,7 @@ export function mountCharacterDetailPage(
 
       const program = noteRemove(characterId, index, currentCharacter.revision);
       runCharacterMutate(
+        "notes",
         program,
         (character) => {
           currentCharacter = character;
@@ -3172,6 +3331,7 @@ export function mountCharacterDetailPage(
 
       const program = notebookSet(characterId, text, currentCharacter.revision);
       runCharacterMutate(
+        "notebook",
         program,
         (character) => {
           currentCharacter = character;
@@ -3195,6 +3355,7 @@ export function mountCharacterDetailPage(
 
       const program = contactAdd(characterId, name, currentCharacter.revision);
       runCharacterMutate(
+        "contacts",
         program,
         (character) => {
           currentCharacter = character;
@@ -3214,6 +3375,7 @@ export function mountCharacterDetailPage(
 
       const program = contactCloseness(characterId, name, next, currentCharacter.revision);
       runCharacterMutate(
+        "contacts",
         program,
         (character) => {
           currentCharacter = character;
@@ -3231,6 +3393,7 @@ export function mountCharacterDetailPage(
 
       const program = contactRemove(characterId, name, currentCharacter.revision);
       runCharacterMutate(
+        "contacts",
         program,
         (character) => {
           currentCharacter = character;
@@ -3253,6 +3416,7 @@ export function mountCharacterDetailPage(
 
       const program = dossierUpdate(characterId, { crewId }, currentCharacter.revision);
       runCharacterMutate(
+        "personal",
         program,
         (character) => {
           currentCharacter = character;
@@ -3271,6 +3435,7 @@ export function mountCharacterDetailPage(
 
       const program = dossierUpdate(characterId, { crewId: "" }, currentCharacter.revision);
       runCharacterMutate(
+        "personal",
         program,
         (character) => {
           currentCharacter = character;
@@ -3308,14 +3473,14 @@ export function mountCharacterDetailPage(
               undoNotice = "Nothing to undo — no history available";
               renderDetailWrapper();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("actions", err);
               renderDetailWrapper();
             }
           },
           onSuccess: ({ character, canUndo, historyCount }) => {
             if (cancelled) return;
             isUndoLoading = false;
-            errorMsg = null;
+            error = null;
             noticeMsg = null;
             currentCharacter = character;
             canUndoState = canUndo;
@@ -3345,6 +3510,7 @@ export function mountCharacterDetailPage(
 
       const program = endScore(characterId, currentCharacter.revision);
       runCharacterMutate(
+        "lifecycle",
         program,
         (character) => {
           currentCharacter = character;
@@ -3368,6 +3534,7 @@ export function mountCharacterDetailPage(
 
       const program = endDowntime(characterId, currentCharacter.revision, { clearSessionExpressions: true });
       runCharacterMutate(
+        "lifecycle",
         program,
         (character) => {
           currentCharacter = character;
@@ -3392,6 +3559,7 @@ export function mountCharacterDetailPage(
 
       const program = retireCharacter(characterId, currentCharacter.revision);
       runCharacterMutate(
+        "high-impact",
         program,
         (character) => {
           currentCharacter = character;
@@ -3423,7 +3591,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection(null, err);
               renderDetailWrapper();
             }
           },
@@ -3459,7 +3627,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("health", err);
               renderDetailWrapper();
             }
           },
@@ -3498,7 +3666,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("health", err);
               renderDetailWrapper();
             }
           },
@@ -3527,6 +3695,7 @@ export function mountCharacterDetailPage(
 
       const program = harmHeal(characterId, harm.intensity, harm.description, currentCharacter.revision);
       runCharacterMutate(
+        "health",
         program,
         (character) => {
           currentCharacter = character;
@@ -3565,7 +3734,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("health", err);
               renderDetailWrapper();
             }
           },
@@ -3595,7 +3764,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshAndShowNotice();
             } else {
-              errorMsg = opErrorText(err);
+              failSection("health", err);
               renderDetailWrapper();
             }
           },
@@ -3619,6 +3788,7 @@ export function mountCharacterDetailPage(
 
       const program = actionSetRating(characterId, action, next, currentCharacter.revision);
       runCharacterMutate(
+        "talents",
         program,
         (character) => {
           currentCharacter = character;
@@ -3648,6 +3818,7 @@ export function mountCharacterDetailPage(
 
       const program = attributeXpAdd(characterId, attribute, delta, currentCharacter.revision);
       runCharacterMutate(
+        "talents",
         program,
         (character) => {
           currentCharacter = character;
@@ -3665,6 +3836,7 @@ export function mountCharacterDetailPage(
 
       const program = attributeXpClear(characterId, attribute, currentCharacter.revision);
       runCharacterMutate(
+        "talents",
         program,
         (character) => {
           currentCharacter = character;
@@ -3687,6 +3859,7 @@ export function mountCharacterDetailPage(
 
       const program = attributeLevelup(characterId, attribute, action, currentCharacter.revision);
       runCharacterMutate(
+        "talents",
         program,
         (character) => {
           currentCharacter = character;
@@ -3706,6 +3879,7 @@ export function mountCharacterDetailPage(
       // Contract: partial update, send only the changed field
       const program = sessionSet(characterId, { [field]: next }, currentCharacter.revision);
       runCharacterMutate(
+        "talents",
         program,
         (character) => {
           currentCharacter = character;
@@ -3734,6 +3908,7 @@ export function mountCharacterDetailPage(
 
       const program = playbookXpAdd(characterId, delta, currentCharacter.revision);
       runCharacterMutate(
+        "playbook",
         program,
         (character) => {
           currentCharacter = character;
@@ -3752,6 +3927,7 @@ export function mountCharacterDetailPage(
 
       const program = playbookXpClear(characterId, currentCharacter.revision);
       runCharacterMutate(
+        "playbook",
         program,
         (character) => {
           currentCharacter = character;
@@ -3772,6 +3948,7 @@ export function mountCharacterDetailPage(
 
       const program = abilityTake(characterId, name, currentCharacter.revision);
       runCharacterMutate(
+        "playbook",
         program,
         (character) => {
           currentCharacter = character;
@@ -3790,6 +3967,7 @@ export function mountCharacterDetailPage(
 
       const program = abilityRemove(characterId, name, currentCharacter.revision);
       runCharacterMutate(
+        "playbook",
         program,
         (character) => {
           currentCharacter = character;
@@ -3815,6 +3993,7 @@ export function mountCharacterDetailPage(
 
       const program = gearAdd(characterId, item.name, item.bulk, currentCharacter.revision);
       runCharacterMutate(
+        "gear",
         program,
         (character) => {
           currentCharacter = character;
@@ -3833,6 +4012,7 @@ export function mountCharacterDetailPage(
 
       const program = gearRemove(characterId, name, currentCharacter.revision);
       runCharacterMutate(
+        "gear",
         program,
         (character) => {
           currentCharacter = character;
@@ -3854,6 +4034,7 @@ export function mountCharacterDetailPage(
 
       const program = gearCommit(characterId, name, currentCharacter.revision);
       runCharacterMutate(
+        "gear",
         program,
         (character) => {
           currentCharacter = character;
@@ -3875,6 +4056,7 @@ export function mountCharacterDetailPage(
 
       const program = gearUncommit(characterId, name, currentCharacter.revision);
       runCharacterMutate(
+        "gear",
         program,
         (character) => {
           currentCharacter = character;
@@ -3896,6 +4078,7 @@ export function mountCharacterDetailPage(
 
       const program = gearSetCommitment(characterId, commitment, currentCharacter.revision);
       runCharacterMutate(
+        "gear",
         program,
         (character) => {
           currentCharacter = character;
@@ -3916,6 +4099,7 @@ export function mountCharacterDetailPage(
         ? gearUnlock(characterId, currentCharacter.revision)
         : gearLock(characterId, currentCharacter.revision);
       runCharacterMutate(
+        "gear",
         program,
         (character) => {
           currentCharacter = character;
@@ -3934,6 +4118,7 @@ export function mountCharacterDetailPage(
 
       const program = gearClearCommitments(characterId, currentCharacter.revision);
       runCharacterMutate(
+        "gear",
         program,
         (character) => {
           currentCharacter = character;
@@ -3961,6 +4146,7 @@ export function mountCharacterDetailPage(
         ? fundGain(characterId, delta, currentCharacter.revision)
         : fundSpend(characterId, -delta, currentCharacter.revision);
       runFundMutate(
+        "coin",
         program,
         (result) => {
           currentCharacter = result.character;
@@ -3994,6 +4180,7 @@ export function mountCharacterDetailPage(
 
       const program = fundLiquidate(characterId, coins, currentCharacter.revision);
       runFundMutate(
+        "coin",
         program,
         (result) => {
           currentCharacter = result.character;
@@ -4025,7 +4212,7 @@ export function mountCharacterDetailPage(
           onFailure: (err) => {
             if (cancelled) return;
             isClocksLoading = false;
-            errorMsg = opErrorText(err, clockOpErrorText);
+            failSection("projects", err, clockOpErrorText);
             renderDetailWrapper();
           },
           onSuccess: (created) => {
@@ -4052,6 +4239,7 @@ export function mountCharacterDetailPage(
       //  at admission).
       const program = clockProgress(clockId, segments, clk.deleteToken);
       runClockMutate(
+        "projects",
         program,
         (updated) => {
           upsertClock(updated);
@@ -4072,6 +4260,7 @@ export function mountCharacterDetailPage(
 
       const program = clockReset(clockId, clk.deleteToken);
       runClockMutate(
+        "projects",
         program,
         (updated) => {
           upsertClock(updated);
@@ -4108,7 +4297,7 @@ export function mountCharacterDetailPage(
               renderDetailWrapper();
               refreshClocksAndNotice();
             } else {
-              errorMsg = opErrorText(err, clockOpErrorText);
+              failSection("projects", err, clockOpErrorText);
               renderDetailWrapper();
             }
           },
@@ -4122,6 +4311,11 @@ export function mountCharacterDetailPage(
       );
     },
   };
+
+  // CHAR-03/PERF-03: wrap the page handlers so each invocation opens a
+  // measurement span (initiator rect, focus-before, scroll-before); spans
+  // complete at the first non-GET fetch response and settle when DOM is quiet.
+  const wrappedHandlers = continuity.wrapHandlers(handlers);
 
   // FV-012: wholesale re-renders destroy the focused control; capture the
   // focused control's position before rendering and restore it after. The
@@ -4180,7 +4374,7 @@ export function mountCharacterDetailPage(
       isClocksLoading,
       coinNotice,
       clocksNotice,
-      errorMsg,
+      error,
       noticeMsg,
       undoNotice,
       harmSpillNotice,
@@ -4188,9 +4382,16 @@ export function mountCharacterDetailPage(
       editing,
       namedEditor,
       rerender: renderDetailWrapper,
-      handlers,
+      handlers: wrappedHandlers,
     }));
     if (pendingFocus && applyFocusTarget(root, pendingFocus)) pendingFocus = null;
+    // CHAR-03: the routed section alert must be visible when it fully sits
+    // off screen; run the guard here where the sheet is attached and layout
+    // is measurable. On-screen alerts never move (scroll preserved).
+    if (error?.section) ensureSectionAlertVisible(root);
+    // CHAR-03/PERF-03: inform the recorder a render cycle completed so
+    // render-to-stable windows close naturally (no span open → no-op).
+    continuity.noteRender();
   };
 
   root.setAttribute("aria-live", "polite");
@@ -4270,5 +4471,6 @@ export function mountCharacterDetailPage(
 
   return () => {
     cancelled = true;
+    continuity.dispose();
   };
 }

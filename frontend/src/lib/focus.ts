@@ -113,12 +113,12 @@ export function applyFocusTarget(root: HTMLElement, target: FocusTarget): boolea
     const keyed = scope.querySelector<HTMLElement>(`[data-focus-key="${target.key}"]`);
     if (keyed) {
       if (isFocusableCandidate(keyed)) {
-        keyed.focus();
+        keyed.focus({ preventScroll: true });
         return true;
       }
       const first = enabledFocusables(keyed)[0];
       if (first) {
-        first.focus();
+        first.focus({ preventScroll: true });
         return true;
       }
       return false; // row present but still disabled (loading render)
@@ -131,7 +131,7 @@ export function applyFocusTarget(root: HTMLElement, target: FocusTarget): boolea
     // Same structure as the capture: the control sits at the same ordinal.
     const el = focusables[target.ordinal];
     if (el && !el.hasAttribute("disabled")) {
-      el.focus();
+      el.focus({ preventScroll: true });
       return true;
     }
     return false; // still disabled — in-flight loading render
@@ -141,20 +141,20 @@ export function applyFocusTarget(root: HTMLElement, target: FocusTarget): boolea
   // scan to the nearest enabled control when the slot changed or shrank.
   const el = focusables[target.ordinal];
   if (el && !el.hasAttribute("disabled")) {
-    el.focus();
+    el.focus({ preventScroll: true });
     return true;
   }
   for (let i = target.ordinal + 1; i < focusables.length; i++) {
     const candidate = focusables[i]!;
     if (!candidate.hasAttribute("disabled")) {
-      candidate.focus();
+      candidate.focus({ preventScroll: true });
       return true;
     }
   }
   for (let i = Math.min(target.ordinal, focusables.length - 1); i >= 0; i--) {
     const candidate = focusables[i]!;
     if (!candidate.hasAttribute("disabled")) {
-      candidate.focus();
+      candidate.focus({ preventScroll: true });
       return true;
     }
   }
