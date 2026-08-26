@@ -6690,6 +6690,9 @@ describe("CHAR-03 section-local error routing", () => {
     await vi.waitFor(() => {
       expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
     });
+    // CHAR-03/Major-1 regression: the mount root must not be a broad live
+    // region (announcements come from the concise sheet-live-summary status node).
+    expect(root.getAttribute("aria-live")).toBeNull();
 
     getStressButton(root)!.click();
     await vi.waitFor(() => {

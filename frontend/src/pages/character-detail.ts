@@ -4394,7 +4394,10 @@ export function mountCharacterDetailPage(
     continuity.noteRender();
   };
 
-  root.setAttribute("aria-live", "polite");
+  // CHAR-03: no broad `aria-live` on the mount root. The sheet's concise
+  // `role="status"` summary (sheet-live-summary) announces routed errors once;
+  // a live root would also announce every wholesale sheet replacement, duplicating
+  // the alert and summary for assistive technology.
 
   const startLoad = () => {
     root.setAttribute("aria-busy", "true");
