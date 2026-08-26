@@ -380,6 +380,43 @@ describe("PC chargen flow", () => {
     expect(root.querySelector("details.create-unvalidated")).toBeNull();
     expect(root.querySelector("#playbook")).not.toBeNull();
   });
+
+  it("shows the required-after-create field state before submission (DEC-01)", () => {
+    mountCharacterCreatePage(root, baseDeps());
+    const fields = Array.from(
+      root.querySelectorAll<HTMLElement>(".pc-chargen-form [data-required-field]"),
+    );
+    // DEC-01 §6: vice (+ purveyor, description), playbook ability, and
+    // name/alias/heritage/background/look/crew — keys mirror the sheet-side
+    // completion-cues.ts so both prompt sets stay aligned.
+    expect(fields.map((f) => f.dataset.requiredField)).toEqual([
+      "name",
+      "alias",
+      "heritage",
+      "background",
+      "look",
+      "vice",
+      "ability",
+      "crew",
+    ]);
+    for (const f of fields) {
+      expect(f.textContent?.trim().length ?? 0).toBeGreaterThan(0);
+    }
+    // Still visible during allocation after a playbook switch.
+    pickPlaybook("Cutter");
+    expect(root.querySelectorAll(".pc-chargen-form [data-required-field]").length).toBe(8);
+  });
+
+  it("keeps the unvalidated escape path behind a disclosure when a budget exists (DEC-01)", () => {
+    mountCharacterCreatePage(root, baseDeps());
+    const details = root.querySelector("details.create-unvalidated");
+    expect(details).not.toBeNull();
+    // The unvalidated form lives INSIDE the opt-in disclosure…
+    expect(details!.querySelector("#playbook")).not.toBeNull();
+    // …while the validated PC flow stays outside it.
+    expect(details!.querySelector(".pc-chargen-form")).toBeNull();
+    expect(root.querySelector(".pc-chargen-form")).not.toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------

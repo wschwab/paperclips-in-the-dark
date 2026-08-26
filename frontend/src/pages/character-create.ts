@@ -156,6 +156,43 @@ interface PcChargenRefs {
   unspentEl: HTMLElement;
   submitBtn: HTMLButtonElement;
 }
+
+/**
+ * DEC-01 §6 ruling: the required-field state visible before submission.
+ * Chargen collects only playbook + action dots, so EVERY one of these is
+ * still outstanding on the fresh sheet at submit time. Keys mirror
+ * lib/completion-cues.ts so this pre-create list and the sheet-side
+ * prompts stay aligned.
+ */
+const REQUIRED_AFTER_CREATE: readonly { key: string; label: string }[] = [
+  { key: "name", label: "a name" },
+  { key: "alias", label: "an alias" },
+  { key: "heritage", label: "a heritage" },
+  { key: "background", label: "a background" },
+  { key: "look", label: "a look" },
+  { key: "vice", label: "a vice, its purveyor, and a description" },
+  { key: "ability", label: "a first playbook ability" },
+  { key: "crew", label: "a crew" },
+];
+
+function renderRequiredAfterCreate(): HTMLElement {
+  return el(
+    "div",
+    { className: "chargen-required" },
+    el(
+      "p",
+      { className: "chargen-required-title" },
+      "Creating leaves these blank — finish them on the sheet:",
+    ),
+    el(
+      "ul",
+      {},
+      ...REQUIRED_AFTER_CREATE.map((r) =>
+        el("li", { "data-required-field": r.key }, r.label),
+      ),
+    ),
+  );
+}
 /**
  * Build the validated PC flow: playbook select first, then per-action dot
  * pickers grouped by attribute, both budget numbers visible, and a Create
@@ -251,6 +288,7 @@ function buildPcChargenForm(
       ...groupEls,
     ),
     counter,
+    renderRequiredAfterCreate(),
     el(
       "div",
       { className: "form-actions" },

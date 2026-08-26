@@ -643,7 +643,7 @@ function renderDetail(state: RenderState): HTMLElement {
   // Retired: every gameplay mutation is on the deny-list (→ RETIRED); the
   // allow-list (dossier/notes/notebook/trauma.remove/undo/delete/reads) stays
   // enabled. stressDisabled layers the pending / out-of-action gates on top
-  // (stress.add + Indulge Vice are the ops those flags block).
+  // (stress.add + stress.clear are the ops those flags block).
   const gameplayDisabled = anyLoading || retired;
   const stressDisabled = anyLoading || retired || pendingTrauma || outOfAction;
   // End-score is the only sanctioned release from out-of-action, so its title
@@ -734,12 +734,14 @@ function renderDetail(state: RenderState): HTMLElement {
   // -- Trauma list ----------------------------------------------------------
   // Routed through the shared component (Design Audit F-05) so the sheet and
   // styleguide render identically. Remove controls are clerical-error
-  // corrections, not the healing path.
+  // corrections, not the healing path — CHAR-05 (DEC-03): they surface only
+  // behind the approved corrections edit mode, like stress.fix; locked ⇒ no
+  // control renders at all.
   const traumaListEl = traumaStamps({
     items: c.monitor.trauma.traumas,
     stamped: c.monitor.trauma.traumas,
     disabled: anyLoading,
-    onRemove: (name) => handlers.onTraumaRemove(name),
+    onRemove: state.correctionsMode ? (name) => handlers.onTraumaRemove(name) : undefined,
   });
 
   const traumaSelect = el("select", { "aria-label": "Add trauma", disabled: gameplayDisabled || !pendingTrauma || availableTraumas.length === 0 },
@@ -764,25 +766,27 @@ function renderDetail(state: RenderState): HTMLElement {
   // -- Vice section ---------------------------------------------------------
 
   // CONTRACT-02 (DEC-02 ruling, 2026-08-24): indulgence is amount-based.
-  // The input defaults to the currently marked stress — one click keeps the
-  // familiar clear-everything behavior, and raising it above the marked
-  // stress is exactly how a caller expresses overindulgence.
-  const indulgeAmountInput = el("input", {
+  // The input defaults to the currently marked stress — one click clears
+  // everything, and raising the amount above the marked stress is exactly
+  // how a caller expresses overindulgence. DEC-02: this control must NOT be
+  // labeled "Indulge Vice" — stress.clear records no contracted vice relief,
+  // so the label states what the op actually does.
+  const clearAmountInput = el("input", {
     type: "number",
     min: "0",
     step: "1",
-    "aria-label": "Stress to clear (Indulge Vice)",
+    "aria-label": "Stress to clear",
     value: String(c.monitor.stress.current),
     disabled: stressDisabled,
     style: "width: 4.5em;",
   }) as HTMLInputElement;
 
-  const indulgeBtn = el("button", {
+  const clearStressBtn = el("button", {
     type: "button",
     disabled: stressDisabled || c.monitor.stress.current === 0,
-    title: "Indulge Vice — clear the chosen amount of stress",
-  }, state.isStressClearLoading ? "…" : "Indulge Vice");
-  indulgeBtn.addEventListener("click", () => handlers.onStressClear(indulgeAmountInput));
+    title: "Clear Stress — clears the chosen amount of marked stress",
+  }, state.isStressClearLoading ? "…" : "Clear Stress");
+  clearStressBtn.addEventListener("click", () => handlers.onStressClear(clearAmountInput));
 
   // -- Undo button ----------------------------------------------------------
   // Lifecycle-recovery is on the retired allow-list; the button reflects the
@@ -1029,8 +1033,8 @@ function renderDetail(state: RenderState): HTMLElement {
           : null,
         el("div", { style: "display: flex; gap: 0.5em; align-items: center;" },
           editBtn,
-          indulgeAmountInput,
-          indulgeBtn,
+          clearAmountInput,
+          clearStressBtn,
         ),
       );
     }
@@ -1282,6 +1286,11 @@ function renderDetail(state: RenderState): HTMLElement {
       c.monitor.trauma.traumas.length === 0
         ? el("p", {}, "(none)")
         : traumaListEl,
+      // CHAR-05: explain the lock instead of leaving a dead-end list.
+      !state.correctionsMode && c.monitor.trauma.traumas.length > 0
+        ? el("p", { className: "lbl", style: "margin: 0.25em 0 0;" },
+            "Trauma removal is a clerical correction — enable corrections (Stress section) to unlock it.")
+        : null,
       el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em;" },
         traumaSelect,
         traumaAddBtn,
@@ -2136,10 +2145,10 @@ function renderDetail(state: RenderState): HTMLElement {
       : null,
 
     // -- F4 lifecycle actions ---------------------------------------------
-    // End-score: always clears stress + out-of-action flags (the sanctioned
+    // End-score always clears stress + out-of-action flags (the sanctioned
     // release); blocked by pending trauma (TRAUMA_REQUIRED) and retired.
-    // Retire: explicit, confirmation-guarded, independent of trauma.
-    // Delete: confirm-guarded; retired characters remain deletable.
+    // CHAR-05 (DEC-03): it stays an ordinary control in its own row, visually
+    // distinct from the permanent-consequence actions below.
     (() => {
       const endScoreBtn = el("button", {
         type: "button",
@@ -2148,24 +2157,8 @@ function renderDetail(state: RenderState): HTMLElement {
       }, state.isEndScoreLoading ? "…" : "End score");
       endScoreBtn.addEventListener("click", handlers.onEndScore);
 
-      const retireBtn = el("button", {
-        type: "button",
-        disabled: anyLoading || retired,
-        title: "Retire this character (confirmation required)",
-      }, state.isRetireLoading ? "…" : "Retire");
-      retireBtn.addEventListener("click", handlers.onRetire);
-
-      const deleteBtn = el("button", {
-        type: "button",
-        disabled: anyLoading,
-        title: "Delete this character (confirmation required, not undoable)",
-      }, state.isDeleteLoading ? "…" : "Delete");
-      deleteBtn.addEventListener("click", handlers.onDeleteCharacter);
-
-      return el("div", { className: "character-lifecycle-actions", "data-section": "lifecycle", style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin-top: 0.5em;" },
+      return el("div", { className: "character-lifecycle-actions", "data-section": "lifecycle", style: "grid-column: 1 / -1; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap; margin-top: 0.5em;" },
         endScoreBtn,
-        retireBtn,
-        deleteBtn,
         // RETIRED copy for the gameplay gate (stress already disabled above).
         retired
           ? el("p", { className: "lbl", style: "margin: 0; width: 100%;" },
@@ -2179,6 +2172,43 @@ function renderDetail(state: RenderState): HTMLElement {
           ? el("p", { className: "lbl", style: "margin: 0; width: 100%;" },
               "No history is available to undo.")
           : null,
+      );
+    })(),
+
+    // -- CHAR-05 (DEC-03): high-impact zone ---------------------------------
+    // Retire/Delete carry permanent consequences: they live in their own
+    // danger-styled zone with consequence copy, clearly separated from the
+    // ordinary End-score release above. Both handlers remain confirmation-
+    // guarded ({confirm: true} on the wire).
+    (() => {
+      const retireBtn = el("button", {
+        type: "button",
+        className: "btn-danger",
+        disabled: anyLoading || retired,
+        title: "Retire this character (confirmation required)",
+      }, state.isRetireLoading ? "…" : "Retire");
+      retireBtn.addEventListener("click", handlers.onRetire);
+
+      const deleteBtn = el("button", {
+        type: "button",
+        className: "btn-danger",
+        disabled: anyLoading,
+        title: "Delete this character (confirmation required, not undoable)",
+      }, state.isDeleteLoading ? "…" : "Delete");
+      deleteBtn.addEventListener("click", handlers.onDeleteCharacter);
+
+      return el("div", {
+        className: "character-high-impact",
+        "data-section": "high-impact",
+        role: "group",
+        "aria-label": "Permanent actions",
+        style: "grid-column: 1 / -1; border: var(--border-medium) solid var(--accent-strong); border-radius: var(--radius); padding: 0.6em 0.75em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
+      },
+        el("p", { className: "lbl", style: "margin: 0; width: 100%; text-transform: uppercase; letter-spacing: 0.08em;" }, "Permanent actions"),
+        el("p", { className: "serif", style: "margin: 0; width: 100%;" },
+          "Retire ends this character's career — gameplay closes, harm/stress/armor clear, dossier and notes stay, and Undo can restore it. Delete erases the character and their history permanently — deletion cannot be undone."),
+        retireBtn,
+        deleteBtn,
       );
     })(),
 

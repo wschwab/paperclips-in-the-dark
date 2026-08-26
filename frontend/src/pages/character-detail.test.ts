@@ -1327,7 +1327,7 @@ describe("character-detail page", () => {
   // -- F2m: Trauma section ------------------------------------------------
 
   describe("F2m Trauma", () => {
-    it("renders current traumas with remove buttons", async () => {
+    it("keeps trauma removal locked by default — stamps render without remove controls", async () => {
       global.fetch = vi
         .fn()
         .mockResolvedValueOnce(ok(characterDTO()))
@@ -1341,9 +1341,15 @@ describe("character-detail page", () => {
 
       await vi.waitFor(() => {
         expect(root.textContent).toContain("Haunted");
-        const removeBtns = root.querySelectorAll('button[title^="Remove trauma"]');
-        expect(removeBtns.length).toBe(1); // one trauma entry
       });
+      // CHAR-05: removal requires the approved corrections edit mode, so no
+      // remove control renders while it is locked.
+      expect(root.querySelectorAll('button[title^="Remove trauma"]').length).toBe(0);
+      expect(root.querySelectorAll("button.trauma-remove-btn").length).toBe(0);
+      // The stamped trauma itself still renders as a display stamp.
+      expect(root.querySelectorAll('.character-traumas span.trauma-stamp[data-stamped="1"]').length).toBe(1);
+      // And the sheet explains how to unlock removal.
+      expect(root.textContent).toContain("enable corrections");
     });
 
     it("renders trauma add select populated from game data, excluding already-stamped traumas", async () => {
@@ -1448,9 +1454,14 @@ describe("character-detail page", () => {
         expect(addCall![1].headers["If-Match"]).toBe("12");
       });
 
-      // Remove half: the stamped trauma gets a remove button once the
-      // updated DTO re-renders; clicking it posts trauma.remove against the
-      // post-add revision.
+      // CHAR-05: removal is gated behind the corrections edit mode — the
+      // stamped trauma only gets a remove control once it is enabled;
+      // clicking that control posts trauma.remove against the post-add
+      // revision.
+      const correctionsToggle = root.querySelector("button.corrections-toggle") as HTMLButtonElement;
+      expect(correctionsToggle).not.toBeNull();
+      expect(root.querySelector('button[aria-label="Remove trauma: Cold"]')).toBeNull();
+      correctionsToggle.click();
       await vi.waitFor(() => {
         expect(root.querySelector('button[aria-label="Remove trauma: Cold"]')).not.toBeNull();
       });
@@ -2173,7 +2184,38 @@ describe("character-detail page", () => {
       });
     });
 
-    it("renders the amount input + Indulge Vice button that posts {amount} to stressClear", async () => {
+    it("never calls a stress-clear control \"Indulge Vice\" — honest Clear Stress wording (DEC-02)", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(characterDTO()))
+        .mockResolvedValueOnce(ok({ Name: "Blades in the Dark", Traumas: ["Cold", "Haunted"], StressMax: 9, TraumaMax: 4 }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Gambling");
+      });
+
+      // DEC-02 ruling: `stress.clear` records no contracted vice relief, so
+      // no control on the sheet may present it as "Indulge Vice" — visible
+      // text, tooltip titles, and aria-labels included.
+      expect(root.textContent).not.toContain("Indulge Vice");
+      expect(root.innerHTML).not.toContain("Indulge Vice");
+
+      // The bare clear op is labeled for what it actually does.
+      const clearBtn = root.querySelector(
+        'button[title="Clear Stress — clears the chosen amount of marked stress"]',
+      ) as HTMLButtonElement;
+      expect(clearBtn).not.toBeNull();
+      expect(clearBtn.textContent).toBe("Clear Stress");
+      const amountInput = root.querySelector('input[aria-label="Stress to clear"]') as HTMLInputElement;
+      expect(amountInput).not.toBeNull();
+    });
+    it("renders the amount input + Clear Stress button that posts {amount} to stressClear", async () => {
       const cleared = characterDTO({
         revision: 13,
         monitor: {
@@ -2206,14 +2248,14 @@ describe("character-detail page", () => {
         expect(root.textContent).toContain("Gambling");
       });
 
-      const indulgeBtn = root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement;
-      expect(indulgeBtn).not.toBeNull();
+      const clearBtn = root.querySelector('button[title="Clear Stress — clears the chosen amount of marked stress"]') as HTMLButtonElement;
+      expect(clearBtn).not.toBeNull();
       // The input defaults to the currently marked stress (3 on the fixture).
-      const amountInput = root.querySelector('input[aria-label="Stress to clear (Indulge Vice)"]') as HTMLInputElement;
+      const amountInput = root.querySelector('input[aria-label="Stress to clear"]') as HTMLInputElement;
       expect(amountInput).not.toBeNull();
       expect(amountInput.value).toBe("3");
       amountInput.value = "3";
-      indulgeBtn.click();
+      clearBtn.click();
 
       await vi.waitFor(() => {
         expect(root.textContent).toContain("0 / 9");
@@ -2256,10 +2298,10 @@ describe("character-detail page", () => {
         expect(root.textContent).toContain("Gambling");
       });
 
-      const indulgeBtn = root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement;
-      const amountInput = root.querySelector('input[aria-label="Stress to clear (Indulge Vice)"]') as HTMLInputElement;
+      const clearBtn = root.querySelector('button[title="Clear Stress — clears the chosen amount of marked stress"]') as HTMLButtonElement;
+      const amountInput = root.querySelector('input[aria-label="Stress to clear"]') as HTMLInputElement;
       amountInput.value = "1.5";
-      indulgeBtn.click();
+      clearBtn.click();
 
       await vi.waitFor(() => {
         expect(root.textContent).toContain("0 / 9");
@@ -2304,10 +2346,10 @@ describe("character-detail page", () => {
         expect(root.textContent).toContain("Gambling");
       });
 
-      const indulgeBtn = root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement;
-      const amountInput = root.querySelector('input[aria-label="Stress to clear (Indulge Vice)"]') as HTMLInputElement;
+      const clearBtn = root.querySelector('button[title="Clear Stress — clears the chosen amount of marked stress"]') as HTMLButtonElement;
+      const amountInput = root.querySelector('input[aria-label="Stress to clear"]') as HTMLInputElement;
       amountInput.value = "9"; // exceeds the fixture's 5 marked
-      indulgeBtn.click();
+      clearBtn.click();
 
       await vi.waitFor(() => {
         expect(root.textContent).toContain("OVERINDULGED");
@@ -4903,7 +4945,7 @@ describe("F4 lifecycle UI", () => {
   };
 
   const getStressPlus = (r: HTMLElement) => r.querySelector('button[title="Add 1 stress"]') as HTMLButtonElement | null;
-  const getIndulge = (r: HTMLElement) => r.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]') as HTMLButtonElement | null;
+  const getClearStress = (r: HTMLElement) => r.querySelector('button[title="Clear Stress — clears the chosen amount of marked stress"]') as HTMLButtonElement | null;
   const getEndScore = (r: HTMLElement) => r.querySelector('button[title^="End the score"], button[title^="Resolve the pending trauma before ending the score"]') as HTMLButtonElement | null;
   const getRetire = (r: HTMLElement) => r.querySelector('button[title="Retire this character (confirmation required)"]') as HTMLButtonElement | null;
   const getDelete = (r: HTMLElement) => r.querySelector('button[title="Delete this character (confirmation required, not undoable)"]') as HTMLButtonElement | null;
@@ -4918,9 +4960,9 @@ describe("F4 lifecycle UI", () => {
     await vi.waitFor(() => {
       expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
     });
-    // Stress + and Indulge Vice are disabled while pending.
+    // Stress + and Clear Stress are disabled while pending.
     expect(getStressPlus(root)!.disabled).toBe(true);
-    expect(getIndulge(root)!.disabled).toBe(true);
+    expect(getClearStress(root)!.disabled).toBe(true);
     // End-score is disabled and the pending banner explains the gate.
     expect(getEndScore(root)!.disabled).toBe(true);
     expect(root.textContent).toContain("A trauma is pending");
@@ -4938,7 +4980,7 @@ describe("F4 lifecycle UI", () => {
       expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
     });
     expect(getStressPlus(root)!.disabled).toBe(true);
-    expect(getIndulge(root)!.disabled).toBe(true);
+    expect(getClearStress(root)!.disabled).toBe(true);
     expect(root.textContent).toContain("out of action");
     // End-score is the release — it stays enabled.
     expect(getEndScore(root)!.disabled).toBe(false);
@@ -5400,6 +5442,12 @@ describe("FV-012 focus restoration", () => {
     await vi.waitFor(() => {
       expect(root.querySelector('button[title="Resolve pending trauma"]')).not.toBeNull();
     });
+    // CHAR-05: the new trauma's remove control exists only in corrections
+    // edit mode — enable it so the restoration target below can exist.
+    (root.querySelector("button.corrections-toggle") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[aria-label="Remove trauma: Haunted"]')).not.toBeNull();
+    });
     (root.querySelector('select[aria-label="Add trauma"]') as HTMLSelectElement).value = "Cold";
     const addBtn = root.querySelector('button[title="Resolve pending trauma"]') as HTMLButtonElement;
     addBtn.focus();
@@ -5509,7 +5557,7 @@ describe("CONTRACT-03 gated corrections", () => {
     expect(fixButton()).toBeNull();
     // Normal play controls are untouched by corrections mode.
     expect(root.querySelector('button[title="Add 1 stress"]')).not.toBeNull();
-    expect(root.querySelector('button[title="Indulge Vice — clear the chosen amount of stress"]')).not.toBeNull();
+    expect(root.querySelector('button[title="Clear Stress — clears the chosen amount of marked stress"]')).not.toBeNull();
   });
 
   it("reveals fix controls when enabled and hides them again when disabled", async () => {
@@ -5789,5 +5837,209 @@ describe("CHAR-06 field affordances", () => {
     // a derived read-only figure beneath it.
     expect(root.querySelectorAll(".coin-stash button").length).toBe(0);
     expect(root.querySelector(".coin-lifestyle")?.textContent).toContain("Lifestyle 2");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CHAR-05 (DEC-03 ruling): high-impact action separation + gated trauma
+// removal. Retire/Delete live in a clearly separated permanent-actions zone
+// carrying consequence copy; End score stays an ordinary release control.
+// Trauma removal requires the approved corrections edit mode (CONTRACT-03);
+// manual trauma add remains resolution-only.
+// ---------------------------------------------------------------------------
+
+describe("CHAR-05 high-impact actions", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.append(root);
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    root.remove();
+  });
+
+  /** Standard six-response load sequence (+ optional op mocks). */
+  function mountWith(dto: unknown, extraMocks: readonly unknown[] = []) {
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}));
+    for (const m of extraMocks) mocked.mockResolvedValueOnce(m);
+    global.fetch = mocked;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  }
+
+  const getEndScore = () =>
+    root.querySelector('button[title^="End the score"]') as HTMLButtonElement | null;
+  const getRetire = () =>
+    root.querySelector('button[title="Retire this character (confirmation required)"]') as HTMLButtonElement | null;
+  const getDelete = () =>
+    root.querySelector('button[title="Delete this character (confirmation required, not undoable)"]') as HTMLButtonElement | null;
+
+  it("separates Retire/Delete into a high-impact zone with consequence copy; End score stays outside", async () => {
+    mountWith(characterDTO());
+
+    await vi.waitFor(() => {
+      expect(getEndScore()).not.toBeNull();
+    });
+    const zone = root.querySelector('[data-section="high-impact"]')!;
+    expect(zone).not.toBeNull();
+    // Both permanent actions live inside the zone...
+    expect(zone.contains(getRetire()!)).toBe(true);
+    expect(zone.contains(getDelete()!)).toBe(true);
+    // ...with consequence copy naming both fates: retirement is reversible
+    // via undo, deletion is not.
+    expect(zone.textContent).toContain("Undo can restore");
+    expect(zone.textContent).toContain("cannot be undone");
+    // End score remains the ordinary release control OUTSIDE the zone, in
+    // its own lifecycle row.
+    expect(zone.contains(getEndScore()!)).toBe(false);
+    expect(getEndScore()!.closest('[data-section="lifecycle"]')).not.toBeNull();
+  });
+
+  it("styles the permanent actions as danger controls while End score stays ordinary", async () => {
+    mountWith(characterDTO());
+
+    await vi.waitFor(() => {
+      expect(getRetire()).not.toBeNull();
+    });
+    expect(getRetire()!.classList.contains("btn-danger")).toBe(true);
+    expect(getDelete()!.classList.contains("btn-danger")).toBe(true);
+    expect(getEndScore()!.classList.contains("btn-danger")).toBe(false);
+  });
+
+  it("keeps the confirmation guard on Retire — declining confirmation issues no request", async () => {
+    mountWith(characterDTO());
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    await vi.waitFor(() => {
+      expect(getRetire()).not.toBeNull();
+    });
+    getRetire()!.click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      expect(calls.find((c) => String(c[0]).endsWith("/retire"))).toBeUndefined();
+    });
+    confirmSpy.mockRestore();
+  });
+});
+
+describe("CHAR-05 gated trauma removal", () => {
+  let root: HTMLElement;
+
+  beforeEach(() => {
+    root = document.createElement("div");
+    document.body.append(root);
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    root.remove();
+  });
+
+  /** Standard six-response load sequence (+ optional op mocks). */
+  function mountWith(dto: unknown, extraMocks: readonly unknown[] = []) {
+    const mocked = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}));
+    for (const m of extraMocks) mocked.mockResolvedValueOnce(m);
+    global.fetch = mocked;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+  }
+
+  const correctionsToggle = () =>
+    root.querySelector("button.corrections-toggle") as HTMLButtonElement | null;
+  const removeTraumaBtn = (name: string) =>
+    root.querySelector(`button[aria-label="Remove trauma: ${name}"]`) as HTMLButtonElement | null;
+
+  it("hides remove controls until corrections mode is enabled and hides them again when disabled", async () => {
+    mountWith(characterDTO()); // traumas: ["Haunted"]
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Haunted");
+    });
+    expect(removeTraumaBtn("Haunted")).toBeNull();
+
+    correctionsToggle()!.click();
+    await vi.waitFor(() => {
+      expect(removeTraumaBtn("Haunted")).not.toBeNull();
+    });
+
+    correctionsToggle()!.click();
+    await vi.waitFor(() => {
+      expect(removeTraumaBtn("Haunted")).toBeNull();
+    });
+  });
+
+  it("posts trauma.remove with If-Match from the revealed control", async () => {
+    const removedDto = characterDTO({
+      revision: 13,
+      monitor: { ...characterDTO().monitor, trauma: { traumas: [], max: 4 } },
+    });
+    mountWith(characterDTO(), [
+      ok({
+        ok: true,
+        character: removedDto,
+        applied: { op: "trauma.remove" },
+        sideEffects: [],
+        error: null,
+      }),
+    ]);
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Haunted");
+    });
+    correctionsToggle()!.click();
+    await vi.waitFor(() => {
+      expect(removeTraumaBtn("Haunted")).not.toBeNull();
+    });
+    removeTraumaBtn("Haunted")!.click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const rmCall = calls.find((c) => String(c[0]).endsWith("/ops/trauma.remove"));
+      expect(rmCall).toBeTruthy();
+      expect(rmCall![0]).toBe(`/api/characters/${CHARACTER_ID}/ops/trauma.remove`);
+      expect(rmCall![1].body).toBe(JSON.stringify({ trauma: "Haunted" }));
+      expect(rmCall![1].headers["If-Match"]).toBe("12");
+    });
+    // The removal re-renders with no stamped trauma left.
+    await vi.waitFor(() => {
+      expect(root.querySelector('.character-traumas span.trauma-stamp[data-stamped="1"]')).toBeNull();
+    });
+  });
+
+  it("keeps manual trauma add resolution-only — disabled while no trauma is pending", async () => {
+    mountWith(characterDTO());
+
+    await vi.waitFor(() => {
+      expect(root.textContent).toContain("Brenda Hilton");
+    });
+    const sel = root.querySelector('select[aria-label="Add trauma"]') as HTMLSelectElement;
+    const addBtn = root.querySelector('button[title="Resolve pending trauma"]') as HTMLButtonElement;
+    expect(sel.disabled).toBe(true);
+    expect(addBtn.disabled).toBe(true);
+
+    // Enabling corrections reveals removal but must NOT unlock manual adds:
+    // CONTRACT-03 added stress.fix, never a manual trauma-add path.
+    correctionsToggle()!.click();
+    await vi.waitFor(() => {
+      expect(removeTraumaBtn("Haunted")).not.toBeNull();
+    });
+    expect((root.querySelector('select[aria-label="Add trauma"]') as HTMLSelectElement).disabled).toBe(true);
+    expect((root.querySelector('button[title="Resolve pending trauma"]') as HTMLButtonElement).disabled).toBe(true);
   });
 });
