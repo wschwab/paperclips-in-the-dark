@@ -19,14 +19,13 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, renameSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
 const CATALOG_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-catalog.json");
-const OUTPUT_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-baseline.json");
 function hash(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -173,25 +172,9 @@ export async function writeMutationArtifact({ mode, fullPath, diagnosticsDir, ru
   return fullPath;
 }
 
-// Parse args
-const args = process.argv.slice(2);
-const specificMutants = args.filter(a => a.startsWith("M"));
-const frontendOnly = args.includes("--frontend-only");
-const backendOnly = args.includes("--backend-only");
-
 // Load catalog
 const catalog = JSON.parse(readFileSync(CATALOG_PATH, "utf8"));
 let mutants = catalog.mutants;
-
-if (specificMutants.length > 0) {
-  mutants = mutants.filter(m => specificMutants.includes(m.id));
-}
-if (frontendOnly) {
-  mutants = mutants.filter(m => m.layer === "frontend");
-}
-if (backendOnly) {
-  mutants = mutants.filter(m => m.layer === "backend-ada");
-}
 
 // ─── Mutation definitions ─────────────────────────────────────────────────
 // Each mutation returns { files: [paths], apply: (repoRoot) => desc }
@@ -206,12 +189,18 @@ const mutations = {
       const content = readFileSync(file, "utf8");
       const changed = replaceExactlyOnce(
         content,
-        'History_Count ("crew", Str_Field (C, "id"))',
-        "0",
-        "M01 Crew_Summary History_Count",
+        `      declare
+         Hc : constant Natural :=
+           History_Count ("crew", Str_Field (C, "id"));
+      begin
+         Set_Field (X, "canUndo", Hc > 0);
+         Set_Field (X, "historyCount", Integer (Hc));
+      end;`,
+        `      null; -- MUTANT M01: canUndo/historyCount projection omitted`,
+        "M01 Crew_Summary projection omission",
       );
       writeFileSync(file, changed);
-      return "Forced Crew_Summary History_Count projection to zero";
+      return "Omitted canUndo/historyCount from Crew_Summary";
     },
   },
 
@@ -308,7 +297,8 @@ const mutations = {
         `         E := Read (Bytes);
       exception`,
         `         E := Read (Bytes);
-         Write_Entity (Kind, Id, E); -- MUTANT M06: write during classification
+         Set_Field (E, "revision", Int_Field (E, "revision") + 1);
+         Write_Entity (Kind, Id, E); -- MUTANT M06: revision-bumping write during classification
       exception`,
         "M06 Classify_Stored",
       );
@@ -395,72 +385,86 @@ const mutations = {
     files: ["backend-ada/server/src/pitd_callback.adb"],
     apply: (repoRoot) => {
       const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
-      let content = readFileSync(file, "utf8");
-      // The W4 branch unlinks related clock ids: if Kind = "clock" then
-      if (!content.includes("if Kind = \"clock\" then")) {
-        throw new Error("M15: Could not find W4 unlink branch");
-      }
-      content = content.replace(
-        'if Kind = "clock" then',
-        'if False then -- MUTANT M15: skip W4 unlink sweep'
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `               Sides : JSON_Array := Empty_Array;
+            begin
+               if Kind = "clock" then`,
+        `               Sides : JSON_Array := Empty_Array;
+            begin
+               if False then -- MUTANT M15: skip W4 unlink sweep`,
       );
-      writeFileSync(file, content);
+      writeFileSync(file, changed);
       return "Skipped W4 unlink-on-delete sweep for related clocks";
     },
   },
 
-  // M10: Clamp off by one (Applied := Item.Stress_Max instead of Item.Stress_Max - Item.Stress_Value)
+  // M10: report the requested delta as applied on overflow (the live clamp
+  // is Bounded_Integers.Add — the server's Core_Clamp_Add wraps it).
   M10: {
-    files: ["backend-ada/core/src/paperclips_core-monitors.adb"],
+    files: ["backend-ada/core/src/paperclips_core-bounded_integers.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/core/src/paperclips_core-monitors.adb");
-      let content = readFileSync(file, "utf8");
-      if (!content.includes("Item.Stress_Max - Item.Stress_Value")) {
-        throw new Error("M10: Could not find Item.Stress_Max - Item.Stress_Value");
-      }
-      content = content.replace(
-        /Applied\s*:=\s*Item\.Stress_Max\s*-\s*Item\.Stress_Value;/g,
-        "Applied := Item.Stress_Max; -- MUTANT M10: off by one"
+      const file = join(repoRoot, "backend-ada/core/src/paperclips_core-bounded_integers.adb");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `      else
+         Applied := Item.Maximum - Item.Current;
+         Item.Current := Item.Maximum;
+      end if;`,
+        `      else
+         Applied := Amount; -- MUTANT M10: requested reported as applied
+         Item.Current := Item.Maximum;
+      end if;`,
+        "M10 overflow clamp",
       );
-      writeFileSync(file, content);
-      return "Changed stress clamp to Applied := Item.Stress_Max (off by one)";
+      writeFileSync(file, changed);
+      return "Overflow applied-delta now reports the requested amount";
     },
   },
 
-  // M11: Auto-add trauma on stress overflow instead of setting Trauma_Pending
+  // M11: Auto-add trauma on stress overflow instead of raising the pending
+  // flag — retargeted to the server's live stress.add arm (the core
+  // Add_Stress is not on the HTTP path).
   M11: {
-    files: ["backend-ada/core/src/paperclips_core-monitors.adb"],
+    files: ["backend-ada/server/src/pitd_callback.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/core/src/paperclips_core-monitors.adb");
-      let content = readFileSync(file, "utf8");
-      if (!content.includes("Item.Trauma_Pending := True")) {
-        throw new Error("M11: Could not find Item.Trauma_Pending := True");
-      }
-      content = content.replace(
-        /Item\.Trauma_Pending\s*:=\s*True/g,
-        "Item.Trauma_Count := Item.Trauma_Count + 1; -- MUTANT M11: auto-add trauma"
+      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `               Set_Field (E, "traumaPending", True);`,
+        `               declare T2 : constant JSON_Value := Get (Get (E, "monitor"), "trauma"); A2 : constant JSON_Array := Get (T2, "traumas"); O2 : JSON_Array := A2; begin Append (O2, Create ("Broken")); Set_Field (T2, "traumas", O2); end; -- MUTANT M11: auto-add trauma`,
+        "M11 pending raise",
       );
-      writeFileSync(file, content);
-      return "Changed Item.Trauma_Pending := True to auto-add trauma";
+      writeFileSync(file, changed);
+      return "Landing at max stress auto-adds a trauma instead of raising the pending flag";
     },
   },
 
-  // M12: Clear retirement during trauma removal
+  // M12: Clear retirement during trauma removal — retargeted to the server's
+  // live trauma.remove arm (the core Remove_Trauma is not on the HTTP path).
   M12: {
-    files: ["backend-ada/core/src/paperclips_core-monitors.adb"],
+    files: ["backend-ada/server/src/pitd_callback.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/core/src/paperclips_core-monitors.adb");
-      let content = readFileSync(file, "utf8");
-      // The actual code uses: Item.Trauma_Count := Item.Trauma_Count - 1;
-      if (!content.includes("Item.Trauma_Count := Item.Trauma_Count - 1")) {
-        throw new Error("M12: Could not find Item.Trauma_Count decrement in Remove_Trauma");
-      }
-      content = content.replace(
-        /Item\.Trauma_Count\s*:=\s*Item\.Trauma_Count\s*-\s*1/g,
-        "Item.Trauma_Count := Item.Trauma_Count - 1;\n      Item.Retired_Flag := False; -- MUTANT M12: clear retirement"
+      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `               if not Found then
+                  return Not_Found_Error (Op, "trauma not found", E);
+               end if;
+               Set_Field(T,"traumas",O);`,
+        `               if not Found then
+                  return Not_Found_Error (Op, "trauma not found", E);
+               end if;
+               Set_Field(T,"traumas",O);
+               Set_Field (E, "isRetired", False); -- MUTANT M12: trauma.remove clears retirement`,
+        "M12 trauma.remove retirement",
       );
-      writeFileSync(file, content);
-      return "Added Item.Retired_Flag := False to Remove_Trauma";
+      writeFileSync(file, changed);
+      return "trauma.remove now clears isRetired";
     },
   },
 
@@ -487,18 +491,20 @@ const mutations = {
     files: ["backend-ada/server/src/pitd_callback.adb"],
     apply: (repoRoot) => {
       const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
-      let content = readFileSync(file, "utf8");
-      // The settings-derived maxima use Settings_Int (S, "StressMax", 0)
-      // Replace the first StressMax lookup with a hardcoded 9
-      if (!content.includes('Settings_Int (S, "StressMax", 0)')) {
-        throw new Error('M16: Could not find Settings_Int (S, "StressMax", 0)');
-      }
-      content = content.replace(
-        'Trim_Image (Settings_Int (S, "StressMax", 0))',
-        '"9"'
+      const content = readFileSync(file, "utf8");
+      // RETARGETED: the creation-template StressMax lookup is normalized away
+      // before persistence, so the mutant was unobservable. The live op-time
+      // enforcement site is tier.add's CrewTierMax lookup (5892-5895).
+      const changed = replaceExactlyOnce(
+        content,
+        `                 Settings_Int ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                                Game (Str_Field (E, "gameStem"))),
+                               "CrewTierMax", 0)`,
+        `                 3 -- MUTANT M16: hardcoded tier maximum`,
+        "M16 CrewTierMax enforcement",
       );
-      writeFileSync(file, content);
-      return "Hardcoded StressMax settings lookup to 9";
+      writeFileSync(file, changed);
+      return "Hardcoded the tier.add CrewTierMax settings lookup to 3";
     },
   },
 
@@ -567,15 +573,177 @@ const mutations = {
     files: ["frontend/src/api/client.ts"],
     apply: (repoRoot) => {
       const file = join(repoRoot, "frontend/src/api/client.ts");
-      let content = readFileSync(file, "utf8");
-      if (!content.includes("DecodeError")) {
-        throw new Error("M20: Could not find DecodeError in client.ts");
-      }
-      content = content.replaceAll("DecodeError", "ApiError");
-      writeFileSync(file, content);
-      return "Changed DecodeError to ApiError on malformed JSON";
+      const content = readFileSync(file, "utf8");
+      // Targeted behavioral mutant: ONLY the malformed-200-JSON site is
+      // reclassified as a status-0 network ApiError. A blanket identifier
+      // rename would duplicate `class ApiError` and kill at compile time,
+      // which is not a mutant-specific behavioral delta.
+      const changed = replaceExactlyOnce(
+        content,
+        'throw new DecodeError(new Error("malformed JSON response"));',
+        'throw new ApiError(0, NETWORK_ERROR_COPY); // MUTANT M20: malformed JSON misclassified as network error',
+        "M20 malformed-JSON classification",
+      );
+      writeFileSync(file, changed);
+      return "Reclassified malformed 200 JSON as a status-0 network ApiError";
     },
   },
+
+  // M21: endpoint mapping bypass — unknown endpoints fall back to a permissive
+  // no-body disposition instead of failing the frozen response oracle.
+  M21: {
+    files: ["conformance/src/endpoint-schema-map.ts"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "conformance/src/endpoint-schema-map.ts");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `  if (!operation) {
+    throw new Error(\`unknown endpoint operationId \${operationId}\`);
+  }`,
+        `  if (!operation) {
+    return { kind: "no-body" } as ResponseDisposition; // MUTANT M21: unknown endpoints bypass the map
+  }`,
+        "M21 endpoint map bypass",
+      );
+      writeFileSync(file, changed);
+      return "Unknown endpoint operationIds bypass the schema map (permissive fallback)";
+    },
+  },
+
+  // M22: default campaign write protection removed — byte drift no longer
+  // fails the run.
+  M22: {
+    files: ["conformance/scripts/default-data-guard.mjs"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "conformance/scripts/default-data-guard.mjs");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `  if (changedCount === 0) return childCode;
+  printDiff(diff);
+  return 1;`,
+        `  return childCode; // MUTANT M22: write protection removed — byte drift no longer fails the run`,
+        "M22 default-data guard verdict",
+      );
+      writeFileSync(file, changed);
+      return "default-data-guard no longer fails on byte drift";
+    },
+  },
+
+  // M23: managed-launch wrong-dataDir acceptance — readiness poll stops
+  // verifying that the health dataDir matches the launcher-owned dir.
+  M23: {
+    files: ["conformance/scripts/managed-run.mjs"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "conformance/scripts/managed-run.mjs");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `if (health?.implementation === "ada" && resolve(health.dataDir) === resolve(expectedDataDir)) return;`,
+        `if (health?.implementation === "ada") return; // MUTANT M23: wrong dataDir accepted`,
+        "M23 dataDir readiness verification",
+      );
+      writeFileSync(file, changed);
+      return "Readiness accepts any ada health response regardless of dataDir";
+    },
+  },
+
+  // M24: degraded roster rows hidden by filtering (E11 total-collections
+  // regression: unreadable rows must stay reachable).
+  M24: {
+    files: ["frontend/src/pages/roster.ts"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "frontend/src/pages/roster.ts");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        "const degraded: T[] = all.filter((row) => !row.isReadable);",
+        "const degraded: T[] = all.filter((row) => row.isReadable); // MUTANT M24: degraded rows hidden",
+        "M24 degraded row filter",
+      );
+      writeFileSync(file, changed);
+      return "Degraded (unreadable) roster rows filtered out of the recovery lane";
+    },
+  },
+
+  // M25: bounded roster rendering removed — every readable row renders at
+  // once, blowing the PERF-02 DOM budget.
+  M25: {
+    files: ["frontend/src/pages/roster.ts"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "frontend/src/pages/roster.ts");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        "export const ROSTER_PAGE_SIZE = 100;",
+        "export const ROSTER_PAGE_SIZE = Number.POSITIVE_INFINITY; // MUTANT M25: unbounded roster rendering",
+        "M25 roster page size",
+      );
+      writeFileSync(file, changed);
+      return "ROSTER_PAGE_SIZE unbounded (render window removed)";
+    },
+  },
+
+  // M26: section-local error routing removed — op failures fall to the
+  // sheet-bottom alert instead of the originating section.
+  M26: {
+    files: ["frontend/src/pages/character-detail.ts"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "frontend/src/pages/character-detail.ts");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        "  if (error && error.section) {",
+        "  if (error && false) { // MUTANT M26: section-local error routing removed",
+        "M26 section error routing",
+      );
+      writeFileSync(file, changed);
+      return "Errors no longer route to their section; sheet-bottom fallback only";
+    },
+  },
+
+  // M27: claim-operation coverage removed — claim.set / claim.customize /
+  // claim.reset dispatch dropped, ops fall through to the unknown-op error.
+  M27: {
+    files: ["backend-ada/server/src/pitd_callback.adb"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      let content = readFileSync(file, "utf8");
+      for (const [op, comment] of [
+        ["claim.set", "acquire/relinquish a claim"],
+        ["claim.customize", "write/merge a per-crew override"],
+        ["claim.reset", "delete the override for a claim"],
+      ]) {
+        content = replaceExactlyOnce(
+          content,
+          `elsif Op = "${op}" then
+         --  Crew Claims: ${comment}`,
+          `elsif False then -- MUTANT M27: ${op} dispatch removed
+         --  Crew Claims: ${comment}`,
+          `M27 ${op}`,
+        );
+      }
+      writeFileSync(file, content);
+      return "Claim operation dispatch removed (claim.set/customize/reset)";
+    },
+  },
+
+  M28: {
+    files: ["conformance/scripts/browser-journeys.mjs"],
+    apply: (repoRoot) => {
+      const file = join(repoRoot, "conformance/scripts/browser-journeys.mjs");
+      const content = readFileSync(file, "utf8");
+      const changed = replaceExactlyOnce(
+        content,
+        `files = (await readdir(suitesBrowserDir)).filter((name) => name.endsWith(".journey.mjs")).sort();`,
+        `files = (await readdir(suitesBrowserDir)).filter((name) => name.endsWith(".journey.mjs") && name !== "lifecycle.journey.mjs").sort(); // MUTANT M28: journey skipped`,
+        "M28 journey enumeration filter",
+      );
+      writeFileSync(file, changed);
+      return "lifecycle journey silently skipped by the enumeration filter";
+    },
+   },
 };
 export function applyCatalogMutation(id, repoRoot) {
   const definition = mutations[id];
@@ -586,15 +754,84 @@ export function applyCatalogMutation(id, repoRoot) {
 
 // ─── Harness ──────────────────────────────────────────────────────────────
 
+const RESULTS_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-results.json");
+
+const sha256File = (path) => hash(readFileSync(path));
+
+// Per-layer verification commands. Each produces a vitest JSON report at
+// `report` so kills can be attributed to specific stable test IDs (delta vs
+// that layer's green baseline), never to incidental build noise.
+function layerTestCommand(layer, report) {
+  switch (layer) {
+    case "backend-ada":
+      return { cmd: `cd conformance && npm run test:ada -- --run --reporter=json --outputFile="${report}"`, cwd: REPO_ROOT, timeout: 2400000 };
+    case "frontend":
+      return { cmd: `npx vitest run --reporter=json --outputFile="${report}"`, cwd: join(REPO_ROOT, "frontend"), timeout: 900000 };
+    case "conformance":
+      return { cmd: `npx vitest run --config vitest.tooling.config.ts --reporter=json --outputFile="${report}"`, cwd: join(REPO_ROOT, "conformance"), timeout: 900000 };
+    default:
+      throw new Error(`unknown layer ${layer}`);
+  }
+}
+
+function buildCommand() {
+  return { cmd: "cd backend-ada/server && alr build", cwd: REPO_ROOT, timeout: 900000 };
+}
+
+// Extract stable test IDs from a vitest JSON report. Bracketed conformance
+// testCase IDs win ([FOO-001]); otherwise fall back to the inventory's
+// path+name slug (test-audit-inventory.mjs idForVitest convention).
+function slugify(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").replace(/-+/g, "-");
+}
+
+function stableTestId(fullName, relFile) {
+  const m = /\[([A-Z][A-Z0-9-]*)\]/.exec(fullName);
+  if (m) return m[1];
+  return slugify(`${relFile} ${fullName}`);
+}
+
+function parseVitestReport(reportPath, exitCode) {
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(reportPath, "utf8"));
+  } catch (e) {
+    return { state: "harness-error", tests: [], error: `cannot parse vitest report: ${e.message}` };
+  }
+  const tests = [];
+  for (const suite of parsed.testResults ?? []) {
+    const abs = suite.name ?? "";
+    const relFile = abs.startsWith(REPO_ROOT) ? abs.slice(REPO_ROOT.length + 1) : abs;
+    for (const a of suite.assertionResults ?? []) {
+      tests.push({ id: stableTestId(a.fullName ?? a.title ?? "", relFile), status: a.status === "passed" ? "passed" : "failed" });
+    }
+  }
+  return { state: exitCode === 0 ? "completed" : "test-failure", tests };
+}
+
+function runLayerTests(layer, withBuild) {
+  const report = join(REPO_ROOT, "agent-docs/test-audit", `.mutation-report-${process.pid}.json`);
+  try {
+    if (withBuild) {
+      console.log("    building Ada server...");
+      const b = runCommand(buildCommand().cmd, buildCommand().cwd, buildCommand().timeout);
+      if (!b.success) {
+        return { state: "build-failure", tests: [], output: (b.stdout + b.stderr).slice(-2000) };
+      }
+    }
+    const { cmd, cwd, timeout } = layerTestCommand(layer, report);
+    const r = runCommand(cmd, cwd, timeout);
+    const parsed = parseVitestReport(report, r.exitCode);
+    parsed.output = (r.stdout + "\n" + r.stderr).slice(-4000);
+    return parsed;
+  } finally {
+    try { rmSync(report, { force: true }); } catch {}
+  }
+}
+
 function runCommand(cmd, cwd = REPO_ROOT, timeout = 300000) {
   try {
-    const result = spawnSync(cmd, {
-      cwd,
-      shell: true,
-      timeout,
-      encoding: "utf8",
-      env: { ...process.env },
-    });
+    const result = spawnSync(cmd, { cwd, shell: true, timeout, encoding: "utf8", env: { ...process.env } });
     return {
       success: result.status === 0,
       stdout: result.stdout || "",
@@ -606,139 +843,170 @@ function runCommand(cmd, cwd = REPO_ROOT, timeout = 300000) {
   }
 }
 
-function revertFiles(files, repoRoot) {
-  // Restore only the specific files from the parent commit
-  for (const f of files) {
-    runCommand(`jj restore --from @- "${f}" 2>&1`, repoRoot);
-  }
-  return true;
+function fileSnapshots(paths) {
+  return paths.map((rel) => {
+    const abs = resolve(REPO_ROOT, rel);
+    return { rel, abs, bytes: readFileSync(abs) };
+  });
 }
 
-function runMutation(mutant) {
-  const { id, layer, intendedCatchingLayer } = mutant;
-  console.log(`\n${"=".repeat(70)}`);
-  console.log(`  ${id} (${layer}) — ${mutant.severity}`);
-  console.log(`  Mutation: ${mutant.mutation.substring(0, 80)}...`);
-  console.log(`${"=".repeat(70)}`);
+function restoreSnapshots(snapshots) {
+  for (const s of snapshots) writeFileSync(s.abs, s.bytes);
+}
 
-  const result = {
-    id,
-    severity: mutant.severity,
-    layer: mutant.layer,
-    status: "not-run",
-    mutation: mutant.mutation,
-    intendedCatchingLayer: mutant.intendedCatchingLayer,
-    buildResult: null,
-    testResult: null,
-    frontendTestResult: null,
-    killed: false,
-    error: null,
-  };
-
-  const mutDef = mutations[id];
-  if (!mutDef) {
-    result.status = "no-mutation-defined";
-    result.error = `No mutation implementation for ${id}`;
-    console.log(`  NO MUTATION DEFINED — skipping`);
-    return result;
-  }
-
-  // Apply mutation
-  try {
-    const desc = mutDef.apply(REPO_ROOT);
-    console.log(`  Applied: ${desc}`);
-  } catch (e) {
-    result.status = "apply-failed";
-    result.error = e.message;
-    console.log(`  APPLY FAILED: ${e.message}`);
-    return result;
-  }
-
-  // Build if needed
-  if (layer === "backend-ada") {
-    console.log("  Building Ada server...");
-    const buildResult = runCommand("cd backend-ada/server && alr build 2>&1", REPO_ROOT, 180000);
-    result.buildResult = {
-      success: buildResult.success,
-      exitCode: buildResult.exitCode,
-      output: buildResult.stdout.slice(-2000) + buildResult.stderr.slice(-2000),
-    };
-    if (!buildResult.success) {
-      result.status = "build-failed";
-      result.killed = false;
-      console.log("  BUILD FAILED — cannot run tests");
-      revertFiles(mutDef.files, REPO_ROOT);
-      return result;
+function verifyHashes(mutant, label) {
+  for (const [rel, expected] of Object.entries(mutant.restorationHash ?? {})) {
+    const actual = sha256File(resolve(REPO_ROOT, rel));
+    if (actual !== expected) {
+      throw new Error(`${label}: ${rel} hash mismatch — concurrent edit or incomplete restoration (expected ${expected.slice(0, 12)}, got ${actual.slice(0, 12)})`);
     }
-    console.log("  Build succeeded.");
-
-    // Run conformance tests
-    console.log("  Running conformance tests...");
-    const testResult = runCommand("cd conformance && npm run test:ada 2>&1", REPO_ROOT, 300000);
-    result.testResult = {
-      success: testResult.success,
-      exitCode: testResult.exitCode,
-      output: testResult.stdout.slice(-3000) + testResult.stderr.slice(-1000),
-    };
-    result.killed = !testResult.success;
-    result.status = result.killed ? "killed" : "survived";
-    console.log(`  Conformance: ${result.killed ? "KILLED" : "SURVIVED"} (exit ${testResult.exitCode})`);
-  } else if (layer === "frontend") {
-    console.log("  Running frontend tests...");
-    const testResult = runCommand("cd frontend && npx vitest run 2>&1", REPO_ROOT, 120000);
-    result.testResult = {
-      success: testResult.success,
-      exitCode: testResult.exitCode,
-      output: testResult.stdout.slice(-3000) + testResult.stderr.slice(-1000),
-    };
-    result.killed = !testResult.success;
-    result.status = result.killed ? "killed" : "survived";
-    console.log(`  Frontend: ${result.killed ? "KILLED" : "SURVIVED"} (exit ${testResult.exitCode})`);
   }
-
-  // Revert ONLY the mutated files
-  revertFiles(mutDef.files, REPO_ROOT);
-  console.log("  Reverted.");
-  return result;
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────
+async function runOneMutant(mutant, baseline, attempt = 1) {
+  const mutDef = mutations[mutant.id];
+  const maxAttempts = 3;
+  const snapshots = fileSnapshots(mutDef.files);
+  try {
+    verifyHashes(mutant, `${mutant.id} pre-apply`);
+    mutDef.apply(REPO_ROOT);
+    const postApply = snapshots.map((s) => sha256File(s.abs));
+    const run = runLayerTests(mutant.layer, mutant.layer === "backend-ada");
+    // Collision check: the mutated files must still hold the mutation; a
+    // concurrent writer (another harness session) invalidates this attempt.
+    const drifted = snapshots.some((s, i) => sha256File(s.abs) !== postApply[i]);
+    if (drifted) {
+      if (attempt < maxAttempts) {
+        console.log(`  file drift detected (concurrent writer) — retrying ${mutant.id} (${attempt}/${maxAttempts})`);
+        return await runOneMutant(mutant, baseline, attempt + 1);
+      }
+      return { id: mutant.id, severity: mutant.severity, layer: mutant.layer, status: "collided", killed: false, killedBy: [], newFailureIds: [], error: "mutated files drifted mid-run after 3 attempts" };
+    }
+    const classified = classifyMutant({
+      baseline: baseline.tests,
+      mutant: run.tests,
+      expectedFailureIds: mutant.expectedTestIds ?? [],
+      runState: run.state,
+    });
+    return {
+      id: mutant.id,
+      severity: mutant.severity,
+      layer: mutant.layer,
+      status: classified.state,
+      killed: classified.killed,
+      killedBy: classified.killed ? classified.newFailureIds : [],
+      newFailureIds: classified.newFailureIds,
+      runState: run.state,
+      output: (run.output ?? "").slice(-1500),
+    };
+  } catch (e) {
+    return { id: mutant.id, severity: mutant.severity, layer: mutant.layer, status: "harness-error", killed: false, killedBy: [], newFailureIds: [], error: String(e.message ?? e) };
+  } finally {
+    restoreSnapshots(snapshots);
+    try { verifyHashes(mutant, `${mutant.id} post-restore`); } catch (e) {
+      console.error(`  RESTORATION FAILURE: ${e.message}`);
+      process.exitCode = 1;
+    }
+  }
+}
 
-export function main() {
-  console.log(`\nAUDIT-0 Wave 3 — Mutation Harness`);
-  console.log(`Running ${mutants.length} mutants: ${mutants.map(m => m.id).join(", ")}`);
-  console.log(`Repository: ${REPO_ROOT}`);
+async function runCampaign() {
+  console.log(`MUT-02 mutation campaign — ${mutants.length} mutants: ${mutants.map((m) => m.id).join(", ")}`);
+
+  // Pre-flight: every catalog entry must be fully specified, implemented,
+  // its expected test IDs present in a green baseline, and its target files
+  // byte-identical to the catalog's restoration hashes.
+  const byLayer = new Map();
+  for (const mutant of mutants) {
+    const mutDef = mutations[mutant.id];
+    if (!mutDef) throw new Error(`pre-flight: no mutation implementation for ${mutant.id}`);
+    if (!Array.isArray(mutant.expectedTestIds) || mutant.expectedTestIds.length === 0) {
+      throw new Error(`pre-flight: ${mutant.id} has no expectedTestIds`);
+    }
+    if (!mutant.restorationHash || Object.keys(mutant.restorationHash).length === 0) {
+      throw new Error(`pre-flight: ${mutant.id} has no restorationHash`);
+    }
+    verifyHashes(mutant, `pre-flight ${mutant.id}`);
+    if (!byLayer.has(mutant.layer)) byLayer.set(mutant.layer, []);
+    byLayer.get(mutant.layer).push(mutant);
+  }
+
+  // Green baseline per layer; expected IDs must exist in it.
+  const baselines = new Map();
+  for (const layer of [...byLayer.keys()].sort()) {
+    console.log(`\n── baseline: ${layer} ──`);
+    const baseline = runLayerTests(layer, layer === "backend-ada");
+    if (baseline.state !== "completed" || baseline.tests.some((t) => t.status !== "passed")) {
+      throw new Error(`baseline for ${layer} is not green (${baseline.state}); refusing to classify mutants`);
+    }
+    console.log(`  green: ${baseline.tests.length} tests`);
+    baselines.set(layer, baseline);
+    const ids = new Set(baseline.tests.map((t) => t.id));
+    for (const mutant of byLayer.get(layer)) {
+      const missing = mutant.expectedTestIds.filter((id) => !ids.has(id));
+      if (missing.length > 0) {
+        throw new Error(`pre-flight: ${mutant.id} expects unknown test IDs: ${missing.join(", ")}`);
+      }
+    }
+  }
 
   const results = [];
-  for (const mutant of mutants) {
-    const result = runMutation(mutant);
-    results.push(result);
+  for (const [layer, layerMutants] of byLayer) {
+    for (const mutant of layerMutants) {
+      console.log(`\n${"=".repeat(70)}\n  ${mutant.id} (${mutant.layer}, ${mutant.severity}) — ${mutant.mutation.slice(0, 90)}…`);
+      const result = await runOneMutant(mutant, baselines.get(mutant.layer));
+      results.push(result);
+      console.log(`  ${result.killed ? "KILLED" : result.status.toUpperCase()}${result.killedBy.length ? ` by ${result.killedBy.join(", ")}` : ""}`);
+    }
   }
 
-  console.log(`\n${"=".repeat(70)}`);
-  console.log("  MUTATION BASELINE SUMMARY");
-  console.log(`${"=".repeat(70)}`);
-  const killed = results.filter(r => r.killed);
-  const survived = results.filter(r => r.status === "survived");
-  const failed = results.filter(r => r.status === "build-failed" || r.status === "apply-failed" || r.status === "no-mutation-defined");
-  console.log(`  Total: ${results.length}`);
-  console.log(`  Killed: ${killed.length} (${killed.map(r => r.id).join(", ")})`);
-  console.log(`  Survived: ${survived.length} (${survived.map(r => r.id).join(", ")})`);
-  console.log(`  Failed/Undefined: ${failed.length} (${failed.map(r => r.id).join(", ")})`);
-
-  const baseline = {
+  const order = { P0: 0, P1: 1, P2: 2 };
+  const summary = {};
+  for (const sev of ["P0", "P1", "P2"]) {
+    const group = results.filter((r) => r.severity === sev);
+    summary[sev] = {
+      total: group.length,
+      killed: group.filter((r) => r.killed).length,
+      survived: group.filter((r) => r.status === "survived").length,
+      notKilled: group.filter((r) => !r.killed).map((r) => r.id),
+    };
+  }
+  const artifact = {
     generatedAt: new Date().toISOString(),
+    catalogIds: mutants.map((m) => m.id),
     totalMutants: results.length,
-    killedCount: killed.length,
-    survivedCount: survived.length,
-    failedCount: failed.length,
-    results,
+    killedCount: results.filter((r) => r.killed).length,
+    survivedCount: results.filter((r) => r.status === "survived").length,
+    killRateBySeverity: summary,
+    results: results.sort((a, b) => (order[a.severity] - order[b.severity]) || a.id.localeCompare(b.id)),
   };
   mkdirSync(join(REPO_ROOT, "agent-docs/test-audit"), { recursive: true });
-  writeFileSync(OUTPUT_PATH, JSON.stringify(baseline, null, 2));
-  console.log(`\nBaseline written to ${OUTPUT_PATH}`);
+  writeFileSync(RESULTS_PATH, JSON.stringify(artifact, null, 2));
+  console.log(`\nResults written to ${RESULTS_PATH}`);
+  for (const sev of ["P0", "P1", "P2"]) {
+    const s = summary[sev];
+    if (s.total > 0) console.log(`  ${sev}: ${s.killed}/${s.total} killed${s.notKilled.length ? ` — not killed: ${s.notKilled.join(", ")}` : ""}`);
+  }
+  if (results.some((r) => !r.killed && r.status !== "survived")) process.exitCode = 1;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-  main();
+const isMain =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+if (isMain) {
+  // Parse args
+  const args = process.argv.slice(2);
+  const specificMutants = args.filter((a) => /^M\d+$/.test(a));
+  const frontendOnly = args.includes("--frontend-only");
+  const backendOnly = args.includes("--backend-only");
+  const conformanceOnly = args.includes("--conformance-only");
+
+  if (frontendOnly) mutants = mutants.filter((m) => m.layer === "frontend");
+  if (backendOnly) mutants = mutants.filter((m) => m.layer === "backend-ada");
+  if (conformanceOnly) mutants = mutants.filter((m) => m.layer === "conformance");
+  if (specificMutants.length > 0) mutants = mutants.filter((m) => specificMutants.includes(m.id));
+
+  runCampaign().catch((e) => {
+    console.error(`campaign failed: ${e.message}`);
+    process.exitCode = 1;
+  });
 }

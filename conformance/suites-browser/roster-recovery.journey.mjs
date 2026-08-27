@@ -1,82 +1,67 @@
-// roster-recovery — RECOVERY-01 journey.
+// roster-recovery — BROWSER-02 top-level journey 1/6 (spec §16 AR-005).
 //
-// Exercises the degraded-row recovery path and the roster-level import IA on
-// a live server: plants one repairable and one unreadable character (route
-// identity is authoritative — the seeded directory id matches the body id),
-// asserts visible classification (`data-recovery-class` + per-class copy),
-// drives Repair (preview → confirm → apply) and Delete (confirm → re-fetch)
-// to full recovery, proves no per-row Import anchors remain, and runs a
-// create-or-replace import through the roster-level panel into a real
-// preview-token / confirm / apply cycle.
+// Readable characters AND crews on the roster; plant one repairable and one
+// unreadable row; filtering must never cost degraded rows their reachability;
+// refresh re-renders; strict decode refuses a non-canonical create; then the
+// full sub-flow checkpoints: visible degraded classification, Repair
+// (preview → confirm → apply), unreadable Delete, zero per-row import
+// anchors, and the roster-level import panel (placement + real replace
+// import). Closes with the roster route/theme matrix.
 //
-// Deliberate backend failures are part of the flow: repair-preview answers
-// 409 NORMALIZATION_REQUIRED (with a token) to confirm. Chromium logs those
-// responses as "Failed to load resource"; they're declared, not suppressed,
-// so zero-error accounting still measures the app.
+// Sub-checkpoint modules (kept from BROWSER-01) run inside this journey:
+//   checkpoints/roster-smoke.mjs       baseline row links
+//   checkpoints/roster-recovery.mjs    degraded classification + repair +
+//                                      delete + import placement
 
-/**
- * Route-scoped console-noise allowance (deliberate 409s drive both the
- * repair preview and possibly the replace-import preview).
- */
-export const expectedConsoleNoise = [
-  { urlPattern: "/repair-preview", text: "Failed to load resource" },
-  { urlPattern: "/import", text: "Failed to load resource" },
-];
 import { createHash, randomUUID } from "node:crypto";
-// The managed launcher exposes PITD_DATA_DIR; the backend reads stored bytes
-// per request, so planting fixture files pre-navigation is sufficient.
 import { mkdir, writeFile } from "node:fs/promises";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
+import * as smoke from "./checkpoints/roster-smoke.mjs";
+import * as recovery from "./checkpoints/roster-recovery.mjs";
+import {
+  composeCtx,
+  runRouteThemeMatrix,
+  unionCheckpoints,
+  unionNoise,
+} from "./lib.mjs";
 
 export const id = "roster-recovery";
 
-export const checkpoints = [
-  {
-    id: "classified-degraded-rows",
-    description:
-      "degraded rows carrying data-recovery-class repairable/unreadable counts (1 each expected)",
-  },
-  {
-    id: "repair-recovers-row",
-    description: "Repair preview→confirm→apply turns the row readable (1/0)",
-  },
-  {
-    id: "unreadable-delete-recovers",
-    description: "deleteToken delete removes the unreadable row after confirm (1/0)",
-  },
-  {
-    id: "per-row-import-links",
-    description: "per-row Import anchors rendered by the roster (0 expected)",
-  },
-  {
-    id: "roster-import-panel-options",
-    description: "target options in the characters import panel (placeholder + entries)",
-  },
-  {
-    id: "roster-import-applies",
-    description: "panel-driven replace import reached OperationResult success (1/0)",
-  },
-  {
-    id: "console-errors",
-    description: "console error count observed on the roster surfaces (0 expected)",
-  },
+// The journey's own deliberate strict-decode fetch (a deliberate 400) makes
+// Chromium log its standard "Failed to load resource" chrome noise; declared
+// so zero-error accounting keeps measuring the app.
+const STRICT_DECODE_NOISE = [
+  { urlPattern: "/api/characters", text: "Failed to load resource" },
 ];
+
+export const expectedConsoleNoise = unionNoise(
+  smoke.expectedConsoleNoise,
+  recovery.expectedConsoleNoise,
+  STRICT_DECODE_NOISE,
+);
+
+export const checkpoints = unionCheckpoints(smoke.checkpoints, recovery.checkpoints, [
+  { id: "roster-crew-rows", description: ">=1 crew row link renders on the roster" },
+  { id: "filter-hides-nonmatching-readable", description: "a non-matching query hides readable rows" },
+  { id: "filter-keeps-degraded-reachable", description: "the same query leaves degraded rows visible/reachable" },
+  { id: "refresh-re-renders-roster", description: "the Refresh control re-fetches and re-renders rows" },
+  { id: "strict-decode-rejects-noncanonical", description: "create with an unknown top-level key -> 422 INVALID_ENTITY" },
+  { id: "matrix-entries", description: "roster route/theme matrix entries exercised (9 expected)" },
+]);
 
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
 const GOLDEN_CHARACTER = join(repoRoot, "conformance/fixtures/golden-character.json");
 
-/** The degraded-entity If-Match token: sha256:<lowercase hex> of the raw bytes. */
 function sha256Token(text) {
   return `sha256:${createHash("sha256").update(text).digest("hex")}`;
 }
 
 /** Plant raw stored bytes at <dataDir>/characters/<id>/current.json. */
 async function seedCharacterBytes(dataDir, idValue, bytes) {
-  const dir = join(dataDir, "characters", idValue);
-  await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, "current.json"), bytes);
+  await mkdir(join(dataDir, "characters", idValue), { recursive: true });
+  await writeFile(join(dataDir, "characters", idValue, "current.json"), bytes);
 }
 
 const api = async (baseUrl, path, init) => {
@@ -88,159 +73,140 @@ export async function run(page, ctx) {
   const { baseUrl } = ctx;
   const dataDir = process.env.PITD_DATA_DIR;
   if (!dataDir) throw new Error("PITD_DATA_DIR missing from journey environment");
+  const wrapped = composeCtx(ctx);
 
-  // A readable character to keep the plate realistic and serve as an import
-  // target later.
-  const playbooksRes = await api(baseUrl, "games/blades-in-the-dark/playbooks");
-  if (playbooksRes.status !== 200) throw new Error(`playbook list → ${playbooksRes.status}`);
-  const playbookEntry = JSON.parse(playbooksRes.text)[0];
-  // The list endpoint returns playbook objects (name + hook list), not names.
-  const playbook = typeof playbookEntry === "string" ? playbookEntry : playbookEntry.name ?? playbookEntry.Name;
-  if (!playbook) throw new Error(`no usable playbook in ${playbooksRes.text.slice(0, 120)}`);
-  const created = await api(baseUrl, "characters", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ gameStem: "blades-in-the-dark", playbook }),
-  });
-  if (created.status !== 200) throw new Error(`character create → ${created.status}: ${created.text.slice(0, 200)}`);
-  const characterId = JSON.parse(created.text).character.id;
+  // -- 0. Baseline: readable rows render (BROWSER-01 smoke) ------------------
+  await smoke.run(page, wrapped);
 
-  // Degraded fixtures derived from the golden character so each row carries
-  // exactly one defect class:
-  //   repairable — unknown nested key (D6): displayed-removal repair, no input
-  //   unreadable — truncated JSON (D10): unparseable bytes, delete-only
+  // -- 1. Readable crew row beside the characters ----------------------------
+  // Seed carries characters; guarantee a crew exists, then require its row.
+  const crewsRes = await api(baseUrl, "crews");
+  if (crewsRes.status !== 200) throw new Error(`crew list -> ${crewsRes.status}`);
+  const crews = JSON.parse(crewsRes.text);
+  if (!Array.isArray(crews) || crews.length === 0) {
+    const createdCrew = await api(baseUrl, "crews", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ gameStem: "blades-in-the-dark", crewType: "Bravos" }),
+    });
+    if (createdCrew.status !== 200) {
+      throw new Error(`crew create -> ${createdCrew.status}: ${createdCrew.text.slice(0, 200)}`);
+    }
+  }
+  await ctx.goto("/roster");
+  const crewRows = page.locator("li[data-crew-id] a[href]");
+  await crewRows.first().waitFor({ state: "visible", timeout: 10_000 });
+  const crewRowCount = await crewRows.count();
+  if (crewRowCount < 1) throw new Error(`expected >=1 crew row on /roster, found ${crewRowCount}`);
+  ctx.checkpoint("roster-crew-rows", crewRowCount);
+
+  // -- 2. Filtering never costs degraded rows their reachability -------------
+  // Plant one unreadable row, then filter to a query nothing readable matches:
+  // readable rows narrow to zero while the degraded row stays visible.
   const golden = JSON.parse(readFileSync(GOLDEN_CHARACTER, "utf8"));
-  const repairableId = randomUUID();
-  const repairableBytes = JSON.stringify({
-    ...golden,
-    id: repairableId,
-    dossier: { ...golden.dossier, favoriteColor: "red" },
-  });
   const unreadableId = randomUUID();
   const unreadableBytes = '{ "kind": "character", "name": "trunc';
-  await seedCharacterBytes(dataDir, repairableId, repairableBytes);
   await seedCharacterBytes(dataDir, unreadableId, unreadableBytes);
-  const unreadableDeleteToken = await sha256Token(unreadableBytes);
-
-  // ---- Classification ------------------------------------------------------
   await ctx.goto("/roster");
-
-  const repairableRow = page.locator(
-    `li[data-degraded][data-recovery-class="repairable"][data-character-id="${repairableId}"]`,
-  );
-  await repairableRow.waitFor({ state: "visible", timeout: 10_000 });
-  await page
-    .locator(`li[data-degraded][data-recovery-class="unreadable"][data-character-id="${unreadableId}"]`)
-    .waitFor({ state: "visible", timeout: 10_000 });
-
-  const visibleCopy = (await repairableRow.textContent()) ?? "";
-  if (!visibleCopy.includes("Repairable character") || !visibleCopy.includes("normalized")) {
-    throw new Error(`repairable row copy not classified visibly: "${visibleCopy.slice(0, 120)}"`);
-  }
-  const unreadableRowText =
-    (await page
-      .locator(`li[data-degraded][data-recovery-class="unreadable"]`)
-      .first()
-      .textContent()) ?? "";
-  if (!unreadableRowText.includes("Unreadable character") || !unreadableRowText.includes("re-import")) {
-    throw new Error(`unreadable row copy lacks recovery guidance: "${unreadableRowText.slice(0, 120)}"`);
-  }
-
-  await ctx.screenshot("recovery01-classification");
-
-  // ---- Repair: preview → confirm → apply -----------------------------------
-  await repairableRow.getByRole("button", { name: "Repair" }).click();
-  await page.locator(".norm-preview").waitFor({ state: "visible", timeout: 10_000 });
-  const readableLink = page.locator(`li[data-character-id="${repairableId}"] > a`);
-  // Seeded fixture trees may add further degraded rows; RECOVERY-01 requires
-  // at least one row of each class to render and classify.
-  const repairableCount = await page.locator('li[data-degraded][data-recovery-class="repairable"]').count();
-  const unreadableCount = await page.locator('li[data-degraded][data-recovery-class="unreadable"]').count();
-  ctx.checkpoint("classified-degraded-rows", Math.min(repairableCount, 1) + Math.min(unreadableCount, 1));
-  if (repairableCount < 1 || unreadableCount < 1) {
-    throw new Error(`degraded classification incomplete: repairable=${repairableCount} unreadable=${unreadableCount}`);
-  }
-  // The preview answered NORMALIZATION_REQUIRED (409) carrying a preview
-  // token; confirming applies the previewed canonical result.
-  await page
-    .locator(".norm-preview")
-    .getByRole("button", { name: "Confirm repair" })
-    .click({ timeout: 10_000 });
-  let repaired = true;
-  try {
-    await readableLink.waitFor({ state: "visible", timeout: 15_000 });
-  } catch {
-    repaired = false;
-  }
-  ctx.checkpoint("repair-recovers-row", repaired ? 1 : 0);
-  if (!repaired) throw new Error("repair did not turn the row readable after confirm");
-
-  // ---- Unreadable: delete via content token --------------------------------
-  const unreadableRow = page.locator(
+  const degradedRow = page.locator(
     `li[data-degraded][data-recovery-class="unreadable"][data-character-id="${unreadableId}"]`,
   );
-  await unreadableRow.getByRole("button", { name: "Delete" }).click();
-  await page.locator(".degraded-delete-confirm").waitFor({ state: "visible", timeout: 10_000 });
-  // Second click is the confirmation inside .degraded-delete-confirm.
-  await page.locator(".degraded-delete-confirm").getByRole("button", { name: "Delete" }).click();
+  await degradedRow.waitFor({ state: "visible", timeout: 10_000 });
 
-  let deleted = true;
-  try {
-    await page
-      .locator(`li[data-character-id="${unreadableId}"]`)
-      .waitFor({ state: "detached", timeout: 15_000 });
-  } catch {
-    deleted = false;
+  const filterInput = page.locator('input[aria-label="Filter roster by name, alias, or playbook"]');
+  await filterInput.fill("zzzz-no-match");
+  // Readable rows disappear; the degraded row must remain.
+  await page
+    .locator("li[data-character-id] a[href]:not(.roster-import)")
+    .first()
+    .waitFor({ state: "detached", timeout: 10_000 })
+    .catch(() => {});
+  const linksWhileFiltered = await page
+    .locator("li[data-character-id] a[href]:not(.roster-import)")
+    .count();
+  ctx.checkpoint("filter-hides-nonmatching-readable", linksWhileFiltered === 0 ? 1 : 0);
+  if (linksWhileFiltered !== 0) {
+    throw new Error(`non-matching query left ${linksWhileFiltered} readable row links visible`);
   }
-  ctx.checkpoint("unreadable-delete-recovers", deleted ? 1 : 0);
-  if (!deleted) throw new Error("unreadable row survived its confirmed delete");
-  await ctx.screenshot("recovery01-after-repair-and-delete");
-
-  // ---- Roster-level general import IA ---------------------------------------
-  const perRowImports = await page.locator("a.roster-import").count();
-  ctx.checkpoint("per-row-import-links", perRowImports);
-  if (perRowImports !== 0) throw new Error(`${perRowImports} per-row Import anchors remain`);
-  const charPanelDetails = page.locator(".roster-characters details.roster-import-panel");
-  await charPanelDetails.locator("summary").click(); // open → options build lazily
-  // Options are rebuilt by the panel's toggle handler; wait for the fresh set.
-  const targetOption = charPanelDetails.locator(
-    `select.import-target option[value="${characterId}"]`,
-  );
-  try {
-    await targetOption.waitFor({ state: "attached", timeout: 10_000 });
-  } catch {
-    const seen = await charPanelDetails
-      .locator("select.import-target option")
-      .evaluateAll((options) => options.map((o) => o.value));
-    throw new Error(`readable character ${characterId} missing from replace targets; saw ${JSON.stringify(seen)}`);
+  const degradedStillVisible = await degradedRow.isVisible();
+  ctx.checkpoint("filter-keeps-degraded-reachable", degradedStillVisible ? 1 : 0);
+  if (!degradedStillVisible) {
+    throw new Error("filtering hid a degraded row — degraded reachability lost");
   }
-  const optionValues = await charPanelDetails.locator("select.import-target option").evaluateAll((options) =>
-    options.map((o) => o.value),
-  );
-  if (!optionValues.includes(characterId)) throw new Error("readable character missing from replace targets");
-  ctx.checkpoint("roster-import-panel-options", optionValues.length);
+  await ctx.screenshot("roster-recovery-filtered-degraded-visible");
 
-  // Replace flow against the freshly repaired character: partial doc,
-  // preview token, confirm, apply — through the shared import page module.
-  await charPanelDetails.locator("select.import-target").selectOption(characterId);
-  await charPanelDetails.getByRole("button", { name: "Open import" }).click();
-  await page.locator("#import-doc").waitFor({ state: "visible", timeout: 10_000 });
-  await page.locator("#import-doc").fill('{ "dossier": { "alias": "Recovery Import" } }');
-  await page.locator("#import-preview-btn").click();
+  // -- 3. Refresh re-renders --------------------------------------------------
+  await filterInput.fill("");
+  await page.locator(".roster-refresh").click();
+  await page
+    .locator('li[data-character-id] a[href]:not(.roster-import)')
+    .first()
+    .waitFor({ state: "visible", timeout: 10_000 });
+  ctx.checkpoint("refresh-re-renders-roster", 1);
 
-  // Either a canonical 200 or a NORMALIZATION_REQUIRED 409 renders a Confirm
-  // control with a preview token; both are valid confirm/apply cycles.
-  await page.locator(".norm-preview").getByRole("button", { name: "Confirm import" }).click({ timeout: 15_000 });
-
-  let imported = true;
-  try {
-    await page.locator(".import-success").waitFor({ state: "visible", timeout: 15_000 });
-  } catch {
-    imported = false;
+  // -- 4. Strict decode: non-canonical create is refused (Option D) -----------
+  // Strict decode (Option D): a non-canonical create is refused at write —
+  // INVALID_ENTITY 422 or INVALID_ENTRY 400; never a silent normalize-on-write.
+  const strictPayload = JSON.stringify({
+    gameStem: "blades-in-the-dark",
+    playbook: "Cutter",
+    bogusTopLevelKey: "not in the schema",
+  });
+  const strictRes = await api(baseUrl, "characters", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: strictPayload,
+  });
+  const strictOk = (res) =>
+    // Request-shape validation precedes the gates (locked status table):
+    // VALIDATION 400, INVALID_ENTRY 400, INVALID_ENTITY 422 — all refusals.
+    (res.status === 422 && res.text.includes("INVALID_ENTITY")) ||
+    (res.status === 400 && (res.text.includes("INVALID_ENTRY") || res.text.includes("VALIDATION")));
+  let strictRejected = strictOk(strictRes);
+  if (!strictRejected) {
+    // Retry through a same-origin fetch (the app's exact transport).
+    const viaPage = await page.evaluate(async ({ url, body }) => {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body,
+      });
+      return { status: res.status, text: await res.text() };
+    }, { url: new URL("/api/characters", baseUrl).href, body: strictPayload });
+    strictRejected = strictOk(viaPage);
+    if (!strictRejected) {
+      throw new Error(
+        `strict decode expected 400 INVALID_ENTRY / 422 INVALID_ENTITY for a non-canonical create, got ` +
+          `${strictRes.status}/${viaPage.status}: ${(viaPage.text || strictRes.text).slice(0, 200)}`,
+      );
+    }
   }
-  ctx.checkpoint("roster-import-applies", imported ? 1 : 0);
-  if (!imported) throw new Error("roster-panel replace import did not reach OperationResult success");
-  await ctx.screenshot("recovery01-roster-import");
+  ctx.checkpoint("strict-decode-rejects-noncanonical", 1);
 
-  ctx.checkpoint("console-errors", ctx.consoleErrors().length);
+  // Clean the filter-step fixture so the sub-flow starts from a classified
+  // board of exactly its own degraded rows.
+  // Deletion is POST /characters/{id}/delete (If-Match: the sha256 content
+  // token for an unreadable entity), not an HTTP DELETE.
+  const delRes = await api(baseUrl, `characters/${unreadableId}/delete`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "if-match": sha256Token(unreadableBytes) },
+    body: JSON.stringify({ confirm: true }),
+  });
+  if (delRes.status !== 200 && delRes.status !== 404) {
+    throw new Error(`fixture cleanup delete -> ${delRes.status}: ${delRes.text.slice(0, 160)}`);
+  }
+
+  // -- 5. Degraded classification, repair, unreadable delete, import IA ------
+  await recovery.run(page, wrapped);
+  // -- 6. Route/theme matrix: the roster surface ------------------------------
+  const entries = await runRouteThemeMatrix(page, ctx, id, [
+    {
+      key: "roster",
+      path: "/roster",
+      waitFor: ".roster-characters",
+      landmarks: [".roster-header", ".roster-characters", ".roster-crews"],
+    },
+  ]);
+  ctx.checkpoint("matrix-entries", entries.length);
+  if (entries.length !== 9) throw new Error(`roster matrix expected 9 entries, got ${entries.length}`);
 }

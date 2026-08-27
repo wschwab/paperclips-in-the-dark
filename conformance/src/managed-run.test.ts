@@ -584,6 +584,7 @@ server.listen(port, "127.0.0.1");
       "fixture one",
       resolve(conformanceDir, "fixtures", "sc-o2-seeds"),
       resolve(conformanceDir, "fixtures", "completeness-seeds"),
+      resolve(conformanceDir, "fixtures", "c5-seeds"),
     ]);
     expect(opts.timeoutMs).toBe(4500);
     expect(opts.vitestArgs).toEqual(forwarded.slice(forwarded.lastIndexOf("--") + 1));
@@ -603,7 +604,7 @@ server.listen(port, "127.0.0.1");
     expect(stdout).toMatch(/\[managed-run\] baseUrl=http:\/\/127\.0\.0\.1:\d+/);
     const dataDir = lineValue(stdout, "dataDir");
     expect(dataDir).toContain("pitd-managed");
-    expect(lineValues(stdout, "seed")).toHaveLength(2);
+    expect(lineValues(stdout, "seed")).toHaveLength(3);
     expect(Number(lineValue(stdout, "pid"))).toBeGreaterThan(0);
     expect(stdout).toContain("testCommand=--run suites/semantics/completeness.test.ts -t COMPLETE-EMPTY-001");
     expect(stderr).toContain("evidence removed");

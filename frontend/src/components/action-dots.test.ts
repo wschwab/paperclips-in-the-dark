@@ -140,6 +140,15 @@ describe("actionDots a11y (A11Y-01)", () => {
       expect(cssSource).toMatch(
         /\.action-dots\.is-interactive button\.action-dot[^{]*\{[^}]*width:\s*24px/,
       );
+      // The ink dot itself stays at its committed 16×16 (M18 guard: shrinking
+      // the declared size below the WCAG 2.5.8 pitch budget must fail here).
+      expect(cssSource).toMatch(
+        /\.action-dot\s*\{[^}]*width:\s*16px[^}]*height:\s*16px/,
+      );
+      // Interactive pitch stays ≥24px: 16px dot + 10px gap (A11Y-01).
+      expect(cssSource).toMatch(
+        /\.action-dots\.is-interactive\s*\{[^}]*gap:\s*10px/,
+      );
     });
   });
 

@@ -41,6 +41,7 @@ import { existsSync, statSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { resolveChromiumExecutable } from "./lib/chromium-resolve.mjs";
 import { ensureFreshFrontendBuild } from "./lib/frontend-fresh.mjs";
+import { loadJourneys } from "./browser-journeys.mjs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -50,7 +51,6 @@ const scriptDir = dirnameOf(import.meta.url);
 const conformanceDir = resolve(scriptDir, "..");
 const repoRoot = resolve(conformanceDir, "..");
 const frontendDir = join(repoRoot, "frontend");
-const suitesBrowserDir = join(conformanceDir, "suites-browser");
 
 function dirnameOf(url) {
   return fileURLToPath(new URL(".", url));
@@ -200,35 +200,9 @@ const DECODE_NOTICE_NEEDLES = [
 ];
 
 
-async function loadJourneys() {
-  let files;
-  try {
-    files = (await readdir(suitesBrowserDir)).filter((name) => name.endsWith(".journey.mjs")).sort();
-  } catch (error) {
-    throw new Error(`cannot read ${suitesBrowserDir}: ${error.message}`);
-  }
-  if (files.length === 0) {
-    throw new Error(`no *.journey.mjs files found in ${suitesBrowserDir}`);
-  }
-  const journeys = [];
-  const seenIds = new Set();
-  for (const file of files) {
-    const mod = await import(`${suitesBrowserDir}/${file}`);
-    const { id, checkpoints, run, expectedConsoleNoise } = mod;
-    if (typeof id !== "string" || id.length === 0) throw new Error(`${file}: must export a non-empty string id`);
-    if (seenIds.has(id)) throw new Error(`${file}: duplicate journey id ${id}`);
-    seenIds.add(id);
-    if (!Array.isArray(checkpoints) || checkpoints.some((c) => typeof c?.id !== "string")) {
-      throw new Error(`${file}: must export checkpoints: [{ id, description? }]`);
-    }
-    if (typeof run !== "function") throw new Error(`${file}: must export async run(page, ctx)`);
-    if (expectedConsoleNoise !== undefined && !Array.isArray(expectedConsoleNoise)) {
-      throw new Error(`${file}: expectedConsoleNoise must be an array of { urlPattern, text } when declared`);
-    }
-    journeys.push({ id, checkpoints, run, file, expectedConsoleNoise: expectedConsoleNoise ?? [] });
-  }
-  return journeys;
-}
+// Journey enumeration lives in ./browser-journeys.mjs (extracted so tooling
+// tests can exercise the real loader side-effect-free); REQUIRED_IDS there
+// makes a silently skipped journey fail the run.
 
 // Chromium auto-requests /favicon.ico when no icon link is declared; the
 // server has none, and the resulting 404 console message is browser chrome

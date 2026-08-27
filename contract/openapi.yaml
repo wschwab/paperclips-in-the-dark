@@ -308,6 +308,12 @@ components:
         developThreshold:
           type: integer
           description: "max(0, rep.max − effectiveTurf); the tier-up rep threshold (rep needs to reach this before tier.add)."
+        tierMax:
+          type: integer
+          description: >
+            Settings-derived CrewTierMax (see game settings / capabilities).
+            The frontend derives its tier display scale from this value, never
+            a hardcoded numeral list. Always present once settings load.
   responses:
     OpResult:
       description: >

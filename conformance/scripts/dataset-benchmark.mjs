@@ -411,7 +411,15 @@ async function collectBrowserMetrics(baseUrl, expectedRows) {
         const state = window.__pitdBench;
         if (!state || state.lastMutation === null) return false;
         const rendered = document.querySelectorAll("[data-character-id],[data-crew-id]").length;
-        return performance.now() - state.lastMutation >= quietMs && rendered >= rows;
+        // PERF-02 bounded roster (frontend/src/pages/roster.ts): readable rows
+        // render in windows of ROSTER_PAGE_SIZE (pinned deliberately — the
+        // frontend pins it the same way in roster.test.ts); degraded rows are
+        // ALWAYS rendered (E11: they stay reachable). The page therefore never
+        // mounts `rows` elements at scale; the honest render-to-stable target
+        // is the initial window. Total row counts are still asserted exactly,
+        // against the API, in runChild.
+        const windowRows = Math.min(rows, 100 /* ROSTER_PAGE_SIZE */);
+        return performance.now() - state.lastMutation >= quietMs && rendered >= windowRows;
       },
       { quietMs: QUIET_WINDOW_MS, rows: expectedRows },
       { timeout: 30_000, polling: 50 },
@@ -635,7 +643,7 @@ async function runChild(argv) {
   // roster        GET /campaign/roster
   // collections   GET /characters | /clocks | /crews (cycled per run)
   // entity-direct GET /characters/{probe}            (skipped at scale 0)
-  // mutation      POST /characters/{probe}/ops/stress.clear (skipped at scale 0)
+  // mutation      POST /characters/{probe}/ops/stress.clear {amount:0} (skipped at scale 0)
   const api = {};
   api.roster = await measureRouteClass("roster", () => timedFetch(`${root}/campaign/roster`));
 
@@ -650,7 +658,14 @@ async function runChild(argv) {
       timedFetch(`${root}/characters/${probe}`),
     );
     api.mutation = await measureRouteClass("mutation", () =>
-      timedFetch(`${root}/characters/${probe}/ops/stress.clear`, { method: "POST" }),
+      timedFetch(`${root}/characters/${probe}/ops/stress.clear`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        // CONTRACT-02: amount-based. amount 0 keeps the measured loop
+        // stateless: always 200 (requested=effective=0), never trips the
+        // overindulgence sideEffect or any lifecycle gate.
+        body: JSON.stringify({ amount: 0 }),
+      }),
     );
   }
 
