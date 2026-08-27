@@ -110,9 +110,11 @@ h3 { font-size: 1.15rem; letter-spacing: 0.04em; }
 }
 
 /* ── Focus ────────────────────────────────────────────────────
- * Always visible, never removed. Every interactive element gets a
- * blood ring on keyboard focus. Mouse focus also draws it because
- * sheet furniture isn't traditional controls. */
+ * Always visible, never removed. Every interactive element gets a ring
+ * on keyboard focus in --focus-ring — a token deliberately distinct from
+ * the error reds (THEME-02/UX-016: red says "error", the ring says
+ * "you are here"). Mouse focus also draws it because sheet furniture
+ * isn't traditional controls. */
 :focus { outline: none; }
 :focus-visible {
   outline: var(--border-thick) solid var(--focus-ring);
@@ -197,9 +199,9 @@ button:active {
 /* ── Form controls (F2aa) ─────────────────────────────────
  * Native <select>, <input>, <textarea> share the sheet furniture language:
  * Oswald labels are the page's job — the controls themselves inherit the
- * body font, sit on raised paper, and draw a blood ring on focus like every
- * other interactive element. Selects keep the native arrow (accessibility /
- * OS behavior); the frame and type match the theme tokens. */
+ * body font, sit on raised paper, and draw a focus ring (non-red, THEME-02)
+ * like every other interactive element. Selects keep the native arrow
+ * (accessibility / OS behavior); the frame and type match the theme tokens. */
 
 input,
 select,

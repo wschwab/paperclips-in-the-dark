@@ -1,0 +1,13 @@
+{
+  "task": "THEME-01",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator-owned verification: frontend unit suite (756/756), npm run build, managed-Chromium conformance run with new theme01-identity-contrast journey asserting >=4.5:1 across Dark/Dark+HiC/HiC/Light",
+  "date": "2026-08-27",
+  "iterationsToGreen": 2,
+  "iterationNotes": "red journey initially returned undefined from page.evaluate source strings (this playwright-core evaluates strings as expressions, not invocable functions); rewrote payloads as IIFEs. Red measurements: light kicker/alias 1.63:1, Hi-C 1:1 on the inked band; Dark already passing (7.52:1)",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": { "compiler": 0, "conformance": 1, "review": 0, "human": 0 },
+  "notes": "Fix = dedicated --band-text-muted token (var(--paper-sunk), #d6cdb8) plus scoped resolution of .character-kicker/.crew-kicker/.alias/.crew-type inside torn-foot plates; no light-theme muted reuse. Green ratios: light 8.13:1, HiC 11.01:1, dark 12.71:1, dark+HiC 11.01:1. Evidence: /tmp/w7-theme01-report.md, screenshots under /tmp/pitd-browser/2026-08-27T13-07-19-770Z-3b4febd5/screenshots/theme01-*.png. Known non-blocking sibling failure: theme02-focus-error journey (sibling crew agent's in-flight THEME-02 red state, TypeError at its own line 212) outside this card's edit surface."
+}

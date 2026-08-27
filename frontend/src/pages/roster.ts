@@ -492,9 +492,15 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
     statusRegion,
     el(
       "div",
+      // LAYOUT-01: heading and its Create/import disclosure share one
+      // scanline (.roster-heading-row); DOM order is unchanged.
       { className: "roster-characters torn-foot" },
-      el("h2", {}, `Characters (${totalChars})`),
-      createImportPanel("character", roster.characters, charImportFlow),
+      el(
+        "div",
+        { className: "roster-heading-row" },
+        el("h2", {}, `Characters (${totalChars})`),
+        createImportPanel("character", roster.characters, charImportFlow),
+      ),
       totalChars === 0
         ? el("p", { className: "empty uneven" }, "No characters yet.")
         : charPlate.listEl,
@@ -504,8 +510,12 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
     el(
       "div",
       { className: "roster-crews torn-foot" },
-      el("h2", {}, `Crews (${totalCrews})`),
-      createImportPanel("crew", roster.crews, crewImportFlow),
+      el(
+        "div",
+        { className: "roster-heading-row" },
+        el("h2", {}, `Crews (${totalCrews})`),
+        createImportPanel("crew", roster.crews, crewImportFlow),
+      ),
       totalCrews === 0
         ? el("p", { className: "empty uneven" }, "No crews yet.")
         : crewPlate.listEl,

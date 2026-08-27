@@ -366,7 +366,7 @@ export function mountStyleguidePage(root: HTMLElement): () => void {
       el(
         "ul",
         { className: "serif" },
-        el("li", {}, "Visible :focus-visible ring in blood accent on every control."),
+        el("li", {}, "Visible :focus-visible ring in a dedicated non-red token — red is reserved for errors."),
         el("li", {}, "prefers-reduced-motion kills transitions and the page fade."),
         el("li", {}, "High-contrast variant via the Hi-C toggle (data-contrast=high)."),
         el("li", {}, "Manual light/dark override; Auto defers to prefers-color-scheme."),

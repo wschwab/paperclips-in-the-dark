@@ -1913,9 +1913,8 @@ function renderDetail(state: RenderState): HTMLElement {
         el("div", {
           className: "gear-loadout-entry",
           "data-gear-item": item.name,
-          style: "display: flex; align-items: center; gap: 0.5em; margin: 0.25em 0;",
         },
-          el("span", { className: "lbl", style: "min-width: 8em;" }, item.name),
+          el("span", { className: "lbl" }, item.name),
           el("span", { className: "gear-item-bulk" }, `${item.bulk} bulk`),
           el("button", {
             type: "button",

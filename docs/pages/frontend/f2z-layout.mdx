@@ -81,3 +81,54 @@ so the grid never strands a half-empty row:
 - `npm test -- --run` (366 tests) and `npm run build` green. ✔
 - No page TS restructure was needed — the layout is CSS-only, so no test
   selectors changed.
+
+## LAYOUT-01 (UX-014) — roster and sheet alignment (2026-08-27)
+
+Wave 7 alignment pass on this page's layout idiom, from the AUDIT-0
+remediation card LAYOUT-01. CSS-led, with two small roster TS changes.
+
+### Roster: explicit shared grid starts
+
+The auto-fit grid could park `.roster-characters` beside the masthead and
+drop `.roster-crews` nearly 1800px lower, so Crews were only visible after
+scrolling past the entire Characters list (DEC-06 finding). The roster now
+uses a fixed two-column template with explicit placements: the masthead
+spans both columns; Characters claims column 1 row 2, Crews column 2 row 2.
+Below 840px everything stacks in one column.
+
+### Roster: Create/import beside the heading
+
+Each section's Create/import disclosure shares one flex scanline with its
+heading via a new `.roster-heading-row` wrapper (`justify-content:
+space-between`, `align-items: baseline`). DOM order is unchanged, so AT
+reading order keeps heading → disclosure → list.
+
+### Sheets: balanced text columns replace paired rows
+
+Sequential pair packing always strands an interior hole beside the shorter
+card of each row (measured: 449px dead space under Traumas, 939px beside
+Playbook), and no packing discipline can backfill those holes without
+reordering DOM or breaking focus order. Wide sheets (≥900px) therefore flow
+their section cards through **two balanced text columns**
+(`display: block; columns: 2` + `break-inside: avoid`). The sheet reads down
+column 1 then down column 2 — visual order equals DOM reading order equals
+focus order. Only the masthead and alert strips span both columns; every
+span edge would force a rebalance seam below it. Measured worst interior
+hole after the change: ≤26px across all widths (was 449px).
+
+### Gear loadout: repeated-row grids
+
+`.gear-loadout-entry` swaps its inline flex for a repeated-row grid
+(`minmax(0, 1fr) max-content max-content`): item names wrap inside the fluid
+track while bulk text and remove buttons sit on stable max-content tracks,
+so every row's ✕ lands on the same x regardless of name length. Verified by
+the layout01-alignment journey with two loadout rows.
+
+### Acceptance evidence
+
+- New journey `conformance/suites-browser/layout01-alignment.journey.mjs`:
+  asserts masthead/plate shared starts, side-by-side plates, heading-beside
+  Create, interior-hole bound, gear-column stability at TRUE 1440/768/390
+  viewports, capturing screenshots of every changed surface.
+- Full browser suite PASS (12 journeys); frontend unit suite 756/756;
+  `tsc --noEmit` clean; `npm run build` clean.

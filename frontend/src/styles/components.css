@@ -58,7 +58,10 @@
   border-color: var(--fill);
 }
 .action-dot:focus-visible {
-  outline-color: var(--accent);
+  /* THEME-02: focus keeps the dedicated non-red token; dense 6–10px dot
+   * pitch gets a tight outline so the ring stays clear of neighbors. */
+  outline-color: var(--focus-ring);
+  outline-offset: 0;
 }
 /* A11Y-01: invisible 24×24 hit zone centred on each interactive ink dot
  * (24px WCAG 2.5.8 target minimum). A pseudo-element's pixels belong to its
@@ -118,7 +121,11 @@
   background: var(--fill-accent);
 }
 .stress-box:focus-visible {
-  outline-color: var(--accent);
+  /* THEME-02: track gap is 6px — a full 2px-offset ring (±5px bleed) would
+   * touch the neighbor box; offset 0 keeps ≥3px air while staying visible
+   * over filled ink boxes (the ring paints on the track surface). */
+  outline-color: var(--focus-ring);
+  outline-offset: 0;
 }
 
 /* ── Turf slots (F2ac) ─────────────────────────────────────────
@@ -161,7 +168,8 @@
   background: var(--fill);
 }
 .chart-box:focus-visible {
-  outline-color: var(--accent);
+  outline-color: var(--focus-ring);
+  outline-offset: 0;
 }
 .chart-box:disabled {
   cursor: default;
@@ -275,8 +283,8 @@
   opacity: 0.6;
 }
 .claim-cell:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 0;
 }
 .active-claim-list {
   list-style: none;
@@ -341,7 +349,7 @@
   box-shadow: none;
 }
 .trauma-stamp:hover { transform: rotate(0deg); }
-.trauma-stamp:focus-visible { outline-color: var(--accent); }
+.trauma-stamp:focus-visible { outline-color: var(--focus-ring); }
 
 /* ── Harm table ──────────────────────────────────────────────── */
 
@@ -411,7 +419,7 @@
 }
 .harm-remove-btn:focus-visible,
 .trauma-remove-btn:focus-visible {
-  outline-color: var(--accent);
+  outline-color: var(--focus-ring);
 }
 .harm-remove-btn:disabled,
 .trauma-remove-btn:disabled {
@@ -454,7 +462,7 @@
 .clock .clock-segment[data-filled="1"] { fill: var(--fill); }
 .clock .clock-segment[data-filled="2"] { fill: var(--fill-accent); }
 .clock .clock-segment:focus { outline: none; }
-.clock .clock-segment:focus-visible { stroke: var(--accent); stroke-width: 4; }
+.clock .clock-segment:focus-visible { stroke: var(--focus-ring); stroke-width: 4; }
 .clock .clock-tick {
   stroke: var(--rule-heavy);
   stroke-width: 2;
@@ -487,7 +495,7 @@
   transition: background var(--transition-fast);
   vertical-align: middle;
 }
-.inked-check:focus-visible { outline-color: var(--accent); }
+.inked-check:focus-visible { outline-color: var(--focus-ring); outline-offset: 0; }
 .inked-check[data-checked="1"],
 .inked-check:checked {
   background: var(--fill);
@@ -635,16 +643,85 @@
   max-width: var(--sheet-width-wide);
 }
 
-.roster,
+.roster {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+/* LAYOUT-01 (UX-014): roster regions take explicit shared grid starts. The
+ * masthead spans both columns; Characters claims column 1 of row 2 and
+ * Crews column 2 of row 2, so both section headings begin on one edge
+ * directly under the header instead of auto-flowing wherever the previous
+ * row happened to leave room (the defect put Characters beside the masthead
+ * and Crews almost 1800px lower). */
+.roster-header {
+  grid-column: 1 / -1;
+}
+.roster-characters {
+  grid-column: 1;
+  grid-row: 2;
+}
+.roster-crews {
+  grid-column: 2;
+  grid-row: 2;
+}
+@media (max-width: 839px) {
+  .roster {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .roster-characters,
+  .roster-crews {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
 .character-detail,
 .crew-detail {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
-  /* Cards size to their content instead of stretching to the tallest
-   * sibling (Design Audit F-06) — avoids stranding hundreds of px of
-   * empty bordered paper in short cards like Fund / Traumas. */
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* LAYOUT-01: wide sheets flow their section cards through two balanced
+ * text columns instead of paired grid rows. Sequential pair packing always
+ * strands a dead vertical hole beside whichever card in each row is shorter
+ * (measured 449px under Traumas, 939px beside Playbook). Multi-column packs
+ * the same DOM sequence with no interior holes — the sheet still reads down
+ * column 1 then column 2, like print columns, so visual order equals DOM
+ * reading order and focus order never jumps. Cards keep their integrity via
+ * break-inside: avoid; only the masthead and alert strips span both columns
+ * (every span edge forces a rebalance below it and would re-plant a ragged
+ * band seam, so mid-sheet furniture rides inside its column instead).
+ * Below 900px the single-column stack needs no special treatment. */
+@media (min-width: 900px) {
+  .character-detail,
+  .crew-detail {
+    display: block;
+    columns: 2;
+    column-gap: 18px;
+  }
+  .character-detail > *,
+  .crew-detail > * {
+    break-inside: avoid;
+    /* replaces the grid gap between stacked cards */
+    margin-top: 18px;
+  }
+  .character-detail > :first-child,
+  .crew-detail > :first-child {
+    margin-top: 0;
+  }
+  /* masthead + alerts read across the whole sheet; everything else packs */
+  .character-detail > .character-header,
+  .character-detail > .error,
+  .character-detail > .notice,
+  .crew-detail > .crew-header,
+  .crew-detail > .error,
+  .crew-detail > .notice {
+    column-span: all;
+  }
 }
 
 /* every section reads as a box on the printed sheet */
@@ -803,6 +880,35 @@
 }
 .harm-add-row input {
   flex: 1 1 10em;
+}
+
+/* ── LAYOUT-01 (UX-014) repeated-row grids ───────────────────── */
+
+/* The roster Create/import disclosure shares one scanline with its section
+ * heading instead of stacking beneath it. DOM order is unchanged (heading,
+ * then disclosure), so AT reading order keeps its sequence. */
+.roster-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75em;
+  flex-wrap: wrap;
+}
+
+/* Gear loadout rows are a repeated-row grid: the item name owns the fluid
+ * track while bulk and remove controls sit on stable max-content tracks, so
+ * every row's ✕ lands on the same x regardless of name length (the old
+ * inline flex let a min-width:8em label push controls sideways). */
+.gear-loadout-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  align-items: center;
+  column-gap: 0.5em;
+  margin: 0.25em 0;
+}
+.gear-loadout-entry > .lbl {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* ── Page primitives (Design Audit F-04 / F-28 / F-29) ────────
@@ -1112,6 +1218,16 @@
 .roster-crews.torn-foot a,
 .app-bar.torn-foot a {
   color: var(--band-text);
+}
+/* THEME-01 (UX-015): the kicker/alias identity lines sit on the inked
+ * band, so their --text-muted ink (an ink-on-paper token) is dark-on-dark
+ * there (measured 1.63:1 light, 1:1 light+HiC). Resolve them through the
+ * dedicated >=4.5:1 band-muted token; non-band contexts keep --text-muted. */
+.character-header.torn-foot .character-kicker,
+.crew-header.torn-foot .crew-kicker,
+.character-header.torn-foot .alias,
+.crew-header.torn-foot .crew-type {
+  color: var(--band-text-muted);
 }
 /* Controls keep their own ink inside the band — the band link color must
  * not override the .btn-primary/.btn-secondary fill pairing or the theme
