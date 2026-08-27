@@ -7,14 +7,15 @@
 // token: correct on paper cards, but dark-on-dark on the band — the audit's
 // "nearly invisible" finding.
 //
-// This journey drives a real seeded character sheet, flips the theme
-// attributes exactly as frontend/src/lib/theme.ts does (data-theme /
-// data-contrast on <html>), measures the ACTUAL computed foreground vs the
-// effective (alpha-composited ancestor chain) background for the kicker and
-// the alias in Dark, Dark+Hi-C, Hi-C, and Light, and asserts >=4.5:1 (WCAG
-// AA normal text) for every measurement. Computed colors and ratios are
-// logged as browser evidence and recorded as one numeric checkpoint per
-// measurement.
+// This journey drives a real seeded character sheet at three TRUE viewport
+// widths (1440 / 768 / 390 — the THEME-01 review requirement; heights follow
+// the theme02 combos), flips the theme state through the REAL app-bar theme
+// switcher (frontend/src/lib/theme.ts mountThemeControls: Auto/Light/Dark +
+// Hi-C toggle), measures the ACTUAL computed foreground vs the effective
+// (alpha-composited ancestor chain) background for the kicker and the alias
+// in Dark, Dark+Hi-C, Hi-C, and Light, and asserts >=4.5:1 (WCAG AA normal
+// text) for every measurement. Computed colors and ratios are logged as
+// browser evidence and recorded as one numeric checkpoint per measurement.
 //
 // Note the coverage asymmetry this encodes: the audit brief mandates Dark
 // and Hi-C, but the failing pair lives where the band appears over light
@@ -22,44 +23,76 @@
 
 export const id = "theme01-identity-contrast";
 
-export const checkpoints = [
-  { id: "dark-kicker-ratio", description: "kicker fg/bg contrast ratio, dark theme (>=4.5 expected)" },
-  { id: "dark-alias-ratio", description: "alias fg/bg contrast ratio, dark theme (>=4.5 expected)" },
-  { id: "dark-hic-kicker-ratio", description: "kicker fg/bg contrast ratio, dark + high contrast (>=4.5 expected)" },
-  { id: "dark-hic-alias-ratio", description: "alias fg/bg contrast ratio, dark + high contrast (>=4.5 expected)" },
-  { id: "hic-kicker-ratio", description: "kicker fg/bg contrast ratio, OS theme + high contrast (>=4.5 expected)" },
-  { id: "hic-alias-ratio", description: "alias fg/bg contrast ratio, OS theme + high contrast (>=4.5 expected)" },
-  { id: "light-kicker-ratio", description: "kicker fg/bg contrast ratio, light theme on the inked band (>=4.5 expected)" },
-  { id: "light-alias-ratio", description: "alias fg/bg contrast ratio, light theme on the inked band (>=4.5 expected)" },
-];
-
-// The four audited states, applied exactly like frontend/src/lib/theme.ts:
-// data-theme="light|dark" (absent = OS pref) and data-contrast="high".
+// The four audited states, matching what the theme switcher produces
+// (data-theme="light|dark", absent = OS pref; data-contrast="high").
 const STATES = [
-  { key: "dark", theme: "dark", contrast: false },
-  { key: "dark-hic", theme: "dark", contrast: true },
-  { key: "hic", theme: null, contrast: true },
-  { key: "light", theme: "light", contrast: false },
+  { key: "dark", label: "dark theme", theme: "dark", contrast: false },
+  { key: "dark-hic", label: "dark + high contrast", theme: "dark", contrast: true },
+  { key: "hic", label: "OS theme + high contrast", theme: null, contrast: true },
+  { key: "light", label: "light theme on the inked band", theme: "light", contrast: false },
 ];
 
-// Source-string evaluate payloads (browser-suite convention: values are
-// embedded into the source; the runner evaluates STRINGS AS EXPRESSIONS, so
-// every payload is a self-invoking function literal with values baked in).
-const applyStateSource = (state) => `(() => {
-  const root = document.documentElement;
-  ${
-    state.theme
-      ? `root.setAttribute("data-theme", ${JSON.stringify(state.theme)});`
-      : 'root.removeAttribute("data-theme");'
-  }
-  ${state.contrast ? 'root.setAttribute("data-contrast", "high");' : 'root.removeAttribute("data-contrast");'}
-})();`;
+// True viewport widths required by the THEME-01 review; heights follow the
+// theme02 combos for the same widths (desktop / tablet / phone).
+const VIEWPORTS = [
+  { key: "1440", width: 1440, height: 900 },
+  { key: "768", width: 768, height: 1024 },
+  { key: "390", width: 390, height: 844 },
+];
 
+const TARGETS = [
+  { name: "kicker", selector: ".character-header.torn-foot .character-kicker" },
+  { name: "alias", selector: ".character-header.torn-foot .alias" },
+];
+
+export const checkpoints = [
+  ...STATES.flatMap((state) =>
+    VIEWPORTS.flatMap((vp) =>
+      TARGETS.map((target) => ({
+        id: `${state.key}-${vp.key}-${target.name}-ratio`,
+        description: `${target.name} fg/bg contrast ratio, ${state.label} @ ${vp.width}px (>=4.5 expected)`,
+      })),
+    ),
+  ),
+  {
+    id: "combinations-verified",
+    description: "number of theme×viewport combinations fully verified (12 expected)",
+  },
+];
+
+// Apply a state through the real app-bar switcher (the same controls a human
+// uses), then verify <html> carries the expected attributes — the switcher
+// writes localStorage + data-theme/data-contrast exactly like
+// frontend/src/lib/theme.ts.
+const READ_ATTRS_SOURCE = `(() => ({
+  theme: document.documentElement.getAttribute("data-theme"),
+  contrast: document.documentElement.getAttribute("data-contrast"),
+}))()`;
+
+async function applyStateViaSwitcher(page, state) {
+  await page
+    .locator(`.theme-controls button[data-theme="${state.theme ?? "auto"}"]`)
+    .click();
+  const contrastBtn = page.locator('.theme-controls button[title="Toggle high contrast"]');
+  const pressed = (await contrastBtn.getAttribute("aria-pressed")) === "true";
+  if (pressed !== state.contrast) await contrastBtn.click();
+  const attrs = await page.evaluate(READ_ATTRS_SOURCE);
+  const expectedTheme = state.theme ?? null;
+  const expectedContrast = state.contrast ? "high" : null;
+  if (attrs.theme !== expectedTheme || attrs.contrast !== expectedContrast) {
+    throw new Error(
+      `theme switcher did not apply ${state.key}: got ` +
+        `data-theme=${JSON.stringify(attrs.theme)} data-contrast=${JSON.stringify(attrs.contrast)}, ` +
+        `expected ${JSON.stringify(expectedTheme)}/${JSON.stringify(expectedContrast)}`,
+    );
+  }
+}
+
+// Source-string evaluate payload (browser-suite convention: values are
+// embedded into the source; the runner evaluates STRINGS AS EXPRESSIONS, so
+// the payload is a self-invoking function literal with values baked in).
 const MEASURE_SOURCE = `(() => {
-  const targets = [
-    { name: "kicker", selector: ".character-header.torn-foot .character-kicker" },
-    { name: "alias", selector: ".character-header.torn-foot .alias" },
-  ];
+  const targets = ${JSON.stringify(TARGETS)};
   const parse = (s) => {
     const m = s.match(/rgba?\\(([^)]+)\\)/);
     if (!m) return { r: 0, g: 0, b: 0, a: 1 };
@@ -125,28 +158,35 @@ export async function run(page, ctx) {
   if (!detailPath || !detailPath.startsWith("/character/")) {
     throw new Error(`no character detail link on seeded roster (got ${JSON.stringify(detailPath)})`);
   }
-  await ctx.goto(detailPath);
-  await page.locator(".character-detail").waitFor({ state: "visible", timeout: 10_000 });
 
   const failures = [];
-  for (const state of STATES) {
-    await page.evaluate(applyStateSource(state));
-    const samples = await page.evaluate(MEASURE_SOURCE);
-    for (const sample of samples) {
-      console.log(
-        `[theme01] ${state.key} ${sample.name}: fg=${sample.color} bg=${sample.background} ` +
-          `fontSize=${sample.fontSizePx} ratio=${sample.ratio}:1 (${sample.selector})`,
-      );
-      ctx.checkpoint(`${state.key}-${sample.name}-ratio`, sample.ratio);
-      if (sample.ratio < 4.5) {
-        failures.push(
-          `${state.key} ${sample.name} ${sample.ratio}:1 < 4.5:1 ` +
-            `(fg=${sample.color} bg=${sample.background} on ${sample.selector})`,
+  let combinations = 0;
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    await ctx.goto(detailPath);
+    await page.locator(".character-detail").waitFor({ state: "visible", timeout: 10_000 });
+
+    for (const state of STATES) {
+      await applyStateViaSwitcher(page, state);
+      const samples = await page.evaluate(MEASURE_SOURCE);
+      for (const sample of samples) {
+        console.log(
+          `[theme01] ${vp.key}px ${state.key} ${sample.name}: fg=${sample.color} bg=${sample.background} ` +
+            `fontSize=${sample.fontSizePx} ratio=${sample.ratio}:1 (${sample.selector})`,
         );
+        ctx.checkpoint(`${state.key}-${vp.key}-${sample.name}-ratio`, sample.ratio);
+        if (sample.ratio < 4.5) {
+          failures.push(
+            `${vp.key}px ${state.key} ${sample.name} ${sample.ratio}:1 < 4.5:1 ` +
+              `(fg=${sample.color} bg=${sample.background} on ${sample.selector})`,
+          );
+        }
       }
+      await ctx.screenshot(`theme01-${state.key}-${vp.key}w`);
+      combinations++;
     }
-    await ctx.screenshot(`theme01-${state.key}`);
   }
+  ctx.checkpoint("combinations-verified", combinations);
 
   if (failures.length > 0) {
     throw new Error(`THEME-01 identity contrast below 4.5:1 — ${failures.join("; ")}`);
