@@ -113,12 +113,19 @@ describe("mutation harness methodology", () => {
   );
 });
 
-  it("[MUT-CAL-008] refreshed M01, M06, and M17 anchors mutate their intended current symbols", async () => {
+  it("[MUT-CAL-008] refreshed M01/M04/M06/M11/M12/M16/M27/M17 anchors mutate their intended current symbols", async () => {
     const repoRoot = resolve(import.meta.dirname, "../..");
+    // ARCH-01: anchors for these mutants moved with their symbols into the
+    // concern packages; each fixture copies the mutant's current target.
     const targets: Record<string, string> = {
-      M01: "backend-ada/server/src/pitd_callback.adb",
-      M06: "backend-ada/server/src/pitd_callback.adb",
+      M01: "backend-ada/server/src/pitd_summary.adb",
+      M04: "backend-ada/server/src/pitd_normalize.adb",
+      M06: "backend-ada/server/src/pitd_stored.adb",
+      M11: "backend-ada/server/src/pitd_ops.adb",
+      M12: "backend-ada/server/src/pitd_ops.adb",
+      M16: "backend-ada/server/src/pitd_ops.adb",
       M17: "frontend/src/lib/focus.ts",
+      M27: "backend-ada/server/src/pitd_ops.adb",
     };
     for (const [id, relative] of Object.entries(targets)) {
       const root = await mkdtemp(join(tmpdir(), `pitd-${id}-`));

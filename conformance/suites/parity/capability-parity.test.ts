@@ -193,6 +193,40 @@ describe("capability parity (SC-O7)", () => {
       }
       expect(pageSources.size, "main.ts mounts at least one page").toBeGreaterThan(0);
 
+      // ARCH-02: a mounted page's interactive wiring may live in first-party
+      // modules the page imports (domains / section controllers under
+      // pages/). Reachability evidence must be read where the control is
+      // actually wired, so each mounted page is scanned as a GROUP: the page
+      // plus every first-party module it imports relative to pages/
+      // (./x.js, transitively). The wired check below then requires the op
+      // reference and the addEventListener wiring to appear somewhere in the
+      // same page group — the same page-level reachability the check has
+      // always asserted, now following the page's own module boundaries.
+      const pageGroups: string[] = [];
+      for (const [pageName, pageSource] of pageSources) {
+        const group: string[] = [pageSource];
+        const pending = [pageName];
+        const visited = new Set<string>([pageName]);
+        while (pending.length > 0) {
+          const key = pending.pop()!;
+          const source = key === pageName ? pageSource : pageSources.get(key)!;
+          const relImport = /\.\/([A-Za-z0-9/-]+)\.js/g;
+          for (let m = relImport.exec(source); m !== null; m = relImport.exec(source)) {
+            const relKey = m[1];
+            if (visited.has(relKey)) continue;
+            visited.add(relKey);
+            try {
+              const s = await readFile(resolve(FRONTEND_SRC, "pages", `${relKey}.ts`), "utf8");
+              group.push(s);
+              pending.push(relKey);
+            } catch {
+              // not a first-party pages/ module — nothing to scan
+            }
+          }
+        }
+        pageGroups.push(group.join("\n"));
+      }
+
       const missing: string[] = [];
       for (const id of humanOps) {
         const entry = manifest.dispositions[id];
@@ -213,8 +247,8 @@ describe("capability parity (SC-O7)", () => {
           missing.push(`${id} (client fn ${id} does not implement ${entry.path})`);
           continue;
         }
-        const wired = [...pageSources.entries()].some(
-          ([, source]) => source.includes(id) && source.includes("addEventListener"),
+        const wired = pageGroups.some(
+          (groupSource) => groupSource.includes(id) && groupSource.includes("addEventListener"),
         );
         if (!wired) {
           missing.push(`${id} (client fn ${id} has no reachable control in a routed page)`);

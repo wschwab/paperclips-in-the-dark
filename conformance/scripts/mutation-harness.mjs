@@ -183,9 +183,9 @@ let mutants = catalog.mutants;
 const mutations = {
   // M01: suppress crew history projections at their History_Count source.
   M01: {
-    files: ["backend-ada/server/src/pitd_callback.adb"],
+    files: ["backend-ada/server/src/pitd_summary.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const file = join(repoRoot, "backend-ada/server/src/pitd_summary.adb");
       const content = readFileSync(file, "utf8");
       const changed = replaceExactlyOnce(
         content,
@@ -247,9 +247,9 @@ const mutations = {
 
   // M04: Truncate key collection at 512 (reverse Wave 2B unbounded fix)
   M04: {
-    files: ["backend-ada/server/src/pitd_callback.adb"],
+    files: ["backend-ada/server/src/pitd_normalize.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const file = join(repoRoot, "backend-ada/server/src/pitd_normalize.adb");
       let content = readFileSync(file, "utf8");
       // Collect_Keys uses: Append (K, Create (String (Name)));
       // Add a length check before the Append to cap at 512
@@ -288,9 +288,9 @@ const mutations = {
 
   // M06: introduce the forbidden persistence write in Classify_Stored.
   M06: {
-    files: ["backend-ada/server/src/pitd_callback.adb"],
+    files: ["backend-ada/server/src/pitd_stored.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const file = join(repoRoot, "backend-ada/server/src/pitd_stored.adb");
       const content = readFileSync(file, "utf8");
       const changed = replaceExactlyOnce(
         content,
@@ -428,9 +428,9 @@ const mutations = {
   // flag — retargeted to the server's live stress.add arm (the core
   // Add_Stress is not on the HTTP path).
   M11: {
-    files: ["backend-ada/server/src/pitd_callback.adb"],
+    files: ["backend-ada/server/src/pitd_ops.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const file = join(repoRoot, "backend-ada/server/src/pitd_ops.adb");
       const content = readFileSync(file, "utf8");
       const changed = replaceExactlyOnce(
         content,
@@ -446,9 +446,9 @@ const mutations = {
   // M12: Clear retirement during trauma removal — retargeted to the server's
   // live trauma.remove arm (the core Remove_Trauma is not on the HTTP path).
   M12: {
-    files: ["backend-ada/server/src/pitd_callback.adb"],
+    files: ["backend-ada/server/src/pitd_ops.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const file = join(repoRoot, "backend-ada/server/src/pitd_ops.adb");
       const content = readFileSync(file, "utf8");
       const changed = replaceExactlyOnce(
         content,
@@ -488,9 +488,9 @@ const mutations = {
 
   // M16: Hardcode a game-settings maximum lookup
   M16: {
-    files: ["backend-ada/server/src/pitd_callback.adb"],
+    files: ["backend-ada/server/src/pitd_ops.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const file = join(repoRoot, "backend-ada/server/src/pitd_ops.adb");
       const content = readFileSync(file, "utf8");
       // RETARGETED: the creation-template StressMax lookup is normalized away
       // before persistence, so the mutant was unobservable. The live op-time
@@ -706,9 +706,9 @@ const mutations = {
   // M27: claim-operation coverage removed — claim.set / claim.customize /
   // claim.reset dispatch dropped, ops fall through to the unknown-op error.
   M27: {
-    files: ["backend-ada/server/src/pitd_callback.adb"],
+    files: ["backend-ada/server/src/pitd_ops.adb"],
     apply: (repoRoot) => {
-      const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
+      const file = join(repoRoot, "backend-ada/server/src/pitd_ops.adb");
       let content = readFileSync(file, "utf8");
       for (const [op, comment] of [
         ["claim.set", "acquire/relinquish a claim"],
@@ -764,7 +764,11 @@ const sha256File = (path) => hash(readFileSync(path));
 function layerTestCommand(layer, report) {
   switch (layer) {
     case "backend-ada":
-      return { cmd: `cd conformance && npm run test:ada -- --run --reporter=json --outputFile="${report}"`, cwd: REPO_ROOT, timeout: 2400000 };
+      // The SC-O0 SIGINT sentinel (suites/__sc_o0_blocker__.test.ts) is a
+      // managed-run tooling fixture, not a suite test: it blocks until its
+      // 60s timeout and would fail every campaign baseline. Excluded here;
+      // it is exercised directly by conformance/src/managed-run.test.ts.
+      return { cmd: `cd conformance && npm run test:ada -- --run --exclude "suites/__sc_o0_blocker__.test.ts" --reporter=json --outputFile="${report}"`, cwd: REPO_ROOT, timeout: 2400000 };
     case "frontend":
       return { cmd: `npx vitest run --reporter=json --outputFile="${report}"`, cwd: join(REPO_ROOT, "frontend"), timeout: 900000 };
     case "conformance":
