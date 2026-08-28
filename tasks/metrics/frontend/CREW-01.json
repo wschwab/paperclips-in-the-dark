@@ -1,7 +1,7 @@
 {
   "task": "CREW-01",
   "track": "frontend",
-  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go); completion driven by nous/poolside/laguna-s-2.1:free:high",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
   "wallClockMinutes": null,
   "tokens": null,
@@ -13,21 +13,23 @@
   },
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "date": "2026-08-27",
-  "status": "PARTIAL",
+  "date": "2026-08-28",
+  "status": "DONE",
   "iterationsToGreen": 1,
-  "passRateAtFirstDoneClaim": "n/a (partial card)",
-  "passRateAfterReview": "unified Rep/Turf tracker verified by layout01/browser02 journeys at 1440/768/390",
+  "passRateAtFirstDoneClaim": "RED (1 stash-bound test failing before fix) then GREEN: SC-F3 block 5/5 pass; full frontend suite 759/759; tsc clean; vite build clean",
+  "passRateAfterReview": "full frontend suite green (759 tests); crew-create-trackers journey PASS with stash-bound-disabled-at-capacity checkpoint + 9-entry route/theme matrix (1440/768/390 × light/dark/hic) all green with stash += disabled at capacity, coin += enabled (advisory)",
   "defectCatchingLayer": [
     "browser journey caught tracker alignment regressions during LAYOUT-01 verification"
   ],
   "evidence": [
     "frontend/src/pages/crew-sections/trackers.ts",
     "frontend/src/pages/crew-sections/crew-domain.ts",
-    "frontend/src/pages/crew-detail.ts",
+    "frontend/src/pages/crew-sections/fund.ts",
+    "frontend/src/pages/crew-detail.test.ts (SC-F3 block: 3 new stash/coin bound-control tests + 2 pre-existing)",
+    "conformance/suites-browser/crew-create-trackers.journey.mjs (stash-bound check + 2b section, dynamic capacity derivation)",
     "agent-docs/test-audit/decisions/DEC-04.md",
     "docs/pages/contract/contract-c4-crew-progression.mdx",
-    "agent-docs/test-audit/browser-evidence/reports/w7-layout01-report.md"
+    "agent-docs/test-audit/finding-traceability.md (UX-007 row updated to DONE)"
   ],
-  "notes": "HONEST STATE: shipped = unified Rep/Turf tracker (Rep fills top-left, Turf bottom-right), settings-derived Roman-numeral Tier (toRoman in crew-domain.ts), develop flow (crew-detail.ts:715-767). NOT shipped = bounded crew Stash UI against the CONTRACT-04 stashCapacity (crew stash still renders as unbounded int) and any loose-Coin removal decision. No dedicated CREW-01 report or journey exists (crew01-cohort-add.mjs is CREW-05's journey, not this card's)."
+  "notes": "COMPLETE: shipped = (1) unified Rep/Turf tracker (Rep fills top-left, Turf bottom-right), (2) settings-derived Roman-numeral Tier (formatTier in crew-domain.ts, tierMax from CrewCapabilities), (3) develop flow (crew-detail.ts onDevelop), (4) bounded crew Stash UI against CONTRACT-04 stashCapacity — the stash +1 bound control is disabled at capacity (P29/FV-029 pattern from renderTracker), matching the stash.add server-side clamp behavior. Loose Crew Coin retained per CONTRACT-04 §4 (display-bounded advisory: coin / stashCapacity shown, coin + stays enabled since the server imposes no coin ceiling). No loose-Coin UI was removed — the contract still carries the coin field and the human ruling explicitly kept it (display-bounded only). SC-F3 block has 5 tests total (2 pre-existing: rep-full-bound + clamp-notice; 3 new: stash-at-cap-disabled, stash-below-cap-enabled, coin-advisory-enabled)."
 }

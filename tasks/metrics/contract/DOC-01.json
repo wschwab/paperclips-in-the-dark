@@ -3,11 +3,11 @@
   "track": "contract",
   "date": "2026-08-28",
   "implementationAgent": "omp main session (opencode-go/glm-5.3-flash) + three read-only evidence scouts (omp task)",
-  "reviewAgent": "self-verification: every referenced path checked on disk; metrics JSON validated; artifact names matched to work-spec section 5",
+  "reviewAgent": "self-verification: every referenced path checked on disk; metrics JSON validated (148 files, 0 errors); artifact names matched to work-spec section 5; internal links validated",
   "iterationsToGreen": 1,
   "wallClockMinutes": null,
   "tokens": null,
-  "passRateAtFirstDoneClaim": "see /tmp/w10-doc01-report.md acceptance checklist",
+  "passRateAtFirstDoneClaim": "see agent-docs/test-audit/doc01-report.md acceptance checklist",
   "passRateAfterReview": "same; REVIEW-01/REVIEW-02 remain the acceptance authorities for the initiative",
   "defectsCaughtBy": {
     "compiler": 0,
@@ -16,7 +16,9 @@
     "human": 0
   },
   "defectCatchingLayer": [
-    "on-disk existence checks rejected stale /tmp-only citations; volatile /tmp evidence migrated into agent-docs/test-audit/browser-evidence/reports/"
+    "on-disk existence checks rejected stale /tmp-only citations; volatile /tmp evidence migrated into agent-docs/test-audit/browser-evidence/reports/",
+    "artifact-name audit detected final-vetting.md needed supersession note pointing to wave9-review.md",
+    "link validation of new vocs page operational-behavior.mdx: all internal /frontend/ and /contract/ links resolve"
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
@@ -24,9 +26,17 @@
   "evidence": [
     "agent-docs/test-audit/finding-traceability.md",
     "agent-docs/test-audit/browser-evidence/",
+    "agent-docs/test-audit/final-vetting.md",
+    "agent-docs/wave9-review.md",
+    "agent-docs/test-audit/browser-evidence/reports/w9-arch02-report.md",
     "docs/pages/",
+    "docs/pages/frontend/operational-behavior.mdx",
     "tasks/metrics/",
-    "/tmp/w10-doc01-report.md"
+    "tasks/metrics/contract/ARCH-02.json",
+    "tasks/metrics/contract/REVIEW-01.json",
+    "tasks/metrics/contract/REVIEW-02.json",
+    "tasks/metrics/contract/VET-01.json",
+    "agent-docs/test-audit/doc01-report.md"
   ],
-  "notes": "Closed DOC-01 scope: vocs updates for user-visible remediation changes, 15 missing card metrics files created honestly, artifact renames to work-spec section 5 names (wave8-final-vetting.md -> final-vetting.md, wave5-browser-evidence.md -> browser-evidence/, dataset-benchmark.json -> performance-results.json incl. RECORD_FILE constant), runtime-flake records created as explicit not-collected markers, AR/UX finding-traceability.md completed."
+  "notes": "DOC-01 v2 complete: (1) Vocs pages updated for all user-visible remediation — bounded roster rendering (f2a-roster), recovery/import (recovery-import + f2a-roster), PC creation (f2e-character-creation + contract-c1), lifecycle labels/workflow (f2m), action-dot keyboard (f1-styleguide), crew claim/advance/cohort (f2u), dark contrast + focus/error geometry (f1-styleguide), browser/performance/operational behavior (NEW operational-behavior.mdx); generated API reference never hand-edited. (2) 24 new metrics files under tasks/metrics/contract/: ARCH-02 (DONE), REVIEW-01 (PENDING), REVIEW-02 (PENDING), VET-01 (BLOCKED), plus 20 from checkpoint 1008bc41. (3) All 16 required artifacts from spec section 5 verified present and correctly named; final-vetting.md annotated as superseded by wave9-review.md. (4) AR-001..AR-017 traceability complete in finding-traceability.md with red/green/revision/tests/browser/decision/review columns. (5) Track Z expected-red honestly recorded as non-blocking. All 148 metrics JSON files validated (0 errors); all evidence paths verified on disk."
 }

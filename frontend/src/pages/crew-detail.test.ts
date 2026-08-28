@@ -2978,6 +2978,64 @@ describe("SC-F3 tracker clamps", () => {
     const plus = root.querySelector('button[title="Add 1 rep"]') as HTMLButtonElement;
     expect(plus.disabled).toBe(true);
   });
+  it("disables the stash + bound control when stash has reached the vault capacity", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(crewDTO({ stash: 4, stashCapacity: 4 })))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValue(ok(crewDTO({ stash: 4, stashCapacity: 4 })));
+
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      const plus = root.querySelector('button[title="Add 1 stash"]') as HTMLButtonElement;
+      expect(plus).not.toBeNull();
+    });
+    const plus = root.querySelector('button[title="Add 1 stash"]') as HTMLButtonElement;
+    expect(plus.disabled).toBe(true);
+  });
+
+  it("keeps the stash + control enabled when below vault capacity", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(crewDTO({ stash: 2, stashCapacity: 4 })))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO({ stash: 2, stashCapacity: 4 })));
+
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      const plus = root.querySelector('button[title="Add 1 stash"]') as HTMLButtonElement;
+      expect(plus).not.toBeNull();
+    });
+    const plus = root.querySelector('button[title="Add 1 stash"]') as HTMLButtonElement;
+    expect(plus.disabled).toBe(false);
+  });
+
+  it("keeps the coin + control enabled even when display-advised against capacity", async () => {
+    // CONTRACT-04 §4: loose crew coin is kept and display-bounded advisory;
+    // the server imposes no coin ceiling, so the + control stays live.
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(crewDTO({ coin: 16, stash: 16, stashCapacity: 16 })))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValueOnce(ok(crewDTO()))
+      .mockResolvedValue(ok(crewDTO({ coin: 16, stash: 16, stashCapacity: 16 })));
+
+    mountCrewDetailPage(root, CREW_ID);
+
+    await vi.waitFor(() => {
+      const plus = root.querySelector('button[title="Add 1 coin"]') as HTMLButtonElement;
+      expect(plus).not.toBeNull();
+    });
+    const plus = root.querySelector('button[title="Add 1 coin"]') as HTMLButtonElement;
+    expect(plus.disabled).toBe(false);
+  });
 
   it("shows a clamp notice when the server applies less than the requested rep delta", async () => {
     const atMax = crewDTO({ revision: 6, rep: { current: 12, max: 12 } });

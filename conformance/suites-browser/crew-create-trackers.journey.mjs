@@ -39,6 +39,7 @@ export const checkpoints = unionCheckpoints(
     { id: "member-linked", description: "a character joined the crew (memberCount 1 on the crew)" },
     { id: "rep-turf-bumped", description: "rep and turf each accepted a +1 through their controls" },
     { id: "tier-funds-set", description: "tier +1, coin +1, hold Strong all committed" },
+    { id: "stash-bound-disabled-at-capacity", description: "stash +1 bound control disabled once vault capacity is reached (CONTRACT-04 §3)" },
     { id: "tier-clamp-notice", description: "tier above the cap shows the clamped-to notice" },
     { id: "crew-undo-restored", description: "Undo last change restored the prior tracker value" },
     { id: "crew-history-page", description: "/crew/{id}/history renders the history page" },
@@ -114,6 +115,32 @@ export async function run(page, ctx) {
     throw new Error(`tier/funds/hold did not commit: ${JSON.stringify(crew)}`);
   }
   ctx.checkpoint("tier-funds-set", 1);
+
+  // -- 2b. Stash bound control (CONTRACT-04 §3): +1 disabled at vault capacity --
+  // Derive the remaining capacity from the live DTO — never hardcode the game
+  // maximum. Add exactly the missing stash to fill the vault, then verify the
+  // +1 button is disabled and the display shows "<capacity> / <capacity>".
+  const preStash = await crewState(page, baseUrl, crewId);
+  const stashCapacity = Number(preStash?.stashCapacity);
+  if (!Number.isFinite(stashCapacity) || stashCapacity < 0) {
+    throw new Error(`cannot derive stash capacity from crew DTO: ${JSON.stringify(preStash?.stashCapacity)}`);
+  }
+  const currentStash = Number(preStash?.stash) || 0;
+  const toAdd = Math.max(0, stashCapacity - currentStash);
+  for (let i = 0; i < toAdd; i++) {
+    await page.locator('button[title="Add 1 stash"]').click();
+  }
+  const expectedStashDisplay = `${stashCapacity} / ${stashCapacity}`;
+  const stashCount = await page.locator(".crew-stash-count").textContent();
+  if (stashCount?.trim() !== expectedStashDisplay) {
+    throw new Error(`stash count expected "${expectedStashDisplay}", got "${stashCount}"`);
+  }
+  const stashPlus = await page.locator('button[title="Add 1 stash"]');
+  if (await stashPlus.isEnabled()) {
+    throw new Error("stash +1 button should be disabled at vault capacity");
+  }
+  ctx.checkpoint("stash-bound-disabled-at-capacity", 1);
+  await ctx.screenshot("crew-create-stash-full");
 
   // -- 3. Tier clamp notice (P29/FV-029): the server clamps above the cap ----
   // The + control is intentionally not disabled at the cap; the server clamps

@@ -30,7 +30,9 @@ export function renderCrewFundSection(state: RenderState): HTMLElement {
   stashMinusBtn.addEventListener("click", () => handlers.onStashDelta(-1));
   const stashPlusBtn = el("button", {
     type: "button",
-    disabled: state.anyLoading,
+    // P29/FV-029: the bound control is disabled once the track is full — the
+    // server would otherwise clamp the delta silently (CONTRACT-04 §3).
+    disabled: state.anyLoading || c.stash >= c.stashCapacity,
     title: "Add 1 stash",
   }, state.isStashLoading ? "…" : "+1");
   stashPlusBtn.addEventListener("click", () => handlers.onStashDelta(1));

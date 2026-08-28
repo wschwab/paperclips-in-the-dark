@@ -1,0 +1,111 @@
+---
+title: Browser, performance, and operational behavior
+description: Six stateful Chromium journeys, frozen performance budgets across 0/10/100/1000-row scales, managed-launch isolation, and the canonical conformance commands.
+---
+
+# Browser, performance, and operational behavior
+
+The repository ships a permanent, repository-owned Chromium suite and a frozen
+performance benchmark as the single canonical conformance entry points.
+
+## Canonical conformance commands
+
+All automated verification runs through the canonical seeded command:
+
+```sh
+cd conformance && npm run test:ada
+```
+
+This seeds the required standard fixtures by default and runs the full black-box
+conformance suite against a managed Ada server with an owned temporary data
+directory and an unused port. CI, mutation, and final vetting all use this
+exact package script.
+
+Additional permanent commands:
+
+| Command | Purpose |
+|---|---|
+| `cd conformance && npm run test:browser` | Six stateful Chromium journeys |
+| `cd conformance && npm run test:mutation` | Full mutation catalog (28/28 killed) |
+| `cd conformance && npm run test:benchmark` | Frozen performance budgets |
+| `cd conformance && npm run test:tooling` | Tooling tests (156/156) |
+| `cd conformance && npm run typecheck` | TypeScript typecheck |
+| `cd backend-ada && ./ci.sh` | Build + prove + server tests |
+
+## Browser suite (BROWSER-01 / BROWSER-02)
+
+A repository-owned managed-Chromium runner drives real Chromium (not happy-dom)
+against a built Ada server. The suite has exactly six top-level journeys:
+
+1. **Roster/recovery** — readable rows, repairable/unreadable degraded rows,
+   filtering without stranding degraded reachability, repair, delete, refresh,
+   top-level import, strict decode.
+2. **Character create/edit** — canonical create, validated PC creation (DEC-01
+   / CONTRACT-01), second-phase retry, roster visibility, dossier editors
+   (Hound playbook, Heritage, Background, Vice, purveyor), reload.
+3. **Crew create/trackers** — create, member link, Rep/Turf, Tier/Fund, two
+   claim acquisitions and deliberate removal, ability/upgrade safety, cohort
+   conditional fields, clamp notice, undo/history, reload.
+4. **Import/repair** — partial preview, needs-input, confirm/apply, stale token,
+   exact data-loss pointers, nested and array unknown keys.
+5. **Lifecycle** — stress maximum, trauma-pending checkpoint, resolution,
+   out-of-action, end score, end-downtime numeric relief, undo, section-local
+   alert, scroll continuity.
+6. **Clock** — bounded and rollover clocks, progress/overflow, relationship
+   unlink, owner deletion reassignment, degraded deletion.
+
+The route/theme matrix runs roster, character detail, and crew detail at
+1440×1000, 768×1024, and 390×844 in light, dark, and high-contrast. The suite
+records `window.innerWidth`, `document.scrollWidth`, container client/scroll
+widths, bounding boxes, computed overflow/min-width/grid/flex, target sizes,
+focus, accessible names/states, and alert announcements.
+
+**Verification:** 6/6 journeys, all matrix entries, no horizontal overflow,
+no missing screenshots/numeric files, no default-data change.
+
+## Performance budgets (PERF-01)
+
+The benchmark measures independent 0/10/100/1,000-row campaigns with degraded
+rows (repairable, needs-input, unreadable) at documented proportions. It
+measures API response distribution, transfer bytes, server process peak RSS,
+frontend DOM node count, render-to-stable duration, browser JS heap, and
+containment.
+
+**Frozen budgets:** 76 metrics across scales 0/10/100/1000, recorded in
+`agent-docs/test-audit/performance-budgets.json` (frozen 2026-08-24,
+fail-closed). Latest run results in
+`agent-docs/test-audit/performance-results.json` (2026-08-27, all metrics
+within budget).
+
+**Bounded roster rendering (PERF-02):** the roster renders at most
+`ROSTER_PAGE_SIZE` (100) readable rows initially with a `Show more` control;
+DOM nodes stay within `ROSTER_DOM_BUDGET_NODES` (2000) at the 1000-row scale
+(measured 1190). Degraded rows are always rendered and remain reachable under
+non-matching search queries. Counts describe the full result set, not just the
+rendered window.
+
+## Operational safety
+
+- **Default-data guard (SAFE-01):** automated verification never reads from or
+  writes to user-owned `campaign-data/`. A manifest records the directory's
+  state before and after a wrapped command; any creation, deletion, rename,
+  size change, or byte change is a failure. The guard is `data/games/`-aware
+  but does not protect `campaign-data/` — a separate campaign-data guard was
+  added.
+- **Managed launch (SAFE-02):** every automated server owns a unique temporary
+  data directory and unused port. Readiness requires: exact child remains alive,
+  no bind/startup error, health returns expected `implementation: "ada"`, and
+  health `dataDir` resolves to the exact owned directory. Cleanup runs in
+  `finally` and targets only the exact owned PID/process tree and owned
+  temporary directory.
+- **Isolation guard:** invoked by conformance, browser, mutation, benchmark, and
+  integrated CI commands — not a standalone advisory blocklist.
+
+## Evidence
+
+- Wave 8 final-vetting snapshot: `agent-docs/test-audit/final-vetting.md`
+- Wave 9 gate review (supersedes Wave 8): `agent-docs/wave9-review.md`
+- Browser evidence reports: `agent-docs/test-audit/browser-evidence/reports/`
+- Performance budgets: `agent-docs/test-audit/performance-budgets.json`
+- Performance results: `agent-docs/test-audit/performance-results.json`
+- Campaign data manifest: `agent-docs/test-audit/campaign-data-manifest.json`
