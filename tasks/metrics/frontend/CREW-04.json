@@ -1,0 +1,32 @@
+{
+  "task": "CREW-04",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "date": "2026-08-27",
+  "status": "DONE",
+  "iterationsToGreen": 2,
+  "iterationNotes": "advancement edit-mode + ability/upgrade removal gating; journey initially flaked against a sibling's in-flight crew-detail.ts edits, repaired after the sibling card settled",
+  "passRateAtFirstDoneClaim": "crew04-advance journey PASS (95/95 crew-detail unit tests)",
+  "passRateAfterReview": "journey green through wave-8/9 gates",
+  "defectCatchingLayer": [
+    "crew04-advance journey deterministically caught an unmark regression (1 -> 1) during wave-7"
+  ],
+  "evidence": [
+    "frontend/src/pages/crew-detail.ts",
+    "frontend/src/pages/crew-sections/playbook.ts",
+    "conformance/suites-browser/checkpoints/crew04-advance.mjs",
+    "agent-docs/test-audit/browser-evidence/reports/w7-crew04-report.md"
+  ],
+  "notes": "Advancement edit mode (session-local aria-pressed toggle) gates ability/upgrade removal; description layout fixed per UX-010."
+}

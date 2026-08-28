@@ -21,6 +21,7 @@ export interface MutationEdit {
 
 export interface Mutant {
   id: string;
+  layer?: "backend-ada" | "frontend" | "conformance";
   expectedFailureIds: string[];
   edits: MutationEdit[];
 }
@@ -55,11 +56,18 @@ export function classifyMutant(input: {
   runState: RunState;
 }): Classification;
 
+export function restoreAndRebuild(input: {
+  snapshots: Array<{ path?: string; abs?: string; bytes: Buffer; hash?: string }>;
+  mutant: Pick<Mutant, "layer"> & { layer?: string };
+  rebuild?: () => Promise<void>;
+}): Promise<void>;
+
 export function executeMutant(input: {
   repoRoot: string;
   mutant: Mutant;
   baselineTests: TestResult[];
   runMutant: () => Promise<RunResult>;
+  rebuild?: () => Promise<void>;
 }): Promise<Classification & { restored: boolean; error?: string }>;
 
 export function executeCampaign(input: {
@@ -67,6 +75,7 @@ export function executeCampaign(input: {
   runBaseline: () => Promise<RunResult>;
   runMutant: (mutant: Mutant) => Promise<RunResult>;
   onApply?: (mutant: Mutant) => Promise<void>;
+  rebuild?: () => Promise<void>;
   repoRoot?: string;
 }): Promise<Array<Classification & { restored: boolean; error?: string }>>;
 

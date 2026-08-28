@@ -111,6 +111,97 @@ describe("mutation harness methodology", () => {
       }).state).toBe(state);
     },
   );
+
+  it("[MUT-CAL-009] rebuilds clean backend binary after source restoration on mutant success", async () => {
+    const { root, file } = await fixtureFile();
+    const before = await readFile(file, "utf8");
+    let rebuildCalled = false;
+    let sourceRestoredAtRebuild = "";
+    const result = await executeMutant({
+      repoRoot: root,
+      mutant: {
+        id: "MX",
+        layer: "backend-ada",
+        expectedFailureIds: ["EXPECTED"],
+        edits: [{ file: "target.ts", symbol: "target", search: "return true", replacement: "return false" }],
+      },
+      baselineTests: [passing("EXPECTED")],
+      runMutant: async () => ({ state: "test-failure", tests: [failing("EXPECTED")] }),
+      rebuild: async () => {
+        rebuildCalled = true;
+        sourceRestoredAtRebuild = await readFile(file, "utf8");
+      },
+    });
+    expect(result.state).toBe("killed");
+    expect(result.restored).toBe(true);
+    expect(rebuildCalled).toBe(true);
+    expect(sourceRestoredAtRebuild).toBe(before);
+  });
+
+  it("[MUT-CAL-010] rebuilds clean backend binary after source restoration on mutant failure/interruption", async () => {
+    const { root, file } = await fixtureFile();
+    const before = await readFile(file, "utf8");
+    let rebuildCalled = false;
+    let sourceRestoredAtRebuild = "";
+    const result = await executeMutant({
+      repoRoot: root,
+      mutant: {
+        id: "MX",
+        layer: "backend-ada",
+        expectedFailureIds: ["EXPECTED"],
+        edits: [{ file: "target.ts", symbol: "target", search: "return true", replacement: "return false" }],
+      },
+      baselineTests: [passing("EXPECTED")],
+      runMutant: async () => {
+        throw new Error("simulated interruption");
+      },
+      rebuild: async () => {
+        rebuildCalled = true;
+        sourceRestoredAtRebuild = await readFile(file, "utf8");
+      },
+    });
+    expect(result.state).toBe("harness-error");
+    expect(rebuildCalled).toBe(true);
+    expect(sourceRestoredAtRebuild).toBe(before);
+  });
+
+  it("[MUT-CAL-011] propagates rebuild failure as a cleanup error", async () => {
+    const { root, file } = await fixtureFile();
+    const result = await executeMutant({
+      repoRoot: root,
+      mutant: {
+        id: "MX",
+        layer: "backend-ada",
+        expectedFailureIds: ["EXPECTED"],
+        edits: [{ file: "target.ts", symbol: "target", search: "return true", replacement: "return false" }],
+      },
+      baselineTests: [passing("EXPECTED")],
+      runMutant: async () => ({ state: "test-failure", tests: [failing("EXPECTED")] }),
+      rebuild: async () => {
+        throw new Error("rebuild failed");
+      },
+    });
+    expect(result.state).toBe("harness-error");
+    expect(result.error).toMatch(/rebuild failed/i);
+  });
+
+  it("[MUT-CAL-012] does not rebuild for non-backend-ada layers", async () => {
+    const { root, file } = await fixtureFile();
+    let rebuildCalled = false;
+    await executeMutant({
+      repoRoot: root,
+      mutant: {
+        id: "MX",
+        layer: "frontend",
+        expectedFailureIds: ["EXPECTED"],
+        edits: [{ file: "target.ts", symbol: "target", search: "return true", replacement: "return false" }],
+      },
+      baselineTests: [passing("EXPECTED")],
+      runMutant: async () => ({ state: "test-failure", tests: [failing("EXPECTED")] }),
+      rebuild: async () => { rebuildCalled = true; },
+    });
+    expect(rebuildCalled).toBe(false);
+  });
 });
 
   it("[MUT-CAL-008] refreshed M01/M04/M06/M11/M12/M16/M27/M17 anchors mutate their intended current symbols", async () => {

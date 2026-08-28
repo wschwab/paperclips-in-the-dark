@@ -1,0 +1,24 @@
+{
+  "task": "REVIEW-01",
+  "track": "contract",
+  "date": "2026-08-28",
+  "implementationAgent": "orchestrator (DOC-01 wave boundary)",
+  "reviewAgent": "not yet dispatched — independent reviewer required per spec §17.2",
+  "iterationsToGreen": 0,
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "n/a — not yet executed",
+  "passRateAfterReview": "n/a — not yet executed",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "PENDING — independent review not yet dispatched",
+  "evidence": [],
+  "notes": "REVIEW-01 (calibrated independent review) requires: (1) apply one realistic planted P0/P1 defect in an isolated jj workspace, (2) give reviewer the governing spec + source + commands + numeric browser evidence + screenshots (but not the planted location), (3) reviewer must reproduce and identify the defect with mechanism and outcome, (4) discard the isolated workspace and verify clean candidate hashes, (5) then review the clean candidate. This gate is blocked on orchestrator dispatch bandwidth and a qualified independent reviewer; it does not block Track A completion but is required for VET-01. Per spec §17.1, a reviewer that misses the planted defect is not calibrated and cannot accept the initiative. Honest status: NOT YET RUN."
+}

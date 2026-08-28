@@ -1,0 +1,31 @@
+{
+  "task": "DEC-06",
+  "track": "contract",
+  "date": "2026-08-24",
+  "kind": "decision-record",
+  "implementationAgent": "wave-5 research card; disposition resolved by human ruling 2026-08-24 (see agent-docs/test-audit/product-decisions.md header + section 7 of each decision file)",
+  "reviewAgent": "orchestrator; human ruling is the acceptance authority",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "n/a (decision card)",
+  "passRateAfterReview": "n/a (decision card)",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "human ruling overrode the DEC-01 recommendation and reshaped CONTRACT-01"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "RESOLVED (no HUMAN DECISION REQUIRED outstanding)",
+  "outcome": "APPROVED (status quo) by human 2026-08-24: keep Style Guide nav link, Auto theme default, all three modes, direct Hi-C button. Frontend column layout complaint routed to LAYOUT-01 (Wave 7), no contract impact.",
+  "decisionEvidence": [
+    "agent-docs/test-audit/product-decisions.md",
+    "agent-docs/test-audit/decisions/DEC-06.md"
+  ],
+  "notes": "No source change; NAV-01 closes as docs/regression-only."
+}

@@ -1,0 +1,30 @@
+{
+  "task": "ARCH-01",
+  "track": "contract",
+  "date": "2026-08-28",
+  "implementationAgent": "wave-9 ARCH-01 card (per /tmp/w9-arch01-brief.md)",
+  "reviewAgent": "orchestrator wave-9 review + focused suites/mutants after every extraction",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "post-extraction gates green: canonical suite 58 files / 471 tests, mutation 28/28, gnatprove 246/246",
+  "passRateAfterReview": "same on wave-9 review (w9-review-brief.md); one mid-card corruption (character-detail.ts was ARCH-02) recovered via git show HEAD replay",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "mutation harness pre-flight (restorationHash) + retargeted mutants M01/M04/M06/M11/M12/M16/M27 verified the decomposed packages kept identical kill behavior"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "DONE",
+  "evidence": [
+    "agent-docs/test-audit/browser-evidence/reports/w9-arch01-report.md",
+    "agent-docs/AUDIT-0-remediation-implementation-work-spec.md",
+    "conformance/scripts/mutation-harness.mjs"
+  ],
+  "notes": "Structural-only card: pitd_callback.adb 9513 -> 2958 lines with six concerns extracted to packages (stored classification, normalization/preview, summary projection, capability projection, operation routing, AWS glue). implementationLoc recorded as 0 because LOC is moved, not added. No behavior/response/error change: suite, mutants, and proofs unchanged."
+}

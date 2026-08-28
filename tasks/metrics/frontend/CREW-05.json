@@ -1,0 +1,32 @@
+{
+  "task": "CREW-05",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "date": "2026-08-27",
+  "status": "DONE",
+  "iterationsToGreen": 1,
+  "passRateAtFirstDoneClaim": "crew01-cohort-add journey PASS (conditional kind fields, Custom reveal, aria-required Add gating)",
+  "passRateAfterReview": "journey green through wave-8/9 gates",
+  "defectCatchingLayer": [
+    "cohort-add journey pins conditional-field behavior against open-issue-cohort-bounds decisions"
+  ],
+  "evidence": [
+    "frontend/src/pages/crew-detail.ts",
+    "frontend/src/pages/crew-sections/cohorts.ts",
+    "conformance/suites-browser/checkpoints/crew01-cohort-add.mjs",
+    "docs/pages/frontend/f2w-cohorts.mdx",
+    "agent-docs/test-audit/browser-evidence/reports/w7-crew05-report.md"
+  ],
+  "notes": "Cohort conditional fields (gang/expert selects, Custom reveal, out-of-data types) with Add readiness gating; documented on f2w-cohorts.mdx."
+}

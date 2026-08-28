@@ -1,0 +1,33 @@
+{
+  "task": "SAFE-01",
+  "track": "contract",
+  "implementationAgent": "openai-codex/gpt-5.6-luna (codex, effort none)",
+  "reviewAgent": "openai-codex/gpt-5.6-luna plus OMP reviewer",
+  "date": "2026-08-23",
+  "iterationsToGreen": 5,
+  "wallClockMinutes": 11,
+  "tokens": 375404,
+  "passRateAtFirstDoneClaim": "0/1 test files (syntax failure)",
+  "passRateAfterReview": "21/21 focused tests; typecheck pass",
+  "defectsCaughtBy": {
+    "compiler": 2,
+    "focusedTests": 5,
+    "independentReview": 6,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "TypeScript transform/typecheck",
+    "focused tooling behavior",
+    "independent source review"
+  ],
+  "implementationLoc": 136,
+  "scaffoldingLoc": 0,
+  "status": "DONE",
+  "canonicalNote": "Canonical metrics record for card SAFE-01. The wave-0 scorecard with the original narrative lives at tasks/metrics/contract/SC-SAFE-01.json; numbers are copied from it verbatim, not re-estimated.",
+  "evidence": [
+    "tasks/metrics/contract/SC-SAFE-01.json",
+    "conformance/scripts/default-data-guard.mjs",
+    "conformance/src/default-data-guard.test.ts",
+    "agent-docs/test-audit/campaign-data-manifest.json"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "task": "CREW-02",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "date": "2026-08-27",
+  "status": "DONE",
+  "iterationsToGreen": 2,
+  "iterationNotes": "shared wave-7 working copy: sibling in-flight edits to crew-detail.ts mid-session; claim.set accumulation bug (backend pitd_callback.adb) found by the journey and fixed in the same card",
+  "passRateAtFirstDoneClaim": "crew02-claims journey PASS (acquire 2 claims -> reload -> remove 1) after backend fix",
+  "passRateAfterReview": "journey retained in the six-journey browser suite; green through wave-8/9 gates",
+  "defectCatchingLayer": [
+    "browser journey exposed the claim.set accumulation bug that unit tests missed"
+  ],
+  "evidence": [
+    "frontend/src/pages/crew-detail.ts",
+    "frontend/src/pages/crew-sections/claims.ts",
+    "conformance/suites-browser/checkpoints/crew02-claims.mjs",
+    "agent-docs/test-audit/browser-evidence/reports/w7-crew02-report.md",
+    "agent-docs/test-audit/browser-evidence/reports/w8-crew-journey-fix-report.md"
+  ],
+  "notes": "Claims edit mode (session-local toggle), confirm-to-acquire pathing, intentional edit-mode removal, disconnected-claim warning. Backend claim.set fix is the only non-frontend LOC in the card."
+}

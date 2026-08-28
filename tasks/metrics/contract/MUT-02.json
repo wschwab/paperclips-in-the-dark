@@ -1,0 +1,36 @@
+{
+  "task": "MUT-02",
+  "track": "contract",
+  "date": "2026-08-28",
+  "implementationAgent": "wave-3 catalog intent cards + wave-8 campaign (orchestrator-owned per /tmp/w8-mut02-brief.md) + wave-9 retarget after ARCH-01",
+  "reviewAgent": "orchestrator; harness tooling tests",
+  "iterationsToGreen": 3,
+  "iterationNotes": "wave 3: 20 intents, 16/20 killed (M02/M03/M17/M18 survived) driving 8 AR-001 catalog additions; wave 8: full campaign brief; wave 9: retargeted M01/M04/M06/M11/M12/M16/M27 to post-ARCH-01 package paths and re-ran to full kill",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "wave-3 baseline: 16/20 (4 survivors) \u2014 recorded in wave3-summary.md",
+  "passRateAfterReview": "final full-catalog run 28/28 killed, 0 survived (P0 19/19, P1 9/9), generatedAt 2026-08-28T10:47:18.534Z",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "mutation": 28,
+    "review": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "mutation harness kills every catalog mutant; per-mutant killedBy + newFailureIds recorded in mutation-results.json"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "DONE",
+  "evidence": [
+    "agent-docs/test-audit/mutation-catalog.json",
+    "agent-docs/test-audit/mutation-results.json",
+    "agent-docs/test-audit/wave3-summary.md",
+    "agent-docs/test-audit/browser-evidence/reports/w8-mut02-brief.md",
+    "agent-docs/test-audit/browser-evidence/reports/w9-arch01-report.md",
+    "conformance/scripts/mutation-harness.mjs",
+    "tasks/metrics/contract/MUT-01.json"
+  ],
+  "notes": "Evidence-only card: catalog + campaign artifacts, no product LOC. Harness retarget and stale-bin/pitd rebuild trap documented in w9-arch01-report.md. Post-campaign bin/pitd is the last mutant's build; rebuilt via alr."
+}

@@ -1,0 +1,24 @@
+{
+  "task": "REVIEW-02",
+  "track": "contract",
+  "date": "2026-08-28",
+  "implementationAgent": "orchestrator (DOC-01 wave boundary)",
+  "reviewAgent": "not yet dispatched — final GPT 5.6 Luna browser gate per spec §17.2",
+  "iterationsToGreen": 0,
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "n/a — not yet executed",
+  "passRateAfterReview": "n/a — not yet executed",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "PENDING — final Luna browser gate not yet dispatched",
+  "evidence": [],
+  "notes": "REVIEW-02 (final Luna browser gate) requires GPT 5.6 Luna via openai-codex at xhigh reasoning effort in a harness that can inspect source, numeric evidence, screenshots, and independently drive the live browser path. The final response must contain exactly one explicit outcome line: 'VERDICT: PASS' or 'VERDICT: FAIL'. This gate is blocked on provider quota reset (per existing metrics files documenting Luna capacity exhaustion on 2026-08-23..26). Per spec §17.2, read-only or browserless output is useful for source review but NOT acceptance. Honest status: NOT YET RUN. Per-card Luna gates exist for CHAR-01, CHAR-02, CHAR-04, CHAR-05, THEME-02 (see their metrics files), but the initiative-level final Luna gate remains outstanding."
+}

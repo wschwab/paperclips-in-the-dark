@@ -1,0 +1,31 @@
+{
+  "task": "ARCH-02",
+  "track": "contract",
+  "date": "2026-08-28",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator independent verification: frontend suite 756/756, tsc clean, build clean (676 modules), browser suite 6/6 journeys PASS, mutation 28/28 killed (P0 19/19, P1 9/9)",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "frontend 20 files / 756 tests green; tsc clean; build clean; browser 6/6 journeys; mutation 28/28 killed",
+  "passRateAfterReview": "identical on wave-9 orchestrator re-run; conformance parity scanner amended to group page + first-party imports (fix was strict add; no manifest or disposition change)",
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "conformance": 0,
+    "review": 1,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "frontend suite flagged corrupted character-detail.ts mid-card (out-of-order scripted rewrite); restored from HEAD snapshot",
+    "conformance parity scanner (PARITY-HUMAN-003) caught false 'no reachable control' findings after page-group decomposition; scanner amended to scan page import groups"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "DONE",
+  "evidence": [
+    "agent-docs/test-audit/browser-evidence/reports/w9-arch02-report.md",
+    "agent-docs/AUDIT-0-remediation-implementation-work-spec.md §16.2",
+    "agent-docs/test-audit/browser-evidence/wave5-browser-evidence.md"
+  ],
+  "notes": "Structural-only card: character-detail.ts 4483->2039 lines, crew-detail.ts 2955->1116 lines; extracted shared mutation transport, character domains, crew domains, and 14+ page section controllers. No behavior/response/error change: suite, mutants, and proofs identical. Mid-card character page corruption recovered via git show HEAD replay (read-only recovery only, no VCS mutation). implementationLoc recorded as 0 because LOC is moved, not added."
+}

@@ -1,0 +1,31 @@
+{
+  "task": "DEC-05",
+  "track": "contract",
+  "date": "2026-08-24",
+  "kind": "decision-record",
+  "implementationAgent": "wave-5 research card; disposition resolved by human ruling 2026-08-24 (see agent-docs/test-audit/product-decisions.md header + section 7 of each decision file)",
+  "reviewAgent": "orchestrator; human ruling is the acceptance authority",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "n/a (decision card)",
+  "passRateAfterReview": "n/a (decision card)",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "human ruling overrode the DEC-01 recommendation and reshaped CONTRACT-01"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "RESOLVED (no HUMAN DECISION REQUIRED outstanding)",
+  "outcome": "APPROVED (Option A) + human addendum 2026-08-24: keep C3 v1 crew contact/faction DTO shapes, settings-derived contact descriptions, no hardcoded faction catalog; ADD per-scoundrel character-level contacts as a contract addition routed to the C5 character-contacts change.",
+  "decisionEvidence": [
+    "agent-docs/test-audit/product-decisions.md",
+    "agent-docs/test-audit/decisions/DEC-05.md"
+  ],
+  "notes": "contract-c5-character-contacts.mdx documents the character-contacts addition."
+}

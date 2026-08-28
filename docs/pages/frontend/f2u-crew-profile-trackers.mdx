@@ -116,3 +116,40 @@ before the implementations existed, then implemented to green via
 
 Full suite green (`npm test -- --run`, 313 tests) and `npm run build`
 (tsc + vite) green.
+
+## Remediation updates (Wave 7 — CREW cards)
+
+### Claims: confirm-to-acquire and edit mode (CREW-02)
+
+- **Acquiring a claim is a confirm-first action**: the acquire control asks
+  for confirmation before posting, so an accidental click cannot spend the
+  crew's claim slot.
+- **Removing a claim is intentional, edit-mode removal**: a session-local
+  **"Edit claims" / "Done editing"** toggle (`aria-pressed`) gates claim
+  removal and customization; while editing, each claim exposes remove and
+  customize/reset controls. A warning is shown when removing a claim would
+  disconnect it from the connected claim map.
+- Regression-pinned by the `crew02-claims` journey (acquire → reload →
+  remove) in the six-journey browser suite; the journey also caught a
+  backend `claim.set` accumulation bug, fixed in the same card.
+
+### Advancement edit mode (CREW-04)
+
+Ability and upgrade **removal** is gated behind a separate session-local
+advancement edit mode (`aria-pressed` toggle); taking and marking stay
+one-click. Description layout of abilities/upgrades was fixed in the same
+card (UX-010). Pinned by the `crew04-advance` journey.
+
+### Cohorts
+
+Cohort conditional fields and Add-readiness gating are documented on
+[F2w — Cohorts](/frontend/f2w-cohorts) (CREW-05).
+
+### Tier / Rep / Turf presentation (DEC-04 routing)
+
+The unified Rep/Turf tracker (Rep fills from the top-left, Turf from the
+bottom-right with a next-Turf outline hint) and the settings-derived Roman
+numeral Tier display are live in `crew-sections/trackers.ts`. The DEC-04
+ruling's bounded crew Stash presentation is **not yet shipped** (the crew
+stash still renders unbounded; see `tasks/metrics/frontend/CREW-01.json`
+for the honest gap list).

@@ -1,0 +1,31 @@
+{
+  "task": "NAV-01",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "date": "2026-08-24",
+  "status": "CLOSED AS DOCS/REGRESSION-ONLY (no source change owed)",
+  "iterationsToGreen": 0,
+  "passRateAtFirstDoneClaim": "n/a",
+  "passRateAfterReview": "theme journeys (theme01-identity-contrast, theme02-focus-error) act as the regression coverage DEC-06 requires",
+  "defectCatchingLayer": [
+    "human ruling confirmed status quo and redirected the real complaint (column layout) to LAYOUT-01"
+  ],
+  "evidence": [
+    "agent-docs/test-audit/decisions/DEC-06.md",
+    "agent-docs/test-audit/product-decisions.md",
+    "conformance/suites-browser/checkpoints/theme01-identity-contrast.mjs",
+    "conformance/suites-browser/checkpoints/theme02-focus-error.mjs"
+  ],
+  "notes": "DEC-06 approved keeping Style Guide nav prominence, Auto theme default, all modes, and the direct Hi-C button. NAV-01 therefore applies a documentation-only outcome; no navigation or theme source changed."
+}

@@ -1,0 +1,31 @@
+{
+  "task": "GATE-01",
+  "track": "contract",
+  "implementationAgent": "openai-codex/gpt-5.6-luna (codex, effort none)",
+  "reviewAgent": "openai-codex/gpt-5.6-luna (codex, effort none)",
+  "date": "2026-08-23",
+  "iterationsToGreen": 4,
+  "wallClockMinutes": 9,
+  "tokens": 351000,
+  "passRateAtFirstDoneClaim": "4/5 selected cases failed; forwarding already passed",
+  "passRateAfterReview": "managed tooling 26/26; typecheck pass; canonical Track A 55 files/422 tests; calibrated independent review PASS",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "focusedTests": 3,
+    "independentReview": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "seeded gate cases",
+    "canonical Track A acceptance",
+    "calibrated independent source review"
+  ],
+  "implementationLoc": 65,
+  "scaffoldingLoc": 0,
+  "status": "DONE",
+  "canonicalNote": "Canonical metrics record for card GATE-01. The wave-0 scorecard with the original narrative lives at tasks/metrics/contract/SC-GATE-01.json; numbers are copied from it verbatim, not re-estimated.",
+  "evidence": [
+    "tasks/metrics/contract/SC-GATE-01.json",
+    "conformance/package.json"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "task": "THEME-02",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "date": "2026-08-27",
+  "status": "DONE",
+  "iterationsToGreen": 2,
+  "iterationNotes": "red journey first (9/9 combos show focus and error borders separable), then geometry swap: --focus-ring decoupled from red across 8 component focus rules",
+  "passRateAtFirstDoneClaim": "green: 9/9 red-separation combos, 9/9 error-alert-red, 36/36 geometry probes, 27/27 screenshots",
+  "passRateAfterReview": "theme02-focus-error journey retained in the six-journey suite",
+  "defectCatchingLayer": [
+    "journey geometry probes (bounding boxes + color resolution) caught the focus/error collision the audit reported"
+  ],
+  "evidence": [
+    "frontend/src/styles/theme.css",
+    "frontend/src/styles/components.css",
+    "conformance/suites-browser/checkpoints/theme02-focus-error.mjs",
+    "agent-docs/test-audit/browser-evidence/reports/w7-theme02-report.md"
+  ],
+  "notes": "Focus ring and error border are now distinguishable in every theme/contrast combination without losing the red error semantics."
+}

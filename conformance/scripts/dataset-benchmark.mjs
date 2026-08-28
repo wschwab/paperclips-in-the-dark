@@ -48,7 +48,7 @@
 // The default mode fails non-zero when a budget is exceeded, when a budgeted
 // metric is missing, and when a produced metric has no budget entry —
 // fail-closed in all three directions. Raw
-// measurements land in agent-docs/test-audit/dataset-benchmark.json
+// measurements land in agent-docs/test-audit/performance-results.json
 // (gitignored).
 
 import { execFileSync, spawn } from "node:child_process";
@@ -77,7 +77,7 @@ const FRONTEND_DIR = join(REPO_ROOT, "frontend");
 const FRONTEND_DIST = join(FRONTEND_DIR, "dist");
 const GAME_SETTINGS_FILE = join(REPO_ROOT, "data", "games", "blades-in-the-dark.json");
 const AUDIT_DIR = join(REPO_ROOT, "agent-docs", "test-audit");
-const RECORD_FILE = join(AUDIT_DIR, "dataset-benchmark.json");
+const RECORD_FILE = join(AUDIT_DIR, "performance-results.json");
 const BUDGETS_FILE = join(AUDIT_DIR, "performance-budgets.json");
 
 const GAME_STEM = "blades-in-the-dark";

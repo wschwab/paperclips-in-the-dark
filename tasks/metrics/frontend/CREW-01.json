@@ -1,0 +1,33 @@
+{
+  "task": "CREW-01",
+  "track": "frontend",
+  "implementationAgent": "ox-alpha (omp main session, opencode-go)",
+  "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "date": "2026-08-27",
+  "status": "PARTIAL",
+  "iterationsToGreen": 1,
+  "passRateAtFirstDoneClaim": "n/a (partial card)",
+  "passRateAfterReview": "unified Rep/Turf tracker verified by layout01/browser02 journeys at 1440/768/390",
+  "defectCatchingLayer": [
+    "browser journey caught tracker alignment regressions during LAYOUT-01 verification"
+  ],
+  "evidence": [
+    "frontend/src/pages/crew-sections/trackers.ts",
+    "frontend/src/pages/crew-sections/crew-domain.ts",
+    "frontend/src/pages/crew-detail.ts",
+    "agent-docs/test-audit/decisions/DEC-04.md",
+    "docs/pages/contract/contract-c4-crew-progression.mdx",
+    "agent-docs/test-audit/browser-evidence/reports/w7-layout01-report.md"
+  ],
+  "notes": "HONEST STATE: shipped = unified Rep/Turf tracker (Rep fills top-left, Turf bottom-right), settings-derived Roman-numeral Tier (toRoman in crew-domain.ts), develop flow (crew-detail.ts:715-767). NOT shipped = bounded crew Stash UI against the CONTRACT-04 stashCapacity (crew stash still renders as unbounded int) and any loose-Coin removal decision. No dedicated CREW-01 report or journey exists (crew01-cohort-add.mjs is CREW-05's journey, not this card's)."
+}

@@ -75,3 +75,35 @@ import {
 
 Capacities (stress max, clock segments, harm slots) are always parameters —
 never hardcoded game maxima (spec §5).
+
+## Remediation updates (AUDIT-0 waves 7–9)
+
+### Action dots — keyboard use and hit targets (A11Y-01)
+
+- **24×24 px minimum hit target** on every 16px ink dot: an explicitly
+  sized 24px `::before` pseudo-element centered with
+  `translate(-50%, -50%)` (an `inset` bleed was rejected — the element
+  border shrinks the containing block and silently undershoots the target).
+  A 10px gap gives a 26px pitch between adjacent dots.
+- **Roving tabindex**: the dot group is one tab stop; `ArrowLeft` /
+  `ArrowRight` move focus and selection between dots instead of every dot
+  being an individual tab stop.
+- Effective hit areas are pinned by `action-dots.test.ts` (CSS contract)
+  and verified in-browser with `document.elementFromPoint` probes at
+  center ±11.5px; measured text contrast on dots: light 13.26:1,
+  dark 13.18:1, high-contrast 21:1.
+
+### Theme tokens (THEME-01, THEME-02)
+
+- **`--band-text-muted`** (`var(--paper-sunk)`, `#d6cdb8`): dedicated
+  muted-text token for identity text on inked torn-plate bands. Scoped
+  resolution for `.character-kicker`, `.crew-kicker`, `.alias`,
+  `.crew-type` inside torn-foot plates — light-theme muted colors are never
+  reused on dark bands. Pinned ratios (theme01-identity-contrast journey):
+  light 8.13:1, Hi-C 11.01:1, dark 12.71:1, dark+Hi-C 11.01:1.
+- **`--focus-ring` decoupled from red** (THEME-02): the focus indicator and
+  the error border no longer share a color in any theme/contrast
+  combination; eight component focus rules resolve
+  `var(--focus-ring)` instead of the error red. Pinned by the
+  theme02-focus-error journey: 9/9 combos show separable focus vs. error
+  borders, 36/36 geometry probes.

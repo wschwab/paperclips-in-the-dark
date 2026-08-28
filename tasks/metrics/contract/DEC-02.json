@@ -1,0 +1,31 @@
+{
+  "task": "DEC-02",
+  "track": "contract",
+  "date": "2026-08-24",
+  "kind": "decision-record",
+  "implementationAgent": "wave-5 research card; disposition resolved by human ruling 2026-08-24 (see agent-docs/test-audit/product-decisions.md header + section 7 of each decision file)",
+  "reviewAgent": "orchestrator; human ruling is the acceptance authority",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "n/a (decision card)",
+  "passRateAfterReview": "n/a (decision card)",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "human ruling overrode the DEC-01 recommendation and reshaped CONTRACT-01"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "RESOLVED (no HUMAN DECISION REQUIRED outstanding)",
+  "outcome": "APPROVED by human 2026-08-24: amount-based vice relief + honest stress-clear label + no phase entity. Routed to CONTRACT-02 (viceReliefStress amount semantics, frontend obligations).",
+  "decisionEvidence": [
+    "agent-docs/test-audit/product-decisions.md",
+    "agent-docs/test-audit/decisions/DEC-02.md"
+  ],
+  "notes": "contract-c2-vice-stress.mdx documents the landed change; frontend label shipped in CHAR-04."
+}

@@ -1,0 +1,31 @@
+{
+  "task": "PERF-04",
+  "track": "frontend",
+  "implementationAgent": "wave-8 PERF-04 card (per /tmp/w8-perf04-brief.md)",
+  "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
+  "wallClockMinutes": null,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "date": "2026-08-27",
+  "status": "DONE (no optimization owed)",
+  "iterationsToGreen": 1,
+  "passRateAtFirstDoneClaim": "benchmark first run valid: all 76 budgeted metrics within frozen budgets at scales 0/10/100/1000 (recordedAt 2026-08-27T17:49:22Z)",
+  "passRateAfterReview": "20/20 then-current mutants killed during the campaign; full 28/28 on 2026-08-28",
+  "defectCatchingLayer": [
+    "two harness bugs fixed by the card itself: stale stress.clear warmup body and stale render-stable predicate in dataset-benchmark.mjs"
+  ],
+  "evidence": [
+    "agent-docs/test-audit/browser-evidence/reports/w8-perf04-report.md",
+    "agent-docs/test-audit/performance-results.json",
+    "agent-docs/test-audit/performance-budgets.json",
+    "conformance/scripts/dataset-benchmark.mjs"
+  ],
+  "notes": "Card contract: optimize ONLY measured over-budget metrics. None were over budget, so zero production revisions; budget file untouched. M18 killed via extended action-dots CSS-contract test during the campaign."
+}

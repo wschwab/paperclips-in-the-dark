@@ -38,3 +38,19 @@ nodes at the 1000-row benchmark scale; both numbers are pinned by tests so
 raising them is an explicit decision rather than drift. Announcements remain
 narrowed to the single polite `.roster-status` region (window/match counts),
 never a live region over the lists themselves (FV-031).
+
+## Recovery and import
+
+Degraded-row classification, repair controls, and the roster-level
+create/replace import IA are documented on
+[Roster recovery and import](/frontend/recovery-import) (RECOVERY-01).
+
+## Operational budgets
+
+- Render budget: ≤ `ROSTER_DOM_BUDGET_NODES` (2000) nodes at the 1000-row
+  benchmark scale, paged at 100 readable rows per entity.
+- The full benchmark enforces 76 frozen, fail-closed budgets across scales
+  0/10/100/1000 (`agent-docs/test-audit/performance-budgets.json`, frozen
+  2026-08-24; latest run `agent-docs/test-audit/performance-results.json`,
+  2026-08-27, all metrics within budget). Run it with
+  `npm run test:benchmark` in `conformance/`.

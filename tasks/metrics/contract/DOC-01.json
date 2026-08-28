@@ -1,0 +1,32 @@
+{
+  "task": "DOC-01",
+  "track": "contract",
+  "date": "2026-08-28",
+  "implementationAgent": "omp main session (opencode-go/glm-5.3-flash) + three read-only evidence scouts (omp task)",
+  "reviewAgent": "self-verification: every referenced path checked on disk; metrics JSON validated; artifact names matched to work-spec section 5",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "see /tmp/w10-doc01-report.md acceptance checklist",
+  "passRateAfterReview": "same; REVIEW-01/REVIEW-02 remain the acceptance authorities for the initiative",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "on-disk existence checks rejected stale /tmp-only citations; volatile /tmp evidence migrated into agent-docs/test-audit/browser-evidence/reports/"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "DONE",
+  "evidence": [
+    "agent-docs/test-audit/finding-traceability.md",
+    "agent-docs/test-audit/browser-evidence/",
+    "docs/pages/",
+    "tasks/metrics/",
+    "/tmp/w10-doc01-report.md"
+  ],
+  "notes": "Closed DOC-01 scope: vocs updates for user-visible remediation changes, 15 missing card metrics files created honestly, artifact renames to work-spec section 5 names (wave8-final-vetting.md -> final-vetting.md, wave5-browser-evidence.md -> browser-evidence/, dataset-benchmark.json -> performance-results.json incl. RECORD_FILE constant), runtime-flake records created as explicit not-collected markers, AR/UX finding-traceability.md completed."
+}

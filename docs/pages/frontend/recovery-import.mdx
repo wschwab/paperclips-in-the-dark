@@ -1,0 +1,65 @@
+---
+title: Roster recovery and import (RECOVERY-01)
+description: Degraded-row classification, repair/delete controls, and roster-level create/replace import IA (Wave 7 remediation).
+---
+
+# Roster recovery and import (RECOVERY-01)
+
+Wave-7 remediation page for UX-012: every degraded row stays reachable, and
+import lives at the top of the roster instead of per-row anchors.
+
+## Degraded rows are total and classified
+
+The roster's collections are **total**: a record that fails a strict read is
+still rendered as a row with `isReadable: false` — it can never be filtered
+away or stranded behind the paging window (see
+[Campaign roster](/frontend/f2a-roster) for the paging rules).
+
+Every degraded row carries `data-recovery-class`:
+
+| Class | Meaning | Controls |
+|---|---|---|
+| `repairable` | Can be normalized once a preview is confirmed | Repair + Delete |
+| `needs-input` | Mounted repair controls await caller values | Repair (pending) + Delete; flips back when cancelled or the preview token goes stale |
+| `unreadable` | Stored bytes cannot be decoded (`422 INVALID_ENTITY`) | Delete only, with re-import guidance |
+
+Classification and recovery copy are rendered by
+`frontend/src/components/degraded-row.ts`; row state lives in
+`frontend/src/pages/roster.ts`. Direct reads of a degraded entity stay
+strict — a detail read of a degraded id returns `422`, so the row is the only
+door.
+
+## Top-level import IA
+
+Per-row **Import** anchors are gone (the unit suite asserts zero
+`a.roster-import` elements). Instead, one disclosure panel per entity kind
+(`details.roster-import-panel`) sits at the top of each list:
+
+- **Create** leg links to the existing creation route.
+- **Replace** leg mounts the shared import page inline against a picked
+  summary.
+
+The panel is lazily rebuilt on toggle so a closed panel stays inside the
+roster's DOM budget.
+
+## Replace targeting under preview-token rules
+
+The confirming `apply` keys `If-Match` by what the row is:
+
+- **Readable target** — by `revision` (`If-Match: "12"`).
+- **Degraded target** — by the sha256 raw-byte content token
+  (`If-Match: "sha256:…"`), so an unreadable entry can be re-imported
+  without deleting it first.
+
+Both keyings are unit-pinned in `frontend/src/pages/roster.test.ts`
+(7 RECOVERY-01 cases within 23 roster tests).
+
+## Verification
+
+- `roster-recovery` journey (six-journey browser suite): drives a real
+  planted degraded pair (unknown nested key → repairable; truncated JSON →
+  unreadable), full repair preview → 409 confirm → apply → row readable,
+  token-keyed delete, and a live roster-level replace import; zero console
+  errors.
+- Unit: `frontend/src/pages/roster.test.ts`; metrics:
+  `tasks/metrics/frontend/RECOVERY-01.json`.

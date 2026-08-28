@@ -23,3 +23,21 @@ so navigation is purely client-side.
 F2e only supports creating a character with a game and playbook; editing,
 crew assignment at creation time, and validation beyond the required playbook
 selection remain later F2 slices.
+
+## Remediation update — validated PC creation (CONTRACT-01 / CHAR-01)
+
+DEC-01 (human ruling 2026-08-24) replaced the minimal two-step create with a
+dedicated, validated PC creation flow: the page now collects playbook choice
+plus starting Talent (action rating) allocation and `POST`s to
+`/api/characters/pc`, which validates the submitted dots against the
+settings-derived budget (`StartingActionDots = 7`,
+`StartingActionDotMax = 2` — per-playbook defaults pre-applied; too many or
+too few dots is a `422`). The form shows the settings-derived unspent-point
+counter, required-state cues for vice/purveyor, playbook ability, and
+identity fields, an escape/override disclosure, and a persistent finish path
+(a failed phase-two step never loses the created entity — retry naming
+only).
+
+Normative statement: [C1 — PC creation](/contract/contract-c1-pc-creation);
+browser journey `pc-chargen`; report
+`agent-docs/test-audit/browser-evidence/reports/char01-report.md`.

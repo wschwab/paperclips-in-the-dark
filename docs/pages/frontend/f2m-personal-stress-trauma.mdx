@@ -13,7 +13,7 @@ is red-green on both the API client and page layers.
 | Method | Endpoint | If-Match | Notes |
 |--------|----------|----------|-------|
 | `dossierUpdate` | `ops/dossier.update` | ✓ | Partial update — only provided fields change |
-| `stressClear` | `ops/stress.clear` | ✓ | No request body |
+| `stressClear` | `ops/stress.clear` | ✓ | `{ amount: number }` — integer ≥ 0, required (CONTRACT-02) |
 | `traumaAdd` | `ops/trauma.add` | ✓ | `{ trauma: string }` |
 | `traumaRemove` | `ops/trauma.remove` | ✓ | `{ trauma: string }` |
 | `getGame` | `/games/{stem}` | — | Returns raw game-settings JSON |
@@ -49,13 +49,21 @@ cancel (✕) buttons. Only one field can edit at a time. Save calls
 - **Add trauma**: A `<select>` populated from game-settings JSON `Traumas`
   array, filtered to exclude already-stamped traumas. An add button (+) calls
   `traumaAdd(selectedTrauma)`.
+- **Trauma resolution clears stress** (CONTRACT-02): resolving a pending
+  trauma via the lifecycle flow resets stress to 0 — the old
+  "keeps stress full" behavior is gone.
 
 ### Vice
 
 - Vice name displayed bold (`c.dossier.vice.name`).
 - Vice description shown in serif if non-empty.
-- **Indulge Vice** button calls `stressClear()`. Disabled when stress is
-  already 0 or an operation is in-flight.
+- **Clear Stress** button calls `stressClear({ amount })` (CONTRACT-02;
+  DEC-02 explicitly renamed the control — it must not read "Indulge Vice"
+  because `stress.clear` records no contracted vice relief). An amount
+  input sits next to the button and defaults to the currently marked
+  stress, so one click still clears everything; requesting more than is
+  marked returns the `overindulged` sideEffect notice. Disabled when
+  stress is already 0 or an operation is in-flight.
 
 ## Stale-revision pattern (F2h rule)
 
@@ -93,3 +101,18 @@ to add), but the rest of the sheet renders normally.
 - `describe("F2m Vice")` — 2 tests
 
 All 101 tests pass (58 client + 19 character-detail page + 18 schema + 6 crew-detail).
+
+## Remediation updates (AUDIT-0 waves 6–7)
+
+- **Corrections edit mode + `stress.fix`** (CONTRACT-03): a session-local
+  toggle reveals an absolute stress-value input that calls `stress.fix` —
+  the distinctly-named correction family that lands stress at an exact
+  value without trauma side effects and records a `"stress.fix"` history
+  entry. See the [normative statement](/contract/contract-c3-corrections).
+- **High-impact action zone** (CHAR-05): End Score, Retire, Delete, and
+  trauma correction/removal controls are separated into a visually distinct
+  danger zone with consequence copy and explicit confirmation steps, so
+  irreversible lifecycle actions cannot be triggered by the same casual
+  click pattern as ordinary edits.
+- **Honest stress-clear label** (CHAR-04): the "Indulge Vice" wording is
+  gone; a unit test asserts the text never reappears.

@@ -109,10 +109,30 @@ export function classifyMutant({ baseline, mutant, expectedFailureIds, runState 
   return { state: runState, killed: false, newFailureIds: newFailureIds.sort() };
 }
 
-export async function executeMutant({ repoRoot, mutant, baselineTests, runMutant }) {
+export async function restoreAndRebuild({ snapshots, mutant, rebuild }) {
+  let restorationError;
+  let rebuildError;
+  for (const snapshot of snapshots) {
+    const abs = snapshot.path ?? snapshot.abs;
+    writeFileSync(abs, snapshot.bytes);
+    if (snapshot.hash && hash(readFileSync(abs)) !== snapshot.hash) {
+      restorationError = new Error(`failed byte-exact restoration of ${abs}`);
+    }
+  }
+  if (mutant?.layer === "backend-ada" && rebuild) {
+    try {
+      await rebuild();
+    } catch (e) {
+      rebuildError = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+  if (restorationError) throw restorationError;
+  if (rebuildError) throw new Error(`cleanup rebuild failed: ${rebuildError.message}`);
+}
+
+export async function executeMutant({ repoRoot, mutant, baselineTests, runMutant, rebuild }) {
   let snapshots = [];
   let classified;
-  let restorationError;
   try {
     snapshots = await applyVerifiedEdits(repoRoot, mutant.edits);
     const run = await runMutant();
@@ -125,18 +145,20 @@ export async function executeMutant({ repoRoot, mutant, baselineTests, runMutant
   } catch (error) {
     classified = { state: "harness-error", killed: false, newFailureIds: [], error: String(error) };
   } finally {
-    for (const snapshot of snapshots) {
-      writeFileSync(snapshot.path, snapshot.bytes);
-      if (hash(readFileSync(snapshot.path)) !== snapshot.hash) {
-        restorationError = new Error(`failed byte-exact restoration of ${snapshot.path}`);
-      }
-    }
+    await restoreAndRebuild({
+      snapshots,
+      mutant,
+      rebuild,
+    }).catch((e) => {
+      // A cleanup failure (restore or rebuild) is a harness error regardless
+      // of prior classification — the workspace is now in an unclean state.
+      classified = { state: "harness-error", killed: false, newFailureIds: [], error: e.message };
+    });
   }
-  if (restorationError) throw restorationError;
   return { ...classified, restored: snapshots.length > 0 };
 }
 
-export async function executeCampaign({ mutants: campaignMutants, runBaseline, runMutant, onApply, repoRoot = REPO_ROOT }) {
+export async function executeCampaign({ mutants: campaignMutants, runBaseline, runMutant, onApply, rebuild, repoRoot = REPO_ROOT }) {
   const baseline = await runBaseline();
   const failures = (baseline.tests ?? []).filter((test) => test.status !== "passed");
   if (baseline.state !== "completed" || failures.length > 0) {
@@ -150,6 +172,7 @@ export async function executeCampaign({ mutants: campaignMutants, runBaseline, r
       mutant,
       baselineTests: baseline.tests,
       runMutant: () => runMutant(mutant),
+      rebuild,
     }));
   }
   return results;
@@ -906,10 +929,22 @@ async function runOneMutant(mutant, baseline, attempt = 1) {
   } catch (e) {
     return { id: mutant.id, severity: mutant.severity, layer: mutant.layer, status: "harness-error", killed: false, killedBy: [], newFailureIds: [], error: String(e.message ?? e) };
   } finally {
+    // Finalize-style cleanup: restore source, then rebuild clean backend binary
+    // (for backend-ada layer mutants) so the compiled pitd never leaks a mutant
+    // build into subsequent runs — after success, failure, or interruption.
     restoreSnapshots(snapshots);
     try { verifyHashes(mutant, `${mutant.id} post-restore`); } catch (e) {
       console.error(`  RESTORATION FAILURE: ${e.message}`);
       process.exitCode = 1;
+    }
+    // Rebuild clean binary after restoration — only for backend-ada layer.
+    if (mutant.layer === "backend-ada") {
+      console.log(`    rebuilding clean ${mutant.id} backend...`);
+      const b = runCommand(buildCommand().cmd, buildCommand().cwd, buildCommand().timeout);
+      if (!b.success) {
+        console.error(`  CLEANUP REBUILD FAILURE for ${mutant.id}: ${(b.stdout + b.stderr).slice(-500)}`);
+        process.exitCode = 1;
+      }
     }
   }
 }

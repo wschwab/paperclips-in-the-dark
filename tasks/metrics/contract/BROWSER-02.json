@@ -1,0 +1,32 @@
+{
+  "task": "BROWSER-02",
+  "track": "contract",
+  "date": "2026-08-27",
+  "implementationAgent": "wave-8 BROWSER-02 card (per /tmp/w8-browser02-brief.md)",
+  "reviewAgent": "orchestrator; browser-suite REQUIRED_IDS enforcement + journey checkpoints",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "6/6 journeys PASS, 45/45 route x viewport x theme matrix entries green on first full managed run recorded in the report",
+  "passRateAfterReview": "same; re-run as part of wave-8/9 gates",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "journey checkpoints caught crew-detail regressions during wave-7 shared-working-copy work (crew-journey fix card, 2026-08-28)"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "status": "DONE",
+  "evidence": [
+    "agent-docs/test-audit/browser-evidence/reports/w8-browser02-report.md",
+    "conformance/scripts/browser-suite.mjs",
+    "conformance/scripts/browser-journeys.mjs",
+    "conformance/suites-browser/",
+    "tasks/metrics/contract/BROWSER-01.json"
+  ],
+  "notes": "Six exact stateful journeys enforced by REQUIRED_IDS in browser-suite.mjs; per-journey numeric JSON + screenshots land in $TMPDIR/pitd-browser/<runId>/. Known sibling-noise policy: journeys from in-flight sibling cards are reported as theirs, never blocked on."
+}
