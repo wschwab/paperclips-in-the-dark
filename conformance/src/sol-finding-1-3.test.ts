@@ -91,6 +91,83 @@ describe("SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints"
   });
 });
 
+
+
+describe("SOL finding 1c — guard rejects caller-provided --child bypass", () => {
+  it("[TOOLING-SOL-008a] checkCommand rejects --child on browser-suite.mjs (bypass via npm run test:browser -- --child)", () => {
+    const result = guardCheckCommand(["node", "conformance/scripts/browser-suite.mjs", "--child"]);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("--child");
+  });
+
+  it("[TOOLING-SOL-008b] checkCommand rejects bare browser-suite.mjs --child", () => {
+    const result = guardCheckCommand(["conformance/scripts/browser-suite.mjs", "--child"]);
+    expect(result.ok).toBe(false);
+  });
+
+  it("[TOOLING-SOL-008c] checkCommand rejects --child on dataset-benchmark.mjs (bypass via npm run test:benchmark -- --child)", () => {
+    const result = guardCheckCommand(["node", "conformance/scripts/dataset-benchmark.mjs", "--child"]);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("--child");
+  });
+
+  it("[TOOLING-SOL-008d] checkCommand rejects bare dataset-benchmark.mjs --child", () => {
+    const result = guardCheckCommand(["conformance/scripts/dataset-benchmark.mjs", "--child"]);
+    expect(result.ok).toBe(false);
+  });
+
+  it("[TOOLING-SOL-008e] checkCommand rejects internal-only env (BASE_URL) on browser-suite.mjs", () => {
+    const result = guardCheckCommand(
+      ["node", "conformance/scripts/browser-suite.mjs"],
+      { env: { BASE_URL: "http://127.0.0.1:9999" } },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("BASE_URL");
+  });
+
+  it("[TOOLING-SOL-008f] checkCommand rejects internal-only env (PITD_DATA_DIR) on dataset-benchmark.mjs", () => {
+    const result = guardCheckCommand(
+      ["node", "conformance/scripts/dataset-benchmark.mjs"],
+      { env: { PITD_DATA_DIR: "/tmp/pitd-managed/fake" } },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("PITD_DATA_DIR");
+  });
+
+  it("[TOOLING-SOL-008g] checkCommand accepts browser-suite.mjs WITHOUT --child (normal path)", () => {
+    const result = guardCheckCommand(["node", "conformance/scripts/browser-suite.mjs"]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("[TOOLING-SOL-008h] checkCommand accepts dataset-benchmark.mjs WITHOUT internal-only env (normal path)", () => {
+    const result = guardCheckCommand(["node", "conformance/scripts/dataset-benchmark.mjs"]);
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("SOL finding 2 — mutation provenance identifies clean baseline", () => {
+  it("[TOOLING-SOL-006a] buildCampaignArtifact uses passed revision, not sourceRevision()", () => {
+    const result = buildCampaignArtifact({
+      results: [],
+      baselines: [{ green: true }],
+      seeds: { name: "seed-defaults", trees: [] },
+      catalogIds: [],
+      command: { cmd: "npm run test:mutation", cwd: "/repo", timeout: 600000 },
+      environment: { node: "v22.0.0", platform: "linux" },
+      revision: "clean-baseline-rev",
+      rawOutputPath: "mutation-raw-test.txt",
+    });
+    expect(result.revision).toBe("clean-baseline-rev");
+    expect(result.revision).not.toBe("unknown");
+  });
+
+  it("[TOOLING-SOL-006b] sourceRevision returns a non-empty string", () => {
+    const rev = sourceRevision();
+    expect(typeof rev).toBe("string");
+    expect(rev.length).toBeGreaterThan(0);
+  });
+});
+
 describe("SOL finding 3 — mutation full-results artifact schema", () => {
   it("[TOOLING-SOL-004] buildCampaignArtifact includes all required schema fields", async () => {
     const result = buildCampaignArtifact({
@@ -113,11 +190,11 @@ describe("SOL finding 3 — mutation full-results artifact schema", () => {
       catalogIds: ["M01"],
       command: { cmd: "npm run test:mutation", cwd: "/repo", timeout: 300000 },
       environment: { node: "v22.0.0", platform: "linux" },
+      revision: "abc123def456",
       rawOutputPath: "mutation-raw-test.txt",
     });
 
-    expect(result.revision).toBeTruthy();
-    expect(result.revision).not.toBe("null");
+    expect(result.revision).toBe("abc123def456");
     expect(result.timestamp).toBeTruthy();
     expect(result.command).toEqual({ cmd: "npm run test:mutation", cwd: "/repo", timeout: 300000 });
     expect(result.environment).toEqual({ node: "v22.0.0", platform: "linux" });

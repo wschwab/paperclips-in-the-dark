@@ -100,7 +100,6 @@ export interface CampaignResult {
   runState?: string;
   output?: string;
 }
-
 export interface CampaignArtifactInput {
   results: CampaignResult[];
   baselines: Array<{ green: boolean; [key: string]: unknown }>;
@@ -108,8 +107,10 @@ export interface CampaignArtifactInput {
   catalogIds: string[];
   command: { cmd: string; cwd: string; timeout: number };
   environment: Record<string, string>;
+  revision: string;
   rawOutputPath: string;
 }
+
 
 export interface CampaignArtifact {
   schema: string;

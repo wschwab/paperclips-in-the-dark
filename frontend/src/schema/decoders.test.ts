@@ -128,6 +128,49 @@ describe("schema decoders against golden fixtures", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// FV-030 — Notes decoder (Outcome 9 / §17.3): ordinary Notes decoder accepts
+// ONLY the canonical array shape. A legacy single-string notes value MUST be
+// rejected by ordinary decoding; legacy string→array conversion lives only in
+// the explicitly-named import/repair migration path (server-side canonicalizer),
+// never in the ordinary client decoder.
+// ---------------------------------------------------------------------------
+describe("Notes decoder (FV-030)", () => {
+  const baseCharacter = loadFixture("golden-character.json") as Record<string, unknown>;
+  const baseCrew = loadFixture("golden-crew.json") as Record<string, unknown>;
+
+  it("accepts an array notes value on a character dossier", () => {
+    const ok = decodeCharacterEither({
+      ...baseCharacter,
+      dossier: { ...(baseCharacter.dossier as object), notes: ["one", "two"] },
+    });
+    expect(Either.isRight(ok)).toBe(true);
+  });
+
+  it("accepts an array notes value on a crew", () => {
+    const ok = decodeCrewEither({ ...baseCrew, notes: ["crew note"] });
+    expect(Either.isRight(ok)).toBe(true);
+  });
+
+  it("rejects a legacy single-string notes value on a character dossier", () => {
+    const bad = decodeCharacterEither({
+      ...baseCharacter,
+      dossier: { ...(baseCharacter.dossier as object), notes: "legacy single string" },
+    });
+    expect(Either.isLeft(bad)).toBe(true);
+  });
+
+  it("rejects a legacy single-string notes value on a crew", () => {
+    const bad = decodeCrewEither({ ...baseCrew, notes: "legacy single string" });
+    expect(Either.isLeft(bad)).toBe(true);
+  });
+
+  it("rejects a non-string-array notes value (numbers)", () => {
+    const bad = decodeCrewEither({ ...baseCrew, notes: [1, 2, 3] });
+    expect(Either.isLeft(bad)).toBe(true);
+  });
+});
+
 describe("ClockSummary decoder (campaign.json#/$defs/clockSummary)", () => {
   const row = {
     kind: "clock",

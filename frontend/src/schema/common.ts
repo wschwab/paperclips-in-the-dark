@@ -55,12 +55,17 @@ export type NamedDescription = typeof NamedDescription.Type;
 
 /**
  * Free-text notes (C4 playtest change): an array of string entries.
- * Accepts a legacy single string too, so older payloads keep decoding.
+ *
+ * FV-030 / §17.3: ordinary decoding accepts ONLY the canonical array shape.
+ * A legacy single-string notes value is REJECTED here; the only place a
+ * string→array conversion is permitted is the explicitly-named import/repair
+ * migration path, where the server-side canonicalizer previews and applies the
+ * legacy→array conversion as a documented normalization change. The client
+ * itself never accepts or coerces a bare string Notes value.
  */
-export const Notes = Schema.Union(
-  Schema.Array(Schema.String),
-  Schema.String,
-).pipe(Schema.annotations({ identifier: "Notes" }));
+export const Notes = Schema.Array(Schema.String).pipe(
+  Schema.annotations({ identifier: "Notes" }),
+);
 export type Notes = typeof Notes.Type;
 
 export const HarmIntensity = Schema.Literal(

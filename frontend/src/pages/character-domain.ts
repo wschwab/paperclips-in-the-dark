@@ -16,10 +16,13 @@ export function getNamedValue(c: Character, key: "background" | "heritage" | "vi
 
 export function getDossierValue(c: Character, field: DossierField): string {
   if (typeof field === "string") {
-    const v = c.dossier[field];
-    // notes is string[] per C4 (legacy single string still decodes)
-    if (typeof v === "string") return v;
-    return v.join(", ");
+    if (field === "notes") {
+      // notes is strictly string[] per C4 (FV-030: legacy single-string
+      // rejection removed); join entries for display.
+      return c.dossier.notes.join(", ");
+    }
+    // name, alias, look are plain strings.
+    return c.dossier[field as "name" | "alias" | "look"];
   }
   return getNamedValue(c, field.key, field.field);
 }

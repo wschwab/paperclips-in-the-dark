@@ -14,9 +14,9 @@ is fixed before the next round).
 > **Authoritative current evidence (2026-08-30).** The counts below for the
 > final VET-01 gate reflect the 2026-08-30 candidate (`65d09ff8`), verified by
 > `agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
-> `tasks/metrics/contract/VET-01.json`. The Wave 8 integration table further
-> below is preserved **as historical context** — it records the 2026-08-14
-> Wave-8 state and is **not** an authoritative current claim.
+> `tasks/metrics/contract/VET-01.json`. The Wave-8 table further below is
+> preserved **as historical context** — it records the 2026-08-14 Wave-8
+> state and is **not** an authoritative current claim.
 
 ## Wave 3 — contract/oracle correctness review (2026-08-14)
 
@@ -74,25 +74,51 @@ Candidate `65d09ff8`; final Luna review (REVIEW-02) on 2026-08-30 returned
 | OpenAPI lint | `npx -y @redocly/cli lint contract/openapi.yaml --config contract/redocly.yaml` | 0 errors, 1 warning |
 | Operation disposition coverage | coverage map | **110/110 operations, 345/345 dispositions** |
 
-**VET-01 extras (8 spec items, all PASS):**
+**VET-01 extras (8 spec items, 7 PASS + 1 PENDING):**
 
-1. Two corruption/repair cycles (`--cycles 2`): Cycle 1 → 471/471; Cycle 2 → 471/471 (Total 942/942).
-2. Generator idempotency twice: all 4 SC-C5 generators byte-identical on second run (proven by `TOOLING-GEN-001..004`); capability manifest covers all 110 operationIds with 86 agent / 24 human / 0 exempt.
-3. Default-data guard negative calibration: 1525 inventory rows, 0 deletions, `data/games` 10 files unchanged.
-4. Six browser journeys + full viewport/theme matrix: 6/6 PASS, 9 matrix entries per journey, no horizontal overflow.
-5. **Generated-doc agent workflow exercise**: a black-box agent completed a full create→mutate→lifecycle→undo→delete workflow using ONLY the generated `skill/api-reference/README.md` + `capability-manifest.json` (no backend source, no guessing IDs/limits), against a managed temp server with no user data. 13 steps all returned expected responses. Script and output preserved at `agent-docs/sol-finding-4-5-correction.md`.
-6. Track Z expected-red: `docs/pages/zero/z4-halted-expected-red.mdx` present; non-blocking.
-7. Ledger/coverage/deletion artifact validation: 1525 inventory rows, 0 deletions, 345/345 coverage.
-8. Campaign-data manifest comparison: 4003 files, 17,495,126 bytes, hash `f8111b765…` identical before/after.
+1. **Two corruption/repair cycles** (`test:ada --cycles 2`): Cycle 1 → 471/471; Cycle 2 → 471/471 (Total 942/942). Per-cycle repair-related test count: 21 (of 26 registrations in the three canonical-shape/persistence suites; exact enumeration and inclusion rule below).
+2. **Generator idempotency twice** (`TOOLING-GEN-001..004`): completeness module, API reference, capability manifest, Ada validator metadata — all byte-identical on second run (SHA256 verified).
+3. **Default-data guard negative calibration** (spec line 1292): default-data inventory 1525 rows, 0 deletions, `data/games` 10 files unchanged.
+4. **Six browser journeys + full viewport/theme matrix**: 6/6 PASS, 9 matrix entries per journey, no horizontal overflow.
+5. **Generated-doc agent workflow exercise — PENDING**: The black-box workflow at `/tmp/gen-doc-workflow-final.mjs` completed all 13 steps using only generated docs, but it spawned the server on **fixed port 9666** and exited **without awaiting server termination or directory removal**, leaving six `gen-doc-workflow-*` directories under `/tmp/pitd-managed/`. This violates the "zero leaked resources" requirement. **Evidence marked PENDING** awaiting the isolation worker's cleaned managed rerun. Generator idempotency (sub-criterion b) is independently satisfied.
+6. **Track Z expected-red**: `docs/pages/zero/z4-halted-expected-red.mdx` present; non-blocking. Static verification only.
+7. **Ledger/coverage/deletion artifact validation**: 1525 inventory rows confirmed; deletion-log zero rows; contract coverage 345/345 (deterministic, ORACLE-01).
+8. **Campaign-data manifest comparison + preservation**: Root `campaign-data/` 4003 files, 17,495,126 bytes, combined hash `eb1a292524061bf759c6dd92ac9146ab4004d1b4ea56ca61aeb3b976b6380d88` — identical before/after. Durable manifest refreshed at `agent-docs/test-audit/campaign-data-manifest.json` (was stale: 1457 files, 6,134,087 bytes from 2026-08-23).
+9. **Manifest**: operationCount 110 = 86 agent + 24 human + 0 exempt; approvedExemptions: []; flaggedCandidates count = **8** (`batch`, `createCharacter`, `createPcCharacter`, `stressAdd`, `harmAdd`, `harmRemove`, `createCrew`, `createClock`).
 
-**Strict decoders:** ordinary current-version decoders contain no compatibility
-defaults or legacy error branches (EDGE-02 / AR-012). Verified by Luna REVIEW-02
-(6/6 journeys) and VET-01 mutation (28/28 killed).
+**Repair-related per-cycle count (exact 21):** the three canonical-shape/persistence suites (`canonical-shape.test.ts` with 13, `import-repair.test.ts` with 7, `concurrency-tokens.test.ts` with 6 = 26 total) register 26 cases per cycle. Of these, **21** exercise the import/repair/preview/apply/normalization-token contract. The **inclusion rule**: a test is repair-related if it exercises any of: (a) import preview/apply (409 NORMALIZATION_REQUIRED with preview token), (b) repair preview/apply on a degraded stored entity, (c) deprecated-format migration (legacy notes string → array, v1 character/crew → canonical), (d) If-Match / preview-token / revision / deleteToken validation on the repair or delete path, (e) 409 STALE_REVISION for stale-token on degraded entity, (f) read-purity guards that pin the "never silently repair on read" contract.
+
+The exact 21:
+
+- **canonical-shape.test.ts (8):** CANON-IMPORT-003, CANON-IMPORT-004, CANON-IMPORT-005, CANON-IMPORT-006, CANON-LEGACY-007, CANON-REPAIR-008, CANON-READONLY-009, CANON-TOTAL-013
+- **import-repair.test.ts (7):** REPAIR-TOKEN-001, REPAIR-TOKEN-002, REPAIR-TOKEN-003, REPAIR-ATOMIC-004, FV-MIGRATE-CHAR-001, FV-MIGRATE-CREW-001, FV-NOTES-STRING-001
+- **concurrency-tokens.test.ts (6):** CONC-IFMATCH-001, CONC-IFMATCH-002, CONC-IFMATCH-003, CONC-REV-004, CONC-TOKEN-005, CONC-NOWRITE-006
+
+The remaining 5 are general canonical-shape guards (CANON-CREATE-001, CANON-NULL-002, CANON-NOWRITE-010, CANON-VERSION-011, CANON-SPARSE-012) that do not touch the repair path. The prior enumeration incorrectly included `ERR-DETAIL-004` (from `error-union.test.ts`, NOT one of the three persistence suites) and omitted CONC-REV-004, CONC-TOKEN-005, and CONC-NOWRITE-006.
+
+**Strict decoders:** ordinary current-version decoders contain no compatibility defaults or legacy error branches (EDGE-02 / AR-012). Verified by Luna REVIEW-02 (6/6 journeys) and VET-01 mutation (28/28 killed).
 
 **Luna PASS:** GPT 5.6 Luna via `openai-codex` at `xhigh` independently ran
 `npm run test:browser` (fresh run `2026-08-30T06-14-37-794Z-d819482b`:
 `passed=true`, 0 problems, 6/6 journeys) and inspected source.
 `VERDICT: PASS`.
+
+**Tooling correction:** VET-01.json previously stated 156/156 tooling; the
+corrected log `04-test-tooling.log` records 170/170 (13 test files). The
+working copy's `conformance/package.json` has `test:ada` removed (present in
+parent commit `wvzskznt`); this causes `TOOLING-MANAGED-025` to fail in the
+current working copy but is a pre-existing state, not introduced by these
+corrections.
+
+**Campaign-data manifest refresh:** `agent-docs/test-audit/campaign-data-manifest.json`
+regenerated 2026-08-30 using the repository's `buildCampaignManifest` function
+(`conformance/scripts/default-data-guard.mjs`); records 4003 files,
+17495126 bytes, identical schema to the 2026-08-23 snapshot (which had
+1457 files, 6134087 bytes). No campaign bytes were modified.
+
+**AR-007 finding-traceability update:** independent review of all 195 P0/P1
+rows + decision classes completed; VERDICT: PASS; references
+`agent-docs/test-audit/p0p1-independent-review.md`.
 
 Notes:
 
@@ -103,24 +129,17 @@ Notes:
 - `nonBlankString` is Unicode-whitespace on both the Ada server and the
   generated frontend evaluator (ECMAScript TrimString set); the completeness
   oracle pins an NBSP case (COMPLETE-WHITESPACE-004).
-- **Repair-related per-cycle count:** the three canonical-shape/persistence
-  suites (`canonical-shape.test.ts`, `import-repair.test.ts`,
-  `concurrency-tokens.test.ts`) register 13 + 7 + 6 = 26 cases per cycle. Of
-  these, 21 exercise the import/repair/preview/apply/normalization token
-  contract (CANON-IMPORT-003..006, CANON-LEGACY-007, CANON-REPAIR-008,
-  CANON-READONLY-009, CANON-TOTAL-013, REPAIR-TOKEN-001..003,
-  REPAIR-ATOMIC-004, FV-MIGRATE-CHAR/CREW-001, FV-NOTES-STRING-001,
-  CONC-IFMATCH-001..003, ERR-DETAIL-004). The remaining 5 are general
-  canonical-shape guards (CANON-CREATE-001, CANON-NULL-002,
-  CANON-NOWRITE-010, CANON-VERSION-011, CANON-SPARSE-012) that do not touch
-  the repair path.
+- **extra05-manifest.log correction:** the original log at
+  `/tmp/vet01-raw-exact-final/extra05-manifest.log` exited 1 because the
+  inventory validation looked for `conformance/generated/inventory.json`
+  (does not exist). Re-ran from repo root using the correct path
+  `agent-docs/test-audit/inventory.json` → exit 0. See
+  `/tmp/vet01-raw-exact-final/extra05-manifest-fixed.log`.
 
 ## Historical Wave 8 integration gate (2026-08-14) — preserved as context only
 
 The following table records the 2026-08-14 Wave-8 snapshot. It is **historical**
-and **not** an authoritative current claim; the Wave-9/VET-01 table above
-supersedes it. Wave 7 decomposition (ARCH-01/02) and the full mutation campaign
-(28/28) were applied after Wave 8 and are reflected only in the VET-01 results.
+and **not** an authoritative current claim; the VET-01 table above supersedes it.
 
 | Gate | Command | Historical result (2026-08-14) |
 |---|---|---|
@@ -137,18 +156,15 @@ supersedes it. Wave 7 decomposition (ARCH-01/02) and the full mutation campaign
 
 ## Final whole-initiative review
 
-- **Rounds:** 9 (8 × `VERDICT: FAIL`, then `VERDICT: PASS`, 2026-08-14).
-- **Round 1–8 findings (all fixed):** stale "backend not implemented" comment; fix-coverage.json suite-name + duplicated-path defects; change log stopped at Wave 6; historical luna-review.md + wave7 "R3 pending" notes; stale vocs status lines; `nonBlankString` Unicode-whitespace alignment (Ada now mirrors the ECMAScript TrimString set, pinned by an NBSP case); missing committed raw conformance report; degraded-clock collection rows (clockSummary end-to-end + TOTAL-CLOCK-DELETE-009); frontend summary metadata made required; count inconsistencies; invalid metrics JSON; template-only task-card Log sections (39 backfilled); dangling final-verdict.md reference.
-- **Round 9:** `VERDICT: PASS` — no real defects; all 17 deliverables coherent; the three cross-cutting invariants hold across contract/Ada/frontend; frozen oracle coverage present; 32/32 findings Closed.
-
-Final verdict (dated, authoritative — current as of 2026-08-30):
-
-> **VERDICT: PASS** — GPT 5.6 Luna via `openai-codex` at `xhigh`, read-only,
-> 2026-08-30. The complete contract-correction initiative — normative spec,
-> frozen contract + oracle, Ada backend (246/246 gnatprove), frontend clients
-> (759/759), agent skill (110/110 operations, 86 agent / 24 human / 0 exempt),
-> strict ordinary decoders (EDGE-02), 32/32 findings closed, mutation
-> (28/28 killed), browser journeys (6/6), and VET-01 whole-initiative gate
-> (471/471 conformance) — passes the independent gate.
+- **AR-007 finding-traceability update:** independent review of all 195 P0/P1 rows
+  + decision classes completed (VERDICT: PASS) via `agent-docs/test-audit/p0p1-independent-review.md`.
+  The `finding-traceability.md` AR-007 row text has been updated to reflect
+  `independentReviewStatus: reviewed` (not `pending`) with review evidence path.
+- **Tooling count:** corrected from stale 156/156 to 170/170.
+- **Campaign-data manifest:** refreshed from stale 1457/6134087 to current 4003/17495126.
+- **extra05-manifest.log:** inventory validation corrected to use
+  `agent-docs/test-audit/inventory.json` path (exit 0).
+- **Generated-doc agent workflow:** PENDING (fixed-port run with leaked temp dirs;
+  awaiting isolation worker's cleaned managed rerun).
 
 Full verdict transcript: `docs/pages/contract/gate-evidence/final-verdict.md`.

@@ -1027,10 +1027,33 @@ async function runParent(opts) {
     }
 
     results.sort((a, b) => a.scale - b.scale);
+    const rawOutputPath = join(AUDIT_DIR, `performance-raw-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`);
+    const rawOutput = results.map((r) => JSON.stringify(r)).join("\n");
+    const rawTemp = `${rawOutputPath}.tmp-${process.pid}`;
+    writeFileSync(rawTemp, rawOutput + "\n");
+    renameSync(rawTemp, rawOutputPath);
+
     const record = {
       schema: RECORD_SCHEMA,
       recordedAt: new Date().toISOString(),
       revision: opts.revision ?? sourceRevision(),
+      command: {
+        cmd: "npm run test:benchmark",
+        cwd: REPO_ROOT,
+        timeout: 24 * 60 * 60 * 1000,
+      },
+      environment: {
+        node: process.version,
+        platform: process.platform,
+        arch: process.arch,
+      },
+      baselineStatus: opts.record ? "recorded" : "budget-enforced",
+      seeds: {
+        name: "seed-defaults",
+        trees: ["conformance/fixtures/sc-o2-seeds", "conformance/fixtures/completeness-seeds"],
+        gameStem: GAME_STEM,
+        degradedMix: DEGRADED_MIX,
+      },
       machine: machineInfo(),
       runtime: {
         node: process.version,
@@ -1052,6 +1075,15 @@ async function runParent(opts) {
         launcher: "managed-browser-smoke.mjs — one fresh invocation per scale (independent data dirs)",
         browserResolution: "shared lib/chromium-resolve.mjs (BROWSER-01 order)",
       },
+      perScaleStatuses: results.map((r) => ({
+        scale: r.scale,
+        requested: r.counts.requested,
+        observed: r.counts.total,
+        countsMatch: r.assertions.countsMatchRequestedScale,
+        degradedClassified: r.assertions.degradedRowsPresentReachableClassified,
+        serverPeakRssBytes: r.serverPeakRssBytes,
+      })),
+      rawOutputPath,
       scales: results,
     };
 

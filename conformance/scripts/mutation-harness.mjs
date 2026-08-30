@@ -237,7 +237,7 @@ export function sourceRevision() {
 // required by the work spec (artifact rules §240-246): revision, timestamp,
 // command, environment, baseline status, input seeds, per-case status, and
 // raw output path.
-export function buildCampaignArtifact({ results, baselines, seeds, catalogIds, command, environment, rawOutputPath }) {
+export function buildCampaignArtifact({ results, baselines, seeds, catalogIds, command, environment, revision, rawOutputPath }) {
   const order = { P0: 0, P1: 1, P2: 2 };
   const summary = {};
   for (const sev of ["P0", "P1", "P2"]) {
@@ -264,7 +264,7 @@ export function buildCampaignArtifact({ results, baselines, seeds, catalogIds, c
 
   return {
     schema: "mutation-results/1",
-    revision: sourceRevision(),
+    revision,
     timestamp: new Date().toISOString(),
     command,
     environment,
@@ -1035,6 +1035,11 @@ async function runOneMutant(mutant, baseline, attempt = 1) {
 }
 
 async function runCampaign() {
+  // Capture the immutable baseline revision BEFORE any mutant is applied.
+  // This identifies the clean correction candidate, not the mutable working-copy
+  // hash during a campaign (which may point at a mutant snapshot).
+  const baselineRevision = process.env.PITD_REVISION || sourceRevision();
+  console.log(`[mutation-harness] baseline revision: ${baselineRevision}`);
   console.log(`MUT-02 mutation campaign — ${mutants.length} mutants: ${mutants.map((m) => m.id).join(", ")}`);
 
   // Pre-flight: every catalog entry must be fully specified, implemented,
@@ -1106,6 +1111,14 @@ async function runCampaign() {
   writeFileSync(rawTemp, rawOutput + (rawOutput ? "\n" : ""));
   renameSync(rawTemp, rawOutputPath);
 
+  // Post-campaign verification: confirm all source files are restored to their
+  // clean baseline state before writing the artifact. This guarantees the
+  // recorded revision identifies the clean candidate, not a mutant snapshot.
+  for (const mutant of mutants) {
+    verifyHashes(mutant, `post-campaign ${mutant.id}`);
+  }
+  console.log("[mutation-harness] post-campaign source verification PASS (all files restored to baseline)");
+
   const artifact = buildCampaignArtifact({
     results,
     baselines: [...baselines.values()].map((b) => ({ green: b.state === "completed" && b.tests.every((t) => t.status === "passed") })),
@@ -1121,6 +1134,7 @@ async function runCampaign() {
       platform: process.platform,
       arch: process.arch,
     },
+    revision: baselineRevision,
     rawOutputPath,
   });
 

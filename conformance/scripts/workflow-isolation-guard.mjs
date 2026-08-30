@@ -44,12 +44,33 @@ function isCanonicalManagedRun(args) {
   return resolved !== undefined && CANONICAL_LAUNCHERS.has(resolved);
 }
 
+// Internal-only flags/env that bypass the managed launcher's server lifecycle.
+// These are only valid when invoked BY the managed launcher (e.g. the launcher
+// sets BASE_URL and passes --child), never when a caller invokes the harness
+// directly. Reject them to prevent bypassing the guard.
+const INTERNAL_ONLY_FLAGS = ["--child"];
+const INTERNAL_ONLY_ENV = ["BASE_URL", "PITD_DATA_DIR", "PITD_BENCH_OUT"];
+
+function hasInternalOnlyArgs(args) {
+  return args.some((arg) => INTERNAL_ONLY_FLAGS.includes(arg));
+}
+
+function hasInternalOnlyEnv(env) {
+  return INTERNAL_ONLY_ENV.some((key) => {
+    // Vite/Vitest sets BASE_URL=/ as the browser base path — that's not a
+    // launch-boundary signal from the managed launcher. Only reject BASE_URL
+    // when set to a real URL (as the launcher sets it).
+    if (key === "BASE_URL" && env[key] === "/") return false;
+    return env[key] !== undefined;
+  });
+}
+
 function isInternalHarness(args) {
   const resolved = resolvedCandidate(args);
   return resolved !== undefined && INTERNAL_HARNESS_SCRIPTS.has(resolved);
 }
 
-export function checkCommand(args, { manual = false } = {}) {
+export function checkCommand(args, { manual = false, env = process.env } = {}) {
   if (manual) return { ok: true, reason: "manual mode" };
 
   if (isCanonicalManagedRun(args)) {
@@ -57,6 +78,16 @@ export function checkCommand(args, { manual = false } = {}) {
   }
 
   if (isInternalHarness(args)) {
+    // Internal harness scripts are accepted only when they do NOT carry
+    // caller-supplied internal-only flags (e.g. --child) or caller-supplied
+    // internal-only env vars. The managed launcher sets these itself; a caller
+    // passing them bypasses the launcher's server lifecycle and cleanup.
+    if (hasInternalOnlyArgs(args)) {
+      return { ok: false, reason: "internal-only --child flag requires the managed launcher" };
+    }
+    if (hasInternalOnlyEnv(env)) {
+      return { ok: false, reason: "internal-only env (BASE_URL/PITD_DATA_DIR/PITD_BENCH_OUT) requires the managed launcher" };
+    }
     return { ok: true, reason: "internal harness delegating to managed launcher" };
   }
 

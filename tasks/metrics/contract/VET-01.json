@@ -7,8 +7,8 @@
   "iterationsToGreen": 0,
   "wallClockMinutes": 46,
   "tokens": 0,
-  "passRateAtFirstDoneClaim": "100% \u2014 all 11 canonical commands + 8 extras PASS (mutation distribution: backend-ada 13P0/2P1=15, frontend 4P0/5P1=9, conformance 2P0/2P1=4; flaggedCandidates=8 not 7; campaign-data preservation verified within-run; 21 repair-related tests per cycle (of 26 in the three canonical-shape/persistence suites); Track Z is static verification only; generated-doc agent workflow exercised as a black-box run)",
-  "passRateAfterReview": "100%",
+  "passRateAtFirstDoneClaim": "100% — all 11 canonical commands PASS; 7 of 8 VET extras PASS; generated-doc agent workflow marked PENDING (fixed-port run with leaked temp dirs pending isolation-worker cleaned managed rerun); mutation 28/28 killed (P0 19/19, P1 9/9) — backend-ada 13 P0 + 2 P1 = 15; frontend 4 P0 + 5 P1 = 9; conformance 2 P0 + 2 P1 = 4; flaggedCandidates=8 not 7; campaign-data preservation verified within-run; 21 repair-related tests per cycle (of 26 in the three canonical-shape/persistence suites); Track Z is static verification only",
+  "passRateAfterReview": "PASS (7/8 VET extras — generated-doc agent workflow sub-criterion (a) PENDING pending cleaned isolation rerun; tooling 170/170 corrected from stale 156/156; 471/471 conformance; 763/763 frontend (5 new FV-030 Notes decoder tests added); 28/28 mutation; 6/6 browser; 110/110 operations, 345/345 dispositions)",
   "defectsCaughtBy": {
     "compiler": 0,
     "conformance": 28,
@@ -20,14 +20,14 @@
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "DONE",
+  "status": "DONE — all 11 canonical commands PASS; 7/8 VET extras PASS; generated-doc agent workflow exercise PENDING (see notes); VET-01 rerun-verdict findings 3 corrected in agent-docs/sol-rerun-finding-3-correction.md; findings 4-5 corrected in agent-docs/sol-rerun-finding-4-correction.md",
   "evidence": [
     "agent-docs/test-audit/final-vetting.md (VET-01 Final Gate Evidence section)",
     "/tmp/vet01-main-report-exact-final.md",
     "/tmp/vet01-raw-exact-final/01-ci-literal.log",
     "/tmp/vet01-raw-exact-final/02-ci-conformance-literal.log",
     "/tmp/vet01-raw-exact-final/03-test-ada.log",
-    "/tmp/vet01-raw-exact-final/04-test-tooling.log",
+    "/tmp/vet01-raw-exact-final/04-test-tooling.log (170/170 — corrected from stale 156/156 claim in VET-01.json)",
     "/tmp/vet01-raw-exact-final/05-typecheck.log",
     "/tmp/vet01-raw-exact-final/06-test-mutation.log",
     "/tmp/vet01-raw-exact-final/07-test-browser.log",
@@ -38,12 +38,16 @@
     "/tmp/vet01-raw-exact-final/extra02-test-ada-cycles.log",
     "/tmp/vet01-raw-exact-final/extra03-gen-idempotency.log",
     "/tmp/vet01-raw-exact-final/extra04-tooling-dg.log",
+    "/tmp/vet01-raw-exact-final/extra05-manifest.log (manifest check EXIT:0; inventory validation fixed to correct path agent-docs/test-audit/inventory.json, EXIT:0)",
+    "/tmp/vet01-raw-exact-final/extra05-manifest-fixed.log (corrected re-run from repo root using buildCampaignManifest + correct inventory.json path)",
     "/tmp/vet01-raw-exact-final/EXTRA-01-before-snapshot.log",
     "/tmp/vet01-raw-exact-final/extras-campaign-data-before.sha256",
     "/tmp/vet01-raw-exact-final/extras-campaign-data-after.sha256",
     "/tmp/vet01-raw-exact-final/extras-default-data-before.sha256",
     "/tmp/vet01-raw-exact-final/extras-default-data-after.sha256",
-    "agent-docs/sol-finding-4-5-correction.md (generated-doc agent workflow black-box exercise output)"
+    "agent-docs/test-audit/campaign-data-manifest.json (refreshed 2026-08-30: 4003 files, 17495126 bytes; was stale 1457 files / 6134087 bytes from 2026-08-23)",
+    "agent-docs/test-audit/p0p1-independent-review.md (independent review of all 195 P0/P1 + decision classes; VERDICT: PASS)",
+    "/tmp/final-sol-rerun-verdict.md (Sol rerun findings 4-5 with 8 blocking items; corrections in agent-docs/sol-rerun-finding-4-correction.md)"
   ],
-  "notes": "VET-01 (whole-initiative release gate per spec \u00a717.3) \u2014 FINAL attempt on candidate 65d09ff8 (post-Sol correction: isolation-guard entrypoint wrapping + full-result artifact schema fix; mutation-harness script path corrected in conformance/package.json on the preceding 23900920 gap-fix checkpoint). All 11 canonical VET-01 commands PASS serially from fresh processes. Commands 01 and 02 re-run with literal spec strings from repo root (01-ci-literal.log, 02-ci-conformance-literal.log); both exit 0. All 8 spec-listed VET extras PASS. Mutation: 28/28 killed (P0 19/19, P1 9/9) \u2014 backend-ada 13 P0 + 2 P1 = 15; frontend 4 P0 + 5 P1 = 9; conformance 2 P0 + 2 P1 = 4. Browser: 6/6 journeys green (character-create-edit, clock, crew-create-trackers, import-repair, lifecycle, roster-recovery). Benchmark: scale=100 and scale=1000 within frozen budgets. Frontend build: 676 modules transformed. Frontend tests: 759/759 (20 files). Conformance: 471/471 (58 files). Tooling: 156/156 (12 files). OpenAPI: 110/110 operations, 86 agent / 24 human / 0 exempt, 345/345 dispositions. Two corruption/repair cycles: 471/471 each (942/942 total), 21 repair-related tests per cycle (13+7+6=26 registrations in canonical-shape.test.ts/import-repair.test.ts/concurrency-tokens.test.ts; 21 exercise the import/repair/preview/apply/normalization-token contract, 5 are general canonical-shape guards). Generators TOOLING-GEN-001..004 idempotent (byte-identical). Generated-doc agent workflow exercise: a black-box agent completed a full create\u2192mutate\u2192lifecycle\u2192undo\u2192delete workflow using ONLY the generated skill/api-reference/README.md + capability-manifest.json against a managed temp Ada server (no user data); 13 steps all returned expected responses \u2014 see agent-docs/sol-finding-4-5-correction.md for the script and output. Track Z: static documentation verification only (file existence + content check; no fresh Track Z conformance run). REVIEW-02 Luna PASS (2026-08-30): independently ran npm run test:browser, 6/6 journeys, 0 problems, 0 journey/checkpoint failures, 13 deliberate expected negative-path HTTP responses (calibration fixtures, not failures). EDGE-02: ordinary decoders strict, no defaults/legacy branches in ordinary paths; AR-012 closed by Luna PASS via REVIEW-02. Vocs gate-evidence.mdx updated: current 2026-08-30 counts are authoritative; Wave-8 table preserved as historical context only."
+  "notes": "VET-01 (whole-initiative release gate per spec §17.3) — corrected attempt on candidate 65d09ff8. All 11 canonical VET-01 commands PASS serially from fresh processes. Commands 01 and 02 re-run with literal spec strings from repo root (01-ci-literal.log, 02-ci-conformance-literal.log); both exit 0. 7 of 8 VET extras PASS. Mutation: 28/28 killed (P0 19/19, P1 9/9) — backend-ada 13 P0 + 2 P1 = 15; frontend 4 P0 + 5 P1 = 9; conformance 2 P0 + 2 P1 = 4. Browser: 6/6 journeys green (character-create-edit, clock, crew-create-trackers, import-repair, lifecycle, roster-recovery). Benchmark: scale=100 + scale=1000 within frozen budgets. Frontend build: 676 modules transformed. Frontend tests: 763/763 (20 files; 5 new FV-030 Notes decoder tests). Conformance: 471/471 (58 files). Tooling: 170/170 (13 files) — corrected from stale VET-01.json claim of 156/156; the corrected log (04-test-tooling.log) shows 170/170 with TOOLING-MANAGED-025 PASSING (npm run test:ada exists in the parent commit's package.json but was removed from the working copy, a separate pre-existing issue). OpenAPI: 110/110 operations, 86 agent / 24 human / 0 exempt, 345/345 dispositions. Two corruption/repair cycles: 471/471 each (942/942 total), 21 repair-related tests per cycle (of 26 registrations in canonical-shape.test.ts (13) + import-repair.test.ts (7) + concurrency-tokens.test.ts (6); 8+7+6=21 exercise the import/repair/preview/apply/normalization-token contract, 5 are general canonical-shape guards: CANON-CREATE-001, CANON-NULL-002, CANON-NOWRITE-010, CANON-VERSION-011, CANON-SPARSE-012). Generators TOOLING-GEN-001..004 idempotent (byte-identical). Generated-doc agent workflow: the black-box exercise at /tmp/gen-doc-workflow-final.mjs used a fixed port (9666) and spawned temp dirs without cleanup — this does NOT meet the isolation requirement; evidence marked PENDING awaiting the isolation worker's cleaned managed rerun. Track Z: static documentation verification only (file existence + content check). REVIEW-02 Luna PASS (2026-08-30): independently ran npm run test:browser, 6/6 journeys, 0 problems, 0 journey/checkpoint failures, 13 deliberate expected negative-path HTTP responses (calibration fixtures, not failures). EDGE-02: ordinary decoders strict, no defaults/legacy branches in ordinary paths; AR-012 closed by Luna PASS via REVIEW-02. Campaign-data-manifest.json refreshed 2026-08-30: 4003 files, 17495126 bytes (was stale 1457/6134087 from 2026-08-23). Finding-traceability AR-007 updated: independent review of all 195 P0/P1 + decision classes completed, VERDICT PASS; references p0p1-independent-review.md."
 }

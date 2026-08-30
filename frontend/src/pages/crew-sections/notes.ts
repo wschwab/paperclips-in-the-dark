@@ -9,14 +9,12 @@ export function renderCrewNotesSection(state: RenderState): HTMLElement {
   const { c, handlers } = state;
   // -- Notes (C4 / F2ac) -------------------------------------------------------
   //
-  // Notes are a string[] in the DTO (legacy single string still decodes).
+  // Notes are a string[] in the DTO (FV-030: the ordinary decoder rejects
+  // legacy single-string values; conversion lives only in the import/repair
+  // migration path).
   // Multi-line textarea + per-entry remove; add/remove go through
   // note.add / note.remove (index-based removal, 0-based to match the op).
-  const notesEntries = Array.isArray(c.notes)
-    ? c.notes
-    : c.notes
-      ? [c.notes]
-      : [];
+  const notesEntries = c.notes;
   const noteList = notesEntries.length > 0
     ? el(
         "ul",

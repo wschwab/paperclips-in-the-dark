@@ -40,7 +40,7 @@ function crewDTO(overrides: Record<string, unknown> = {}) {
     stashCapacity: 4,
     contacts: [],
     factions: [],
-    notes: "Up-and-coming crew",
+    notes: ["Up-and-coming crew"],
     turf: 0,
     claimedClaimIds: [],
     claimOverrides: [],
@@ -2630,21 +2630,6 @@ describe("crew-detail page", () => {
       expect(root.querySelector('button[title="Add note"]')).not.toBeNull();
       expect(root.querySelector('button[title="Remove note 0"]')).not.toBeNull();
       expect(root.querySelector('button[title="Remove note 1"]')).not.toBeNull();
-    });
-
-    it("renders a legacy single-string notes field as one entry", async () => {
-      global.fetch = vi
-        .fn()
-        .mockResolvedValue(ok(crewDTO({ notes: "Up-and-coming crew" })));
-
-      mountCrewDetailPage(root, CREW_ID);
-
-      await vi.waitFor(() => {
-        expect(root.querySelector(".crew-notes")).not.toBeNull();
-      });
-      const entries = root.querySelectorAll<HTMLElement>(".note-list .note-entry");
-      expect(entries.length).toBe(1);
-      expect(entries[0]?.textContent).toContain("Up-and-coming crew");
     });
 
     it("adds a note via note.add and renders it", async () => {

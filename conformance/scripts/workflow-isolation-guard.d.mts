@@ -6,7 +6,7 @@ export interface CheckResult {
   reason: string;
 }
 
-export function checkCommand(args: string[], options?: { manual?: boolean }): CheckResult;
+export function checkCommand(args: string[], options?: { manual?: boolean; env?: Record<string, string> }): CheckResult;
 
 export function parseArgs(argv: string[]): {
   help?: boolean;
