@@ -12,6 +12,7 @@
     "test:tooling": "vitest run --config vitest.tooling.config.ts",
     "test:mutation": "node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/mutation-harness.mjs",
     "test:benchmark": "node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/dataset-benchmark.mjs",
+    "test:agent-workflow": "node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-browser-smoke.mjs --seed-defaults -- node conformance/scripts/gen-doc-workflow-managed.mjs",
     "typecheck": "tsc --noEmit"
   },
   "bin": {

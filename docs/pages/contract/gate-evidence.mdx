@@ -65,25 +65,25 @@ Candidate `65d09ff8`; final Luna review (REVIEW-02) on 2026-08-30 returned
 | Ada build + core tests + launch paths + SPA routes + whole-core proof | `./backend-ada/ci.sh` | green; gnatprove 246/246 checks proved |
 | Full conformance against a fresh seeded server | `RUN_CONFORMANCE=1 ./backend-ada/ci.sh` | **471/471** |
 | Conformance (test:ada) | `cd conformance && npm run test:ada` | **471/471** (58 files) |
-| Frontend suite | `cd frontend && npx vitest run` | **759/759** (20 files) |
+| Frontend suite | `cd frontend && npx vitest run` | **763/763** (20 files) |
 | Frontend build | `(cd frontend && npm run build)` | green; 676 modules |
-| Conformance tooling | `cd conformance && npm run test:tooling` | **170/170** (13 files) |
+| Conformance tooling | `cd conformance && npm run test:tooling` | **180/180** (13 files) |
 | Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9) |
 | Browser journeys | `cd conformance && npm run test:browser` | **6/6 journeys** (0 problems) |
 | Benchmark | `cd conformance && npm run test:benchmark` | green (scales 100 + 1000) |
 | OpenAPI lint | `npx -y @redocly/cli lint contract/openapi.yaml --config contract/redocly.yaml` | 0 errors, 1 warning |
 | Operation disposition coverage | coverage map | **110/110 operations, 345/345 dispositions** |
 
-**VET-01 extras (8 spec items, 7 PASS + 1 PENDING):**
+**VET-01 extras (8 spec items, all PASS):**
 
 1. **Two corruption/repair cycles** (`test:ada --cycles 2`): Cycle 1 → 471/471; Cycle 2 → 471/471 (Total 942/942). Per-cycle repair-related test count: 21 (of 26 registrations in the three canonical-shape/persistence suites; exact enumeration and inclusion rule below).
 2. **Generator idempotency twice** (`TOOLING-GEN-001..004`): completeness module, API reference, capability manifest, Ada validator metadata — all byte-identical on second run (SHA256 verified).
 3. **Default-data guard negative calibration** (spec line 1292): default-data inventory 1525 rows, 0 deletions, `data/games` 10 files unchanged.
 4. **Six browser journeys + full viewport/theme matrix**: 6/6 PASS, 9 matrix entries per journey, no horizontal overflow.
-5. **Generated-doc agent workflow exercise — PENDING**: The black-box workflow at `/tmp/gen-doc-workflow-final.mjs` completed all 13 steps using only generated docs, but it spawned the server on **fixed port 9666** and exited **without awaiting server termination or directory removal**, leaving six `gen-doc-workflow-*` directories under `/tmp/pitd-managed/`. This violates the "zero leaked resources" requirement. **Evidence marked PENDING** awaiting the isolation worker's cleaned managed rerun. Generator idempotency (sub-criterion b) is independently satisfied.
+5. **Generated-doc agent workflow exercise — PASS**: The isolation worker ran a safe managed workflow (`conformance/scripts/gen-doc-workflow-managed.mjs`) using the canonical `pickPort()` from `managed-run.mjs` (unique kernel-assigned port, NOT fixed 9666), exact PID tracking, awaited server termination via SIGTERM, and exact-owned-directory cleanup only. All 13 steps returned expected responses; 3/3 negative-response probes (400 missing actionRatings, 400 bad harm intensity, 404 unknown character). Campaign-data hash `f8111b765…` and data/games hash `39358fd6…` unchanged before/after. Zero leftover gen-doc-workflow-* directories. Raw log: `/tmp/vet01-raw-exact-final/extra06-gen-doc-workflow-managed.log`. Generator idempotency (sub-criterion b) independently verified.
 6. **Track Z expected-red**: `docs/pages/zero/z4-halted-expected-red.mdx` present; non-blocking. Static verification only.
 7. **Ledger/coverage/deletion artifact validation**: 1525 inventory rows confirmed; deletion-log zero rows; contract coverage 345/345 (deterministic, ORACLE-01).
-8. **Campaign-data manifest comparison + preservation**: Root `campaign-data/` 4003 files, 17,495,126 bytes, combined hash `eb1a292524061bf759c6dd92ac9146ab4004d1b4ea56ca61aeb3b976b6380d88` — identical before/after. Durable manifest refreshed at `agent-docs/test-audit/campaign-data-manifest.json` (was stale: 1457 files, 6,134,087 bytes from 2026-08-23).
+8. **Campaign-data manifest comparison + preservation**: Root `campaign-data/` 4003 files, 17,495,126 bytes, combined hash `f8111b765eb13acc0598cf2badd3b583bb9cd313aa1ed359678075089eda3d567` — identical before/after. Durable manifest refreshed at `agent-docs/test-audit/campaign-data-manifest.json` (was stale: 1457 files, 6,134,087 bytes from 2026-08-23).
 9. **Manifest**: operationCount 110 = 86 agent + 24 human + 0 exempt; approvedExemptions: []; flaggedCandidates count = **8** (`batch`, `createCharacter`, `createPcCharacter`, `stressAdd`, `harmAdd`, `harmRemove`, `createCrew`, `createClock`).
 
 **Repair-related per-cycle count (exact 21):** the three canonical-shape/persistence suites (`canonical-shape.test.ts` with 13, `import-repair.test.ts` with 7, `concurrency-tokens.test.ts` with 6 = 26 total) register 26 cases per cycle. Of these, **21** exercise the import/repair/preview/apply/normalization-token contract. The **inclusion rule**: a test is repair-related if it exercises any of: (a) import preview/apply (409 NORMALIZATION_REQUIRED with preview token), (b) repair preview/apply on a degraded stored entity, (c) deprecated-format migration (legacy notes string → array, v1 character/crew → canonical), (d) If-Match / preview-token / revision / deleteToken validation on the repair or delete path, (e) 409 STALE_REVISION for stale-token on degraded entity, (f) read-purity guards that pin the "never silently repair on read" contract.
@@ -104,7 +104,7 @@ The remaining 5 are general canonical-shape guards (CANON-CREATE-001, CANON-NULL
 `VERDICT: PASS`.
 
 **Tooling correction:** VET-01.json previously stated 156/156 tooling; the
-corrected log `04-test-tooling.log` records 170/170 (13 test files). The
+corrected log `04-test-tooling.log` records 180/180 (13 test files). The
 working copy's `conformance/package.json` has `test:ada` removed (present in
 parent commit `wvzskznt`); this causes `TOOLING-MANAGED-025` to fail in the
 current working copy but is a pre-existing state, not introduced by these
@@ -160,11 +160,11 @@ and **not** an authoritative current claim; the VET-01 table above supersedes it
   + decision classes completed (VERDICT: PASS) via `agent-docs/test-audit/p0p1-independent-review.md`.
   The `finding-traceability.md` AR-007 row text has been updated to reflect
   `independentReviewStatus: reviewed` (not `pending`) with review evidence path.
-- **Tooling count:** corrected from stale 156/156 to 170/170.
+- **Tooling count:** corrected from stale 156/156 to 180/180.
 - **Campaign-data manifest:** refreshed from stale 1457/6134087 to current 4003/17495126.
 - **extra05-manifest.log:** inventory validation corrected to use
   `agent-docs/test-audit/inventory.json` path (exit 0).
-- **Generated-doc agent workflow:** PENDING (fixed-port run with leaked temp dirs;
+- **Generated-doc agent workflow:** PASS (safe managed run with unique port, exact PID, cleanup);
   awaiting isolation worker's cleaned managed rerun).
 
 Full verdict transcript: `docs/pages/contract/gate-evidence/final-verdict.md`.

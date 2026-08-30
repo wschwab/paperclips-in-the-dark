@@ -31,6 +31,7 @@ const INTERNAL_HARNESS_SCRIPTS = new Set([
   join(repoRoot, "conformance", "scripts", "browser-suite.mjs"),
   join(repoRoot, "conformance", "scripts", "mutation-harness.mjs"),
   join(repoRoot, "conformance", "scripts", "dataset-benchmark.mjs"),
+  join(repoRoot, "conformance", "scripts", "gen-doc-workflow-managed.mjs"),
 ]);
 
 function resolvedCandidate(args) {

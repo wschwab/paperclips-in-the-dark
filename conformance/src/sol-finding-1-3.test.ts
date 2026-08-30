@@ -250,3 +250,98 @@ describe("SOL finding 3b — benchmark full-results artifact schema", () => {
     expect(benchScript).toContain("dataset-benchmark.mjs");
   });
 });
+
+
+describe("SOL finding 4 — gen-doc workflow child-only black-box", () => {
+  const pkg = JSON.parse(
+    readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"), "utf8"),
+  );
+  const workflowScript = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "scripts",
+    "gen-doc-workflow-managed.mjs",
+  );
+  const workflowRel = "conformance/scripts/gen-doc-workflow-managed.mjs";
+
+  it("[TOOLING-SOL-009a] test:agent-workflow script is wired through default-data-guard + workflow-isolation-guard + managed-browser-smoke", () => {
+    const script = pkg.scripts["test:agent-workflow"];
+    expect(script).toBeDefined();
+    expect(script).toContain("default-data-guard.mjs");
+    expect(script).toContain("workflow-isolation-guard.mjs");
+    expect(script).toContain("managed-browser-smoke.mjs");
+    expect(script).toContain("gen-doc-workflow-managed.mjs");
+  });
+
+  it("[TOOLING-SOL-009b] checkCommand accepts gen-doc-workflow-managed.mjs as internal harness (no --child)", () => {
+    const result = guardCheckCommand(["node", workflowRel]);
+    expect(result.ok).toBe(true);
+    expect(result.reason).toContain("internal harness");
+  });
+
+  it("[TOOLING-SOL-009c] checkCommand rejects --child on gen-doc-workflow-managed.mjs", () => {
+    const result = guardCheckCommand(["node", workflowRel, "--child"]);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("--child");
+  });
+
+  it("[TOOLING-SOL-009d] checkCommand rejects caller-provided BASE_URL on gen-doc-workflow-managed.mjs", () => {
+    const result = guardCheckCommand(
+      ["node", workflowRel],
+      { env: { BASE_URL: "http://127.0.0.1:9999" } },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("BASE_URL");
+  });
+
+  it("[TOOLING-SOL-009e] checkCommand rejects caller-provided PITD_DATA_DIR on gen-doc-workflow-managed.mjs", () => {
+    const result = guardCheckCommand(
+      ["node", workflowRel],
+      { env: { PITD_DATA_DIR: "/tmp/pitd-fake" } },
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain("PITD_DATA_DIR");
+  });
+
+  it("[TOOLING-SOL-009f] gen-doc-workflow-managed.mjs requires BASE_URL or CONFORMANCE_BASE_URL env", async () => {
+    // Running the script with no BASE_URL/CONFORMANCE_BASE_URL must fail fast.
+    const { spawn } = await import("node:child_process");
+    const { pathToFileURL } = await import("node:url");
+    const child = spawn(process.execPath, [fileURLToPath(pathToFileURL(workflowScript))], {
+      env: { ...process.env, BASE_URL: undefined, CONFORMANCE_BASE_URL: undefined, PITD_DATA_DIR: undefined },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.on("data", (d) => (stderr += d.toString()));
+    const code = await new Promise((resolve) => child.once("exit", resolve));
+    expect(code).toBe(1);
+    expect(stderr).toContain("FATAL");
+    expect(stderr).toContain("BASE_URL");
+  });
+
+  it("[TOOLING-SOL-009g] gen-doc-workflow-managed.mjs requires PITD_DATA_DIR env when BASE_URL is set", async () => {
+    const { spawn } = await import("node:child_process");
+    const { pathToFileURL } = await import("node:url");
+    const child = spawn(process.execPath, [fileURLToPath(pathToFileURL(workflowScript))], {
+      env: { ...process.env, BASE_URL: "http://127.0.0.1:9999", CONFORMANCE_BASE_URL: undefined, PITD_DATA_DIR: undefined },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stderr = "";
+    child.stderr.on("data", (d) => (stderr += d.toString()));
+    const code = await new Promise((resolve) => child.once("exit", resolve));
+    expect(code).toBe(1);
+    expect(stderr).toContain("FATAL");
+    expect(stderr).toContain("PITD_DATA_DIR");
+  });
+
+  it("[TOOLING-SOL-009h] gen-doc-workflow-managed.mjs does NOT import spawn or startServer (child-only)", async () => {
+    const src = readFileSync(workflowScript, "utf8");
+    expect(src).not.toContain("import { spawn }");
+    expect(src).not.toContain("import { createServer }");
+    expect(src).not.toContain("pickPort");
+    expect(src).not.toContain("defaultPaths");
+    expect(src).not.toContain("startServer");
+    expect(src).not.toContain("stopServer");
+    expect(src).toContain("process.env.BASE_URL");
+  });
+});
