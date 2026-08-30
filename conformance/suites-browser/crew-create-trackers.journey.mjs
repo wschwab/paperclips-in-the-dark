@@ -129,6 +129,34 @@ export async function run(page, ctx) {
   const toAdd = Math.max(0, stashCapacity - currentStash);
   for (let i = 0; i < toAdd; i++) {
     await page.locator('button[title="Add 1 stash"]').click();
+    // The stash +1 control carries a session-local isStashLoading guard
+    // (frontend/src/pages/crew-detail.ts onStashDelta) that silently drops
+    // clicks while the prior mutation is in flight. Wait for BOTH the
+    // server-authoritative stash value to advance to the next expected total
+    // AND the rendered UI count to reflect it before issuing the next click —
+    // no sleeps, no hardcoded capacity. The server DTO is polled via a source
+    // string (closures do not cross the browser boundary, matching the
+    // crewMemberCount convention); the UI count is observed through the live
+    // DOM so the final assertion cannot race a rerender.
+    const expected = currentStash + i + 1;
+    await page.waitForFunction(
+      `(async (exp) => {
+        const res = await fetch("/api/crews/${crewId}", { headers: { Accept: "application/json" } });
+        if (!res.ok) return false;
+        const crew = await res.json();
+        return Number(crew.stash) >= exp;
+      })(${expected})`,
+      { timeout: 15_000 },
+    );
+    const expectedDisplay = `${expected} / ${stashCapacity}`;
+    await page.waitForFunction(
+      `(display) => {
+        const el = document.querySelector(".crew-stash-count");
+        return el && el.textContent.trim() === display;
+      }`,
+      expectedDisplay,
+      { timeout: 15_000 },
+    );
   }
   const expectedStashDisplay = `${stashCapacity} / ${stashCapacity}`;
   const stashCount = await page.locator(".crew-stash-count").textContent();

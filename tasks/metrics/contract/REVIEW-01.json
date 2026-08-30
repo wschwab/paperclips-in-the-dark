@@ -1,24 +1,31 @@
 {
   "task": "REVIEW-01",
   "track": "contract",
-  "date": "2026-08-28",
-  "implementationAgent": "orchestrator (DOC-01 wave boundary)",
-  "reviewAgent": "not yet dispatched — independent reviewer required per spec §17.2",
-  "iterationsToGreen": 0,
-  "wallClockMinutes": 0,
-  "tokens": 0,
-  "passRateAtFirstDoneClaim": "n/a — not yet executed",
-  "passRateAfterReview": "n/a — not yet executed",
+  "date": "2026-08-30",
+  "implementationAgent": "nous/poolside/laguna-s-2.1:free:high",
+  "reviewAgent": "nous/poolside/laguna-s-2.1:free:high (independent fresh session)",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": null,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "471/471",
+  "passRateAfterReview": "471/471",
   "defectsCaughtBy": {
     "compiler": 0,
     "conformance": 0,
-    "review": 0,
+    "review": 1,
     "human": 0
   },
-  "defectCatchingLayer": [],
+  "defectCatchingLayer": [
+    "independent-review (planted M10 from mutation-catalog.json; reviewer identified mechanism + outcome + failing test delta against green baseline)"
+  ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "PENDING — independent review not yet dispatched",
-  "evidence": [],
-  "notes": "REVIEW-01 (calibrated independent review) requires: (1) apply one realistic planted P0/P1 defect in an isolated jj workspace, (2) give reviewer the governing spec + source + commands + numeric browser evidence + screenshots (but not the planted location), (3) reviewer must reproduce and identify the defect with mechanism and outcome, (4) discard the isolated workspace and verify clean candidate hashes, (5) then review the clean candidate. This gate is blocked on orchestrator dispatch bandwidth and a qualified independent reviewer; it does not block Track A completion but is required for VET-01. Per spec §17.1, a reviewer that misses the planted defect is not calibrated and cannot accept the initiative. Honest status: NOT YET RUN."
+  "status": "DONE — calibrated independent review PASS; clean candidate 471/471",
+  "evidence": [
+    "agent-docs/review01-calibrated-review.md",
+    "conformance/suites/semantics/bounded-integer.test.ts (planted-failing test now green on clean candidate)",
+    "agent-docs/test-audit/mutation-catalog.json (M10 catalog entry; restoration hash matches clean-candidate file hash)",
+    "agent-docs/test-audit/mutation-results.json (catalog P0/P1 killed baseline)"
+  ],
+  "notes": "REVIEW-01 calibration executed per AUDIT-0 §17: (1) one realistic unlabeled P0 defect from the existing mutant catalog was planted in an isolated disposable jj workspace rooted on candidate 0fa9d070be204ff84c28d948536ddca86376fd89; (2) the reviewer was given only governing spec + source + canonical commands + numeric browser evidence + screenshots, with no mutant ID/file/symbol/line/test-ID/candidate-revision/exact hashes; (3) the reviewer independently reproduced and identified the defect with mechanism and outcome and named the failing test that flips red by delta; (4) the planted workspace was discarded (jj workspace forget + rm) and clean candidate hashes verified; (5) a second clean isolated workspace was built and the canonical gate re-run. Planted run: 8 failures / 471 (npm run test:ada). Clean run: 471/471. Clean candidate file hash for the affected Ada module = 932e914e83242681633ae716ac127d2acc427ee76c523531723104d3605f8b7f, matching the catalog restoration hash. CALIBRATION VERDICT: PASS; CLEAN CANDIDATE VERDICT: PASS. Full proof in agent-docs/review01-calibrated-review.md. No commit/push."
 }
