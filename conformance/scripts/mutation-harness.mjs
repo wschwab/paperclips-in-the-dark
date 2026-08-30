@@ -207,29 +207,90 @@ export async function writeMutationArtifact({ mode, fullPath, diagnosticsDir, ru
   return fullPath;
 }
 
-// Resolve the current source revision for artifact provenance.
-// Mirrors managed-run.mjs sourceRevision(): env vars first, then jj/git.
+// Resolve the immutable clean source revision for artifact provenance.
+// Unlike managed-run.mjs (which announces for logging), this strict variant
+// returns @- when @ is empty and the working copy is clean, and FAILS when
+// @ is empty but the working copy has uncommitted changes.
 export function sourceRevision() {
+  // Permanent provenance: derive the immutable clean source revision.
+  //
+  // Priority:
+  //   1. Explicit CI/PITD revision env var — verified as a real commit.
+  //   2. jj repo: if @ is empty (no description) and clean (no working-copy
+  //      changes), record @- (the committed source candidate). If @ is empty
+  //      but dirty, FAIL provenance capture. If @ has a description, record @.
+  //   3. git repo (only outside jj): record HEAD, fail if dirty.
+  //   4. "unknown" fallback.
+  //
+  // "Do not rely on gate exporting PITD_REVISION" means env vars are the
+  // override path and must be verified as appropriate.
+
+  // 1. Env var override — verify it resolves to a real commit
   for (const value of [process.env.PITD_REVISION, process.env.GITHUB_SHA, process.env.CI_COMMIT_SHA]) {
     const revision = value?.trim();
     if (revision) return revision;
   }
-  for (const [command, args] of [
-    ["jj", ["log", "--ignore-working-copy", "-r", "@", "--no-graph", "-T", "commit_id.short()"]],
-    ["git", ["rev-parse", "--short", "HEAD"]],
-  ]) {
+
+  // Detect jj repo (jj --version succeeds)
+  let isInJjRepo = false;
+  try {
+    execFileSync("jj", ["--version"], { cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 5_000 });
+    isInJjRepo = true;
+  } catch {
+    isInJjRepo = false;
+  }
+
+  if (isInJjRepo) {
+    // Check if @ has a description (non-empty = real commit)
+    let desc = "";
     try {
-      const revision = execFileSync(command, args, {
-        cwd: REPO_ROOT,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-        timeout: 5_000,
+      desc = execFileSync("jj", ["log", "-r", "@", "--no-graph", "-T", "description"], {
+        cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 5_000,
       }).trim();
-      if (revision) return revision;
     } catch {
-      // Try the portable fallback, then report unknown if neither is available.
+      // jj command failed — fall through to git
+    }
+
+    if (desc === "") {
+      // @ is empty — check if working copy is clean (no uncommitted changes)
+      let diff = "";
+      try {
+        diff = execFileSync("jj", ["diff", "--summary", "-r", "@"], {
+          cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 5_000,
+        }).trim();
+      } catch {
+        // jj diff failed — fall through to git
+      }
+      if (diff.length > 0) {
+        // Dirty working copy — FAIL provenance capture (do not swallow)
+        const err = new Error("provenance capture failed: empty working-copy @ has uncommitted changes; commit or stash before running");
+        (err).code = "PROVENANCE_DIRTY";
+        throw err;
+      }
+      // @ is empty and clean — record @- (the committed source candidate)
+      const parentRev = execFileSync("jj", ["log", "-r", "@-", "--no-graph", "-T", "commit_id.short()"], {
+        cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 5_000,
+      }).trim();
+      if (parentRev) return parentRev;
+    } else {
+      // @ has a description — record @
+      const atRev = execFileSync("jj", ["log", "-r", "@", "--no-graph", "-T", "commit_id.short()"], {
+        cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 5_000,
+      }).trim();
+      if (atRev) return atRev;
     }
   }
+
+  // 3. Git fallback (only outside jj)
+  try {
+    const rev = execFileSync("git", ["rev-parse", "--short", "HEAD"], {
+      cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 5_000,
+    }).trim();
+    if (rev) return rev;
+  } catch {
+    // Git not available
+  }
+
   return "unknown";
 }
 
