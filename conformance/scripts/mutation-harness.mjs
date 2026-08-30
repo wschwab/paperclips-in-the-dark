@@ -20,12 +20,24 @@
 
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, renameSync, rmSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawnSync, execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
 const CATALOG_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-catalog.json");
+const RESULTS_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-results.json");
+
+// Input seeds the campaign runs with (mirrors managed-run.mjs --seed-defaults).
+const DEFAULT_SEEDS = {
+  name: "seed-defaults",
+  trees: [
+    "conformance/fixtures/sc-o2-seeds",
+    "conformance/fixtures/completeness-seeds",
+    "conformance/fixtures/c5-seeds",
+  ],
+};
+
 function hash(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -193,6 +205,80 @@ export async function writeMutationArtifact({ mode, fullPath, diagnosticsDir, ru
   writeFileSync(temporary, text);
   renameSync(temporary, fullPath);
   return fullPath;
+}
+
+// Resolve the current source revision for artifact provenance.
+// Mirrors managed-run.mjs sourceRevision(): env vars first, then jj/git.
+export function sourceRevision() {
+  for (const value of [process.env.PITD_REVISION, process.env.GITHUB_SHA, process.env.CI_COMMIT_SHA]) {
+    const revision = value?.trim();
+    if (revision) return revision;
+  }
+  for (const [command, args] of [
+    ["jj", ["log", "--ignore-working-copy", "-r", "@", "--no-graph", "-T", "commit_id.short()"]],
+    ["git", ["rev-parse", "--short", "HEAD"]],
+  ]) {
+    try {
+      const revision = execFileSync(command, args, {
+        cwd: REPO_ROOT,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+        timeout: 5_000,
+      }).trim();
+      if (revision) return revision;
+    } catch {
+      // Try the portable fallback, then report unknown if neither is available.
+    }
+  }
+  return "unknown";
+}
+
+// Build the full mutation-results artifact with the complete evidence schema
+// required by the work spec (artifact rules §240-246): revision, timestamp,
+// command, environment, baseline status, input seeds, per-case status, and
+// raw output path.
+export function buildCampaignArtifact({ results, baselines, seeds, catalogIds, command, environment, rawOutputPath }) {
+  const order = { P0: 0, P1: 1, P2: 2 };
+  const summary = {};
+  for (const sev of ["P0", "P1", "P2"]) {
+    const group = results.filter((r) => r.severity === sev);
+    summary[sev] = {
+      total: group.length,
+      killed: group.filter((r) => r.killed).length,
+      survived: group.filter((r) => r.status === "survived").length,
+      notKilled: group.filter((r) => !r.killed).map((r) => r.id),
+    };
+  }
+
+  const perCaseStatuses = results.map((r) => ({
+    id: r.id,
+    layer: r.layer,
+    severity: r.severity,
+    status: r.status,
+    killed: r.killed,
+    killedBy: r.killedBy,
+    newFailureIds: r.newFailureIds,
+  }));
+
+  const baselineStatus = baselines && baselines.every((b) => b.green) ? "green" : "red";
+
+  return {
+    schema: "mutation-results/1",
+    revision: sourceRevision(),
+    timestamp: new Date().toISOString(),
+    command,
+    environment,
+    baselineStatus,
+    seeds,
+    catalogIds,
+    totalMutants: results.length,
+    killedCount: results.filter((r) => r.killed).length,
+    survivedCount: results.filter((r) => r.status === "survived").length,
+    killRateBySeverity: summary,
+    perCaseStatuses,
+    rawOutputPath,
+    results: results.sort((a, b) => (order[a.severity] - order[b.severity]) || a.id.localeCompare(b.id)),
+  };
 }
 
 // Load catalog
@@ -777,7 +863,6 @@ export function applyCatalogMutation(id, repoRoot) {
 
 // ─── Harness ──────────────────────────────────────────────────────────────
 
-const RESULTS_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-results.json");
 
 const sha256File = (path) => hash(readFileSync(path));
 
@@ -1010,18 +1095,45 @@ async function runCampaign() {
       notKilled: group.filter((r) => !r.killed).map((r) => r.id),
     };
   }
-  const artifact = {
-    generatedAt: new Date().toISOString(),
+  const auditDir = join(REPO_ROOT, "agent-docs/test-audit");
+  // Compute rawOutputPath before building the artifact so the artifact's
+  // rawOutputPath field exactly matches the file we write.
+  const rawOutputPath = join(auditDir, `mutation-raw-${new Date().toISOString().replace(/[:.]/g, "-")}.txt`);
+
+  // Collect raw output from all mutant runs for the raw-output path.
+  const rawOutput = results.map((r) => r.output ?? "").join("\n").trim();
+  const rawTemp = `${rawOutputPath}.tmp-${process.pid}`;
+  writeFileSync(rawTemp, rawOutput + (rawOutput ? "\n" : ""));
+  renameSync(rawTemp, rawOutputPath);
+
+  const artifact = buildCampaignArtifact({
+    results,
+    baselines: [...baselines.values()].map((b) => ({ green: b.state === "completed" && b.tests.every((t) => t.status === "passed") })),
+    seeds: DEFAULT_SEEDS,
     catalogIds: mutants.map((m) => m.id),
-    totalMutants: results.length,
-    killedCount: results.filter((r) => r.killed).length,
-    survivedCount: results.filter((r) => r.status === "survived").length,
-    killRateBySeverity: summary,
-    results: results.sort((a, b) => (order[a.severity] - order[b.severity]) || a.id.localeCompare(b.id)),
-  };
-  mkdirSync(join(REPO_ROOT, "agent-docs/test-audit"), { recursive: true });
-  writeFileSync(RESULTS_PATH, JSON.stringify(artifact, null, 2));
+    command: {
+      cmd: "npm run test:mutation",
+      cwd: REPO_ROOT,
+      timeout: 24 * 60 * 60 * 1000, // 24h campaign cap
+    },
+    environment: {
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+    },
+    rawOutputPath,
+  });
+
+  // Write the full results artifact atomically via the existing atomic helper.
+  await writeMutationArtifact({
+    mode: "full",
+    fullPath: RESULTS_PATH,
+    diagnosticsDir: "",
+    runId: new Date().toISOString().replace(/[:.]/g, "-"),
+    artifact,
+  });
   console.log(`\nResults written to ${RESULTS_PATH}`);
+  console.log(`  raw output: ${rawOutputPath}`);
   for (const sev of ["P0", "P1", "P2"]) {
     const s = summary[sev];
     if (s.total > 0) console.log(`  ${sev}: ${s.killed}/${s.total} killed${s.notKilled.length ? ` — not killed: ${s.notKilled.join(", ")}` : ""}`);

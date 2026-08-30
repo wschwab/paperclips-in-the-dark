@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // OPT-010: workflow isolation guard.
 //
 // Automated workflows may start the Ada server only through the canonical
@@ -18,22 +17,50 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), "..", "..", "..");
 const managedRunPath = join(repoRoot, "conformance", "scripts", "managed-run.mjs");
+const managedBrowserSmokePath = join(repoRoot, "conformance", "scripts", "managed-browser-smoke.mjs");
 
+// Canonical managed launchers that own their port, data dir, and process tree.
+// Both managed-run.mjs (vitest) and managed-browser-smoke.mjs (browser/benchmark)
+// are accepted — they share the same server lifecycle and cleanup contract.
+const CANONICAL_LAUNCHERS = new Set([managedRunPath, managedBrowserSmokePath]);
+
+// Internal harness scripts that delegate to canonical managed launchers and
+// never start a server directly. Accepted under the guard because their server
+// lifecycle is owned by the managed launchers above.
+const INTERNAL_HARNESS_SCRIPTS = new Set([
+  join(repoRoot, "conformance", "scripts", "browser-suite.mjs"),
+  join(repoRoot, "conformance", "scripts", "mutation-harness.mjs"),
+  join(repoRoot, "conformance", "scripts", "dataset-benchmark.mjs"),
+]);
+
+function resolvedCandidate(args) {
+  if (args.length === 0) return undefined;
+  const candidate = args[0] === process.execPath || args[0] === "node" ? args[1] : args[0];
+  return candidate === undefined ? undefined : resolve(repoRoot, candidate);
+}
 
 function isCanonicalManagedRun(args) {
-  if (args.length === 0) return false;
-  const candidate = args[0] === process.execPath || args[0] === "node" ? args[1] : args[0];
-  return candidate !== undefined && resolve(repoRoot, candidate) === managedRunPath;
+  const resolved = resolvedCandidate(args);
+  return resolved !== undefined && CANONICAL_LAUNCHERS.has(resolved);
+}
+
+function isInternalHarness(args) {
+  const resolved = resolvedCandidate(args);
+  return resolved !== undefined && INTERNAL_HARNESS_SCRIPTS.has(resolved);
 }
 
 export function checkCommand(args, { manual = false } = {}) {
   if (manual) return { ok: true, reason: "manual mode" };
 
   if (isCanonicalManagedRun(args)) {
-    return { ok: true, reason: "canonical managed-run launcher" };
+    return { ok: true, reason: "canonical managed launcher" };
   }
 
-  return { ok: false, reason: "automated commands must use the canonical managed-run launcher" };
+  if (isInternalHarness(args)) {
+    return { ok: true, reason: "internal harness delegating to managed launcher" };
+  }
+
+  return { ok: false, reason: "automated commands must use a canonical managed launcher" };
 }
 
 function usage() {
@@ -49,7 +76,8 @@ function usage() {
     "  --check-command <cmd>  check a command string without running it",
     "  --help             this text",
     "",
-    "Automated commands must invoke the exact canonical managed-run launcher.",
+    "Automated commands must invoke a canonical managed launcher (managed-run.mjs",
+    "or managed-browser-smoke.mjs) or an internal harness script that delegates to one.",
   ].join("\n");
 }
 

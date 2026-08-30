@@ -58,13 +58,14 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  renameSync,
   rmSync,
   statSync,
   writeFileSync,
 } from "node:fs";
 import { availableParallelism, hostname, release, tmpdir, type as osType } from "node:os";
 import { basename, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SCRIPT_DIR = dirnameOf(import.meta.url);
 const SELF_PATH = fileURLToPath(import.meta.url);
@@ -78,6 +79,32 @@ const FRONTEND_DIST = join(FRONTEND_DIR, "dist");
 const GAME_SETTINGS_FILE = join(REPO_ROOT, "data", "games", "blades-in-the-dark.json");
 const AUDIT_DIR = join(REPO_ROOT, "agent-docs", "test-audit");
 const RECORD_FILE = join(AUDIT_DIR, "performance-results.json");
+
+// Resolve the current source revision when --revision is not provided.
+// env vars first, then jj/git, then "unknown".
+export function sourceRevision() {
+  for (const value of [process.env.PITD_REVISION, process.env.GITHUB_SHA, process.env.CI_COMMIT_SHA]) {
+    const revision = value?.trim();
+    if (revision) return revision;
+  }
+  for (const [command, args] of [
+    ["jj", ["log", "--ignore-working-copy", "-r", "@", "--no-graph", "-T", "commit_id.short()"]],
+    ["git", ["rev-parse", "--short", "HEAD"]],
+  ]) {
+    try {
+      const revision = execFileSync(command, args, {
+        cwd: REPO_ROOT,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+        timeout: 5_000,
+      }).trim();
+      if (revision) return revision;
+    } catch {
+      // Try the next fallback.
+    }
+  }
+  return "unknown";
+}
 const BUDGETS_FILE = join(AUDIT_DIR, "performance-budgets.json");
 
 const GAME_STEM = "blades-in-the-dark";
@@ -1003,7 +1030,7 @@ async function runParent(opts) {
     const record = {
       schema: RECORD_SCHEMA,
       recordedAt: new Date().toISOString(),
-      revision: opts.revision,
+      revision: opts.revision ?? sourceRevision(),
       machine: machineInfo(),
       runtime: {
         node: process.version,
@@ -1029,7 +1056,9 @@ async function runParent(opts) {
     };
 
     mkdirSync(AUDIT_DIR, { recursive: true });
-    writeFileSync(RECORD_FILE, JSON.stringify(record, null, 2) + "\n");
+    const tempFile = `${RECORD_FILE}.tmp-${process.pid}`;
+    writeFileSync(tempFile, JSON.stringify(record, null, 2) + "\n");
+    renameSync(tempFile, RECORD_FILE);
     console.log(`[dataset-benchmark] raw record written → ${RECORD_FILE}`);
 
     if (opts.record) {
@@ -1136,7 +1165,12 @@ async function main() {
   await runParent(opts);
 }
 
-main().catch((error) => {
-  console.error(`[dataset-benchmark] FAILED: ${error?.stack ?? error}`);
-  process.exit(1);
-});
+const isMain =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+if (isMain) {
+  main().catch((error) => {
+    console.error(`[dataset-benchmark] FAILED: ${error?.stack ?? error}`);
+    process.exit(1);
+  });
+}

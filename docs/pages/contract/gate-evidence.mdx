@@ -11,6 +11,13 @@ effort `xhigh`, read-only sandbox) plus the Wave 8 integration results.
 Each gate ended in exactly `VERDICT: PASS` (anything else fails the gate and
 is fixed before the next round).
 
+> **Authoritative current evidence (2026-08-30).** The counts below for the
+> final VET-01 gate reflect the 2026-08-30 candidate (`23900920`), verified by
+> `agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
+> `tasks/metrics/contract/VET-01.json`. The Wave 8 integration table further
+> below is preserved **as historical context** — it records the 2026-08-14
+> Wave-8 state and is **not** an authoritative current claim.
+
 ## Wave 3 — contract/oracle correctness review (2026-08-14)
 
 - **Rounds:** 15 (14 × `VERDICT: FAIL`, then `VERDICT: PASS`).
@@ -46,11 +53,76 @@ is fixed before the next round).
 - **Evidence:** `agent-docs/frontend-vetting/wave7/` (gitignored local
   evidence).
 
-## Wave 8 — final integration gate (2026-08-14)
+## Final VET-01 whole-initiative gate (2026-08-30)
 
-Orchestrator-verified, re-runnable from the repository root:
+Candidate `23900920`; final Luna review (REVIEW-02) on 2026-08-30 returned
+`VERDICT: PASS`. The authoritative 2026-08-30 results, recorded in
+`agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
+`tasks/metrics/contract/VET-01.json`:
 
 | Gate | Command | Result |
+|---|---|---|
+| Ada build + core tests + launch paths + SPA routes + whole-core proof | `./backend-ada/ci.sh` | green; gnatprove 246/246 checks proved |
+| Full conformance against a fresh seeded server | `RUN_CONFORMANCE=1 ./backend-ada/ci.sh` | **471/471** |
+| Conformance (test:ada) | `cd conformance && npm run test:ada` | **471/471** (58 files) |
+| Frontend suite | `cd frontend && npx vitest run` | **759/759** (20 files) |
+| Frontend build | `(cd frontend && npm run build)` | green; 676 modules |
+| Conformance tooling | `cd conformance && npm run test:tooling` | **170/170** (13 files) |
+| Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9) |
+| Browser journeys | `cd conformance && npm run test:browser` | **6/6 journeys** (0 problems) |
+| Benchmark | `cd conformance && npm run test:benchmark` | green (scales 100 + 1000) |
+| OpenAPI lint | `npx -y @redocly/cli lint contract/openapi.yaml --config contract/redocly.yaml` | 0 errors, 1 warning |
+| Operation disposition coverage | coverage map | **110/110 operations, 345/345 dispositions** |
+
+**VET-01 extras (8 spec items, all PASS):**
+
+1. Two corruption/repair cycles (`--cycles 2`): Cycle 1 → 471/471; Cycle 2 → 471/471 (Total 942/942).
+2. Generator idempotency twice: all 4 SC-C5 generators byte-identical on second run (proven by `TOOLING-GEN-001..004`); capability manifest covers all 110 operationIds with 86 agent / 24 human / 0 exempt.
+3. Default-data guard negative calibration: 1525 inventory rows, 0 deletions, `data/games` 10 files unchanged.
+4. Six browser journeys + full viewport/theme matrix: 6/6 PASS, 9 matrix entries per journey, no horizontal overflow.
+5. **Generated-doc agent workflow exercise**: a black-box agent completed a full create→mutate→lifecycle→undo→delete workflow using ONLY the generated `skill/api-reference/README.md` + `capability-manifest.json` (no backend source, no guessing IDs/limits), against a managed temp server with no user data. 13 steps all returned expected responses. Script and output preserved at `agent-docs/sol-finding-4-5-correction.md`.
+6. Track Z expected-red: `docs/pages/zero/z4-halted-expected-red.mdx` present; non-blocking.
+7. Ledger/coverage/deletion artifact validation: 1525 inventory rows, 0 deletions, 345/345 coverage.
+8. Campaign-data manifest comparison: 4003 files, 17,495,126 bytes, hash `f8111b765…` identical before/after.
+
+**Strict decoders:** ordinary current-version decoders contain no compatibility
+defaults or legacy error branches (EDGE-02 / AR-012). Verified by Luna REVIEW-02
+(6/6 journeys) and VET-01 mutation (28/28 killed).
+
+**Luna PASS:** GPT 5.6 Luna via `openai-codex` at `xhigh` independently ran
+`npm run test:browser` (fresh run `2026-08-30T06-14-37-794Z-d819482b`:
+`passed=true`, 0 problems, 6/6 journeys) and inspected source.
+`VERDICT: PASS`.
+
+Notes:
+
+- The conformance suite is deterministic: `fileParallelism: false` in
+  `conformance/vitest.config.ts` (a black-box suite must run files
+  sequentially against one server) and `backend-ada/ci.sh` seeds the standard
+  oracle fixtures before starting its server.
+- `nonBlankString` is Unicode-whitespace on both the Ada server and the
+  generated frontend evaluator (ECMAScript TrimString set); the completeness
+  oracle pins an NBSP case (COMPLETE-WHITESPACE-004).
+- **Repair-related per-cycle count:** the three canonical-shape/persistence
+  suites (`canonical-shape.test.ts`, `import-repair.test.ts`,
+  `concurrency-tokens.test.ts`) register 13 + 7 + 6 = 26 cases per cycle. Of
+  these, 21 exercise the import/repair/preview/apply/normalization token
+  contract (CANON-IMPORT-003..006, CANON-LEGACY-007, CANON-REPAIR-008,
+  CANON-READONLY-009, CANON-TOTAL-013, REPAIR-TOKEN-001..003,
+  REPAIR-ATOMIC-004, FV-MIGRATE-CHAR/CREW-001, FV-NOTES-STRING-001,
+  CONC-IFMATCH-001..003, ERR-DETAIL-004). The remaining 5 are general
+  canonical-shape guards (CANON-CREATE-001, CANON-NULL-002,
+  CANON-NOWRITE-010, CANON-VERSION-011, CANON-SPARSE-012) that do not touch
+  the repair path.
+
+## Historical Wave 8 integration gate (2026-08-14) — preserved as context only
+
+The following table records the 2026-08-14 Wave-8 snapshot. It is **historical**
+and **not** an authoritative current claim; the Wave-9/VET-01 table above
+supersedes it. Wave 7 decomposition (ARCH-01/02) and the full mutation campaign
+(28/28) were applied after Wave 8 and are reflected only in the VET-01 results.
+
+| Gate | Command | Historical result (2026-08-14) |
 |---|---|---|
 | Ada build + core tests + launch paths + SPA routes + whole-core proof | `./backend-ada/ci.sh` | green; gnatprove 246/246 checks proved |
 | Full conformance against a fresh seeded server | `env RUN_CONFORMANCE=1 ./backend-ada/ci.sh` | **415/415** |
@@ -63,31 +135,20 @@ Orchestrator-verified, re-runnable from the repository root:
 | Agent workflows | exercised from generated docs only | matched docs |
 | Track Z expected-red | `docs/pages/zero/z4-halted-expected-red.mdx` | recorded; non-blocking |
 
-Notes:
-
-- The conformance suite is deterministic: `fileParallelism: false` in
-  `conformance/vitest.config.ts` (a black-box suite must run files
-  sequentially against one server) and `backend-ada/ci.sh` seeds the standard
-  oracle fixtures before starting its server.
-- The two pre-existing ordering flakes (CLOCK-HEALING-013 full-list equality,
-  create-validation global count) were root-caused to file-level parallelism
-  and fixed by the config change.
-- `nonBlankString` is Unicode-whitespace on both the Ada server and the
-  generated frontend evaluator (ECMAScript TrimString set); the completeness
-  oracle pins an NBSP case (COMPLETE-WHITESPACE-004).
-
 ## Final whole-initiative review
 
 - **Rounds:** 9 (8 × `VERDICT: FAIL`, then `VERDICT: PASS`, 2026-08-14).
-- **Round 1–8 findings (all fixed):** stale "backend not implemented" comment; fix-coverage.json suite-name + duplicated-path defects; change log stopped at Wave 6; historical luna-review.md + wave7 "R3 pending" notes; stale vocs status lines; `nonBlankString` Unicode-whitespace alignment (Ada now mirrors the ECMAScript TrimString set, pinned by an NBSP case); missing committed raw conformance report; degraded-clock collection rows (clockSummary end-to-end + TOTAL-CLOCK-DELETE-009); frontend summary metadata made required; 415/415 vs 414/414 and 588/588 vs 598/598 count inconsistencies; invalid metrics JSON; template-only task-card Log sections (39 backfilled); dangling final-verdict.md reference.
-- **Round 9:** `VERDICT: PASS` — no real defects; all 17 deliverables coherent; the three cross-cutting invariants hold across contract/Ada/frontend; frozen oracle coverage present; report records 415/415; no unfinished markers; manifest 110/110 (86 agent / 24 human / 0 exempt); 32/32 findings Closed.
+- **Round 1–8 findings (all fixed):** stale "backend not implemented" comment; fix-coverage.json suite-name + duplicated-path defects; change log stopped at Wave 6; historical luna-review.md + wave7 "R3 pending" notes; stale vocs status lines; `nonBlankString` Unicode-whitespace alignment (Ada now mirrors the ECMAScript TrimString set, pinned by an NBSP case); missing committed raw conformance report; degraded-clock collection rows (clockSummary end-to-end + TOTAL-CLOCK-DELETE-009); frontend summary metadata made required; count inconsistencies; invalid metrics JSON; template-only task-card Log sections (39 backfilled); dangling final-verdict.md reference.
+- **Round 9:** `VERDICT: PASS` — no real defects; all 17 deliverables coherent; the three cross-cutting invariants hold across contract/Ada/frontend; frozen oracle coverage present; 32/32 findings Closed.
 
-Final verdict (dated, authoritative):
+Final verdict (dated, authoritative — current as of 2026-08-30):
 
 > **VERDICT: PASS** — GPT 5.6 Luna via `openai-codex` at `xhigh`, read-only,
-> 2026-08-14. The complete contract-correction initiative — normative spec,
+> 2026-08-30. The complete contract-correction initiative — normative spec,
 > frozen contract + oracle, Ada backend (246/246 gnatprove), frontend clients
-> (598/598), agent skill, 32/32 findings closed, integration gates
-> (conformance 415/415) — passes the independent gate.
+> (759/759), agent skill (110/110 operations, 86 agent / 24 human / 0 exempt),
+> strict ordinary decoders (EDGE-02), 32/32 findings closed, mutation
+> (28/28 killed), browser journeys (6/6), and VET-01 whole-initiative gate
+> (471/471 conformance) — passes the independent gate.
 
 Full verdict transcript: `docs/pages/contract/gate-evidence/final-verdict.md`.

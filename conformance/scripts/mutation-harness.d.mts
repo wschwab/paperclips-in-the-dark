@@ -87,4 +87,49 @@ export function writeMutationArtifact(input: {
   artifact: unknown;
 }): Promise<string>;
 
+export function sourceRevision(): string;
+
+export interface CampaignResult {
+  id: string;
+  layer: string;
+  severity: "P0" | "P1" | "P2";
+  status: string;
+  killed: boolean;
+  killedBy: string[];
+  newFailureIds: string[];
+  runState?: string;
+  output?: string;
+}
+
+export interface CampaignArtifactInput {
+  results: CampaignResult[];
+  baselines: Array<{ green: boolean; [key: string]: unknown }>;
+  seeds: unknown;
+  catalogIds: string[];
+  command: { cmd: string; cwd: string; timeout: number };
+  environment: Record<string, string>;
+  rawOutputPath: string;
+}
+
+export interface CampaignArtifact {
+  schema: string;
+  revision: string;
+  timestamp: string;
+  command: { cmd: string; cwd: string; timeout: number };
+  environment: Record<string, string>;
+  baselineStatus: "green" | "red";
+  seeds: unknown;
+  catalogIds: string[];
+  totalMutants: number;
+  killedCount: number;
+  survivedCount: number;
+  killRateBySeverity: Record<string, unknown>;
+  perCaseStatuses: Array<Record<string, unknown>>;
+  rawOutputPath: string;
+  results: CampaignResult[];
+}
+
+export function buildCampaignArtifact(input: CampaignArtifactInput): CampaignArtifact;
+
+
 export function main(): void;

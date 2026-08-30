@@ -2,27 +2,45 @@
   "task": "EDGE-02",
   "track": "contract",
   "implementationAgent": "openai-codex/gpt-5.6-sol orchestrator",
-  "reviewAgent": "blocked: openai-codex/gpt-5.6-luna xhigh usage limit until 2026-08-27 08:03",
+  "reviewAgent": "GPT 5.6 Luna via openai-codex, model gpt-5.6-luna, reasoning effort xhigh (final Luna review executed as REVIEW-02 on 2026-08-30; prior xhigh capacity was exhausted until 2026-08-27 08:03)",
   "date": "2026-08-23",
   "iterationsToGreen": 2,
   "wallClockMinutes": 28,
   "tokens": 0,
   "passRateAtFirstDoneClaim": "frontend focused 445/445; conformance focused strict responses 18/18; frontend full exposed 8 incomplete crew error fixtures",
-  "passRateAfterReview": "review not executed; frontend 16 files/616 tests; build pass; conformance typecheck pass; canonical Track A 55 files/430 tests; browser containment pass at 1440x900 and 390x844 across light/dark/high contrast",
+  "passRateAfterReview": "PASS — ordinary decoders strict (445/445 frontend + 178 strict-response conformance); zero defaults/legacy branches retained in ordinary paths; migration-path decoders intact; confirmed by REVIEW-02 Luna xhigh browser gate (6/6 journeys) and VET-01 (471/471 conformance, 28/28 mutation P0 19/19 P1 9/9)",
   "defectsCaughtBy": {
     "compiler": 0,
     "focusedTests": 8,
-    "independentReview": 0,
+    "independentReview": 1,
     "human": 0
   },
   "defectCatchingLayer": [
-    "strict frontend decoder tests",
-    "strict conformance response tests",
+    "strict frontend decoder tests (445/445)",
+    "strict conformance response tests (178/178)",
     "full frontend fixture decoding",
     "seeded canonical Track A acceptance",
-    "real Chromium containment and theme probe"
+    "real Chromium containment and theme probe",
+    "Luna REVIEW-02 independent browser gate (6/6 journeys, 0 problems)"
   ],
   "implementationLoc": 347,
   "scaffoldingLoc": 0,
-  "notes": "Implementation and behavioral acceptance are green. Task remains blocked solely on the repository-mandated exact Luna review. The OMP reviewer route selected Sol and hit a usage limit; a direct Codex gpt-5.6-luna xhigh invocation confirmed the Luna limit and reset time. Token accounting was unavailable, so tokens is 0 rather than estimated."
+  "reviewHistory": [
+    {
+      "date": "2026-08-23",
+      "status": "blocked",
+      "reviewer": "openai-codex/gpt-5.6-luna xhigh",
+      "reason": "provider usage limit exhausted; reset at 2026-08-27 08:03",
+      "evidence": "tasks/metrics/contract/EDGE-02.json prior reviewAgent field"
+    },
+    {
+      "date": "2026-08-30",
+      "status": "PASS",
+      "reviewer": "GPT 5.6 Luna via openai-codex, xhigh",
+      "reason": "final Luna browser gate (REVIEW-02) independently ran npm run test:browser (6/6 journeys) and inspected source; ordinary decoders confirmed strict with no defaults/legacy branches; closure confirmed by VET-01 (471/471, 28/28 mutation)",
+      "evidence": "agent-docs/review02-luna-review.md (VERDICT: PASS); tasks/metrics/contract/REVIEW-02.json",
+      "closesFinding": "AR-012"
+    }
+  ],
+  "notes": "Implementation and behavioral acceptance were green on 2026-08-23. The repository-mandated exact Luna review was initially blocked (xhigh capacity exhausted). On 2026-08-30, the final Luna review was executed as REVIEW-02 and returned VERDICT: PASS, independently confirming 6/6 browser journeys, 0 problems, and that ordinary decoders retain no forbidden defaults/legacy branches. The AR-012 finding (EDGE-02) is therefore CLOSED by verified Luna evidence rather than by implementation alone. Token accounting was unavailable for the initial dispatch, so tokens is 0 rather than estimated. The historical 'blocked' status is preserved above in reviewHistory; the current authoritative status is PASS."
 }
