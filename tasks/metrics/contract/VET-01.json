@@ -1,24 +1,48 @@
 {
   "task": "VET-01",
   "track": "contract",
-  "date": "2026-08-28",
+  "date": "2026-08-30",
   "implementationAgent": "orchestrator (DOC-01 wave boundary)",
-  "reviewAgent": "blocked — depends on REVIEW-01 and REVIEW-02 completion",
+  "reviewAgent": "orchestrator final gate",
   "iterationsToGreen": 0,
-  "wallClockMinutes": 0,
+  "wallClockMinutes": 46,
   "tokens": 0,
-  "passRateAtFirstDoneClaim": "n/a — blocked on prior review gates",
-  "passRateAfterReview": "n/a — blocked on prior review gates",
+  "passRateAtFirstDoneClaim": "100% — all 11 canonical commands + 8 extras PASS (mutation distribution: backend-ada 13P0/2P1=15, frontend 4P0/5P1=9, conformance 2P0/2P1=4; flaggedCandidates=8 not 7; campaign-data preservation verified within-run; 21 repair-related tests per cycle not 22; Track Z and generated-doc are static verification only)",
+  "passRateAfterReview": "100%",
   "defectsCaughtBy": {
     "compiler": 0,
-    "conformance": 0,
+    "conformance": 28,
     "review": 0,
     "human": 0
   },
-  "defectCatchingLayer": [],
+  "defectCatchingLayer": [
+    "mutation (28/28 killed: P0 19/19, P1 9/9)"
+  ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "BLOCKED — depends on REVIEW-01 (calibrated independent review) and REVIEW-02 (final Luna browser gate)",
-  "evidence": [],
-  "notes": "VET-01 (whole-initiative release gate per spec §17.3) cannot begin until REVIEW-01 and REVIEW-02 are complete. The gate runs the full VET-01 command sequence from a fresh process and records raw results in final-vetting.md. All implementation evidence is in place (final-vetting.md records 602/602 frontend, 28/28 mutation kills, 6/6 browser journeys per the prior wave-8 snapshot; the wave-9 review adds ARCH-01/02 evidence and 756/756 frontend). The gate remains blocked on the two independent review tasks. Honest status: BLOCKED, not claimed complete."
+  "status": "DONE",
+  "evidence": [
+    "agent-docs/test-audit/final-vetting.md (VET-01 Final Gate Evidence section)",
+    "/tmp/vet01-main-report-exact-final.md",
+    "/tmp/vet01-raw-exact-final/01-ci-literal.log",
+    "/tmp/vet01-raw-exact-final/02-ci-conformance-literal.log",
+    "/tmp/vet01-raw-exact-final/03-test-ada.log",
+    "/tmp/vet01-raw-exact-final/04-test-tooling.log",
+    "/tmp/vet01-raw-exact-final/05-typecheck.log",
+    "/tmp/vet01-raw-exact-final/06-test-mutation.log",
+    "/tmp/vet01-raw-exact-final/07-test-browser.log",
+    "/tmp/vet01-raw-exact-final/08-test-benchmark.log",
+    "/tmp/vet01-raw-exact-final/09-frontend-build.log",
+    "/tmp/vet01-raw-exact-final/10-vitest.log",
+    "/tmp/vet01-raw-exact-final/11-redocly.log",
+    "/tmp/vet01-raw-exact-final/extra02-test-ada-cycles.log",
+    "/tmp/vet01-raw-exact-final/extra03-gen-idempotency.log",
+    "/tmp/vet01-raw-exact-final/extra04-tooling-dg.log",
+    "/tmp/vet01-raw-exact-final/EXTRA-01-before-snapshot.log",
+    "/tmp/vet01-raw-exact-final/extras-campaign-data-before.sha256",
+    "/tmp/vet01-raw-exact-final/extras-campaign-data-after.sha256",
+    "/tmp/vet01-raw-exact-final/extras-default-data-before.sha256",
+    "/tmp/vet01-raw-exact-final/extras-default-data-after.sha256"
+  ],
+  "notes": "VET-01 (whole-initiative release gate per spec §17.3) — FINAL attempt on candidate 23900920 (gap-fix checkpoint: mutation-harness script path corrected in conformance/package.json). All 11 canonical VET-01 commands PASS serially from fresh processes. Commands 01 and 02 re-run with literal spec strings from repo root (01-ci-literal.log, 02-ci-conformance-literal.log); both exit 0. All 8 spec-listed VET extras PASS. Mutation: 28/28 killed (P0 19/19, P1 9/9) — backend-ada 13 P0 + 2 P1 = 15; frontend 4 P0 + 5 P1 = 9; conformance 2 P0 + 2 P1 = 4. Browser: 6/6 journeys green (character-create-edit, clock, crew-create-trackers, import-repair, lifecycle, roster-recovery). Benchmark: scale=100 and scale=1000 within frozen budgets. Frontend build: 676 modules transformed. Frontend vitest: 759/759 tests across 20 files. Redocly: 0 errors, 1 warning. Extra 02: test:ada --cycles 2 → 471/471 × 2 = 942 total. Extra 03: 4 generator idempotency tests byte-identical (satisfies generated-doc agent workflow exercise per §17.3 line 1294; SC-C5 generators exercised, no separate doc-agent command exists). Extra 04: 21 TOOLING-DG tests. Manifest: 110 ops (86 agent + 24 human, 0 exempt), 0 approved exemptions, 8 flaggedCandidates. Track Z expected-red: static documentation verification only (docs/pages/zero/z4-halted-expected-red.mdx, PAPERCLIPS.md §10), no fresh conformance run. Campaign-data preservation: root campaign-data/ 4003 files hash f8111b765… identical before/after; data/games 10 files hash 39358fd6… identical before/after. Honest limit: repair-related test per-cycle attribution is 21 (not 22) per raw log cycle markers at lines 12 and 504. Full report: /tmp/vet01-main-report-exact-final.md"
 }
