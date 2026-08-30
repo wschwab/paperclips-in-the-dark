@@ -11,8 +11,8 @@ Use the service as a sheet manager. Make game decisions only when the user suppl
 
 Every contract `operationId` appears exactly once in the generated [api-reference/capability-manifest.json](api-reference/capability-manifest.json), with one of three dispositions:
 
-- `agent` — documented for agent use (per-operation reference entry in the README); no reachable human control required. 85 of 108 operations.
-- `human` — destructive, lifecycle, or designated sheet-management operations that require a reachable human UI control (23 of 108): entity create/delete/import/repair, batch, retire, end-score, end-downtime, undo, trauma resolution/correction, and dossier/notebook/note editing. When a human-required control is present, never bypass it; drive the workflow through the user's confirmation and the guardrails (preview tokens, `If-Match`, `confirm: true`).
+- `agent` — documented for agent use (per-operation reference entry in the README); no reachable human control required. 86 of 110 operations.
+- `human` — destructive, lifecycle, or designated sheet-management operations that require a reachable human UI control (24 of 110): entity create/delete/import/repair, batch, retire, end-score, end-downtime, undo, trauma resolution/correction, and dossier/notebook/note editing. When a human-required control is present, never bypass it; drive the workflow through the user's confirmation and the guardrails (preview tokens, `If-Match`, `confirm: true`).
 - `exempt` — none currently. Exemptions require explicit contract-author approval with a reason in the manifest; never assume one.
 
 ## Discover the server

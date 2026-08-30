@@ -9,5 +9,5 @@
   "wallClockMinutes": null,
   "tokens": null,
   "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 21m43s; 4 generators + regenerated artifacts; 108 operationIds (99 was stale) all dispositioned 0 exempt; tooling 6/6 incl. idempotency; Ada validator package compiles standalone"
+  "notes": " single dispatch 21m43s; 4 generators + regenerated artifacts; 110 operationIds (99 was stale) all dispositioned 0 exempt; tooling 6/6 incl. idempotency; Ada validator package compiles standalone"
 }
