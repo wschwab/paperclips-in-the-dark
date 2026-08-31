@@ -5,7 +5,7 @@
   "implementationAgent": "wave-9 ARCH-01 card (per /tmp/w9-arch01-brief.md)",
   "reviewAgent": "orchestrator wave-9 review + focused suites/mutants after every extraction",
   "iterationsToGreen": 1,
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "passRateAtFirstDoneClaim": "post-extraction gates green: canonical suite 58 files / 471 tests, mutation 28/28, gnatprove 246/246",
   "passRateAfterReview": "same on wave-9 review (w9-review-brief.md); one mid-card corruption (character-detail.ts was ARCH-02) recovered via git show HEAD replay",
@@ -26,5 +26,9 @@
     "agent-docs/AUDIT-0-remediation-implementation-work-spec.md",
     "conformance/scripts/mutation-harness.mjs"
   ],
-  "notes": "Structural-only card: pitd_callback.adb 9513 -> 2958 lines with six concerns extracted to packages (stored classification, normalization/preview, summary projection, capability projection, operation routing, AWS glue). implementationLoc recorded as 0 because LOC is moved, not added. No behavior/response/error change: suite, mutants, and proofs unchanged."
+  "notes": "Structural-only card: pitd_callback.adb 9513 -> 2958 lines with six concerns extracted to packages (stored classification, normalization/preview, summary projection, capability projection, operation routing, AWS glue). implementationLoc recorded as 0 because LOC is moved, not added. No behavior/response/error change: suite, mutants, and proofs unchanged.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

@@ -6,7 +6,7 @@
   "date": "2026-08-07",
   "iterationsToGreen": 1,
   "iterationNotes": "Single dispatch. Report accurate (340 = 313+27 verified). Child found + gracefully worked around the unimplemented single-crew-type endpoint.",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "crew-type detail endpoint (contract-defined) 404s on Ada \u2014 worked around with a list-fallback; worth implementing in a future A-task. Ability/upgrade ops verified live (ABILITY_MAXED, mark/unmark incl. upsert)."
+  "notes": "crew-type detail endpoint (contract-defined) 404s on Ada \u2014 worked around with a list-fallback; worth implementing in a future A-task. Ability/upgrade ops verified live (ABILITY_MAXED, mark/unmark incl. upsert).",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 F2v: crew sheet \u2014 Playbook abilities + upgrades + lair chart"
+  }
 }

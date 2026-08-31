@@ -3,7 +3,7 @@
   "track": "frontend",
   "implementationAgent": "ox-alpha (omp main session, opencode-go)",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -29,5 +29,9 @@
     "agent-docs/test-audit/browser-evidence/reports/w7-crew02-report.md",
     "agent-docs/test-audit/browser-evidence/reports/w8-crew-journey-fix-report.md"
   ],
-  "notes": "Claims edit mode (session-local toggle), confirm-to-acquire pathing, intentional edit-mode removal, disconnected-claim warning. Backend claim.set fix is the only non-frontend LOC in the card."
+  "notes": "Claims edit mode (session-local toggle), confirm-to-acquire pathing, intentional edit-mode removal, disconnected-claim warning. Backend claim.set fix is the only non-frontend LOC in the card.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

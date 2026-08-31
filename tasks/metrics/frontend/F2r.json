@@ -6,7 +6,7 @@
   "date": "2026-08-07",
   "iterationsToGreen": 1,
   "iterationNotes": "Two dispatches (first died to reboot, zero edits). Report accurate incl. a contract-correction of the orchestrator's brief. Counts verified: 234 = 195+39.",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "5th shape-vs-semantics conformance blind spot (A9 filed): gear.add/remove/commit/uncommit/clear-commitments unimplemented server-side; suite green anyway. Frontend accepted; live paths deferred."
+  "notes": "5th shape-vs-semantics conformance blind spot (A9 filed): gear.add/remove/commit/uncommit/clear-commitments unimplemented server-side; suite green anyway. Frontend accepted; live paths deferred.",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 F2r: character sheet \u2014 Gear / loadout section"
+  }
 }

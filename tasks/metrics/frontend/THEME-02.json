@@ -3,7 +3,7 @@
   "track": "frontend",
   "implementationAgent": "ox-alpha (omp main session, opencode-go)",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -28,5 +28,9 @@
     "conformance/suites-browser/checkpoints/theme02-focus-error.mjs",
     "agent-docs/test-audit/browser-evidence/reports/w7-theme02-report.md"
   ],
-  "notes": "Focus ring and error border are now distinguishable in every theme/contrast combination without losing the red error semantics."
+  "notes": "Focus ring and error border are now distinguishable in every theme/contrast combination without losing the red error semantics.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

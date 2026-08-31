@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "transport/operation errors",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 27.0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 27m; fetchJson classification (DecodeError/ApiError/network), whole-union decoding via fetchOperation, undo If-Match, friendly error cards; client 261+main+shell green; resolved all 70 detail-page mock drifts too; build green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 27m; fetchJson classification (DecodeError/ApiError/network), whole-union decoding via fetchOperation, undo If-Match, friendly error cards; client 261+main+shell green; resolved all 70 detail-page mock drifts too; build green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "nquoted: \"27m\""
+  }
 }

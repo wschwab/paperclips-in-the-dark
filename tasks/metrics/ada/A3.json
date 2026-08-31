@@ -53,5 +53,10 @@
     "Defaults intentionally assume the development binary layout backend-ada/server/bin/pitd",
     "Bare-name invocation resolved through PATH and symlinked invocation are not covered by A3"
   ],
-  "next": "Proceed to the next small Ada task; use Haiku for bounded red-green work and Sonnet for time-boxed review at lower effort unless deep analysis is needed."
+  "next": "Proceed to the next small Ada task; use Haiku for bounded red-green work and Sonnet for time-boxed review at lower effort unless deep analysis is needed.",
+  "wallClockMinutes": 9.9,
+  "metricsMethodology": {
+    "method": "startedAt/acceptedAt timestamps",
+    "source": "2026-07-22T10:03:52+03:00 \u2192 2026-07-22T10:13:47+03:00"
+  }
 }

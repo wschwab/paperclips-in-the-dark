@@ -6,7 +6,7 @@
   "date": "2026-08-07",
   "iterationsToGreen": 2,
   "iterationNotes": "Dispatch 1 died silently mid-research (SRD rep/turf) with zero edits; dispatch 2 with the plan's decision 5 pre-answered landed clean. Report accurate (counts 313 = 278+35 verified).",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "7th shape-vs-semantics gap (A11 filed): crew tier.add/coin.add/stash.add unimplemented (also cohorts + crew XP + rolodex.remove). Frontend accepted; live paths deferred."
+  "notes": "7th shape-vs-semantics gap (A11 filed): crew tier.add/coin.add/stash.add unimplemented (also cohorts + crew XP + rolodex.remove). Frontend accepted; live paths deferred.",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 F2u: crew sheet \u2014 Profile + trackers (rep/heat/wanted/hold/t"
+  }
 }

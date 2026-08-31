@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "stored admission + typed errors",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 38.3,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 38m20s; centralized Classify_Stored; full 26-branch union via new pitd_error package; If-Match on undo/delete; 48/51 in gate set; legacy Error_Result reimplemented as typed dispatcher"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 38m20s; centralized Classify_Stored; full 26-branch union via new pitd_error package; If-Match on undo/delete; 48/51 in gate set; legacy Error_Result reimplemented as typed dispatcher",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "38m20s"
+  }
 }

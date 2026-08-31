@@ -6,7 +6,7 @@
   "date": "2026-08-10",
   "iterationsToGreen": 2,
   "iterationNotes": "Dispatch 1 died silently after client ops (11.5h, page UI never started); orchestrator committed part 1 and redispatched page-UI-only. Report accurate (414 = 396+18).",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 690,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 1
   },
-  "notes": "SRD rep/turf tracker: 12 rep boxes + 6 grayed-from-right turf slots, threshold 12\u2212turf, Develop weak\u2192strong / strong\u2192pay-tier. Live probe verified the whole develop path."
+  "notes": "SRD rep/turf tracker: 12 rep boxes + 6 grayed-from-right turf slots, threshold 12\u2212turf, Develop weak\u2192strong / strong\u2192pay-tier. Live probe verified the whole develop path.",
+  "metricsMethodology": {
+    "method": "hours-duration text in iterationNotes (dispatch runtime)",
+    "source": "\"11.5h\""
+  }
 }

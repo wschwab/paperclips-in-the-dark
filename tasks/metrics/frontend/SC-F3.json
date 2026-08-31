@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "capabilities + clamps + healing delta",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 80.0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 80m; capability projections consumed (no local joins as primary); tracker clamps + requested/effective notices; healing-clock delta; 441 focused tests green; build green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 80m; capability projections consumed (no local joins as primary); tracker clamps + requested/effective notices; healing-clock delta; 441 focused tests green; build green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "nquoted: \"80m\""
+  }
 }

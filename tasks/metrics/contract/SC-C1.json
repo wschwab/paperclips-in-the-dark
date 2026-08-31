@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "canonical entity schemas",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 9.2,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 9m12s; redocly green; ajv 24/24 goldens validate; 13 x-requiredWhenComplete records exact; if/then bounded rollover; x-segmentsLeSize extension (redocly rejects $data); lifecycle flags; sparse claimOverrides kept; goldens canonical"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 9m12s; redocly green; ajv 24/24 goldens validate; 13 x-requiredWhenComplete records exact; if/then bounded rollover; x-segmentsLeSize extension (redocly rejects $data); lifecycle flags; sparse claimOverrides kept; goldens canonical",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "9m12s"
+  }
 }

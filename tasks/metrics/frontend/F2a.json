@@ -18,5 +18,10 @@
   ],
   "review": "Sonnet identified missing page-state tests, aria-live, unmatched-route behavior, and minor cancellation/simplification concerns. The orchestrator fixed aria state and removed nonexistent detail links. Live acceptance independently exposed the Ada SPA deep-link 404 and added a durable regression.",
   "providerLimit": "none",
-  "notes": "The in-app browser backend was unavailable, so live acceptance verified HTTP deep-link, API, HTML shell, bundle serving, and missing-asset behavior rather than rendered pixels. Full interactive Claude CLI was used, not claude -p."
+  "notes": "The in-app browser backend was unavailable, so live acceptance verified HTTP deep-link, API, HTML shell, bundle serving, and missing-asset behavior rather than rendered pixels. Full interactive Claude CLI was used, not claude -p.",
+  "wallClockMinutes": 10.0,
+  "metricsMethodology": {
+    "method": "elapsedMinutes field",
+    "source": "derived from waveStart/waveEnd timestamps"
+  }
 }

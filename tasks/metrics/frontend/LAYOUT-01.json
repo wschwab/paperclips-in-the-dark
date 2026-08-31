@@ -5,9 +5,18 @@
   "reviewAgent": "orchestrator-owned verification: frontend unit suite (756/756), tsc --noEmit, npm run build, full managed-Chromium browser suite (12 journeys incl. new layout01-alignment), numeric geometry assertions at true 1440/768/390 viewports; independent GPT 5.6 Luna review pending completion of report",
   "date": "2026-08-27",
   "iterationsToGreen": 4,
-  "iterationNotes": "(1) red journey failed on roster masthead left 284 != plate left 729 as designed. (2) my roster.ts edits auto-repaired away charPlate/crewPlate listEl/noteEl/moreBtn children, emptying both plates — caught by unit suite + sibling journeys, restored. (3) multicol first pass used column-span:all on mid-sheet furniture, creating a 1419px rebalance seam; trimmed spans to masthead+alerts only. (4) journey gear seeding moved from UI-click path to the same contract ops (gear.add/gear.commit) after the UI add handler silently no-opped in headless runs.",
-  "wallClockMinutes": null,
+  "iterationNotes": "(1) red journey failed on roster masthead left 284 != plate left 729 as designed. (2) my roster.ts edits auto-repaired away charPlate/crewPlate listEl/noteEl/moreBtn children, emptying both plates \u2014 caught by unit suite + sibling journeys, restored. (3) multicol first pass used column-span:all on mid-sheet furniture, creating a 1419px rebalance seam; trimmed spans to masthead+alerts only. (4) journey gear seeding moved from UI-click path to the same contract ops (gear.add/gear.commit) after the UI add handler silently no-opped in headless runs.",
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 2, "review": 1, "human": 0 },
-  "notes": "Red measurements at 1440px: .roster-characters in column 2 (l=729) sharing row with masthead; crews 1782px lower; Traumas/Health row hole 449px (Playbook/Talents 939px); gear remove-button x follows name width. Green: masthead+plates share starts, sheets as two balanced multicol columns with zero interior holes >26px, gear columns stable via repeated-row grid minmax(0,1fr)/max-content/max-content. Docs: docs/pages/frontend/f2z-layout.mdx LAYOUT-01 section. Screenshots: /tmp/w7-layout01-shots/. Sibling note: theme02-focus-error journey crashed twice mid-session on its own code (outlineColor TypeError; relative-URL fetch SyntaxError) before its agent fixed it; not this card's surface."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 2,
+    "review": 1,
+    "human": 0
+  },
+  "notes": "Red measurements at 1440px: .roster-characters in column 2 (l=729) sharing row with masthead; crews 1782px lower; Traumas/Health row hole 449px (Playbook/Talents 939px); gear remove-button x follows name width. Green: masthead+plates share starts, sheets as two balanced multicol columns with zero interior holes >26px, gear columns stable via repeated-row grid minmax(0,1fr)/max-content/max-content. Docs: docs/pages/frontend/f2z-layout.mdx LAYOUT-01 section. Screenshots: /tmp/w7-layout01-shots/. Sibling note: theme02-focus-error journey crashed twice mid-session on its own code (outlineColor TypeError; relative-URL fetch SyntaxError) before its agent fixed it; not this card's surface.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

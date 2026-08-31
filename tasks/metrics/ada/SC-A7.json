@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "clock core + API",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " accumulation + reset per frozen Post; ownership/purpose/behavior/related fields; signed progress; unlink; reassignment; 15/15 clock cases green; healing-clock family fix (NUM-CLOCK-004); core proof + tests green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " accumulation + reset per frozen Post; ownership/purpose/behavior/related fields; signed progress; unlink; reassignment; 15/15 clock cases green; healing-clock family fix (NUM-CLOCK-004); core proof + tests green",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

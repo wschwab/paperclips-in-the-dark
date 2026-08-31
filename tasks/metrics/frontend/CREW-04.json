@@ -3,7 +3,7 @@
   "track": "frontend",
   "implementationAgent": "ox-alpha (omp main session, opencode-go)",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -28,5 +28,9 @@
     "conformance/suites-browser/checkpoints/crew04-advance.mjs",
     "agent-docs/test-audit/browser-evidence/reports/w7-crew04-report.md"
   ],
-  "notes": "Advancement edit mode (session-local aria-pressed toggle) gates ability/upgrade removal; description layout fixed per UX-010."
+  "notes": "Advancement edit mode (session-local aria-pressed toggle) gates ability/upgrade removal; description layout fixed per UX-010.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

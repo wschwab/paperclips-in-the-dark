@@ -3,7 +3,7 @@
   "track": "frontend",
   "implementationAgent": "wave-8 PERF-04 card (per /tmp/w8-perf04-brief.md)",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -27,5 +27,9 @@
     "agent-docs/test-audit/performance-budgets.json",
     "conformance/scripts/dataset-benchmark.mjs"
   ],
-  "notes": "Card contract: optimize ONLY measured over-budget metrics. None were over budget, so zero production revisions; budget file untouched. M18 killed via extended action-dots CSS-contract test during the campaign."
+  "notes": "Card contract: optimize ONLY measured over-budget metrics. None were over budget, so zero production revisions; budget file untouched. M18 killed via extended action-dots CSS-contract test during the campaign.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

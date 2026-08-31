@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "lifecycle oracle",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 9.8,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 9m46s; 25 frozen LIFECYCLE-* cases; 20 red/5 green; decode-free design"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 9m46s; 25 frozen LIFECYCLE-* cases; 20 red/5 green; decode-free design",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "9m46s"
+  }
 }

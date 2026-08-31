@@ -6,7 +6,7 @@
   "date": "2026-08-07",
   "iterationsToGreen": 1,
   "iterationNotes": "Single dispatch; report accurate (366 = 355+11 verified). Also fixed a latent test-file structure bug (nested describes).",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "Final F2 wave slice. Criteria text from crew game data, never hardcoded. Live xp paths pending A11."
+  "notes": "Final F2 wave slice. Criteria text from crew game data, never hardcoded. Live xp paths pending A11.",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 F2x: crew sheet \u2014 Crew XP section"
+  }
 }

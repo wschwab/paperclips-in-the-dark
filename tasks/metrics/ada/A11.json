@@ -6,7 +6,7 @@
   "date": "2026-08-08",
   "iterationsToGreen": 2,
   "iterationNotes": "Dispatch 1 died silently (~14h, zero edits) \u2014 was asked to write conformance tests too. Dispatch 2 server-only with orchestrator-written red test: complete and exact. Conformance 160\u2192164.",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 840,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "Seventh shape-vs-semantics gap closed (A4/A5/A7/A8/A9/A10/A11). ALL contract ops now implemented server-side; every F2 wave slice's live paths are now real."
+  "notes": "Seventh shape-vs-semantics gap closed (A4/A5/A7/A8/A9/A10/A11). ALL contract ops now implemented server-side; every F2 wave slice's live paths are now real.",
+  "metricsMethodology": {
+    "method": "hours-duration text in iterationNotes (dispatch runtime)",
+    "source": "\"~14h\""
+  }
 }

@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "clocks oracle + SPARK contract",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 22.1,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 22m6s; 15 CLOCK cases 14 red/1 green; Progress/Reset Post stated in paperclips_core-clocks.ads; expected proof failure recorded (accumulation vs old body); Reset Post proved; core tests + server build green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 22m6s; 15 CLOCK cases 14 red/1 green; Progress/Reset Post stated in paperclips_core-clocks.ads; expected proof failure recorded (accumulation vs old body); Reset Post proved; core tests + server build green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "22m6s"
+  }
 }

@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "operations",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 10.2,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 10m9s; import preview/apply + repair preview/apply + retire; 12 If-Match-required sites; clock metadata ops; 4-field clock-progress family; reassignedClockIds as sideEffects entries (frozen OpResult); redocly green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 10m9s; import preview/apply + repair preview/apply + retire; 12 If-Match-required sites; clock metadata ops; 4-field clock-progress family; reassignedClockIds as sideEffects entries (frozen OpResult); redocly green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "10m9s"
+  }
 }

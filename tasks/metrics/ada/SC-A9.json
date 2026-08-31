@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "retained server defects",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " cohort.add allowed fields (ERR-FV004-001 green); vice parity verified; cohort.remove/update validation gaps; malformed transport verified; no remaining SC-R6 backend assignment"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " cohort.add allowed fields (ERR-FV004-001 green); vice parity verified; cohort.remove/update validation gaps; malformed transport verified; no remaining SC-R6 backend assignment",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

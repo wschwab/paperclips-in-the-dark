@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "total collections + degraded deletion",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 13.8,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 13m51s; route-derived degraded rows with sha256 deleteToken; stale-token 409; unreadable crew deletion unlinks readable members; 35/35 gate set green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 13m51s; route-derived degraded rows with sha256 deleteToken; stale-token 409; unreadable crew deletion unlinks readable members; 35/35 gate set green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "13m51s"
+  }
 }

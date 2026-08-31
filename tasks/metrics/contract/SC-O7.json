@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "error/concurrency/parity oracle",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 47.2,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 47m11s; 19 cases (ERR/CONC/PARITY); 13 red/6 green; human-control gap list for Wave 6"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 47m11s; 19 cases (ERR/CONC/PARITY); 13 red/6 green; human-control gap list for Wave 6",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "47m11s"
+  }
 }

@@ -6,8 +6,17 @@
   "date": "2026-08-26",
   "iterationsToGreen": 3,
   "iterationNotes": "24px hit targets via ::before expansion; roving tabindex per rating group with arrow keys; selected value + group label + disabled state exposed",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "action-dots component + unit tests green; frontend suite 706/706; build clean; browser probe pending final xhigh Luna gate"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "action-dots component + unit tests green; frontend suite 706/706; build clean; browser probe pending final xhigh Luna gate",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

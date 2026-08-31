@@ -5,7 +5,7 @@
   "implementationAgent": "ox-alpha (omp main session, opencode-go)",
   "reviewAgent": "orchestrator independent verification: frontend suite 756/756, tsc clean, build clean (676 modules), browser suite 6/6 journeys PASS, mutation 28/28 killed (P0 19/19, P1 9/9)",
   "iterationsToGreen": 1,
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "passRateAtFirstDoneClaim": "frontend 20 files / 756 tests green; tsc clean; build clean; browser 6/6 journeys; mutation 28/28 killed",
   "passRateAfterReview": "identical on wave-9 orchestrator re-run; conformance parity scanner amended to group page + first-party imports (fix was strict add; no manifest or disposition change)",
@@ -24,8 +24,12 @@
   "status": "DONE",
   "evidence": [
     "agent-docs/test-audit/browser-evidence/reports/w9-arch02-report.md",
-    "agent-docs/AUDIT-0-remediation-implementation-work-spec.md §16.2",
+    "agent-docs/AUDIT-0-remediation-implementation-work-spec.md \u00a716.2",
     "agent-docs/test-audit/browser-evidence/wave5-browser-evidence.md"
   ],
-  "notes": "Structural-only card: character-detail.ts 4483->2039 lines, crew-detail.ts 2955->1116 lines; extracted shared mutation transport, character domains, crew domains, and 14+ page section controllers. No behavior/response/error change: suite, mutants, and proofs identical. Mid-card character page corruption recovered via git show HEAD replay (read-only recovery only, no VCS mutation). implementationLoc recorded as 0 because LOC is moved, not added."
+  "notes": "Structural-only card: character-detail.ts 4483->2039 lines, crew-detail.ts 2955->1116 lines; extracted shared mutation transport, character domains, crew domains, and 14+ page section controllers. No behavior/response/error change: suite, mutants, and proofs identical. Mid-card character page corruption recovered via git show HEAD replay (read-only recovery only, no VCS mutation). implementationLoc recorded as 0 because LOC is moved, not added.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

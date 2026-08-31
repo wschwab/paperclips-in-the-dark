@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "typed error union",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 10.6,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 10m34s (thin report; orchestrator verified independently); 26 branches all six members; errorCode enum 26; mismatch rejection via ajv probe; batch reuses union; redocly green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 10m34s (thin report; orchestrator verified independently); 26 branches all six members; errorCode enum 26; mismatch rejection via ajv probe; batch reuses union; redocly green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "10m34s"
+  }
 }

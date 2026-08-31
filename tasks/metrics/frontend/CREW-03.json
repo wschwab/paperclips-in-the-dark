@@ -3,7 +3,7 @@
   "track": "frontend",
   "implementationAgent": "ox-alpha (omp main session, opencode-go)",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -27,5 +27,9 @@
     "frontend/src/pages/crew-detail.ts",
     "docs/pages/contract/contract-c5-character-contacts.mdx"
   ],
-  "notes": "DEC-05 approved Option A: crew contacts keep the C3 v1 DTO {name, profession} with settings-derived descriptions; factions stay free-form with settings-clamped numeric status; no hardcoded faction catalog. Existing crew-detail.ts rendering already complies, so the card closes with zero frontend changes. The human addendum (character-level contacts) landed as the C5 character-contacts contract change."
+  "notes": "DEC-05 approved Option A: crew contacts keep the C3 v1 DTO {name, profession} with settings-derived descriptions; factions stay free-form with settings-clamped numeric status; no hardcoded faction catalog. Existing crew-detail.ts rendering already complies, so the card closes with zero frontend changes. The human addendum (character-level contacts) landed as the C5 character-contacts contract change.",
+  "metricsMethodology": {
+    "method": "documentation/decision-only: no execution time",
+    "source": "Decision card (DEC-05 approved): documentation-only, no execution time"
+  }
 }

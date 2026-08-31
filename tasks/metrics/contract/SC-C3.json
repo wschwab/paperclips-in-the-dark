@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "settings+capabilities",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 15.1,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 15m7s; 12 new settings fields all 4 games; crew-settings-schema + S&V crew file from official Evil Hat sheets; 3 capability endpoints; fixed 2 pre-existing settings-schema defects + fr JSON comment; ajv green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 15m7s; 12 new settings fields all 4 games; crew-settings-schema + S&V crew file from official Evil Hat sheets; 3 capability endpoints; fixed 2 pre-existing settings-schema defects + fr JSON comment; ajv green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "15m7s"
+  }
 }

@@ -6,17 +6,26 @@
   "date": "2026-08-26",
   "iterationsToGreen": 2,
   "iterationNotes": "journey landed in the same change as the PERF-03 metrics; red states covered there. First run surfaced two fixes: predicate serialization into the page (source strings instead of closures) and the harness console-noise allowance for deliberately injected 422s",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
   "browsersGate": {
     "command": "cd conformance && npm run test:browser",
-    "result": "PASS — char03-continuity records both checkpoints (stress-continuity-record, gear-failure-alert-routed); all journeys green"
+    "result": "PASS \u2014 char03-continuity records both checkpoints (stress-continuity-record, gear-failure-alert-routed); all journeys green"
   },
   "assertedEvidence": [
     "settled onStressDelta success record: outcome/outcomeStatus 200, initiatorDescriptor ends @stress, initiatorRect + focusBefore/focusAfter present, operationMs and renderToStableMs measured, scroll telemetry present and within budget",
     "forced 422 on POST /ops/gear.add settles as a failure record attributed to @gear whose alert renders inside [data-section=\"gear\"] as .error.section-error, is visible in the viewport (DOM geometry check and record.anyAlertVisible), with a visible alert snapshot recorded",
-    "alert-routing mutant (gear -> personal) verified to fail this journey before being reverted — see PERF-03.json mutant result"
+    "alert-routing mutant (gear -> personal) verified to fail this journey before being reverted \u2014 see PERF-03.json mutant result"
   ],
-  "notes": "Companion CHAR-02/PERF-03 metrics carry shared context. The journey drives everything through real UI controls (+ stress button, gear-add details menu) at scrolled positions."
+  "notes": "Companion CHAR-02/PERF-03 metrics carry shared context. The journey drives everything through real UI controls (+ stress button, gear-add details menu) at scrolled positions.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

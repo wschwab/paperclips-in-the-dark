@@ -6,7 +6,7 @@
   "date": "2026-08-07",
   "iterationsToGreen": 1,
   "iterationNotes": "Single dispatch. Child corrected the orchestrator's semantics spec (clamped-set, not clamp-add) with clear reasoning matching the shipped client \u2014 a genuinely good catch.",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "Third instance of the shape-vs-semantics conformance blind spot (A4, A5, A7): endpoint coverage checked OperationResult shape only. New SEMANTICS-SESSION-SET-001 red-green test closes it for session.set."
+  "notes": "Third instance of the shape-vs-semantics conformance blind spot (A4, A5, A7): endpoint coverage checked OperationResult shape only. New SEMANTICS-SESSION-SET-001 red-green test closes it for session.set.",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 A7: ada session.set op + SEMANTICS-SESSION-SET-001 conforman"
+  }
 }

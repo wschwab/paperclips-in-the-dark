@@ -6,7 +6,7 @@
   "date": "2026-08-08",
   "iterationsToGreen": 1,
   "iterationNotes": "Single dispatch. Child proactively fixed a stale prior assertion (SEMANTICS-GEAR-OPS-003 expected '' per the old bug) and flagged it for review \u2014 correct. All claims verified.",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 1
   },
-  "notes": "Found by the human in live play (8th shape-vs-semantics gap: conformance schemas.ts used Schema.String for commitment). Now the schema is enum-tight. campaign-data migrated locally."
+  "notes": "Found by the human in live play (8th shape-vs-semantics gap: conformance schemas.ts used Schema.String for commitment). Now the schema is enum-tight. campaign-data migrated locally.",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 A12: ada gear commitment uses contract enum 'none' (was '') "
+  }
 }

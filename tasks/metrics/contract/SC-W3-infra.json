@@ -6,7 +6,7 @@
   "date": "2026-08-14",
   "iterationsToGreen": 2,
   "iterationNotes": "Decoder sync (drift fix) then decoder tolerance (canonical-default filling) so the pre-existing suite returns green against the lagging runtime; baseline 279 passed / 135 failed (oracle reds only). createClock api + 2 stale clockKind test sites updated to frozen contract.",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "Full managed suite: 279 passed / 135 failed at freeze; 9 strict-decode offline tests still reject bad shapes; remaining reds are behavioral oracles + server-lag classes."
+  "notes": "Full managed suite: 279 passed / 135 failed at freeze; 9 strict-decode offline tests still reject bad shapes; remaining reds are behavioral oracles + server-lag classes.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

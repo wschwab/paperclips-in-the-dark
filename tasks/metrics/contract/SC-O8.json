@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "FV oracle corrections",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 48.8,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 48m46s; 32-FV mapping table recorded in traceability ledger; added FV-MIGRATE-CHAR/CREW + FV-NOTES-STRING (O1) + ERR-FV004-001 red + ERR-FV026-001 guard (O7)"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 48m46s; 32-FV mapping table recorded in traceability ledger; added FV-MIGRATE-CHAR/CREW + FV-NOTES-STRING (O1) + ERR-FV004-001 red + ERR-FV026-001 guard (O7)",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "48m46s"
+  }
 }

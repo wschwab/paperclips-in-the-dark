@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "retained corrections",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 6.6,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 6m34s; vice $ref fixed; cohort.add already correct; shared-cap declaration; TotalBoxes/UPGRADE_MAXED declared; signed XP deltas; canUndo/historyCount in summaries + OpResult; hub-coordinated with C2"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 6m34s; vice $ref fixed; cohort.add already correct; shared-cap declaration; TotalBoxes/UPGRADE_MAXED declared; signed XP deltas; canUndo/historyCount in summaries + OpResult; hub-coordinated with C2",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "6m34s"
+  }
 }

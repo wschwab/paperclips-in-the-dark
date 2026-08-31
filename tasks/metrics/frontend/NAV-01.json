@@ -3,7 +3,7 @@
   "track": "frontend",
   "implementationAgent": "ox-alpha (omp main session, opencode-go)",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -27,5 +27,9 @@
     "conformance/suites-browser/checkpoints/theme01-identity-contrast.mjs",
     "conformance/suites-browser/checkpoints/theme02-focus-error.mjs"
   ],
-  "notes": "DEC-06 approved keeping Style Guide nav prominence, Auto theme default, all modes, and the direct Hi-C button. NAV-01 therefore applies a documentation-only outcome; no navigation or theme source changed."
+  "notes": "DEC-06 approved keeping Style Guide nav prominence, Auto theme default, all modes, and the direct Hi-C button. NAV-01 therefore applies a documentation-only outcome; no navigation or theme source changed.",
+  "metricsMethodology": {
+    "method": "documentation/decision-only: no execution time",
+    "source": "Decision card (DEC-06 approved): documentation-only, no execution time"
+  }
 }

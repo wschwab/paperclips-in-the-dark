@@ -6,8 +6,17 @@
   "date": "2026-08-26",
   "iterationsToGreen": 1,
   "iterationNotes": "renamed bare stress-clear control to honest label (no false 'Indulge Vice'); surfaced overindulged signal; phase helpers advisory/non-persistent",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "character-detail tests green (706/706); build clean; browser suite PASS; pending final xhigh Luna gate"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "character-detail tests green (706/706); build clean; browser suite PASS; pending final xhigh Luna gate",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

@@ -6,7 +6,7 @@
   "date": "2026-08-08",
   "iterationsToGreen": 1,
   "iterationNotes": "Single dispatch; report accurate. Verified by orchestrator with headless Chrome computed-style probes (2-col wide / 1-col narrow, horizontal trackers, no overflow).",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 1
   },
-  "notes": "Human playtest report drove this (flush-left pages + vertical trackers). CSS-only fix: themed container + responsive card grid + flex-wrap trackers."
+  "notes": "Human playtest report drove this (flush-left pages + vertical trackers). CSS-only fix: themed container + responsive card grid + flex-wrap trackers.",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 F2z: layout \u2014 themed page container + responsive card grid +"
+  }
 }

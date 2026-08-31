@@ -6,7 +6,7 @@
   "date": "2026-08-07",
   "iterationsToGreen": 2,
   "iterationNotes": "Dispatch 1: pure investigation, zero edits, silent termination. Dispatch 2 with pre-digested code locations + semantics in prompt: complete, exact, one file changed. Lesson: flash needs the investigation front-loaded for dense/unfamiliar code.",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "Revision_Gate.Release is match-guarded (stale release can't clear newer claim) and called on every failure path incl. Constraint_Error handler. Heal semantics replicate core's proven implementation exactly. Verified by orchestrator probe + full conformance rerun (138/11, red set unchanged)."
+  "notes": "Revision_Gate.Release is match-guarded (stale release can't clear newer claim) and called on every failure path incl. Constraint_Error handler. Heal semantics replicate core's proven implementation exactly. Verified by orchestrator probe + full conformance rerun (138/11, red set unchanged).",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 09:35 \u2014 A5: ada harm.heal + harm.healing-clock ops; fix Revision_Gat"
+  }
 }

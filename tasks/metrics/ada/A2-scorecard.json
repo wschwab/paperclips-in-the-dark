@@ -760,161 +760,161 @@
     },
     {
       "id": "SEMANTICS-ARMOR-AVAILABILITY-001",
-      "name": "§5.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-001] unavailable special armor is a typed error",
+      "name": "\u00a75.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-001] unavailable special armor is a typed error",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/armor-availability.test.ts",
       "status": "passed",
       "durationMs": 37.07426699999996
     },
     {
       "id": "SEMANTICS-ARMOR-AVAILABILITY-002",
-      "name": "§5.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-002] clearing an armor-used flag is always permitted",
+      "name": "\u00a75.1.4 armor availability is derived from state [SEMANTICS-ARMOR-AVAILABILITY-002] clearing an armor-used flag is always permitted",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/armor-availability.test.ts",
       "status": "passed",
       "durationMs": 13.262787000000003
     },
     {
       "id": "SEMANTICS-BOUNDED-INTEGER-001",
-      "name": "§5.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-001] stress addition clamps at the game maximum",
+      "name": "\u00a75.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-001] stress addition clamps at the game maximum",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/bounded-integer.test.ts",
       "status": "passed",
       "durationMs": 52.381696000000034
     },
     {
       "id": "SEMANTICS-BOUNDED-INTEGER-002",
-      "name": "§5.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-002] action ratings clamp below zero",
+      "name": "\u00a75.1.1 BoundedInteger clamps and reports the applied delta [SEMANTICS-BOUNDED-INTEGER-002] action ratings clamp below zero",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/bounded-integer.test.ts",
       "status": "passed",
       "durationMs": 23.213336000000027
     },
     {
       "id": "SEMANTICS-COMMITMENT-LOCK-001",
-      "name": "§5.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-001] locked commitment rejects changes",
+      "name": "\u00a75.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-001] locked commitment rejects changes",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-lock.test.ts",
       "status": "passed",
       "durationMs": 52.09047300000003
     },
     {
       "id": "SEMANTICS-COMMITMENT-LOCK-002",
-      "name": "§5.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-002] unlock permits an explicit commitment change",
+      "name": "\u00a75.1.10 commitment locking is explicit [SEMANTICS-COMMITMENT-LOCK-002] unlock permits an explicit commitment change",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/commitment-lock.test.ts",
       "status": "passed",
       "durationMs": 25.937500999999997
     },
     {
       "id": "SEMANTICS-CROSS-LINKS-001",
-      "name": "§5.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-001] dossier crewId accepts an existing crew and roster counts members",
+      "name": "\u00a75.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-001] dossier crewId accepts an existing crew and roster counts members",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/cross-links.test.ts",
       "status": "passed",
       "durationMs": 59.40013499999998
     },
     {
       "id": "SEMANTICS-CROSS-LINKS-002",
-      "name": "§5.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-002] deleting a crew unlinks its members",
+      "name": "\u00a75.1.11 character and crew cross-links [SEMANTICS-CROSS-LINKS-002] deleting a crew unlinks its members",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/cross-links.test.ts",
       "status": "passed",
       "durationMs": 33.29937799999993
     },
     {
       "id": "SEMANTICS-FUND-001",
-      "name": "§5.1.8 fund gains expose partial capacity [SEMANTICS-FUND-001] satchel then stash fill and overflow is visible",
+      "name": "\u00a75.1.8 fund gains expose partial capacity [SEMANTICS-FUND-001] satchel then stash fill and overflow is visible",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund.test.ts",
       "status": "passed",
       "durationMs": 40.861609999999985
     },
     {
       "id": "SEMANTICS-FUND-002",
-      "name": "§5.1.8 fund gains expose partial capacity [SEMANTICS-FUND-002] spending uses satchel before stash liquidation",
+      "name": "\u00a75.1.8 fund gains expose partial capacity [SEMANTICS-FUND-002] spending uses satchel before stash liquidation",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/fund.test.ts",
       "status": "passed",
       "durationMs": 14.328380999999979
     },
     {
       "id": "SEMANTICS-HARM-SPILLOVER-001",
-      "name": "§5.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-001] full severe harm rolls upward into fatal",
+      "name": "\u00a75.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-001] full severe harm rolls upward into fatal",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/harm-spillover.test.ts",
       "status": "passed",
       "durationMs": 41.11751199999998
     },
     {
       "id": "SEMANTICS-HARM-SPILLOVER-002",
-      "name": "§5.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-002] removing one intensity does not cascade another slot",
+      "name": "\u00a75.1.2 harm spillover and exact removal [SEMANTICS-HARM-SPILLOVER-002] removing one intensity does not cascade another slot",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/harm-spillover.test.ts",
       "status": "passed",
       "durationMs": 26.653569000000005
     },
     {
       "id": "SEMANTICS-RETIRED-DEADISH-001",
-      "name": "§5.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-001] the final trauma retires the character and exposes both flags",
+      "name": "\u00a75.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-001] the final trauma retires the character and exposes both flags",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/retired-deadish.test.ts",
       "status": "passed",
       "durationMs": 53.590483000000006
     },
     {
       "id": "SEMANTICS-RETIRED-DEADISH-002",
-      "name": "§5.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-002] retired reads work but notebook writes return RETIRED",
+      "name": "\u00a75.1.9 retirement and deadish flags are distinct [SEMANTICS-RETIRED-DEADISH-002] retired reads work but notebook writes return RETIRED",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/retired-deadish.test.ts",
       "status": "passed",
       "durationMs": 38.13126600000004
     },
     {
       "id": "SEMANTICS-ROLODEX-001",
-      "name": "§5.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-001] friend can move through close-friend to rival",
+      "name": "\u00a75.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-001] friend can move through close-friend to rival",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/rolodex.test.ts",
       "status": "passed",
       "durationMs": 57.05785700000001
     },
     {
       "id": "SEMANTICS-ROLODEX-002",
-      "name": "§5.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-002] rival can be downgraded back to friend",
+      "name": "\u00a75.1.7 rolodex has the complete closeness transition set [SEMANTICS-ROLODEX-002] rival can be downgraded back to friend",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/rolodex.test.ts",
       "status": "passed",
       "durationMs": 25.08132599999999
     },
     {
       "id": "SEMANTICS-STRESS-OVERFLOW-001",
-      "name": "§5.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-001] full stress does not add trauma automatically",
+      "name": "\u00a75.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-001] full stress does not add trauma automatically",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/stress-overflow.test.ts",
       "status": "passed",
       "durationMs": 47.91186499999998
     },
     {
       "id": "SEMANTICS-STRESS-OVERFLOW-002",
-      "name": "§5.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-002] trauma is a separate explicit operation",
+      "name": "\u00a75.1.3 stress overflow is advisory only [SEMANTICS-STRESS-OVERFLOW-002] trauma is a separate explicit operation",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/stress-overflow.test.ts",
       "status": "passed",
       "durationMs": 51.576367000000005
     },
     {
       "id": "SEMANTICS-UPGRADES-001",
-      "name": "§5.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-001] marking the same multi-box upgrade twice retains two boxes",
+      "name": "\u00a75.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-001] marking the same multi-box upgrade twice retains two boxes",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/upgrades.test.ts",
       "status": "passed",
       "durationMs": 54.65080499999999
     },
     {
       "id": "SEMANTICS-UPGRADES-002",
-      "name": "§5.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-002] unmarking removes one box instead of the whole upgrade",
+      "name": "\u00a75.1.6 upgrades are marked and unmarked box-wise [SEMANTICS-UPGRADES-002] unmarking removes one box instead of the whole upgrade",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/upgrades.test.ts",
       "status": "passed",
       "durationMs": 25.10447300000004
     },
     {
       "id": "SEMANTICS-XP-TRACKS-001",
-      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-001] attribute level-up clears only that attribute track",
+      "name": "\u00a75.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-001] attribute level-up clears only that attribute track",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
       "status": "passed",
       "durationMs": 49.04299699999996
     },
     {
       "id": "SEMANTICS-XP-TRACKS-002",
-      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-002] taking an ability does not clear playbook XP",
+      "name": "\u00a75.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-002] taking an ability does not clear playbook XP",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
       "status": "passed",
       "durationMs": 14.226016000000016
     },
     {
       "id": "SEMANTICS-XP-TRACKS-003",
-      "name": "§5.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-003] S&V action maxima and healing clock size come from game data",
+      "name": "\u00a75.1.5 attribute and playbook XP are asymmetric tracks [SEMANTICS-XP-TRACKS-003] S&V action maxima and healing clock size come from game data",
       "suite": "/home/x/code/paperclips-in-the-dark/conformance/suites/semantics/xp-tracks.test.ts",
       "status": "passed",
       "durationMs": 6.11958199999998
@@ -926,5 +926,10 @@
     "failed": 0,
     "skipped": 0,
     "todo": 0
+  },
+  "wallClockMinutes": 0,
+  "metricsMethodology": {
+    "method": "documentation/decision-only: no execution time",
+    "source": "Scorecard report: no execution, 0 minutes"
   }
 }

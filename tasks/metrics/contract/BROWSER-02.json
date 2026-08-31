@@ -5,7 +5,7 @@
   "implementationAgent": "wave-8 BROWSER-02 card (per /tmp/w8-browser02-brief.md)",
   "reviewAgent": "orchestrator; browser-suite REQUIRED_IDS enforcement + journey checkpoints",
   "iterationsToGreen": 1,
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "passRateAtFirstDoneClaim": "6/6 journeys PASS, 45/45 route x viewport x theme matrix entries green on first full managed run recorded in the report",
   "passRateAfterReview": "same; re-run as part of wave-8/9 gates",
@@ -28,5 +28,9 @@
     "conformance/suites-browser/",
     "tasks/metrics/contract/BROWSER-01.json"
   ],
-  "notes": "Six exact stateful journeys enforced by REQUIRED_IDS in browser-suite.mjs; per-journey numeric JSON + screenshots land in $TMPDIR/pitd-browser/<runId>/. Known sibling-noise policy: journeys from in-flight sibling cards are reported as theirs, never blocked on."
+  "notes": "Six exact stateful journeys enforced by REQUIRED_IDS in browser-suite.mjs; per-journey numeric JSON + screenshots land in $TMPDIR/pitd-browser/<runId>/. Known sibling-noise policy: journeys from in-flight sibling cards are reported as theirs, never blocked on.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

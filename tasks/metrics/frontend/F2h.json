@@ -22,6 +22,15 @@
     "date": "2026-07-26",
     "fix": "character-detail.ts: StaleRevisionError branch cleared isStressLoading but never called renderDetail() before the async getCharacter refetch, leaving the disabled/loading DOM stuck with no in-flight indicator until the refetch callback resolved. Added the missing renderDetail() call to match every sibling branch.",
     "testGap": "No DOM-level regression test added for the fix or for the recovery UX generally: repo has no jsdom/happy-dom dependency and vitest.config.ts runs environment: \"node\" (no document global); none of F2a-F2g's page components have unit tests either. Pre-existing, repo-wide gap, recorded as a follow-up rather than expanded in this pass.",
-    "verified": ["npm test -- --run: 47/47 green", "npm run build: tsc --noEmit + vite build, green", "no forbidden paths touched"]
+    "verified": [
+      "npm test -- --run: 47/47 green",
+      "npm run build: tsc --noEmit + vite build, green",
+      "no forbidden paths touched"
+    ]
+  },
+  "wallClockMinutes": 12.0,
+  "metricsMethodology": {
+    "method": "elapsedMinutes field",
+    "source": "derived from waveStart/waveEnd timestamps"
   }
 }

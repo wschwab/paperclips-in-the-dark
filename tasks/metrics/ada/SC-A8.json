@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "lifecycle state machine",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " pending/out-of-action/stressClearPending; explicit retire; resolution-only trauma; allow/deny lists; canUndo/historyCount; baseline undo; lifecycle 25/25 green; core monitors proved"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " pending/out-of-action/stressClearPending; explicit retire; resolution-only trauma; allow/deny lists; canUndo/historyCount; baseline undo; lifecycle 25/25 green; core monitors proved",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

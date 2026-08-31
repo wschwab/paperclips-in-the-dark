@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "import/repair transactions",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 36.0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 35m59s; preview/apply for import + repair with tokens/If-Match/confirm; 22/14 in gate set; CANON-IMPORT-003/004/006 LEGACY-007 VERSION-011 REPAIR-ATOMIC-004 green; CANON-IMPORT-005 frozen-case contradiction found"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 35m59s; preview/apply for import + repair with tokens/If-Match/confirm; 22/14 in gate set; CANON-IMPORT-003/004/006 LEGACY-007 VERSION-011 REPAIR-ATOMIC-004 green; CANON-IMPORT-005 frozen-case contradiction found",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "35m59s"
+  }
 }

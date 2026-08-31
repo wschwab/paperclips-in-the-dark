@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "enum needs-input classification (D4), server-side isComplete derivation, suite-drift updates (If-Match/envelope/union shapes), FILL-002 frozen-case amendment (authorized)",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " full unseeded suite 358 passed/56 failed with remaining reds categorized to SC-A6/A7/A8/A9/SC-F4/wave-7"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " full unseeded suite 358 passed/56 failed with remaining reds categorized to SC-A6/A7/A8/A9/SC-F4/wave-7",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

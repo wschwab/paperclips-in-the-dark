@@ -16,5 +16,10 @@
   ],
   "review": "API contract confirmation: stressAdd POSTs {delta} body with If-Match header; OperationResult response decoded for character DTO. StaleRevisionError distinct from ApiError. Character detail page +1 stress button calls stressAdd, re-renders on success, shows stale-revision message on 409.",
   "providerLimit": "none",
-  "notes": "Strict red-green TDD: 4 failing tests for stressAdd before implementation, all passing after. Frontend-only slice; Ada server unchanged. No edits to contract/, conformance/, or blades-in-the-sheets/. Minimal mutation scope: stress.add only, no undo or stale-version recovery."
+  "notes": "Strict red-green TDD: 4 failing tests for stressAdd before implementation, all passing after. Frontend-only slice; Ada server unchanged. No edits to contract/, conformance/, or blades-in-the-sheets/. Minimal mutation scope: stress.add only, no undo or stale-version recovery.",
+  "wallClockMinutes": 5.0,
+  "metricsMethodology": {
+    "method": "elapsedMinutes field",
+    "source": "derived from waveStart/waveEnd timestamps"
+  }
 }

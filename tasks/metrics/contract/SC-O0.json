@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "managed conformance harness",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 22.5,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " single dispatch 22m31s; launcher with build/port/temp-dir/seeding/readiness/exact-PID cleanup/evidence preservation; test:ada forwards selectors after last --; 9 tooling tests; found 4 deterministic drift failures + pre-existing flakiness"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " single dispatch 22m31s; launcher with build/port/temp-dir/seeding/readiness/exact-PID cleanup/evidence preservation; test:ada forwards selectors after last --; 9 tooling tests; found 4 deterministic drift failures + pre-existing flakiness",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "22m31s"
+  }
 }

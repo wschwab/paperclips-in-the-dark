@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "create recovery + labels",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 5.0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 5m; phase-2 retain/link/retry no-duplicate, Unnamed labels; 13 tests green; build green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 5m; phase-2 retain/link/retry no-duplicate, Unnamed labels; 13 tests green; build green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "nquoted: \"5m\""
+  }
 }

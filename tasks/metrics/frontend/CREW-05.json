@@ -3,7 +3,7 @@
   "track": "frontend",
   "implementationAgent": "ox-alpha (omp main session, opencode-go)",
   "reviewAgent": "orchestrator wave review + managed-Chromium journeys; Luna gate per card requirement",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -28,5 +28,9 @@
     "docs/pages/frontend/f2w-cohorts.mdx",
     "agent-docs/test-audit/browser-evidence/reports/w7-crew05-report.md"
   ],
-  "notes": "Cohort conditional fields (gang/expert selects, Custom reveal, out-of-data types) with Add readiness gating; documented on f2w-cohorts.mdx."
+  "notes": "Cohort conditional fields (gang/expert selects, Custom reveal, out-of-data types) with Add readiness gating; documented on f2w-cohorts.mdx.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

@@ -17,5 +17,10 @@
   ],
   "review": "API contract discovery: POST /api/crews has additionalProperties: false, so optional 'name' parameter cannot be sent. Crew creation form simplified to crew-type select only. All tests aligned with API spec. Live acceptance verified end-to-end crew creation flow.",
   "providerLimit": "none",
-  "notes": "Strict red-green TDD: wrote failing tests for getCrewTypeList and createCrew, then implemented to pass. Frontend-only slice; Ada server binary unchanged. No edits to contract/, conformance/, or blades-in-the-sheets/."
+  "notes": "Strict red-green TDD: wrote failing tests for getCrewTypeList and createCrew, then implemented to pass. Frontend-only slice; Ada server binary unchanged. No edits to contract/, conformance/, or blades-in-the-sheets/.",
+  "wallClockMinutes": 25.0,
+  "metricsMethodology": {
+    "method": "elapsedMinutes field",
+    "source": "derived from waveStart/waveEnd timestamps"
+  }
 }

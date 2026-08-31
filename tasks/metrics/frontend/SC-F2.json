@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "import/repair/degraded UI",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 77.0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 77m; import page + normalization-preview + degraded-row repair/delete; 26 focused tests green; build green"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 77m; import page + normalization-preview + degraded-row repair/delete; 26 focused tests green; build green",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "nquoted: \"77m\""
+  }
 }

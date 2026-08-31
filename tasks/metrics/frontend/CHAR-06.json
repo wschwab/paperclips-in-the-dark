@@ -6,8 +6,17 @@
   "date": "2026-08-26",
   "iterationsToGreen": 2,
   "iterationNotes": "semantic default option text ('Severity'); consistent sigma delta labels; XP tracker furniture comparable to Stress; strengthened Stash/Lifestyle hierarchy without writable Lifestyle",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "character-detail + crew-detail tests green; frontend suite 706/706; build clean; browser suite PASS; pending final xhigh Luna gate"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "character-detail + crew-detail tests green; frontend suite 706/706; build clean; browser suite PASS; pending final xhigh Luna gate",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+  }
 }

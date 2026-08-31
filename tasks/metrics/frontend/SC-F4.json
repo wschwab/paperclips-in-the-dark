@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "lifecycle UI",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 77.0,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 77m; pending-trauma prompt, out-of-action, end-score, retire, retired editing, undo/history; new client exports; build green; coordinated with F3"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 77m; pending-trauma prompt, out-of-action, end-score, retire, retired editing, undo/history; new client exports; build green; coordinated with F3",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "nquoted: \"77m\""
+  }
 }

@@ -6,8 +6,17 @@
   "date": "2026-08-14",
   "iterationsToGreen": 1,
   "iterationNotes": "recursive validator + canonicalizer",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 47.5,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": " 47m31s; generated validators wired into every write path; canonicalizer per R0 matrix D1-D10 L1-L8; Validator_Gate for concurrency; CANON-CREATE-001 + ADMIT-MUTATION-012 green; full suite 302 passed/112 failed zero new failures"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": " 47m31s; generated validators wired into every write path; canonicalizer per R0 matrix D1-D10 L1-L8; Validator_Gate for concurrency; CANON-CREATE-001 + ADMIT-MUTATION-012 green; full suite 302 passed/112 failed zero new failures",
+  "metricsMethodology": {
+    "method": "duration text extracted from notes field",
+    "source": "47m31s"
+  }
 }

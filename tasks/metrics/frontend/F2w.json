@@ -6,7 +6,7 @@
   "date": "2026-08-07",
   "iterationsToGreen": 1,
   "iterationNotes": "Single dispatch; report accurate (355 = 340+15 verified).",
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 0,
@@ -14,5 +14,9 @@
     "review": 0,
     "human": 0
   },
-  "notes": "UI follows contract enums (cohortType gang|expert, cohortHarm healthy..dead). Live cohort paths pending A11."
+  "notes": "UI follows contract enums (cohortType gang|expert, cohortHarm healthy..dead). Live cohort paths pending A11.",
+  "metricsMethodology": {
+    "method": "git commit timestamp (single atomic implementation commit)",
+    "source": "2026-08-07 12:21 \u2014 F2w: crew sheet \u2014 Cohorts section"
+  }
 }

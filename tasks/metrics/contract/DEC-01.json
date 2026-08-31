@@ -6,7 +6,7 @@
   "implementationAgent": "wave-5 research card; disposition resolved by human ruling 2026-08-24 (see agent-docs/test-audit/product-decisions.md header + section 7 of each decision file)",
   "reviewAgent": "orchestrator; human ruling is the acceptance authority",
   "iterationsToGreen": 1,
-  "wallClockMinutes": null,
+  "wallClockMinutes": 0,
   "tokens": null,
   "passRateAtFirstDoneClaim": "n/a (decision card)",
   "passRateAfterReview": "n/a (decision card)",
@@ -27,5 +27,9 @@
     "agent-docs/test-audit/product-decisions.md",
     "agent-docs/test-audit/decisions/DEC-01.md"
   ],
-  "notes": "contract-c1-pc-creation.mdx documents the landed change."
+  "notes": "contract-c1-pc-creation.mdx documents the landed change.",
+  "metricsMethodology": {
+    "method": "documentation/decision-only: no execution time",
+    "source": "Decision card: documents landed change, no execution time"
+  }
 }
