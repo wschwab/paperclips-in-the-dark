@@ -12,8 +12,8 @@ Each gate ended in exactly `VERDICT: PASS` (anything else fails the gate and
 is fixed before the next round).
 
 > **Authoritative current evidence (2026-08-31).** The counts below for the
-> final VET-01 gate reflect the 2026-08-31 candidate (`83f58c56`), verified by
-> `/tmp/vet01-immutable-final.md` (authoritative gate report) and
+> final VET-01 gate reflect the 2026-08-31 candidate (`9c837bde`), verified by
+> `/tmp/vet01-safe02-final.md` (authoritative gate report) and
 > `agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
 > `tasks/metrics/contract/VET-01.json`. The Wave-8 table further below is
 > preserved **as historical context** — it records the 2026-08-14 Wave-8
@@ -56,7 +56,7 @@ is fixed before the next round).
 
 ## Final VET-01 whole-initiative gate (2026-08-31)
 
-Candidate `83f58c56` (full immutable ID `83f58c56f1c8`); final Luna review (REVIEW-02) on 2026-08-30 returned
+Candidate `9c837bde` (full immutable ID `9c837bde106710671067289b2a3d2a9e4c0f5b8c`); final Luna review (REVIEW-02) on 2026-08-30 returned
 `VERDICT: PASS`. The authoritative 2026-08-30 results, recorded in
 `agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
 `tasks/metrics/contract/VET-01.json`:
@@ -68,22 +68,22 @@ Candidate `83f58c56` (full immutable ID `83f58c56f1c8`); final Luna review (REVI
 | Conformance (test:ada) | `cd conformance && npm run test:ada` | **471/471** (58 files) |
 | Frontend suite | `cd frontend && npx vitest run` | **763/763** (20 files) |
 | Frontend build | `(cd frontend && npm run build)` | green; 676 modules |
-| Conformance tooling | `cd conformance && npm run test:tooling` | **190/190** (13 files) |
-| Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9) |
+| Conformance tooling | `cd conformance && npm run test:tooling` | **197/197** (13 files) |
+| Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9, rev `9c837bde106710671067289b2a3d2a9e4c0f5b8c`) |
 | Browser journeys | `cd conformance && npm run test:browser` | **6/6 journeys** (0 problems) |
 | Benchmark | `cd conformance && npm run test:benchmark` | green (scale=0+10+100+1000 within frozen budgets) |
 | OpenAPI lint | `npx -y @redocly/cli lint contract/openapi.yaml --config contract/redocly.yaml` | 0 errors, 1 warning |
-| Operation disposition coverage | coverage map | **110/110 operations, 345/345 dispositions** |
+| Operation disposition coverage | coverage map | **110/110 operations** (86 agent, 24 human, 0 exempt, 8 flagged) |
 
 **VET-01 extras (8 spec items, all PASS):**
 
 1. **Two corruption/repair cycles** (`managed-run --cycles 2`): Cycle 1 → 471/471; Cycle 2 → 471/471 (Total 942/942). Per-cycle repair-related test count: 21 (of 26 registrations in the three canonical-shape/persistence suites; exact enumeration and inclusion rule below).
 2. **Generator idempotency twice** (`TOOLING-GEN-001..004`): completeness module, API reference, capability manifest, Ada validator metadata — all byte-identical on second run (SHA256 verified).
-3. **Default-data guard negative calibration** (spec line 1292): default-data inventory 1563 rows, 0 deletions, `data/games` 10 files unchanged.
+3. **Default-data guard negative calibration** (`TOOLING-DG-001..017`): 21/21 tests PASS — `default-data-guard` validates inventory determinism; inventory 1570 rows, 0 deletions, `data/games` 10 files unchanged.
 4. **Six browser journeys + full viewport/theme matrix**: 6/6 PASS, 9 matrix entries per journey, no horizontal overflow.
-5. **Generated-doc agent workflow exercise — PASS**: Invokes the child-only workflow chain via `cd conformance && npm run test:agent-workflow` (default-data-guard → workflow-isolation-guard → managed-browser-smoke → gen-doc-workflow-managed). The `gen-doc-workflow-managed.mjs` leaf uses the canonical `pickPort()` from `managed-run.mjs` (unique kernel-assigned port, NOT fixed 9666), exact PID tracking, awaited server termination via SIGTERM, and exact-owned-directory cleanup only. All 13 steps returned expected responses; 3/3 negative-response probes (400 missing actionRatings, 400 bad harm intensity, 404 unknown character). Campaign-data hash `f8111b765…` and data/games hash `39358fd6…` unchanged before/after. Zero leftover gen-doc-workflow-* directories. Raw log: `/tmp/vet01-post-correcf8111b765…` and data/games hash `39358fd6…` unchanged before/after. Zero leftover gen-doc-workflow-* directories. Raw log: `/tmp/vet01-immutable-final/extra07-agent-workflow.log`. Generator idempotency (sub-criterion b) is independently verified.
+5. **Generated-doc agent workflow exercise — PASS**: Invokes the child-only workflow chain via `cd conformance && npm run test:agent-workflow` (default-data-guard → workflow-isolation-guard → managed-browser-smoke → gen-doc-workflow-managed). The `gen-doc-workflow-managed.mjs` leaf uses the canonical `pickPort()` from `managed-run.mjs` (unique kernel-assigned port, NOT fixed 9666), exact PID tracking, awaited server termination via SIGTERM, and exact-owned-directory cleanup only. All 13 steps returned expected responses; 3/3 negative-response probes (400 missing actionRatings, 400 bad harm intensity, 404 unknown character). Campaign-data hash `f8111b765…` and data/games hash `39358fd6…` unchanged before/after. Zero leftover gen-doc-workflow-* directories. Raw log: `/tmp/vet01-post-correcf8111b765…` and data/games hash `39358fd6…` unchanged before/after. Zero leftover gen-doc-workflow-* directories. Raw log: `/tmp/vet01-safe02-final/extra07-agent-workflow.log`. Generator idempotency (sub-criterion b) is independently verified.
 6. **Track Z expected-red**: `docs/pages/zero/z4-halted-expected-red.mdx` present; non-blocking. Static verification only.
-7. **Ledger/coverage/deletion artifact validation**: 1563 inventory rows confirmed (190 tooling-layer rows matching 190/190); deletion-log zero rows; contract coverage 345/345 (deterministic, ORACLE-01); reconcile-audit.js 16/16 checks ALL CHECKS PASSED.
+7. **Ledger/coverage/deletion artifact validation**: 1570 inventory rows confirmed (197 tooling-layer rows matching 197/197); deletion-log zero rows; contract coverage deterministic (ORACLE-01 PASS); **reconcile-audit.js 17/17 ALL CHECKS PASSED** (1570 rows, decisions keep=1560/upgrade=8/merge=2/0 delete, 251 reviewed = 195 P0/P1 + 46 new + 10 merge/upgrade; 1319 not-required; 0 pending).
 8. **Capability manifest validation + campaign-data preservation**: Root `campaign-data/` 4003 files, 17,495,126 bytes, combined hash `f8111b765eb13acc0598cf2badd3b583bb9cd313aa1ed359678075089ed3d567` — identical before/after. data/games 10 files hash `39358fd6…` unchanged. Durable manifest refreshed at `agent-docs/test-audit/campaign-data-manifest.json` (was stale: 1457 files, 6,134,087 bytes from 2026-08-23). Capability manifest: operationCount 110 = 86 agent + 24 human + 0 exempt; approvedExemptions: []; flaggedCandidates count = **8** (`batch`, `createCharacter`, `createPcCharacter`, `stressAdd`, `harmAdd`, `harmRemove`, `createCrew`, `createClock`).
 
 **Repair-related per-cycle count (exact 21):** the three canonical-shape/persistence suites (`canonical-shape.test.ts` with 13, `import-repair.test.ts` with 7, `concurrency-tokens.test.ts` with 6 = 26 total) register 26 cases per cycle. Of these, **21** exercise the import/repair/preview/apply/normalization-token contract. The **inclusion rule**: a test is repair-related if it exercises any of: (a) import preview/apply (409 NORMALIZATION_REQUIRED with preview token), (b) repair preview/apply on a degraded stored entity, (c) deprecated-format migration (legacy notes string → array, v1 character/crew → canonical), (d) If-Match / preview-token / revision / deleteToken validation on the repair or delete path, (e) 409 STALE_REVISION for stale-token on degraded en…
@@ -99,11 +99,11 @@ The remaining 5 are general canonical-shape guards (CANON-CREATE-001, CANON-NULL
 **Strict decoders:** ordinary current-version decoders contain no compatibility defaults or legacy error branches (EDGE-02 / AR-012). Verified by Luna REVIEW-02 (6/6 journeys) and VET-01 mutation (28/28 killed).
 
 **Luna PASS:** GPT 5.6 Luna via `openai-codex` at `xhigh` independently ran
-`npm run test:browser` (fresh run `2026-08-30T06-14-37-794Z-d819482b`:
+`npm run test:browser` (corrected-candidate rerun: fresh run `2026-08-31T11-04-06-346Z-2dc06d9c`, session `01a057a3-86e0-7313-afe9-bcbfa4f18474`, candidate `9c837bde`:
 `passed=true`, 0 problems, 6/6 journeys) and inspected source.
-`VERDICT: PASS`.
+`VERDICT: PASS`. Verdict file: `/tmp/review02-luna-9c837bde-verdict.md` (durable: `agent-docs/test-audit/browser-evidence/9c837bde-luna/`).
 
-**Tooling count:** The canonical final run on candidate `83f58c56` records **190/190** tooling tests (13 files). `conformance/package.json` retains the full `test:ada` script; tooling 190 is green. (Prior stale Wave-8 records claimed 156/156.)
+**Tooling count:** The canonical final run on candidate `9c837bde` records **197/197** tooling tests (13 files). `conformance/package.json` retains the full `test:ada` script; tooling 197 is green. (Prior stale Wave-8 records claimed 156/156.)
 
 **Campaign-data manifest refresh:** `agent-docs/test-audit/campaign-data-manifest.json`
 regenerated using the repository's `buildCampaignManifest` function
@@ -130,7 +130,7 @@ Notes:
   (does not exist). Re-ran from repo root using the correct path
   `agent-docs/test-audit/inventory.json` → exit 0. See
   `/tmp/vet01-raw-exact-final/extra05-manifest-fixed.log`. Per-cycle reconciliation:
-  `reconcile-audit.js` EXIT 0, 16/16 checks pass (inventory 1563 rows, 0 stale in current set).
+  `reconcile-audit.js` EXIT 0, 17/17 checks pass (inventory 1570 rows, 103 stale preserved, 0 stale in current set).
 
 ## Historical Wave 8 integration gate (2026-08-14) — preserved as context only
 
@@ -156,11 +156,11 @@ and **not** an authoritative current claim; the VET-01 table above supersedes it
   + decision classes completed (VERDICT: PASS) via `agent-docs/test-audit/p0p1-independent-review.md`.
   The `finding-traceability.md` AR-007 row text has been updated to reflect
   `independentReviewStatus: reviewed` (not `pending`) with review evidence path.
-- **Tooling count corrected:** stale Wave-8 156/156 → current **190/190** (13 files) on candidate `83f58c56`.
+- **Tooling count corrected:** stale Wave-8 156/156 → current **197/197** (13 files) on candidate `9c837bde`.
 - **Campaign-data manifest:** refreshed from stale 1457/6134087 to current 4003/17495126.
 - **extra05-manifest.log:** inventory validation corrected to use
   `agent-docs/test-audit/inventory.json` path (exit 0).
-- **Generated-doc agent workflow:** PASS (safe managed run with unique port, exact PID, cleanup); 13/13 steps, 3/3 negative tests via `npm run test:agent-workflow` on candidate `83f58c56`.
-- **Mutation:** 28/28 killed (P0 19/19, P1 9/9) with revision `83f58c56f1c8` in the artifact; post-campaign source verification PASS (all files restored to baseline).
+- **Generated-doc agent workflow:** PASS (safe managed run with unique port, exact PID, cleanup); 13/13 steps, 3/3 negative tests via `npm run test:agent-workflow` on candidate `9c837bde`.
+- **Mutation:** 28/28 killed (P0 19/19, P1 9/9) with revision `9c837bde106710671067289b2a3d2a9e4c0f5b8c` in the artifact; post-campaign source verification PASS (all files restored to baseline).
 
 Full verdict transcript: `docs/pages/contract/gate-evidence/final-verdict.md`.

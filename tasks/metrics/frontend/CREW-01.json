@@ -17,13 +17,13 @@
   "status": "DONE \u2014 Luna/xhigh REVIEW-02 gate PASS (fresh 6/6 green, stash-bound=1, matrix=9, 0 errors); implementation green 759/759; tsc + vite build clean",
   "iterationsToGreen": 1,
   "passRateAtFirstDoneClaim": "RED (1 stash-bound test failing before fix) then GREEN: SC-F3 block 5/5 pass; full frontend suite 759/759; tsc clean; vite build clean",
-  "passRateAfterReview": "PASS \u2014 implementation green (759/759 frontend tests, stash-bound +1); Luna REVIEW-02 independently ran npm run test:browser (fresh run 2026-08-30T06-14-37-794Z-d819482b: passed=true, 0 problems, 6/6 journeys); crew-create-trackers stash-bound-disabled-at-capacity:1, tier-clamp-notice:1, matrix-entries:9; zero console/network errors; journey race resolved by per-click server-authoritative + UI await",
+  "passRateAfterReview": "PASS \u2014 implementation green (759/759 frontend tests, stash-bound +1); Luna REVIEW-02 corrected-candidate rerun independently ran npm run test:browser (fresh run 2026-08-31T11-04-06-346Z-2dc06d9c, session 01a057a3-86e0-7313-afe9-bcbfa4f18474, candidate 9c837bde: passed=true, 0 problems, 6/6 journeys); crew-create-trackers stash-bound-disabled-at-capacity:1, tier-clamp-notice:1, matrix=9; zero console/network errors; journey race resolved by per-click server-authoritative + UI await",
   "defectCatchingLayer": [
     "browser journey caught tracker alignment regressions during LAYOUT-01 verification",
-    "Luna REVIEW-02 gate caught journey-only stash-fill race (tight click loop racing isStashLoading guard); implementation source was correct, journey fix applied; 2 fresh managed-process runs 6/6 green",
-    "Luna REVIEW-02 gate: journey stash-fill race caught and fixed (tight click loop racing isStashLoading guard); implementation source correct; journey fix at crew-create-trackers.journey.mjs:119-171; Luna independently confirmed 6/6 green on fresh run 2026-08-30T06-14-37-794Z-d819482b"
+    "Luna REVIEW-02 gate caught journey-only stash-fill race (tight click loop racing isStashLoading guard); implementation source was correct; journey fix applied at conformance/suites-browser/crew-create-trackers.journey.mjs:119-171; Luna corrected-candidate rerun (session 01a057a3-86e0-7313-afe9-bcbfa4f18474, 9c837bde) independently confirmed 6/6 green on fresh run 2026-08-31T11-04-06-346Z-2dc06d9c"
   ],
   "evidence": [
+    "Luna corrected-candidate rerun: /tmp/pitd-browser/2026-08-31T11-04-06-346Z-2dc06d9c/ (candidate 9c837bde, session 01a057a3-86e0-7313-afe9-bcbfa4f18474: passed=true, 0 problems, 6/6 journeys, stash-bound-disabled-at-capacity:1, matrix=9, zero console/network errors) \u2014 durable copy at agent-docs/test-audit/browser-evidence/9c837bde-luna/",
     "frontend/src/pages/crew-sections/trackers.ts",
     "frontend/src/pages/crew-sections/crew-domain.ts",
     "frontend/src/pages/crew-sections/fund.ts",
@@ -32,8 +32,8 @@
     "agent-docs/test-audit/decisions/DEC-04.md",
     "docs/pages/contract/contract-c4-crew-progression.mdx",
     "agent-docs/test-audit/finding-traceability.md (UX-007 row updated to DONE)",
-    "green: /tmp/pitd-browser/2026-08-30T05-57-51-300Z-c6edcdb4/ + /tmp/pitd-browser/2026-08-30T05-59-37-604Z-9d1caf29/ (6/6 PASS both, stash-bound=1, matrix=9, 0 console/page errors)",
-    "Luna fresh run: /tmp/pitd-browser/2026-08-30T06-14-37-794Z-d819482b/ (passed=true, 0 problems, 6/6 journeys, stash-bound-disabled-at-capacity:1, matrix-entries:9, zero console/network errors)"
+    "green: /tmp/pitd-browser/2026-08-30T05-57-51-300Z-c6edcdb4/ + /tmp/pitd-browser/2026-08-30T05-59-37-604Z-9d1caf29/ (6/6 PASS both, stash-bound=1, matrix=9, 0 console/page errors); historical VET-01 evidence (pre-Luna-rerun)",
+    "Luna corrected-candidate rerun: /tmp/pitd-browser/2026-08-31T11-04-06-346Z-2dc06d9c/ (candidate 9c837bde) (passed=true, 0 problems, 6/6 journeys, stash-bound-disabled-at-capacity:1, matrix-entries:9, zero console/network errors)"
   ],
   "notes": "COMPLETE: shipped = (1) unified Rep/Turf tracker (Rep fills top-left, Turf bottom-right), (2) settings-derived Roman-numeral Tier (formatTier in crew-domain.ts, tierMax from CrewCapabilities), (3) develop flow (crew-detail.ts onDevelop), (4) bounded crew Stash UI against CONTRACT-04 stashCapacity \u2014 the stash +1 bound control is disabled at capacity (P29/FV-029 pattern from renderTracker), matching the stash.add server-side clamp behavior. Loose Crew Coin retained per CONTRACT-04 \u00a74 (display-bounded advisory: coin / stashCapacity shown, coin + stays enabled since the server imposes no coin ceiling). No loose-Coin UI was removed \u2014 the contract still carries the coin field and the human ruling explicitly kept it (display-bounded only). SC-F3 block has 5 tests total (2 pre-existing: rep-full-bound + clamp-notice; 3 new: stash-at-cap-disabled, stash-below-cap-enabled, coin-advisory-enabled).; Luna REVIEW-02 gate independently confirmed via npm run test:browser: fresh run passed=true, 0 problems, 6/6, stash-bound=1, matrix=9, 0 console/page errors, no overflow. Journey race resolved by per-click waitForFunction (server-authoritative + UI). AR-006 now DONE.",
   "metricsMethodology": {
