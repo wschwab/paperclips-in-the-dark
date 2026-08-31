@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
     reporters: ["verbose"],
-    testTimeout: 15_000,
+    testTimeout: 60_000,
+    sequence: { concurrent: false },
+    fileParallelism: false,
   },
 });

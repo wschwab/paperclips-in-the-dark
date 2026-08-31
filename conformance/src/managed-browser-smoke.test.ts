@@ -1,6 +1,8 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { spawn, execFile } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join, resolve, sep } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   buildChildEnv,
@@ -136,4 +138,331 @@ describe("Wave-0 managed browser-smoke launcher", () => {
     expect(new Set(ports).size).toBeGreaterThan(1);
     expect(PORT_RETRY_ATTEMPTS).toBeGreaterThan(0);
   });
+});
+
+// ---------------------------------------------------------------------------
+// SAFE-02 red/green tests: managed-browser-smoke.mjs must clean its exact owned
+// run directory on ALL exit paths — success, child nonzero/failure, startup
+// failure, readiness timeout, SIGINT, and SIGTERM — without broad deletion and
+// without touching unrelated siblings or orphaned server processes.
+//
+// These integration tests spawn the real launcher with a fake --server script
+// (same pattern as managed-run.test.ts). The fake server accepts --port, --data,
+// --static, --games, and --test-hooks, serves /api/health, then exits (crash,
+// hang, or stays) as the test requires.
+// ---------------------------------------------------------------------------
+
+const conformanceDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const browserSmokePath = resolve(conformanceDir, "scripts", "managed-browser-smoke.mjs");
+const managedRoot = defaultPaths().managedRoot;
+
+const execFileAsync = (
+  file: string,
+  args: string[],
+  env?: NodeJS.ProcessEnv,
+  timeoutMs = 120_000,
+): Promise<{ code: number | null; stdout: string; stderr: string }> =>
+  new Promise((resolvePromise) => {
+    execFile(
+      file,
+      args,
+      {
+        cwd: conformanceDir,
+        timeout: timeoutMs,
+        maxBuffer: 32 * 1024 * 1024,
+        env: { ...process.env, ...env },
+      },
+      (error, stdout, stderr) => {
+        const code = error == null ? 0 : typeof error.code === "number" ? error.code : 1;
+        resolvePromise({ code, stdout, stderr });
+      },
+    );
+  });
+
+const execFileInDir = (
+  file: string,
+  args: string[],
+  cwd: string,
+  env?: NodeJS.ProcessEnv,
+  timeoutMs = 30_000,
+): Promise<{ code: number | null; stdout: string; stderr: string }> =>
+  new Promise((resolvePromise) => {
+    execFile(
+      file,
+      args,
+      { cwd, timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024, env: { ...process.env, ...env } },
+      (error, stdout, stderr) => {
+        const code = error == null ? 0 : typeof error.code === "number" ? error.code : 1;
+        resolvePromise({ code, stdout, stderr });
+      },
+    );
+  });
+
+
+const lineValues = (stdout: string, key: string): string[] => {
+  const matches = [...stdout.matchAll(new RegExp(`\\[managed-browser-smoke\\] ${key}=([^\\s]+)`, "g"))];
+  return matches.map((match) => match[1]);
+};
+
+const lineValue = (stdout: string, key: string): string => {
+  const values = lineValues(stdout, key);
+  if (values.length === 0) throw new Error(`missing [managed-browser-smoke] ${key}= in output`);
+  return values[0];
+};
+
+const pidAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const assertNoOrphanServers = async (): Promise<void> => {
+  const result = await execFileInDir("pgrep", ["-f", "pitd-managed"], conformanceDir, undefined, 10_000);
+  expect(result.stdout.trim()).toBe("");
+};
+
+const makeFakeServer = async (root: string, script: string, name: string): Promise<string> => {
+  const path = join(root, name);
+  await writeFile(path, script);
+  await chmod(path, 0o755);
+  return path;
+};
+
+// A fake server that serves /api/health with the correct implementation and
+// dataDir, then stays alive until killed.
+const healthyServerScript = `#!/usr/bin/env node
+import { createServer } from "node:http";
+const port = Number(process.argv[process.argv.indexOf("--port") + 1]);
+const data = process.argv[process.argv.indexOf("--data") + 1];
+const server = createServer((req, res) => {
+  if (req.url === "/api/health") {
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ implementation: "ada", dataDir: data }));
+    return;
+  }
+  res.writeHead(404);
+  res.end();
+});
+server.listen(port, "127.0.0.1");
+`;
+
+// A fake server that crashes immediately (startup failure).
+const crashingServerScript = `#!/usr/bin/env node
+process.stderr.write("raised PROGRAM_ERROR : boom\n");
+process.exit(1);
+`;
+
+// A fake server that starts but never becomes healthy (timeout).
+const hangingServerScript = `#!/usr/bin/env node
+import { createServer } from "node:http";
+const port = Number(process.argv[process.argv.indexOf("--port") + 1]);
+// Listen on the port but never serve /api/health — causes readiness timeout.
+const server = createServer((req, res) => {
+  res.writeHead(503);
+  res.end("not ready");
+});
+server.listen(port, "127.0.0.1");
+// Don't exit; let the launcher timeout and kill us.
+`;
+
+describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
+  // TOOLING-BROWSER-009: success path cleans the exact owned run directory
+  it("[TOOLING-BROWSER-009] success path removes the exact owned run directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-success-"));
+    const fakeServer = await makeFakeServer(root, healthyServerScript, "healthy.mjs");
+    try {
+      const { code, stdout, stderr } = await execFileAsync(
+        "node",
+        [browserSmokePath, "--server", fakeServer, "--", "true"],
+        undefined,
+        30_000,
+      );
+      expect(code).toBe(0);
+      expect(stderr).toContain("evidence removed");
+      const runDir = lineValue(stdout, "runDir");
+      expect(runDir).toContain("pitd-managed");
+      // The exact owned run dir must not exist.
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-010: child nonzero/failure cleans the run directory
+  it("[TOOLING-BROWSER-010] child nonzero/failure removes the exact owned run directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-cmd-fail-"));
+    const fakeServer = await makeFakeServer(root, healthyServerScript, "healthy.mjs");
+    try {
+      // `false` exits 1
+      const { code, stdout, stderr } = await execFileAsync(
+        "node",
+        [browserSmokePath, "--server", fakeServer, "--", "false"],
+        undefined,
+        30_000,
+      );
+      expect(code).toBe(1);
+      const runDir = lineValue(stdout, "runDir");
+      expect(runDir).toContain("pitd-managed");
+      // The exact owned run dir must not exist on ANY path.
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-011: startup failure cleans the run directory
+  it("[TOOLING-BROWSER-011] startup failure removes the exact owned run directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-startup-fail-"));
+    const fakeServer = await makeFakeServer(root, crashingServerScript, "crash.mjs");
+    try {
+      const { code, stdout, stderr } = await execFileAsync(
+        "node",
+        [browserSmokePath, "--server", fakeServer, "--timeout", "5000", "--", "true"],
+        undefined,
+        30_000,
+      );
+      expect(code).toBe(1);
+      expect(stderr).toContain("exited before readiness");
+      const runDir = lineValue(stdout, "runDir");
+      expect(runDir).toContain("pitd-managed");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-012: readiness timeout cleans the run directory
+  it("[TOOLING-BROWSER-012] readiness timeout removes the exact owned run directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-timeout-"));
+    const fakeServer = await makeFakeServer(root, hangingServerScript, "hang.mjs");
+    try {
+      const { code, stdout, stderr } = await execFileAsync(
+        "node",
+        [browserSmokePath, "--server", fakeServer, "--timeout", "500", "--", "true"],
+        undefined,
+        30_000,
+      );
+      expect(code).toBe(1);
+      expect(stderr).toContain("health returned HTTP 503");
+      const runDir = lineValue(stdout, "runDir");
+      expect(runDir).toContain("pitd-managed");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-013: SIGINT during command cleans the run directory
+  it("[TOOLING-BROWSER-013] SIGINT during command removes the exact owned run directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-sigint-"));
+    const fakeServer = await makeFakeServer(root, healthyServerScript, "healthy.mjs");
+    try {
+      // Command that sleeps so we can interrupt it
+      const { code, stdout, stderr } = await new Promise<{ code: number; stdout: string; stderr: string }>(
+        (resolvePromise) => {
+          const child = spawn(
+            "node",
+            [browserSmokePath, "--server", fakeServer, "--", "sleep", "30"],
+            { cwd: conformanceDir, env: { ...process.env } },
+          );
+          let stdoutBuf = "";
+          let stderrBuf = "";
+          child.stdout?.on("data", (d) => (stdoutBuf += d.toString()));
+          child.stderr?.on("data", (d) => (stderrBuf += d.toString()));
+          // Wait for readiness announcement, then signal
+          const readyTimer = setTimeout(() => {
+            child.kill("SIGINT");
+          }, 5000);
+          child.on("exit", (exitCode) => {
+            clearTimeout(readyTimer);
+            resolvePromise({ code: exitCode ?? 1, stdout: stdoutBuf, stderr: stderrBuf });
+          });
+        },
+      );
+      // SIGINT should result in 128+2 = 130 (SIGINT signal number)
+      expect(code).toBe(130);
+      const runDir = lineValue(stdout, "runDir");
+      expect(runDir).toContain("pitd-managed");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-014: SIGTERM during command cleans the run directory
+  it("[TOOLING-BROWSER-014] SIGTERM during command removes the exact owned run directory", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-sigterm-"));
+    const fakeServer = await makeFakeServer(root, healthyServerScript, "healthy.mjs");
+    try {
+      const { code, stdout, stderr } = await new Promise<{ code: number; stdout: string; stderr: string }>(
+        (resolvePromise) => {
+          const child = spawn(
+            "node",
+            [browserSmokePath, "--server", fakeServer, "--", "sleep", "30"],
+            { cwd: conformanceDir, env: { ...process.env } },
+          );
+          let stdoutBuf = "";
+          let stderrBuf = "";
+          child.stdout?.on("data", (d) => (stdoutBuf += d.toString()));
+          child.stderr?.on("data", (d) => (stderrBuf += d.toString()));
+          const readyTimer = setTimeout(() => {
+            child.kill("SIGTERM");
+          }, 5000);
+          child.on("exit", (exitCode) => {
+            clearTimeout(readyTimer);
+            resolvePromise({ code: exitCode ?? 1, stdout: stdoutBuf, stderr: stderrBuf });
+          });
+        },
+      );
+      // SIGTERM should result in 128+15 = 143
+      expect(code).toBe(143);
+      const runDir = lineValue(stdout, "runDir");
+      expect(runDir).toContain("pitd-managed");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-015: --keep preserves the run dir on success but siblings are untouched
+  it("[TOOLING-BROWSER-015] --keep preserves the run dir on success while siblings remain untouched", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-keep-"));
+    const fakeServer = await makeFakeServer(root, healthyServerScript, "healthy.mjs");
+    try {
+      // Create an unrelated sibling dir in pitd-managed
+      const sibling = join(managedRoot, "sbt-sibling-marker");
+      await mkdir(sibling, { recursive: true });
+      await writeFile(join(sibling, "marker.txt"), "do not delete");
+      try {
+        const { code, stdout, stderr } = await execFileAsync(
+          "node",
+          [browserSmokePath, "--server", fakeServer, "--keep", "--", "true"],
+          undefined,
+          30_000,
+        );
+        expect(code).toBe(0);
+        expect(stderr).toContain("run dir kept");
+        const runDir = lineValue(stdout, "runDir");
+        expect(runDir).toContain("pitd-managed");
+        // Run dir survives with --keep.
+        expect((await stat(runDir)).isDirectory()).toBe(true);
+        // Unrelated sibling must still exist.
+        const siblingStat = await stat(sibling);
+        expect(siblingStat.isDirectory()).toBe(true);
+      } finally {
+        await rm(sibling, { recursive: true, force: true });
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
 });

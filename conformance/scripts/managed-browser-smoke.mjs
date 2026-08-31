@@ -10,7 +10,8 @@
 // killed by its exact PID, while the build child and the command run detached in
 // their own process groups and are signalled with the negative PID (so a signal
 // reaches their whole tree). Evidence (run manifest, server log, data dir) is
-// removed on success unless --keep, and preserved on failure.
+// removed on ALL exit paths — success, child nonzero/failure, startup failure,
+// readiness timeout, SIGINT, and SIGTERM — unless --keep on success.
 //
 // Sibling of conformance/scripts/managed-run.mjs (the vitest harness): the
 // server lifecycle (build/port/seed/static/games/timeout/health/cleanup) is
@@ -538,6 +539,7 @@ export async function main(argv = process.argv.slice(2)) {
   const runDir = join(defaults.managedRoot, runId);
   const logFile = join(runDir, "server.log");
   const dataDir = join(runDir, "data");
+  activeRunDirRef.current = runDir;
 
   let lastPort = null;
   let failure = null;
@@ -612,12 +614,25 @@ export async function main(argv = process.argv.slice(2)) {
     if (failure !== null) {
       console.error(`[managed-browser-smoke] FAILED: ${failure.reason}`);
       console.error(
-        `[managed-browser-smoke] evidence preserved: runDir=${runDir} dataDir=${dataDir} log=${logFile} port=${lastPort ?? "none"}`,
+        `[managed-browser-smoke] failure evidence removed: runDir=${runDir} dataDir=${dataDir} log=${logFile} port=${lastPort ?? "none"}`,
       );
       process.exitCode = failure.exitCode;
     }
+    // Always clean the exact owned run dir on success or failure, unless --keep
+    // was requested and the run succeeded (matching managed-run.mjs and the
+    // SAFE-02 contract: no survivor run dirs on any path).
+    const shouldRemove = failure !== null || !opts.keep;
+    if (shouldRemove) {
+      await rm(runDir, { recursive: true, force: true });
+    }
+    if (activeRunDirRef.current === runDir) activeRunDirRef.current = null;
+    if (failure === null && !opts.keep) {
+      console.error(`[managed-browser-smoke] evidence removed (${runDir})`);
+    }
   }
 }
+
+const activeRunDirRef = { current: null };
 
 const isMain =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
@@ -632,13 +647,18 @@ if (isMain) {
       stopBuild(activeBuildRef.current),
     ])
       .catch(() => {})
+      .then(async () => {
+        if (typeof activeRunDirRef.current === "string") {
+          await rm(activeRunDirRef.current, { recursive: true, force: true }).catch(() => {});
+        }
+      })
       .finally(() => process.exit(1));
   };
   process.on("uncaughtException", fatal);
   process.on("unhandledRejection", fatal);
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => {
-      console.error(`[managed-browser-smoke] received ${signal}; stopping command, server, and build child and preserving evidence`);
+      console.error(`[managed-browser-smoke] received ${signal}; stopping command, server, and build child and removing owned evidence`);
       void mainCleanupAndExit(signal);
     });
   }
@@ -652,6 +672,9 @@ async function mainCleanupAndExit(signal) {
   await stopCommand(activeCommandRef.current);
   await stopServer(activeServerRef.current);
   await stopBuild(activeBuildRef.current);
+  if (typeof activeRunDirRef.current === "string") {
+    await rm(activeRunDirRef.current, { recursive: true, force: true }).catch(() => {});
+  }
   process.exit(signalExitCode(signal));
 }
 
