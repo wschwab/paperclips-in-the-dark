@@ -7,8 +7,37 @@
   "iterationNotes": "1: redocly recommended-ruleset errors (security/summary rules, disabled with rationale); 2: license/localhost warnings; 3: ajv strict date-time format needed ajv-formats; 4: UUID regex variant group {4}->{3} caught by fixture validation.",
   "wallClockMinutes": 35,
   "tokens": null,
-  "defectsCaughtBy": { "linter": 1, "schemaValidation": 1, "human": 0 },
-  "loc": { "openapi": 1460, "schemas": 620, "fixtures": 210, "auditDoc": 120 },
+  "defectsCaughtBy": {
+    "linter": 1,
+    "schemaValidation": 1,
+    "human": 0,
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0
+  },
+  "loc": {
+    "openapi": 1460,
+    "schemas": 620,
+    "fixtures": 210,
+    "auditDoc": 120
+  },
   "conformancePassRate": null,
-  "notes": "Conformance N/A: C0 produces the contract the suite is built from."
+  "notes": "Conformance N/A: C0 produces the contract the suite is built from.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Conformance N/A: C0 produces the contract the suite is built from.",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for C0; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for C0; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)",
+  "implementationAgent": "unknown (see notes)",
+  "reviewAgent": "orchestrator (see notes for review evidence)"
 }

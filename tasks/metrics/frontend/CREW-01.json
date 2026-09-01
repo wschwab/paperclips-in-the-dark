@@ -11,8 +11,8 @@
     "review": 0,
     "human": 0
   },
-  "implementationLoc": 0,
-  "scaffoldingLoc": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
   "date": "2026-08-28",
   "status": "DONE \u2014 Luna/xhigh REVIEW-02 gate PASS (fresh 6/6 green, stash-bound=1, matrix=9, 0 errors); implementation green 759/759; tsc + vite build clean",
   "iterationsToGreen": 1,
@@ -38,6 +38,9 @@
   "notes": "COMPLETE: shipped = (1) unified Rep/Turf tracker (Rep fills top-left, Turf bottom-right), (2) settings-derived Roman-numeral Tier (formatTier in crew-domain.ts, tierMax from CrewCapabilities), (3) develop flow (crew-detail.ts onDevelop), (4) bounded crew Stash UI against CONTRACT-04 stashCapacity \u2014 the stash +1 bound control is disabled at capacity (P29/FV-029 pattern from renderTracker), matching the stash.add server-side clamp behavior. Loose Crew Coin retained per CONTRACT-04 \u00a74 (display-bounded advisory: coin / stashCapacity shown, coin + stays enabled since the server imposes no coin ceiling). No loose-Coin UI was removed \u2014 the contract still carries the coin field and the human ruling explicitly kept it (display-bounded only). SC-F3 block has 5 tests total (2 pre-existing: rep-full-bound + clamp-notice; 3 new: stash-at-cap-disabled, stash-below-cap-enabled, coin-advisory-enabled).; Luna REVIEW-02 gate independently confirmed via npm run test:browser: fresh run passed=true, 0 problems, 6/6, stash-bound=1, matrix=9, 0 console/page errors, no overflow. Journey race resolved by per-click waitForFunction (server-authoritative + UI). AR-006 now DONE.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: card shipped nonzero frontend code (see notes) but exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
   }
 }

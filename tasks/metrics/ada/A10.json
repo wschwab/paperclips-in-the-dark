@@ -17,6 +17,18 @@
   "notes": "6th shape-vs-semantics gap closed (A4/A5/A7/A8/A9/A10). fund.liquidate + spend stash-liquidation at 2:1 now live.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 A10: ada fund.liquidate + fund.spend stash-liquidation (conf"
-  }
+    "source": "2026-08-07 12:21 \u2014 A10: ada fund.liquidate + fund.spend stash-liquidation (conf",
+    "locNote": "implementationLoc: unknown \u2014 no LOC figure in existing notes/evidence for A10; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc: unknown \u2014 no scaffolding LOC figure in existing notes/evidence for A10; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red: 1 compiler failures caught before green",
+  "passRateAfterReview": "6th shape-vs-semantics gap closed (A4/A5/A7/A8/A9/A10). fund.liquidate + spend stash-liquidation at 2:1 now live.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "compiler caught 1 defect(s)",
+    "independent review caught 1 defect(s)"
+  ],
+  "status": "blocked \u2014 see notes (defect/rejection documented)"
 }

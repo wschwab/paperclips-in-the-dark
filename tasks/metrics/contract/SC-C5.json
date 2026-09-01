@@ -17,6 +17,17 @@
   "notes": " single dispatch 21m43s; 4 generators + regenerated artifacts; 110 operationIds (99 was stale) all dispositioned 0 exempt; tooling 6/6 incl. idempotency; Ada validator package compiles standalone",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "21m43s"
-  }
+    "source": "21m43s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-C5; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-C5; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": " single dispatch 21m43s; 4 generators + regenerated artifacts; 110 operationIds (99 was stale) all dispositioned 0 exempt; tooling 6/6 incl. idempotency; Ada validator package compiles standalone",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

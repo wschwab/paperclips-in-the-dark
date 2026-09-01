@@ -13,7 +13,9 @@
     "compiler": 2,
     "focusedTests": 5,
     "independentReview": 6,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "TypeScript transform/typecheck",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 136,
   "scaffoldingLoc": 0,
-  "notes": "Read-only manifest/guard over user-owned campaign-data; exact create/modify/delete/rename/type/root-existence detection; artifact records 1457 files without changing campaign bytes. Token total includes probe, implementation, review, corrective, and failed/refused Luna calls with reported usage."
+  "notes": "Read-only manifest/guard over user-owned campaign-data; exact create/modify/delete/rename/type/root-existence detection; artifact records 1457 files without changing campaign bytes. Token total includes probe, implementation, review, corrective, and failed/refused Luna calls with reported usage.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

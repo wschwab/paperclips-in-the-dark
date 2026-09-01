@@ -16,6 +16,24 @@ DATA_DIR="$TMP_ROOT/data"
 LOG_FILE="$TMP_ROOT/server.log"
 mkdir -p "$DATA_DIR"
 
+SERVER_PID=""
+cleanup () {
+   if [ -n "${SERVER_PID:-}" ]; then
+      kill "${SERVER_PID}" 2>/dev/null || true
+      wait "${SERVER_PID}" 2>/dev/null || true
+   fi
+   if [ -n "${TMP_ROOT:-}" ]; then
+      rm -rf "${TMP_ROOT}"
+   fi
+}
+
+# Install cleanup trap IMMEDIATELY after TMP_ROOT creation, before any fallible
+# command (port probe, executable check, server launch). This prevents leak on
+# port-allocation failure, missing executable, or bind error.
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
+
 # Pick an unused port via the kernel.
 PORT=$(
   python3 -c '
@@ -26,20 +44,6 @@ print(s.getsockname()[1])
 s.close()
 '
 )
-
-SERVER_PID=""
-cleanup () {
-   if [ -n "$SERVER_PID" ]; then
-      kill "$SERVER_PID" 2>/dev/null || true
-      wait "$SERVER_PID" 2>/dev/null || true
-   fi
-   rm -rf "$TMP_ROOT"
-}
-
-# On INT/TERM, clean up then exit with conventional signal code (128 + signum).
-trap cleanup EXIT
-trap 'cleanup; exit 130' INT
-trap 'cleanup; exit 143' TERM
 
 SERVER_BIN="${PITD_SERVER_BIN:-$SCRIPT_DIR/server/bin/pitd}"
 test -x "$SERVER_BIN" || { echo "server executable not found: $SERVER_BIN" >&2; exit 1; }

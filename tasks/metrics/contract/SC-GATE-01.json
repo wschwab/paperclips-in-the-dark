@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 3,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "seeded gate cases",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 65,
   "scaffoldingLoc": 0,
-  "notes": "Defects were bad seeded-case calibration, a phase-classification bug, and unknown revision handling. Green used fresh owned temporary data, two standard seeds, and verified cleanup removed the run. The exact canonical conformance package is consumed by CI/mutation. Counts and token total are approximate where noted."
+  "notes": "Defects were bad seeded-case calibration, a phase-classification bug, and unknown revision handling. Green used fresh owned temporary data, two standard seeds, and verified cleanup removed the run. The exact canonical conformance package is consumed by CI/mutation. Counts and token total are approximate where noted.",
+  "status": "complete \u2014 Green",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

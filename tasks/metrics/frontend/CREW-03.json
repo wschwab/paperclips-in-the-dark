@@ -11,8 +11,8 @@
     "review": 0,
     "human": 1
   },
-  "implementationLoc": 0,
-  "scaffoldingLoc": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
   "date": "2026-08-24",
   "status": "CLOSED VIA DEC-05 (decision-only; no implementation owed)",
   "iterationsToGreen": 0,
@@ -30,6 +30,9 @@
   "notes": "DEC-05 approved Option A: crew contacts keep the C3 v1 DTO {name, profession} with settings-derived descriptions; factions stay free-form with settings-clamped numeric status; no hardcoded faction catalog. Existing crew-detail.ts rendering already complies, so the card closes with zero frontend changes. The human addendum (character-level contacts) landed as the C5 character-contacts contract change.",
   "metricsMethodology": {
     "method": "documentation/decision-only: no execution time",
-    "source": "Decision card (DEC-05 approved): documentation-only, no execution time"
+    "source": "Decision card (DEC-05 approved): documentation-only, no execution time",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: card shipped nonzero frontend code (see notes) but exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
   }
 }

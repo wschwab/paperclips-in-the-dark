@@ -17,6 +17,17 @@
   "notes": "Final F2 wave slice. Criteria text from crew game data, never hardcoded. Live xp paths pending A11.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2x: crew sheet \u2014 Crew XP section"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2x: crew sheet \u2014 Crew XP section",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2x; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2x; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Final F2 wave slice. Criteria text from crew game data, never hardcoded. Live xp paths pending A11.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

@@ -17,6 +17,17 @@
   "notes": "Found by the human in live play (8th shape-vs-semantics gap: conformance schemas.ts used Schema.String for commitment). Now the schema is enum-tight. campaign-data migrated locally.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 A12: ada gear commitment uses contract enum 'none' (was '') "
-  }
+    "source": "2026-08-07 12:21 \u2014 A12: ada gear commitment uses contract enum 'none' (was '') ",
+    "locNote": "implementationLoc: unknown \u2014 no LOC figure in existing notes/evidence for A12; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc: unknown \u2014 no scaffolding LOC figure in existing notes/evidence for A12; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Found by the human in live play (8th shape-vs-semantics gap: conformance schemas.ts used Schema.String for commitment). Now the schema is enum-tight. campaign-data migrated locally.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "human caught 1 defect(s)"
+  ],
+  "status": "blocked \u2014 see notes (defect/rejection documented)"
 }

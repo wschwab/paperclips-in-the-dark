@@ -17,6 +17,17 @@
   "notes": "Live Ada probe (port 9671, orchestrator): harm.add spillover ladder w/ landedIntensity, harm.remove, ARMOR_NOT_AVAILABLE all correct with revision advance. Probe found TWO ADA SERVER BUGS: harm.heal + harm.healing-clock unimplemented (VALIDATION unknown operation), and a Revision_Gate leak \u2014 any failed op with If-Match permanently wedges the entity (string check wants rev N, gate wants N+1). Filed tasks/A5-ada-harm-heal-revision-gate.md. Heal-path live acceptance deferred to A5.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-07-29 20:19 \u2014 F2n: character sheet \u2014 health section"
-  }
+    "source": "2026-07-29 20:19 \u2014 F2n: character sheet \u2014 health section",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2n; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2n; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 1, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "Live Ada probe (port 9671, orchestrator): harm.add spillover ladder w/ landedIntensity, harm.remove, ARMOR_NOT_AVAILABLE all correct with revision advance. Probe found TWO ADA SERVER BUGS: harm.heal +",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "compiler caught 1 defect(s)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

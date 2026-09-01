@@ -8,6 +8,26 @@
   "iterationNotes": "Single dispatch, first pass accepted. Claimed 6 undoCharacter tests verified exact by grep; full suite 53/53 + build green on orchestrator rerun. No command-constraint violations observed in report or diff (no VCS, no kills, no deletions, no servers started).",
   "wallClockMinutes": 10,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "First slice under the DeepSeek-primary/Luna-escalation roster. NO_HISTORY handling depends on client-side 'code: message' formatting of ok:false 200 responses; verified correct against live Ada (NO_HISTORY arrives as HTTP 200 ok:false). Live probe: stress 0->2 (rev2), undo restores 0 (rev3), second undo NO_HISTORY. Orchestrator probe initially used wrong body field (amount vs delta) — probe error, not implementation defect."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "First slice under the DeepSeek-primary/Luna-escalation roster. NO_HISTORY handling depends on client-side 'code: message' formatting of ok:false 200 responses; verified correct against live Ada (NO_HISTORY arrives as HTTP 200 ok:false). Live probe: stress 0->2 (rev2), undo restores 0 (rev3), second undo NO_HISTORY. Orchestrator probe initially used wrong body field (amount vs delta) \u2014 probe error, not implementation defect.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "First slice under the DeepSeek-primary/Luna-escalation roster. NO_HISTORY handling depends on client-side 'code: message' formatting of ok:false 200 responses; verified correct against live Ada (NO_HI",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2i; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2i; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

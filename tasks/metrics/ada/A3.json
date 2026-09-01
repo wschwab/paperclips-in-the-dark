@@ -57,6 +57,28 @@
   "wallClockMinutes": 9.9,
   "metricsMethodology": {
     "method": "startedAt/acceptedAt timestamps",
-    "source": "2026-07-22T10:03:52+03:00 \u2192 2026-07-22T10:13:47+03:00"
+    "source": "2026-07-22T10:03:52+03:00 \u2192 2026-07-22T10:13:47+03:00",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for A3; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for A3; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "no after-review evidence recorded",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (gnatprove verified per notes)",
+  "implementationAgent": "unknown (see notes)",
+  "reviewAgent": "orchestrator (see notes for review evidence)",
+  "iterationsToGreen": "see notes (iteration count not explicitly recorded)",
+  "tokens": null,
+  "notes": "A3 metric card; see evidence links for details",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
   }
 }

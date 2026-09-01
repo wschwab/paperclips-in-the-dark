@@ -31,6 +31,7 @@
   "notes": "Six exact stateful journeys enforced by REQUIRED_IDS in browser-suite.mjs; per-journey numeric JSON + screenshots land in $TMPDIR/pitd-browser/<runId>/. Known sibling-noise policy: journeys from in-flight sibling cards are reported as theirs, never blocked on.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
   }
 }

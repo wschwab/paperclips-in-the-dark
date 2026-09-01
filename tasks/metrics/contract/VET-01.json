@@ -57,5 +57,9 @@
     "docs/pages/zero/z4-halted-expected-red.mdx (Track Z report, 4603 bytes)"
   ],
   "notes": "VET-01 (whole-initiative release gate per spec \u00a717.3) \u2014 canonical final run on candidate 9c837bde1067 (short: 9c837bde; working copy @ 798ef3de empty, parent 9c837bde). All 11 canonical VET-01 commands PASS serially from fresh processes in /tmp/vet01-safe02-final/. Commands 01 and 02 run with literal spec strings from repo root (backend-ada/ci.sh with RUN_CONFORMANCE=0 and RUN_CONFORMANCE=1 respectively); both exit 0. 8 VET extras PASS. No PITD_REVISION env var set \u2014 sourceRevision() auto-derives @- when @ is empty and clean. Mutation: 28/28 killed (P0 19/19, P1 9/9). Post-campaign source verification PASS (all files restored to baseline). Mutation and performance artifacts both record revision 9c837bde106710671067289b2a3d2a9e4c0f5b8c. Browser evidence preserved at /tmp/pitd-browser/2026-08-30T21-05-21-492Z-0f534079/ (77 screenshots + journey-results.json). Tool counts: 197 tooling (was 190 in prior candidate), 471 conformance, 763 frontend. Inventory regenerated: 1570 rows (was 1563 in prior candidate). reconcile-audit.js final run: EXIT 0, 17/17 ALL CHECKS PASSED (reconcile-audit-summary.json allPassed: true; 1570 rows, 103 stale, decisions keep=1560/upgrade=8/merge=2/0 delete, 251 reviewed = 195 P0/P1 + 46 new new + 10 merge/upgrade (disjoint); 1319 not-required; 0 pending). p0p1-independent-review.md EXISTS with VERDICT: PASS. p0p1-sampling-manifest.json reviewStatus: reviewed.",
-  "inventoryAuditStatus": "PASS \u2014 final reconcile-audit.js run: 17/17 ALL CHECKS PASSED"
+  "inventoryAuditStatus": "PASS \u2014 final reconcile-audit.js run: 17/17 ALL CHECKS PASSED",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

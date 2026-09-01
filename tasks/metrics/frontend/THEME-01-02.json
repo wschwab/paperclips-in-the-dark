@@ -59,6 +59,17 @@
   "testDescription": "20 unit tests in roster.test.ts: character roster span meets WCAG AA (>=4.5:1) in all 4 theme states (4 tests); span resolves through --band-text-muted not --text-muted in all 4 theme states (4 tests); strong meets WCAG AA in all 4 states (4 tests); li meets WCAG AA in all 4 states (4 tests); secondary span differs from primary strong (hierarchy) in all 4 states (4 tests)",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "iteration notes, test output, browser journey results, computed contrast ratios from getComputedStyle"
-  }
+    "source": "iteration notes, test output, browser journey results, computed contrast ratios from getComputedStyle",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for THEME-01-02; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for THEME-01-02; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 1, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "Residual of THEME-01 (UX-015): the original fix added --band-text-muted and covered character/crew HEADER identity lines (kicker, alias, crew-type) inside torn-foot plates, but the torn-foot selector ",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "conformance caught 1 defect(s)"
+  ],
+  "status": "complete (see notes)"
 }

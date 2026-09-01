@@ -17,6 +17,17 @@
   "notes": " single dispatch 15m7s; 12 new settings fields all 4 games; crew-settings-schema + S&V crew file from official Evil Hat sheets; 3 capability endpoints; fixed 2 pre-existing settings-schema defects + fr JSON comment; ajv green",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "15m7s"
-  }
+    "source": "15m7s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-C3; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-C3; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

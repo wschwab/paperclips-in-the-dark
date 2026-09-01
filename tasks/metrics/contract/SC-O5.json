@@ -17,6 +17,17 @@
   "notes": " single dispatch 22m6s; 15 CLOCK cases 14 red/1 green; Progress/Reset Post stated in paperclips_core-clocks.ads; expected proof failure recorded (accumulation vs old body); Reset Post proved; core tests + server build green",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "22m6s"
-  }
+    "source": "22m6s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-O5; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-O5; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

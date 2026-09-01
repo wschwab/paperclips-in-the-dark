@@ -11,12 +11,25 @@
   "defectsCaughtBy": {
     "compiler": 1,
     "conformance": 0,
-    "review": "PASS (gpt-5.6-luna, openai-codex, xhigh \u2014 /tmp/char05-luna-review.log); no contract FAIL findings; one P2 follow-up: .trauma-remove-btn hit target below 24x24 (pre-existing F-05/F-19 ghost styling shared with .harm-remove-btn, outside card edit surface)",
+    "review": 0,
     "human": 0
   },
   "notes": "DEC-03 ruling: high-impact zone for Retire/Delete with consequence copy + kept confirm guards; End score visually ordinary; trauma removal gated behind CONTRACT-03 corrections edit mode; manual trauma add untouched (resolution-only). 706/706 frontend tests green; npm run build clean; real-Chromium numeric evidence light/dark/high-contrast + 390px containment; screenshots attached to Luna review.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: 4 failing tests (zone absent, no danger class, remove controls ungated, grid placement); build caught lost non-null assertion",
+  "passRateAfterReview": "135 page tests pass; 706/706 frontend tests; npm run build clean; real-Chromium numeric evidence light/dark/high-contrast + 390px containment; screenshots attached to Luna review",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "character-detail tests (706/706)",
+    "Luna/xhigh browser review (char05)",
+    "compiler caught TS18047 lost assertion"
+  ],
+  "status": "DONE \u2014 706/706 frontend tests, 706/706 character-detail, build clean, browser suite PASS with Luna review"
 }

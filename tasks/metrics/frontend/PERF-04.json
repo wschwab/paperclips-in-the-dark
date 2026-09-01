@@ -11,8 +11,8 @@
     "review": 0,
     "human": 0
   },
-  "implementationLoc": 0,
-  "scaffoldingLoc": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
   "date": "2026-08-27",
   "status": "DONE (no optimization owed)",
   "iterationsToGreen": 1,
@@ -30,6 +30,9 @@
   "notes": "Card contract: optimize ONLY measured over-budget metrics. None were over budget, so zero production revisions; budget file untouched. M18 killed via extended action-dots CSS-contract test during the campaign.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: PERF-04 involved nonzero harness+fixture edits (2 mutation harness bugs fixed by the card itself); exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
   }
 }

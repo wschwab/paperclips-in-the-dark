@@ -17,6 +17,17 @@
   "notes": "Human playtest report drove this (flush-left pages + vertical trackers). CSS-only fix: themed container + responsive card grid + flex-wrap trackers.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2z: layout \u2014 themed page container + responsive card grid +"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2z: layout \u2014 themed page container + responsive card grid +",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2z; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2z; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Human playtest report drove this (flush-left pages + vertical trackers). CSS-only fix: themed container + responsive card grid + flex-wrap trackers.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "human caught 1 defect(s)"
+  ],
+  "status": "complete (see notes)"
 }

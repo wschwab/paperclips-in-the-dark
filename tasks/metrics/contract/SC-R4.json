@@ -8,6 +8,26 @@
   "iterationNotes": "Single dispatch, 8m54s. 56 classification rows (29 game-domain, 9 derived, 6 request, 4 service, 8 internal) with file:line citations; 16-row settings migration plan covering all 4 games; gaps found: upgrade.mark ignores TotalBoxes (pitd_callback.adb:1850 vs openapi.yaml:1398), per-commitment load unenforced, Idempotency-Key 128 unenforced, import bypasses settings maxima, missing scum-and-villainy-crews.json, levelup/set-rating cap mismatch, session 3-vs-2, armor has* persisted.",
   "wallClockMinutes": 9,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "Open questions resolved by orchestrator at gate: session max = 2 (C# authoritative, W7); armor has* stay persisted write-derived (W8); idempotency LRU internal (W9); AllowedClockSizes rejected (W10); DevelopCoinCostMultiplier adopted (W11); S&V defaults = current shipped behavior (W12)."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Open questions resolved by orchestrator at gate: session max = 2 (C# authoritative, W7); armor has* stay persisted write-derived (W8); idempotency LRU internal (W9); AllowedClockSizes rejected (W10); DevelopCoinCostMultiplier adopted (W11); S&V defaults = current shipped behavior (W12).",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Open questions resolved by orchestrator at gate: session max = 2 (C# authoritative, W7); armor has* stay persisted write-derived (W8); idempotency LRU internal (W9); AllowedClockSizes rejected (W10); ",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-R4; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-R4; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

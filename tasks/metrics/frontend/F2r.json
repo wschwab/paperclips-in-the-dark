@@ -17,6 +17,17 @@
   "notes": "5th shape-vs-semantics conformance blind spot (A9 filed): gear.add/remove/commit/uncommit/clear-commitments unimplemented server-side; suite green anyway. Frontend accepted; live paths deferred.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2r: character sheet \u2014 Gear / loadout section"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2r: character sheet \u2014 Gear / loadout section",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2r; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2r; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

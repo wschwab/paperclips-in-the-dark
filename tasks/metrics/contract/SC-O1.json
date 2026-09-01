@@ -17,6 +17,17 @@
   "notes": " 1 dispatch + O8 additions; canonical-shape 13 + import-repair 4 + FV-MIGRATE-CHAR/CREW + FV-NOTES-STRING; 18 red/2 green; decode-free raw assertions",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-O1; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-O1; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

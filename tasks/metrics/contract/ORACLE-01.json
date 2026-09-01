@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 1,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "fail-closed oracle calibrations",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 586,
   "scaffoldingLoc": 0,
-  "notes": "The committed generated artifact has 331 exact operation/status rows. Luna quota exhaustion prevented the requested independent implementation/review dispatch; no review result is claimed. Token accounting was unavailable, so tokens is recorded as 0 rather than estimated."
+  "notes": "The committed generated artifact has 331 exact operation/status rows. Luna quota exhaustion prevented the requested independent implementation/review dispatch; no review result is claimed. Token accounting was unavailable, so tokens is recorded as 0 rather than estimated.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

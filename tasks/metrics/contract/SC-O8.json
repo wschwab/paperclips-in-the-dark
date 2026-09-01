@@ -17,6 +17,17 @@
   "notes": " single dispatch 48m46s; 32-FV mapping table recorded in traceability ledger; added FV-MIGRATE-CHAR/CREW + FV-NOTES-STRING (O1) + ERR-FV004-001 red + ERR-FV026-001 guard (O7)",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "48m46s"
-  }
+    "source": "48m46s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-O8; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-O8; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": " single dispatch 48m46s; 32-FV mapping table recorded in traceability ledger; added FV-MIGRATE-CHAR/CREW + FV-NOTES-STRING (O1) + ERR-FV004-001 red + ERR-FV026-001 guard (O7)",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

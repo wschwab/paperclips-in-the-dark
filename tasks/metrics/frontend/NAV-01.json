@@ -11,8 +11,8 @@
     "review": 0,
     "human": 1
   },
-  "implementationLoc": 0,
-  "scaffoldingLoc": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
   "date": "2026-08-24",
   "status": "CLOSED AS DOCS/REGRESSION-ONLY (no source change owed)",
   "iterationsToGreen": 0,
@@ -30,6 +30,9 @@
   "notes": "DEC-06 approved keeping Style Guide nav prominence, Auto theme default, all modes, and the direct Hi-C button. NAV-01 therefore applies a documentation-only outcome; no navigation or theme source changed.",
   "metricsMethodology": {
     "method": "documentation/decision-only: no execution time",
-    "source": "Decision card (DEC-06 approved): documentation-only, no execution time"
+    "source": "Decision card (DEC-06 approved): documentation-only, no execution time",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
   }
 }

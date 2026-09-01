@@ -57,5 +57,31 @@
     "Native Zero HTTP response storage cannot carry larger accumulated rosters; use the spec 10.3 neutral shim.",
     "Absolute PITD_DATA paths report in health but entity creation fails; relative custom paths work.",
     "Concurrent allocation still relies on the backend's single-process serialization assumptions and lacks an explicit global allocator mutex."
-  ]
+  ],
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "no after-review evidence recorded",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for Z2; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for Z2; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "expected-red \u2014 Track Z non-blocking per work-spec \u00a72.27",
+  "implementationAgent": "unknown (see notes)",
+  "reviewAgent": "orchestrator (see notes for review evidence)",
+  "iterationsToGreen": "see notes (iteration count not explicitly recorded)",
+  "tokens": null,
+  "notes": "Z2 metric card; see evidence links for details",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  }
 }

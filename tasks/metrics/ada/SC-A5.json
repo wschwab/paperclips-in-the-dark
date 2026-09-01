@@ -17,6 +17,17 @@
   "notes": " 36m57s; settings load/validate loudly; service/character/crew capability endpoints; LIMIT-CAP/CHAR/CREW green; byte identity maintained",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "36m57s"
-  }
+    "source": "36m57s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-A5; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-A5; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

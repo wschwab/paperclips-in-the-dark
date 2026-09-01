@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 3,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "request-schema 400 rejection",
@@ -25,5 +27,10 @@
   ],
   "implementationLoc": 190,
   "scaffoldingLoc": 0,
-  "notes": "Mutants were applied by hand to pitd_callback.adb and restored via jj restore after each kill; the binary was rebuilt between mutant runs. Coverage-map counts updated from 105/108 to 108/108. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Mutants were applied by hand to pitd_callback.adb and restored via jj restore after each kill; the binary was rebuilt between mutant runs. Coverage-map counts updated from 105/108 to 108/108. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

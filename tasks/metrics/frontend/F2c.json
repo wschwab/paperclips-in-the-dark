@@ -21,6 +21,24 @@
   "wallClockMinutes": 4.0,
   "metricsMethodology": {
     "method": "elapsedMinutes field",
-    "source": "derived from waveStart/waveEnd timestamps"
+    "source": "derived from waveStart/waveEnd timestamps",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2c; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2c; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green",
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
   }
 }

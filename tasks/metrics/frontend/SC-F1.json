@@ -17,6 +17,17 @@
   "notes": " 68m; strict recursive decoders (onExcessProperty error); generated-completeness module used; decoders.test.ts 21->35 tests green; build green",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "nquoted: \"68m\""
-  }
+    "source": "nquoted: \"68m\"",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-F1; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-F1; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

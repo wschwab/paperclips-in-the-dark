@@ -19,8 +19,8 @@
     "frontend suite flagged corrupted character-detail.ts mid-card (out-of-order scripted rewrite); restored from HEAD snapshot",
     "conformance parity scanner (PARITY-HUMAN-003) caught false 'no reachable control' findings after page-group decomposition; scanner amended to scan page import groups"
   ],
-  "implementationLoc": 0,
-  "scaffoldingLoc": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
   "status": "DONE",
   "evidence": [
     "agent-docs/test-audit/browser-evidence/reports/w9-arch02-report.md",
@@ -30,6 +30,9 @@
   "notes": "Structural-only card: character-detail.ts 4483->2039 lines, crew-detail.ts 2955->1116 lines; extracted shared mutation transport, character domains, crew domains, and 14+ page section controllers. No behavior/response/error change: suite, mutants, and proofs identical. Mid-card character page corruption recovered via git show HEAD replay (read-only recovery only, no VCS mutation). implementationLoc recorded as 0 because LOC is moved, not added.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: structural refactoring involved nonzero source edits (see notes); exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links, git commit history",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
   }
 }

@@ -26,6 +26,19 @@
   "notes": "The CharCapabilities contract misreading was a Wave 6 SC-F3 regression class bug; crew-detail already received the full catalog shape from the server, so only the character page needed the join fix. expectedConsoleNoise declared for the injected 500's Chromium resource-error noise.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: char02 journey failed \u2014 take-ability select never enabled (contract misreading of availableAbilityTakes)",
+  "passRateAfterReview": "PASS \u2014 9 checkpoints in char02-option-editors (6 happy-path + editor-accessible-state + editor-survives-rerender + game-data-fetch-degrades); all other journeys green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "char02-option-editors journey (9 checkpoints)",
+    "contract source review",
+    "Luna/xhigh browser review"
+  ],
+  "status": "DONE \u2014 9 checkpoints char02-option-editors PASS; contract misreading fixed; all journeys green"
 }

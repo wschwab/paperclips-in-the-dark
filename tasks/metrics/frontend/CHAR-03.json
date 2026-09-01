@@ -26,6 +26,19 @@
   "notes": "Companion CHAR-02/PERF-03 metrics carry shared context. The journey drives everything through real UI controls (+ stress button, gear-add details menu) at scrolled positions.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: no char03-continuity journey existed; mutation continuity at scrolled positions untested",
+  "passRateAfterReview": "PASS \u2014 char03-continuity records both checkpoints (stress-continuity-record, gear-failure-alert-routed); all journeys green; alert-routing mutant killed by new journey",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "char03-continuity journey (2 checkpoints)",
+    "alert-routing mutant calibration",
+    "orchestrator browser probe"
+  ],
+  "status": "DONE \u2014 char03-continuity 2 checkpoints PASS, alert-routing mutant killed, all journeys green"
 }

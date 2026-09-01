@@ -17,6 +17,19 @@
   "notes": "1000-row real-Chromium DOM nodes 5188 -> 1190 (committed budget 2000, pinned); degraded rows visible under nonmatching query 0/100 -> 100/100; 16/16 roster tests, 697/697 frontend suite; shared npm build gate blocked by sibling agent's in-flight action-dots.test.ts (unrelated files), tsc clean outside it",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: 16/16 roster tests, but DOM 5188 nodes exceeded committed budget 2000; degraded rows 0/100 reachable",
+  "passRateAfterReview": "16/16 roster tests, 697/697 frontend suite, 1000-row DOM 1190 nodes (budget 2000), degraded rows 100/100 reachable",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend unit suite (16/16 roster tests)",
+    "real-Chromium DOM measurement (5188 -> 1190 nodes)",
+    "orchestrator browser probe"
+  ],
+  "status": "DONE \u2014 16/16 roster tests, 697/697 frontend suite, DOM 5188->1190 nodes (budget 2000), degraded rows 0/100->100/100 reachable"
 }

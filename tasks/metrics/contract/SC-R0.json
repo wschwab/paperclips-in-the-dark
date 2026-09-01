@@ -8,6 +8,26 @@
   "iterationNotes": "Single dispatch, 10m3s. Independent orchestrator walker re-ran coverage: 265/265 normalized property paths (5 schemas, top-level + $defs + nested + array items) present in the matrix; subagent's own script reported 228/228 (subset methodology). No corrections needed.",
   "wallClockMinutes": 10,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "10 defect classes x 6 columns, 8 legacy conversion rules (L1-L8), 4 normalizer outcomes, per-class fixture sketches F1-F10. Total summary fields and clock ownership fields correctly marked as SC-C1 additions."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "10 defect classes x 6 columns, 8 legacy conversion rules (L1-L8), 4 normalizer outcomes, per-class fixture sketches F1-F10. Total summary fields and clock ownership fields correctly marked as SC-C1 additions.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "10 defect classes x 6 columns, 8 legacy conversion rules (L1-L8), 4 normalizer outcomes, per-class fixture sketches F1-F10. Total summary fields and clock ownership fields correctly marked as SC-C1 ad",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-R0; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-R0; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

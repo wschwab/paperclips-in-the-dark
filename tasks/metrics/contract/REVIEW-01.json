@@ -1,12 +1,13 @@
 {
   "task": "REVIEW-01",
   "track": "contract",
-  "date": "2026-08-30",
+  "date": "2026-09-01",
   "implementationAgent": "nous/poolside/laguna-s-2.1:free:high",
-  "reviewAgent": "nous/poolside/laguna-s-2.1:free:high (independent fresh session)",
-  "iterationsToGreen": 1,
-  "wallClockMinutes": 0,
-  "tokens": null,
+  "reviewAgent": "gpt-5.6-sol via openai-codex (session 01a05c63)",
+  "reviewerRoute": "gpt-5.6-sol",
+  "modelReasoningEffort": "xhigh",
+  "sandbox": "workspace-write",
+  "approvalPolicy": "never",
   "passRateAtFirstDoneClaim": "471/471",
   "passRateAfterReview": "471/471",
   "defectsCaughtBy": {
@@ -16,20 +17,67 @@
     "human": 0
   },
   "defectCatchingLayer": [
-    "independent-review (planted M10 from mutation-catalog.json; reviewer identified mechanism + outcome + failing test delta against green baseline)"
+    "independent-review (25d3082d calibration: planted SAFE-02 health-identity regression in conformance/scripts/managed-browser-smoke.mjs:waitForHealth lines 297-300; reviewer reproduced via HTTP stub returning 200 + implementation:'evil' + wrong dataDir, identified exact mechanism and divergence from managed-run.mjs reference)"
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "DONE \u2014 calibrated independent review PASS; clean candidate 471/471",
+  "status": "INPROGRESS \u2014 25d3082d calibration PASS but clean candidate FAIL; calibrated reviewer correctly withheld acceptance pending corrective cards",
   "evidence": [
-    "agent-docs/review01-calibrated-review.md",
-    "conformance/suites/semantics/bounded-integer.test.ts (planted-failing test now green on clean candidate)",
-    "agent-docs/test-audit/mutation-catalog.json (M10 catalog entry; restoration hash matches clean-candidate file hash)",
-    "agent-docs/test-audit/mutation-results.json (catalog P0/P1 killed baseline)"
+    "agent-docs/review01-calibrated-review.md (2026-09-01 25d3082d cycle section)",
+    "conformance/scripts/managed-browser-smoke.mjs (clean identity check present at line 297: health?.implementation === 'ada' && dataDir === expectedDataDir)",
+    "agent-docs/test-audit/mutation-catalog.json (M18 stale \u2014 expects components.css a0ba0f, current db11a7)",
+    "agent-docs/test-audit/mutation-results.json (stale \u2014 records revision 9c837bde1067 not 25d3082d)",
+    "/tmp/review01-25d-calibration-verdict.md (CALIBRATION: PASS)",
+    "/tmp/review01-25d-clean-verdict.md (CLEAN-CANDIDATE: FAIL)"
   ],
-  "notes": "REVIEW-01 calibration executed per AUDIT-0 \u00a717: (1) one realistic unlabeled P0 defect from the existing mutant catalog was planted in an isolated disposable jj workspace rooted on candidate 0fa9d070be204ff84c28d948536ddca86376fd89; (2) the reviewer was given only governing spec + source + canonical commands + numeric browser evidence + screenshots, with no mutant ID/file/symbol/line/test-ID/candidate-revision/exact hashes; (3) the reviewer independently reproduced and identified the defect with mechanism and outcome and named the failing test that flips red by delta; (4) the planted workspace was discarded (jj workspace forget + rm) and clean candidate hashes verified; (5) a second clean isolated workspace was built and the canonical gate re-run. Planted run: 8 failures / 471 (npm run test:ada). Clean run: 471/471. Clean candidate file hash for the affected Ada module = 932e914e83242681633ae716ac127d2acc427ee76c523531723104d3605f8b7f, matching the catalog restoration hash. CALIBRATION VERDICT: PASS; CLEAN CANDIDATE VERDICT: PASS. Full proof in agent-docs/review01-calibrated-review.md. No commit/push.",
+  "calibratedReview01Cycles": [
+    {
+      "cycle": "2026-08-30 @ 0fa9d070",
+      "verdict": "PASS (calibration PASS; clean candidate PASS \u2014 471/471 green)",
+      "preservedAs": "original JSON fields above",
+      "historicalNote": "prior cycle; clean-candidate verdict now superseded by 25d3082d FAIL"
+    },
+    {
+      "cycle": "2026-09-01 @ 25d3082d",
+      "calibrationVerdict": "PASS",
+      "verdictFile": "/tmp/review01-25d-calibration-verdict.md",
+      "plantedDefect": "SAFE-02 health-identity regression in conformance/scripts/managed-browser-smoke.mjs:waitForHealth (lines 297-300): regressed identity check to bare return; after HTTP 200 + JSON parse, returns unconditionally without checking implementation === 'ada' or resolving dataDir against expectedDataDir",
+      "reproduction": "HTTP stub returning 200 with implementation: 'evil' and unrelated dataDir; managed-browser-smoke accepted it; managed-run rejected it",
+      "plantedFileHash": "015ca96595419d7fe4115741037da2a63303421d41354b86fe74fff03775030a",
+      "cleanFileHash": "2a16e3895bf4b23de56ec80ffd80a97c29b9f7129543c80b6cc604f7a634ed0c",
+      "disposableWorkspace": "/tmp/review01-25d-work (destroyed; parent 25d3082d untouched)",
+      "cleanVerdict": "FAIL",
+      "cleanVerdictFile": "/tmp/review01-25d-clean-verdict.md",
+      "cleanFindings": [
+        {
+          "priority": "P0",
+          "finding": "candidate identity/evidence mismatch: clean prompt named f37d6a00 (status-only waitForHealth, fixed ports 19657/19659, --band-text Hi-C black-on-black); 25d3082d fixes these (1088 changed lines) but durable browser/Luna evidence still identifies pre-fix candidate 9c837bde1067"
+        },
+        {
+          "priority": "P1",
+          "finding": "port-probe failure leaks owned temp dirs: test-launch-paths.sh:16 and test-spa-routes.sh:14 create TMP_ROOT before PORT allocation but install EXIT trap only after (line 48/40); EPERM on binding exits with trap unset -> 13 leaked empty dirs reproduced"
+        },
+        {
+          "priority": "P1",
+          "finding": "stale mutation gate: mutation-catalog.json M18 expects components.css a0ba0f but current is db11a7; mutation-results.json records revision 9c837bde1067 not 25d3082d"
+        },
+        {
+          "priority": "P2",
+          "finding": "incomplete metric schemas: PERF-02, PERF-03, CHAR-01..06, RECOVERY-01, LAYOUT-01, THEME-01 omit passRateAtFirstDoneClaim/passRateAfterReview/implementationLoc/scaffoldingLoc"
+        }
+      ],
+      "positiveChecks": "roster 43/43; readiness identity + dynamic ports present; contract coverage 110 ops / 345 dispositions; 4003 campaign files / 17495126 bytes match manifest; performance budgets green",
+      "status": "FAIL \u2014 clean candidate not accepted; calibrated reviewer correctly withheld acceptance"
+    }
+  ],
+  "notes": "25d3082d REVIEW-01 calibration per AUDIT-0 spec \u00a717.2: (1) ONE realistic P0 defect planted in an isolated disposable jj workspace at /tmp/review01-25d-work, parent commit 25d3082d untouched, working commit ff0b0bcb; (2) reviewer given governing spec + source + numeric browser evidence + screenshots, with NO defect location; (3) reviewer reproduced/independently identified the planted SAFE-02 health-identity regression at managed-browser-smoke.mjs:297-300 with mechanism + outcome + divergence from managed-run.mjs reference; (4) disposable workspace destroyed, clean candidate hash verified (2a16e389... = 25d3082d, defect confined to working copy only); (5) clean-candidate review then run in primary repo. Calibration PASS; clean candidate FAIL (P0 identity/evidence mismatch + P1 trap-ordering leak + P1 stale mutation artifacts + P2 incomplete metrics). Per \u00a717.2 'If either FAIL: report exact findings, do not mark done.' Per \u00a717.2 step 6 'Only after both PASS: update tracked REVIEW-01 metric + review01-calibrated-review.md with facts.' Both PASS was NOT achieved, so REVIEW-01 remains IN PROGRESS; the FAIL findings must spawn corrective cards and a fresh Luna/PASS on a single valid candidate identity.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "raw codex logs, git/jj history, repo file inspection",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "wallClockMinutesNote": "wallClockMinutes=0: audit/calibration card, no execution duration (see metricsMethodology)"
+  },
+  "iterationsToGreen": "see notes (iteration count not explicitly recorded)",
+  "tokens": null,
+  "wallClockMinutes": 0
 }

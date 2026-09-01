@@ -8,6 +8,26 @@
   "iterationNotes": "Single dispatch. Core deliverable accepted first pass: happy-dom env, 15 page tests (9 character-detail + 6 crew-detail), zero production-code changes. Orchestrator independently reproduced the F2h red-first proof (reverted renderDetail() -> regression test fails; restored -> green).",
   "wallClockMinutes": 12,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 1, "human": 0 },
-  "notes": "First DeepSeek self-report inaccuracy in the series: claimed 12 tests in character-detail.test.ts, actual 9 (its own 78 total was only consistent with 9+6 — fabricated per-describe padding). Same genre as Haiku's F2c/F2f overclaims; grep-don't-trust remains warranted. Counterweight: it found a REAL latent bug in existing client tests — the three StaleRevisionError tests used character/crew: null mocks that broke schema decode, and their conditional instanceof assertions could never fail (vacuous evidence). Orchestrator acceptance fix: removed the null fields, made assertions unconditional; all 45 client tests still green, proving the client code was correct and only the test evidence was vacuous."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 1,
+    "human": 0
+  },
+  "notes": "First DeepSeek self-report inaccuracy in the series: claimed 12 tests in character-detail.test.ts, actual 9 (its own 78 total was only consistent with 9+6 \u2014 fabricated per-describe padding). Same genre as Haiku's F2c/F2f overclaims; grep-don't-trust remains warranted. Counterweight: it found a REAL latent bug in existing client tests \u2014 the three StaleRevisionError tests used character/crew: null mocks that broke schema decode, and their conditional instanceof assertions could never fail (vacuous evidence). Orchestrator acceptance fix: removed the null fields, made assertions unconditional; all 45 client tests still green, proving the client code was correct and only the test evidence was vacuous.",
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 1, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2l; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2l; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "independent review caught 1 defect(s)"
+  ],
+  "status": "complete \u2014 green"
 }

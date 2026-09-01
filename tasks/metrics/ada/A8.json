@@ -17,6 +17,17 @@
   "notes": "Fourth shape-vs-semantics conformance blind spot closed (A4/A5/A7/A8). ability.remove now works for characters+crews; TimesTakeable enforced from game data.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 A8: ada ability.remove + TimesTakeable ABILITY_MAXED enforce"
-  }
+    "source": "2026-08-07 12:21 \u2014 A8: ada ability.remove + TimesTakeable ABILITY_MAXED enforce",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for A8; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for A8; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Fourth shape-vs-semantics conformance blind spot closed (A4/A5/A7/A8). ability.remove now works for characters+crews; TimesTakeable enforced from game data.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (gnatprove verified per notes)"
 }

@@ -17,6 +17,17 @@
   "notes": "7th shape-vs-semantics gap (A11 filed): crew tier.add/coin.add/stash.add unimplemented (also cohorts + crew XP + rolodex.remove). Frontend accepted; live paths deferred.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2u: crew sheet \u2014 Profile + trackers (rep/heat/wanted/hold/t"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2u: crew sheet \u2014 Profile + trackers (rep/heat/wanted/hold/t",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2u; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2u; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "7th shape-vs-semantics gap (A11 filed): crew tier.add/coin.add/stash.add unimplemented (also cohorts + crew XP + rolodex.remove). Frontend accepted; live paths deferred.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete"
 }

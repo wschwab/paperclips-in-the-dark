@@ -13,7 +13,9 @@
     "compiler": 1,
     "focusedTests": 6,
     "independentReview": 1,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "focused tooling behavior",
@@ -29,5 +31,10 @@
     "conformance/scripts/managed-run.mjs",
     "conformance/scripts/managed-browser-smoke.mjs",
     "conformance/src/managed-browser-smoke.test.ts"
-  ]
+  ],
+  "notes": "SAFE-02 metric card; see evidence links for details",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

@@ -13,7 +13,9 @@
     "compiler": 1,
     "focusedTests": 2,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "import-side-effect calibration",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 290,
   "scaffoldingLoc": 0,
-  "notes": "The interrupted red import altered only pitd_callback.adb; it was immediately restored from the parent revision and jj status confirmed no residual source change. All catalog-anchor probes operate on temp copies. Token accounting was unavailable, so tokens is 0 rather than estimated."
+  "notes": "The interrupted red import altered only pitd_callback.adb; it was immediately restored from the parent revision and jj status confirmed no residual source change. All catalog-anchor probes operate on temp copies. Token accounting was unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

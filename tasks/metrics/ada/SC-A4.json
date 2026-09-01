@@ -17,6 +17,17 @@
   "notes": " 13m51s; route-derived degraded rows with sha256 deleteToken; stale-token 409; unreadable crew deletion unlinks readable members; 35/35 gate set green",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "13m51s"
-  }
+    "source": "13m51s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-A4; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-A4; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 35/35",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

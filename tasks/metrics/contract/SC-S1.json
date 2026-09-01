@@ -5,9 +5,28 @@
   "reviewAgent": "orchestrator (omp, deepseek-v4-flash-0731)",
   "date": "2026-08-14",
   "iterationsToGreen": 1,
-  "iterationNotes": "Single normative-editor dispatch, 6m1s. PAPERCLIPS.md amended: +77/-13 lines across §4 (canonical shape rule 6, If-Match MUST), §5.1.3/9, new §5.3 lifecycle state machine, §5.4 clocks, §5.5 limits/capabilities, §6 (key presence, claimOverrides exception, completeness, normalizer outcomes), §7.1 (errors union, import/repair, total collections, recursive admission), §7.2 (end-score, retire), §8 (conformance categories, Track Z), §9 (generated validators), §10 (Track Z halted), §12 (client obligations). Gate greps: all key terms present exactly-once normatively, zero superseded-draft refs, zero invalidated claims.",
+  "iterationNotes": "Single normative-editor dispatch, 6m1s. PAPERCLIPS.md amended: +77/-13 lines across \u00a74 (canonical shape rule 6, If-Match MUST), \u00a75.1.3/9, new \u00a75.3 lifecycle state machine, \u00a75.4 clocks, \u00a75.5 limits/capabilities, \u00a76 (key presence, claimOverrides exception, completeness, normalizer outcomes), \u00a77.1 (errors union, import/repair, total collections, recursive admission), \u00a77.2 (end-score, retire), \u00a78 (conformance categories, Track Z), \u00a79 (generated validators), \u00a710 (Track Z halted), \u00a712 (client obligations). Gate greps: all key terms present exactly-once normatively, zero superseded-draft refs, zero invalidated claims.",
   "wallClockMinutes": 6,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "Statement->section checklist returned and reviewed; 'requested/effective' terminology corrected from the old 'requested/applied' in §5.1.1 example."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Statement->section checklist returned and reviewed; 'requested/effective' terminology corrected from the old 'requested/applied' in \u00a75.1.1 example.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Statement->section checklist returned and reviewed; 'requested/effective' terminology corrected from the old 'requested/applied' in \u00a75.1.1 example.",
+  "implementationLoc": 13,
+  "scaffoldingLoc": "unknown",
+  "metricsMethodology": {
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-S1; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

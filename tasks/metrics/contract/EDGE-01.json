@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 1,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "exact pointer multiset equality",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 155,
   "scaffoldingLoc": 0,
-  "notes": "No backend defect was exposed, so backend code remained unchanged. The M04 run was restored and rebuilt before clean acceptance. Token accounting was unavailable, so tokens is 0 rather than estimated."
+  "notes": "No backend defect was exposed, so backend code remained unchanged. The M04 run was restored and rebuilt before clean acceptance. Token accounting was unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

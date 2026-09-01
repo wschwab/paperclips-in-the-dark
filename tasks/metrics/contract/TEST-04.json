@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 1,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "red-green order (matrix green before deletion)",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 420,
   "scaffoldingLoc": 0,
-  "notes": "Net suite delta +1 test (431 to 432): deleted 27 ledger-approved rows, added the generated matrix plus two M01 carry-over cases. conformance-classification.json is stale relative to the Wave-3 decisions and should be regenerated or retired in DOC-01. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Net suite delta +1 test (431 to 432): deleted 27 ledger-approved rows, added the generated matrix plus two M01 carry-over cases. conformance-classification.json is stale relative to the Wave-3 decisions and should be regenerated or retired in DOC-01. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "blocked \u2014 see notes (rejection/missing documented)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

@@ -9,25 +9,38 @@
     "glm": 1,
     "luna": 1
   },
-  "tokens": {
-    "luna_final_session": 1768308,
-    "glm": null,
-    "grok": null
-  },
+  "tokens": null,
   "iterationsToGreen": {
     "luna_semantics_trajectory": "11 failing files -> 4 -> 23/23"
   },
   "defectsCaughtBy": {
     "zeroImportStderr": "multiple (PAR100 class)",
     "zeroRuntime": "BLD004 mutref.Vec",
-    "conformance": "trajectory above",
-    "orchestrator": 1
+    "conformance": 0,
+    "orchestrator": 1,
+    "compiler": 0,
+    "review": 0,
+    "human": 0
   },
   "zeroDiagnosticsVerdict": "fix --plan --json useful for precise BLD004 diagnosis but needed human-grade review; check --json masks parse errors pre-import (footgun, in AGENTS.md)",
   "notes": "EXPERIMENT CAVEAT: iteration counts contaminated by provider outage (5 timeouts), quota 429, credits 402, one orchestrator friendly-fire kill, and a codex stdin stall. NOT a clean single-model signal. Luna final session alone burned 1.77M tokens. Cold-start acceptance verified by orchestrator: health ok, 23/23 semantics, runtime pure zero-run (dev-only _*.py source-fix scripts left in server/, flagged for Z2 cleanup). game-settings still partly from hand-transcribed game_data.0 \u2014 Z2 must load data/games/*.json at startup.",
   "wallClockMinutes": 0,
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-07-19 16:17 \u2014 Z1: Zero domain core (relay: Grok->GLM->Luna) \u2014 23/23 semant"
-  }
+    "source": "2026-07-19 16:17 \u2014 Z1: Zero domain core (relay: Grok->GLM->Luna) \u2014 23/23 semant",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for Z1; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for Z1; git diff not run per no-source-edit constraint"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 23/23",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "orchestrator caught 1 defect(s)",
+    "zeroImportStderr: multiple (PAR100 class)",
+    "zeroRuntime: BLD004 mutref.Vec"
+  ],
+  "status": "expected-red \u2014 Track Z non-blocking per work-spec \u00a72.27",
+  "implementationAgent": "orchestrator (see notes)",
+  "reviewAgent": "orchestrator (see notes for review evidence)"
 }

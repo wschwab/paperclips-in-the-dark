@@ -17,6 +17,17 @@
   "notes": " 38m20s; centralized Classify_Stored; full 26-branch union via new pitd_error package; If-Match on undo/delete; 48/51 in gate set; legacy Error_Result reimplemented as typed dispatcher",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "38m20s"
-  }
+    "source": "38m20s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-A3; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-A3; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": " 38m20s; centralized Classify_Stored; full 26-branch union via new pitd_error package; If-Match on undo/delete; 48/51 in gate set; legacy Error_Result reimplemented as typed dispatcher",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

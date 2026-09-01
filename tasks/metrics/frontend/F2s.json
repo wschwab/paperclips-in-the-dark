@@ -17,6 +17,17 @@
   "notes": "6th shape-vs-semantics gap (A10): fund.liquidate + spend stash-liquidation unimplemented. Coin+Projects UI accepted; live fund paths defer to A10. Lifestyle = stash\u00f710 display-only; clocks verified live (create/progress/reset/delete incl. clock revision If-Match).",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2s: character sheet \u2014 Coin + Projects (clocks) sections"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2s: character sheet \u2014 Coin + Projects (clocks) sections",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2s; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2s; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "6th shape-vs-semantics gap (A10): fund.liquidate + spend stash-liquidation unimplemented. Coin+Projects UI accepted; live fund paths defer to A10. Lifestyle = stash\u00f710 display-only; clocks verified li",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete"
 }

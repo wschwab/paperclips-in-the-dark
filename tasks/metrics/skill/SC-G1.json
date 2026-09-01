@@ -8,6 +8,26 @@
   "iterationNotes": "Agent skill workflows + regenerated api-reference; byte-identical second run proven; tooling green",
   "wallClockMinutes": 5,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "Capability manifest 108 ops (85 agent/23 human/0 exempt); SKILL.md workflows for preview/apply, degraded recovery, lifecycle attention, capabilities, numeric families, idempotency best-effort"
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Capability manifest 108 ops (85 agent/23 human/0 exempt); SKILL.md workflows for preview/apply, degraded recovery, lifecycle attention, capabilities, numeric families, idempotency best-effort",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Capability manifest 108 ops (85 agent/23 human/0 exempt); SKILL.md workflows for preview/apply, degraded recovery, lifecycle attention, capabilities, numeric families, idempotency best-effort",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-G1; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-G1; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (orchestrator acceptance per notes)"
 }

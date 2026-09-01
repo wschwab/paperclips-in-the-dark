@@ -17,6 +17,17 @@
   "notes": " single dispatch 22m31s; launcher with build/port/temp-dir/seeding/readiness/exact-PID cleanup/evidence preservation; test:ada forwards selectors after last --; 9 tooling tests; found 4 deterministic drift failures + pre-existing flakiness",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "22m31s"
-  }
+    "source": "22m31s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-O0; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-O0; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": " single dispatch 22m31s; launcher with build/port/temp-dir/seeding/readiness/exact-PID cleanup/evidence preservation; test:ada forwards selectors after last --; 9 tooling tests; found 4 deterministic ",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 tests green per notes"
 }

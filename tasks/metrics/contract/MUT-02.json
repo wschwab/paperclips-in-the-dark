@@ -35,6 +35,7 @@
   "notes": "Evidence-only card: catalog + campaign artifacts, no product LOC. Harness retarget and stale-bin/pitd rebuild trap documented in w9-arch01-report.md. Post-campaign bin/pitd is the last mutant's build; rebuilt via alr.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
   }
 }

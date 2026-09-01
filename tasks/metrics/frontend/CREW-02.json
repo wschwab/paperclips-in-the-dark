@@ -11,8 +11,8 @@
     "review": 0,
     "human": 0
   },
-  "implementationLoc": 0,
-  "scaffoldingLoc": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
   "date": "2026-08-27",
   "status": "DONE",
   "iterationsToGreen": 2,
@@ -32,6 +32,9 @@
   "notes": "Claims edit mode (session-local toggle), confirm-to-acquire pathing, intentional edit-mode removal, disconnected-claim warning. Backend claim.set fix is the only non-frontend LOC in the card.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: card shipped nonzero frontend code (see notes) but exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
   }
 }

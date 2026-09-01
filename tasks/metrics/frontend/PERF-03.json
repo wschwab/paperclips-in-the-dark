@@ -38,6 +38,19 @@
   "notes": "Continuity records come from window.__paperclipsContinuity installed by character-detail mount; the forced 422 is injected by route interception on /ops/gear.add so real UI handlers exercise the failure path.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: char03-continuity journey not yet added; no browser coverage for mutation continuity at scrolled positions",
+  "passRateAfterReview": "PASS \u2014 all 5 browser journeys green (char02-option-editors, char03-continuity, character-contacts, pc-chargen, roster-smoke); renderToStableMs 80.4, scrollDriftPx 0",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "real-Chromium journey (char03-continuity)",
+    "alert-routing mutant calibration (gear->personal)",
+    "orchestrator browser probe"
+  ],
+  "status": "DONE \u2014 char03-continuity journey 9 checkpoints, alert-routing mutant killed, renderToStableMs 80.4, scrollDriftPx 0"
 }

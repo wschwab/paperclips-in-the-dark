@@ -1,7 +1,7 @@
 {
   "task": "CONTRACT-03",
   "track": "contract",
-  "implementationAgent": "opencode-go/ox-alpha-free (full-card brief, strict order: spec page → OpenAPI → red tests → Ada → frontend → gates)",
+  "implementationAgent": "opencode-go/ox-alpha-free (full-card brief, strict order: spec page \u2192 OpenAPI \u2192 red tests \u2192 Ada \u2192 frontend \u2192 gates)",
   "reviewAgent": "orchestrator independent gate re-runs (typecheck, focused 7/7, full test:ada 57/457, tooling 11/151, frontend 19/664, build); parity oracle PARITY-HUMAN-003 independently re-verified the reachable human control",
   "date": "2026-08-25",
   "iterationsToGreen": 2,
@@ -13,14 +13,21 @@
     "compiler": 0,
     "focusedTests": 1,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "CORRECTIONS-FIX-001..007 (absolute-setter clamp without lifecycle side effects, VALIDATION shapes, stress.fix history label, undo restores pre-fix state)",
     "PARITY-HUMAN-003 required-human-set pin (manifest classification must match the frozen work-spec set)",
-    "ENDPOINT-MAP-001 route-count pin (106 → 107)"
+    "ENDPOINT-MAP-001 route-count pin (106 \u2192 107)"
   ],
   "implementationLoc": 430,
   "scaffoldingLoc": 0,
-  "notes": "Contract change adds /characters/{id}/ops/stress.fix (x-snapshot true, absolute-setter family, {value} integer >= 0 clamped into [0, StressMax]); correction never raises traumaPending and emits no sideEffects; gates identical to sibling stress ops. Frontend exposes it only behind a session-local Enable-corrections toggle in the stress section. Derived artifacts regenerated from the contract, not hand-edited: contract-coverage.json, capability-manifest.json (stressFix = human/correction), api-reference README.md. Trauma escape hatch noted as candidate only per ruling. No VCS mutation commands used."
+  "notes": "Contract change adds /characters/{id}/ops/stress.fix (x-snapshot true, absolute-setter family, {value} integer >= 0 clamped into [0, StressMax]); correction never raises traumaPending and emits no sideEffects; gates identical to sibling stress ops. Frontend exposes it only behind a session-local Enable-corrections toggle in the stress section. Derived artifacts regenerated from the contract, not hand-edited: contract-coverage.json, capability-manifest.json (stressFix = human/correction), api-reference README.md. Trauma escape hatch noted as candidate only per ruling. No VCS mutation commands used.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

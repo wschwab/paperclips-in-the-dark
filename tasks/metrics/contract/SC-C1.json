@@ -17,6 +17,17 @@
   "notes": " single dispatch 9m12s; redocly green; ajv 24/24 goldens validate; 13 x-requiredWhenComplete records exact; if/then bounded rollover; x-segmentsLeSize extension (redocly rejects $data); lifecycle flags; sparse claimOverrides kept; goldens canonical",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "9m12s"
-  }
+    "source": "9m12s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-C1; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-C1; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

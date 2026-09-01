@@ -7,8 +7,33 @@
   "iterationNotes": "Single non-interactive dispatch; self-reported acceptance confirmed by orchestrator from clean install (rm -rf node_modules dist; npm ci; build + 18/18 tests green).",
   "wallClockMinutes": 12,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "human": 0 },
-  "loc": { "implementation": null, "tests": null },
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "human": 0,
+    "review": 0
+  },
+  "loc": {
+    "implementation": null,
+    "tests": null
+  },
   "conformancePassRateAtFirstClaim": null,
-  "notes": "effect pinned 3.21.4 (registry min-release-age). Plain-DOM decision documented in docs/pages/frontend/f0-framework-decision.mdx. Scope compliance verified: only frontend/ + docs/pages/frontend/ touched."
+  "notes": "effect pinned 3.21.4 (registry min-release-age). Plain-DOM decision documented in docs/pages/frontend/f0-framework-decision.mdx. Scope compliance verified: only frontend/ + docs/pages/frontend/ touched.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "effect pinned 3.21.4 (registry min-release-age). Plain-DOM decision documented in docs/pages/frontend/f0-framework-decision.mdx. Scope compliance verified: only frontend/ + docs/pages/frontend/ touche",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F0; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F0; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)",
+  "implementationAgent": "unknown (see notes)",
+  "reviewAgent": "orchestrator (see notes for review evidence)"
 }

@@ -17,6 +17,17 @@
   "notes": "UI follows contract enums (cohortType gang|expert, cohortHarm healthy..dead). Live cohort paths pending A11.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2w: crew sheet \u2014 Cohorts section"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2w: crew sheet \u2014 Cohorts section",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2w; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2w; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "UI follows contract enums (cohortType gang|expert, cohortHarm healthy..dead). Live cohort paths pending A11.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

@@ -17,6 +17,17 @@
   "notes": "Conformance 168->176 (8 new: 4 C4 + 4 A13). Mastery gating reads crew Mastery boxesMarked vs game-data TotalBoxes; heal no longer auto-shifts.",
   "metricsMethodology": {
     "method": "git commit timestamps (implementation commits)",
-    "source": "19:09\u219219:49 (11 commits) on 2026-08-09"
-  }
+    "source": "19:09\u219219:49 (11 commits) on 2026-08-09",
+    "locNote": "implementationLoc: unknown \u2014 no LOC figure in existing notes/evidence for A13; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc: unknown \u2014 no scaffolding LOC figure in existing notes/evidence for A13; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Conformance 168->176 (8 new: 4 C4 + 4 A13). Mastery gating reads crew Mastery boxesMarked vs game-data TotalBoxes; heal no longer auto-shifts.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "human caught 1 defect(s)"
+  ],
+  "status": "blocked \u2014 see notes (defect/rejection documented)"
 }

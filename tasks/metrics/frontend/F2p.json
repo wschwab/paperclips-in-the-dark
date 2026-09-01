@@ -17,6 +17,17 @@
   "notes": "Live probe caught TWO server gaps the green suite missed: ability.remove unimplemented and TimesTakeable not enforced (ABILITY_MAXED never emitted) \u2014 filed A8. Frontend accepted; live paths deferred.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2p: character sheet \u2014 Playbook abilities + playbook XP sect"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2p: character sheet \u2014 Playbook abilities + playbook XP sect",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2p; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2p; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

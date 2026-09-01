@@ -8,6 +8,26 @@
   "iterationNotes": "Single dispatch, 5m46s. Official page fetched (8 named categories; score/custom are spec extensions - conflict B). C# reference read (ProjectClock, RolloverClock, healing clock; rollover overwrite TODO - conflict A). 10-row taxonomy, one DTO sketch, ClockPurposes 10 values, owner-deletion = reassignment (cascade rejected), related-clock = unlink-on-delete, rollover accumulation with worked example + SPARK Post sketch. Legacy migration rule: purpose custom.",
   "wallClockMinutes": 6,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "Frozen decisions W2-W6, W10. DTO sketch consumed by SC-C1/SC-C2/SC-O5/SC-A7."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Frozen decisions W2-W6, W10. DTO sketch consumed by SC-C1/SC-C2/SC-O5/SC-A7.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Frozen decisions W2-W6, W10. DTO sketch consumed by SC-C1/SC-C2/SC-O5/SC-A7.",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-R3; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-R3; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

@@ -17,6 +17,20 @@
   "notes": "Fix = dedicated --band-text-muted token (var(--paper-sunk), #d6cdb8) plus scoped resolution of .character-kicker/.crew-kicker/.alias/.crew-type inside torn-foot plates; no light-theme muted reuse. Green ratios: light 8.13:1, HiC 11.01:1, dark 12.71:1, dark+HiC 11.01:1. Evidence: /tmp/w7-theme01-report.md, screenshots under /tmp/pitd-browser/2026-08-27T13-07-19-770Z-3b4febd5/screenshots/theme01-*.png. Known non-blocking sibling failure: theme02-focus-error journey (sibling crew agent's in-flight THEME-02 red state, TypeError at its own line 212) outside this card's edit surface.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: light-theme identity text contrast 1.63:1 (below 4.5:1 threshold); Hi-C 1:1 on inked band; journey payloads were expressions not IIFEs",
+  "passRateAfterReview": "PASS \u2014 756/756 frontend tests; npm run build clean; 6/6 browser journeys green; contrast light 8.13:1, HiC 11.01:1, dark 12.71:1, dark+HiC 11.01:1 (all >= 4.5:1); theme01-identity-contrast journey green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend unit suite (756/756)",
+    "theme01-identity-contrast journey",
+    "conformance caught IIFE payload issue",
+    "Luna/xhigh browser review"
+  ],
+  "status": "DONE \u2014 756/756 frontend tests, build clean, contrast light 8.13:1 / dark 12.71:1 / HiC 11.01:1 / dark+HiC 11.01:1"
 }

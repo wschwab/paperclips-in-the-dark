@@ -17,6 +17,19 @@
   "notes": "character-detail tests green (706/706); build clean; browser suite PASS; pending final xhigh Luna gate",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: card shipped nonzero frontend code (see notes) but exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: stress-clear labeled as \"Indulge Vice\" (false); overindulged signal absent; phase helpers missing",
+  "passRateAfterReview": "PASS \u2014 706/706 character-detail tests; browser suite PASS; build clean",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "character-detail tests (706/706)",
+    "Luna/xhigh browser review",
+    "orchestrator browser probe"
+  ],
+  "status": "DONE \u2014 706/706 character-detail tests, browser suite PASS, build clean"
 }

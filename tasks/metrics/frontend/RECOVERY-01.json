@@ -17,6 +17,19 @@
   "notes": "23/23 roster unit tests incl. 7 RECOVERY-01 cases; npm run build clean; roster-recovery journey PASS on live backend-ada with zero console errors. Known non-blocking sibling failure: crew04-advance (crew-detail.ts card owned by another crew agent) fails deterministically at 'unmark did not land: 1 -> 1' \u2014 outside this card's edit surface, reported in /tmp/w7-recovery01-report.md",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: roster-recovery journey half-applied (duplicate repairableCount/unreadableCount declarations, lost Repair-confirm click + readableLink locator)",
+  "passRateAfterReview": "23/23 roster unit tests incl. 7 RECOVERY-01 cases; npm run build clean; roster-recovery journey PASS on live backend-ada with zero console errors",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "roster unit tests (23/23 incl. 7 RECOVERY-01)",
+    "roster-recovery journey",
+    "compiler caught duplicate declarations"
+  ],
+  "status": "DONE \u2014 23/23 roster unit tests, roster-recovery journey PASS, build clean, zero console errors"
 }

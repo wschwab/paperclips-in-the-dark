@@ -13,12 +13,19 @@
     "compiler": 0,
     "focusedTests": 0,
     "independentReview": 1,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "drill-b contradiction caught against locked decision E11 (degraded rows keep roster contract-shaped)"
   ],
   "implementationLoc": 640,
   "scaffoldingLoc": 0,
-  "notes": "Spec question for BROWSER-02: no seed can produce a whole-page decode failure under E11; decode-failure journeys must use request interception. package-lock refresh also bumped tsx/vitest/vite/esbuild devDeps in range — tooling suite re-verified 150/150. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Spec question for BROWSER-02: no seed can produce a whole-page decode failure under E11; decode-failure journeys must use request interception. package-lock refresh also bumped tsx/vitest/vite/esbuild devDeps in range \u2014 tooling suite re-verified 150/150. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

@@ -17,6 +17,17 @@
   "notes": " 35m59s; preview/apply for import + repair with tokens/If-Match/confirm; 22/14 in gate set; CANON-IMPORT-003/004/006 LEGACY-007 VERSION-011 REPAIR-ATOMIC-004 green; CANON-IMPORT-005 frozen-case contradiction found",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "35m59s"
-  }
+    "source": "35m59s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-A2; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-A2; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 22/14",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 22/14"
 }

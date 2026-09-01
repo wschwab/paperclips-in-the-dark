@@ -2,7 +2,7 @@
   "task": "TEST-03",
   "track": "contract",
   "implementationAgent": "opencode-go/ox-alpha-free (bounded brief, yolo, max thinking)",
-  "reviewAgent": "orchestrator independent re-run (616→614 tests green, build clean) + grep spot-checks of all claimed edits",
+  "reviewAgent": "orchestrator independent re-run (616\u2192614 tests green, build clean) + grep spot-checks of all claimed edits",
   "date": "2026-08-24",
   "iterationsToGreen": 2,
   "wallClockMinutes": 28,
@@ -13,7 +13,9 @@
     "compiler": 1,
     "focusedTests": 0,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "tsc --noEmit during worker development",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 120,
   "scaffoldingLoc": 0,
-  "notes": "Worker found the trauma row passed vacuously before surgery (resolve clicked with empty select) — a latent test defect the audit missed. No arbitrary numeric reduction target: exactly the 8 ledger-approved rows enacted. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Worker found the trauma row passed vacuously before surgery (resolve clicked with empty select) \u2014 a latent test defect the audit missed. No arbitrary numeric reduction target: exactly the 8 ledger-approved rows enacted. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

@@ -17,6 +17,17 @@
   "notes": "Revision_Gate.Release is match-guarded (stale release can't clear newer claim) and called on every failure path incl. Constraint_Error handler. Heal semantics replicate core's proven implementation exactly. Verified by orchestrator probe + full conformance rerun (138/11, red set unchanged).",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 09:35 \u2014 A5: ada harm.heal + harm.healing-clock ops; fix Revision_Gat"
-  }
+    "source": "2026-08-07 09:35 \u2014 A5: ada harm.heal + harm.healing-clock ops; fix Revision_Gat",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for A5; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for A5; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "Revision_Gate.Release is match-guarded (stale release can't clear newer claim) and called on every failure path incl. Constraint_Error handler. Heal semantics replicate core's proven implementation ex",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

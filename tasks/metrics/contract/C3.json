@@ -17,6 +17,17 @@
   "notes": "New conformance ops red-by-design pending A-track server support. FactionStatus {Min,Max} game-settings convention introduced and documented; range never hardcoded.",
   "metricsMethodology": {
     "method": "documentation/decision-only: no execution time",
-    "source": "Red-by-design pending: no execution, 0 minutes (no implementation time)"
-  }
+    "source": "Red-by-design pending: no execution, 0 minutes (no implementation time)",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for C3; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for C3; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "New conformance ops red-by-design pending A-track server support. FactionStatus {Min,Max} game-settings convention introduced and documented; range never hardcoded.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

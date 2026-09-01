@@ -17,6 +17,17 @@
   "notes": "Full managed suite: 279 passed / 135 failed at freeze; 9 strict-decode offline tests still reject bad shapes; remaining reds are behavioral oracles + server-lag classes.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-W3-infra; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-W3-infra; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Full managed suite: 279 passed / 135 failed at freeze; 9 strict-decode offline tests still reject bad shapes; remaining reds are behavioral oracles + server-lag classes.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

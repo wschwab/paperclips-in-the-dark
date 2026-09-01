@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 2,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "live-API verification corrected two wrong fixture assumptions before freeze (createdAt classification; isRepairable flag semantics)",
@@ -21,5 +23,10 @@
   ],
   "implementationLoc": 780,
   "scaffoldingLoc": 40,
-  "notes": "Latency budget headroom x3 (+5ms floor) instead of brief's example x1.5 — justified by measured ~2.4x run-to-run p95 variance; documented in-code. Contract-docs discrepancies (createdAt/needs-input, isRepairable flag breadth) deferred to a docs pass rather than worked around. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Latency budget headroom x3 (+5ms floor) instead of brief's example x1.5 \u2014 justified by measured ~2.4x run-to-run p95 variance; documented in-code. Contract-docs discrepancies (createdAt/needs-input, isRepairable flag breadth) deferred to a docs pass rather than worked around. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete \u2014 pass",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

@@ -13,7 +13,9 @@
     "compiler": 1,
     "focusedTests": 0,
     "independentReview": 2,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "tsc caught missing getGame import and unused param after manual rewiring",
@@ -22,5 +24,10 @@
   ],
   "implementationLoc": 900,
   "scaffoldingLoc": 0,
-  "notes": "Stage-3 worker was killed mid-run by broker shutdown (exit 143); orchestrator completed and repaired its work manually. Radicle push failed with missing ssh-agent socket (once-per-boot ritual needed); GitHub mirror pushed. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Stage-3 worker was killed mid-run by broker shutdown (exit 143); orchestrator completed and repaired its work manually. Radicle push failed with missing ssh-agent socket (once-per-boot ritual needed); GitHub mirror pushed. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "blocked \u2014 see notes (rejection/missing documented)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

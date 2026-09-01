@@ -17,6 +17,17 @@
   "notes": " full unseeded suite 358 passed/56 failed with remaining reds categorized to SC-A6/A7/A8/A9/SC-F4/wave-7",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-W4-fixups; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-W4-fixups; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": " full unseeded suite 358 passed/56 failed with remaining reds categorized to SC-A6/A7/A8/A9/SC-F4/wave-7",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete"
 }

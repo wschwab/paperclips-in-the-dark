@@ -17,6 +17,17 @@
   "notes": " 2 dispatches (first died to provider socket error; re-dispatch 14m19s); 14 ADMIT + 8 TOTAL cases + 20 seeded degraded fixtures; 19 red/3 green; FV-010 reproduction pinned",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "14m19s"
-  }
+    "source": "14m19s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-O2; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-O2; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

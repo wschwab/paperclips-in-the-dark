@@ -20,6 +20,24 @@ mkdir -p "$DATA_DIR"
 # Owned log file inside the temp root so cleanup is exact.
 LOG_FILE="$TMP_ROOT/server.log"
 
+server_pid=""
+cleanup () {
+  if [ -n "${server_pid:-}" ]; then
+     kill "${server_pid}" 2>/dev/null || true
+     wait "${server_pid}" 2>/dev/null || true
+  fi
+  if [ -n "${TMP_ROOT:-}" ]; then
+     rm -rf "${TMP_ROOT}"
+  fi
+}
+
+# Install cleanup trap IMMEDIATELY after TMP_ROOT creation, before any fallible
+# command (port probe, executable check, server launch). This prevents leak on
+# port-allocation failure, missing executable, or bind error.
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
+
 # Pick an unused port: bind to port 0 on a throwaway socket pair, read the
 # kernel-assigned port, close it, and pass it to the server. The gap between
 # close and bind is the usual small race; the server will fail fast if the port
@@ -34,20 +52,6 @@ s.close()
 '
 )
 export PITD_LAUNCH_TEST_PORT="$PORT"
-
-server_pid=""
-cleanup () {
-  if [ -n "$server_pid" ]; then
-     kill "$server_pid" 2>/dev/null || true
-     wait "$server_pid" 2>/dev/null || true
-  fi
-  rm -rf "$TMP_ROOT"
-}
-
-# On INT/TERM, clean up then exit with conventional signal code (128 + signum).
-trap cleanup EXIT
-trap 'cleanup; exit 130' INT
-trap 'cleanup; exit 143' TERM
 
 # Verify the server executable exists before launching.
 test -x "$SERVER" || { echo "server executable not found: $SERVER" >&2; exit 1; }

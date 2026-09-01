@@ -17,6 +17,17 @@
   "notes": " 47m31s; generated validators wired into every write path; canonicalizer per R0 matrix D1-D10 L1-L8; Validator_Gate for concurrency; CANON-CREATE-001 + ADMIT-MUTATION-012 green; full suite 302 passed/112 failed zero new failures",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "47m31s"
-  }
+    "source": "47m31s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-A1; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-A1; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

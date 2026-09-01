@@ -17,6 +17,17 @@
   "notes": "FactionStatus {-3,3} added to all 4 game files (Blades canon; server clamps from data, never hardcoded). French file BOM + pre-existing // comment preserved. Conformance went 138/11 -> 149/149, closing the C3 loop.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 11:59 \u2014 A6: ada crew contacts & factions ops + FactionStatus game-se"
-  }
+    "source": "2026-08-07 11:59 \u2014 A6: ada crew contacts & factions ops + FactionStatus game-se",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for A6; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for A6; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "FactionStatus {-3,3} added to all 4 game files (Blades canon; server clamps from data, never hardcoded). French file BOM + pre-existing // comment preserved. Conformance went 138/11 -> 149/149, closin",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 gnatprove 138/11"
 }

@@ -7,7 +7,31 @@
   "iterationNotes": "Single non-interactive dispatch; all acceptance passed on orchestrator re-run from clean install.",
   "wallClockMinutes": 27,
   "tokens": 241306,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "human": 0 },
-  "loc": { "suites": null, "tooling": null },
-  "notes": "131 tests (contract 90 / semantics 23 / persistence 9 / lifecycle 9). Tooling test coverage thin (2 tests: shim, report) — shim gets real exercise only if Z-track escape hatch fires. S&V cases assert settings-driven maxima. Assignment note for E0: C1+A-track=Luna, F-track+Z-track=Grok — model/track confound, unavoidable at n=1, must be flagged in the memo."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "human": 0,
+    "review": 0
+  },
+  "loc": {
+    "suites": null,
+    "tooling": null
+  },
+  "notes": "131 tests (contract 90 / semantics 23 / persistence 9 / lifecycle 9). Tooling test coverage thin (2 tests: shim, report) \u2014 shim gets real exercise only if Z-track escape hatch fires. S&V cases assert settings-driven maxima. Assignment note for E0: C1+A-track=Luna, F-track+Z-track=Grok \u2014 model/track confound, unavoidable at n=1, must be flagged in the memo.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "131 tests (contract 90 / semantics 23 / persistence 9 / lifecycle 9). Tooling test coverage thin (2 tests: shim, report) \u2014 shim gets real exercise only if Z-track escape hatch fires. S&V cases assert ",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for C1; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for C1; git diff not run per no-source-edit constraint",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)",
+  "implementationAgent": "unknown (see notes)",
+  "reviewAgent": "orchestrator (see notes for review evidence)"
 }

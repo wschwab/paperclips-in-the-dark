@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 3,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "seeded gate cases",
@@ -27,5 +29,10 @@
   "evidence": [
     "tasks/metrics/contract/SC-GATE-01.json",
     "conformance/package.json"
-  ]
+  ],
+  "notes": "GATE-01 metric card; see evidence links for details",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

@@ -8,6 +8,26 @@
   "iterationNotes": "Single dispatch, first pass accepted. 6 undoCrew tests verified exact by grep; 59/59 + build reproduced by orchestrator. Mirror-slice of F2i executed faithfully, including the synchronous renderDetail discipline in every branch.",
   "wallClockMinutes": 8,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "Live Ada probe (port 9813, exact-PID cleanup verified): crew rep.add 0->3 (rev 2), undo restores rep 0 (rev 3), second undo HTTP 200 ok:false NO_HISTORY. Second consecutive clean DeepSeek slice under the new pairing; no command-constraint violations."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Live Ada probe (port 9813, exact-PID cleanup verified): crew rep.add 0->3 (rev 2), undo restores rep 0 (rev 3), second undo HTTP 200 ok:false NO_HISTORY. Second consecutive clean DeepSeek slice under the new pairing; no command-constraint violations.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Live Ada probe (port 9813, exact-PID cleanup verified): crew rep.add 0->3 (rev 2), undo restores rep 0 (rev 3), second undo HTTP 200 ok:false NO_HISTORY. Second consecutive clean DeepSeek slice under ",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2j; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2j; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

@@ -17,6 +17,17 @@
   "notes": " single dispatch 21m31s; 16 LIMIT + 7 NUM cases; 14 red/9 green; FV-005/011/021/022/029 gaps pinned with file:line",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "21m31s"
-  }
+    "source": "21m31s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-O4; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-O4; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

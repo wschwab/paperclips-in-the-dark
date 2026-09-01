@@ -13,12 +13,19 @@
     "compiler": 0,
     "focusedTests": 0,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "8-row vice oracle (clamp, overindulge signal, missing-amount VALIDATION, resolve-clears-stress with reload persistence)"
   ],
   "implementationLoc": 620,
   "scaffoldingLoc": 0,
-  "notes": "Worker did not write its report before exiting (1h30m run); completion evidence re-derived from gates and working-copy diff. Breaking change documented: vice op now requires amount, old callers receive VALIDATION. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Worker did not write its report before exiting (1h30m run); completion evidence re-derived from gates and working-copy diff. Breaking change documented: vice op now requires amount, old callers receive VALIDATION. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

@@ -17,6 +17,17 @@
   "notes": " single dispatch 47m11s; 19 cases (ERR/CONC/PARITY); 13 red/6 green; human-control gap list for Wave 6",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "47m11s"
-  }
+    "source": "47m11s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-O7; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-O7; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

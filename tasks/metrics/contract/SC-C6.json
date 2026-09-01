@@ -17,6 +17,17 @@
   "notes": " single dispatch 6m34s; vice $ref fixed; cohort.add already correct; shared-cap declaration; TotalBoxes/UPGRADE_MAXED declared; signed XP deltas; canUndo/historyCount in summaries + OpResult; hub-coordinated with C2",
   "metricsMethodology": {
     "method": "duration text extracted from notes field",
-    "source": "6m34s"
-  }
+    "source": "6m34s",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for SC-C6; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for SC-C6; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": " single dispatch 6m34s; vice $ref fixed; cohort.add already correct; shared-cap declaration; TotalBoxes/UPGRADE_MAXED declared; signed XP deltas; canUndo/historyCount in summaries + OpResult; hub-coor",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

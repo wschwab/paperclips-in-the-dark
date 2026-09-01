@@ -8,6 +8,25 @@
   "iterationNotes": "Single dispatch; largest slice yet (~1570 insertions incl. a structured rewrite of character-detail into a shared mutation runner). All claimed per-describe counts grep-exact (13 client + 10 page tests). 101/101 + build reproduced.",
   "wallClockMinutes": 18,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "No hardcoded maxima or trauma names (grep-verified; menus from game data). F2l page tests survived the rewrite and enforced the F2h render rule through it. Live Ada probe (port 9817, exact-PID cleanup): dossier.update, stress.add 0->5, trauma add/remove, stress.clear all correct with revision advance. Probe found TWO ADA SERVER BUGS out of slice scope: no request-body validation (unknown/missing fields accepted, empty-string trauma stored) and duplicate trauma.add silently ok instead of DUPLICATE -> filed tasks/A4-ada-request-validation.md; both are conformance blind spots (suite 131/131 green despite them)."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "No hardcoded maxima or trauma names (grep-verified; menus from game data). F2l page tests survived the rewrite and enforced the F2h render rule through it. Live Ada probe (port 9817, exact-PID cleanup): dossier.update, stress.add 0->5, trauma add/remove, stress.clear all correct with revision advance. Probe found TWO ADA SERVER BUGS out of slice scope: no request-body validation (unknown/missing fields accepted, empty-string trauma stored) and duplicate trauma.add silently ok instead of DUPLICATE -> filed tasks/A4-ada-request-validation.md; both are conformance blind spots (suite 131/131 green despite them).",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 131/131",
+  "implementationLoc": 1570,
+  "scaffoldingLoc": "unknown",
+  "metricsMethodology": {
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2m; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 131/131"
 }

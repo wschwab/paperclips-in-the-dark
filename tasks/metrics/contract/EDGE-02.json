@@ -8,12 +8,14 @@
   "wallClockMinutes": 28,
   "tokens": 0,
   "passRateAtFirstDoneClaim": "frontend focused 445/445; conformance focused strict responses 18/18; frontend full exposed 8 incomplete crew error fixtures",
-  "passRateAfterReview": "PASS — ordinary decoders strict (445/445 frontend + 178 strict-response conformance); zero defaults/legacy branches retained in ordinary paths; migration-path decoders intact; confirmed by REVIEW-02 Luna xhigh browser gate (6/6 journeys) and VET-01 (471/471 conformance, 28/28 mutation P0 19/19 P1 9/9)",
+  "passRateAfterReview": "PASS \u2014 ordinary decoders strict (445/445 frontend + 178 strict-response conformance); zero defaults/legacy branches retained in ordinary paths; migration-path decoders intact; confirmed by REVIEW-02 Luna xhigh browser gate (6/6 journeys) and VET-01 (471/471 conformance, 28/28 mutation P0 19/19 P1 9/9)",
   "defectsCaughtBy": {
     "compiler": 0,
     "focusedTests": 8,
     "independentReview": 1,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "strict frontend decoder tests (445/445)",
@@ -42,5 +44,10 @@
       "closesFinding": "AR-012"
     }
   ],
-  "notes": "Implementation and behavioral acceptance were green on 2026-08-23. The repository-mandated exact Luna review was initially blocked (xhigh capacity exhausted). On 2026-08-30, the final Luna review was executed as REVIEW-02 and returned VERDICT: PASS, independently confirming 6/6 browser journeys, 0 problems, and that ordinary decoders retain no forbidden defaults/legacy branches. The AR-012 finding (EDGE-02) is therefore CLOSED by verified Luna evidence rather than by implementation alone. Token accounting was unavailable for the initial dispatch, so tokens is 0 rather than estimated. The historical 'blocked' status is preserved above in reviewHistory; the current authoritative status is PASS."
+  "notes": "Implementation and behavioral acceptance were green on 2026-08-23. The repository-mandated exact Luna review was initially blocked (xhigh capacity exhausted). On 2026-08-30, the final Luna review was executed as REVIEW-02 and returned VERDICT: PASS, independently confirming 6/6 browser journeys, 0 problems, and that ordinary decoders retain no forbidden defaults/legacy branches. The AR-012 finding (EDGE-02) is therefore CLOSED by verified Luna evidence rather than by implementation alone. Token accounting was unavailable for the initial dispatch, so tokens is 0 rather than estimated. The historical 'blocked' status is preserved above in reviewHistory; the current authoritative status is PASS.",
+  "status": "complete \u2014 green",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

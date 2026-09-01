@@ -8,6 +8,26 @@
   "iterationNotes": "Single dispatch, first pass accepted. 4 getCrewHistory tests verified exact by grep; 63/63 + build reproduced by orchestrator.",
   "wallClockMinutes": 7,
   "tokens": null,
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
-  "notes": "Live Ada probe (port 9815, exact-PID cleanup verified): empty history [], rep.add populates 1 entry (op rep.add), /crew/{id}/history SPA route 200, unknown-id API 404. Third consecutive clean DeepSeek first-pass slice; exact self-report again."
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Live Ada probe (port 9815, exact-PID cleanup verified): empty history [], rep.add populates 1 entry (op rep.add), /crew/{id}/history SPA route 200, unknown-id API 404. Third consecutive clean DeepSeek first-pass slice; exact self-report again.",
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "pass \u2014 pass",
+  "implementationLoc": "unknown",
+  "metricsMethodology": {
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2k; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2k; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  },
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 pass"
 }

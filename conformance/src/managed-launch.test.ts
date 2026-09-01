@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, stat, readFile, rm } from "node:fs/promises";
+import { mkdtemp, stat, readFile, rm, writeFile, chmod } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
@@ -220,6 +220,22 @@ const runScriptWithFakeServer = async (
 /** Clean up a temp work root. */
 const cleanupWorkRoot = async (workRoot: string): Promise<void> => {
   await rm(workRoot, { recursive: true, force: true });
+};
+
+/** Find leftover temp dirs matching a prefix in /tmp (for leak detection). */
+const findTmpDirs = async (prefix: string): Promise<string[]> => {
+  const dirs: string[] = [];
+  try {
+    const entries = await import("node:fs/promises").then((fs) => fs.readdir(tmpdir()));
+    for (const entry of entries) {
+      if (entry.startsWith(prefix)) {
+        dirs.push(join(tmpdir(), entry));
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return dirs;
 };
 
 // --- Tests -----------------------------------------------------------------
@@ -524,4 +540,77 @@ describe("SAFE-02 backend-ada launch scripts own their lifecycle", () => {
       await cleanupWorkRoot(workRoot);
     }
   }, 60_000);
+
+  // TOOLING-LAUNCH-011: If port allocation fails (e.g. python3 unavailable), the
+  // script must still clean up the TMP_ROOT it already created. The cleanup
+  // trap must be installed BEFORE the fallible port-probe command.
+  it("[TOOLING-LAUNCH-011] test-launch-paths.sh cleans up TMP_ROOT even when port allocation fails (trap-before-fallible)", async () => {
+    // Create a pre-existing unrelated temp dir that must survive.
+    const unrelatedTmp = await mkdtemp(join(tmpdir(), "unrelated-tmp-XXXXXX"));
+    // Create a fake bin dir with a python3 that always fails.
+    const fakeBin = await mkdtemp(join(tmpdir(), "fake-bin-XXXXXX"));
+    const fakePythonPath = join(fakeBin, "python3");
+    await writeFile(fakePythonPath, "#!/bin/sh\necho 'python3 mocked failure' >&2\nexit 1\n");
+    await chmod(fakePythonPath, 0o755);
+    try {
+      const result = await execFileAsync(
+        "sh",
+        [launchPathsScript],
+        { PATH: `${fakeBin}:${process.env.PATH}` },
+        30_000,
+      );
+
+      // Script must fail
+      expect(result.code).toBe(1);
+
+      // The unrelated temp dir must still exist.
+      let unrelatedExists = true;
+      try {
+        await stat(unrelatedTmp);
+      } catch {
+        unrelatedExists = false;
+      }
+      expect(unrelatedExists).toBe(true);
+
+      // No pitd-launch-paths.* temp dirs should remain in /tmp.
+      const leftover = await findTmpDirs("pitd-launch-paths");
+      expect(leftover).toEqual([]);
+    } finally {
+      await rm(unrelatedTmp, { recursive: true, force: true });
+      await rm(fakeBin, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-LAUNCH-012: Same as 011 for test-spa-routes.sh.
+  it("[TOOLING-LAUNCH-012] test-spa-routes.sh cleans up TMP_ROOT even when port allocation fails (trap-before-fallible)", async () => {
+    const unrelatedTmp = await mkdtemp(join(tmpdir(), "unrelated-tmp-XXXXXX"));
+    const fakeBin = await mkdtemp(join(tmpdir(), "fake-bin-XXXXXX"));
+    const fakePythonPath = join(fakeBin, "python3");
+    await writeFile(fakePythonPath, "#!/bin/sh\necho 'python3 mocked failure' >&2\nexit 1\n");
+    await chmod(fakePythonPath, 0o755);
+    try {
+      const result = await execFileAsync(
+        "sh",
+        [spaRoutesScript],
+        { PATH: `${fakeBin}:${process.env.PATH}` },
+        30_000,
+      );
+
+      expect(result.code).toBe(1);
+
+      let unrelatedExists = true;
+      try {
+        await stat(unrelatedTmp);
+      } catch {
+        unrelatedExists = false;
+      }
+      expect(unrelatedExists).toBe(true);
+
+      const leftover = await findTmpDirs("pitd-spa");
+      expect(leftover).toEqual([]);
+    } finally {
+      await rm(unrelatedTmp, { recursive: true, force: true });
+      await rm(fakeBin, { recursive: true, force: true });
+    }
+  }, 30_000);
 });

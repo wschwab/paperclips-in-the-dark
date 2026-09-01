@@ -17,6 +17,20 @@
   "notes": "Red measurements at 1440px: .roster-characters in column 2 (l=729) sharing row with masthead; crews 1782px lower; Traumas/Health row hole 449px (Playbook/Talents 939px); gear remove-button x follows name width. Green: masthead+plates share starts, sheets as two balanced multicol columns with zero interior holes >26px, gear columns stable via repeated-row grid minmax(0,1fr)/max-content/max-content. Docs: docs/pages/frontend/f2z-layout.mdx LAYOUT-01 section. Screenshots: /tmp/w7-layout01-shots/. Sibling note: theme02-focus-error journey crashed twice mid-session on its own code (outlineColor TypeError; relative-URL fetch SyntaxError) before its agent fixed it; not this card's surface.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
-  }
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: frontend edits are nonzero implementation LOC; exact diff LOC not recoverable (git diff not run, no source/VCS); methodology searched notes, iterationNotes, evidence links, git commit history, raw codex logs",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
+  },
+  "passRateAtFirstDoneClaim": "red: char03-continuity journey failed (roster masthead left 284 != plate left 729); roster plates emptied by auto-repair; multicol created 1419px rebalance seam",
+  "passRateAfterReview": "PASS \u2014 756/756 frontend tests; tsc clean; npm run build clean; 12 browser journeys (incl. new layout01-alignment) green; zero horizontal overflow at 1440/768/390; numeric geometry within budget",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend unit suite (756/756)",
+    "12 browser journeys incl. layout01-alignment",
+    "conformance caught plate-emptying auto-repair",
+    "Luna/xhigh browser review"
+  ],
+  "status": "DONE \u2014 756/756 frontend tests, 12 browser journeys green, zero horizontal overflow at 1440/768/390"
 }

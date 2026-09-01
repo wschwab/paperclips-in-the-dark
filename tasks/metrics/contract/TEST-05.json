@@ -13,7 +13,9 @@
     "compiler": 0,
     "focusedTests": 1,
     "independentReview": 0,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "named runtime assertions (M13 killer demonstrated)",
@@ -21,5 +23,10 @@
   ],
   "implementationLoc": 160,
   "scaffoldingLoc": 0,
-  "notes": "Zero deletions — the ledger's delete gate (proof fully covers AND execution adds no boundary signal) qualified no row; recorded explicitly. Suggestion surfaced for a future wave: add proofCoversFully to decision rows to make the gate mechanical. Token accounting unavailable, so tokens is 0 rather than estimated."
+  "notes": "Zero deletions \u2014 the ledger's delete gate (proof fully covers AND execution adds no boundary signal) qualified no row; recorded explicitly. Suggestion surfaced for a future wave: add proofCoversFully to decision rows to make the gate mechanical. Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "complete (see notes)",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

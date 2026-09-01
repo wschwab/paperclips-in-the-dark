@@ -17,6 +17,17 @@
   "notes": "Score XP UI ships but needs A7 for live support. Levelup clamp verified live (rating cannot exceed maxRating). No hardcoded lists/maxima; menus + descriptions from game data, playbook ExperienceCondition via new getPlaybook.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2o: character sheet \u2014 Talents + XP + Score XP section"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2o: character sheet \u2014 Talents + XP + Score XP section",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2o; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2o; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Score XP UI ships but needs A7 for live support. Levelup clamp verified live (rating cannot exceed maxRating). No hardcoded lists/maxima; menus + descriptions from game data, playbook ExperienceCondit",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "human caught 1 defect(s)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

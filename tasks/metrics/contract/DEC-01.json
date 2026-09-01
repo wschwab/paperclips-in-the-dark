@@ -30,6 +30,7 @@
   "notes": "contract-c1-pc-creation.mdx documents the landed change.",
   "metricsMethodology": {
     "method": "documentation/decision-only: no execution time",
-    "source": "Decision card: documents landed change, no execution time"
+    "source": "Decision card: documents landed change, no execution time",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
   }
 }

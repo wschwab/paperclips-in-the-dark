@@ -17,6 +17,17 @@
   "notes": "Fifth shape-vs-semantics gap closed (A4/A5/A7/A8/A9). Gear semantics from C# Gear.cs incl. precondition order; conformance 152\u2192156.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 A9: ada gear.add/remove/commit/uncommit/clear-commitments + "
-  }
+    "source": "2026-08-07 12:21 \u2014 A9: ada gear.add/remove/commit/uncommit/clear-commitments + ",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for A9; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for A9; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "Fifth shape-vs-semantics gap closed (A4/A5/A7/A8/A9). Gear semantics from C# Gear.cs incl. precondition order; conformance 152\u2192156.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "blocked \u2014 see notes (rejection/missing documented)"
 }

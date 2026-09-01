@@ -17,6 +17,17 @@
   "notes": "Third instance of the shape-vs-semantics conformance blind spot (A4, A5, A7): endpoint coverage checked OperationResult shape only. New SEMANTICS-SESSION-SET-001 red-green test closes it for session.set.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 A7: ada session.set op + SEMANTICS-SESSION-SET-001 conforman"
-  }
+    "source": "2026-08-07 12:21 \u2014 A7: ada session.set op + SEMANTICS-SESSION-SET-001 conforman",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for A7; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for A7; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "red-first (see notes/iterationNotes); defectsCaughtBy={\"compiler\": 0, \"conformance\": 0, \"review\": 0, \"human\": 0}",
+  "passRateAfterReview": "pass \u2014 green",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete \u2014 green"
 }

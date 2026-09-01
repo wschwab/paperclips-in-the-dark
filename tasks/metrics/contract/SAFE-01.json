@@ -13,7 +13,9 @@
     "compiler": 2,
     "focusedTests": 5,
     "independentReview": 6,
-    "human": 0
+    "human": 0,
+    "conformance": 0,
+    "review": 0
   },
   "defectCatchingLayer": [
     "TypeScript transform/typecheck",
@@ -29,5 +31,10 @@
     "conformance/scripts/default-data-guard.mjs",
     "conformance/src/default-data-guard.test.ts",
     "agent-docs/test-audit/campaign-data-manifest.json"
-  ]
+  ],
+  "notes": "SAFE-01 metric card; see evidence links for details",
+  "metricsMethodology": {
+    "method": "historical evidence review (no git diff available)",
+    "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
 }

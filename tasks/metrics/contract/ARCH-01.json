@@ -18,8 +18,8 @@
   "defectCatchingLayer": [
     "mutation harness pre-flight (restorationHash) + retargeted mutants M01/M04/M06/M11/M12/M16/M27 verified the decomposed packages kept identical kill behavior"
   ],
-  "implementationLoc": 0,
-  "scaffoldingLoc": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
   "status": "DONE",
   "evidence": [
     "agent-docs/test-audit/browser-evidence/reports/w9-arch01-report.md",
@@ -29,6 +29,9 @@
   "notes": "Structural-only card: pitd_callback.adb 9513 -> 2958 lines with six concerns extracted to packages (stored classification, normalization/preview, summary projection, capability projection, operation routing, AWS glue). implementationLoc recorded as 0 because LOC is moved, not added. No behavior/response/error change: suite, mutants, and proofs unchanged.",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history"
+    "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
+    "locNote": "implementationLoc/scaffoldingLoc=unknown: structural refactoring involved nonzero source edits (see notes); exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links, git commit history",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: exact diff LOC not recoverable (git diff not run); methodology searched notes, iterationNotes, evidence links"
   }
 }

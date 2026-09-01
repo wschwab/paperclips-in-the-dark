@@ -17,6 +17,17 @@
   "notes": "crew-type detail endpoint (contract-defined) 404s on Ada \u2014 worked around with a list-fallback; worth implementing in a future A-task. Ability/upgrade ops verified live (ABILITY_MAXED, mark/unmark incl. upsert).",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:21 \u2014 F2v: crew sheet \u2014 Playbook abilities + upgrades + lair chart"
-  }
+    "source": "2026-08-07 12:21 \u2014 F2v: crew sheet \u2014 Playbook abilities + upgrades + lair chart",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2v; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2v; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "crew-type detail endpoint (contract-defined) 404s on Ada \u2014 worked around with a list-fallback; worth implementing in a future A-task. Ability/upgrade ops verified live (ABILITY_MAXED, mark/unmark incl",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }

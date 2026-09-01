@@ -17,6 +17,17 @@
   "notes": "Closes the C3->A6->F2y loop. Server-side clamp shown via applied.effective notice; no hardcoded status range in the frontend (grep-verified). STALE_REVISION -> refetch with 'Sheet refreshed' notice per F2h pattern.",
   "metricsMethodology": {
     "method": "git commit timestamp (single atomic implementation commit)",
-    "source": "2026-08-07 12:07 \u2014 F2y: crew sheet \u2014 Contacts & Factions section (client ops + "
-  }
+    "source": "2026-08-07 12:07 \u2014 F2y: crew sheet \u2014 Contacts & Factions section (client ops + ",
+    "locNote": "implementationLoc=unknown: no LOC figure in existing notes/evidence for F2y; git diff not run per no-source-edit constraint",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC figure in existing notes/evidence for F2y; git diff not run per no-source-edit constraint",
+    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology"
+  },
+  "passRateAtFirstDoneClaim": "pending green (no first-done claim recorded)",
+  "passRateAfterReview": "Closes the C3->A6->F2y loop. Server-side clamp shown via applied.effective notice; no hardcoded status range in the frontend (grep-verified). STALE_REVISION -> refetch with 'Sheet refreshed' notice pe",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "no defects caught by any layer (0 across all categories)"
+  ],
+  "status": "complete (see notes)"
 }
