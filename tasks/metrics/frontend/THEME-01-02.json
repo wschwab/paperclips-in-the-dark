@@ -1,0 +1,64 @@
+{
+  "task": "THEME-01-02",
+  "track": "frontend",
+  "implementationAgent": "hic-roster-fast (task subagent)",
+  "reviewAgent": "self-verifying: frontend unit suite (783/783) + npm run build + managed-Chromium browser suite (6/6 journeys, 0 console errors)",
+  "date": "2026-09-01",
+  "iterationsToGreen": 1,
+  "iterationNotes": "red: unit test asserted span text resolves to --text-muted (1:1 in light+HiC). green: new dedicated --band-text-muted block for .roster-characters.torn-foot span only (character roster secondary span); .roster-crews.torn-foot span restored to original --band-text grouping (unchanged). Preserves primary/secondary hierarchy: character span=muted #d6cdb8, strong/li/crew-span=primary #efe7d6.",
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Residual of THEME-01 (UX-015): the original fix added --band-text-muted and covered character/crew HEADER identity lines (kicker, alias, crew-type) inside torn-foot plates, but the torn-foot selector at components.css:1255 omitted .roster-characters.torn-foot span. The roster character row renders <strong>Name</strong><span> alias \u2022 playbook</span> inside <a> inside <li> inside .roster-characters.torn-foot; the span fell through to .character-list a span { color: var(--text-muted) } which in light+HiC resolves to var(--ink) = #1a1a1a, identical to --band-ink = #1a1a1a (1:1 contrast, completely invisible). The crew roster span was already covered by the existing .roster-crews.torn-foot span in the original selector and did NOT have the bug. Fix: added .roster-characters.torn-foot span to a dedicated --band-text-muted block (color: var(--band-text-muted)), while restoring .roster-crews.torn-foot span to the original --band-text block (unchanged behavior). Only the character roster span span changes token.",
+  "greenEvidence": {
+    "light": {
+      "span_fg": "#d6cdb8",
+      "band_bg": "#2f3238",
+      "contrast": "8.13:1",
+      "status": "PASS"
+    },
+    "light+HiC": {
+      "span_fg": "#d6cdb8",
+      "band_bg": "#1a1a1a",
+      "contrast": "11.01:1",
+      "status": "PASS"
+    },
+    "dark": {
+      "span_fg": "#d6cdb8",
+      "band_bg": "#08070a",
+      "contrast": "12.71:1",
+      "status": "PASS"
+    },
+    "dark+HiC": {
+      "span_fg": "#d6cdb8",
+      "band_bg": "#1a1a1a",
+      "contrast": "11.01:1",
+      "status": "PASS"
+    }
+  },
+  "redEvidence": {
+    "light": {
+      "span_fg": "#5a5044",
+      "band_bg": "#2f3238",
+      "contrast": "1.63:1",
+      "status": "FAIL"
+    },
+    "light+HiC": {
+      "span_fg": "#1a1a1a",
+      "band_bg": "#1a1a1a",
+      "contrast": "1:1",
+      "status": "FAIL"
+    }
+  },
+  "testCount": 20,
+  "testDescription": "20 unit tests in roster.test.ts: character roster span meets WCAG AA (>=4.5:1) in all 4 theme states (4 tests); span resolves through --band-text-muted not --text-muted in all 4 theme states (4 tests); strong meets WCAG AA in all 4 states (4 tests); li meets WCAG AA in all 4 states (4 tests); secondary span differs from primary strong (hierarchy) in all 4 states (4 tests)",
+  "metricsMethodology": {
+    "method": "no grounded duration available (git commit point-in-time only)",
+    "source": "iteration notes, test output, browser journey results, computed contrast ratios from getComputedStyle"
+  }
+}

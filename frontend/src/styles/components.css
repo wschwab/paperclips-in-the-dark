@@ -1259,8 +1259,19 @@
 .roster-characters.torn-foot li,
 .roster-crews.torn-foot li,
 .roster-characters.torn-foot strong,
+.roster-crews.torn-foot strong,
 .roster-crews.torn-foot span {
   color: var(--band-text);
+}
+/* UX-015: the character roster span carries secondary copy (alias, playbook,
+ * status) — the dimmed-on-dark --band-text-muted token, not --band-text,
+ * preserving the primary/secondary hierarchy on the inked band.
+ * --band-text-muted is documented to stay >=4.5:1 against --band-ink in every
+ * theme combination; --text-muted (ink-on-paper) is dark-on-dark there.
+ * Crew spans remain --band-text (their alias text is primary on the band,
+ * matching the original selector grouping). */
+.roster-characters.torn-foot span {
+  color: var(--band-text-muted);
 }
 .roster-characters.torn-foot li:hover,
 .roster-crews.torn-foot li:hover {

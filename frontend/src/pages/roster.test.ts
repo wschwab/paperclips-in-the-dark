@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountRosterPage } from "./roster.js";
+import { loadStylesheets } from "./seam.js";
 
 const ok = (data: unknown) => ({
   ok: true,
@@ -1020,5 +1021,132 @@ describe("RECOVERY-01 degraded-row classification and roster-level import", () =
       );
     });
   });
+});
+
+// ---------------------------------------------------------------------------
+// Accessibility: character roster row text on the torn-foot band (THEME-01 / UX-015).
+// The roster plates (.roster-characters.torn-foot / .roster-crews.torn-foot)
+// are inked-band surfaces. Primary text (strong, li) resolves through
+// --band-text (>=4.5:1 against --band-ink) in every theme+contrast combo.
+// The character roster span (secondary copy: alias, playbook, status) resolves
+// through the dedicated --band-text-muted token (>=4.5:1 against --band-ink),
+// NOT through --text-muted (an ink-on-paper token that is dark-on-dark on the
+// band in light+HiC: 1:1). This test pins: (a) WCAG AA floor for every text
+// element; (b) the hierarchy: character span uses --band-text-muted (#d6cdb8)
+// while strong uses --band-text (#efe7d6); (c) the bug guard: span never
+// resolves to --text-muted (#5a5044 light / #1a1a1a HiC).
+// Note: crew roster spans are NOT tested here — they remain on --band-text
+// (original behavior, not changed by this fix).
+// ---------------------------------------------------------------------------
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const m = hex.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+  if (!m) throw new Error(`cannot parse ${hex}`);
+  return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) };
+}
+function channel(v: number): number {
+  v /= 255;
+  return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+}
+function luminance(c: { r: number; g: number; b: number }): number {
+  return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
+}
+function contrastRatio(fg: string, bg: string): number {
+  const l1 = luminance(hexToRgb(fg));
+  const l2 = luminance(hexToRgb(bg));
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+// --band-text-muted = --paper-sunk = #d6cdb8 in all themes.
+// --text-muted = --ink = #1a1a1a in light+HiC / dark+HiC; #5a5044 in light.
+const TEXT_MUTED_LIGHT = "#5a5044";
+const TEXT_MUTED_HIC = "#1a1a1a";
+function isTextMuted(color: string, hc: boolean): boolean {
+  return hc
+    ? color.toLowerCase() === TEXT_MUTED_HIC.toLowerCase()
+    : color.toLowerCase() === TEXT_MUTED_LIGHT.toLowerCase();
+}
+
+const THEME_STATES = [
+  { theme: "light" as const, contrast: false, label: "light" },
+  { theme: "light" as const, contrast: true, label: "light+HiC" },
+  { theme: "dark" as const, contrast: false, label: "dark" },
+  { theme: "dark" as const, contrast: true, label: "dark+HiC" },
+];
+
+/** Mount a single readable character row inside the torn-foot band and return
+  * the computed colors of each text element. Mirrors the real renderCharacter
+  * markup: <li><a><strong>Name</strong><span> alias • playbook</span></a></li>. */
+function mountRosterRow(
+  theme: "light" | "dark",
+  hiC: boolean,
+): { spanColor: string; bandBg: string; strongColor: string; liColor: string } {
+  loadStylesheets();
+  document.documentElement.setAttribute("data-theme", theme);
+  if (hiC) document.documentElement.setAttribute("data-contrast", "high");
+  else document.documentElement.removeAttribute("data-contrast");
+
+  const band = document.createElement("div");
+  band.className = "roster-characters torn-foot";
+  const ul = document.createElement("ul");
+  ul.className = "character-list";
+  const li = document.createElement("li");
+  li.setAttribute("data-character-id", "test");
+  const a = document.createElement("a");
+  a.href = "/character/test";
+  const strong = document.createElement("strong");
+  strong.textContent = "Test Character";
+  const span = document.createElement("span");
+  span.textContent = " Webweaver • Spider";
+  a.appendChild(strong);
+  a.appendChild(span);
+  li.appendChild(a);
+  ul.appendChild(li);
+  band.appendChild(ul);
+  document.body.appendChild(band);
+
+  const spanColor = getComputedStyle(span).color;
+  const bandBg = getComputedStyle(band).backgroundColor;
+  const strongColor = getComputedStyle(strong).color;
+  const liColor = getComputedStyle(li).color;
+
+  document.body.removeChild(band);
+  return { spanColor, bandBg, strongColor, liColor };
+}
+
+describe("roster row text on the torn-foot band (THEME-01)", () => {
+  for (const state of THEME_STATES) {
+    it(`character roster span text meets WCAG AA (>=4.5:1) in ${state.label}`, () => {
+      const { spanColor, bandBg } = mountRosterRow(state.theme, state.contrast);
+      const ratio = contrastRatio(spanColor, bandBg);
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`character roster span resolves through --band-text-muted (not --text-muted) in ${state.label}`, () => {
+      const { spanColor } = mountRosterRow(state.theme, state.contrast);
+      // Bug guard: span must NOT be the ink-on-paper --text-muted value.
+      expect(isTextMuted(spanColor, state.contrast)).toBe(false);
+      // Positive: span must be --band-text-muted = --paper-sunk = #d6cdb8.
+      expect(spanColor.toLowerCase()).toBe("#d6cdb8");
+    });
+
+    it(`character roster strong text meets WCAG AA (>=4.5:1) in ${state.label}`, () => {
+      const { strongColor, bandBg } = mountRosterRow(state.theme, state.contrast);
+      const ratio = contrastRatio(strongColor, bandBg);
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`character roster li text meets WCAG AA (>=4.5:1) in ${state.label}`, () => {
+      const { liColor, bandBg } = mountRosterRow(state.theme, state.contrast);
+      const ratio = contrastRatio(liColor, bandBg);
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    });
+
+    it(`secondary span differs from primary strong (hierarchy preserved) in ${state.label}`, () => {
+      const { spanColor, strongColor } = mountRosterRow(state.theme, state.contrast);
+      // --band-text-muted (#d6cdb8) should differ from --band-text (#efe7d6).
+      expect(spanColor).not.toBe(strongColor);
+    });
+  }
 });
 

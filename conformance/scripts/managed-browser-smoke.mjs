@@ -262,9 +262,16 @@ export async function seedDataDir(dataDir, seeds) {
   return seeded;
 }
 
-// Poll GET /api/health until 200, bounded by timeoutMs. An optional external
-// signal aborts an in-flight poll immediately (used by waitForHealthOrExit).
-export async function waitForHealth(baseUrl, timeoutMs, signal) {
+// Poll GET /api/health until 200 + JSON identity match, bounded by timeoutMs.
+// An optional external signal aborts an in-flight poll immediately (used by
+// waitForHealthOrExit so an abandoned poll cannot keep fetching — and keep the
+// event loop alive — after the server process has already exited).
+//
+// The 200-status check is NOT sufficient for readiness: an unrelated server on
+// a colliding port may answer. Identity is verified by requiring the JSON body
+// to carry implementation === "ada" and dataDir resolving to the exact owned
+// data dir (same convention as managed-run.mjs waitForHealth).
+export async function waitForHealth(baseUrl, timeoutMs, signal, expectedDataDir) {
   const deadline = Date.now() + timeoutMs;
   let lastError;
   while (Date.now() < deadline) {
@@ -279,8 +286,19 @@ export async function waitForHealth(baseUrl, timeoutMs, signal) {
       const response = await fetch(`${baseUrl}/api/health`, {
         signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
       });
-      if (response.status === 200) return;
-      lastError = new Error(`health returned HTTP ${response.status}`);
+      if (response.status === 200) {
+        let health;
+        try {
+          health = await response.json();
+        } catch {
+          lastError = new Error("health returned invalid JSON");
+          continue;
+        }
+        if (health?.implementation === "ada" && resolve(health.dataDir ?? "") === resolve(expectedDataDir ?? "")) return;
+        lastError = new Error("health returned wrong implementation or dataDir");
+      } else {
+        lastError = new Error(`health returned HTTP ${response.status}`);
+      }
     } catch (error) {
       lastError = error;
     } finally {
@@ -311,8 +329,9 @@ async function readLogTail(logFile, maxBytes = 4096) {
 }
 
 // Race server readiness against an early exit. Resolves null when /api/health
-// returns 200; resolves { code, signal } when the server process terminates first.
-async function waitForHealthOrExit(baseUrl, timeoutMs, child) {
+// returns 200 with the expected implementation and dataDir; resolves { code,
+// signal } when the server process terminates first.
+async function waitForHealthOrExit(baseUrl, timeoutMs, child, expectedDataDir) {
   const pollController = new AbortController();
   const exited = new Promise((resolvePromise) => {
     child.once("exit", (code, signal) => {
@@ -320,7 +339,7 @@ async function waitForHealthOrExit(baseUrl, timeoutMs, child) {
       resolvePromise({ code, signal });
     });
   });
-  const healthy = waitForHealth(baseUrl, timeoutMs, pollController.signal).then(() => null);
+  const healthy = waitForHealth(baseUrl, timeoutMs, pollController.signal, expectedDataDir).then(() => null);
   return Promise.race([healthy, exited]);
 }
 
@@ -340,7 +359,7 @@ async function startServerForCycle(
     announce({ pid: child.pid });
     let earlyExit;
     try {
-      earlyExit = await waitForHealthOrExit(baseUrl, timeoutMs, child);
+      earlyExit = await waitForHealthOrExit(baseUrl, timeoutMs, child, dataDir);
     } catch (error) {
       await stopServer(child);
       throw error;

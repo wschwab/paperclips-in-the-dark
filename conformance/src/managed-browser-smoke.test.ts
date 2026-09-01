@@ -465,4 +465,92 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       await rm(root, { recursive: true, force: true });
     }
   }, 30_000);
+
+  // TOOLING-BROWSER-016: health identity — reject a 200 from an unrelated server
+  // that doesn't serve /api/health correctly (wrong implementation)
+  it("[TOOLING-BROWSER-016] rejects readiness from an unrelated 200 listener (health identity)", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-health-id-"));
+    const unrelatedServer = await makeFakeServer(
+      root,
+      `#!/usr/bin/env node
+import { createServer } from "node:http";
+const port = Number(process.argv[process.argv.indexOf("--port") + 1]);
+const server = createServer((req, res) => {
+  res.setHeader("content-type", "application/json");
+  res.end(JSON.stringify({ status: "ok", implementation: "evil", dataDir: "/tmp" }));
+});
+server.listen(port, "127.0.0.1");
+`,
+      "unrelated.mjs",
+    );
+    try {
+      const { code, stdout, stderr } = await execFileAsync(
+        "node",
+        [browserSmokePath, "--server", unrelatedServer, "--timeout", "3000", "--", "true"],
+        undefined,
+        30_000,
+      );
+      expect(code).toBe(1);
+      const runDir = lineValue(stdout, "runDir");
+      expect(runDir).toContain("pitd-managed");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-017: health identity — reject wrong dataDir from a 200 response
+  it("[TOOLING-BROWSER-017] rejects health with wrong dataDir (identity mismatch)", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-wrong-data-"));
+    const wrongDataServer = await makeFakeServer(
+      root,
+      `#!/usr/bin/env node
+import { createServer } from "node:http";
+const port = Number(process.argv[process.argv.indexOf("--port") + 1]);
+const server = createServer((req, res) => {
+  res.setHeader("content-type", "application/json");
+  res.end(JSON.stringify({ status: "ok", implementation: "ada", dataDir: "/wrong/data/dir" }));
+});
+server.listen(port, "127.0.0.1");
+`,
+      "wrong-data.mjs",
+    );
+    try {
+      const { code, stdout, stderr } = await execFileAsync(
+        "node",
+        [browserSmokePath, "--server", wrongDataServer, "--timeout", "3000", "--", "true"],
+        undefined,
+        30_000,
+      );
+      expect(code).toBe(1);
+      expect(stderr).toMatch(/wrong implementation|dataDir|not ready/i);
+      const runDir = lineValue(stdout, "runDir");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-BROWSER-018: health identity — reject a server that exits before readiness
+  it("[TOOLING-BROWSER-018] rejects a server that exits before readiness (child not alive)", async () => {
+    const root = await mkdtemp(join(tmpdir(), "sbt-early-exit-"));
+    const earlyExitServer = await makeFakeServer(root, crashingServerScript, "early.mjs");
+    try {
+      const { code, stdout, stderr } = await execFileAsync(
+        "node",
+        [browserSmokePath, "--server", earlyExitServer, "--timeout", "5000", "--", "true"],
+        undefined,
+        30_000,
+      );
+      expect(code).toBe(1);
+      expect(stderr).toContain("exited before readiness");
+      const runDir = lineValue(stdout, "runDir");
+      await expect(stat(runDir)).rejects.toThrow();
+      await assertNoOrphanServers();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
 });
