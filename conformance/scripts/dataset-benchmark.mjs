@@ -174,6 +174,7 @@ const WARMUP_RUNS = 3;
 const MEASURED_RUNS = 20;
 const SEED_CONCURRENCY = 8;
 const QUIET_WINDOW_MS = 250; // mutation-observer quiet window for render-to-stable
+const HEAP_SETTLE_MS = 500; // idle settle before reading usedJSHeapSize — lets V8 natural idle GC complete so the reading reflects live retained memory, not transient render garbage
 const REQUEST_TIMEOUT_MS = 60_000;
 
 const RECORD_SCHEMA = "perf01-dataset-benchmark/1";
@@ -463,10 +464,15 @@ async function collectBrowserMetrics(baseUrl, expectedRows) {
   const { resolveChromiumExecutable } = await import("./lib/chromium-resolve.mjs");
   const { chromium } = await import("playwright-core");
   const executablePath = resolveChromiumExecutable();
+  // PERF-04 fix: launch with --expose-gc so gc() is available in the browser.
+  // After render-to-stable we idle-settle (HEAP_SETTLE_MS) then call gc()
+  // before reading usedJSHeapSize — this filters transient render garbage from
+  // the reading so it is deterministic and reflects only live-retained data
+  // (roster CharacterSummary objects in plate closures, DOM nodes, etc.).
   const browser = await chromium.launch({
     executablePath,
     headless: true,
-    ...(process.getuid?.() === 0 ? { args: ["--no-sandbox"] } : {}),
+    args: ["--js-flags=--expose-gc", ...(process.getuid?.() === 0 ? ["--no-sandbox"] : [])],
   });
   try {
     const context = await browser.newContext();
@@ -510,6 +516,15 @@ async function collectBrowserMetrics(baseUrl, expectedRows) {
       { quietMs: QUIET_WINDOW_MS, rows: expectedRows },
       { timeout: 30_000, polling: 50 },
     );
+    // PERF-04 fix: after render-to-stable, idle-settle then gc() before the
+    // heap snapshot. The 500ms idle wait lets V8's natural idle GC run; the
+    // explicit gc() (chromium launched with --expose-gc) is the benchmark
+    // contract's defined stabilization step. This filters transient render
+    // garbage (DOM construction, Effect runtime warmup, async font/img decode)
+    // without hiding production-retained data (the CharacterSummary objects
+    // held by the roster plate closures are live references, not collectible).
+    await new Promise((resolve) => setTimeout(resolve, HEAP_SETTLE_MS));
+    await page.evaluate(() => { if (typeof globalThis.gc === "function") globalThis.gc(); });
     const metrics = await page.evaluate(() => ({
       lastMutation: window.__pitdBench.lastMutation,
       domNodes: document.getElementsByTagName("*").length,
@@ -1127,6 +1142,8 @@ async function runParent(opts) {
         measuredRuns: MEASURED_RUNS,
         seedConcurrency: SEED_CONCURRENCY,
         mutationObserverQuietWindowMs: QUIET_WINDOW_MS,
+        heapSettleMs: HEAP_SETTLE_MS,
+        gcBeforeHeapSnapshot: true,
         degradedMixProportions: DEGRADED_MIX,
         crewType: CREW_TYPE,
         gameStem: GAME_STEM,

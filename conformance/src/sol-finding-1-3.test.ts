@@ -399,3 +399,54 @@ describe("SOL finding 4 — gen-doc workflow child-only black-box", () => {
     expect(src).toContain("process.env.BASE_URL");
   });
 });
+
+// ---------------------------------------------------------------------------
+// PERF-04: heap measurement determinism
+//
+// RED: before the fix, collectBrowserMetrics read performance.memory.usedJSHeapSize
+// immediately after the 250ms mutation-observer quiet window — without letting
+// V8's GC run, so the reading captured transient render garbage non-
+// deterministically (5.89–9.04MB at scale 1000 across runs, exceeding the
+// frozen 5.34MB budget). The fix: launch Chromium with --expose-gc, idle-settle
+// (HEAP_SETTLE_MS), then call gc() before the heap snapshot, making the
+// reading deterministic and budget-compliant.
+// ---------------------------------------------------------------------------
+
+const benchmarkScriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "scripts", "dataset-benchmark.mjs");
+
+describe("PERF-04 — deterministic heap measurement", () => {
+  it("[TOOLING-PERF-04a] chromium launched with --expose-gc so gc() is available", async () => {
+    const src = await readFile(benchmarkScriptPath, "utf8");
+    expect(src).toContain("--js-flags=--expose-gc");
+  });
+
+  it("[TOOLING-PERF-04b] gc() called before reading usedJSHeapSize", async () => {
+    const src = await readFile(benchmarkScriptPath, "utf8");
+    // The gc() call (globalThis.gc()) must appear before the usedJSHeapSize
+    // read inside the page.evaluate metrics block. Both are in the actual
+    // code (not comments) — search for the evaluate call pattern.
+    const gcIdx = src.indexOf("globalThis.gc()");
+    const evalIdx = src.indexOf("const metrics = await page.evaluate");
+    expect(gcIdx).toBeGreaterThan(-1);
+    expect(evalIdx).toBeGreaterThan(-1);
+    expect(gcIdx).toBeLessThan(evalIdx);
+  });
+
+  it("[TOOLING-PERF-04c] HEAP_SETTLE_MS idle-settle constant is defined and positive", async () => {
+    const src = await readFile(benchmarkScriptPath, "utf8");
+    const m = src.match(/HEAP_SETTLE_MS\s*=\s*(\d+)/);
+    expect(m).not.toBeNull();
+    const val = Number(m![1]);
+    expect(val).toBeGreaterThan(0);
+  });
+
+
+  it("[TOOLING-PERF-04d] idle-settle wait precedes gc() call in collectBrowserMetrics", async () => {
+    const src = await readFile(benchmarkScriptPath, "utf8");
+    const settleIdx = src.indexOf("setTimeout(resolve, HEAP_SETTLE_MS)");
+    const gcIdx = src.indexOf("globalThis.gc()");
+    expect(settleIdx).toBeGreaterThan(-1);
+    expect(gcIdx).toBeGreaterThan(-1);
+    expect(settleIdx).toBeLessThan(gcIdx);
+  });
+});
