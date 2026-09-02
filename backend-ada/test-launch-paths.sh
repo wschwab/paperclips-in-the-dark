@@ -14,11 +14,6 @@ SERVER="${PITD_SERVER_BIN:-$SCRIPT_DIR/server/bin/pitd}"
 
 # Owned data directory: never touches repo default campaign-data.
 TMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/pitd-launch-paths.XXXXXX")
-DATA_DIR="$TMP_ROOT/data"
-mkdir -p "$DATA_DIR"
-
-# Owned log file inside the temp root so cleanup is exact.
-LOG_FILE="$TMP_ROOT/server.log"
 
 server_pid=""
 cleanup () {
@@ -32,11 +27,16 @@ cleanup () {
 }
 
 # Install cleanup trap IMMEDIATELY after TMP_ROOT creation, before any fallible
-# command (port probe, executable check, server launch). This prevents leak on
-# port-allocation failure, missing executable, or bind error.
+# command (mkdir, port probe, executable check, server launch). This prevents
+# leak on mkdir failure, port-allocation failure, missing executable, or bind error.
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT
 trap 'cleanup; exit 143' TERM
+
+DATA_DIR="$TMP_ROOT/data"
+mkdir -p "$DATA_DIR"
+
+LOG_FILE="$TMP_ROOT/server.log"
 
 # Pick an unused port: bind to port 0 on a throwaway socket pair, read the
 # kernel-assigned port, close it, and pass it to the server. The gap between

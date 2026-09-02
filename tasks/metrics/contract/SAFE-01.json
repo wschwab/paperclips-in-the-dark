@@ -32,7 +32,7 @@
     "conformance/src/default-data-guard.test.ts",
     "agent-docs/test-audit/campaign-data-manifest.json"
   ],
-  "notes": "SAFE-01 metric card; see evidence links for details",
+  "notes": "SAFE-01 metric card; see evidence links for details. [2026-09-02: default-data guard tests 21/21 PASS; SAFE-01 guard EXIT 0 around harmless 'true' child confirms zero writes to campaign-data during guarded runs. Campaign-data manifest refreshed after post-VET-01 format-normalization drift in 1 file (characters/7865a17b-d267-434a-8177-0f5a7871aa46/current.json, -61 bytes, entity semantically identical); data/games unchanged (sha256 39358fd6… matches VET-01 baseline). See finding-traceability.md AR-002 row and final-vetting.md preservation notes for drift record.].",
   "metricsMethodology": {
     "method": "historical evidence review (no git diff available)",
     "source": "per-card notes + iterationNotes + defectsCaughtBy"

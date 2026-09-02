@@ -496,6 +496,85 @@ describe("OperationResult decoder", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// EDGE-02 — STALE_REVISION details XOR enforcement (contract/common.json#/$defs/errorStaleDetails)
+// ---------------------------------------------------------------------------
+describe("STALE_REVISION details XOR (EDGE-02)", () => {
+  const token = "sha256:" + "a".repeat(64);
+
+  function makeStaleResult(details: unknown) {
+    return {
+      ok: false,
+      applied: { op: "get" },
+      sideEffects: [],
+      error: {
+        code: "STALE_REVISION",
+        status: 409,
+        message: "stale",
+        retryable: false,
+        recovery: "refresh",
+        details,
+      },
+    };
+  }
+
+
+  it("accepts a valid currentRevision alone", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentRevision: 1 }));
+    expect(Either.isRight(result)).toBe(true);
+  });
+
+  it("accepts a valid currentContentToken alone", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentContentToken: token }));
+    expect(Either.isRight(result)).toBe(true);
+  });
+
+  it("rejects both currentRevision and currentContentToken present", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentRevision: 1, currentContentToken: token }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects neither key present (empty details)", () => {
+    const result = decodeOperationResultEither(makeStaleResult({}));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects an unknown key in details", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentRevision: 1, bogus: true }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects currentRevision as non-integer", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentRevision: 1.5 }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects currentRevision below 1", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentRevision: 0 }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects a malformed currentContentToken", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentContentToken: "not-a-token" }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects currentContentToken without sha256 prefix", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentContentToken: "a".repeat(64) }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects currentContentToken with wrong hex length", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentContentToken: "sha256:" + "a".repeat(63) }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+
+  it("rejects a non-number currentRevision (string)", () => {
+    const result = decodeOperationResultEither(makeStaleResult({ currentRevision: "1" }));
+    expect(Either.isLeft(result)).toBe(true);
+  });
+});
+
 describe("HistoryEntry decoder (F2aa)", () => {
   it("decodes a snapshotId emitted by the Ada server (17-digit tick format)", () => {
     const entry = decodeHistoryEntry({

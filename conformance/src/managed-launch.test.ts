@@ -613,4 +613,70 @@ describe("SAFE-02 backend-ada launch scripts own their lifecycle", () => {
       await rm(fakeBin, { recursive: true, force: true });
     }
   }, 30_000);
+
+  // TOOLING-LAUNCH-013: If mkdir fails, the script must still clean up TMP_ROOT.
+  // The cleanup trap must be installed before mkdir -p is called.
+  it("[TOOLING-LAUNCH-013] test-launch-paths.sh cleans up TMP_ROOT even when mkdir fails (trap-before-fallible-mkdir)", async () => {
+    const unrelatedTmp = await mkdtemp(join(tmpdir(), "unrelated-tmp-XXXXXX"));
+    // Create a fake bin dir with a mkdir that always fails.
+    const fakeBin = await mkdtemp(join(tmpdir(), "fake-bin-XXXXXX"));
+    const fakeMkdirPath = join(fakeBin, "mkdir");
+    await writeFile(fakeMkdirPath, "#!/bin/sh\necho 'mkdir mocked failure' >&2\nexit 1\n");
+    await chmod(fakeMkdirPath, 0o755);
+    try {
+      const result = await execFileAsync(
+        "sh",
+        [launchPathsScript],
+        { PATH: `${fakeBin}:${process.env.PATH}` },
+        30_000,
+      );
+      expect(result.code).toBe(1);
+
+      let unrelatedExists = true;
+      try {
+        await stat(unrelatedTmp);
+      } catch {
+        unrelatedExists = false;
+      }
+      expect(unrelatedExists).toBe(true);
+
+      const leftover = await findTmpDirs("pitd-launch-paths");
+      expect(leftover).toEqual([]);
+    } finally {
+      await rm(unrelatedTmp, { recursive: true, force: true });
+      await rm(fakeBin, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  // TOOLING-LAUNCH-014: Same for test-spa-routes.sh.
+  it("[TOOLING-LAUNCH-014] test-spa-routes.sh cleans up TMP_ROOT even when mkdir fails (trap-before-fallible-mkdir)", async () => {
+    const unrelatedTmp = await mkdtemp(join(tmpdir(), "unrelated-tmp-XXXXXX"));
+    const fakeBin = await mkdtemp(join(tmpdir(), "fake-bin-XXXXXX"));
+    const fakeMkdirPath = join(fakeBin, "mkdir");
+    await writeFile(fakeMkdirPath, "#!/bin/sh\necho 'mkdir mocked failure' >&2\nexit 1\n");
+    await chmod(fakeMkdirPath, 0o755);
+    try {
+      const result = await execFileAsync(
+        "sh",
+        [spaRoutesScript],
+        { PATH: `${fakeBin}:${process.env.PATH}` },
+        30_000,
+      );
+      expect(result.code).toBe(1);
+
+      let unrelatedExists = true;
+      try {
+        await stat(unrelatedTmp);
+      } catch {
+        unrelatedExists = false;
+      }
+      expect(unrelatedExists).toBe(true);
+
+      const leftover = await findTmpDirs("pitd-spa");
+      expect(leftover).toEqual([]);
+    } finally {
+      await rm(unrelatedTmp, { recursive: true, force: true });
+      await rm(fakeBin, { recursive: true, force: true });
+    }
+  }, 30_000);
 });

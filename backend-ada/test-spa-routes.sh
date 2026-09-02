@@ -12,9 +12,6 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 # Owned data directory and temp root.
 TMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/pitd-spa.XXXXXX")
-DATA_DIR="$TMP_ROOT/data"
-LOG_FILE="$TMP_ROOT/server.log"
-mkdir -p "$DATA_DIR"
 
 SERVER_PID=""
 cleanup () {
@@ -28,11 +25,14 @@ cleanup () {
 }
 
 # Install cleanup trap IMMEDIATELY after TMP_ROOT creation, before any fallible
-# command (port probe, executable check, server launch). This prevents leak on
-# port-allocation failure, missing executable, or bind error.
+# command (mkdir, port probe, executable check, server launch).
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT
 trap 'cleanup; exit 143' TERM
+
+DATA_DIR="$TMP_ROOT/data"
+LOG_FILE="$TMP_ROOT/server.log"
+mkdir -p "$DATA_DIR"
 
 # Pick an unused port via the kernel.
 PORT=$(

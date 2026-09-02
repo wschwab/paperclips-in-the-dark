@@ -40,18 +40,16 @@ const ErrorPreviewDetails = Schema.Struct({
 });
 const ErrorContentToken = Schema.String.pipe(Schema.pattern(/^sha256:[0-9a-f]{64}$/));
 // STALE_REVISION details are a contract `oneOf` (currentRevision XOR
-// currentContentToken). The frozen reference models them as a strict union,
-// but frontend/src/api/client.ts (out of SC-F1 scope) reads
-// `error.details.currentRevision` directly. Model the pair as a flat
-// optional-fields struct so the decoded type stays client-accessible while
-// still rejecting undeclared keys and typing both members. The server always
-// sends exactly one partner; a client decoder need not enforce exclusivity.
-const ErrorStaleDetails = Schema.Struct({
-  currentRevision: Schema.optional(
-    Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1)),
-  ),
-  currentContentToken: Schema.optional(ErrorContentToken),
-});
+// currentContentToken) per common.json#/$defs/errorStaleDetails: exactly one
+// partner is present, additionalProperties: false. Modeled as a strict union
+// of two single-field structs so the decoder enforces EXACTLY ONE (rejecting
+// both absent and both present). Each branch declares only its own key with
+// no excess, matching the frozen contract.
+const RevisionNum = Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(1));
+const ErrorStaleDetails = Schema.Union(
+  Schema.Struct({ currentRevision: RevisionNum, currentContentToken: Schema.Undefined }),
+  Schema.Struct({ currentRevision: Schema.Undefined, currentContentToken: ErrorContentToken }),
+);
 /** Branches whose details is an empty object (additionalProperties: false). */
 const EmptyDetails = Schema.Struct({});
 

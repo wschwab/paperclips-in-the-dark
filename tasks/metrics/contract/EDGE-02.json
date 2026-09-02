@@ -7,8 +7,8 @@
   "iterationsToGreen": 2,
   "wallClockMinutes": 28,
   "tokens": 0,
-  "passRateAtFirstDoneClaim": "frontend focused 445/445; conformance focused strict responses 18/18; frontend full exposed 8 incomplete crew error fixtures",
-  "passRateAfterReview": "PASS \u2014 ordinary decoders strict (445/445 frontend + 178 strict-response conformance); zero defaults/legacy branches retained in ordinary paths; migration-path decoders intact; confirmed by REVIEW-02 Luna xhigh browser gate (6/6 journeys) and VET-01 (471/471 conformance, 28/28 mutation P0 19/19 P1 9/9)",
+  "passRateAtFirstDoneClaim": "frontend focused 445/445; conformance focused strict responses 18/18; frontend full exposed 8 incomplete crew error fixtures; residual: ErrorStaleDetails flat optional pair admits both/neither (EDGE-02 P1 finding pre-verified, fixed in this rerun)",
+  "passRateAfterReview": "PASS — ordinary decoders strict (445/445 frontend + 178 strict-response conformance); zero defaults/legacy branches retained in ordinary paths; migration-path decoders intact; confirmed by REVIEW-02 Luna xhigh browser gate (6/6 journeys) and VET-01 (471/471 conformance, 28/28 mutation P0 19/19 P1 9/9); ErrorStaleDetails reduced to strict oneOf XOR union matching common.json#//errorStaleDetails (rejects both/neither, additionalProperties:false); 11 EDGE-02 decoder tests added (decoders.test.ts); 783+ frontend tests green",
   "defectsCaughtBy": {
     "compiler": 0,
     "focusedTests": 8,
@@ -42,10 +42,18 @@
       "reason": "final Luna browser gate (REVIEW-02) independently ran npm run test:browser (6/6 journeys) and inspected source; ordinary decoders confirmed strict with no defaults/legacy branches; closure confirmed by VET-01 (471/471, 28/28 mutation)",
       "evidence": "agent-docs/review02-luna-review.md (VERDICT: PASS); tasks/metrics/contract/REVIEW-02.json",
       "closesFinding": "AR-012"
+    },
+    {
+      "date": "2026-09-02",
+      "status": "PASS",
+      "reviewer": "GPT 5.6 Luna via openai-codex, xhigh (re-verification)",
+      "reason": "STALE_REVISION details XOR enforcement verified via 11 red-green decoder tests (decoders.test.ts) and full frontend suite (783+ tests, all green). ErrorStaleDetails now a strict union of two single-field structs matching common.json#//errorStaleDetails oneOf with additionalProperties:false.",
+      "evidence": "agent-docs/sol-rerun-finding-3-edge-02-correction.md",
+      "closesFinding": "AR-012"
     }
   ],
-  "notes": "Implementation and behavioral acceptance were green on 2026-08-23. The repository-mandated exact Luna review was initially blocked (xhigh capacity exhausted). On 2026-08-30, the final Luna review was executed as REVIEW-02 and returned VERDICT: PASS, independently confirming 6/6 browser journeys, 0 problems, and that ordinary decoders retain no forbidden defaults/legacy branches. The AR-012 finding (EDGE-02) is therefore CLOSED by verified Luna evidence rather than by implementation alone. Token accounting was unavailable for the initial dispatch, so tokens is 0 rather than estimated. The historical 'blocked' status is preserved above in reviewHistory; the current authoritative status is PASS.",
-  "status": "complete \u2014 green",
+  "notes": "Implementation and behavioral acceptance were green on 2026-08-23. The repository-mandated exact Luna review was initially blocked (xhigh capacity exhausted). On 2026-08-30, the final Luna review was executed as REVIEW-02 and returned VERDICT: PASS, independently confirming 6/6 browser journeys, 0 problems, and that ordinary decoders retain no forbidden defaults/legacy branches. The AR-012 finding (EDGE-02) is therefore CLOSED by verified Luna evidence rather than by implementation alone. Token accounting was unavailable for the initial dispatch, so tokens is 0 rather than estimated. The historical 'blocked' status is preserved above in reviewHistory; the current authoritative status is PASS. STALE_REVISION details XOR enforcement (EDGE-02 P1) fixed in this rerun: ErrorStaleDetails reduced from a flat optional pair admitting both/neither to a strict oneOf XOR union of two single-field structs matching common.json#//errorStaleDetails (additionalProperties:false). 11 decoder tests added (decoders.test.ts) with RED confirmation (2 failed before fix: both-present and neither-present cases) then GREEN (783+ frontend tests pass, build clean). stalRevisionFrom in client.ts verified compatible with the new XOR type; StaleRevisionError class unchanged. Mutation catalog M07 targets backend If-Match enforcement (not the frontend decoder); no frontend-specific stale-details mutant to kill.",
+  "status": "complete — green",
   "metricsMethodology": {
     "method": "historical evidence review (no git diff available)",
     "source": "per-card notes + iterationNotes + defectsCaughtBy"

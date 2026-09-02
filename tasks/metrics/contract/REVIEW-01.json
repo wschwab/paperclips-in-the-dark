@@ -1,9 +1,9 @@
 {
   "task": "REVIEW-01",
   "track": "contract",
-  "date": "2026-09-01",
+  "date": "2026-09-02",
   "implementationAgent": "nous/poolside/laguna-s-2.1:free:high",
-  "reviewAgent": "gpt-5.6-sol via openai-codex (session 01a05c63)",
+  "reviewAgent": "gpt-5.6-sol via openai-codex (session 01a06210 calibration; session 01a06220 clean)",
   "reviewerRoute": "gpt-5.6-sol",
   "modelReasoningEffort": "xhigh",
   "sandbox": "workspace-write",
@@ -17,23 +17,29 @@
     "human": 0
   },
   "defectCatchingLayer": [
-    "independent-review (25d3082d calibration: planted SAFE-02 health-identity regression in conformance/scripts/managed-browser-smoke.mjs:waitForHealth lines 297-300; reviewer reproduced via HTTP stub returning 200 + implementation:'evil' + wrong dataDir, identified exact mechanism and divergence from managed-run.mjs reference)"
+    "independent-review (25d3082d calibration: planted SAFE-02 health-identity regression in conformance/scripts/managed-browser-smoke.mjs:waitForHealth lines 297-300; reviewer reproduced via HTTP stub returning 200 + implementation:'evil' + wrong dataDir, identified exact mechanism and divergence from managed-run.mjs reference)",
+    "independent-review (10bb87fb calibration: planted M18 action-dot ::before hit-zone regression in frontend/src/styles/components.css; reviewer reproduced via CSS inspection, identified mechanism at components.css:73-81, named failing A11Y-01 test action-dots.test.ts:135-141, verified hash delta db11a76b...→0895ba58...)"
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "INPROGRESS \u2014 25d3082d calibration PASS but clean candidate FAIL; calibrated reviewer correctly withheld acceptance pending corrective cards",
+  "status": "INPROGRESS — 10bb87fb calibration PASS; clean candidate FAIL; 5 primary blockers (P1 trap/mkdir leak, P1 10 --keep run dirs, P1 stale campaign manifest 61 bytes, P2 stale VET-01/REVIEW-02 evidence @ 9c837bde, EDGE-02 weak OperationResult decoder); corrective cards pending",
   "evidence": [
-    "agent-docs/review01-calibrated-review.md (2026-09-01 25d3082d cycle section)",
+    "agent-docs/review01-calibrated-review.md (10bb87fb cycle section, to be appended after PASS)",
     "conformance/scripts/managed-browser-smoke.mjs (clean identity check present at line 297: health?.implementation === 'ada' && dataDir === expectedDataDir)",
-    "agent-docs/test-audit/mutation-catalog.json (M18 stale \u2014 expects components.css a0ba0f, current db11a7)",
-    "agent-docs/test-audit/mutation-results.json (stale \u2014 records revision 9c837bde1067 not 25d3082d)",
+    "frontend/src/styles/components.css (hash db11a76b…75f; ::before hit zone = 24px x 24px lines 78-79; Hi-C --band-text-muted at 1274)",
+    "agent-docs/test-audit/mutation-catalog.json (M18 restorationHash db11a76b…75f matches current components.css)",
+    "agent-docs/test-audit/mutation-results.json (revision 10bb87fb11da, 28/28 killed)",
+    "agent-docs/test-audit/performance-results.json (revision 10bb87fb11da, budgets green per scale/metric)",
+    "agent-docs/test-audit/browser-evidence/10bb87fb-pre-review/ (6/6 journeys PASS, 0 problems, 77 PNG + 47 JSON)",
     "/tmp/review01-25d-calibration-verdict.md (CALIBRATION: PASS)",
-    "/tmp/review01-25d-clean-verdict.md (CLEAN-CANDIDATE: FAIL)"
+    "/tmp/review01-25d-clean-verdict.md (CLEAN-CANDIDATE: FAIL)",
+    "/tmp/review01-10bb-calibration-verdict.md (CALIBRATION: PASS)",
+    "/tmp/review01-10bb-clean-verdict.md (CLEAN-CANDIDATE: FAIL — 5 blockers)"
   ],
   "calibratedReview01Cycles": [
     {
       "cycle": "2026-08-30 @ 0fa9d070",
-      "verdict": "PASS (calibration PASS; clean candidate PASS \u2014 471/471 green)",
+      "verdict": "PASS (calibration PASS; clean candidate PASS — 471/471 green)",
       "preservedAs": "original JSON fields above",
       "historicalNote": "prior cycle; clean-candidate verdict now superseded by 25d3082d FAIL"
     },
@@ -67,17 +73,58 @@
         }
       ],
       "positiveChecks": "roster 43/43; readiness identity + dynamic ports present; contract coverage 110 ops / 345 dispositions; 4003 campaign files / 17495126 bytes match manifest; performance budgets green",
-      "status": "FAIL \u2014 clean candidate not accepted; calibrated reviewer correctly withheld acceptance"
+      "status": "FAIL — clean candidate not accepted; calibrated reviewer correctly withheld acceptance"
+    },
+    {
+      "cycle": "2026-09-02 @ 10bb87fb11dac3b28f2393306e67b7985977d9dd",
+      "candidate": "10bb87fb11dac3b28f2393306e67b7985977d9dd (\"remove source-text heap assertions\")",
+      "calibrationVerdict": "PASS",
+      "calibrationVerdictFile": "/tmp/review01-10bb-calibration-verdict.md",
+      "calibrationRunLog": "/tmp/review01-10bb-calibration-run.log",
+      "calibrationSession": "01a06210-c5b2",
+      "plantedDefect": "P1/SAFE-02-a11y action-dot ::before hit-zone regression in frontend/src/styles/components.css:73-81 — regressed width/height from 24px to 16px, violating A11Y-01 WCAG 2.5.8 24×24 minimum",
+      "reproduction": "reviewer reproduced via CSS inspection of components.css ::before; named failing A11Y-01 contract test action-dots.test.ts:135-141; verified hash delta db11a76b… (clean) → 0895ba58… (mutant); noted prior reviewer caught it",
+      "plantedFileHash": "0895ba58cc263767ce64af2fd7702ad33b2d4bbee395cf9bbaf800621fc62d82",
+      "cleanFileHash": "db11a76b584070ac1a8bde53f09f01a8f8c856b1423a5e4b3fa1efdfa444c75f",
+      "disposableWorkspace": "/tmp/review01-10bb-work (destroyed; parent 10bb87fb untouched, working commit c2186210 empty successor)",
+      "cleanVerdict": "FAIL",
+      "cleanVerdictFile": "/tmp/review01-10bb-clean-verdict.md",
+      "cleanRunLog": "/tmp/review01-10bb-clean-run.log",
+      "cleanSession": "01a06220-044e",
+      "cleanFindings": [
+        {
+          "priority": "P1",
+          "finding": "Ada launch scripts still leak if mkdir fails before cleanup trap: backend-ada/test-launch-paths.sh line 18 mkdir -p precedes line 37 trap cleanup EXIT; test-spa-routes.sh line 17 mkdir -p precedes line 33 trap cleanup EXIT. mkdir sits between resource creation and trap installation; a mkdir failure exits with trap unset and TMP_ROOT leaks"
+        },
+        {
+          "priority": "P1",
+          "finding": "Tooling suite left 10 --keep run directories under /tmp/pitd-managed (2026-09-02T11:12–12:04)"
+        },
+        {
+          "priority": "P1",
+          "finding": "Campaign manifest stale: agent-docs/test-audit/campaign-data-manifest.json timestamped 2026-08-30 (9c837bde era, 17495126 bytes) vs current 10bb87fb campaign-data (17495065 bytes; 4003 files both); 61-byte mismatch in one file — manifest does not match reviewed candidate"
+        },
+        {
+          "priority": "P2",
+          "finding": "Stale VET-01/REVIEW-02 evidence: tasks/metrics/contract/VET-01.json (15 refs to 9c837bde) and REVIEW-02.json (13 refs to 9c837bde) still identify pre-fix candidate 9c837bde, not 10bb87fb"
+        },
+        {
+          "priority": "P2",
+          "finding": "EDGE-02 weak frontend OperationResult decoder: frontend/src/schema/operation-result.ts models STALE_REVISION details as a flat optional-field struct (ErrorStaleDetails) instead of the contract oneOf/XOR exclusivity; ordinary decoders admit a weaker shape than contract/schemas/operation-result.json additionalProperties:false union branches"
+        }
+      ],
+      "positiveChecks": "M18 absent (::before = 24px x 24px, hash db11a76b… = catalog restorationHash); waitForHealth identity check present (line 297); no fixed ports in launch scripts; Hi-C --band-text-muted present (line 1274); mutation-results 28/28 killed @ revision 10bb87fb11da; performance budgets green @ 10bb87fb11da; browser-evidence 10bb87fb-pre-review 6/6 journeys 0 problems 77 PNG + 47 JSON; metrics 4/4 §11 fields; roster 43/43",
+      "status": "FAIL — clean candidate not accepted; 5 primary blockers remain"
     }
   ],
-  "notes": "25d3082d REVIEW-01 calibration per AUDIT-0 spec \u00a717.2: (1) ONE realistic P0 defect planted in an isolated disposable jj workspace at /tmp/review01-25d-work, parent commit 25d3082d untouched, working commit ff0b0bcb; (2) reviewer given governing spec + source + numeric browser evidence + screenshots, with NO defect location; (3) reviewer reproduced/independently identified the planted SAFE-02 health-identity regression at managed-browser-smoke.mjs:297-300 with mechanism + outcome + divergence from managed-run.mjs reference; (4) disposable workspace destroyed, clean candidate hash verified (2a16e389... = 25d3082d, defect confined to working copy only); (5) clean-candidate review then run in primary repo. Calibration PASS; clean candidate FAIL (P0 identity/evidence mismatch + P1 trap-ordering leak + P1 stale mutation artifacts + P2 incomplete metrics). Per \u00a717.2 'If either FAIL: report exact findings, do not mark done.' Per \u00a717.2 step 6 'Only after both PASS: update tracked REVIEW-01 metric + review01-calibrated-review.md with facts.' Both PASS was NOT achieved, so REVIEW-01 remains IN PROGRESS; the FAIL findings must spawn corrective cards and a fresh Luna/PASS on a single valid candidate identity.",
+  "notes": "REVIEW-01 10bb87fb cycle per AUDIT-0 work-spec §17.2: (1) ONE realistic P1 defect planted in isolated disposable jj workspace at /tmp/review01-10bb-work, parent commit 10bb87fb untouched, working commit c2186210 (empty successor); (2) reviewer given governing spec + SAFE-02/A11Y-01/THEME-01 contracts + current source + 10bb87fb revision-tagged evidence, NO defect location; (3) reviewer reproduced/independently identified the planted M18 action-dot ::before hit-zone regression at components.css:73-81 with mechanism + failing A11Y-01 test + hash delta; (4) disposable workspace destroyed, clean candidate hash verified (db11a76b… = 10bb87fb, defect confined to working copy only); (5) clean-candidate review run in primary repo — calibration PASS, clean candidate FAIL on 5 primary blockers. Per §17.2 'If either FAIL: report exact findings, do not mark done.' Per §17.2 step 6 'Only after both PASS: update tracked REVIEW-01 + review01-calibrated-review.md.' Both PASS was NOT achieved; the 5 FAIL findings become corrective cards and require a fresh Luna/PASS re-review on a single valid candidate identity with all findings remediated.",
   "metricsMethodology": {
-    "method": "no grounded duration available (git commit point-in-time only)",
-    "source": "raw codex logs, git/jj history, repo file inspection",
-    "tokensNote": "tokens=null: token accounting not available for this card; see metricsMethodology",
-    "wallClockMinutesNote": "wallClockMinutes=0: audit/calibration card, no execution duration (see metricsMethodology)"
+    "method": "calibration + clean-candidate review pair; pass-gate = zero P0/P1 findings + no unexplained P2 + 100% mutant kill + 6/6 Chromium journeys + budgets green + zero leaked resources + no stale evidence",
+    "source": "codex review-run logs (--output-last-message verdicts), git/jj history, repo file inspection, /tmp/pitd-managed inspection, campaign-data byte count",
+    "tokensNote": "tokens=null: token accounting not available (see metricsMethodology method note)",
+    "wallClockMinutesNote": "calibration: 84 min (01a06210, 5040s); clean: 18 min (01a06220, ~1080s first completion, 990s wall)"
   },
-  "iterationsToGreen": "see notes (iteration count not explicitly recorded)",
+  "iterationsToGreen": "10bb87fb cycle blocked on 5 corrective cards; no green achieved",
   "tokens": null,
-  "wallClockMinutes": 0
+  "wallClockMinutes": 102
 }
