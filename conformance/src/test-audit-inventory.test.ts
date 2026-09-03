@@ -1,3 +1,7 @@
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   parseAdaAsserts,
@@ -14,6 +18,10 @@ import {
   sortRows,
   assemble,
   blankRow,
+  looksLedgerAssigned,
+  assertSafeToOverwrite,
+  parseArgs,
+  generate,
 } from "../scripts/test-audit-inventory.mjs";
 
 // ---------------------------------------------------------------------------
@@ -375,10 +383,77 @@ describe("TA00 assemble", () => {
       ...base,
       ada: [makeAdaRow({ line: 9, label: "x", relFile: "backend-ada/core/tests/core_tests.adb" })],
     });
+
     for (const r of inv.rows) {
       expect(r.decision).toBe("");
       expect(r.target).toBe("");
       expect(r.dupeOf).toBe("");
     }
+  });
+});
+
+describe("TA00 ledger-overwrite guard", () => {
+  // Raw generator output carries blank decision fields for the ledger to
+  // assign; it must never silently replace the audited dataset (ledgerCounts,
+  // staleRows, assigned decisions, review states). The 2026-09-06 incident:
+  // a bare `node scripts/test-audit-inventory.mjs` overwrote the canonical
+  // 1618-row inventory.json with raw output, erasing staleRows and breaking
+  // reconcile-audit.js. These tests pin the refusal contract. All temp-only;
+  // the refusal path throws before any vitest-list collection runs.
+  const ledgeredJson = JSON.stringify({
+    generated: "2026-09-04T00:00:00.000Z",
+    rows: [
+      { id: "X-001", decision: "keep", independentReviewStatus: "reviewed" },
+    ],
+    staleRows: [{ id: "OLD-001" }],
+    ledgerCounts: { keep: 1, merge: 0, upgrade: 0, delete: 0, total: 1, staleExcluded: 1 },
+  });
+
+  it("[TA00-GUARD-001] looksLedgerAssigned detects every ledger marker, accepts raw output", () => {
+    expect(looksLedgerAssigned(null)).toBe(false);
+    expect(looksLedgerAssigned("inventory")).toBe(false);
+    expect(looksLedgerAssigned([])).toBe(false);
+    expect(looksLedgerAssigned({ rows: [] })).toBe(false);
+    expect(
+      looksLedgerAssigned(assemble({ frontend: [], conformance: [], tooling: [], ada: [], proof: [] })),
+    ).toBe(false);
+    expect(looksLedgerAssigned({ ledgerCounts: {} })).toBe(true);
+    expect(looksLedgerAssigned({ staleRows: [] })).toBe(true);
+    expect(looksLedgerAssigned({ rows: [{ id: "X", decision: "keep" }] })).toBe(true);
+    expect(looksLedgerAssigned({ rows: [{ id: "X", decision: "" }] })).toBe(false);
+    expect(
+      looksLedgerAssigned({ rows: [{ id: "X", decision: "", independentReviewStatus: "reviewed" }] }),
+    ).toBe(true);
+  });
+
+  it("[TA00-GUARD-002] parseArgs defaults force:false and accepts --force", () => {
+    expect(parseArgs([]).force).toBe(false);
+    expect(parseArgs(["--force"]).force).toBe(true);
+  });
+
+  it("[TA00-GUARD-003] generate() refuses a ledger-assigned file and leaves it byte-identical", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "ta00-guard-"));
+    const target = join(dir, "inventory.json");
+    await writeFile(target, ledgeredJson, "utf8");
+    const before = createHash("sha256").update(await readFile(target, "utf8"), "utf8").digest("hex");
+    await expect(generate({ output: target })).rejects.toThrow(/refusing to overwrite ledger-assigned/);
+    const after = createHash("sha256").update(await readFile(target, "utf8"), "utf8").digest("hex");
+    expect(after).toBe(before);
+  });
+
+  it("[TA00-GUARD-004] assertSafeToOverwrite allows raw-over-raw and missing files, force overrides", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "ta00-guard-"));
+    const raw = join(dir, "raw.json");
+    await writeFile(
+      raw,
+      JSON.stringify({ generated: false, groups: [], rows: [{ id: "X", decision: "", target: "", dupeOf: "" }] }),
+      "utf8",
+    );
+    await expect(assertSafeToOverwrite(raw)).resolves.toBe(true);
+    await expect(assertSafeToOverwrite(join(dir, "does-not-exist.json"))).resolves.toBe(true);
+    const ledger = join(dir, "ledger.json");
+    await writeFile(ledger, ledgeredJson, "utf8");
+    await expect(assertSafeToOverwrite(ledger)).rejects.toThrow(/refusing/);
+    await expect(assertSafeToOverwrite(ledger, { force: true })).resolves.toBe(true);
   });
 });

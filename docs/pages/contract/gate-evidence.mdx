@@ -16,13 +16,13 @@ is fixed before the next round).
   > 11/11 gate (`tasks/metrics/contract/VET-01.json`), ordered Luna 6/6 gate
   > (`9879bf76-luna-ordered/`, session `01a06bad`, `VERDICT: PASS`; `9879bf76-luna-final/`
   > session `01a06b5b` retained as pre-gate diagnostic),
-  > inventory 1618 rows, reconcile 17/17, campaign-data 0 characters / 0 crews.
+  > inventory 1618 rows at gate time (current re-audit 2026-09-06: 1622 rows + 136 stale, manifest 294 rows, reconcile 17/17), campaign-data 0 characters / 0 crews.
   > The 2026-08-31 `9c837bde` tables below are **superseded history**.
   > Release-gate order (spec: REVIEW-01, then REVIEW-02, then VET-01): REVIEW-01
   > is DONE (sequence clean PASS `01a06ba3`), REVIEW-02 is DONE (ordered gate
   > `01a06bad`), VET-01 is DONE order-valid (run 2026-09-04T09:27:21Z–10:05:40Z,
-  > 11 literal commands EXIT 0). Only the final Sol release review remains
-  > pending — final PASS NOT claimed.
+  > 11 literal commands EXIT 0). Only the final Astra release review remains
+  > pending (user-authorized Sol→Astra routing change 2026-09-06; all historical Sol sessions/results verbatim) — final PASS NOT claimed.
 
 ## Wave 3 — contract/oracle correctness review (2026-08-14)
 
@@ -85,7 +85,7 @@ is fixed before the next round).
   3. **Default-data guard negative calibration**: 21/21 tests PASS + live noop EXIT 0.
   4. **Six browser journeys + full viewport/theme matrix**: fresh 6/6 archived as `browser-evidence/9879bf76-vet-ordered/` (77 screenshots, 45 matrix-numeric, journey-results + console-network-errors + provenance.json matrixNumeric 45 verified at archive time).
   5. **Track Z expected-red**: `docs/pages/zero/z4-halted-expected-red.mdx` present (4603 bytes); non-blocking. Static verification only.
-  6. **Ledger/coverage/deletion artifact validation**: inventory 1618 rows (keep 1608 / upgrade 8 / merge 2 / delete 0; 195 P0/P1 = 149 P0 + 46 P1; 103 stale preserved; 93 new all reviewed, 0 pending); deletion-log zero rows; contract coverage deterministic (ORACLE-01 PASS); **reconcile-audit.js 17/17 ALL CHECKS PASSED**; finding-traceability 231/231; metrics validator 149/149 files, 0 errors.
+  6. **Ledger/coverage/deletion artifact validation** (09-04 gate record; current re-audit 2026-09-06: inventory 1622 rows — keep 1612 / upgrade 8 / merge 2 / delete 0; 195 P0/P1 = 149 P0 + 46 P1; 136 stale preserved; 99 new all reviewed, 0 pending; manifest 294 rows; reconcile-audit.js 17/17 ALL CHECKS PASSED): at gate time inventory 1618 rows (keep 1608 / upgrade 8 / merge 2 / delete 0; 195 P0/P1 = 149 P0 + 46 P1; 103 stale preserved; 93 new all reviewed, 0 pending); deletion-log zero rows; contract coverage deterministic (ORACLE-01 PASS); **reconcile-audit.js 17/17 ALL CHECKS PASSED**; finding-traceability 231/231; metrics validator 149/149 files, 0 errors.
   7. **Campaign-data manifest comparison + preservation**: workspace copy `diff -r`-identical to primary after all runs: 0 characters / 0 crews / 110 clocks, 123 files, 48,180 bytes (authorized cleanup state intact). `data/games` 10 files sha256 `39358fd65151a4e124be462a91495f42715e6448325638dd6fc06f174ee75a52` = VET-01 baseline, unchanged.
   8. **Capability manifest validation**: operationCount 110 = 86 agent + 24 human + 0 exempt; approvedExemptions: []; flaggedCandidates **8** (`batch`, `createCharacter`, `createPcCharacter`, `stressAdd`, `harmAdd`, `harmRemove`, `createCrew`, `createClock`); PARITY-MANIFEST-001 green in-suite.
 
@@ -101,7 +101,7 @@ is fixed before the next round).
 
   **Strict decoders:** ordinary current-version decoders contain no compatibility defaults or legacy error branches (EDGE-02 / AR-012). Verified by ordered Luna REVIEW-02 (6/6 journeys, `9879bf76-luna-ordered/`) and VET-01 mutation (28/28 killed).
 
-  **Ordered sessions:** REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3` (`CLEAN-CANDIDATE: PASS`); REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run above. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Only the final Sol release review remains pending — final PASS NOT claimed.
+  **Ordered sessions:** REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3` (`CLEAN-CANDIDATE: PASS`); REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run above. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Only the final Astra release review remains pending (routing change 2026-09-06) — final PASS NOT claimed.
 
   **9c-era data:** the 2026-08-30 run on `9c837bde` (246/471/197/763, inventory 1570, campaign 4003 files) is superseded history — retained in git history and the superseded `final-vetting.md` sections, not repeated here.
 
@@ -114,8 +114,8 @@ is fixed before the next round).
   - `nonBlankString` is Unicode-whitespace on both the Ada server and the
   generated frontend evaluator (ECMAScript TrimString set); the completeness
   oracle pins an NBSP case (COMPLETE-WHITESPACE-004).
-  - Current reconciliation: `reconcile-audit.js` EXIT 0, 17/17 checks pass (inventory 1618 rows, 103 stale preserved, 0 stale in current set, 0 pending).
-  - **Runtime flake/determinism (finding 7, 2026-09-04T12:50Z–12:56Z, muse-sol-flake):** working tree after the 009f/009g `exit`→`close` fix atop `44448a4d` (grandchild of immutable `9879bf76cea2`): focused 009f **21/21**, 009g **21/21** (each `1 passed | 33 skipped`); full `npm run test:tooling` **214/214** (14 files) in 5/5 runs (4 own + sibling bg_36). Classification `deterministic` retained for both cases on observed evidence; no other inventory change. Raw outputs live only under gitignored `agent-docs/test-audit/flake-raw-*.txt` (not mirrored); full record `agent-docs/test-audit/runtime-flake-final.json`, tracked mirror `tasks/metrics/contract/VET-01.json`. Final immutable candidate ID pending checkpoint.
+  - Current reconciliation: `reconcile-audit.js` EXIT 0, 17/17 checks pass (inventory 1622 rows, 136 stale preserved, 0 stale in current set, 0 pending; 09-04 gate record: 1618 rows, 103 stale).
+  - **Runtime flake/determinism (finding 7 rerun, 2026-09-06T10:51Z–10:57Z, muse-sol-flake):** root fixes in tree atop `6a8daaad` (sync-flush fatal `ee3fc07b-2ed`, 015 cleanup `f588c4d9-42b`): focused 009f **21/21**, 009g **21/21** (each `1 passed | 33 skipped`); piped-child flush stress **100/100** (exit 1, FATAL through pipe); focused 015 **2/2**; full `npm run test:tooling` **214/214** (14 files) in 4/4 runs with `/tmp/pitd-managed` empty after every run. Classification `deterministic` for 009f/009g/015 on observed current evidence; no other inventory change. Raw outputs live only under gitignored `agent-docs/test-audit/flake-raw-*-2026-09-06T1056Z.txt` (not mirrored); full record `agent-docs/test-audit/runtime-flake-final.json`, tracked mirror `tasks/metrics/contract/VET-01.json`. Prior 2026-09-04 campaign superseded. Final immutable candidate ID pending checkpoint.
 
 ## Historical Wave 8 integration gate (2026-08-14) — preserved as context only
 
@@ -141,7 +141,7 @@ and **not** an authoritative current claim; the VET-01 table above supersedes it
   + decision classes completed (VERDICT: PASS) via `agent-docs/test-audit/p0p1-independent-review.md`.
   The `finding-traceability.md` AR-007 row text has been updated to reflect
   `independentReviewStatus: reviewed` (not `pending`) with review evidence path.
-- **(Historical 9c-era) Tooling count corrected:** stale Wave-8 156/156 → **197/197** (13 files) on candidate `9c837bde` (superseded; current: 214/214 on `9879bf76`).
+- **(Historical 9c-era) Tooling count corrected:** stale Wave-8 156/156 → **197/197** (13 files) on candidate `9c837bde` (superseded; 09-04: 214/214 on `9879bf76`; current re-audit 2026-09-06: 218/218, 14 files — +4 TA00-GUARD +1 MUT-CAL-007-5 −1 MUT-CAL-007 bare dup).
 - **(Historical 9c-era) Campaign-data manifest:** refreshed from stale 1457/6134087 to 4003/17495126 (superseded; current: post-cleanup manifest 123 files, 0 characters / 0 crews).
 - **extra05-manifest.log:** inventory validation corrected to use
   `agent-docs/test-audit/inventory.json` path (exit 0).

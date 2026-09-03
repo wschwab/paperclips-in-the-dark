@@ -44,7 +44,7 @@ export const LAYERS: string[];
 
 export function defaultOutputPath(): string;
 export function usage(): string;
-export function parseArgs(argv?: string[]): { output: string; help: boolean };
+export function parseArgs(argv?: string[]): { output: string; help: boolean; force: boolean };
 export function deriveLayer(relPath: string): string;
 export function slugify(s: string): string;
 export function conformanceIdFromName(name: string): string | null;
@@ -73,5 +73,7 @@ export function sortRows(rows: InventoryRow[]): InventoryRow[];
 export function collect(repoRootDir?: string): Promise<BundleSet>;
 export function assemble(bundles: BundleSet): InventoryObject;
 export function writeInventory(inventory: InventoryObject, outputPath: string): Promise<string>;
-export function generate(opts?: { output?: string }): Promise<GenerateResult>;
+export function looksLedgerAssigned(value: unknown): boolean;
+export function assertSafeToOverwrite(output: string, opts?: { force?: boolean }): Promise<true>;
+export function generate(opts?: { output?: string; force?: boolean }): Promise<GenerateResult>;
 export function main(argv?: string[]): Promise<GenerateResult | { help: boolean }>;

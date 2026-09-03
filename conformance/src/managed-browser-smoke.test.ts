@@ -442,6 +442,9 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       const sibling = join(managedRoot, "sbt-sibling-marker");
       await mkdir(sibling, { recursive: true });
       await writeFile(join(sibling, "marker.txt"), "do not delete");
+      // Exact owned run directory returned by this run; removed after the
+      // keep-semantics assertions so --keep runs never leak.
+      let ownedRunDir: string | null = null;
       try {
         const { code, stdout, stderr } = await execFileAsync(
           "node",
@@ -453,6 +456,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
         expect(stderr).toContain("run dir kept");
         const runDir = lineValue(stdout, "runDir");
         expect(runDir).toContain("pitd-managed");
+        ownedRunDir = runDir;
         // Run dir survives with --keep.
         expect((await stat(runDir)).isDirectory()).toBe(true);
         // Unrelated sibling must still exist.
@@ -460,6 +464,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
         expect(siblingStat.isDirectory()).toBe(true);
       } finally {
         await rm(sibling, { recursive: true, force: true });
+        if (ownedRunDir !== null) await rm(ownedRunDir, { recursive: true, force: true });
       }
     } finally {
       await rm(root, { recursive: true, force: true });

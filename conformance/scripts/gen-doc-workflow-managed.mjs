@@ -21,7 +21,7 @@
  * an error — direct invocation without a managed context is rejected.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, writeSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
@@ -29,20 +29,28 @@ import { join } from "node:path";
 // --- Require managed-environment context ---
 
 const apiUrl = process.env.BASE_URL || process.env.CONFORMANCE_BASE_URL;
-if (!apiUrl) {
-  console.error("[workflow] FATAL: no BASE_URL or CONFORMANCE_BASE_URL in environment");
-  console.error("[workflow] This script must be run via the managed launcher (test:agent-workflow).");
-  console.error("[workflow] Direct invocation without a managed context is not permitted.");
-  process.exitCode = 1;
+// Fatal diagnostics must be synchronously durable before exit: console.error
+// into a pipe may still be buffered when process.exit(1) terminates the child,
+// losing the bytes even though the parent awaits close. writeSync(2, ...)
+// blocks until the bytes reach the pipe, so the parent always observes them.
+const fatal = (lines) => {
+  for (const line of lines) writeSync(2, line + "\n");
   process.exit(1);
+};
+if (!apiUrl) {
+  fatal([
+    "[workflow] FATAL: no BASE_URL or CONFORMANCE_BASE_URL in environment",
+    "[workflow] This script must be run via the managed launcher (test:agent-workflow).",
+    "[workflow] Direct invocation without a managed context is not permitted.",
+  ]);
 }
 
 const dataDir = process.env.PITD_DATA_DIR;
 if (!dataDir) {
-  console.error("[workflow] FATAL: no PITD_DATA_DIR in environment");
-  console.error("[workflow] This script must be run via the managed launcher (test:agent-workflow).");
-  process.exitCode = 1;
-  process.exit(1);
+  fatal([
+    "[workflow] FATAL: no PITD_DATA_DIR in environment",
+    "[workflow] This script must be run via the managed launcher (test:agent-workflow).",
+  ]);
 }
 
 // --- API client (operates on server via documented endpoints only) ---

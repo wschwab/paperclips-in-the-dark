@@ -81,16 +81,24 @@ export function usage() {
     "Options:",
     "  --output <path>   write inventory.json here",
     "                    (default agent-docs/test-audit/inventory.json)",
+    "  --force           overwrite even a ledger-assigned inventory file.",
+    "                    Without --force the generator refuses to clobber a",
+    "                    file that already carries ledger assignment",
+    "                    (ledgerCounts/staleRows, assigned decisions, or",
+    "                    independentReviewStatus) — raw output has blank",
+    "                    decision fields and must never silently replace the",
+    "                    audited dataset.",
     "  --help            this text",
     "",
   ].join("\n");
 }
 
 export function parseArgs(argv = process.argv.slice(2)) {
-  const opts = { output: defaultOutputPath(), help: false };
+  const opts = { output: defaultOutputPath(), help: false, force: false };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--help") opts.help = true;
+    else if (arg === "--force") opts.force = true;
     else if (arg === "--output") {
       if (i + 1 >= argv.length) throw new Error("--output requires a path");
       opts.output = resolve(process.cwd(), argv[++i]);
@@ -449,9 +457,38 @@ export async function writeInventory(inventory, outputPath) {
   return outputPath;
 }
 
-// -- CLI ------------------------------------------------------------------
+// A file that already carries ledger assignment — the canonical audit dataset
+// (ledgerCounts/staleRows top level, an assigned decision, or an
+// independentReviewStatus) — must never be silently replaced by raw output.
+// Raw rows carry blank decision fields for the ledger to assign; clobbering
+// the audited file erases decisions, staleRows, and review states.
+// Returns true when generation may proceed; throws otherwise.
+export function looksLedgerAssigned(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  if (value.ledgerCounts !== undefined || value.staleRows !== undefined) return true;
+  if (!Array.isArray(value.rows)) return false;
+  return value.rows.some(
+    (r) => r && (String(r.decision ?? "").trim() !== "" || "independentReviewStatus" in r),
+  );
+}
 
-export async function generate({ output = defaultOutputPath() } = {}) {
+export async function assertSafeToOverwrite(output, { force = false } = {}) {
+  let existing = null;
+  try {
+    existing = JSON.parse(await readFile(output, "utf8"));
+  } catch {
+    return true;
+  }
+  if (!force && looksLedgerAssigned(existing)) {
+    throw new Error(
+      `refusing to overwrite ledger-assigned inventory at ${output} (pass --force to override)`,
+    );
+  }
+  return true;
+}
+
+export async function generate({ output = defaultOutputPath(), force = false } = {}) {
+  await assertSafeToOverwrite(output, { force });
   const bundles = await collect(repoRoot);
   const inventory = assemble(bundles);
   await writeInventory(inventory, output);
@@ -464,7 +501,7 @@ export async function main(argv = process.argv.slice(2)) {
     process.stdout.write(usage());
     return { help: true };
   }
-  const result = await generate({ output: opts.output });
+  const result = await generate({ output: opts.output, force: opts.force });
   process.stdout.write(
     `[test-audit-inventory] wrote ${result.rowCount} rows to ${result.output}\n`,
   );
