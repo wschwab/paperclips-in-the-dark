@@ -45,6 +45,7 @@ acceptance:
   Physical removal deferred to Wave-4 surgery (TEST-03/TEST-04) per ledger rule.
 - 2026-08-24: `contract-coverage-map.json` closed at 108/108 operations with an
   empty uncoveredList after TEST-02 landed the claim-operation guards.
+- 2026-09-08 (re-audit + TA00-GUARD): inventory now 1622 current + 136 stale (ledger keep1612/merge2/upgrade8/delete0; reconcile 17/17). `conformance/scripts/test-audit-inventory.mjs` gained a ledger-overwrite guard (refuses ledger-assigned targets unless `--force`; TA00-GUARD-001..004, 4 new tooling rows). Astra R1 red: GUARD-003/004 leaked mkdtemp dirs (20 historical `/tmp/ta00-guard-*` dirs); fixed with owned `try/finally rm` per suite convention — verified zero new dirs on focused success (4/4) and on injected assertion failure (1 failed as designed), full tooling 218/218, inventory hash unchanged; historical dirs removed after per-path fixture verification.
 
 ## Dispatch notes
 

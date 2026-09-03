@@ -22,7 +22,8 @@ is fixed before the next round).
   > is DONE (sequence clean PASS `01a06ba3`), REVIEW-02 is DONE (ordered gate
   > `01a06bad`), VET-01 is DONE order-valid (run 2026-09-04T09:27:21Z–10:05:40Z,
   > 11 literal commands EXIT 0). Only the final Astra release review remains
-  > pending (user-authorized Sol→Astra routing change 2026-09-06; all historical Sol sessions/results verbatim) — final PASS NOT claimed.
+  > pending (route `openai-codex/gpt-6-astra`, thinking MEDIUM per 2026-09-08 user config — Astra scope only; Luna xhigh gate unchanged; all historical Sol sessions/results verbatim) — final PASS NOT claimed.
+  > 2d9c39b6 REVIEW-01 (Astra/openai-codex xhigh): blind calibration v2 PASS (M20 `client.ts:193`, 3/3 vs 1F/2P); clean review BLOCKED on provider quota (reset 2026-09-08 01:35 IDT) — NOT PASS. Prior 9879 DONE preserved as historical.
 
 ## Wave 3 — contract/oracle correctness review (2026-08-14)
 
@@ -101,7 +102,7 @@ is fixed before the next round).
 
   **Strict decoders:** ordinary current-version decoders contain no compatibility defaults or legacy error branches (EDGE-02 / AR-012). Verified by ordered Luna REVIEW-02 (6/6 journeys, `9879bf76-luna-ordered/`) and VET-01 mutation (28/28 killed).
 
-  **Ordered sessions:** REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3` (`CLEAN-CANDIDATE: PASS`); REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run above. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Only the final Astra release review remains pending (routing change 2026-09-06) — final PASS NOT claimed.
+  **Ordered sessions:** REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3` (`CLEAN-CANDIDATE: PASS`); REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run above. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Only the final Astra release review remains pending (thinking medium per 2026-09-08; Luna xhigh unchanged) — final PASS NOT claimed.
 
   **9c-era data:** the 2026-08-30 run on `9c837bde` (246/471/197/763, inventory 1570, campaign 4003 files) is superseded history — retained in git history and the superseded `final-vetting.md` sections, not repeated here.
 

@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -433,27 +433,35 @@ describe("TA00 ledger-overwrite guard", () => {
 
   it("[TA00-GUARD-003] generate() refuses a ledger-assigned file and leaves it byte-identical", async () => {
     const dir = await mkdtemp(join(tmpdir(), "ta00-guard-"));
-    const target = join(dir, "inventory.json");
-    await writeFile(target, ledgeredJson, "utf8");
-    const before = createHash("sha256").update(await readFile(target, "utf8"), "utf8").digest("hex");
-    await expect(generate({ output: target })).rejects.toThrow(/refusing to overwrite ledger-assigned/);
-    const after = createHash("sha256").update(await readFile(target, "utf8"), "utf8").digest("hex");
-    expect(after).toBe(before);
+    try {
+      const target = join(dir, "inventory.json");
+      await writeFile(target, ledgeredJson, "utf8");
+      const before = createHash("sha256").update(await readFile(target, "utf8"), "utf8").digest("hex");
+      await expect(generate({ output: target })).rejects.toThrow(/refusing to overwrite ledger-assigned/);
+      const after = createHash("sha256").update(await readFile(target, "utf8"), "utf8").digest("hex");
+      expect(after).toBe(before);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("[TA00-GUARD-004] assertSafeToOverwrite allows raw-over-raw and missing files, force overrides", async () => {
     const dir = await mkdtemp(join(tmpdir(), "ta00-guard-"));
-    const raw = join(dir, "raw.json");
-    await writeFile(
-      raw,
-      JSON.stringify({ generated: false, groups: [], rows: [{ id: "X", decision: "", target: "", dupeOf: "" }] }),
-      "utf8",
-    );
-    await expect(assertSafeToOverwrite(raw)).resolves.toBe(true);
-    await expect(assertSafeToOverwrite(join(dir, "does-not-exist.json"))).resolves.toBe(true);
-    const ledger = join(dir, "ledger.json");
-    await writeFile(ledger, ledgeredJson, "utf8");
-    await expect(assertSafeToOverwrite(ledger)).rejects.toThrow(/refusing/);
-    await expect(assertSafeToOverwrite(ledger, { force: true })).resolves.toBe(true);
+    try {
+      const raw = join(dir, "raw.json");
+      await writeFile(
+        raw,
+        JSON.stringify({ generated: false, groups: [], rows: [{ id: "X", decision: "", target: "", dupeOf: "" }] }),
+        "utf8",
+      );
+      await expect(assertSafeToOverwrite(raw)).resolves.toBe(true);
+      await expect(assertSafeToOverwrite(join(dir, "does-not-exist.json"))).resolves.toBe(true);
+      const ledger = join(dir, "ledger.json");
+      await writeFile(ledger, ledgeredJson, "utf8");
+      await expect(assertSafeToOverwrite(ledger)).rejects.toThrow(/refusing/);
+      await expect(assertSafeToOverwrite(ledger, { force: true })).resolves.toBe(true);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

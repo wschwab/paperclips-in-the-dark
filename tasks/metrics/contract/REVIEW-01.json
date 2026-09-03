@@ -24,7 +24,7 @@
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "DONE — 9879bf76 calibration PASS (M20 FV-023, session 01a068e6) + clean PASS (sequence session 01a06ba3, CLEAN-CANDIDATE: PASS, /tmp/review01-9879-clean-sequence-verdict-full.md). History preserved: quota abort (01a068f0) → retry FAIL (3 blockers, corrected) → final FAIL (2 P0 ordering blockers, downstream reset to BLOCKED/PENDING) → sequence PASS with order intact (REVIEW-02/VET-01 stay BLOCKED/PENDING). Ordered downstream since completed: REVIEW-02 DONE (Luna/xhigh session 01a06bad, VERDICT: PASS) + VET-01 DONE order-valid; final release subject to remaining Sol findings.",
+  "status": "BLOCKED — current cycle 2026-09-07 @ 2d9c39b6 (blind calibration v2 PASS; clean review BLOCKED on openai-codex provider quota, reset 2026-09-08 01:35 IDT; NOT PASS). Historical: 9879bf76 DONE (calibration PASS session 01a068e6 + clean PASS sequence session 01a06ba3; ordered downstream REVIEW-02 DONE 01a06bad + VET-01 DONE order-valid) — preserved in calibratedReview01Cycles, NOT current.",
   "evidence": [
     "agent-docs/review01-calibrated-review.md (10bb87fb cycle recorded; 9879 calibration PASS + clean PASS recorded; REVIEW-01 DONE, downstream pending)",
     "conformance/scripts/managed-browser-smoke.mjs (clean identity check present at line 297: health?.implementation === 'ada' && dataDir === expectedDataDir)",
@@ -56,7 +56,9 @@
     "agent-docs/test-audit/mutation-results.json + performance-results.json (2026-09-04: replaced by validated clean-workspace rerun artifacts, revision 9879bf76cea2; originals backed up at /tmp/vet9879/backup-orig/)",
     "orchestration log: ~/orchestration-logs/inbox/2026-09-04-vibe-muse-sol-clean-fixes.md (this correction cycle)",
     "/tmp/review01-9879-clean-final-verdict-full.md (CLEAN-CANDIDATE: FAIL — 2 P0 ordering blockers; B1/B2/B3 verified positive)",
-    "/tmp/review01-9879-clean-sequence-verdict-full.md (CLEAN-CANDIDATE: PASS, Sol/xhigh session 01a06ba3, wall 477.80s)"
+    "/tmp/review01-9879-clean-sequence-verdict-full.md (CLEAN-CANDIDATE: PASS, Sol/xhigh session 01a06ba3, wall 477.80s)",
+    "/tmp/review01-2d9c39b6-calibration2-verdict.md (2026-09-07 @ 2d9c39b6 blind calibration v2: CALIBRATION: PASS + planted FAIL — M20 at client.ts:193, mechanism, client.test.ts:6812, fresh paired evidence clean 3/3 vs planted 1F/2P, jj-byte hashes 68735e27…/fac168fe…; v1 verdict preserved as history only — provenance leak disclosed+redacted)",
+    "/tmp/review01-2d9c39b6-clean-err.log (2026-09-07 @ 2d9c39b6 clean review: PROVIDER FAILURE usage_limit_reached, exit 1, 199.48s, no verdict; reset 2026-09-08 01:35 IDT; cycle BLOCKED not PASS)"
   ],
   "calibratedReview01Cycles": [
     {
@@ -156,6 +158,27 @@
       "cleanFindings": [],
       "positiveChecks": "Sequence clean PASS checks: FV-023 3/3 (DecodeError intact, M20 absent, hash 68735e27…); STALE_REVISION decoder 11/11 (XOR union); A11Y-01 11/11 (24x24 ::before, roving keyboard); traps-before-mkdir + kernel ports + Ada identity pollers; 28/28 restoration hashes match; validators 149/149 + 231/231 + 17/17 (reconcile from temp copy); campaign 123 files byte-match; /tmp/pitd-managed 0 entries; working-copy evidence-only child unchanged. Earlier B1/B2/B3 corrections + literal VET 11/11 diagnostic stand as candidate evidence.",
       "status": "PASS — calibration PASS + clean PASS (sequence); both Sol verdicts achieved with ordering blockers cleared by downstream reset. REVIEW-01 DONE. Next: fresh ordered REVIEW-02, then fresh VET-01."
+    },
+    {
+      "cycle": "2026-09-07 @ 2d9c39b6",
+      "candidate": "2d9c39b627ce45ad3c894de907147e1a1dad10b3 (\"fix diagnostic flushing and preserve audited inventory\")",
+      "reviewerRoute": "openai-codex/gpt-6-astra --thinking=xhigh (explicit OMP route; no Sol)",
+      "calibrationVerdict": "PASS (blind v2: defect located with mechanism + failing test + fresh paired test delta + jj-byte hashes; no answer-key/prior-verdict reads; v1 history-only — provenance leak disclosed, redacted, redone)",
+      "calibrationVerdictFile": "/tmp/review01-2d9c39b6-calibration2-verdict.md",
+      "calibrationSession": "tooling-recovered agent.db threads ≈ 01a07ce4 (2026-09-07 17:30:05 UTC, repo cwd; NOT reviewer-stated); v1 ≈ 01a07cdc",
+      "calibrationRunLog": "/tmp/review01-2d9c39b6-calibration2-run.log",
+      "plantedDefect": "P0 FV-023 transport-classification regression in frontend/src/api/client.ts:193 — malformed 200 JSON reclassified as ApiError(0, NETWORK_ERROR_COPY) instead of DecodeError",
+      "reproduction": "clean primary 3/3 PASS vs planted workspace 1 failed/2 passed (client.test.ts:6812); single-file diff confirmed; clean hash verified from jj revision bytes",
+      "plantedFileHash": "fac168fe521fd7593fc536b27c20f373599a720a1368e23057baae437ffaaaee",
+      "calibrationSession": "NONE stated by reviewers — no exact ID recovered. Timestamp-correlated agent.db thread rows (UNVERIFIED candidates, NOT authoritative identity): 01a07ce4 @ 2026-09-07 17:30:05 UTC and 01a07cdc @ 17:20:42 UTC, repo cwd. Proof by route + artifacts.",
+      "cleanFileHash": "68735e2740f3b7f83ba6f484a1c350b0e63f66ff1777d2bbd45371dc327e70e0",
+      "disposableWorkspace": "/tmp/review01-2d9c39b6-work (destroyed via jj workspace forget + rm -rf, verified gone; parent 2d9c39b6 untouched; primary hash clean)",
+      "cleanVerdict": "BLOCKED — openai-codex quota (usage_limit_reached, exit 1, 199.48s, raw /tmp/review01-2d9c39b6-clean-err.log); reset 2026-09-08 01:35 IDT; NO verdict file, NO terminal line; retry after reset, do not repeat calibration",
+      "cleanVerdictFile": "NOT CREATED (quota abort)",
+      "cleanRunLog": "/tmp/review01-2d9c39b6-clean-run.log (empty stdout) + /tmp/review01-2d9c39b6-clean-err.log (quota error)",
+      "cleanFindings": [],
+      "positiveChecks": "validators this cycle: metrics 149/149 0 errors, traceability 231/231, reconcile 17/17 0 err/warn (1622 rows, 136 stale, 195 P0/P1, 99 new reviewed); primary .omo-only successor; client.ts clean hash",
+      "status": "BLOCKED — blind calibration PASS achieved; clean review pending provider quota reset; NOT PASS"
     }
   ],
   "notes": "REVIEW-01 10bb87fb cycle per AUDIT-0 work-spec §17.2: (1) ONE realistic P1 defect planted in isolated disposable jj workspace at /tmp/review01-10bb-work, parent commit 10bb87fb untouched, working commit c2186210 (empty successor); (2) reviewer given governing spec + SAFE-02/A11Y-01/THEME-01 contracts + current source + 10bb87fb revision-tagged evidence, NO defect location; (3) reviewer reproduced/independently identified the planted M18 action-dot ::before hit-zone regression at components.css:73-81 with mechanism + failing A11Y-01 test + hash delta; (4) disposable workspace destroyed, clean candidate hash verified (db11a76b… = 10bb87fb, defect confined to working copy only); (5) clean-candidate review run in primary repo — calibration PASS, clean candidate FAIL on 5 primary blockers. Per §17.2 'If either FAIL: report exact findings, do not mark done.' Per §17.2 step 6 'Only after both PASS: update tracked REVIEW-01 + review01-calibrated-review.md.' Both PASS was NOT achieved; the 5 FAIL findings become corrective cards and require a fresh Luna/PASS re-review on a single valid candidate identity with all findings remediated.",
