@@ -30,9 +30,11 @@
     "tasks/metrics/contract/SC-SAFE-01.json",
     "conformance/scripts/default-data-guard.mjs",
     "conformance/src/default-data-guard.test.ts",
-    "agent-docs/test-audit/campaign-data-manifest.json"
+    "agent-docs/test-audit/campaign-data-manifest.json",
+    "agent-docs/test-audit/campaign-data-manifest-post-cleanup.json",
+    "agent-docs/test-audit/pre-cleanup-entity-inventory.json"
   ],
-  "notes": "SAFE-01 metric card; see evidence links for details. [2026-09-02: default-data guard tests 21/21 PASS; SAFE-01 guard EXIT 0 around harmless 'true' child confirms zero writes to campaign-data during guarded runs. Campaign-data manifest refreshed after post-VET-01 format-normalization drift in 1 file (characters/7865a17b-d267-434a-8177-0f5a7871aa46/current.json, -61 bytes, entity semantically identical); data/games unchanged (sha256 39358fd6… matches VET-01 baseline). See finding-traceability.md AR-002 row and final-vetting.md preservation notes for drift record.].",
+  "notes": "SAFE-01 metric card; see evidence links for details. [2026-09-02: default-data guard tests 21/21 PASS; SAFE-01 guard EXIT 0 around harmless 'true' child confirms zero writes to campaign-data during guarded runs. Campaign-data manifest refreshed after post-VET-01 format-normalization drift in 1 file (characters/7865a17b.../current.json, -61 bytes, entity semantically identical); data/games unchanged (sha256 39358fd6… matches VET-01 baseline). [2026-09-02 campaign-data cleanup authorized]: All test characters (1562 entity dirs) and crews (588 entity dirs) deleted by exact path; clocks/ (110 dirs, 122 files) untouched; campaign.json + clocks + settings preserved. Post-cleanup guard run: node default-data-guard.mjs -- echo no-op → EXIT 0. Post-cleanup manifest at campaign-data-manifest-post-cleanup.json. See finding-traceability.md AR-002 row and final-vetting.md preservation notes for drift record.]. [2026-09-04 reconcile vs VET-01 @9879bf76: consistent — post-cleanup manifest (123 files, characters 0, crews 0, clocks 110) matches live campaign-data dirs (characters/ 0, crews/ 0); inventory 1618 rows delete:0; reconcile 17/17; no new writes.]",
   "metricsMethodology": {
     "method": "historical evidence review (no git diff available)",
     "source": "per-card notes + iterationNotes + defectsCaughtBy"

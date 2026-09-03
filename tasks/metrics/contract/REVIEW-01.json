@@ -1,9 +1,9 @@
 {
   "task": "REVIEW-01",
   "track": "contract",
-  "date": "2026-09-02",
+  "date": "2026-09-04",
   "implementationAgent": "nous/poolside/laguna-s-2.1:free:high",
-  "reviewAgent": "gpt-5.6-sol via openai-codex (session 01a06210 calibration; session 01a06220 clean)",
+  "reviewAgent": "gpt-5.6-sol via openai-codex (session 01a06210 calibration; session 01a06220 clean); 9879 cycle: session 01a068e6 calibration PASS; 9879 clean PASS session 01a06ba3-5c25-7f90-917d-c7ccde4019a3 (sequence, Sol/xhigh)",
   "reviewerRoute": "gpt-5.6-sol",
   "modelReasoningEffort": "xhigh",
   "sandbox": "workspace-write",
@@ -18,23 +18,45 @@
   },
   "defectCatchingLayer": [
     "independent-review (25d3082d calibration: planted SAFE-02 health-identity regression in conformance/scripts/managed-browser-smoke.mjs:waitForHealth lines 297-300; reviewer reproduced via HTTP stub returning 200 + implementation:'evil' + wrong dataDir, identified exact mechanism and divergence from managed-run.mjs reference)",
-    "independent-review (10bb87fb calibration: planted M18 action-dot ::before hit-zone regression in frontend/src/styles/components.css; reviewer reproduced via CSS inspection, identified mechanism at components.css:73-81, named failing A11Y-01 test action-dots.test.ts:135-141, verified hash delta db11a76b...→0895ba58...)"
+    "independent-review (10bb87fb calibration: planted M18 action-dot ::before hit-zone regression in frontend/src/styles/components.css; reviewer reproduced via CSS inspection, identified mechanism at components.css:73-81, named failing A11Y-01 test action-dots.test.ts:135-141, verified hash delta db11a76b...→0895ba58...)",
+    "independent-review (9879bf76 calibration: planted M20 FV-023 transport-classification regression in frontend/src/api/client.ts:193; reviewer ran focused FV-023 tests clean 3/3 PASS vs mutant DecodeError→ApiError, located mechanism, no answer-key read)",
+    "independent-review (9879bf76 sequence clean PASS session 01a06ba3: FV-023 3/3, A11Y-01 11/11, STALE_REVISION decoder 11/11, 28/28 restoration hashes match, validators 149/149 + 231/231 + 17/17; CLEAN-CANDIDATE: PASS with ordering blockers cleared by downstream reset)"
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "INPROGRESS — 10bb87fb calibration PASS; clean candidate FAIL; 5 primary blockers (P1 trap/mkdir leak, P1 10 --keep run dirs, P1 stale campaign manifest 61 bytes, P2 stale VET-01/REVIEW-02 evidence @ 9c837bde, EDGE-02 weak OperationResult decoder); corrective cards pending",
+  "status": "DONE — 9879bf76 calibration PASS (M20 FV-023, session 01a068e6) + clean PASS (sequence session 01a06ba3, CLEAN-CANDIDATE: PASS, /tmp/review01-9879-clean-sequence-verdict-full.md). History preserved: quota abort (01a068f0) → retry FAIL (3 blockers, corrected) → final FAIL (2 P0 ordering blockers, downstream reset to BLOCKED/PENDING) → sequence PASS with order intact (REVIEW-02/VET-01 stay BLOCKED/PENDING). Next required: fresh REVIEW-02, then fresh VET-01; final release NOT PASS until then.",
   "evidence": [
-    "agent-docs/review01-calibrated-review.md (10bb87fb cycle section, to be appended after PASS)",
+    "agent-docs/review01-calibrated-review.md (10bb87fb cycle recorded; 9879 calibration PASS + clean PASS recorded; REVIEW-01 DONE, downstream pending)",
     "conformance/scripts/managed-browser-smoke.mjs (clean identity check present at line 297: health?.implementation === 'ada' && dataDir === expectedDataDir)",
     "frontend/src/styles/components.css (hash db11a76b…75f; ::before hit zone = 24px x 24px lines 78-79; Hi-C --band-text-muted at 1274)",
     "agent-docs/test-audit/mutation-catalog.json (M18 restorationHash db11a76b…75f matches current components.css)",
-    "agent-docs/test-audit/mutation-results.json (revision 10bb87fb11da, 28/28 killed)",
-    "agent-docs/test-audit/performance-results.json (revision 10bb87fb11da, budgets green per scale/metric)",
-    "agent-docs/test-audit/browser-evidence/10bb87fb-pre-review/ (6/6 journeys PASS, 0 problems, 77 PNG + 47 JSON)",
+    "(historical 10bb cycle) agent-docs/test-audit/mutation-results.json (revision 10bb87fb11da, 28/28 killed)",
+    "(historical 10bb cycle) agent-docs/test-audit/performance-results.json (revision 10bb87fb11da, budgets green per scale/metric)",
+    "(historical 10bb cycle) agent-docs/test-audit/browser-evidence/10bb87fb-pre-review/ (6/6 journeys PASS, 0 problems, 77 PNG + 47 JSON)",
+    "agent-docs/test-audit/mutation-results.json (current 9879: revision 9879bf76cea2, 28/28 killed P0 19/19 P1 9/9, literal clean-workspace run 2026-09-04T08:16:25Z-08:39:05Z EXIT 0, raw mutation-raw-2026-09-04T08-39-04-998Z.txt, sha256 3679dfbc…a721; supersedes 2026-09-03 artifact)",
+    "agent-docs/test-audit/performance-results.json (current 9879: revision 9879bf76cea2, budget-enforced 4/4 scales countsMatch, literal clean-workspace run 2026-09-04T08:39:13Z-08:39:39Z EXIT 0, raw performance-raw-2026-09-04T08-39-39-686Z.txt, sha256 a50772bc…1f654)",
+    "agent-docs/test-audit/browser-evidence/9879bf76-pre-review/ (current 9879: 6/6 journeys PASS, 0 problems)",
+    "agent-docs/test-audit/final-vetting.md (9879 VET section 2026-09-04: 11 literal gates PASS, 8/8 extras; Sol clean retry FAIL 3 blockers corrected, awaiting fresh retry; release NOT PASS)",
     "/tmp/review01-25d-calibration-verdict.md (CALIBRATION: PASS)",
     "/tmp/review01-25d-clean-verdict.md (CLEAN-CANDIDATE: FAIL)",
     "/tmp/review01-10bb-calibration-verdict.md (CALIBRATION: PASS)",
-    "/tmp/review01-10bb-clean-verdict.md (CLEAN-CANDIDATE: FAIL — 5 blockers)"
+    "/tmp/review01-10bb-clean-verdict.md (CLEAN-CANDIDATE: FAIL — 5 blockers)",
+    "/tmp/review01-9879-calibration-verdict.md (CALIBRATION: PASS — M20 FV-023 defect at client.ts:193)",
+    "/tmp/review01-9879-clean-run.log (clean review aborted: OpenAI usage_limit_reached, reset Sep 7 07:34 AM)",
+    "/tmp/review01-9879-clean-verdict.md (NOT created — quota abort)",
+    "orchestration log: ~/orchestration-logs/inbox/2026-09-03-codex-sol-review01-9879.md",
+    "agent-docs/test-audit/browser-evidence/9879bf76-luna-final/ (REVIEW-02 Luna final, session 01a06b5b, 6/6 PASS, VERDICT: PASS)",
+    "tasks/metrics/contract/VET-01.json (refreshed 2026-09-04 to 9879bf76: mutation 28/28, inventory 1618, reconcile 17/17, campaign 0/0)",
+    "tasks/metrics/contract/REVIEW-02.json (Luna final 2026-09-04, session 01a06b5b, VERDICT: PASS)",
+    "/tmp/review01-9879-clean-retry-verdict-full.md (2026-09-04 clean retry: CLEAN-CANDIDATE: FAIL — 3 blockers A/B/C; positive evidence: FV-023+M18 hashes match, 28/28 mutation, budgets green, 6/6 browser, 149 metrics, campaign 123/48180 intact, 0 managed leaks)",
+    "agent-docs/test-audit/finding-traceability.md (2026-09-04: AR-006 row PARTIAL + notes correction; validate-finding-traceability.js 231/231 ALL CHECKS PASSED)",
+    "agent-docs/test-audit/browser-evidence/9879bf76-pre-review/provenance.json (2026-09-04: matrixNumeric 36 -> 45 + stale-count note; no checksum manifest covers this file; journey evidence untouched)",
+    "/tmp/vet9879/ws-mutation.log (clean workspace @9879bf76 literal `cd conformance && npm run test:mutation` EXIT 0, 28/28 killed P0 19/19 P1 9/9, 2026-09-04T08:16:25Z-08:39:05Z)",
+    "/tmp/vet9879/ws-benchmark.log (clean workspace @9879bf76 literal `cd conformance && npm run test:benchmark` EXIT 0, PASS all scales within frozen budgets, 2026-09-04T08:39:13Z-08:39:39Z)",
+    "agent-docs/test-audit/mutation-results.json + performance-results.json (2026-09-04: replaced by validated clean-workspace rerun artifacts, revision 9879bf76cea2; originals backed up at /tmp/vet9879/backup-orig/)",
+    "orchestration log: ~/orchestration-logs/inbox/2026-09-04-vibe-muse-sol-clean-fixes.md (this correction cycle)",
+    "/tmp/review01-9879-clean-final-verdict-full.md (CLEAN-CANDIDATE: FAIL — 2 P0 ordering blockers; B1/B2/B3 verified positive)",
+    "/tmp/review01-9879-clean-sequence-verdict-full.md (CLEAN-CANDIDATE: PASS, Sol/xhigh session 01a06ba3, wall 477.80s)"
   ],
   "calibratedReview01Cycles": [
     {
@@ -115,6 +137,25 @@
       ],
       "positiveChecks": "M18 absent (::before = 24px x 24px, hash db11a76b… = catalog restorationHash); waitForHealth identity check present (line 297); no fixed ports in launch scripts; Hi-C --band-text-muted present (line 1274); mutation-results 28/28 killed @ revision 10bb87fb11da; performance budgets green @ 10bb87fb11da; browser-evidence 10bb87fb-pre-review 6/6 journeys 0 problems 77 PNG + 47 JSON; metrics 4/4 §11 fields; roster 43/43",
       "status": "FAIL — clean candidate not accepted; 5 primary blockers remain"
+    },
+    {
+      "cycle": "2026-09-03 @ 9879bf76",
+      "candidate": "9879bf76cea24d7b2983a1d960b8d09018a7c2a6 (\"close final review safety and decoder findings\")",
+      "calibrationVerdict": "PASS (defect located via source + test delta; no answer-key read)",
+      "calibrationVerdictFile": "/tmp/review01-9879-calibration-verdict.md",
+      "calibrationSession": "01a068e6-8422-7de2-ae5f-1aaa26b6fa46",
+      "calibrationRunLog": "/tmp/review01-9879-calibration-run.log",
+      "plantedDefect": "P0 FV-023/EDGE-02 transport-classification regression in frontend/src/api/client.ts:193 — malformed 200 JSON reclassified as ApiError(0, NETWORK_ERROR_COPY) instead of DecodeError, falsely surfacing an invalid response as a network outage",
+      "reproduction": "calibration reviewer ran the focused FV-023 fetchJson transport-classification tests against the clean primary source (3/3 PASS) and the planted disposable workspace (mutant fails only the malformed-200-JSON case, asserting DecodeError but getting ApiError). Located mechanism at client.ts:193, named failing test client.test.ts:6812",
+      "plantedFileHash": "fac168fe521fd7593fc536b27c20f373599a720a1368e23057baae437ffaaaee",
+      "cleanFileHash": "68735e2740f3b7f83ba6f484a1c350b0e63f66ff1777d2bbd45371dc327e70e0",
+      "cleanVerdict": "PASS (sequence 2026-09-04, Sol/xhigh session 01a06ba3-5c25-7f90-917d-c7ccde4019a3, wall 477.80s, /tmp/review01-9879-clean-sequence-verdict-full.md: CLEAN-CANDIDATE: PASS — no blocking findings; order intact with REVIEW-02/VET-01 BLOCKED/PENDING. Priors preserved: quota abort 01a068f0 → retry FAIL 3 blockers corrected → final FAIL 2 P0 ordering blockers, downstream reset)",
+      "cleanVerdictFile": "/tmp/review01-9879-clean-sequence-verdict-full.md (CLEAN-CANDIDATE: PASS; priors: /tmp/review01-9879-clean-final-verdict-full.md FAIL ordering, /tmp/review01-9879-clean-retry-verdict-full.md FAIL 3 corrected, /tmp/review01-9879-clean-verdict.md never created — quota abort)",
+      "cleanRunLog": "/tmp/review01-9879-clean-run.log",
+      "cleanSession": "01a06ba3-5c25-7f90-917d-c7ccde4019a3 (sequence clean PASS; priors: 01a068f0 quota abort, Sol/xhigh retry + final)",
+      "cleanFindings": [],
+      "positiveChecks": "Sequence clean PASS checks: FV-023 3/3 (DecodeError intact, M20 absent, hash 68735e27…); STALE_REVISION decoder 11/11 (XOR union); A11Y-01 11/11 (24x24 ::before, roving keyboard); traps-before-mkdir + kernel ports + Ada identity pollers; 28/28 restoration hashes match; validators 149/149 + 231/231 + 17/17 (reconcile from temp copy); campaign 123 files byte-match; /tmp/pitd-managed 0 entries; working-copy evidence-only child unchanged. Earlier B1/B2/B3 corrections + literal VET 11/11 diagnostic stand as candidate evidence.",
+      "status": "PASS — calibration PASS + clean PASS (sequence); both Sol verdicts achieved with ordering blockers cleared by downstream reset. REVIEW-01 DONE. Next: fresh ordered REVIEW-02, then fresh VET-01."
     }
   ],
   "notes": "REVIEW-01 10bb87fb cycle per AUDIT-0 work-spec §17.2: (1) ONE realistic P1 defect planted in isolated disposable jj workspace at /tmp/review01-10bb-work, parent commit 10bb87fb untouched, working commit c2186210 (empty successor); (2) reviewer given governing spec + SAFE-02/A11Y-01/THEME-01 contracts + current source + 10bb87fb revision-tagged evidence, NO defect location; (3) reviewer reproduced/independently identified the planted M18 action-dot ::before hit-zone regression at components.css:73-81 with mechanism + failing A11Y-01 test + hash delta; (4) disposable workspace destroyed, clean candidate hash verified (db11a76b… = 10bb87fb, defect confined to working copy only); (5) clean-candidate review run in primary repo — calibration PASS, clean candidate FAIL on 5 primary blockers. Per §17.2 'If either FAIL: report exact findings, do not mark done.' Per §17.2 step 6 'Only after both PASS: update tracked REVIEW-01 + review01-calibrated-review.md.' Both PASS was NOT achieved; the 5 FAIL findings become corrective cards and require a fresh Luna/PASS re-review on a single valid candidate identity with all findings remediated.",
@@ -122,9 +163,9 @@
     "method": "calibration + clean-candidate review pair; pass-gate = zero P0/P1 findings + no unexplained P2 + 100% mutant kill + 6/6 Chromium journeys + budgets green + zero leaked resources + no stale evidence",
     "source": "codex review-run logs (--output-last-message verdicts), git/jj history, repo file inspection, /tmp/pitd-managed inspection, campaign-data byte count",
     "tokensNote": "tokens=null: token accounting not available (see metricsMethodology method note)",
-    "wallClockMinutesNote": "calibration: 84 min (01a06210, 5040s); clean: 18 min (01a06220, ~1080s first completion, 990s wall)"
+    "wallClockMinutesNote": "calibration: 84 min (01a06210, 5040s); clean: 18 min (01a06220, ~1080s first completion, 990s wall); 9879 sequence clean PASS: ~8 min (01a06ba3, 477.80s wall); prior top-level 102 + 8 = 110"
   },
-  "iterationsToGreen": "10bb87fb cycle blocked on 5 corrective cards; no green achieved",
+  "iterationsToGreen": "9879 cycle green: calibration PASS + clean PASS (sequence) after retry FAIL (3 blockers corrected) + final FAIL (2 ordering blockers, downstream reset to BLOCKED/PENDING); priors: 10bb87fb cycle blocked on 5 corrective cards",
   "tokens": null,
-  "wallClockMinutes": 102
+  "wallClockMinutes": 110
 }

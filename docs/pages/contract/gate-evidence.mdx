@@ -11,13 +11,17 @@ effort `xhigh`, read-only sandbox) plus the Wave 8 integration results.
 Each gate ended in exactly `VERDICT: PASS` (anything else fails the gate and
 is fixed before the next round).
 
-> **Authoritative current evidence (2026-08-31).** The counts below for the
-> final VET-01 gate reflect the 2026-08-31 candidate (`9c837bde`), verified by
-> `/tmp/vet01-safe02-final.md` (authoritative gate report) and
-> `agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
-> `tasks/metrics/contract/VET-01.json`. The Wave-8 table further below is
-> preserved **as historical context** — it records the 2026-08-14 Wave-8
-> state and is **not** an authoritative current claim.
+  > **Authoritative current evidence (2026-09-04).** The current candidate is
+  > `9879bf76` (full `9879bf76cea24d7b2983a1d960b8d09018a7c2a6`): VET-01 literal
+  > 11/11 diagnostic (`tasks/metrics/contract/VET-01.json`), ordered Luna 6/6 gate
+  > (`9879bf76-luna-ordered/`, session `01a06bad`, `VERDICT: PASS`; `9879bf76-luna-final/`
+  > session `01a06b5b` retained as pre-gate diagnostic),
+  > inventory 1618 rows, reconcile 17/17, campaign-data 0 characters / 0 crews.
+  > The 2026-08-31 `9c837bde` tables below are **superseded history**.
+  > Release-gate order (spec: REVIEW-01, then REVIEW-02, then VET-01): REVIEW-01
+  > is DONE (sequence clean PASS `01a06ba3`) and REVIEW-02 is DONE (ordered gate
+  > `01a06bad`); next required: fresh VET-01 (BLOCKED/PENDING). Final release is
+  > NOT PASS until the ordered sequence completes.
 
 ## Wave 3 — contract/oracle correctness review (2026-08-14)
 
@@ -56,10 +60,10 @@ is fixed before the next round).
 
 ## Final VET-01 whole-initiative gate (2026-08-31)
 
-Candidate `9c837bde` (full immutable ID `9c837bde106710671067289b2a3d2a9e4c0f5b8c`); final Luna review (REVIEW-02) on 2026-08-30 returned
-`VERDICT: PASS`. The authoritative 2026-08-30 results, recorded in
-`agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
-`tasks/metrics/contract/VET-01.json`:
+  Candidate `9879bf76` (full immutable ID `9879bf76cea24d7b2983a1d960b8d09018a7c2a6`) since the 2026-09-04 refresh (superseding `9c837bde` below, retained as history); final Luna review (REVIEW-02) final gate on 2026-09-04 returned
+  `VERDICT: PASS`. The superseded 2026-08-30 results were recorded in
+  `agent-docs/test-audit/final-vetting.md` (VET-01 Final Gate Evidence) and
+  `tasks/metrics/contract/VET-01.json`; current-candidate evidence is the 2026-09-04 refresh (see blockquote above):
 
 | Gate | Command | Result |
 |---|---|---|
@@ -69,7 +73,7 @@ Candidate `9c837bde` (full immutable ID `9c837bde106710671067289b2a3d2a9e4c0f5b8
 | Frontend suite | `cd frontend && npx vitest run` | **763/763** (20 files) |
 | Frontend build | `(cd frontend && npm run build)` | green; 676 modules |
 | Conformance tooling | `cd conformance && npm run test:tooling` | **197/197** (13 files) |
-| Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9, rev `9c837bde106710671067289b2a3d2a9e4c0f5b8c`) |
+  | Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9, rev `9879bf76`, run 2026-09-03) |
 | Browser journeys | `cd conformance && npm run test:browser` | **6/6 journeys** (0 problems) |
 | Benchmark | `cd conformance && npm run test:benchmark` | green (scale=0+10+100+1000 within frozen budgets) |
 | OpenAPI lint | `npx -y @redocly/cli lint contract/openapi.yaml --config contract/redocly.yaml` | 0 errors, 1 warning |
@@ -98,10 +102,14 @@ The remaining 5 are general canonical-shape guards (CANON-CREATE-001, CANON-NULL
 
 **Strict decoders:** ordinary current-version decoders contain no compatibility defaults or legacy error branches (EDGE-02 / AR-012). Verified by Luna REVIEW-02 (6/6 journeys) and VET-01 mutation (28/28 killed).
 
-**Luna PASS:** GPT 5.6 Luna via `openai-codex` at `xhigh` independently ran
-`npm run test:browser` (corrected-candidate rerun: fresh run `2026-08-31T11-04-06-346Z-2dc06d9c`, session `01a057a3-86e0-7313-afe9-bcbfa4f18474`, candidate `9c837bde`:
-`passed=true`, 0 problems, 6/6 journeys) and inspected source.
-`VERDICT: PASS`. Verdict file: `/tmp/review02-luna-9c837bde-verdict.md` (durable: `agent-docs/test-audit/browser-evidence/9c837bde-luna/`).
+  **Luna final PASS (2026-09-04):** GPT 5.6 Luna via `openai-codex` at `xhigh`
+  (session `01a06b5b-43de-71a2-a072-5401d7aed342`, candidate `9879bf76`
+  head-verified) ran `npm run test:browser` FIRST (fresh run
+  `2026-09-04T07-40-18-772Z-d6b530e4`, exit 0): `passed=true`, 0 problems,
+  6/6 journeys (checkpoints 17/8/28/6/10/14); matrix 45 numeric + 45
+  screenshots; theme01-fresh PASS (25 checkpoints, 24 ratios/12 combos).
+  `VERDICT: PASS`. Archive: `agent-docs/test-audit/browser-evidence/9879bf76-luna-final/`
+  (prior `9c837bde-luna/` rerun superseded, retained as history).
 
 **Tooling count:** The canonical final run on candidate `9c837bde` records **197/197** tooling tests (13 files). `conformance/package.json` retains the full `test:ada` script; tooling 197 is green. (Prior stale Wave-8 records claimed 156/156.)
 
@@ -162,5 +170,7 @@ and **not** an authoritative current claim; the VET-01 table above supersedes it
   `agent-docs/test-audit/inventory.json` path (exit 0).
 - **Generated-doc agent workflow:** PASS (safe managed run with unique port, exact PID, cleanup); 13/13 steps, 3/3 negative tests via `npm run test:agent-workflow` on candidate `9c837bde`.
 - **Mutation:** 28/28 killed (P0 19/19, P1 9/9) with revision `9c837bde106710671067289b2a3d2a9e4c0f5b8c` in the artifact; post-campaign source verification PASS (all files restored to baseline).
+- **2026-09-04 refresh to candidate `9879bf76`:** mutation artifact now records rev `9879bf76cea2` (28/28 killed, order-valid literal run 2026-09-04T09:40:59Z–10:03:26Z EXIT 0, raw `mutation-raw-2026-09-04T10-03-26-180Z.txt`); performance artifact rev `9879bf76cea2` (budget-enforced 4/4, order-valid literal run 2026-09-04T10:04:52Z–10:05:13Z EXIT 0, raw `performance-raw-2026-09-04T10-05-13-149Z.txt`); inventory 1618 rows (tooling-layer 214, frontend-layer 794), reconcile 17/17; ordered Luna 6/6 gate (`9879bf76-luna-ordered/`, session `01a06bad`, `VERDICT: PASS`; `9879bf76-luna-final/` session `01a06b5b` retained as pre-gate diagnostic); order-valid VET browser archive `9879bf76-vet-ordered/` (fresh 6/6, 77 screenshots, 45 matrix); campaign-data 0 characters / 0 crews per authorized cleanup (post-cleanup manifest 123 files). The `9c837bde` rows above are superseded history.
+- **Release-gate status (2026-09-04):** REVIEW-01 is DONE (calibration PASS `01a068e6` + sequence clean PASS `01a06ba3`), REVIEW-02 is DONE (ordered Luna gate `01a06bad`, `VERDICT: PASS`), and VET-01 is DONE (order-valid run 2026-09-04T09:27:21Z–10:05:40Z: 11 literal commands EXIT 0 in clean workspace @9879bf76 + 8/8 extras; `tasks/metrics/contract/VET-01.json`, `agent-docs/test-audit/final-vetting.md` ORDER-VALID section, raw logs `/tmp/vet9879-ordered/`). Final Sol release review still pending — final PASS NOT claimed.
 
 Full verdict transcript: `docs/pages/contract/gate-evidence/final-verdict.md`.
