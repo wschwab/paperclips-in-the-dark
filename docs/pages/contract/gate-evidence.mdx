@@ -11,19 +11,28 @@ effort `xhigh`, read-only sandbox) plus the Wave 8 integration results.
 Each gate ended in exactly `VERDICT: PASS` (anything else fails the gate and
 is fixed before the next round).
 
-  > **Authoritative current evidence (2026-09-04).** The current candidate is
-  > `9879bf76` (full `9879bf76cea24d7b2983a1d960b8d09018a7c2a6`): VET-01 order-valid
-  > 11/11 gate (`tasks/metrics/contract/VET-01.json`), ordered Luna 6/6 gate
-  > (`9879bf76-luna-ordered/`, session `01a06bad`, `VERDICT: PASS`; `9879bf76-luna-final/`
-  > session `01a06b5b` retained as pre-gate diagnostic),
-  > inventory 1618 rows at gate time (current re-audit 2026-09-06: 1622 rows + 136 stale, manifest 294 rows, reconcile 17/17), campaign-data 0 characters / 0 crews.
-  > The 2026-08-31 `9c837bde` tables below are **superseded history**.
-  > Release-gate order (spec: REVIEW-01, then REVIEW-02, then VET-01): REVIEW-01
-  > is DONE (sequence clean PASS `01a06ba3`), REVIEW-02 is DONE (ordered gate
-  > `01a06bad`), VET-01 is DONE order-valid (run 2026-09-04T09:27:21Z–10:05:40Z,
-  > 11 literal commands EXIT 0). Only the final Astra release review remains
-  > pending (route `openai-codex/gpt-6-astra`, thinking MEDIUM per 2026-09-08 user config — Astra scope only; Luna xhigh gate unchanged; all historical Sol sessions/results verbatim) — final PASS NOT claimed.
-  > 2d9c39b6 REVIEW-01 (Astra/openai-codex xhigh): blind calibration v2 PASS (M20 `client.ts:193`, 3/3 vs 1F/2P); clean review BLOCKED on provider quota (reset 2026-09-08 01:35 IDT) — NOT PASS. Prior 9879 DONE preserved as historical.
+  > **Authoritative current evidence (2026-09-09).** The current candidate is
+  > `f650d62c` (full `f650d62c32db6a2f8e16c9f9325eadecda765e57`): REVIEW-01 is
+  > BLOCKED — blind M02 calibration PASS (`clock.ts` relatedClockIds,
+  > `/tmp/review01-f650d62c-calibration-verdict.md`) but clean retry FAIL
+  > (Astra/medium, `CLEAN-CANDIDATE: FAIL`: B1 happy-dom WeakRef frontend flake
+  > FIXED 2026-09-09 (probe FAIL-to-PASS, roster 5/5 43/43, full 3/3 794/794,
+  > independently verified); B2 current-cycle wording — closed by this rewrite; B3
+  > `/tmp/pitd-managed` residue — closed 2026-09-09 by exact-path removal,
+  > TOOLING-MANAGED-019 1 passed / 217 filtered, root empty;
+  > `/tmp/review01-f650d62c-clean-retry-verdict.md`).
+  > Required sequence: B1 fix DONE — awaiting new candidate, then REVIEW-01 clean PASS (calibration anew), then fresh Luna
+  > (REVIEW-02), then fresh VET-01, then final Astra review (medium) —
+  > downstream gates are NOT DONE and must not be marked so.
+  > Explicitly historical only: the 2026-09-04 `9879bf76` order-valid gates
+  > (REVIEW-01 DONE `01a06ba3`, REVIEW-02 DONE `01a06bad`, VET-01 DONE run
+  > 2026-09-04T09:27:21Z–10:05:40Z, 11 literal commands EXIT 0; inventory 1618
+  > rows at gate time, re-audit 2026-09-06: 1622 rows + 136 stale, manifest 294
+  > rows, reconcile 17/17; ordered Luna 6/6 `9879bf76-luna-ordered/` session
+  > `01a06bad` VERDICT: PASS, `9879bf76-luna-final/` `01a06b5b` pre-gate
+  > diagnostic), the 2026-09-07 `2d9c39b6` quota-BLOCKED cycle (superseded by the
+  > post-reset f650 retry), and the 2026-08-31 `9c837bde` tables below
+  > (**superseded history**); campaign-data 0 characters / 0 crews.
 
 ## Wave 3 — contract/oracle correctness review (2026-08-14)
 
@@ -102,7 +111,7 @@ is fixed before the next round).
 
   **Strict decoders:** ordinary current-version decoders contain no compatibility defaults or legacy error branches (EDGE-02 / AR-012). Verified by ordered Luna REVIEW-02 (6/6 journeys, `9879bf76-luna-ordered/`) and VET-01 mutation (28/28 killed).
 
-  **Ordered sessions:** REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3` (`CLEAN-CANDIDATE: PASS`); REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run above. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Only the final Astra release review remains pending (thinking medium per 2026-09-08; Luna xhigh unchanged) — final PASS NOT claimed.
+  **Ordered sessions (current cycle `f650d62c`, REVIEW-01 BLOCKED):** blind M02 calibration PASS (`clock.ts` relatedClockIds, `CALIBRATION: PASS`, `/tmp/review01-f650d62c-calibration-verdict.md`); clean retry FAIL (Astra/medium, B1 FIXED 2026-09-09 + B2/B3 closed; awaiting new candidate + fresh REVIEW-01 rerun, `CLEAN-CANDIDATE: FAIL`, `/tmp/review01-f650d62c-clean-retry-verdict.md`). Historical 9879 sessions only: REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3`; REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run 2026-09-04T09:27:21Z–10:05:40Z. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Pending in order: new candidate (B1 fix DONE) → REVIEW-01 clean PASS → fresh REVIEW-02 → fresh VET-01 → final Astra review (thinking medium per 2026-09-08; Luna xhigh unchanged) — final PASS NOT claimed, downstream NOT DONE.
 
   **9c-era data:** the 2026-08-30 run on `9c837bde` (246/471/197/763, inventory 1570, campaign 4003 files) is superseded history — retained in git history and the superseded `final-vetting.md` sections, not repeated here.
 

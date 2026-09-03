@@ -24,7 +24,7 @@
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "BLOCKED — current cycle 2026-09-07 @ 2d9c39b6 (blind calibration v2 PASS; clean review BLOCKED on openai-codex provider quota, reset 2026-09-08 01:35 IDT; NOT PASS). Historical: 9879bf76 DONE (calibration PASS session 01a068e6 + clean PASS sequence session 01a06ba3; ordered downstream REVIEW-02 DONE 01a06bad + VET-01 DONE order-valid) — preserved in calibratedReview01Cycles, NOT current.",
+  "status": "BLOCKED — current cycle 2026-09-09 @ f650d62c (blind M02 calibration PASS — clock.ts relatedClockIds; clean retry FAIL (B1 happy-dom WeakRef flake FIXED 2026-09-09: probe FAIL-to-PASS, roster 5/5 43/43, full 3/3 794/794 — awaiting new candidate + fresh REVIEW-01 (calibration anew), NOT PASS; B2 wording closed by Vocs rewrite, B3 /tmp residue closed 2026-09-09 exact-path removal + TOOLING-MANAGED-019 1/217 root empty; CLEAN-CANDIDATE: FAIL, /tmp/review01-f650d62c-clean-retry-verdict.md). Historical: 2d9c39b6 quota-BLOCKED cycle superseded by post-reset f650 retry; 9879bf76 DONE (calibration PASS 01a068e6 + clean PASS 01a06ba3; downstream REVIEW-02 DONE 01a06bad + VET-01 DONE order-valid) — preserved in calibratedReview01Cycles, explicitly historical only, NOT current.",
   "evidence": [
     "agent-docs/review01-calibrated-review.md (10bb87fb cycle recorded; 9879 calibration PASS + clean PASS recorded; REVIEW-01 DONE, downstream pending)",
     "conformance/scripts/managed-browser-smoke.mjs (clean identity check present at line 297: health?.implementation === 'ada' && dataDir === expectedDataDir)",
@@ -165,12 +165,11 @@
       "reviewerRoute": "openai-codex/gpt-6-astra --thinking=xhigh (explicit OMP route; no Sol)",
       "calibrationVerdict": "PASS (blind v2: defect located with mechanism + failing test + fresh paired test delta + jj-byte hashes; no answer-key/prior-verdict reads; v1 history-only — provenance leak disclosed, redacted, redone)",
       "calibrationVerdictFile": "/tmp/review01-2d9c39b6-calibration2-verdict.md",
-      "calibrationSession": "tooling-recovered agent.db threads ≈ 01a07ce4 (2026-09-07 17:30:05 UTC, repo cwd; NOT reviewer-stated); v1 ≈ 01a07cdc",
       "calibrationRunLog": "/tmp/review01-2d9c39b6-calibration2-run.log",
       "plantedDefect": "P0 FV-023 transport-classification regression in frontend/src/api/client.ts:193 — malformed 200 JSON reclassified as ApiError(0, NETWORK_ERROR_COPY) instead of DecodeError",
       "reproduction": "clean primary 3/3 PASS vs planted workspace 1 failed/2 passed (client.test.ts:6812); single-file diff confirmed; clean hash verified from jj revision bytes",
       "plantedFileHash": "fac168fe521fd7593fc536b27c20f373599a720a1368e23057baae437ffaaaee",
-      "calibrationSession": "NONE stated by reviewers — no exact ID recovered. Timestamp-correlated agent.db thread rows (UNVERIFIED candidates, NOT authoritative identity): 01a07ce4 @ 2026-09-07 17:30:05 UTC and 01a07cdc @ 17:20:42 UTC, repo cwd. Proof by route + artifacts.",
+      "calibrationSession": "NONE stated by reviewers — no exact verified ID recovered; proof carried by route + artifacts.",
       "cleanFileHash": "68735e2740f3b7f83ba6f484a1c350b0e63f66ff1777d2bbd45371dc327e70e0",
       "disposableWorkspace": "/tmp/review01-2d9c39b6-work (destroyed via jj workspace forget + rm -rf, verified gone; parent 2d9c39b6 untouched; primary hash clean)",
       "cleanVerdict": "BLOCKED — openai-codex quota (usage_limit_reached, exit 1, 199.48s, raw /tmp/review01-2d9c39b6-clean-err.log); reset 2026-09-08 01:35 IDT; NO verdict file, NO terminal line; retry after reset, do not repeat calibration",
@@ -179,16 +178,33 @@
       "cleanFindings": [],
       "positiveChecks": "validators this cycle: metrics 149/149 0 errors, traceability 231/231, reconcile 17/17 0 err/warn (1622 rows, 136 stale, 195 P0/P1, 99 new reviewed); primary .omo-only successor; client.ts clean hash",
       "status": "BLOCKED — blind calibration PASS achieved; clean review pending provider quota reset; NOT PASS"
+    },
+    {
+      "cycle": "2026-09-09 @ f650d62c",
+      "candidate": "f650d62c32db6a2f8e16c9f9325eadecda765e57 (\"clean inventory guard fixtures and record review evidence\")",
+      "reviewerRoute": "openai-codex/gpt-6-astra --thinking=medium (explicit OMP route, fresh ephemeral session; no Sol)",
+      "calibrationVerdict": "PASS (blind M02: clock.ts relatedClockIds optional+default located with mechanism + M02-killer test delta + jj-byte hashes; blind-certifiable; accepted as supplied, NOT repeated in clean retry)",
+      "calibrationVerdictFile": "/tmp/review01-f650d62c-calibration-verdict.md",
+      "cleanVerdict": "FAIL (B1 P1 happy-dom WeakRef observer flake PENDING; B2 P2 wording closed by Vocs rewrite; B3 P2 /tmp residue closed 2026-09-09)",
+      "cleanVerdictFile": "/tmp/review01-f650d62c-clean-retry-verdict.md",
+      "cleanRunLog": "/tmp/review01-f650d62c-clean-retry-run.log (exit 0, wall 782.08s, no quota error)",
+      "cleanFindings": [
+        "B1 P1: locked-DOM happy-dom observer GC flake (roster.test.ts:885/891)",
+        "B2 P2: current-cycle wording (this rewrite)",
+        "B3 P2: /tmp/pitd-managed residue (closed)"
+      ],
+      "positiveChecks": "stream race 218/218 tooling + 100/100 stress; VET values = live; card states; rawOutputPath durable; 294-row arithmetic; 53 cards; flake hashes; validators 149/149 + 231/231 + 17/17; focused 35 + decoders 73/73; B3 closure TOOLING-MANAGED-019 1/217 root empty",
+      "status": "BLOCKED — B1 FIXED 2026-09-09 (awaiting new candidate + fresh REVIEW-01 rerun, calibration anew) → REVIEW-01 clean PASS → fresh REVIEW-02 → fresh VET-01 → final Astra medium; NOT PASS"
     }
   ],
-  "notes": "REVIEW-01 10bb87fb cycle per AUDIT-0 work-spec §17.2: (1) ONE realistic P1 defect planted in isolated disposable jj workspace at /tmp/review01-10bb-work, parent commit 10bb87fb untouched, working commit c2186210 (empty successor); (2) reviewer given governing spec + SAFE-02/A11Y-01/THEME-01 contracts + current source + 10bb87fb revision-tagged evidence, NO defect location; (3) reviewer reproduced/independently identified the planted M18 action-dot ::before hit-zone regression at components.css:73-81 with mechanism + failing A11Y-01 test + hash delta; (4) disposable workspace destroyed, clean candidate hash verified (db11a76b… = 10bb87fb, defect confined to working copy only); (5) clean-candidate review run in primary repo — calibration PASS, clean candidate FAIL on 5 primary blockers. Per §17.2 'If either FAIL: report exact findings, do not mark done.' Per §17.2 step 6 'Only after both PASS: update tracked REVIEW-01 + review01-calibrated-review.md.' Both PASS was NOT achieved; the 5 FAIL findings become corrective cards and require a fresh Luna/PASS re-review on a single valid candidate identity with all findings remediated.",
+  "notes": "REVIEW-01 10bb87fb cycle per AUDIT-0 work-spec §17.2: (1) ONE realistic P1 defect planted in isolated disposable jj workspace at /tmp/review01-10bb-work, parent commit 10bb87fb untouched, working commit c2186210 (empty successor); (2) reviewer given governing spec + SAFE-02/A11Y-01/THEME-01 contracts + current source + 10bb87fb revision-tagged evidence, NO defect location; (3) reviewer reproduced/independently identified the planted M18 action-dot ::before hit-zone regression at components.css:73-81 with mechanism + failing A11Y-01 test + hash delta; (4) disposable workspace destroyed, clean candidate hash verified (db11a76b… = 10bb87fb, defect confined to working copy only); (5) clean-candidate review run in primary repo — calibration PASS, clean candidate FAIL on 5 primary blockers. Per §17.2 'If either FAIL: report exact findings, do not mark done.' Per §17.2 step 6 'Only after both PASS: update tracked REVIEW-01 + review01-calibrated-review.md.' Both PASS was NOT achieved; the 5 FAIL findings become corrective cards and require a fresh Luna/PASS re-review on a single valid candidate identity with all findings remediated. 2d9c39b6 calibration-session note (UNVERIFIED guesses only, NOT identity): timestamp-correlated agent.db thread rows 01a07ce4 @ 2026-09-07 17:30:05 UTC and 01a07cdc @ 17:20:42 UTC, repo cwd — candidates, not authoritative; no verified reviewer session ID exists.",
   "metricsMethodology": {
     "method": "calibration + clean-candidate review pair; pass-gate = zero P0/P1 findings + no unexplained P2 + 100% mutant kill + 6/6 Chromium journeys + budgets green + zero leaked resources + no stale evidence",
     "source": "codex review-run logs (--output-last-message verdicts), git/jj history, repo file inspection, /tmp/pitd-managed inspection, campaign-data byte count",
     "tokensNote": "tokens=null: token accounting not available (see metricsMethodology method note)",
     "wallClockMinutesNote": "calibration: 84 min (01a06210, 5040s); clean: 18 min (01a06220, ~1080s first completion, 990s wall); 9879 sequence clean PASS: ~8 min (01a06ba3, 477.80s wall); prior top-level 102 + 8 = 110"
   },
-  "iterationsToGreen": "9879 cycle green: calibration PASS + clean PASS (sequence) after retry FAIL (3 blockers corrected) + final FAIL (2 ordering blockers, downstream reset to BLOCKED/PENDING); priors: 10bb87fb cycle blocked on 5 corrective cards",
+  "iterationsToGreen": "9879 cycle green: calibration PASS + clean PASS (sequence) after retry FAIL (3 blockers corrected) + final FAIL (2 ordering blockers, downstream reset to BLOCKED/PENDING); priors: 10bb87fb cycle blocked on 5 corrective cards; f650d62c cycle: calibration M02 PASS + clean FAIL (B1 FIXED 2026-09-09, B2/B3 closed; awaiting new candidate + fresh review, NOT PASS)",
   "tokens": null,
   "wallClockMinutes": 110
 }
