@@ -24,8 +24,8 @@
   ],
   "implementationLoc": 900,
   "scaffoldingLoc": 0,
-  "notes": "Stage-3 worker was killed mid-run by broker shutdown (exit 143); orchestrator completed and repaired its work manually. Radicle push failed with missing ssh-agent socket (once-per-boot ritual needed); GitHub mirror pushed. Token accounting unavailable, so tokens is 0 rather than estimated.",
-  "status": "blocked \u2014 see notes (rejection/missing documented)",
+  "notes": "[History 2026-08-25: stage-3 worker was killed mid-run by broker shutdown (exit 143) and its first attempt left broken tests; the orchestrator completed and repaired the work by hand, fixing a real UI bug it exposed (stale dot fills on playbook switch inverted the next click into a clear). Radicle push failed with missing ssh-agent socket (once-per-boot ritual needed); GitHub mirror pushed.] [2026-09-04 final-Sol-finding-3 reconciliation: both incidents were transient execution events, not product blockers — the card (tasks/CONTRACT-01.md) records Status complete for stages 1-3 with gates green (pc oracle 10/10; canonical 55/442; frontend 19/656; browser journeys 2/2 PASS; build clean). No current blocker; VET-01 DONE order-valid (9879bf76) treats all implementation/documentation dependencies as closed.] Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "DONE — card complete stages 1-3 (tasks/CONTRACT-01.md Status: complete); pc oracle 10/10, canonical 55/442, frontend 19/656, browser 2/2 PASS, build clean; stage-3 kill/push history in notes, no current blocker",
   "metricsMethodology": {
     "method": "historical evidence review (no git diff available)",
     "source": "per-card notes + iterationNotes + defectsCaughtBy"

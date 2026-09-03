@@ -24,8 +24,8 @@
   ],
   "implementationLoc": 420,
   "scaffoldingLoc": 0,
-  "notes": "Net suite delta +1 test (431 to 432): deleted 27 ledger-approved rows, added the generated matrix plus two M01 carry-over cases. conformance-classification.json is stale relative to the Wave-3 decisions and should be regenerated or retired in DOC-01. Token accounting unavailable, so tokens is 0 rather than estimated.",
-  "status": "blocked \u2014 see notes (rejection/missing documented)",
+  "notes": "Net suite delta +1 test (431 to 432): deleted 27 ledger-approved rows, added the generated matrix plus two M01 carry-over cases. [History 2026-08-24: conformance-classification.json was stale relative to the Wave-3 decisions; the card names the per-layer decisions files as the ledger of record (tasks/TEST-04.md:45-47).] [2026-09-04 final-Sol-finding-3 reconciliation: the classification file (2026-08-21) remains superseded, not regenerated — the canonical ledger is now inventory.json (1618 rows; reconcile-audit.js 17/17) plus per-layer decisions; DOC-01 retired it as an authority by moving acceptance to inventory/reconcile artifacts. No current blocker; card Status is complete and VET-01 DONE order-valid (9879bf76) treats all implementation/documentation dependencies as closed.] Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "DONE — card complete (tasks/TEST-04.md Status: complete); matrix+endpoints 117/117, 20/20 isolation, 3x full managed 432/432 plus orchestrator re-run 432/432 + typecheck; classification staleness superseded, see notes",
   "metricsMethodology": {
     "method": "historical evidence review (no git diff available)",
     "source": "per-card notes + iterationNotes + defectsCaughtBy"

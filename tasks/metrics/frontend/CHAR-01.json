@@ -14,7 +14,7 @@
     "review": 0,
     "human": 0
   },
-  "notes": "character-create tests + pc-chargen browser journey green; browser suite all journeys PASS; build clean; pending final xhigh Luna gate",
+  "notes": "character-create tests + pc-chargen browser journey green; browser suite all journeys PASS; build clean. [History 2026-08-26: final xhigh Luna gate was pending at card time.] [2026-09-04 final-Sol-finding-3 reconciliation: the pending gate has since closed — REVIEW-02 DONE (Luna/xhigh ordered session 01a06bad, VERDICT: PASS — fresh 6/6 journeys incl. pc-chargen, matrix 45/45, theme01-fresh 25/25); REVIEW-01 DONE (sequence clean PASS 01a06ba3); traceability UX-001 is DONE (char01 journey 6/6 checkpoints, 0 problems, Luna PASS); VET-01 DONE order-valid (9879bf76, frontend 794/794). No current blocker.]",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
@@ -31,5 +31,5 @@
     "Luna/xhigh browser review",
     "orchestrator browser probe"
   ],
-  "status": "DONE \u2014 character-create tests + pc-chargen browser journey green; browser suite 6/6 journeys PASS; build clean"
+  "status": "DONE — character-create tests + pc-chargen journey green; browser 6/6; Luna xhigh gate PASS (REVIEW-02 ordered 01a06bad); traceability UX-001 DONE; VET-01 DONE order-valid 9879bf76"
 }

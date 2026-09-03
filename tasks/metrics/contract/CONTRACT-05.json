@@ -22,8 +22,8 @@
   ],
   "implementationLoc": 850,
   "scaffoldingLoc": 0,
-  "notes": "Worker completed all edits including browser journey and seed fixture wiring but its closing turn died on 'OpenAI completions stream timed out waiting for first event'. No rework needed. Token accounting unavailable, so tokens is 0 rather than estimated.",
-  "status": "blocked \u2014 see notes (rejection/missing documented)",
+  "notes": "[History 2026-08-25: the worker completed all edits including browser journey and seed fixture wiring, but its closing turn died on an OpenAI completions stream timeout and never yielded its report; the orchestrator stopped it and verified all gates independently with no rework needed.] [2026-09-04 final-Sol-finding-3 reconciliation: the timeout was a provider event after finished work, not a product blocker — the card (tasks/CONTRACT-05.md) records Status complete with gates green (typecheck clean; focused oracle 9/9; canonical 59 files/470 tests; frontend 19 files/668; build clean; browser suite all journeys green incl. character-contacts). No current blocker; VET-01 DONE order-valid (9879bf76) treats all implementation/documentation dependencies as closed.] Token accounting unavailable, so tokens is 0 rather than estimated.",
+  "status": "DONE — card complete (tasks/CONTRACT-05.md Status: complete); typecheck + focused oracle 9/9 + canonical 59/470 + frontend 19/668 + build + browser all green incl. character-contacts; stream-timeout history in notes, no current blocker",
   "metricsMethodology": {
     "method": "historical evidence review (no git diff available)",
     "source": "per-card notes + iterationNotes + defectsCaughtBy"

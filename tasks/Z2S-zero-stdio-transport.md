@@ -41,3 +41,8 @@ If a future release remains one-shot-only, use a neutral Node line dispatcher
 that invokes `zero run` once per complete request with stdin closed per child;
 keep this explicitly process-per-request rather than claiming persistent Zero
 JSONL transport.
+
+## Log
+
+- 2026-07-21: Luna/xhigh probe (session 019f8515, 19 min wall-clock) — one-line echo PASS at EOF; persistent-stdio probes BLOCKED (`std.io` scans caller-owned buffers only; `std.fs` `/dev/stdin` read yields no line while the pipe stays open); frozen shim GET /api/health timed out after 2s. Result `blocked-at-persistent-stdio-boundary`, expected-red, Track Z non-blocking. Metrics: `tasks/metrics/zero/Z2S.json`; probes archived under `backend-zero/spike/`.
+- 2026-09-04 (finding-6 backfill): this `## Log` added so the tracked metrics record has its required task log per work-spec §3.3 (`## Log`) and §5. Entries above mirror the tracked metrics record; no sessions/results invented.

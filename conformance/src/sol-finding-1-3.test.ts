@@ -367,7 +367,7 @@ describe("SOL finding 4 — gen-doc workflow child-only black-box", () => {
     });
     let stderr = "";
     child.stderr.on("data", (d) => (stderr += d.toString()));
-    const code = await new Promise((resolve) => child.once("exit", resolve));
+    const code = await new Promise((resolve) => child.once("close", resolve));
     expect(code).toBe(1);
     expect(stderr).toContain("FATAL");
     expect(stderr).toContain("BASE_URL");
@@ -382,7 +382,7 @@ describe("SOL finding 4 — gen-doc workflow child-only black-box", () => {
     });
     let stderr = "";
     child.stderr.on("data", (d) => (stderr += d.toString()));
-    const code = await new Promise((resolve) => child.once("exit", resolve));
+    const code = await new Promise((resolve) => child.once("close", resolve));
     expect(code).toBe(1);
     expect(stderr).toContain("FATAL");
     expect(stderr).toContain("PITD_DATA_DIR");

@@ -70,9 +70,9 @@ is fixed before the next round).
   | Conformance (test:ada) | `cd conformance && npm run test:ada` | **471/471** (58 files, 09:28:51–09:29:45) |
   | Conformance tooling | `cd conformance && npm run test:tooling` | **214/214** (14 files, 09:29:47–09:30:51) |
   | Typecheck | `cd conformance && npm run typecheck` | no errors (09:40:55–09:40:56) |
-  | Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9, rev `9879bf76cea2`, 09:40:59–10:03:26; results sha256 `7000c6e7…7169`; raw `mutation-raw-2026-09-04T10-03-26-180Z.txt`) |
+  | Mutation (full catalog) | `cd conformance && npm run test:mutation` | **28/28 killed** (P0 19/19, P1 9/9, rev `9879bf76cea2`, 09:40:59–10:03:26; results sha256 `17a8dc9e…2489`; raw `mutation-raw-2026-09-04T10-03-26-180Z.txt`; pre-repoint history: sha256 `7000c6e7…7169`) |
   | Browser journeys | `cd conformance && npm run test:browser` | **6/6 journeys** (0 problems, 10:03:32–10:04:50; run `2026-09-04T10-03-32-584Z-38cbfbad`; durable `9879bf76-vet-ordered/`: 77 screenshots, 45 matrix-numeric) |
-  | Benchmark | `cd conformance && npm run test:benchmark` | green, 4/4 scales within frozen budgets (rss 8.5/10.4/11.6/25.4MiB, dom 60/101/494/2272; 10:04:52–10:05:13; results sha256 `35bfb547…0d0e5e`; raw `performance-raw-2026-09-04T10-05-13-149Z.txt`) |
+  | Benchmark | `cd conformance && npm run test:benchmark` | green, 4/4 scales within frozen budgets (rss 8.5/10.4/11.6/25.4MiB, dom 60/101/494/2272; 10:04:52–10:05:13; results sha256 `116243ec…4948`; raw `performance-raw-2026-09-04T10-05-13-149Z.txt`; pre-repoint history: sha256 `35bfb547…0d0e5e`) |
   | Frontend build | `(cd frontend && npm run build)` | green; tsc + vite 371.85 kB JS (10:05:16–10:05:19) |
   | Frontend suite | `cd frontend && npx vitest run` | **794/794** (20 files, 10:05:22–10:05:36) |
   | OpenAPI lint | `npx -y @redocly/cli lint contract/openapi.yaml --config contract/redocly.yaml` | 0 errors, 27 warnings (26 composition + 1 previewToken; 10:05:38–10:05:40) |
@@ -115,6 +115,7 @@ is fixed before the next round).
   generated frontend evaluator (ECMAScript TrimString set); the completeness
   oracle pins an NBSP case (COMPLETE-WHITESPACE-004).
   - Current reconciliation: `reconcile-audit.js` EXIT 0, 17/17 checks pass (inventory 1618 rows, 103 stale preserved, 0 stale in current set, 0 pending).
+  - **Runtime flake/determinism (finding 7, 2026-09-04T12:50Z–12:56Z, muse-sol-flake):** working tree after the 009f/009g `exit`→`close` fix atop `44448a4d` (grandchild of immutable `9879bf76cea2`): focused 009f **21/21**, 009g **21/21** (each `1 passed | 33 skipped`); full `npm run test:tooling` **214/214** (14 files) in 5/5 runs (4 own + sibling bg_36). Classification `deterministic` retained for both cases on observed evidence; no other inventory change. Raw outputs live only under gitignored `agent-docs/test-audit/flake-raw-*.txt` (not mirrored); full record `agent-docs/test-audit/runtime-flake-final.json`, tracked mirror `tasks/metrics/contract/VET-01.json`. Final immutable candidate ID pending checkpoint.
 
 ## Historical Wave 8 integration gate (2026-08-14) — preserved as context only
 

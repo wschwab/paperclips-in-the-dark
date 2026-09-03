@@ -14,7 +14,7 @@
     "review": 0,
     "human": 0
   },
-  "notes": "action-dots component + unit tests green; frontend suite 706/706; build clean; browser probe pending final xhigh Luna gate",
+  "notes": "action-dots component + unit tests green; frontend suite 706/706 at card time (current gate 794/794, 20 files); build clean; browser probe PASS. [History 2026-08-26: final xhigh Luna gate was pending at card time.] [2026-09-04 final-Sol-finding-3 reconciliation: the pending gate has since closed — REVIEW-01 sequence clean PASS (Sol/xhigh session 01a06ba3) verified A11Y-01 11/11 (24px ::before hit targets, roving tabindex + arrow keys); REVIEW-02 DONE (Luna/xhigh ordered session 01a06bad, VERDICT: PASS — 6/6 journeys, matrix 45/45 containment + 45/45 focus, theme01-fresh 25/25); traceability AR-011 is DONE; VET-01 DONE order-valid (9879bf76). No current blocker.]",
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
@@ -29,5 +29,5 @@
   "defectCatchingLayer": [
     "no defects caught by any layer (0 across all categories)"
   ],
-  "status": "complete \u2014 green"
+  "status": "DONE — action-dots + unit tests green; frontend 706/706 at card time (current gate 794/794); Luna xhigh gate PASS (REVIEW-01 seq 01a06ba3 A11Y-01 11/11; REVIEW-02 ordered 01a06bad); VET-01 DONE order-valid 9879bf76"
 }
