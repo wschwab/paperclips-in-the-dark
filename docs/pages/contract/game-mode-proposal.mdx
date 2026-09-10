@@ -1,0 +1,650 @@
+---
+title: Game mode proposal — Free Play / Score / Downtime
+---
+
+# Game mode proposal — Free Play / Score / Downtime
+
+> **Status: PROPOSAL — not implemented, pending human sign-off.**
+> Nothing in `contract/` or `conformance/` has been changed. This page is a
+> contract-change proposal only; it carries no implemented behavior and no
+> verified code. Every claim about existing behavior is cited `file:line`;
+> every claim about new behavior is marked *proposed*. Design-only research:
+> no code, contract, conformance, or VCS action was taken to produce this page.
+>
+> Origin: playtest backlog item 3 ("GAME MODE") and related item 4
+> (`docs/pages/backlog/playtest-2026-10-scoundrel.mdx:25-46`). The brief's
+> mode model is the orchestrator's proposal recorded at
+> `docs/pages/backlog/playtest-2026-10-scoundrel.mdx:39-43`.
+
+## 1. Ground truth
+
+### 1.1 blades-in-the-sheets has no mode, phase, downtime, or score concept
+
+Per `AGENTS.md:184-185` the C# `Models/` tree is authoritative for domain
+semantics. Findings, all read-only:
+
+| Search | Scope | Result |
+|---|---|---|
+| `Downtime` / `downtime` | `blades-in-the-sheets/Models/**` (`Models/Characters`, `Models/Crews`, `Models/Game`, `Models/Interactions`, `Models/Settings`) | **No matches.** No downtime model, no downtime activity, no downtime phase. |
+| `Score` (identifier) | `blades-in-the-sheets/Models/**/*.cs` | **No matches.** |
+| `[Ii]ncarcerat`, `[Ee]ntangle`, `[Pp]ayoff` | whole `blades-in-the-sheets/` tree | **No matches.** |
+| `downtime` (case-insensitive) | whole `blades-in-the-sheets/` tree | Matches only in `UI/wwwroot/data/*.json` ability/crew **description prose**, `docs/agent-api-spec.md`, `agent-docs/REVIEW.md`, `agent-docs/bits-repomix.md`, and compiled `bin/`/`obj/` artifacts. No `.cs` file. |
+
+Stated plainly: **BitS has nothing.** There is no mode, no phase, no downtime
+concept, no incarceration status, and no entanglement/payoff concept anywhere in
+its domain model. What exists:
+
+- **Crew trackers** — `Heat`, `Wanted`, `Rep` as `BoundedInteger` with bounds
+  hardcoded in the C# constructor: `blades-in-the-sheets/Models/Crews/Crew.cs:25-27`
+  (`Heat = new BoundedInteger(0, 9)`, `Wanted = new BoundedInteger(0, 4)`,
+  `Rep = new BoundedInteger(0, 12)`), and the properties at
+  `blades-in-the-sheets/Models/Crews/Crew.cs:54-58`. This is the **only**
+  "heat" concept in BitS, and it is a crew tracker, not a downtime phase.
+- **Character session expressions** — `blades-in-the-sheets/Models/Characters/Session.cs`
+  exists (Playbook/Character/Struggle expressions + max) but carries no phase.
+- **GameSetting** — the whole authoritative settings record is
+  `blades-in-the-sheets/Models/Settings/GameSetting.cs:5-22`; its numeric
+  members are `RecoveryClockSize` and `ActionPointMaximum`. **No downtime,
+  score, phase, or activity setting exists in the reference.**
+- **Prose only** — the rules text lives in data descriptions, e.g. "At the end
+  of each downtime phase, you earn +2 stash"
+  (`blades-in-the-sheets/UI/wwwroot/data/blades-in-the-dark.json:415`),
+  "During downtime, you get +1 result level when you acquire an asset or reduce
+  heat" (`:499`), "Due to your careful planning, during downtime, you may give
+  yourself or another crew member +1 downtime action" (`:494`), and "When
+  incarcerated, your wanted level counts as 1 less…" (`:514`). Crew-text
+  equivalents: `blades-in-the-sheets/UI/wwwroot/data/blades-in-the-dark-crews.json:29`
+  ("When you end downtime with zero heat, take +1 rep"), `:127`/`:461` (cohort
+  performs a downtime activity), `:309` (Vice Den downtime roll). These are
+  rulebook prose copied verbatim, **not mechanical model** — consistent with
+  `PAPERCLIPS.md:27-28` ("No dice rolling, position/effect, engagement,
+  downtime procedure, or any encoding of GM judgment"; game-mechanical
+  structure comes from the game-settings JSON only).
+
+### 1.2 This repo's game-settings JSON
+
+Copied verbatim from BitS (`PAPERCLIPS.md:40`). The only downtime/score-adjacent
+content is description prose at `data/games/blades-in-the-dark.json:200, 415,
+494, 499, 514` (same line numbers as upstream) plus crew descriptions in
+`data/games/blades-in-the-dark-crews.json`. **There is no downtime-activity
+list, no downtime-activity maximum, and no phase definition in any settings
+file** — a repo-wide search for `DowntimeActivities`/`downtimeActivit` returns
+nothing. BitD downtime in this repo is tracked only as *session expressions*,
+whose maximum is a settings integer: `SessionExpressionMax: 2` at
+`data/games/blades-in-the-dark.json:1064`, validated at startup
+(`backend-ada/server/src/pitd_callback.adb:2634, 2719`), read at
+`backend-ada/server/src/pitd_ops.adb:186, 1363-1370`.
+
+Related settings that *are* mechanical today:
+
+- `CrewTrackerMaximaSetting {HeatMax, WantedMax, RepMax}` —
+  `data/games/game-settings-schema.json:490-509`; read (with fallback literals)
+  at `backend-ada/server/src/pitd_normalize.adb:2035-2039` and bound-checked at
+  `:2761-2762`. This is where a downtime **heat** cap would come from — it
+  already exists.
+- `XpTrackMaximaSetting {Playbook, Attribute, Crew}` —
+  `data/games/game-settings-schema.json:450-468`; this is where the XP half of
+  end-of-score caps come from.
+- `ClockPurposes` — `data/games/blades-in-the-dark.json:1066-1077`; the list
+  includes `"score"` and `"long-term-project"`, but per `PAPERCLIPS.md:182`
+  clock purpose is **descriptive only** ("Paperclips never auto-resolves races,
+  activates linked clocks, or determines fictional consequences"). A clock whose
+  purpose is `score` is not a score phase and must not be conflated with one.
+
+**Where the backend loads game settings** (asked explicitly):
+
+- Games root — `backend-ada/server/src/pitd.adb:46` (`Repo_Root & "/data/games"`),
+  bound to `Games_Root` at startup `backend-ada/server/src/pitd_callback.adb:3112`.
+- Per-game load + structural validation + cache —
+  `backend-ada/server/src/pitd_callback.adb:3035-3071` (`Load_One_Game`), driven
+  by the index `backend-ada/server/src/pitd_callback.adb:3073-3079`
+  (`Load_Settings_At_Startup`, reads `data/games/games.json`).
+- Settings schema enforcement is a server-boundary concern, not generated:
+  `backend-ada/server/src/pitd_callback.adb:2507-2512`; cache contract at
+  `backend-ada/server/src/pitd_common.adb:151-156`; cached lookup with legacy
+  disk fallback at `backend-ada/server/src/pitd_common.adb:955-971` (`Game`);
+  dotted-path integer accessor (e.g. `"CrewTrackerMaxima.HeatMax"`) at
+  `backend-ada/server/src/pitd_common.adb:973-999` (`Settings_Int`).
+- Read-only game-data routes: `backend-ada/server/src/pitd_callback.adb:784,
+  793, 3167`.
+
+So a new settings block (e.g. `DowntimeSettings`) would be added to
+`data/games/game-settings-schema.json` (+ the JSON data files) and read through
+`Pitd_Common.Settings_Int` / a sibling accessor. No maximum may be hardcoded
+(`AGENTS.md:182-183`, `PAPERCLIPS.md:133`).
+
+### 1.3 Current campaign state
+
+There is essentially none. The campaign document is five scalar fields —
+`kind`, `name`, `gameStem`, `createdAt`, `formatVersion` —
+`contract/schemas/campaign.json:6-17`. It is **created once at startup and
+never mutated**: `backend-ada/server/src/pitd_callback.adb:3114` (creation) →
+`Initialize_Campaign`, which is explicitly "startup-only"
+(`backend-ada/server/src/pitd_common.adb:518-532`, guard at `:521`), and served
+read-only at `backend-ada/server/src/pitd_callback.adb:3126`. There is no
+revision on it, no `If-Match` discipline, and no campaign-scoped mutation route.
+Mode state therefore has no existing home and needs a new campaign-scoped,
+revisioned, entity-shaped resource.
+
+### 1.4 Current score/downtime operations in the contract
+
+- `end-score` — `POST /api/characters/{id}/end-score`,
+  `contract/openapi.yaml:1574-1605` (`operationId: endScore`, `x-snapshot: true`):
+  optional body `{clearArmorUsed, resetLoadoutCommitment}`; always clears stress
+  to 0 and resets `isOutOfAction`/`stressClearPending`; gates `RETIRED` and
+  `TRAUMA_REQUIRED`; one snapshot, one history entry.
+- `end-downtime` — `POST /api/characters/{id}/end-downtime`,
+  `contract/openapi.yaml:1647-1666` (`operationId: endDowntime`): required body
+  `{clearSessionExpressions, viceReliefStress}`; clears session expressions and
+  an optional caller-supplied vice-relief stress amount ("GM judgment stays
+  outside").
+- Both are in the snapshot-worthy op list —
+  `backend-ada/server/src/pitd_ops.adb:59`; implementations at
+  `backend-ada/server/src/pitd_ops.adb:1614` (end-score) and `:1659`
+  (end-downtime).
+- Composite precedent: `POST /api/campaign/batch`
+  (`contract/openapi.yaml:415-417`), all-or-nothing across ops.
+- **Neither op knows about XP, payoff, heat, or entanglements.** End-score today
+  is a *per-character stress release*, not "the score ended". This is the single
+  biggest semantic gap between the current contract and the requested feature.
+
+### 1.5 Error envelope and status table (locked)
+
+`contract/schemas/operation-result.json:145-728` defines the discriminated union
+(one branch per code, `discriminator: propertyName: code` at `:728`). Complete
+code list with statuses: `VALIDATION` 400 (`:145`), `INVALID_ENTRY` 400
+(`:166`), `INVALID_ENTITY` 422 (`:179`), `NORMALIZATION_REQUIRED` 409 (`:192`),
+`NOT_FOUND` 404 (`:211`), `STALE_REVISION` 409 (`:236`), `PAYLOAD_TOO_LARGE`
+413 (`:666`), and domain failures delivered as **HTTP 200** with the typed error
+body: `RETIRED` (`:257`), `CONFIRM_REQUIRED` (`:282`), `DUPLICATE` (`:307`),
+`SLOT_FULL_FATAL` (`:332`), `CANNOT_HEAL` (`:357`), `ARMOR_NOT_AVAILABLE`
+(`:381`), `ABILITY_MAXED` (`:406`), `CANNOT_LEVEL_UP` (`:430`),
+`RATING_MAXED` (`:454`), `UPGRADE_MAXED` (`:478`), `INSUFFICIENT_FUNDS`
+(`:502`), `SATCHEL_FULL` (`:526`), `OVER_BULK` (`:550`), `NO_COMMITMENT`
+(`:574`), `COMMITMENT_LOCKED` (`:599`), `NO_HISTORY` (`:624`), `GAME_NOT_FOUND`
+(`:649`), `TRAUMA_REQUIRED` (`:682`), `OUT_OF_ACTION` (`:707`). The locked
+status table is restated at `contract/openapi.yaml:330-339`.
+
+This matters for the design: a mode-gating failure is a **domain** failure, so
+it belongs in the 200-delivered family — **no new HTTP status codes are needed**.
+
+### 1.6 Current UI locations of the two buttons
+
+- **"End score"** — `frontend/src/pages/character-sections/lifecycle.ts:16-24`:
+  `endScoreBtn` built at `:16`, label at `:20`, click wired at `:21`, placed in
+  the lifecycle section wrapper (`.character-lifecycle-actions`,
+  `data-section: "lifecycle"`) at `:23`. Disabled when loading/retired/pending
+  trauma (`:18`), tooltip from `endScoreTitle`
+  (`frontend/src/pages/character-sections/context.ts:73-75`).
+- **"End downtime"** — `frontend/src/pages/character-sections/talents.ts:189-199`:
+  IIFE at `:189`, `endDowntimeBtn` at `:190`, label at `:194`, handler at `:195`,
+  wrapped in `.downtime-row` at `:196`.
+- API wrappers: `endScore` at `frontend/src/api/client.ts:663-683`,
+  `endDowntime` at `frontend/src/api/client.ts:696-712`.
+- Handlers: `onEndScore` at `frontend/src/pages/character-detail.ts:1122-1134`,
+  end-downtime call at `frontend/src/pages/character-detail.ts:1158-1161`.
+- Layout context for the panel: `.character-detail`/`.crew-detail` are centered
+  blocks capped at `var(--sheet-width-wide)` = `1120px`
+  (`frontend/src/styles/components.css:642-644`, `frontend/src/styles/theme.css:58-60`),
+  single-column grid by default (`components.css:681-684`), multi-column text
+  flow at ≥900px (`components.css:694+`).
+
+## 2. The mode model
+
+**Proposed** (matches the brief at `docs/pages/backlog/playtest-2026-10-scoundrel.mdx:39-43`;
+no source disagrees, because no source has any opinion — see §1.1):
+
+```
+mode:    free-play | score | downtime
+score phases:    planning → engagement → action → end
+downtime phases: payoff → heat → entanglements → activities
+```
+
+- `free-play` has **no** sub-phase (`phase: null`). It is the mode in which the
+  sheet behaves exactly as it does today — the regression-safe default.
+- `score` and `downtime` always have an ordered `phase` from their own fixed list.
+- Advancing a phase is the only forward step; there is no free-form phase
+  jumping. Proposed rule: `mode.set` may switch mode only from `free-play`, or
+  from `score/end` → `downtime/payoff` (and symmetrically `downtime/activities` →
+  `free-play`). Skipping Score, or starting Downtime from the middle of a Score,
+  is `VALIDATION` (open question 4).
+- **Incarceration is a per-scoundrel status, not a mode.** Proposed as a
+  character-level field (§3.3), cleared by the downtime entanglement step
+  (§5). Source disagreement: **none** — BitS has no incarceration field at all
+  (§1.1), so this is a new concept, and it is backlog item 4
+  (`docs/pages/backlog/playtest-2026-10-scoundrel.mdx:45-46`), not part of this
+  card.
+
+Honest caveat to carry into the contract change: sub-phases as modelled are
+**bookkeeping, not mechanics**. Per `PAPERCLIPS.md:12` and `:27` PitD stays a
+sheet manager; the phase order exists so the UI and the agent both know *where
+in the fiction the table is*, and so specific ops can be gated — never so the
+server can roll dice or decide outcomes.
+
+## 3. Where the state lives
+
+### 3.1 Campaign-wide, not per-character
+
+Proposed: a new **campaign-scoped, revisioned entity** — the first one. Mode is
+a property of the table, not of a scoundrel; two scoundrels in the same campaign
+are in the same mode. Storing it per-character would make "are we in downtime?"
+a join, and would make a single write path disagree between sheets
+(`PAPERCLIPS.md:76`: "The operation API is the only way anything — agent or UI —
+mutates state").
+
+### 3.2 Resources and operations (existing contract style)
+
+Proposed routes — op-style POST, never whole-object PUT
+(`PAPERCLIPS.md:76`), envelope `OperationResult`
+(`contract/schemas/operation-result.json`), standard `id`/`ifMatch`/
+`idempotencyKey` parameters (`contract/openapi.yaml:1594`), 200/404/409
+response set like every other op:
+
+| Proposed route | operationId | Purpose |
+|---|---|---|
+| `GET /api/campaign/mode` | `getCampaignMode` | Read mode + phase + gates + `allowedOps` (§8). |
+| `POST /api/campaign/ops/mode.set` | `campaignModeSet` | `{mode, phase?}`. Validates the transition. |
+| `POST /api/campaign/ops/phase.advance` | `campaignPhaseAdvance` | `{}`. Moves one step; gates on outstanding per-scoundrel work. |
+| `POST /api/campaign/ops/downtime.activity` | `campaignDowntimeActivity` | `{characterId, name, description}` — records one downtime activity for one scoundrel and consumes one action (§6). |
+| `POST /api/campaign/ops/score.end` | `campaignScoreEnd` | The end-of-score process (§5). |
+| `POST /api/campaign/ops/downtime.end` | `campaignDowntimeEnd` | The end-of-downtime process (§5). |
+
+Why `ops/`-style and not `PUT /campaign/mode`: the single-write-path rule
+(`PAPERCLIPS.md:76`) forbids a UI whole-object PUT, and every existing mutation
+is a named op (`contract/openapi.yaml:863-2564`).
+
+Storage — proposed: `{DataDir}/campaign-state.json` alongside the existing
+`campaign.json`, written by the same atomic `Atomic_Write` helper used for
+entities (`backend-ada/server/src/pitd_common.adb:525`), with a monotonically
+increasing `revision` and `If-Match` enforcement exactly as
+`PAPERCLIPS.md:123` describes. `campaign.json` itself stays frozen at its five
+fields (`contract/schemas/campaign.json:6-17`) — it is created once at startup
+(`backend-ada/server/src/pitd_callback.adb:3114`) and is not a mutable entity.
+
+Proposed `campaignState` DTO (canonical shape, no nulls, no absent keys —
+`PAPERCLIPS.md:206`):
+
+```json
+{
+  "kind": "campaignState",
+  "id": "campaign",
+  "gameStem": "blades-in-the-dark",
+  "revision": 7,
+  "createdAt": "2026-10-06T20:00:00.000Z",
+  "updatedAt": "2026-10-06T21:14:03.221Z",
+  "mode": "downtime",
+  "phase": "heat",
+  "scoreSequence": 3,
+  "downtimeSequence": 2
+}
+```
+
+`scoreSequence`/`downtimeSequence` are monotonic counters so an agent can prove
+*which* score ended ("end score 3"), which is cheap and unbounded-safe.
+
+### 3.3 Per-scoundrel additions (character DTO)
+
+Proposed, all new:
+
+- `downtimeActivities` — canonical array of `{name, description}` items on the
+  character, written by `campaignDowntimeActivity`. Per-character (not
+  campaign-wide) because the activity belongs to a scoundrel, and because
+  per-character snapshots/undo (`contract/openapi.yaml:818`,
+  `backend-ada/server/src/pitd_ops.adb:59`) then work for free.
+- `isIncarcerated` (boolean, canonical, default `false`) — the
+  per-scoundrel incarceration status (§2). Written by the entanglement step,
+  never derived.
+- The activity **cap** is *not* stored: it is a settings integer read through
+  `Settings_Int` (`backend-ada/server/src/pitd_common.adb:973-999`) and surfaced
+  as a capability projection, per `PAPERCLIPS.md:193` ("derived limits …
+  never persisted"). ⚠ Tension to resolve: the crew trackers *do* store their max
+  (`data/games/game-settings-schema.json:490-509`; bound-checked at
+  `backend-ada/server/src/pitd_normalize.adb:2761-2762`), so a stored-max
+  precedent exists — open question 6.
+
+### 3.4 Settings-driven limits only
+
+No hardcoded maxima anywhere (`AGENTS.md:182-183`, `PAPERCLIPS.md:133, 192`).
+Proposed new settings block, e.g.:
+
+```jsonc
+"DowntimeSettings": {
+  "ActivityCountMax": 3,          // downtime actions per scoundrel per downtime
+  "CrewHeatAtEndOfScore": 2      // still a *proposed default the GM may override*
+}
+```
+
+Both names are placeholders pending the human's ruling (open question 2). The
+first must be a real setting; the second is arguably GM judgment and may not
+belong in settings at all — `PAPERCLIPS.md:27` forbids encoding a downtime
+procedure. What is *not* negotiable: any cap is read from
+`data/games/*.json` through `Pitd_Common.Settings_Int`, and the frontend reads
+it from `/api/games/{stem}` (already served read-only,
+`backend-ada/server/src/pitd_callback.adb:784-793`) or the capability
+projection — never from a literal.
+
+## 4. Action gating
+
+Denial is a **domain failure at HTTP 200** with a **new error code in the
+existing union** — no new HTTP status (`contract/openapi.yaml:330-339`,
+`contract/schemas/operation-result.json:145-728`):
+
+```
+code: WRONG_MODE            status: 200 (domain failure family)
+details: { "op": "harm.add", "allowedIn": ["free-play","score"],
+           "mode": "downtime", "phase": "heat" }
+retryable: false   recovery: "switch the campaign mode first, or use an op allowed here"
+```
+
+`VALIDATION` (400) stays reserved for structurally bad requests (unknown mode
+string, unknown phase for the named mode). Rows marked ⚠ are **my judgement, not
+ground truth** — the human should overrule freely; no source constrains them.
+
+Notation: `FP` = free-play · `S.pl/en/ac/end` · `D.pa/he/en/ac`. "Any" = all modes.
+
+### 4.1 Character ops
+
+| Op (`contract/openapi.yaml` line) | Allowed | Denied → error |
+|---|---|---|
+| `stress.add` (`:863`) | Any | — |
+| `stress.clear` (`:889`) | Any | — |
+| `stress.fix` (`:927`) | Any | — |
+| `trauma.add` (`:962`) | Any | — |
+| `trauma.remove` (`:998`) | Any | — |
+| `harm.add` (`:1025`) | FP, S.ac, D.ac | elsewhere → `WRONG_MODE` ⚠ (why not S.en? a clock can resolve during engagement — open question 5) |
+| `harm.remove` (`:1046`) | Any | — |
+| `harm.heal` (`:1067`) | Any | — |
+| `harm.healing-clock` (`:1088`) | Any | — |
+| `armor.set` (`:1108`) | FP, S.en, S.ac | elsewhere → `WRONG_MODE` ⚠ |
+| `playbook-xp.add` (`:1129`) | S.end (via `score.end`) | elsewhere → `WRONG_MODE` |
+| `playbook-xp.clear` (`:1144`) | S.end | elsewhere → `WRONG_MODE` ⚠ |
+| `attribute-xp.add` (`:1154`) | S.end | elsewhere → `WRONG_MODE` |
+| `attribute-xp.clear` (`:1175`) | S.end | elsewhere → `WRONG_MODE` ⚠ |
+| `attribute.levelup` (`:1194`) | FP, S.end | elsewhere → `WRONG_MODE` ⚠ |
+| `action.set-rating` (`:1215`) | FP, S.pl, S.end | elsewhere → `WRONG_MODE` ⚠ |
+| `ability.take` (`:1236`) | FP, S.pl, D.pa | elsewhere → `WRONG_MODE` ⚠ |
+| `ability.remove` (`:1251`) | Any (harm reversal must never be blocked) | — ⚠ deliberate |
+| `gear.add` / `gear.remove` (`:1266`, `:1286`) | FP, S.pl, D.pa, D.ac | elsewhere → `WRONG_MODE` ⚠ |
+| `gear.commit` / `uncommit` / `set-commitment` / `clear-commitments` (`:1301`–`:1351`) | Any | — |
+| `gear.lock` / `gear.unlock` (`:1361`, `:1370`) | Any | — |
+| `fund.gain` (`:1379`) | Any | — |
+| `fund.spend` (`:1399`) | Any | — |
+| `fund.liquidate` (`:1419`) | Any | — |
+| `contact.add` / `closeness` / `remove` (`:1439`–`:1484`) | Any | — |
+| `dossier.update` (`:1506`) | Any | — |
+| `session.set` (`:1533`) | S.pl, S.ac, D.ac | elsewhere → `WRONG_MODE` ⚠ (expressions are the score/downtime bookkeeping) |
+| `notebook.set` (`:1555`) | Any | — |
+| **`end-score`** (`:1574`) | **Any** ⚠ | — |
+| `note.add` / `note.remove` (`:1607`, `:1627`) | Any | — |
+| **`end-downtime`** (`:1647`) | **Any** ⚠ | — |
+| `retire` (`:835`) | Any | — |
+| `delete` (`:660`), `import` (`:686`), `repair` (`:767`), `undo` (`:818`) | Any | — |
+
+⚠ **`end-score` / `end-downtime` stay ungated on purpose.** They are the
+lifecycle release for stress and out-of-action
+(`contract/openapi.yaml:1574-1592`; `PAPERCLIPS.md:168-170`), and gating them to
+`S.end` would break recovery when a table is mid-session in Free Play. The
+campaign-scoped `score.end` / `downtime.end` composites (§5) are the *process*;
+the per-character ops stay the *safety valve*. Open question 3.
+
+### 4.2 Crew ops
+
+| Op (`contract/openapi.yaml` line) | Allowed | Denied → error |
+|---|---|---|
+| `heat.add` (`:1905`) | S.end, D.he | elsewhere → `WRONG_MODE` ⚠ |
+| `wanted.add` (`:1920`) | S.end, D.he | elsewhere → `WRONG_MODE` ⚠ |
+| `rep.add` (`:1935`) | S.end, D.ac | elsewhere → `WRONG_MODE` ⚠ |
+| `tier.add` (`:1950`) | S.end | elsewhere → `WRONG_MODE` ⚠ |
+| `hold.set` (`:1965`) | Any | — |
+| `xp.add` (`:1985`) | S.end | elsewhere → `WRONG_MODE` |
+| `xp.clear` (`:2060`) | S.end | elsewhere → `WRONG_MODE` ⚠ |
+| `note.add` / `note.remove` (`:2000`, `:2020`) | Any | — |
+| `turf.add` (`:2040`) | D.ac | elsewhere → `WRONG_MODE` ⚠ |
+| `ability.take` / `ability.remove` (`:2069`, `:2083`) | FP, D.pa | elsewhere → `WRONG_MODE` ⚠ |
+| `claim.set` / `customize` / `reset` (`:2097`–`:2141`) | FP, S.pl, D.pa | elsewhere → `WRONG_MODE` ⚠ |
+| `upgrade.mark` / `unmark` (`:2161`, `:2176`) | FP, S.pl, D.pa, D.ac | elsewhere → `WRONG_MODE` ⚠ |
+| `cohort.add` / `update` / `remove` (`:2191`–`:2248`) | FP, D.pa, D.ac | elsewhere → `WRONG_MODE` ⚠ |
+| `contact.add` / `remove` (`:2267`, `:2288`) | Any | — |
+| `faction.set-status` / `faction.remove` (`:2308`, `:2329`) | Any | — |
+| `coin.add` (`:2351`) | S.end | elsewhere → `WRONG_MODE` ⚠ |
+| `stash.add` (`:2364`) | S.end, D.pa | elsewhere → `WRONG_MODE` ⚠ |
+| `fields.update` (`:2379`) | Any | — |
+| `delete` (`:1729`), `import` (`:1757`), `repair` (`:1835`), `undo` (`:1888`) | Any | — |
+
+### 4.3 Clocks, campaign, games
+
+| Op | Allowed | Denied → error |
+|---|---|---|
+| `clock.progress` (`contract/openapi.yaml:2532`) | Any | — |
+| `clock.reset` (`contract/openapi.yaml:2564`) | Any | — |
+| `createClock` (`:2417`), `updateClock` (`:2469`), `deleteClock` (`:2508`) | Any | — |
+| `campaign.batch` (`contract/openapi.yaml:415`) | Any | — **but each member op is gated independently**; a gated member fails the batch as a whole (`WRONG_MODE`, all-or-nothing per `PAPERCLIPS.md:251`) ⚠ |
+| `createCharacter` (`:551`), `createPcCharacter` (`:569`) | Any (a new scoundrel joins whatever mode is current) | — ⚠ |
+| `createCrew` (`:1681`) | FP, S.pl | elsewhere → `WRONG_MODE` ⚠ |
+| `GET` routes (`:354`–`:2467`) | Any (reads are never gated; total collections stay 200 — `PAPERCLIPS.md:242`) | — |
+
+### 4.4 Campaign-scoped ops (proposed)
+
+| Proposed op | Allowed | Denied → error |
+|---|---|---|
+| `campaignModeSet` | always (transition rules, §2) | illegal transition → `VALIDATION` (400) |
+| `campaignPhaseAdvance` | S.pl→S.en→S.ac→S.end; D.pa→D.he→D.en→D.ac | from `free-play` → `VALIDATION`; out-of-order → `VALIDATION` |
+| `score.end` | S.end only | elsewhere → `WRONG_MODE` |
+| `downtime.end` | D.ac only | elsewhere → `WRONG_MODE` |
+| `downtime.activity` | D.ac only, and only while the character has an action remaining | elsewhere → `WRONG_MODE`; exhausted → `UPGRADE_MAXED`-style domain error — proposed new code `DOWNTIME_ACTIONS_SPENT`, 200 ⚠ (open question 6) |
+
+## 5. End-of-score process
+
+Proposed order for `POST /api/campaign/ops/score.end` (available only in
+`S.end`). "Computed" = the server derives it from settings + stored state.
+"Prompted" = the caller (human GM or agent) supplies the outcome; the server
+never invents it (`PAPERCLIPS.md:12, 27`).
+
+| # | Step | Computed | Prompted |
+|---|---|---|---|
+| 0 | Gate: mode is `score`, phase is `end`; no roster character `isRetired` | ✅ | — |
+| 1 | **XP.** Playbook XP for each PC; attribute XP per action used | Track maxima and clamping — `data/games/game-settings-schema.json:450-468` (`XpTrackMaximaSetting`), already enforced by the existing `playbook-xp.add` / `attribute-xp.add` ops (`contract/openapi.yaml:1129, 1154`) | *Which* attributes earned XP and *how much* (roll = GM judgment); the default playbook award is commonly the crew Tier (`backend-ada/server/src/pitd_ops.adb` `xp.add` family) — propose as a **suggested value the caller confirms or overrides** ⚠ |
+| 2 | **Payoff.** Crew coin; per-scoundrel stash gains | Clamping to `FundMaximaSetting` (`data/games/game-settings-schema.json:470-488`) and `CrewTrackerMaxima` bounds — already handled by `coin.add` / `stash.add` (`contract/openapi.yaml:2351, 2364`) | The payout amount (clock/die result). The "+2 stash at end of downtime phase" rule is prose in an ability (`data/games/blades-in-the-dark.json:415`) and stays **outside** the server ⚠ |
+| 3 | **Heat.** Crew heat added; optional per-scoundrel heat | Clamp to `CrewTrackerMaxima.HeatMax` (`data/games/game-settings-schema.json:493`, enforced at `backend-ada/server/src/pitd_normalize.adb:2035`) | The heat value. Per-crew-type modifiers are prose (`data/games/blades-in-the-dark-crews.json:24`), so a settings default would be a **new** mechanical claim — proposal: do not add it; prompt every time ⚠ |
+| 4 | **Entanglement roll → incarceration.** Roll; on failure set `isIncarcerated = true` for the affected scoundrel(s) | Nothing — BitS has no entanglement or incarceration model at all (§1.1) | The roll and its outcome, entirely. Recorded, never derived. |
+| 5 | **Release.** Per-character `end-score` semantics: stress → 0, out-of-action flags cleared, optional `{clearArmorUsed, resetLoadoutCommitment}` | Exactly the existing contract behavior (`contract/openapi.yaml:1574-1592`; `backend-ada/server/src/pitd_ops.adb:1614-`) | The two optional cleanup flags |
+| 6 | Advance to `free-play` | ✅ | — |
+
+Atomicity and undo ⚠ — the open decision: `score.end` fans out to N characters +
+M crews. Two options: (a) **per-entity snapshots**, one per affected entity, each
+independently undoable, result reports per-entity outcomes — matches the existing
+per-character history model (`PAPERCLIPS.md:124`); or (b) one campaign-scoped
+atomic snapshot. Option (a) is proposed; the campaign `revision` still guards
+mode changes. Note this is *weaker* than `/campaign/batch`'s all-or-nothing
+(`contract/openapi.yaml:415`) — deliberately, so a mid-process failure does not
+lose the whole score. Open question 7.
+
+Downtime end (`downtime.end`, available in `D.ac`) is the symmetric process:
+activities already recorded (§6) → **no extra compute** → advance to
+`free-play`. Per-character `end-downtime` (clear session expressions +
+caller-supplied vice-relief stress) is invoked or offered as today
+(`contract/openapi.yaml:1647-1666`) ⚠.
+
+## 6. Downtime action tracking
+
+Proposed:
+
+- One activity is one `POST /api/campaign/ops/downtime.activity`
+  `{characterId, name, description}`; it appends `{name, description}` to that
+  character's `downtimeActivities` and consumes one action. `name` is required
+  (`minLength: 1`) and `description` is required-but-may-be-blank so the shape
+  stays canonical and null-free (`PAPERCLIPS.md:206`).
+- The cap is `DowntimeSettings.ActivityCountMax` from game settings (§3.4), read
+  via `Settings_Int`; exceeding it is `DOWNTIME_ACTIONS_SPENT` (200, typed
+  details `{count, max}`) ⚠.
+- Crew cohort downtime activities (`data/games/blades-in-the-dark-crews.json:127,
+  461` — "one of your cohorts may perform a downtime activity") are a **crew**
+  concept and need their own record or must be explicitly out of scope ⚠ —
+  open question 8. No cohort-level activity storage exists today
+  (`contract/schemas/crew.json` properties: `kind … claimedClaimIds,
+  claimOverrides` — no activity list).
+- Removing an activity: no dedicated op is proposed. Per the single-write-path
+  rule every change needs an op, so `campaignDowntimeActivityRemove {characterId,
+  index}` is proposed for symmetry with `note.remove`
+  (`contract/openapi.yaml:1627`).
+
+## 7. UI — sticky mode panel
+
+Proposed, **campaign chrome** (mode is campaign-wide, §3.1), so it must appear
+on the roster and on character/crew detail, not only inside one sheet.
+
+- **Position.** Side gutter when there is room, footer otherwise. Concretely:
+  the detail sheets are centered blocks capped at `1120px`
+  (`frontend/src/styles/components.css:642-644`,
+  `frontend/src/styles/theme.css:58-60`), so a gutter rail only exists when the
+  viewport is meaningfully wider than that block — propose a CSS-only
+  container/`@media` breakpoint (the sheet already switches layout at 900px,
+  `frontend/src/styles/components.css:694`) with **no** JS width probing, since
+  responsive containment must be provable numerically in a real viewport
+  (`AGENTS.md:161-167`).
+- **Stickiness.** `position: sticky; top: var(--gutter)` in the gutter case;
+  in the footer case `position: sticky; bottom: 0` as a bar under the sheet.
+  Gutter and footer are the **same DOM node** re-parented by CSS, so there is
+  one implementation and one set of controls.
+- **Contents.** Current mode + phase, a mode switcher (three states, free-play
+  default), a phase stepper (only shown for `score`/`downtime`), the activity
+  counter per scoundrel, and **the two moved controls**:
+  - "End score" moved **out of** `frontend/src/pages/character-sections/lifecycle.ts:16-24`
+  - "End downtime" moved **out of** `frontend/src/pages/character-sections/talents.ts:190-199`
+  Both become campaign-scoped invocations of `score.end` / `downtime.end` (§5).
+  ⚠ Consequence to confirm: those two buttons are currently per-character. Moving
+  them to a campaign panel means the campaign panel must also choose *which
+  scoundrels* are included. That is a UX decision, not a mechanical one — open
+  question 3. The per-character lifecycle buttons should either move wholesale
+  (and gain a target picker) or stay in place as the safety valve (§4.1).
+- **Backend coupling.** Gated controls render disabled with the `WRONG_MODE`
+  reason in the tooltip — the same explanatory-copy obligation the lifecycle
+  buttons already meet (`frontend/src/pages/character-sections/context.ts:73-75`,
+  `frontend/src/pages/character-sections/stress.ts:320-324`). Nothing may be
+  hidden — an agent-visible gate that the UI silently omits is a second
+  convention.
+- ⚠ Any implementation of this section is subject to the frontend vision gate:
+  real Chromium at every affected viewport, numeric responsive evidence, and an
+  independent **GPT 5.6 Luna / openai-codex / xhigh** PASS (`AGENTS.md:156-178`).
+  That model has no reliable route in this sandbox, so browser evidence must be
+  planned outside it.
+
+## 8. Agent usability
+
+Proposed — an agent must never have to guess whether an op is legal:
+
+1. `GET /api/campaign/mode` returns mode, phase, both sequences, and:
+   - `allowedOps`: the array of op names legal **right now** across the whole
+     campaign (`["harm.add", "playbook-xp.add", …]`). This is the single highest
+     -value field; it turns the entire §4 table into a runtime answer.
+   - `nextPhases`: the legal targets from `phase.advance`.
+   - `gates`: outstanding per-scoundrel work so an agent does not N+1 —
+     `{characterId, blockers: ["TRAUMA_REQUIRED"] | [], activitiesRemaining, activitiesMax}`.
+2. The same `allowedOps`/`mode`/`phase` fields ride on `GET /api/campaign`
+   (`contract/openapi.yaml:382-384`) and on roster summaries
+   (`contract/schemas/campaign.json:182-190`) so a single roster fetch answers
+   "what can I do?".
+3. Every `WRONG_MODE` error echoes `allowedIn`, `mode`, `phase` in `details`, so
+   an agent that guessed anyway can self-correct without a second request.
+4. Gating is enforced **server-side on every mutation path**, including
+   `/campaign/batch` members (§4.3). `allowedOps` is a convenience projection,
+   never the enforcement point (`PAPERCLIPS.md:198`: "the mutation remains
+   authoritative").
+5. The generated agent-skill API reference must be regenerated from the
+   contract, never hand-edited (`PAPERCLIPS.md:78`, `AGENTS.md:100`).
+
+## 9. Open questions for the human
+
+1. **Is the three-mode / eight-sub-phase model right**, including
+   `free-play` having no phase? Confirm or amend the orchestrator's proposal at
+   `docs/pages/backlog/playtest-2026-10-scoundrel.mdx:39-43`.
+2. **Settings name and value.** Proposed `DowntimeSettings.ActivityCountMax`.
+   What is the real BitD downtime action count, and what should the key be
+   called? (No downtime setting exists today — §1.2.)
+3. **The two buttons.** Move "End score" and "End downtime" into the campaign
+   panel entirely, or keep the per-character buttons as a safety valve and add
+   campaign-scoped composites beside them? If the panel is campaign-wide, how
+   does the user choose which scoundrels the score end covers — all, or a
+   selection?
+4. **Mode transitions.** Is `mode.set` allowed to jump (score → downtime
+   directly), or only `free-play → score → downtime → free-play`? And what
+   happens when a table walks away mid-score?
+5. **Harm and armor timing.** Should `harm.add` be legal during
+   `S.engagement` (a clock can resolve there) as proposed, or only in
+   `S.action`?
+6. **Stored vs derived cap.** Persist the activity cap on the character (crew
+   trackers store their max — `backend-ada/server/src/pitd_normalize.adb:2761-2762`)
+   or expose it only as a capability projection per `PAPERCLIPS.md:193`? And is
+   the exhausted-activities error code name right?
+7. **Atomicity of `score.end`.** Per-entity snapshots (each undoable, partial
+   progress survives a mid-process failure) or one atomic campaign snapshot?
+8. **Crew/cohort downtime activities.** In scope for this card, or a follow-up?
+   Backlog item 6 asks to preload every playbook's contacts; nothing today can
+   record a cohort performing a downtime activity.
+9. **Playbook XP default.** Should `score.end` *suggest* the standard award (crew
+   Tier) and let the caller confirm/override, or require the caller to state it
+   outright? Suggesting is friendlier to an agent; requiring it keeps the server
+   free of rulebook claims.
+10. **Incarceration scope.** Backlog item 4 covers incarceration plus the
+    start-of-downtime complications. Confirm incarceration ships as a plain
+    per-scoundrel boolean set during the entanglement step — and whether
+    incarceration should *block* score actions while active.
+11. **Which sub-phase are heat/payoff in?** `D.heat` and `S.end` both touch crew
+    heat; one mode owns it, or both? (Proposed: both, per §4.2.)
+12. **Free Play semantics.** Is free-play purely "no gating", or should it also
+    suppress phase display and the phase stepper entirely? (Proposed: suppress.)
+
+## 10. Proposed card breakdown
+
+Four cards, ordered; the contract card is first because everything else depends
+on it, and per `AGENTS.md:62-67` / `PAPERCLIPS.md:265` neither the backend nor
+the frontend touches `contract/` or `conformance/`.
+
+**Card 1 — CONTRACT: game mode + campaign state.**
+Freeze the `WRONG_MODE` (and downtime-actions-spent) error branches into
+`contract/schemas/operation-result.json` with 200 statuses only
+(`contract/openapi.yaml:330-339`); add `campaignState` to
+`contract/schemas/campaign.json`; add `POST /campaign/ops/mode.set`,
+`phase.advance`, `downtime.activity`, `score.end`, `downtime.end` +
+`GET /campaign/mode` to `contract/openapi.yaml`; add `downtimeActivities` and
+`isIncarcerated` to `contract/schemas/character.json`; document the §4 gating
+table per path; add the `DowntimeSettings` block to
+`data/games/game-settings-schema.json` and every settings file under
+`data/games/`. Review artifact: `docs/pages/contract/ops-audit.mdx` precedent
+for per-op audit against the C# method. **No implementation.**
+
+**Card 2 — BACKEND (Ada, Track A).** `campaign-state.json` storage with atomic
+writes and revision/`If-Match` beside the existing `Atomic_Write`
+(`backend-ada/server/src/pitd_common.adb:525`); the six new routes beside the
+`/campaign` dispatch at `backend-ada/server/src/pitd_callback.adb:3126, 3167`;
+op handlers in `backend-ada/server/src/pitd_ops.adb` (which already holds
+`end-score`/`end-downtime`, `:1614, 1659`); gating applied at the single op
+dispatch point so batch members are covered; settings read via
+`Settings_Int` (`backend-ada/server/src/pitd_common.adb:973-999`) — no literal
+anywhere (`AGENTS.md:182`). `x-snapshot: true` on the composites
+(`backend-ada/server/src/pitd_ops.adb:59`).
+
+**Card 3 — FRONTEND.** API client methods mirroring
+`frontend/src/api/client.ts:663-712` style; a campaign-level state store
+polling `GET /api/campaign/mode`; the sticky mode panel (§7) as one CSS-reparented
+node; **move** the buttons out of
+`frontend/src/pages/character-sections/lifecycle.ts:16-24` and
+`frontend/src/pages/character-sections/talents.ts:190-199` into it; gated
+controls disabled with reason tooltips; no client-side maximum literals
+(`AGENTS.md:182`). Subject to the Luna/xhigh vision gate (`AGENTS.md:156-178`) —
+plan browser evidence outside this sandbox.
+
+**Card 4 — CONFORMANCE.** New suites under `conformance/suites/`:
+`campaign-state/` (create defaults, revision conflict, atomic write),
+`gating/` (every row of §4 — one case per op per denied phase, asserting code
+`WRONG_MODE`, HTTP 200, and echoed `details`), `score-end/` (order, per-entity
+snapshot/undo behavior, `TRAUMA_REQUIRED` passthrough), `downtime-activities/`
+(settings-driven cap, canonical shape, per-crew-setting variations so no
+BitD-specific maximum is baked in — `PAPERCLIPS.md:366`), and an agent-usability
+case asserting `allowedOps` matches the enforcement point exactly. Registered
+into the scoring harness IDs (`PAPERCLIPS.md:276`).
+
+## Change log
+
+- 2026-10-06 — initial proposal. No contract, backend, frontend, or conformance
+  change made. Awaiting human sign-off on §9.
