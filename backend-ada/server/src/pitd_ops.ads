@@ -48,6 +48,12 @@ package Pitd_Ops is
    function Validate_Request
      (Kind, Op : String; B : JSON_Value; Bad : out Unbounded_String) return Boolean;
 
+   --  Shared single-entity/batch admission: shape plus store references,
+   --  checked while the caller holds the mutation's transaction locks.
+   function Validate_Mutation_Request
+     (Kind, Id, Op : String; B : JSON_Value; Bad : out Unbounded_String)
+      return Boolean;
+
    --  The ONE operation router: dispatches every entity op against E with
    --  args B, returning the frozen operation-result envelope.
    function Mutate (Kind, Op : String; E, B : JSON_Value) return JSON_Value;

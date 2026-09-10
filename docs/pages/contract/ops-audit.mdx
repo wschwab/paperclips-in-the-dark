@@ -80,6 +80,38 @@ deliberately differs from source; noted), **dropped**.
 | clocks (project/rollover) | **added** | `ProjectClock`/`RolloverClock` exist in Models and PAPERCLIPS §5 lists Clocks as an entity; catalog omitted campaign-level clock ops entirely. Contract adds `/api/clocks` CRUD + progress/reset with rollover semantics. |
 | result shape | corrected | Catalog's `OperationResult<T>`/`warning`/`sideEffects`-dict → PAPERCLIPS §7.1 uniform shape: `ok`, full entity DTO, `applied {op, requested, effective}`, `sideEffects: string[]`, `error {code, message}`. |
 
+### Batch execution and history boundary (2026-10-04 correction)
+
+`POST /api/campaign/batch` executes operations and reports item outcomes in
+request order, including multiple operations on the same entity. Deadlock-free
+lock acquisition sorts a separate index of entity keys; it never rearranges the
+operation plan. A later operation on the same entity sees the earlier planned
+state. If any item fails, none of the planned entity state, revisions, or history
+is committed; the existing HTTP 200 batch envelope carries per-item outcomes.
+
+Single-entity and batch mutations share request admission, including clock
+update ownership and relationship checks. Nonexistent owners or related clocks,
+self-links, and duplicate links are rejected before mutation. Schema-valid UUID
+strings alone do not prove that a referenced entity exists.
+
+The snapshot policy follows the **composite's** `x-snapshot: true`
+(`contract/openapi.yaml`, `/campaign/batch`), not the first child's snapshot flag:
+each successfully changed entity gets exactly one pre-batch snapshot/history
+entry labeled `campaign.batch` and one revision increment. This includes batches
+made entirely of otherwise snapshot-free micro-operations, such as
+`notebook.set` or `clock.progress`. Undo restores the full pre-batch entity,
+including the micro-operation's state.
+
+Unknown top-level or per-operation properties violate the batch request's
+`additionalProperties: false` and return the existing HTTP 400 `VALIDATION`
+syntax/shape error without writes. The batch response table currently lists only
+200; declaring the standardized validation response explicitly remains a
+contract documentation decision, not a contract change in this correction.
+
+Regression evidence: `BATCH-ORDER-001`–`002`, `BATCH-CLOCK-REFS-001`–`005`,
+`BATCH-SNAPSHOT-001`–`004`, and `BATCH-SHAPE-001`–`002`.
+
+
 ## Error codes (contract enumeration)
 
 `NOT_FOUND, VALIDATION, STALE_REVISION, RETIRED, CONFIRM_REQUIRED, DUPLICATE,

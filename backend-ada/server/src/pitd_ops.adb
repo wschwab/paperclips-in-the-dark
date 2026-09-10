@@ -593,6 +593,15 @@ elsif Op = "clock.progress" then
       return True;
    end Validate_Request;
 
+   function Validate_Mutation_Request
+     (Kind, Id, Op : String; B : JSON_Value; Bad : out Unbounded_String)
+      return Boolean is
+   begin
+      return Validate_Request (Kind, Op, B, Bad)
+        and then (Kind /= "clock" or else Op /= "update"
+                  or else Check_Clock_Refs (B, Id, Bad));
+   end Validate_Mutation_Request;
+
    function Mutate (Kind, Op : String; E, B : JSON_Value) return JSON_Value is
       Requested : Integer := Integer'First; Effective : Integer := Integer'First;
       New_Value, Applied : Natural := 0;
@@ -1403,9 +1412,8 @@ elsif Op = "harm.add" then
          --  SC-A7: clock update (contract/openapi.yaml /clocks/{id}/update):
          --  ownerKind/ownerId (together), purpose, and relatedClockIds
          --  (replaces the full relationship set).  Mechanical fields are
-         --  not editable here.  Reference validation (owner exists, related
-         --  clocks exist, no self/duplicates) ran in Handle_Entity before
-         --  Mutate.
+         --  not editable here.  Shared mutation request admission checked
+         --  the store references before either single or batch execution.
          if Kind /= "clock" then
             return Validation_Error (Op, "clock-only operation",
                                       Root_Issues ("clock-only operation"), E);
@@ -1708,10 +1716,9 @@ elsif Op = "harm.add" then
 
    --  SC-A7: clock ownership and relationship reference validation
    --  (clock-taxonomy.mdx §5 rules 3 and 5; contract/openapi.yaml /clocks
-   --  POST and /clocks/{id}/update).  Requires store access, so it runs in
-   --  Handle_Entity (create and update paths) rather than in the pure
-   --  request-shape validator.  Self_Id is the clock's own id ("" on
-   --  create, where self-reference is impossible).
+   --  POST and /clocks/{id}/update).  Requires store access, so create and
+   --  shared mutation admission call it within the route transaction scope.
+   --  Self_Id is the clock's own id ("" on create).
    function Check_Clock_Refs
      (B : JSON_Value; Self_Id : String; Bad : out Unbounded_String)
       return Boolean

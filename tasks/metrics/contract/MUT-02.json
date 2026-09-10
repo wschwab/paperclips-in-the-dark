@@ -87,6 +87,43 @@
     },
     "methodology": "Observed full campaign output and generated result metadata; duration is the command wall time, not an inferred task total. Historical metrics fields and prior correction remain unchanged."
   },
+  "correction2026-10-04-batch": {
+    "finding": "REVIEW-01-BATCH-ORDER-REFS changed pitd_callback.adb and pitd_ops.adb lock/order/history pipeline and shared mutation admission, invalidating the same ten restoration hashes.",
+    "anchorVerification": "In-memory application of all 28 current mutation implementations changed their intended source targets without filesystem mutation; exact-once anchors remained unique. Confirmed the ten stale mutants against current candidate 0627c594. No anchor, replacement, expected killer, severity, or semantic intent changed.",
+    "hashRefreshes": [
+      {
+        "mutants": ["M05", "M07", "M08", "M09", "M14", "M15"],
+        "path": "backend-ada/server/src/pitd_callback.adb",
+        "oldHash": "4db146dee4838fa2e8857e6b0b788362ac54540b1a15e0f4afe4bd00e4298a88",
+        "newHash": "1f3513e5b8850763060dfd18245d2575d2a20a1b9dbf65d57b364d772ae7cf26"
+      },
+      {
+        "mutants": ["M11", "M12", "M16", "M27"],
+        "path": "backend-ada/server/src/pitd_ops.adb",
+        "oldHash": "4332891d78b478497721504a3daebc39111d18fb8f6bda457b114bf3ef65ea6e",
+        "newHash": "595cc77953a9ea5ebe4e717f77ad4ccf44e2afa18027fc0c97740f5e974640aa"
+      }
+    ],
+    "otherMutants": "All other restoration hashes already matched; unchanged. Prior create-boundary refresh and campaign evidence remain unchanged.",
+    "verification": {
+      "command": "npm run test:mutation",
+      "cwd": "conformance",
+      "exitCode": 0,
+      "wallClockSeconds": 1614,
+      "killed": 28,
+      "total": 28,
+      "survived": 0,
+      "P0": "19/19 killed",
+      "P1": "9/9 killed",
+      "baselineTests": {"backendAda": 508, "conformanceTooling": 220, "frontend": 794},
+      "postCampaignSourceRestoration": "PASS; all catalog files restored byte-exactly and clean backend rebuilt after each Ada mutant",
+      "revision": "ed64305cbe09",
+      "timestamp": "2026-10-04T07:53:58.589Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-04T07-53-58-587Z.txt"
+    },
+    "methodology": "Additive entry for second 2026-10-04 mutation refresh (batch-boundary). Historical entries and create-boundary results above remain unchanged."
+  },
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",

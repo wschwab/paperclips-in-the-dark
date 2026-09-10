@@ -1861,28 +1861,13 @@ if Kind = "crew" then
                Bad : Unbounded_String;
                Valid : Boolean := False;
             begin
-               Valid := Validate_Request (Kind, Op, B, Bad);
+               Valid := Validate_Mutation_Request (Kind, Id, Op, B, Bad);
                if not Valid then
                   Entity_Lock_Registry.Release (Id);
-                  return Fail (AWS.Messages.S400, Op, "VALIDATION",
+                  return Fail (AWS.Messages.S400, Op, "VALIDATION", E,
                                Message => To_String (Bad));
                end if;
             end;
-            --  SC-A7: clock update reference validation (owner exists,
-            --  related clocks exist, no self/duplicates) needs store
-            --  access, so it runs here rather than in the pure request
-            --  validator (CLOCK-OWNER-003, CLOCK-RELATED-009).
-            if Kind = "clock" and then Op = "update" then
-               declare
-                  Bad : Unbounded_String;
-               begin
-                  if not Check_Clock_Refs (B, Id, Bad) then
-                     Entity_Lock_Registry.Release (Id);
-                     return Fail (AWS.Messages.S400, Op, "VALIDATION", E,
-                                  Message => To_String (Bad));
-                  end if;
-               end;
-            end if;
             R := Mutate (Kind, Op, E, B);
             if Bool_Field (R, "ok") then
                --  SC-A1: every write persists the complete canonical shape —
@@ -2636,16 +2621,22 @@ if Kind = "crew" then
                Args : JSON_Value := JSON_Null;
                E    : JSON_Value := JSON_Null;
                Changed : Boolean := False;
-               Req_Idx : Natural := 0;
             end record;
             Ents : array (1 .. Max_Batch_Operations) of Ent :=
               (others => (Kind => Null_Unbounded_String, Id => Null_Unbounded_String,
                           Op => Null_Unbounded_String, Args => JSON_Null,
-                          E => JSON_Null, Changed => False, Req_Idx => 0));
+                          E => JSON_Null, Changed => False));
             N    : Natural := 0;
-            Locked : array (1 .. 50) of Boolean := (others => False);
+            Lock_Order : array (1 .. Max_Batch_Operations) of Positive :=
+              (others => 1);
+            Locked : array (1 .. Max_Batch_Operations) of Boolean := (others => False);
          begin
-            if B.Kind /= JSON_Object_Type or else not Has_Field (B, "ops") then
+            if B.Kind = JSON_Object_Type and then not Only_Fields (B, "|ops|") then
+               Response := Json_Response
+                 (Validation_Error ("batch", "unknown batch property",
+                                    Root_Issues ("unknown batch property")),
+                  AWS.Messages.S400);
+            elsif B.Kind /= JSON_Object_Type or else not Has_Field (B, "ops") then
                Response := Json_Response
                  (Validation_Error ("batch", "ops must be a non-empty array",
                                     Root_Issues ("ops must be a non-empty array")));
@@ -2671,6 +2662,11 @@ if Kind = "crew" then
                            Fail_Msg := To_Unbounded_String ("each op requires entity, id, op, args");
                            exit;
                         end if;
+                        if not Only_Fields (O, "|entity|id|op|args|") then
+                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
+                           Fail_Msg := To_Unbounded_String ("unknown batch operation property");
+                           exit;
+                        end if;
                         K := To_Unbounded_String (Str_Field (O, "entity"));
                         if To_String (K) /= "character" and then To_String (K) /= "crew"
                           and then To_String (K) /= "clock" then
@@ -2688,8 +2684,8 @@ if Kind = "crew" then
                         N := N + 1;
                         Ents (N) := (Kind => K, Id => ID,
                                      Op => OP, Args => Get (O, "args"),
-                                     E => JSON_Null, Changed => False,
-                                     Req_Idx => N);
+                                     E => JSON_Null, Changed => False);
+                        Lock_Order (N) := N;
                         --  SC-A3: batch shares the ONE stored-entity
                         --  classification path (degraded rows → typed
                         --  INVALID_ENTITY with repairability details).
@@ -2720,12 +2716,12 @@ if Kind = "crew" then
                      for I in 1 .. N - 1 loop
                         for J in I + 1 .. N loop
                            declare
-                              KI : constant String := To_String (Ents (I).Kind) & "/" & To_String (Ents (I).Id);
-                              KJ : constant String := To_String (Ents (J).Kind) & "/" & To_String (Ents (J).Id);
+                              KI : constant String := To_String (Ents (Lock_Order (I)).Kind) & "/" & To_String (Ents (Lock_Order (I)).Id);
+                              KJ : constant String := To_String (Ents (Lock_Order (J)).Kind) & "/" & To_String (Ents (Lock_Order (J)).Id);
                            begin
                               if KJ < KI then
-                                 declare T : Ent := Ents (I); begin
-                                    Ents (I) := Ents (J); Ents (J) := T;
+                                 declare T : constant Positive := Lock_Order (I); begin
+                                    Lock_Order (I) := Lock_Order (J); Lock_Order (J) := T;
                                  end;
                               end if;
                            end;
@@ -2733,13 +2729,14 @@ if Kind = "crew" then
                      end loop;
                      for I in 1 .. N loop
                         declare
+                           Idx : constant Positive := Lock_Order (I);
                            H : Boolean;
                            Already : Boolean := False;
                            KeyI : constant String :=
-                             To_String (Ents (I).Kind) & "/" & To_String (Ents (I).Id);
+                             To_String (Ents (Idx).Kind) & "/" & To_String (Ents (Idx).Id);
                         begin
                            for P in 1 .. I - 1 loop
-                              if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
+                              if To_String (Ents (Lock_Order (P)).Kind) & "/" & To_String (Ents (Lock_Order (P)).Id) = KeyI
                               then
                                  Already := True; exit;
                               end if;
@@ -2748,18 +2745,18 @@ if Kind = "crew" then
                               --  bounded spin like the per-entity routes: a
                               --  transiently busy registry must not fail a
                               --  whole batch under parallel load
-                              Entity_Lock_Registry.Claim (To_String (Ents (I).Id), 0, H);
+                              Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
                               for T in 1 .. 200 loop
                                  exit when H;
                                  delay 0.001;
-                                 Entity_Lock_Registry.Claim (To_String (Ents (I).Id), 0, H);
+                                 Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
                               end loop;
                               if not H then OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
                                  Fail_Msg := To_Unbounded_String ("too many concurrent batches");
                                  exit;
                               end if;
                            end if;
-                           Locked (I) := not Already;
+                           Locked (Idx) := not Already;
                         end;
                      end loop;
                   end if;
@@ -2792,7 +2789,19 @@ if Kind = "crew" then
                                 ("entity is degraded; repair before mutating");
                               exit;
                            end if;
-                           R := Mutate (To_String (Ents (I).Kind), OpS, Ents (I).E, Ents (I).Args);
+                           declare
+                              Bad : Unbounded_String;
+                           begin
+                              if Validate_Mutation_Request
+                                (To_String (Ents (I).Kind), To_String (Ents (I).Id),
+                                 OpS, Ents (I).Args, Bad)
+                              then
+                                 R := Mutate (To_String (Ents (I).Kind), OpS, Ents (I).E, Ents (I).Args);
+                              else
+                                 R := Validation_Error
+                                   (OpS, To_String (Bad), Root_Issues (To_String (Bad)), Ents (I).E);
+                              end if;
+                           end;
                            if Bool_Field (R, "ok") then
                               declare
                                  Batch_Mutated_Ok : Boolean;
@@ -2840,7 +2849,6 @@ if Kind = "crew" then
                         declare
                            K : constant String := To_String (Ents (I).Kind);
                            ID : constant String := To_String (Ents (I).Id);
-                           OpS : constant String := To_String (Ents (I).Op);
                            KeyI : constant String := K & "/" & ID;
                            Seen : Boolean := False;
                         begin
@@ -2848,13 +2856,21 @@ if Kind = "crew" then
                               if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
                               then Seen := True; exit; end if;
                            end loop;
-                           if not Seen then
+                           if not Seen and then Ents (I).Changed then
                               declare
                                  Before : constant JSON_Value := Clone (Read_Entity (K, ID));
+                                 Last : Positive := I;
                               begin
-                                 if Snapshots (OpS) then Snapshot (K, ID, OpS, Before); end if;
-                                 Stamp (Ents (I).E);
-                                 Write_Entity (K, ID, Ents (I).E);
+                                 for P in I + 1 .. N loop
+                                    if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI then
+                                       Last := P;
+                                    end if;
+                                 end loop;
+                                 --  The composite itself is x-snapshot:true,
+                                 --  including batches made entirely of micro-ops.
+                                 Snapshot (K, ID, "campaign.batch", Before);
+                                 Stamp (Ents (Last).E);
+                                 Write_Entity (K, ID, Ents (Last).E);
                               end;
                            end if;
                         end;
@@ -2869,23 +2885,6 @@ if Kind = "crew" then
                         Response := Json_Response (V);
                      end;
                   else
-                     if Length (Outs) = N then
-                        --  SC-A3: outcomes are reported in REQUEST order —
-                        --  the planner sorts entities only for lock ordering.
-                        declare
-                           Reordered : JSON_Array := Empty_Array;
-                        begin
-                           for K in 1 .. N loop
-                              for L in 1 .. N loop
-                                 if Ents (L).Req_Idx = K then
-                                    Append (Reordered, Get (Outs, L));
-                                    exit;
-                                 end if;
-                              end loop;
-                           end loop;
-                           Outs := Reordered;
-                        end;
-                     end if;
                      if Length (Outs) > 0 then
                         --  SC-A3: per-item outcomes carry the failing item's
                         --  typed union error; the batch envelope stays 200
@@ -2903,7 +2902,9 @@ if Kind = "crew" then
                         Response := Json_Response (Batch_Err);
                      else
                         Response := Json_Response
-                          (Error_Result ("batch", To_String (Fail_Code), To_String (Fail_Msg)));
+                          (Error_Result ("batch", To_String (Fail_Code), To_String (Fail_Msg)),
+                           (if To_String (Fail_Code) = "VALIDATION"
+                            then AWS.Messages.S400 else AWS.Messages.S200));
                      end if;
                   end if;
                   for I in 1 .. N loop

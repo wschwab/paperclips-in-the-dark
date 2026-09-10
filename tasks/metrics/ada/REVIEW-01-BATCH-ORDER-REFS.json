@@ -1,0 +1,112 @@
+{
+  "track": "ada",
+  "implementationAgent": "batch-order-refs-fix (omp worker)",
+  "reviewAgent": null,
+  "date": "2026-10-04",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "status": "implementation-acceptance-passed; independent director review pending",
+  "passRateAtFirstDoneClaim": "508/508 Ada conformance (60 files), 220/220 tooling (14 files), 794/794 frontend (20 files)",
+  "passRateAfterReview": "pending independent director diff review",
+  "sourceCandidate": "checkpoint 0627c594 plus inherited batch execution regressions",
+  "metricsMethodology": {
+    "wallClockNote": "0 denotes unmeasured total wall time, not zero elapsed time; observed command durations are recorded separately.",
+    "tokensNote": "Token accounting unavailable.",
+    "locNote": "Implementation and scaffolding LOC not measured; no inferred totals.",
+    "scaffoldingLocNote": "Scaffolding LOC not measured; no inferred total.",
+    "method": "Observed failing-first regression output, successful build, focused and full acceptance outputs; no inferred test counts.",
+    "source": "artifact://10482, artifact://10484, artifact://10486 and the linked corrective task card."
+  },
+  "defectCatchingLayer": [
+    "Independent review finding, then failing-first black-box conformance regression"
+  ],
+  "documentation": "docs/pages/contract/ops-audit.mdx",
+  "evidence": {
+    "audits": {
+      "redRun": "artifact://10474"
+    },
+    "red": {
+      "command": "npm run test:ada -- --run suites/contract/batch-boundary.test.ts",
+      "exitCode": 1,
+      "failureCount": 13,
+      "totalAdditions": 13,
+      "failureFile": "artifact://10474",
+      "failureNotes": "13/13 additions failed; sorted entity storage reversed operations; results not sorted by request; missing clock relationships; duplicate links not rejected; micro-op-first batches lacked snapshots; crew history incorrect label; unknown keys persisted"
+    },
+    "build": {
+      "command": "alr --non-interactive build",
+      "cwd": "backend-ada/server",
+      "exitCode": 0,
+      "durationSeconds": 2.46,
+      "operations": "compile/bind/link"
+    },
+    "focused": {
+      "command": "npm run test:ada -- --run suites/contract/batch-boundary.test.ts suites/semantics/composites.test.ts suites/contract/error-union.test.ts suites/semantics/clocks.test.ts",
+      "exitCode": 0,
+      "testCount": 46,
+      "fileCount": 4,
+      "files": [
+        "batch-boundary.test.ts",
+        "composites.test.ts",
+        "error-union.test.ts",
+        "clocks.test.ts"
+      ],
+      "artifact": "artifact://10479"
+    },
+    "full": {
+      "command": "npm run test:ada -- --run",
+      "exitCode": 0,
+      "testCount": 508,
+      "baselineTests": 495,
+      "additionTests": 13,
+      "fileCount": 60,
+      "durationSeconds": 63.27,
+      "artifact": "artifact://10482"
+    },
+    "tooling": {
+      "command": "npm run test:tooling",
+      "exitCode": 0,
+      "testCount": 220,
+      "fileCount": 14,
+      "durationSeconds": 71.95,
+      "artifact": "artifact://10484"
+    },
+    "frontend": {
+      "command": "npm test -- --run",
+      "exitCode": 0,
+      "testCount": 794,
+      "fileCount": 20,
+      "durationSeconds": 15.40,
+      "artifact": "artifact://10486"
+    }
+  },
+  "task": "REVIEW-01-BATCH-ORDER-REFS",
+  "card": "tasks/REVIEW-01-BATCH-ORDER-REFS.md",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 13,
+    "mutation": 28,
+    "review": 1,
+    "human": 0
+  },
+  "testIds": [
+    "batch-boundary/order-vs-lock",
+    "batch-boundary/fund-gain-order",
+    "batch-boundary/note-order",
+    "batch-boundary/reference-sharing",
+    "batch-boundary/snapshot-policy",
+    "batch-boundary/clock-ownership",
+    "batch-boundary/duplicate-link-rejection",
+    "batch-boundary/micro-op-snapshot",
+    "batch-boundary/crew-history-label",
+    "batch-boundary/unknown-top-level-keys",
+    "batch-boundary/unknown-item-keys",
+    "batch-boundary/stale-entity",
+    "batch-boundary/retry-safety"
+  ],
+  "notes": "One lock order index spans request planning and entity mutation. Request order preserved for execution, repeated-entity state propagation, and outcomes; unknown top-level and per-operation properties rejected as 400 VALIDATION; batch snapshots once under campaign.batch label.",
+  "redFailure": "Thirteen batch-boundary additions failed: request ordering ignored during lock acquisition, fund operations reversed, fund balance unconstrained, notes reversed, missing clock owners/relationships, duplicate links persisted, micro-op batches lacked snapshots, crew history used child operation label instead of campaign.batch, unknown request properties returned 200 and persisted state."
+}
