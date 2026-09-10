@@ -14,30 +14,39 @@ description: SC-R3 Wave 0 research — official Progress Clocks taxonomy reconci
 
 **Card:** `tasks/SC-R3.md` · **Status:** research complete, decisions frozen for downstream cards (SC-C1, SC-C2, SC-C3, SC-O5, SC-A7).
 
-## Current clock-create request semantics (2026-09-24 correction)
+## Current create request semantics (2026-10-04 correction)
 
-`POST /api/clocks` accepts any nonempty JSON string as `name`, including
-quotes, literal backslashes, Unicode, and escaped control characters. Names
-are data, not JSON source: creation preserves the decoded string exactly
-and generates the clock's ID server-side. JSON-looking text cannot replace
-another clock or reset its revision/progress.
+Creation treats strings as JSON data, never as source text. `POST /api/clocks`
+preserves any nonempty `name`; `POST /api/characters` and `POST /api/crews`
+preserve `playbook` and `crewType`, including quotes, literal backslashes,
+Unicode, and escaped control characters. Server-generated IDs cannot be
+overridden by JSON-looking text, and existing entities remain unchanged.
+`POST /api/characters/pc` shares the character constructor while retaining its
+published-playbook and settings-derived starting-allocation validation.
 
-For best-effort retry protection, send the optional `Idempotency-Key` header
-and resend the **identical request body bytes** to the same route. An immediate
-identical retry returns the original successful result, including the same
-clock ID, without persisting a second clock. Distinct keys create independently.
-The cache is process-local and bounded; neither durable replay nor a fixed
-replay window is promised. Validation failures are not cached as successes.
+All four create routes share one canonical schema-admission, atomic-write,
+baseline-snapshot (character/crew), and successful-response boundary. Send the
+optional `Idempotency-Key` header and resend the **identical request body bytes**
+to the same route for best-effort retry protection. Concurrent identical retries
+are serialized by method, route, and key across lookup, persistence, and response
+storage. They return the same successful response bytes and persist one entity.
+Different routes or keys remain independent. Validation failures do not consume
+the key. The cache remains process-local and bounded; neither durable replay nor
+a fixed replay window is promised.
 
-**Contract decision still needed:** createClock declares only HTTP 200/400,
+**Contract decisions still needed:** createClock declares only HTTP 200/400,
 whereas existing entity-mutation idempotency handling uses HTTP 409 for a
-same-key/different-body mismatch. The specification does not choose a mismatch
-status. This correction covers exact retries only; it neither introduces a
-409 response for createClock nor establishes a new mismatch policy. Clients
-should use a new key for a different creation request.
+same-key/different-body mismatch. The specification does not choose a create
+mismatch status. This correction covers exact retries only; it introduces no
+new HTTP status or mismatch policy. Clients should use a new key for a different
+creation request. Separately, `createCharacter` and `createCrew` declare only
+HTTP 200 in `contract/openapi.yaml`, although existing request validation already
+returns HTTP 400. Whether to declare those validation responses remains an open
+contract decision; this implementation correction does not edit the contract.
 
-Regression evidence: `CLOCK-CREATE-016`–`018` and
-`PERSISTENCE-IDEMPOTENCY-005`–`006` (existing conformance test directories).
+Regression evidence: `CLOCK-CREATE-016`–`018`,
+`LIFECYCLE-CREATION-004`–`009`, and `PERSISTENCE-IDEMPOTENCY-005`–`019`
+(existing conformance suite directories).
 
 ## 1. Scope and sources
 

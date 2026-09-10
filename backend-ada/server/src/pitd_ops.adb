@@ -86,40 +86,106 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
       Subtract (Item, Amount, Applied); New_Value := Value (Item);
    end Core_Clamp_Subtract;
 
-function New_Character (Stem, Playbook : String) return JSON_Value is
+   function New_Game_Entity (Kind, Stem : String; G : JSON_Value)
+                            return JSON_Value is
+      E : JSON_Value := Create_Object;
+      T : constant String := Now;
+   begin
+      Set_Field (E, "kind", Kind);
+      Set_Field (E, "id", New_Id);
+      Set_Field (E, "gameStem", Stem);
+      Set_Field (E, "gameName", Str_Field (G, "Name"));
+      Set_Field (E, "language", Str_Field (G, "Language", "English"));
+      Set_Field (E, "revision", Integer'(1));
+      Set_Field (E, "formatVersion", Integer'(1));
+      Set_Field (E, "createdAt", T);
+      Set_Field (E, "updatedAt", T);
+      return E;
+   end New_Game_Entity;
+
+   function Tracker (Field : String; Current, Maximum : Integer)
+                     return JSON_Value is
+      V : JSON_Value := Create_Object;
+   begin
+      Set_Field (V, Field, Current);
+      Set_Field (V, "max", Maximum);
+      return V;
+   end Tracker;
+
+   function Empty_Description return JSON_Value is
+      V : JSON_Value := Create_Object;
+   begin
+      Set_Field (V, "name", "");
+      Set_Field (V, "description", "");
+      return V;
+   end Empty_Description;
+
+   function New_Character (Stem, Playbook : String) return JSON_Value is
       G : constant JSON_Value := Game (Stem);
       S : constant Settings_Ref := (To_Unbounded_String (Stem), G);
-      Id : constant String := New_Id;
-      T : constant String := Now;
-      C : JSON_Value;
-      --  The stable DTO skeleton is intentionally explicit: it is the JSON boundary.
-      --  SC-A6: every game-domain maximum in the template is read from the
-      --  validated game settings (startup-validated; no fallback literal).
-      Template : constant String :=
-        "{""kind"":""character"",""id"":""" & Id & """,""gameStem"":""" & Stem
-        & """,""gameName"":""" & Str_Field (G, "Name") & """,""language"":"""
-        & Str_Field (G, "Language", "English") & """,""revision"":1,""formatVersion"":1,""createdAt"":"""
-        & T & """,""updatedAt"":""" & T
-        & """,""isRetired"":false,""isDeadish"":false,""traumaPending"":false,""isOutOfAction"":false,""stressClearPending"":false,""dossier"":{""name"":"""",""crewId"":"""",""alias"":"""",""look"":"""",""notes"":[],""background"":{""name"":"""",""description"":""""},""heritage"":{""name"":"""",""description"":""""},""vice"":{""name"":"""",""description"":"""",""purveyor"":{""name"":"""",""description"":""""}}},""monitor"":{""stress"":{""current"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "StressMax", 0))
-        & "},""trauma"":{""traumas"":[],""max"":"
-        & Trim_Image (Settings_Int (S, "TraumaMax", 0))
-        & "},""harm"":{""lesser"":[],""moderate"":[],""severe"":[],""fatal"":[],""healingClock"":{""segments"":0,""size"":"
-        & Trim_Image (Settings_Int (S, "RecoveryClockSize", 0))
-        & ",""rollover"":0}},""armor"":{""standardUsed"":false,""heavyUsed"":false,""specialUsed"":false,""hasStandard"":false,""hasHeavy"":false,""hasSpecial"":false}},""talent"":{""attributes"":[]},""playbook"":{""name"":"""
-        & Playbook & """,""experience"":{""points"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "XpTrackMaxima.Playbook", 0))
-        & "},""abilities"":[]},""gear"":{""loadout"":[],""availableGear"":[],""commitment"":""none"",""isCommitmentLocked"":false,""maxBulk"":"
-        & Trim_Image (Settings_Int (S, "LoadMaxima.MaxBulk", 0))
-        & "},""fund"":{""satchel"":{""coins"":2,""max"":"
-        & Trim_Image (Settings_Int (S, "FundMaxima.SatchelMax", 0))
-        & "},""stash"":{""coins"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "FundMaxima.StashMax", 0))
-        & "}},""contacts"":[],""session"":{""playbookExpressions"":0,""characterExpressions"":0,""struggleExpressions"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "SessionExpressionMax", 0))
-        & "},""notebook"":""""}";
+      C : JSON_Value := New_Game_Entity ("character", Stem, G);
+      Dossier, Vice, Monitor, Trauma, Harm, Healing, Armor, Talent,
+        Book, Gear, Fund, Session : JSON_Value := Create_Object;
    begin
-      C := Read (Template);
+      Set_Field (C, "isRetired", False);
+      Set_Field (C, "isDeadish", False);
+      Set_Field (C, "traumaPending", False);
+      Set_Field (C, "isOutOfAction", False);
+      Set_Field (C, "stressClearPending", False);
+      Set_Field (Dossier, "name", "");
+      Set_Field (Dossier, "crewId", "");
+      Set_Field (Dossier, "alias", "");
+      Set_Field (Dossier, "look", "");
+      Set_Field (Dossier, "notes", Empty_Array);
+      Set_Field (Dossier, "background", Empty_Description);
+      Set_Field (Dossier, "heritage", Empty_Description);
+      Vice := Empty_Description;
+      Set_Field (Vice, "purveyor", Empty_Description);
+      Set_Field (Dossier, "vice", Vice);
+      Set_Field (C, "dossier", Dossier);
+      Set_Field (Monitor, "stress", Tracker ("current", 0, Settings_Int (S, "StressMax", 0)));
+      Set_Field (Trauma, "traumas", Empty_Array);
+      Set_Field (Trauma, "max", Settings_Int (S, "TraumaMax", 0));
+      Set_Field (Monitor, "trauma", Trauma);
+      Set_Field (Harm, "lesser", Empty_Array);
+      Set_Field (Harm, "moderate", Empty_Array);
+      Set_Field (Harm, "severe", Empty_Array);
+      Set_Field (Harm, "fatal", Empty_Array);
+      Set_Field (Healing, "segments", Integer'(0));
+      Set_Field (Healing, "size", Settings_Int (S, "RecoveryClockSize", 0));
+      Set_Field (Healing, "rollover", Integer'(0));
+      Set_Field (Harm, "healingClock", Healing);
+      Set_Field (Monitor, "harm", Harm);
+      Set_Field (Armor, "standardUsed", False);
+      Set_Field (Armor, "heavyUsed", False);
+      Set_Field (Armor, "specialUsed", False);
+      Set_Field (Armor, "hasStandard", False);
+      Set_Field (Armor, "hasHeavy", False);
+      Set_Field (Armor, "hasSpecial", False);
+      Set_Field (Monitor, "armor", Armor);
+      Set_Field (C, "monitor", Monitor);
+      Set_Field (Talent, "attributes", Empty_Array);
+      Set_Field (C, "talent", Talent);
+      Set_Field (Book, "name", Playbook);
+      Set_Field (Book, "experience", Tracker ("points", 0, Settings_Int (S, "XpTrackMaxima.Playbook", 0)));
+      Set_Field (Book, "abilities", Empty_Array);
+      Set_Field (C, "playbook", Book);
+      Set_Field (Gear, "loadout", Empty_Array);
+      Set_Field (Gear, "availableGear", Empty_Array);
+      Set_Field (Gear, "commitment", "none");
+      Set_Field (Gear, "isCommitmentLocked", False);
+      Set_Field (Gear, "maxBulk", Settings_Int (S, "LoadMaxima.MaxBulk", 0));
+      Set_Field (C, "gear", Gear);
+      Set_Field (Fund, "satchel", Tracker ("coins", 2, Settings_Int (S, "FundMaxima.SatchelMax", 0)));
+      Set_Field (Fund, "stash", Tracker ("coins", 0, Settings_Int (S, "FundMaxima.StashMax", 0)));
+      Set_Field (C, "fund", Fund);
+      Set_Field (C, "contacts", Empty_Array);
+      Set_Field (Session, "playbookExpressions", Integer'(0));
+      Set_Field (Session, "characterExpressions", Integer'(0));
+      Set_Field (Session, "struggleExpressions", Integer'(0));
+      Set_Field (Session, "max", Settings_Int (S, "SessionExpressionMax", 0));
+      Set_Field (C, "session", Session);
+      Set_Field (C, "notebook", "");
       --  Build attributes/actions and playbook defaults from game-settings JSON.
       if G.Kind = JSON_Object_Type and then Has_Field (G, "Attributes") then
          declare Out_A : JSON_Array := Empty_Array; Attrs : constant JSON_Array := Get (G, "Attributes"); begin
@@ -150,24 +216,32 @@ function New_Character (Stem, Playbook : String) return JSON_Value is
    function New_Crew (Stem, Crew_Type : String) return JSON_Value is
       G : constant JSON_Value := Game (Stem);
       S : constant Settings_Ref := (To_Unbounded_String (Stem), G);
-      Id : constant String := New_Id; T : constant String := Now;
+      C : JSON_Value := New_Game_Entity ("crew", Stem, G);
    begin
-      return Read ("{""kind"":""crew"",""id"":""" & Id & """,""gameStem"":""" & Stem
-        & """,""gameName"":""" & Str_Field (G,"Name") & """,""language"":""" & Str_Field (G,"Language","English")
-        & """,""revision"":1,""formatVersion"":1,""createdAt"":""" & T & """,""updatedAt"":""" & T
-        & """,""crewTypeName"":""" & Crew_Type & """,""name"":"""",""lair"":"""",""reputation"":"""",""huntingGrounds"":"""",""tier"":0,""hold"":""weak"",""heat"":{""current"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "CrewTrackerMaxima.HeatMax", 0))
-        & "},""wanted"":{""current"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "CrewTrackerMaxima.WantedMax", 0))
-        & "},""rep"":{""current"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "CrewTrackerMaxima.RepMax", 0))
-        & "},""experience"":{""points"":0,""max"":"
-        & Trim_Image (Settings_Int (S, "XpTrackMaxima.Crew", 0))
-        & "},""specialAbilities"":[],""upgrades"":[],""cohorts"":[],""contacts"":[],""factions"":[],""coin"":0,""stash"":0,""stashCapacity"":"
-        --  CONTRACT-04: the derived vault capacity is part of the canonical
-        --  create shape (base until Vault boxes are marked).
-        & Trim_Image (Settings_Int (S, "CrewStashBaseCapacity", 0))
-        & ",""turf"":0,""notes"":[],""claimedClaimIds"":[],""claimOverrides"":[]}");
+      Set_Field (C, "crewTypeName", Crew_Type);
+      Set_Field (C, "name", "");
+      Set_Field (C, "lair", "");
+      Set_Field (C, "reputation", "");
+      Set_Field (C, "huntingGrounds", "");
+      Set_Field (C, "tier", Integer'(0));
+      Set_Field (C, "hold", "weak");
+      Set_Field (C, "heat", Tracker ("current", 0, Settings_Int (S, "CrewTrackerMaxima.HeatMax", 0)));
+      Set_Field (C, "wanted", Tracker ("current", 0, Settings_Int (S, "CrewTrackerMaxima.WantedMax", 0)));
+      Set_Field (C, "rep", Tracker ("current", 0, Settings_Int (S, "CrewTrackerMaxima.RepMax", 0)));
+      Set_Field (C, "experience", Tracker ("points", 0, Settings_Int (S, "XpTrackMaxima.Crew", 0)));
+      Set_Field (C, "specialAbilities", Empty_Array);
+      Set_Field (C, "upgrades", Empty_Array);
+      Set_Field (C, "cohorts", Empty_Array);
+      Set_Field (C, "contacts", Empty_Array);
+      Set_Field (C, "factions", Empty_Array);
+      Set_Field (C, "coin", Integer'(0));
+      Set_Field (C, "stash", Integer'(0));
+      Set_Field (C, "stashCapacity", Settings_Int (S, "CrewStashBaseCapacity", 0));
+      Set_Field (C, "turf", Integer'(0));
+      Set_Field (C, "notes", Empty_Array);
+      Set_Field (C, "claimedClaimIds", Empty_Array);
+      Set_Field (C, "claimOverrides", Empty_Array);
+      return C;
    end New_Crew;
 
    --  SC-A1: the frozen clock create writes the Wave-2 canonical shape

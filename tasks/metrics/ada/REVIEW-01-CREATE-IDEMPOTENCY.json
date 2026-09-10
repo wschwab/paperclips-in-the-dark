@@ -1,0 +1,118 @@
+{
+  "track": "ada",
+  "implementationAgent": "create-boundary-fix (omp worker)",
+  "reviewAgent": null,
+  "date": "2026-10-04",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "status": "implementation-acceptance-passed; independent director review pending",
+  "passRateAtFirstDoneClaim": "495/495 Ada conformance (59 files), 220/220 tooling (14 files), 794/794 frontend (20 files)",
+  "passRateAfterReview": "pending independent director diff review",
+  "sourceCandidate": "checkpoint 801798b8 plus inherited lifecycle regressions",
+  "metricsMethodology": {
+    "wallClockNote": "0 denotes unmeasured total wall time, not zero elapsed time; observed command durations are recorded separately.",
+    "tokensNote": "Token accounting unavailable.",
+    "locNote": "Implementation and scaffolding LOC not measured; no inferred totals.",
+    "scaffoldingLocNote": "Scaffolding LOC not measured; no inferred total.",
+    "method": "Observed failing-first regression output, successful build, focused and full acceptance outputs; no inferred test counts.",
+    "source": "artifact://10421, artifact://10424, artifact://10427, artifact://10429, artifact://10431 and the linked corrective task card."
+  },
+  "defectCatchingLayer": [
+    "Independent review finding, then failing-first black-box conformance regression"
+  ],
+  "documentation": "docs/pages/contract/wave0/clock-taxonomy.mdx",
+  "evidence": {
+    "audits": {
+      "cwd": ".",
+      "command": "node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js",
+      "exitCode": 0,
+      "metricsFilesValidated": 155,
+      "traceabilityChecksPassed": 231,
+      "reconciliationChecksPassed": 17,
+      "errors": 0,
+      "note": "Initial metrics validation caught two missing scaffoldingLocNote fields in the new records; corrected both, then all three commands passed."
+    },
+    "red": {
+      "command": "npm run test:ada -- --run suites/lifecycle/creation.test.ts suites/persistence/create-boundary.test.ts -t 'LIFECYCLE-CREATION-00[4-9]|PERSISTENCE-IDEMPOTENCY-0(0[7-9]|1[0-9])'",
+      "cwd": "conformance",
+      "exitCode": 1,
+      "testsFailed": 17,
+      "testsPassed": 2,
+      "testsSkipped": 3,
+      "selectedAddedTests": 19,
+      "artifact": "artifact://10421"
+    },
+    "build": {
+      "command": "XDG_RUNTIME_DIR=/tmp alr --non-interactive build",
+      "cwd": "backend-ada/server",
+      "exitCode": 0,
+      "seconds": 1.63,
+      "result": "Compile/bind/link successful"
+    },
+    "focused": {
+      "command": "npm run test:ada -- --run suites/lifecycle/creation.test.ts suites/persistence/create-boundary.test.ts suites/persistence/idempotency.test.ts",
+      "cwd": "conformance",
+      "exitCode": 0,
+      "testsPassed": 28,
+      "filesPassed": 3,
+      "artifact": "artifact://10424"
+    },
+    "full": {
+      "command": "npm run test:ada -- --run",
+      "cwd": "conformance",
+      "exitCode": 0,
+      "testsPassed": 495,
+      "filesPassed": 59,
+      "baselineTests": 476,
+      "addedTests": 19,
+      "seconds": 60.02,
+      "artifact": "artifact://10427"
+    },
+    "tooling": {
+      "command": "npm run test:tooling",
+      "cwd": "conformance",
+      "exitCode": 0,
+      "testsPassed": 220,
+      "filesPassed": 14,
+      "seconds": 73.55,
+      "artifact": "artifact://10429"
+    },
+    "frontend": {
+      "command": "npm test -- --run",
+      "cwd": "frontend",
+      "exitCode": 0,
+      "testsPassed": 794,
+      "filesPassed": 20,
+      "seconds": 15.06,
+      "artifact": "artifact://10431"
+    }
+  },
+  "task": "REVIEW-01-CREATE-IDEMPOTENCY",
+  "card": "tasks/REVIEW-01-CREATE-IDEMPOTENCY.md",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 2,
+    "human": 0
+  },
+  "testIds": [
+    "PERSISTENCE-IDEMPOTENCY-007",
+    "PERSISTENCE-IDEMPOTENCY-008",
+    "PERSISTENCE-IDEMPOTENCY-009",
+    "PERSISTENCE-IDEMPOTENCY-010",
+    "PERSISTENCE-IDEMPOTENCY-011",
+    "PERSISTENCE-IDEMPOTENCY-012",
+    "PERSISTENCE-IDEMPOTENCY-013",
+    "PERSISTENCE-IDEMPOTENCY-014",
+    "PERSISTENCE-IDEMPOTENCY-015",
+    "PERSISTENCE-IDEMPOTENCY-016",
+    "PERSISTENCE-IDEMPOTENCY-017",
+    "PERSISTENCE-IDEMPOTENCY-018",
+    "PERSISTENCE-IDEMPOTENCY-019"
+  ],
+  "notes": "One method/route/key lock spans lookup, schema admission, entity/baseline persistence, and successful response storage on all four create routes. Cache remains bounded and process-local; no mismatch policy or new statuses.",
+  "redFailure": "Eleven idempotency additions failed and two passed: non-clock routes ignored keys (12 concurrent creates persisted 12 entities); concurrent clock retries persisted two entities."
+}

@@ -375,6 +375,34 @@ package body Pitd_Callback is
 
 
    ---------------------------------------------------------------------------
+   --  Every create route uses the same canonical persistence boundary.
+   --  Handle_Create holds the scope lock until the response is stored.
+   function Persist_Create
+     (Request : AWS.Status.Data; Path, Kind, Op : String; E : JSON_Value)
+      return AWS.Response.Data is
+      Created_Ok : Boolean;
+      R : JSON_Value;
+   begin
+      Schema_Check (Kind, E, Created_Ok);
+      if not Created_Ok then
+         return Fail (AWS.Messages.S500, Op, "INTERNAL",
+                      Message => "created entity fails schema validation");
+      end if;
+      Write_Entity (Kind, Str_Field (E, "id"), E);
+      if Kind = "character" or else Kind = "crew" then
+         Write_Baseline_Snapshot (Kind, Str_Field (E, "id"), Op, E);
+      end if;
+      R := Success_Result (Op, E);
+      if Header (Request, "Idempotency-Key") /= "" then
+         Idempotency_Store.Store
+           (AWS.Status.Method (Request) & "|" & Path & "|"
+              & Header (Request, "Idempotency-Key"),
+            GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))),
+            String'(Write (R, Compact => False)) & ASCII.LF);
+      end if;
+      return Json_Response (R);
+   end Persist_Create;
+
    --  CONTRACT-01 stage 2 (DEC-01 ruling): dedicated validated PC creation
    --  path, POST /api/characters/pc.  Mirrors the sibling createCharacter
    --  flow (shared template -> schema validator gate -> atomic write ->
@@ -729,19 +757,8 @@ package body Pitd_Callback is
                end loop;
                Set_Field (Get (E, "talent"), "attributes", Out_Attrs);
 
-               declare
-                  Created_Ok : Boolean;
-               begin
-                  Schema_Check ("character", E, Created_Ok);
-                  if not Created_Ok then
-                     return Fail (AWS.Messages.S500, Op, "INTERNAL",
-                                  Message =>
-                                    "created entity fails schema validation");
-                  end if;
-               end;
-               Write_Entity ("character", Str_Field (E, "id"), E);
-               Write_Baseline_Snapshot ("character", Str_Field (E, "id"), Op, E);
-               return Json_Response (Success_Result (Op, E));
+               return Persist_Create
+                 (Request, "/api/characters/pc", "character", Op, E);
             end;
          end;
       end;
@@ -811,8 +828,6 @@ package body Pitd_Callback is
       Entity_Exists, Entity_Parse_Ok : Boolean := False;
       Adm_Issues : JSON_Array := Empty_Array;
       Adm_Canonical : Boolean := False;
-      Create_Scope_Key : Unbounded_String;
-      Create_Body_Hash : Unbounded_String;
    begin
       if Id = "" then
          if not Is_Post then
@@ -842,30 +857,6 @@ package body Pitd_Callback is
                             Message => To_String (Bad));
             end if;
          end;
-         if Kind = "clock" and then Header (Request, "Idempotency-Key") /= "" then
-            if Header (Request, "Idempotency-Key")'Length > 128 then
-               return Fail (AWS.Messages.S400, "clock.create", "VALIDATION",
-                            Message => "Idempotency-Key exceeds the 128-character maximum");
-            end if;
-            Create_Scope_Key := To_Unbounded_String
-              (AWS.Status.Method (Request) & "|" & Path & "|"
-               & Header (Request, "Idempotency-Key"));
-            Create_Body_Hash := To_Unbounded_String
-              (GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))));
-            declare
-               Found, Match : Boolean;
-               Stored : Unbounded_String;
-            begin
-               Idempotency_Store.Lookup
-                 (To_String (Create_Scope_Key), To_String (Create_Body_Hash),
-                  Found, Match, Stored);
-               if Found and then Match then
-                  return Json_Text (To_String (Stored));
-               end if;
-               --  Only exact retries are covered here.  Create's contract
-               --  does not declare the existing mutation mismatch status.
-            end;
-         end if;
          if Kind = "clock" then
             --  SC-A7: ownership and relationship references need store
             --  access, so they are validated here (CLOCK-OWNER-002,
@@ -905,35 +896,8 @@ package body Pitd_Callback is
          else
             E := New_Clock (B);
          end if;
-         --  SC-A1: create is canonical by construction — the constructed
-         --  entity must validate against the generated schema validator
-         --  before the first write (fail closed; a template bug must never
-         --  persist a non-canonical document).
-         declare
-            Created_Ok : Boolean;
-         begin
-            Schema_Check (Kind, E, Created_Ok);
-            if not Created_Ok then
-               return Fail (AWS.Messages.S500, Kind & ".create", "INTERNAL",
-                            Message => "created entity fails schema validation");
-            end if;
-         end;
-Write_Entity (Kind, Str_Field (E, "id"), E);
-         --  SC-A8 / FV-028: create takes exactly one baseline snapshot so a
-         --  fresh entity's first undo is not NO_HISTORY.  The baseline is
-         --  excluded from the history listing and the derived projections
-         --  (LIFECYCLE-DERIVED-001: fresh entity -> canUndo false,
-         --  historyCount 0).
-         if Kind = "character" or else Kind = "crew" then
-            Write_Baseline_Snapshot (Kind, Str_Field (E, "id"), Kind & ".create", E);
-         end if;
-         R := Success_Result (Kind & ".create", E);
-         if Length (Create_Scope_Key) > 0 then
-            Idempotency_Store.Store
-              (To_String (Create_Scope_Key), To_String (Create_Body_Hash),
-               String'(Write (R, Compact => False)) & ASCII.LF);
-         end if;
-         return Json_Response (R);
+         return Persist_Create
+           (Request, Path, Kind, Kind & ".create", E);
       end if;
       if not Safe (Id) then return Fail (AWS.Messages.S404, "get", "NOT_FOUND"); end if;
       --  BUG-001: every mutation of an existing entity claims that entity's
@@ -1979,6 +1943,61 @@ if Kind = "crew" then
             AWS.Messages.S400);
    end Handle_Entity;
 
+   --  Serialize lookup -> canonical write -> response store per scope.
+   --  Validation failures are not cached.  Different-body key reuse keeps
+   --  create's existing behavior; no new mismatch policy is introduced.
+   function Handle_Create
+     (Request : AWS.Status.Data; Path : String) return AWS.Response.Data is
+      Key : constant String := Header (Request, "Idempotency-Key");
+      Scope : constant String := AWS.Status.Method (Request) & "|" & Path & "|" & Key;
+      Lock_Id : constant String := "create|" & Scope;
+      Held : Boolean := False;
+      Found, Match : Boolean;
+      Stored : Unbounded_String;
+      Response : AWS.Response.Data;
+      function Execute return AWS.Response.Data is
+      begin
+         if Path = "/api/characters/pc" then
+            return Handle_Pc_Create (Request);
+         end if;
+         return Handle_Entity (Request, Path);
+      end Execute;
+   begin
+      if Key = "" then
+         return Execute;
+      end if;
+      if Key'Length > 128 then
+         return Fail
+           (AWS.Messages.S400,
+            (if Path = "/api/characters/pc" then "character.createPc"
+             elsif Part (Path, 2) = "characters" then "character.create"
+             elsif Part (Path, 2) = "crews" then "crew.create" else "clock.create"),
+            "VALIDATION",
+            Message => "Idempotency-Key exceeds the 128-character maximum");
+      end if;
+      loop
+         Entity_Lock_Registry.Claim (Lock_Id, 0, Held);
+         exit when Held;
+         delay 0.001;
+      end loop;
+      Idempotency_Store.Lookup
+        (Scope, GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))),
+         Found, Match, Stored);
+      if Found and then Match then
+         Response := Json_Text (To_String (Stored));
+      else
+         Response := Execute;
+      end if;
+      Entity_Lock_Registry.Release (Lock_Id);
+      return Response;
+   exception
+      when others =>
+         if Held then
+            Entity_Lock_Registry.Release (Lock_Id);
+         end if;
+         raise;
+   end Handle_Create;
+
    --  SC-A5: game-settings startup validation and loading.  The expanded
    --  settings schema (data/games/game-settings-schema.json) is enforced
    --  structurally here — the generated validator unit covers entity DTO
@@ -2789,7 +2808,13 @@ if Kind = "crew" then
                                  end if;
                               end;
                               Ents (I).Changed := True;
-                              Append (Outs, Read ("{""ok"":true,""op"":""" & OpS & """}"));
+                              declare
+                                 Item : JSON_Value := Create_Object;
+                              begin
+                                 Set_Field (Item, "ok", True);
+                                 Set_Field (Item, "op", OpS);
+                                 Append (Outs, Item);
+                              end;
                            else
                               OK := False;
                               --  SC-A3: batch items carry the same whole-error
@@ -2928,8 +2953,15 @@ if Kind = "crew" then
       elsif Part(Path,1)="api" and then Part(Path,2)="games" then Response:=Handle_Games(Path);
       elsif Part(Path,1)="api" and then Part(Path,2)="characters"
               and then Part(Path,3)="pc" and then Part(Path,4)=""
-      then Response:=Handle_Pc_Create(Request);
-      elsif Part(Path,1)="api" and then (Part(Path,2)="characters" or else Part(Path,2)="crews" or else Part(Path,2)="clocks") then Response:=Handle_Entity(Request,Path);
+      then
+         Response := (if AWS.Status.Method (Request) = AWS.Status.POST
+                      then Handle_Create (Request, Path)
+                      else Handle_Pc_Create (Request));
+      elsif Part(Path,1)="api" and then (Part(Path,2)="characters" or else Part(Path,2)="crews" or else Part(Path,2)="clocks") then
+         Response := (if AWS.Status.Method (Request) = AWS.Status.POST
+                        and then Part (Path, 3) = ""
+                      then Handle_Create (Request, Path)
+                      else Handle_Entity (Request, Path));
       elsif Path="/api/test-hooks/crash-mid-write" then
          --  SC-A2: crash probe (REPAIR-ATOMIC-004).  Armed only when the
          --  server runs with --test-hooks; the hook fires on the next write
@@ -2977,7 +3009,16 @@ if Kind = "crew" then
             end if;
          end;
       else Response:=AWS.Response.Acknowledge(AWS.Messages.S405,"Method not allowed",AWS.MIME.Text_Plain);end if;
-      Ada.Text_IO.Put_Line("{""method"":"""&AWS.Status.Method(Request)&""",""path"":"""&Path&""",""status"":"&AWS.Messages.Image(AWS.Response.Status_Code(Response))&"}");return Response;
+      declare
+         Entry_Value : JSON_Value := Create_Object;
+      begin
+         Set_Field (Entry_Value, "method", AWS.Status.Method (Request));
+         Set_Field (Entry_Value, "path", Path);
+         Set_Field (Entry_Value, "status",
+                    Integer'Value (AWS.Messages.Image (AWS.Response.Status_Code (Response))));
+         Ada.Text_IO.Put_Line (Write (Entry_Value));
+      end;
+      return Response;
    exception when E:others =>
       --  SC-A3: the typed union is the only error channel — the raw
       --  exception stays in the server log, never in the response body.

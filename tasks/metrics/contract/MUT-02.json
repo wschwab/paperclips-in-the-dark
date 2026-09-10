@@ -38,6 +38,55 @@
     "fix": "relocated agent-docs/test-audit/mutation-catalog.json -> conformance/fixtures/mutation-catalog.json, updated CATALOG_PATH",
     "verification": "fresh disposable jj workspace; tooling 218/218, Ada 471/471, frontend 794/794"
   },
+  "correction2026-10-04": {
+    "finding": "Shared create-boundary corrections changed pitd_callback.adb and pitd_ops.adb, invalidating ten catalog restoration hashes.",
+    "anchorVerification": "In-memory application of all 28 current mutation implementations changed their intended source targets without filesystem mutation; exact-once anchors remained unique. Confirmed the ten stale mutants against their current live source arms. No anchor, replacement, expected killer, severity, or semantic intent changed.",
+    "hashRefreshes": [
+      {
+        "mutants": ["M05", "M07", "M08", "M09", "M14", "M15"],
+        "path": "backend-ada/server/src/pitd_callback.adb",
+        "oldHash": "cab0848ee486d2d8f147276d3485071c4dec25eac15bf2cc9dde248a98dc5e8e",
+        "newHash": "4db146dee4838fa2e8857e6b0b788362ac54540b1a15e0f4afe4bd00e4298a88"
+      },
+      {
+        "mutants": ["M11", "M12", "M16", "M27"],
+        "path": "backend-ada/server/src/pitd_ops.adb",
+        "oldHash": "72c644ec8933acdfd637c228f20f21baf109f038cd9801c852c8407e63ad4f36",
+        "newHash": "4332891d78b478497721504a3daebc39111d18fb8f6bda457b114bf3ef65ea6e"
+      }
+    ],
+    "otherMutants": "All other restoration hashes already matched; unchanged.",
+    "verification": {
+      "command": "npm run test:mutation",
+      "cwd": "conformance",
+      "exitCode": 0,
+      "wallClockSeconds": 1557,
+      "killed": 28,
+      "total": 28,
+      "survived": 0,
+      "P0": "19/19 killed",
+      "P1": "9/9 killed",
+      "baselineTests": {"backendAda": 495, "conformanceTooling": 220, "frontend": 794},
+      "postCampaignSourceRestoration": "PASS; all catalog files restored byte-exactly and clean backend rebuilt after each Ada mutant",
+      "revision": "2714c3e24c34",
+      "timestamp": "2026-10-04T07:07:17.843Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-04T07-07-17-842Z.txt",
+      "sessionArtifact": "artifact://10436"
+    },
+    "validators": {
+      "command": "node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js",
+      "cwd": ".",
+      "exitCode": 0,
+      "metricsFilesValidated": 155,
+      "traceabilityChecksPassed": 231,
+      "reconciliationChecksPassed": 17,
+      "errors": 0,
+      "warnings": 0,
+      "result": "All three reported ALL CHECKS PASSED."
+    },
+    "methodology": "Observed full campaign output and generated result metadata; duration is the command wall time, not an inferred task total. Historical metrics fields and prior correction remain unchanged."
+  },
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
