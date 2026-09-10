@@ -1,0 +1,239 @@
+# Accepted-socket investigation (2026-10-05)
+
+**Socket root cause: unresolved. Evidence-loss defect: fixed and focused-tested.**
+No server socket fix or socket-acceptance claim. The VET-01 report on candidate
+`bc63af5f` remains authoritative: first-cycle curl empty replies,
+`UND_ERR_SOCKET` failures, and an AWS burst timeout must not be hidden by client
+retries, new statuses, reduced concurrency, or an arbitrary worker-limit bump.
+
+## What the evidence establishes
+
+The original `extra01-two-cycles.log` in
+`agent-docs/test-audit/vet-evidence/bc63af5f-wave10/` records server PID 104411,
+port 41011, and the first `CROSS-LOCK-008` empty reply before the later burst
+failure. Its managed server log was removed and that run has no preserved
+syscall trace or client socket timestamps. Subsequent traces are not traces of
+this original failure.
+
+AWS 21.0.0 keeps newly accepted first-header sockets and idle keep-alive sockets
+in one acceptor set. `aws-net-acceptors.adb:283–286` can evict a non-ready socket
+above the derived close threshold (256 with 64 workers; two auxiliary sockets
+are added internally). Available historical traced cycles peak at 66 live
+accepted sockets and do not demonstrate this eviction.
+
+There is a separate worker-pressure path: `aws-server-protocol_handler.adb:205–223`
+invokes `Force_Clean` when no worker is free. `aws-server.adb:631–678` can close
+another expired abortable slot; forced client-header timeout is two seconds,
+normal client-header timeout seven seconds. This path does not require the
+acceptor count threshold. It is a source-level hypothesis, not the observed
+cause of the reported failures.
+
+The first historical traced burst received 41 HTTP 200 and 23 HTTP 400 headers
+within 0.269 seconds, not empty replies. The batch lock admission's 200 one-ms
+retries followed by `VALIDATION` could explain those 400s, but the old trace
+truncated response bodies. Do not classify these responses as transport drops.
+
+## Resumed observation
+
+Evidence is under
+`agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/`:
+
+- `socket-observed-old-01`: the orchestrator's old-binary traced two-cycle run
+  passed 540/540 in each cycle. Diagnostic logs contain 5,414 fetch starts,
+  5,413 responses, and one pre-readiness `ECONNREFUSED` health poll. All 280
+  batch requests receive headers (276 HTTP 200; four intentional HTTP 400
+  schema-validation responses). No `too many concurrent batches` body occurs.
+- `socket-observer-old-02`: the observer-only eight-cycle attempt was interrupted
+  by the orchestrator's 300-second execution deadline. Three completed Vitest
+  children exited zero; this is not an eight-cycle acceptance pass. Logs contain
+  9,993 starts, 9,776 responses, and 217 `ECONNREFUSED` errors: three readiness
+  polls and 214 refusals after the interrupted server stopped. There are no
+  observed `UND_ERR_SOCKET` errors. The preserved server log checksum is
+  `0322f7649e62db69531e9d44a44f563325a59451ef9e1f05ca6bf1bb2e2b4354`.
+
+The temporary observer records request start, response/error timestamp, nested
+socket cause, process lifecycle, and saves the managed log before cleanup. It
+changes neither retries nor HTTP semantics. The trace wrapper now uses `-T`:
+`-ttt` alone timestamps syscall entry, so a blocking `accept` can appear before
+the previous lifetime's shutdown while returning a reused descriptor afterward.
+Correlate peer ports and syscall completion, not descriptor number alone.
+
+## Next causal gate
+
+Use separate fresh managed runs of the five affected files, rather than eight
+full cycles accumulating data in one directory. Preserve each run's client and
+server evidence. The exact next command is on
+`tasks/VET-01-SOCKET-INVESTIGATION.md`. The orchestrator owns serial execution.
+Once a failure is observed, match its request path, client local port, and
+start/error timestamps to server socket lifetime and process events; write a
+deterministic failing-first regression for that cause before changing server
+startup. Neither the unlimited keep-alive thresholds nor an unrelated
+260-connection stress test were landed. Worker count remains 64.
+
+## Failed-run log retention correction
+
+The user separately required fixing the demonstrated evidence-loss defect:
+`managed-run.mjs` deleted `server.log` together with the temporary data on a
+failed run. This prevented correlating the original socket failures.
+
+After stopping its owned Vitest, server, and build children, the launcher now
+copies a failed run's appended server log to
+`agent-docs/test-audit/managed-run-logs/<run-id>-server.log` and prints the exact
+absolute path as `[managed-run] retainedLog=...` on stderr. This directory is
+outside `/tmp/pitd-managed`; temporary campaign data and manifests are still
+removed. Successful runs retain nothing. Test failures, setup failures, fatal
+errors, and handled interruption signals share this policy. An earlier failed
+cycle remains a failure even if later cycles pass, so its log is retained.
+Preservation errors are surfaced; temporary-data cleanup still runs.
+
+Additive `conformance/src/managed-log-retention.test.ts` covers test failure,
+readiness failure, SIGTERM, and success, including the complete stdout/stderr
+log, exact retained path, removed temporary run, and stopped server.
+The orchestrator ran
+`npm --prefix conformance run test:tooling -- src/managed-log-retention.test.ts`:
+red was three failures for missing `retainedLog` and one success control;
+green was **4/4**, exit zero, **2.16 seconds**. Logs are
+`bc63af5f-resumed-2026-10-05/managed-log-retention-red.log` and
+`managed-log-retention-green.log` under the VET evidence root.
+No frozen conformance tests, HTTP statuses, client retries, worker count, or
+AWS shedding limits changed.
+
+Treating a still-unreproduced socket finding as unreproduced is an orchestrator
+decision, not a human waiver. Fresh current-source VET acceptance must still
+pass two consecutive Ada cycles. A future failure now prints and retains its
+server log for causal investigation.
+
+## Cold original-candidate observations
+
+Three original `bc63af5f` disposable-workspace cold builds and first-start
+two-cycle runs completed serially in an exclusive UI/browser-paused window.
+All **six cycles passed 540/540**, with **64/64 files** per cycle; all builds
+and two-cycle commands exited zero. Command durations were **153.97, 151.14,
+and 152.25 seconds** after cold builds of **3.75, 3.74, and 3.75 seconds**.
+The background runner had timeout zero. Each owned workspace was forgotten
+and removed, and the UI/Luna window was released afterwards.
+
+Durable evidence is under
+`agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/cold-{1,2,3}/`
+and `cold-summary.json`. These observations leave the original transport
+failure **unreproduced**, not causally fixed. The orchestrator's disposition
+does not waive the fresh current-source VET two-cycle extra.
+
+## Fresh current-source failure with retained evidence
+
+The scalar-corrected final sequence passed typecheck, all four benchmark scales,
+and the first separate fresh Ada run (540/540). The second fresh Ada run failed
+`CROSS-LOCK-008` at its 15-second test deadline (539/540); execution stopped.
+Its log is retained at
+`agent-docs/test-audit/managed-run-logs/2026-10-05T22-10-16-457Z-7535b1e3-server.log`.
+The mapped burst logs all 17 selected response outcomes before callback return:
+one successful clock create, the successful owner deletion, and fifteen
+rejected clock creates. Actual callback return, response transmission, and
+client completion remain unresolved; these logs do not prove callback deadlock.
+
+The focused diagnostic loop preserves each curl's timestamped wire trace and
+server network syscall completions. A preload observer records `execFile`
+spawn/stdin/stdout/exit/close/callback phases, fetch dispatch and response headers,
+and response-body completion. This distinguishes the concurrent curl barrier
+from the subsequent GETs on a reused client connection without changing frozen
+tests, HTTP semantics, retries, or worker limits. It stops at the first failure.
+After a cause-specific fix, the entire final gate set must run from scratch,
+including two separate fresh consecutive Ada runs and the two-cycle extra.
+
+## Deterministic concurrent request-validator correction
+
+The native full cross-entity suite under 64 busy roster channels captured a
+valid `clock.progress` request (`{segments:1}`) rejected with **400 VALIDATION /
+unknown field**, with unchanged clock revision1 and segments0. The complete
+body is retained in `crossfile-busy-roster-body-20/run-04/passive-client-3449058.jsonl`
+under the resumed VET evidence root. A previous full-file pressure run also
+rejected CROSS-LOCK-004's valid progress request; no failing case was excluded.
+
+`Pitd_Ops.Check_Fields` used package-global mutable `Allowed_Keys` and
+`Allowed_Passed`. Concurrent AWS tasks could overwrite the allowed set before
+the JSON-map callback checked a field. Both the accumulator and callback now
+belong to the `Check_Fields` activation and read its local `Allowed` value.
+The fix adds no lock or contention, removes the obsolete globals, and preserves
+the same allowed fields, validation reasons, and operation schemas.
+
+The additive Ada executable in `backend-ada/server/tests/` links a test-only
+JSON-map adapter. The first task stops after selecting `segments`; the second
+selects `confirm` before either mapping proceeds. This forces the original
+overwrite without sleeps, scheduler assumptions, or production test hooks.
+The tooling regression first failed with **one valid clock.progress request
+rejected: unknown field** (`validator-concurrency-red.log`). After the local
+state fix it passed: two deterministic checks plus **64 tasks / 64,000 valid
+checks**, while a genuinely unknown field remains rejected. The observed green
+command exited zero in **4.06 seconds**; its structured observation is
+`validator-concurrency-green-observation.json`.
+
+```sh
+npm --prefix conformance run test:tooling -- src/operation-validation-concurrency.test.ts
+```
+
+The test adapter and its linker wrapping are absent from the production
+executable. No frozen test, request status, retry, existing deadline, or AWS
+worker/shedding limit changed. The precise original transport/timeout cause
+is not proved by this validator regression; fresh full release gates remain
+required. At resume, 64 exact owned orphan tracees from completed strace
+diagnostics were terminated and verified absent. The human's development
+server and browser were deliberately left alone.
+
+## Remaining shared-state audit
+
+The read-only server-package inventory found no additional unguarded mutable
+request-path globals. Entity locks, idempotency/preview stores, counters,
+crash hooks and generated-validator result access are protected.
+Configuration roots/game caches and the similarly shaped
+`S_Extra_Allowed/S_Extra_Bad` settings validator run synchronously before
+listening; they are intentionally unchanged.
+
+Direct pinned-dependency review confirms that GNATCOLL26 stores keys in each
+JSON object's ordered map (`gnatcoll-json.ads678–686`,
+`gnatcoll-json.adb1182–1202,1559–1570`), not a process-global canonical-key
+table on these paths. Scalar string ownership uses atomic counters
+(`gnatcoll-json.ads670–672`, `gnatcoll-json.adb997–1003,1028–1036`) delegated
+through GNATCOLL.Atomic to GNAT16 Seq_Cst atomic add/sub intrinsics.
+Callbacks may receive shared reference-counted values, not fresh deep copies;
+atomic ownership does not imply mutable-container thread safety.
+
+The deterministic rejection uses only integer/boolean request schemas and
+does not call N_Str/N_Str_Required. This independently demonstrates the older
+allowed-set race without blaming immutable scalar retention.
+The complete inventory and qualified direct review are retained as
+`request-shared-state-audit.json` and
+`request-shared-state-audit-parent-review.json` in the resumed evidence root.
+No additional source correction was required from this audit.
+
+## Fresh corrected-source gate results
+
+After the source fix, complete hash refresh and resolved state audit, the
+fresh full mutation campaign passed **28/28**, **0 survivors**,
+**P0 19/19 / P1 9/9**, with source restoration PASS. Baselines were
+Ada540, tooling233 and frontend806.
+
+The subsequent serial fresh sequence passed every required command:
+
+| Gate | Observed result |
+|---|---|
+| Typecheck | exit0 |
+| Frozen full benchmark | all4 scales PASS; scale10 p50 roster9.87ms, collections7.77ms, mutation4.29ms within13/9/6.13ms |
+| Two separate consecutive fresh Ada runs | 540/540 each,64 files each |
+| Two-cycle extra | 540/540 twice |
+| Tooling | 233/233,18 files |
+| Frontend | 806/806,20 files |
+| Three validators | 163 metrics / 231 traceability / 17 reconciliation; errors0/warnings0 |
+
+CROSS-LOCK-003/004/008 passed in all four final Ada cycles; CROSS008 took
+110/84/85/101ms. Evidence is retained in `pass3-final-gate-results.json`,
+individual `pass3-final-*.log` files, `pass3-final-observed-summary.json`
+and `pass3-performance-results.json`.
+Prior failures remain intact. The validator race is causally fixed;
+the precise original transport/timeout mechanism remains unproved, so these
+observed green gates are not described as a universal flake fix.
+
+All13 owned temporary diagnostic/final-runner scripts were archived under
+`retired-diagnostic-scripts/` and removed from `/tmp`, together with the empty
+owned curl-wrapper directory. Historical strace wrappers must not be reused
+without exact owned-tracee cleanup. The development server56773 was deliberately
+not stopped or restarted; no unrelated data or processes were changed.

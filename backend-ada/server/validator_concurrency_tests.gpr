@@ -1,0 +1,13 @@
+project Validator_Concurrency_Tests extends "paperclips_server.gpr" is
+   for Source_Dirs use ("src", "src/generated", "tests");
+   for Object_Dir use "obj/validator-concurrency";
+   for Exec_Dir use "bin";
+   for Main use ("validator_concurrency.adb");
+
+   package Linker is
+      --  Test-only rendezvous at the existing JSON-map call boundary. The
+      --  production executable never links this adapter or linker option.
+      for Default_Switches ("Ada") use
+        ("-Wl,--wrap=gnatcoll__json__map_json_object");
+   end Linker;
+end Validator_Concurrency_Tests;

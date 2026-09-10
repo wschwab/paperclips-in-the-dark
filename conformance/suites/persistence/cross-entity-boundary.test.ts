@@ -11,7 +11,12 @@ type ConcurrentRequest = { path: string; body: unknown; headers?: Record<string,
 // child before feeding bodies, so startup work cannot serialize the burst.
 async function concurrentRequests(requests: ConcurrentRequest[]): Promise<HttpResponse[]> {
   const children = requests.map(({ path, body, headers = {} }) => {
-    const { promise, resolve, reject } = Promise.withResolvers<HttpResponse>();
+    let resolve!: (response: HttpResponse) => void;
+    let reject!: (cause: unknown) => void;
+    const promise = new Promise<HttpResponse>((resolveResponse, rejectResponse) => {
+      resolve = resolveResponse;
+      reject = rejectResponse;
+    });
     const child = execFile("curl", ["--silent", "--show-error", "--max-time", "15", "--dump-header", "-",
       "--header", "Content-Type: application/json", ...Object.entries(headers).flatMap(([key, value]) => ["--header", `${key}: ${value}`]),
       "--data-binary", "@-", `${api.baseUrl}/${path}`], (error, stdout) => {

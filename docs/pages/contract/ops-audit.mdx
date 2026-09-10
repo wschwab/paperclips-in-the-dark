@@ -268,6 +268,23 @@ Source paths above are within the pinned AWS 21.0.0 release's `src/core/`
 installation); the dependency version is fixed in the server's Alire manifest
 and lockfile.
 
+### REVIEW-01 regression typing (2026-10-05)
+
+The new, nonfrozen boundary regressions now decode entity responses and
+collection summaries through the existing conformance `Schemas`/`decode`
+mirrors before reading revisions or collection IDs. PC allocation treats absent
+playbook `DefaultActionPoints` as no default dots, leaving allocation bounds
+derived from game settings. Both synchronized curl probes use inline typed
+Promise executors instead of `Promise.withResolvers`, preserving their
+spawn-before-body release and child cleanup on the existing TypeScript library
+target. No runtime API behavior or frozen contract/test changed.
+
+The six VET-reported compiler errors supplied failing evidence; the corrected
+conformance `npm run typecheck` (`tsc --noEmit`) exited 0 on 2026-10-05
+(1.75 seconds). This typing acceptance does not claim runtime-suite or release
+gate acceptance. The dated record is in
+`tasks/REVIEW-01-CREATE-IDEMPOTENCY.md` and its existing metrics file.
+
 ## Error codes (contract enumeration)
 
 `NOT_FOUND, VALIDATION, STALE_REVISION, RETIRED, CONFIRM_REQUIRED, DUPLICATE,

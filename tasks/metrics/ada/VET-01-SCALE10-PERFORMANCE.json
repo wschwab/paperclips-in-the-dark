@@ -1,0 +1,122 @@
+{
+  "task": "VET-01-SCALE10-PERFORMANCE",
+  "track": "ada",
+  "implementationAgent": "vet-fail-fix.VetPerf",
+  "recoveryAgent": "vet-fix-2.RecoverPerf",
+  "status": "Full frozen benchmark passed after scalar-allocation correction; final campaign/gates pending",
+  "date": "2026-10-05",
+  "tokens": null,
+  "wallClockMinutes": 1.756167,
+  "evidence": "agent-docs/test-audit/vet-evidence/bc63af5f-wave10/perf-investigation/",
+  "reviewAgent": "Orchestrator-owned structural, semantic and full benchmark verification; independent director/Jev acceptance separate",
+  "iterationsToGreen": 3,
+  "passRateAtFirstDoneClaim": "No final done claim; original full benchmark failed and intermediate production benchmark still failed collections 9.46>9ms.",
+  "passRateAfterReview": "Structural 5/5, semantic 45/45, production build exit0, full frozen benchmark4/4 scales within budgets.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {"compiler": 0, "conformance": 5, "review": 0, "human": 0},
+  "defectCatchingLayer": ["Frozen benchmark budget gate", "Failing-first tooling allocation guards"],
+  "notes": "Schema-complete additive correction; no acceptance claim from structural guards. Historical and measured intermediate failures retained.",
+  "metricsMethodology": {
+    "method": "wallClockMinutes is the measured command-time lower bound only, not total worker duration",
+    "source": "Resumed command-results.jsonl measured commands sum105.37s (previous46.06s plus membership-candidate benchmark26.57s, scalar red0.46s/green0.43s/build4.73s/semantics4.40s/benchmark22.72s). iterationsToGreen3 counts production, membership, scalar full budget candidates, not bisect experiments.",
+    "locNote": "Implementation spans recovered partial edits and current allocation cutover; no grounded isolated LOC measurement recorded.",
+    "scaffoldingLocNote": "Structural regression additions are recorded by test IDs; no isolated LOC measurement recorded.",
+    "tokensNote": "Token accounting unavailable; null does not claim measured zero tokens."
+  },
+  "acceptedHistoricalBaseline": "tasks/metrics/frontend/PERF-04.json",
+  "originalVettingFailure": {
+    "revision": "bc63af5f",
+    "scale": 10,
+    "rosterP50Ms": 16.98,
+    "rosterBudgetMs": 13,
+    "collectionsP50Ms": 13.76,
+    "collectionsBudgetMs": 9
+  },
+  "bisect": {
+    "revisions": ["801798b8", "0627c594", "96654312", "e019e0ff", "ba03c32e", "bc63af5f"],
+    "backToBackControls": true,
+    "conclusion": "Same scale10 failure on oldest/current controls and every intermediate revision; cannot attribute to later write-reference or lock-registry changes.",
+    "record": "bisect-summary.json",
+    "fullGate": false
+  },
+  "failingFirstGuards": {
+    "TOOLING-READ-PERF-001": "Red exit1: known-key Collect_Keys present. Green after filtering before allocation/sort.",
+    "TOOLING-READ-PERF-002": "Red exit1: normalizer received bytes and reparsed entity. Green after passing original parsed value.",
+    "TOOLING-READ-PERF-003": "Previous worker transcript lines 580-592 records red exit1 before production -O2 and green afterward. Recovery strengthens scenario-binding assertions.",
+    "TOOLING-READ-PERF-004": "Main recorded red exit1 (1 failed, 3 passed) before replacing wrapped-name construction, then green4/4 exit0 in performance-membership-green.log.",
+    "TOOLING-READ-PERF-005": "Main recorded red exit1 (1 failed, 4 passed) before removing canonical scalar-string deep copies and repeated field lookups, then green5/5 exit0 in performance-string-allocation-green.log."
+  },
+  "intermediateCandidate": {
+    "change": "Unknown-key filtering only",
+    "rosterP50Ms": [13.97, 15.26],
+    "collectionsP50Ms": [11.61, 12.46],
+    "accepted": false
+  },
+  "completedCandidate": {
+    "changes": [
+      "Allocate/sort only unknown non-exempt removal keys; preserve legacy dictionary sorting",
+      "Parse canonical stored bytes once and normalize the parsed value; preserve unreadable fallback",
+      "Consume existing Alire GPR_BUILD=production scenario in server GPR with -O2, without -gnatp",
+      "Compare allowed-name boundaries directly without constructing a wrapped string; preserve exact membership semantics",
+      "Read ordinary/required string fields once and retain immutable canonical scalar string storage; preserve container deep copies and diagnostics"
+    ],
+    "compilerEvidenceBefore": "compiler-flags-before.txt",
+    "compilerEvidenceAfter": "Main reports ALI -O2 confirmed and no -gnatp",
+    "priorProductionBenchmark": {
+      "evidence": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/benchmark-production.log",
+      "collectionsScale10P50Ms": 9.46,
+      "budgetMs": 9,
+      "accepted": false
+    },
+    "membershipRedEvidence": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/performance-membership-red.log",
+    "priorMembershipBenchmark": {
+      "evidence": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/final-benchmark.log",
+      "rosterScale10P50Ms": 13.17,
+      "rosterBudgetMs": 13,
+      "mutationScale10P50Ms": 6.67,
+      "mutationBudgetMs": 6.13,
+      "accepted": false
+    },
+    "scalarStringRedEvidence": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/performance-string-allocation-red.log",
+    "benchmarkResult": {
+      "exitCode": 0, "allScalesWithinFrozenBudgets": true, "scales": 4, "wallClockSeconds": 22.72,
+      "scale10P50Ms": {"roster": 10.15, "collections": 1.97, "mutation": 4.3},
+      "evidence": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/performance-scalar-green.json",
+      "log": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/performance-scalar-benchmark.log"
+    },
+    "accepted": true,
+    "reason": "Scalar allocation correction passes semantic45/45 and frozen benchmark; fresh corrected-source full28 campaign and complete final gate sequence now PASS."
+  },
+  "recoveryVerification": {
+    "buildsRun": 0,
+    "testsRun": 0,
+    "benchmarksRun": 0,
+    "disposableWorkspacesRemoved": [
+      "vet-perf-0627c594", "vet-perf-801798b8", "vet-perf-96654312",
+      "vet-perf-9879bf76", "vet-perf-ba03c32e", "vet-perf-bc63af5f",
+      "vet-perf-e019e0ff"
+    ],
+    "mutationRetargetingOwner": "Main (M04 removal collector and M06 parsed-value classifier)",
+    "nextCommand": "Assigned corrective final gates and recorded-evidence validation complete; broader release review is orchestrator-owned",
+    "targetedCommands": [
+      "cd conformance && npm run test:tooling -- src/read-classification-allocation.test.ts",
+      "cd conformance && npm run test:ada -- --run suites/persistence/entity-admission.test.ts suites/persistence/canonical-shape.test.ts suites/persistence/unknown-key-boundary.test.ts suites/persistence/write-reference-admission.test.ts",
+      "cd conformance && npm run test:benchmark -- --record --scales 10",
+      "cd conformance && npm run test:benchmark"
+    ]
+  },
+  "finalCorrectedSourceBenchmark": {
+    "command": "npm --prefix conformance run test:benchmark",
+    "exitCode": 0, "wallClockSeconds": 26.07,
+    "scales": 4, "allScalesWithinFrozenBudgets": true,
+    "scale10P50Ms": {"roster": 9.87, "collections": 7.77, "mutation": 4.29},
+    "scale10FrozenBudgetsMs": {"roster": 13, "collections": 9, "mutation": 6.13},
+    "revision": "9fb9a13cf847", "timestamp": "2026-10-06T02:35:53.019Z",
+    "evidence": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/pass3-performance-results.json",
+    "log": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/pass3-final-benchmark.log",
+    "fullFinalGates": "PASS fresh mutation28/28, typecheck, Ada540/540 fourcycles, tooling233, frontend806, validators163/231/17"
+  },
+  "frozenBudgetSha256": "47b0c6fce5ba11d3ae03a2ab2c8fa08c3b2ffff5e9da5d1e8eb5a9659aea53ec",
+  "fullFinalGatesOwner": "vet-fix-2 (explicitly assigned corrective gates); orchestrator owns broader release review"
+}

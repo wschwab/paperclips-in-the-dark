@@ -247,6 +247,86 @@
     "verificationStatus": "Full suites, three validators and 28-mutant campaign passed; independent corrective review pending.",
     "methodology": "Additive observed-result entry. Combined wall time is not a standalone campaign or total task duration. All historical entries preserved unchanged."
   },
+  "correction2026-10-05-vet-read-performance": {
+    "finding": "Read-performance cutover moved unknown-removal collection and removed the stored parse/exception adjacency, requiring semantic M04/M06 anchor retargeting.",
+    "catalogChanges": "After explicit UI stable/Luna PASS, all 18 unique targets checksummed; nine stale restoration entries across eight files refreshed. M04/M06 anchors retargeted without changing mutant intents, expected killers or severities.",
+    "targetedRed": {
+      "command": "cd conformance && npx vitest run --config vitest.tooling.config.ts src/mutation-read-retarget.test.ts",
+      "exitCode": 1, "failed": 2, "total": 2,
+      "reason": "M04 changed dictionary collector instead of removal collector; M06 exact anchor absent.",
+      "log": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/mutation-read-retarget-red.log"
+    },
+    "targetedGreen": {
+      "command": "cd conformance && npx vitest run --config vitest.tooling.config.ts src/mutation-read-retarget.test.ts",
+      "exitCode": 0, "passed": 2, "total": 2,
+      "log": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/mutation-read-retarget-green.log"
+    },
+    "exclusiveWindow": "UI source and browser/heavy jobs frozen after its explicit stable signal",
+    "hashRefreshes": [
+      {"mutants": ["M04"], "path": "backend-ada/server/src/pitd_normalize.adb", "oldHash": "0b547690a7d5f28ef697e1d9840f6dd3008f6ae9b084d40ac230d811834636af", "newHash": "a2fb70b8b901bc8fbb7320d9e87e4b4b674f1faece9dd1a41551c8184e477a72"},
+      {"mutants": ["M06"], "path": "backend-ada/server/src/pitd_stored.adb", "oldHash": "7daf58ecf45a84fdc6fe7614c5189b77ec2c73db926c687953331e35453630ff", "newHash": "ca1463b79d24164997e622f333af48d66fa614c0dda5aed4d3a83db3e07122b5"},
+      {"mutants": ["M18"], "path": "frontend/src/styles/components.css", "oldHash": "db11a76b584070ac1a8bde53f09f01a8f8c856b1423a5e4b3fa1efdfa444c75f", "newHash": "f220cbfd51659047eb03727c0842c74abaf1610c9076448611b8f4b78d7fde3f"},
+      {"mutants": ["M19"], "path": "frontend/src/main.ts", "oldHash": "8e3a6ea385c8bbd49ecbf222028d3b46eada8451a97b9e614330af9cc5faeef1", "newHash": "4c1d31a42f9cd44c7b87814f9d76ad8036369b0b989b310704c67228267e3033"},
+      {"mutants": ["M20"], "path": "frontend/src/api/client.ts", "oldHash": "68735e2740f3b7f83ba6f484a1c350b0e63f66ff1777d2bbd45371dc327e70e0", "newHash": "71cefdbcc29964a8a9eadf685e936c2a23048abe148c8197d487fdbe8a22b42c"},
+      {"mutants": ["M23"], "path": "conformance/scripts/managed-run.mjs", "oldHash": "dad0fa5c697c2197b92d403288023ac53a41c3a87f03eae2443dec7c199a9a4e", "newHash": "4ee01ec50eb69a315b44a1df6426cee6992d61f4df3690a505f4f77a5650f9fc"},
+      {"mutants": ["M24", "M25"], "path": "frontend/src/pages/roster.ts", "oldHash": "f86fe402bccd5dfa4cb583e5fddb6e63c03dafd2e7209aa3b72de4bda84398d8", "newHash": "0e12dc7406b0645fe788e4a78ae31fb49fe1cfe14da8f1f04de16c8d1e8d2cef"},
+      {"mutants": ["M26"], "path": "frontend/src/pages/character-detail.ts", "oldHash": "6c824d2b2e16a3e939503931d10ab8a33f943d60e24a0ab8d2cdb5a46385f541", "newHash": "e70049bee72f9b0e744104f58ca4cb504bfdf852a90918d4fa3d0429e044017d"}
+    ],
+    "verification": {
+      "command": "npm --prefix conformance run test:mutation",
+      "exitCode": 0, "wallClockSeconds": 1715.58,
+      "killed": 28, "total": 28, "survived": 0, "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": {"backendAda": 540, "conformanceTooling": 231, "frontend": 806},
+      "postCampaignSourceRestoration": "PASS; all targets restored to baseline and clean backend rebuilt after every Ada mutant",
+      "revision": "ffa4a152cf8d", "timestamp": "2026-10-05T21:35:54.784Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T21-35-54-777Z.txt",
+      "sessionArtifact": "artifact://10899"
+    },
+    "scalarCorrectionHashRefresh": {
+      "mutants": ["M04"], "path": "backend-ada/server/src/pitd_normalize.adb",
+      "oldHash": "a2fb70b8b901bc8fbb7320d9e87e4b4b674f1faece9dd1a41551c8184e477a72",
+      "newHash": "6164d6f7b5c61bf36c396ad3ef5b1bbeeb0e60541cafc8f5ff4939e526a85fc1",
+      "reason": "After the membership candidate's final benchmark failure, canonical scalar strings now use one lookup and immutable reference-counted storage; rebuilt semantic45/45 and full frozen benchmark passed."
+    },
+    "finalSourceVerification": {
+      "command": "npm --prefix conformance run test:mutation",
+      "exitCode": 0, "wallClockSeconds": 1720.61,
+      "killed": 28, "total": 28, "survived": 0, "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": {"backendAda": 540, "conformanceTooling": 232, "frontend": 806},
+      "postCampaignSourceRestoration": "PASS; all targets restored to final scalar-corrected baseline and clean backend rebuilt after every Ada mutant",
+      "revision": "b20a00520a67", "timestamp": "2026-10-05T22:08:29.524Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T22-08-29-519Z.txt",
+      "sessionArtifact": "artifact://10908"
+    },
+    "verificationStatus": "Scalar-corrected full campaign passed28/28; earlier campaign preserved. Fresh finalpass2 stopped on second Ada command: CROSS-LOCK-008 timeout15000ms (539/540), matching retained serverlog has all17callbackoutcomes. Focused wire/client/syscall causality pending. Any cause-specific source change requires catalog hash review and new full campaign before restarting all final gates; no release PASS."
+  },
+  "correction2026-10-06-validator": {
+    "finding": "Confirmed load-only unknown-field400 is a shared Pitd_Ops Check_Fields state race; deterministic red then local callback/state green.",
+    "hashReview": "Checksummed all18 unique catalog targets after source freeze; only four entries for the operation package were stale.",
+    "hashRefresh": {
+      "mutants": ["M11", "M12", "M16", "M27"],
+      "path": "backend-ada/server/src/pitd_ops.adb",
+      "oldHash": "bf699ebe37af8571e8a3ffcfd970a75b6f729abe27c6e23ae2796d1de42553df",
+      "newHash": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
+    },
+    "otherTargets": "All17 other target hashes matched; no mutation anchor, intent, severity or expected killer changed.",
+    "evidence": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/validator-source-hash-review.json",
+    "verificationStatus": "Complete: corrected-source full28 campaign and fresh pass3 final sequence PASS; final recorded-evidence validators163/231/17 PASS with errors0/warnings0 in2.40s. Broader release verdict remains orchestrator-owned.",
+    "nextCommand": "None for assigned corrective gate set; orchestrator owns broader release review",
+    "verification": {
+      "command": "npm --prefix conformance run test:mutation",
+      "exitCode": 0, "wallClockSeconds": 1726.71,
+      "killed": 28, "total": 28, "survived": 0, "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": {"backendAda": 540, "conformanceTooling": 233, "frontend": 806},
+      "postCampaignSourceRestoration": "PASS; all targets restored to baseline; clean backend rebuilt after every Ada mutant",
+      "revision": "05a123245339", "timestamp": "2026-10-06T02:35:15.239Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-06T02-35-15-235Z.txt",
+      "sessionArtifact": "artifact://10981"
+    }
+  },
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",

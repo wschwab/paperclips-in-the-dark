@@ -111,7 +111,10 @@ describe("campaign batch shared boundaries", () => {
       const entries = await history(route, entity.id);
       expect(entries).toHaveLength(1);
       expect(entries[0]?.op).toBe("campaign.batch");
-      expect((await api.get(`${route}/${entity.id}`)).body.revision).toBe(entity.revision + 1);
+      const body = (await api.get(`${route}/${entity.id}`)).body;
+      const after = kind === "character" ? await decode(Schemas.Character, body)
+        : kind === "crew" ? await decode(Schemas.Crew, body) : await decode(Schemas.Clock, body);
+      expect(after.revision).toBe(entity.revision + 1);
     });
   }
 

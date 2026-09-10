@@ -11,7 +11,12 @@ import { newCharacter, newCrew } from "../../src/suite-helpers.js";
 // already documented by the existing Node-fetch concurrency suite.
 async function concurrentPosts(requests: { path: string; body: unknown }[]): Promise<HttpResponse[]> {
   const children = requests.map(({ path, body }) => {
-    const { promise, resolve, reject } = Promise.withResolvers<HttpResponse>();
+    let resolve!: (response: HttpResponse) => void;
+    let reject!: (cause: unknown) => void;
+    const promise = new Promise<HttpResponse>((resolveResponse, rejectResponse) => {
+      resolve = resolveResponse;
+      reject = rejectResponse;
+    });
     const child = execFile("curl", ["--silent", "--show-error", "--max-time", "15", "--dump-header", "-",
       "--header", "Content-Type: application/json", "--data-binary", "@-",
       `${api.baseUrl}/${path}`], (error, stdout) => {

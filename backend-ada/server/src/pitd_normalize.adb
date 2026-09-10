@@ -267,8 +267,43 @@ package body Pitd_Normalize is
 
    function In_Allowed (Name : String; Allowed : String) return Boolean is
    begin
-      return Ada.Strings.Fixed.Index (Allowed, "|" & Name & "|") > 0;
+      --  Match the same pipe-wrapped substring without constructing it for
+      --  every known member on a canonical read. Check the length before
+      --  computing bounds, including empty names and non-1-based strings.
+      if Allowed'Length < 2 or else Name'Length > Allowed'Length - 2 then
+         return False;
+      end if;
+      for I in Allowed'First .. Allowed'Last - Name'Length - 1 loop
+         if Allowed (I) = '|'
+           and then Allowed (I + Name'Length + 1) = '|'
+           and then Allowed (I + 1 .. I + Name'Length) = Name
+         then
+            return True;
+         end if;
+      end loop;
+      return False;
    end In_Allowed;
+
+   --  Canonical reads usually have no removals. Only allocate and sort
+   --  names that will produce a change, keeping the same lexical ordering
+   --  without constructing a temporary string value for every known key.
+   function Collect_Removal_Keys
+     (O : JSON_Value; Allowed, Exempt : String) return JSON_Array
+   is
+      K : JSON_Array := Empty_Array;
+      procedure Add (Name : UTF8_String; Value : JSON_Value) is
+      begin
+         if not In_Allowed (String (Name), Allowed)
+           and then (Exempt = "" or else not In_Allowed (String (Name), Exempt))
+         then
+            Append (K, Create (String (Name)));
+         end if;
+      end Add;
+   begin
+      if O.Kind = JSON_Object_Type then Map_JSON_Object (O, Add'Access); end if;
+      Sort (K, Less_Keys'Access);
+      return K;
+   end Collect_Removal_Keys;
 
    --  D6: unknown keys are never defaulted and never silently dropped —
    --  each is listed as a removal the preview must display.  Exempt names
@@ -278,30 +313,23 @@ package body Pitd_Normalize is
      (O : JSON_Value; Ptr, Allowed : String; C : in out N_Ctx;
       Exempt : String := "")
    is
-      K : constant JSON_Array := Collect_Keys (O);
+      K : constant JSON_Array := Collect_Removal_Keys (O, Allowed, Exempt);
    begin
       for I in 1 .. Length (K) loop
          declare
             Name : constant String := Get (Get (K, I));
+            P : constant String := Ptr & "/" & Name;
+            V : constant JSON_Value := Get (O, Name);
+            E : JSON_Value := Create_Object;
          begin
-            if not In_Allowed (Name, Allowed)
-              and then (Exempt = "" or else not In_Allowed (Name, Exempt))
-            then
-               declare
-                  P : constant String := Ptr & "/" & Name;
-                  V : constant JSON_Value := Get (O, Name);
-                  E : JSON_Value := Create_Object;
-               begin
-                  Set_Field (E, "pointer", P);
-                  Set_Field (E, "reason", "unknown-key removal");
-                  Set_Field (E, "previous", Clone (V));
-                  Set_Field (E, "replacement", JSON_Null);
-                  Append (C.Changes, E);
-                  Append (C.Warnings, Create
-                            ("Unknown property " & P
-                             & " will be removed (data loss); removal must be confirmed"));
-               end;
-            end if;
+            Set_Field (E, "pointer", P);
+            Set_Field (E, "reason", "unknown-key removal");
+            Set_Field (E, "previous", Clone (V));
+            Set_Field (E, "replacement", JSON_Null);
+            Append (C.Changes, E);
+            Append (C.Warnings, Create
+                      ("Unknown property " & P
+                       & " will be removed (data loss); removal must be confirmed"));
          end;
       end loop;
    end List_Removals;
@@ -448,10 +476,12 @@ package body Pitd_Normalize is
    --  FILL string property (missing/null -> Default).
    function N_Str (O : JSON_Value; Name, Ptr : String; Default : String;
                    C : in out N_Ctx) return JSON_Value is
+      Present : constant Boolean := Has_Field (O, Name);
+      V : constant JSON_Value := (if Present then Get (O, Name) else JSON_Null);
    begin
-      if not Has_Field (O, Name) or else Get (O, Name).Kind = JSON_Null_Type then
+      if V.Kind = JSON_Null_Type then
          Add_Change (C, Ptr, "missing/null fill", JSON_Null, Create (Default),
-                     (if Has_Field (O, Name)
+                     (if Present
                       then "Property " & Ptr & " is null (null is never stored): "
                            & "normalized to canonical default "
                            & (if Default = "" then """" else Default)
@@ -460,37 +490,40 @@ package body Pitd_Normalize is
                            & (if Default = "" then """" else Default)));
          return Create (Default);
       end if;
-      declare V : constant JSON_Value := Get (O, Name); begin
-         if V.Kind = JSON_String_Type then return Clone (V); end if;
-         if V.Kind = JSON_Int_Type then
-            declare N : constant Integer := Integer'(Get (V)); begin
-               Add_Change (C, Ptr, "type coercion", Clone (V), Create (Trim_Image (N)),
-                           "Property " & Ptr & " had type number, expected string: converted to "
-                           & Trim_Image (N));
-               return Create (Trim_Image (N));
-            end;
-         end if;
-         Add_Needs (C, Ptr, "wrong type: cannot be converted to string", "a string value");
-         return Clone (V);
-      end;
+      --  Strings are immutable scalar values: assignment retains their
+      --  reference-counted storage, unlike Clone which allocates a new string.
+      --  Containers on invalid-input branches still require a deep copy.
+      if V.Kind = JSON_String_Type then return V; end if;
+      if V.Kind = JSON_Int_Type then
+         declare N : constant Integer := Integer'(Get (V)); begin
+            Add_Change (C, Ptr, "type coercion", Clone (V), Create (Trim_Image (N)),
+                        "Property " & Ptr & " had type number, expected string: converted to "
+                        & Trim_Image (N));
+            return Create (Trim_Image (N));
+         end;
+      end if;
+      Add_Needs (C, Ptr, "wrong type: cannot be converted to string", "a string value");
+      return Clone (V);
    end N_Str;
 
    --  NEEDS-INPUT string property (minLength 1): no canonical default.
    function N_Str_Required (O : JSON_Value; Name, Ptr : String; C : in out N_Ctx;
                             Min_Len : Natural := 1) return JSON_Value is
+      V : constant JSON_Value :=
+        (if Has_Field (O, Name) then Get (O, Name) else JSON_Null);
    begin
-      if Has_Field (O, Name) and then Get (O, Name).Kind /= JSON_Null_Type then
-         declare V : constant JSON_Value := Get (O, Name); begin
-            if V.Kind = JSON_String_Type then
-               if Str_Field (O, Name)'Length >= Min_Len then return Clone (V); end if;
+      if V.Kind /= JSON_Null_Type then
+         if V.Kind = JSON_String_Type then
+            declare S : constant String := Get (V); begin
+               if S'Length >= Min_Len then return V; end if;
                Add_Needs (C, Ptr, "too short: needs at least " & Trim_Image (Min_Len)
                           & " character(s)", "a string of at least " & Trim_Image (Min_Len)
                           & " characters");
-               return Clone (V);
-            end if;
-            Add_Needs (C, Ptr, "wrong type: expected a string", "a string value");
-            return Clone (V);
-         end;
+               return V;
+            end;
+         end if;
+         Add_Needs (C, Ptr, "wrong type: expected a string", "a string value");
+         return Clone (V);
       end if;
       Add_Needs (C, Ptr, "missing required property (no canonical default)",
                  "a caller-supplied value");

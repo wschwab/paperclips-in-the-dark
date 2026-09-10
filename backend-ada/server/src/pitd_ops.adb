@@ -306,15 +306,6 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
 
    type Spec_List is array (Positive range <>) of Spec_Rec;
 
-   Allowed_Passed : Boolean := True;
-   Allowed_Keys : Unbounded_String := Null_Unbounded_String;
-   procedure Check_Allowed (Name : UTF8_String; Value : JSON_Value) is
-   begin
-      if Ada.Strings.Fixed.Index (To_String (Allowed_Keys), "|" & String (Name) & "|") = 0 then
-         Allowed_Passed := False;
-      end if;
-   end Check_Allowed;
-
    function Has_Any_Field (B : JSON_Value) return Boolean is
       Count : Natural := 0;
       procedure Cnt (Name : UTF8_String; Value : JSON_Value) is begin Count := Count + 1; end Cnt;
@@ -326,14 +317,20 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
 
    function Check_Fields (B : JSON_Value; Specs : Spec_List; Bad : out Unbounded_String) return Boolean is
       Allowed : Unbounded_String := To_Unbounded_String ("|");
+      Allowed_Passed : Boolean := True;
+      procedure Check_Allowed (Name : UTF8_String; Value : JSON_Value) is
+      begin
+         if Ada.Strings.Fixed.Index (To_String (Allowed), "|" & String (Name) & "|") = 0 then
+            Allowed_Passed := False;
+         end if;
+      end Check_Allowed;
    begin
       for I in Specs'Range loop
          Allowed := Allowed & To_String (Specs (I).Nm) & "|";
       end loop;
       if B.Kind /= JSON_Object_Type then Bad := To_Unbounded_String("body must be an object"); return False; end if;
-      Allowed_Keys := Allowed; Allowed_Passed := True;
       Map_JSON_Object (B, Check_Allowed'Access);
-      if not Allowed_Passed then Bad := To_Unbounded_String("unknown field"); Allowed_Passed := True; return False; end if;
+      if not Allowed_Passed then Bad := To_Unbounded_String("unknown field"); return False; end if;
       for I in Specs'Range loop
          declare S : Spec_Rec := Specs (I); begin
             if S.Rq and then not Has_Field (B, To_String (S.Nm)) then

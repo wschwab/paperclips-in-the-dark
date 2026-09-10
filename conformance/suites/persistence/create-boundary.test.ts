@@ -1,6 +1,7 @@
 import { describe, expect } from "vitest";
 import { randomUUID } from "node:crypto";
 import { api } from "../../src/api.js";
+import { decode, Schemas } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook, gameSetting } from "../../src/game-data.js";
 
@@ -8,7 +9,7 @@ const stem = "blades-in-the-dark";
 const setting = gameSetting(stem);
 const playbook = firstPlaybook(stem);
 function pcRatings(): Record<string, number> {
-  const defaults = Object.fromEntries(setting.Playbooks.find((p) => p.Name === playbook)!.DefaultActionPoints.map((p) => [p.Action, p.Points]));
+  const defaults = Object.fromEntries((setting.Playbooks.find((p) => p.Name === playbook)!.DefaultActionPoints ?? []).map((p) => [p.Action, p.Points]));
   const ratings = Object.fromEntries(setting.Attributes.flatMap((a) => a.Actions.map((x) => [x.Name, defaults[x.Name] ?? 0])));
   let remaining = setting.StartingActionDots! - Object.values(ratings).reduce((a, b) => a + b, 0);
   while (remaining > 0) {
@@ -31,6 +32,13 @@ const routes = [
   ["clocks", "clock", { name: "Concurrent clock", behavior: "bounded", size: 4, ownerKind: "campaign", ownerId: "", purpose: "custom", relatedClockIds: [] }],
 ] as const;
 
+async function collectionRows(kind: "character" | "crew" | "clock") {
+  const collection = kind === "character" ? "characters" : `${kind}s`;
+  const body = (await api.get(collection)).body;
+  return kind === "character" ? decode(Schemas.CharacterSummaryList, body)
+    : kind === "crew" ? decode(Schemas.CrewSummaryList, body) : decode(Schemas.ClockList, body);
+}
+
 describe("shared create idempotency boundary", () => {
   for (const [index, [route, kind, body]] of routes.entries()) {
     const id = (offset: number) => `PERSISTENCE-IDEMPOTENCY-${String(7 + index * 3 + offset).padStart(3, "0")}`;
@@ -45,8 +53,7 @@ describe("shared create idempotency boundary", () => {
       expect((await api.get(`${kind === "character" ? "characters" : `${kind}s`}/${entity.id}`)).body).toEqual(entity);
     });
     testCase(id(1), `${route} concurrent identical retries persist exactly one entity`, async () => {
-      const collection = kind === "character" ? "characters" : `${kind}s`;
-      const before = new Set((await api.get(collection)).body.map((row: { id: string }) => row.id));
+      const before = new Set((await collectionRows(kind)).map((row) => row.id));
       const headers = { "Idempotency-Key": randomUUID() };
       const responses = await Promise.all(Array.from({ length: 12 }, () => api.post(route, body, headers)));
       for (const response of responses) {
@@ -54,8 +61,8 @@ describe("shared create idempotency boundary", () => {
         expect.soft(response.rawBody).toBe(responses[0]!.rawBody);
       }
       const entity = (await api.operation(responses[0]!))[kind];
-      const added = (await api.get(collection)).body.filter((row: { id: string }) => !before.has(row.id));
-      expect.soft(added.map((row: { id: string }) => row.id)).toEqual([entity!.id]);
+      const added = (await collectionRows(kind)).filter((row) => !before.has(row.id));
+      expect.soft(added.map((row) => row.id)).toEqual([entity!.id]);
     });
     testCase(id(2), `${route} validation failures do not consume a retry key`, async () => {
       const headers = { "Idempotency-Key": randomUUID() };

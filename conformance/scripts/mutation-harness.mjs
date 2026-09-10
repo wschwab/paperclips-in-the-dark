@@ -415,24 +415,24 @@ const mutations = {
     },
   },
 
-  // M04: Truncate key collection at 512 (reverse Wave 2B unbounded fix)
+  // M04: Truncate unknown-removal key collection at 512.
   M04: {
     files: ["backend-ada/server/src/pitd_normalize.adb"],
     apply: (repoRoot) => {
       const file = join(repoRoot, "backend-ada/server/src/pitd_normalize.adb");
       let content = readFileSync(file, "utf8");
-      // Collect_Keys uses: Append (K, Create (String (Name)));
-      // Add a length check before the Append to cap at 512
-      const pattern = /Append\s*\(K,\s*Create\s*\(String\s*\(Name\)\)\s*\);/;
+      // The read-performance cutover leaves dictionary collection separate;
+      // mutate the live removal collector, not the first Append in the file.
+      const pattern = /(function Collect_Removal_Keys[\s\S]*?)Append\s*\(K,\s*Create\s*\(String\s*\(Name\)\)\s*\);/;
       if (!pattern.test(content)) {
-        throw new Error("M04: Could not find Append (K, Create (String (Name))) in Collect_Keys");
+        throw new Error("M04: Could not find removal-key Append in Collect_Removal_Keys");
       }
       content = content.replace(
         pattern,
-        "if Length (K) < 512 then -- MUTANT M04: truncate at 512\n         Append (K, Create (String (Name)));\n         end if;"
+        "$1if Length (K) < 512 then -- MUTANT M04: truncate at 512\n               Append (K, Create (String (Name)));\n            end if;"
       );
       writeFileSync(file, content);
-      return "Truncated Collect_Keys to 512 entries";
+      return "Truncated Collect_Removal_Keys to 512 entries";
     },
   },
 
@@ -465,11 +465,11 @@ const mutations = {
       const changed = replaceExactlyOnce(
         content,
         `         E := Read (Bytes);
-      exception`,
+         Ctx := Pitd_Normalize.Canonicalize (Kind, Id, E);`,
         `         E := Read (Bytes);
          Set_Field (E, "revision", Int_Field (E, "revision") + 1);
          Write_Entity (Kind, Id, E); -- MUTANT M06: revision-bumping write during classification
-      exception`,
+         Ctx := Pitd_Normalize.Canonicalize (Kind, Id, E);`,
         "M06 Classify_Stored",
       );
       writeFileSync(file, changed);

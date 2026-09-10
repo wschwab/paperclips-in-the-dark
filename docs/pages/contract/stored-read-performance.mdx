@@ -1,0 +1,113 @@
+---
+title: Stored-read performance
+---
+
+# Stored-read performance
+
+Roster, collection, detail, history, capability, and write admission share the
+stored-entity classifier. Optimizing a read must preserve the four normalization
+outcomes and recursive schema admission; skipping normalization because a stored
+revision or file timestamp looks unchanged is not equivalent.
+
+The Wave 10 performance investigation measured all six historical revisions
+(`801798b8`, `0627c594`, `96654312`, `e019e0ff`, `ba03c32e`, `bc63af5f`) in fresh
+jj workspaces, sequentially on the same machine. Back-to-back oldest/current
+controls exceeded the same scale-10 budgets. This rules out attributing the
+failure specifically to the later universal write-admission or lock-registry
+changes. The dated PERF-04 accepted result remains historical evidence, not a
+current-machine baseline.
+
+The retained accepted `9879bf76` result used Node 26.8.1 and Linux
+7.1.11-zen1-1-zen; fresh controls use Node 26.10.0 and Linux
+7.2.8-zen1-2-zen. The read classifier/normalizer/summary source did not change
+between that accepted revision and `801798b8`. Historical result comparison
+alone therefore does not prove a source regression.
+
+Redundant operations in the common read path are removed:
+
+- Parse stored bytes once and pass the original parsed value to normalization.
+  Keep the original value for admission diagnostics; normalization still creates
+  its separate document. The established bytes-overload unreadable handling is
+  retained on parse/normalization failure.
+- During unknown-property removal discovery, collect and sort **only unknown,
+  non-exempt names**. Known names no longer require temporary JSON strings and
+  sorting at every nested object. Removal order remains lexical, and every
+  unknown key still receives its displayed data-loss change.
+- Allowed-name membership compares the original string against pipe-delimited
+  list boundaries directly, instead of constructing `"|" & Name & "|"` for
+  every object member. The length guard protects all slice/index arithmetic.
+  Empty names still match `||`, embedded pipes preserve wrapped-substring
+  semantics, and iteration uses the actual lower bound of the allowed string.
+- Ordinary and required string normalization look up each field once, then
+  retain the immutable scalar string value instead of deep-cloning it.
+  GNATCOLL 26 string assignment increments its reference count; `Clone` creates
+  a new string allocation. Normalized objects remain separate, and replacing
+  an object field cannot change the original scalar string. Invalid container
+  values still use deep copies. Missing/null diagnostics, coercions, and
+  required string length validation are unchanged.
+
+## Explicit production compilation
+
+The fresh unoptimized server's `pitd_normalize.ali` metadata contained
+`-gnat2022` but no optimization flag. Alire already sets `GPR_BUILD=production`
+in `backend-ada/server/alire.toml`; declaring that scenario alone did not apply
+compiler optimization because the server project supplied its own switches.
+The server GPR now consumes that existing scenario: production uses
+`-gnat2022 -O2`, while other modes retain `-gnat2022`. Runtime checks remain
+enabled; neither `-gnatp` nor a reduced admission path is introduced.
+
+This is a compiled-code optimization, not a second read cache. The same
+classifier, normalizer, validators, and locking execute on every request.
+The main-owned production rebuild confirmed `-O2` with runtime checks retained,
+but its full benchmark still failed scale10 collections p50 at 9.46ms against
+9ms. That observed red prompted the allocation-free membership correction.
+Neither the production-build candidate nor the membership correction is a
+benchmark pass without a subsequent successful full run.
+
+`TOOLING-READ-PERF-003` guards both the Alire scenario binding and its compiler
+switches. Source assertions cannot establish the switches used by a stale
+executable: the orchestrator must rebuild, inspect the generated `.ali` flags,
+and run the benchmark serially before recording a performance pass.
+
+`TOOLING-READ-PERF-004` guards the allocation-free membership implementation;
+the orchestrator recorded its failing-first wrapped-string assertion before
+the source correction, then confirmed structural green. A later full benchmark
+still failed scale10 roster p50 13.17ms >13ms and mutation p50 6.67ms >6.13ms.
+That failure prompted the scalar-string allocation correction guarded
+failing-first by `TOOLING-READ-PERF-005`. After that correction, the orchestrator
+observed structural **5/5**, rebuilt semantic **45/45**, and a successful full
+frozen benchmark at all four scales. Scale10 p50 was **10.15ms roster**,
+**1.97ms collections**, and **4.30ms mutation**, within unchanged **13/9/6.13ms**
+budgets. The full result is archived as
+`bc63af5f-resumed-2026-10-05/performance-scalar-green.json` under VET evidence.
+Final mutation and fresh complete gates remain separate required acceptance.
+
+No read writes to storage. No budget, schema, HTTP status, game maximum,
+reference-admission rule, or lock boundary changes are part of this optimization.
+
+Raw revision measurements and candidate measurements are archived under
+`agent-docs/test-audit/vet-evidence/bc63af5f-wave10/perf-investigation/`.
+`TOOLING-READ-PERF-001` and `TOOLING-READ-PERF-002` guard the allocation/parse
+structure; the frozen entity-admission, canonical-shape, and unknown-key-boundary
+suites remain the behavior authority. Final full gates are owned by the
+orchestrator. The scalar correction is benchmark-accepted; final whole-initiative
+release acceptance is not claimed by that single benchmark.
+
+## Final corrected-source measurements (2026-10-06)
+
+The fresh full benchmark after the request-validator concurrency correction
+passed all4 scales in26.07s. Scale10 p50 was **roster9.87ms /
+collections7.77ms / mutation4.29ms** within the unchanged **13/9/6.13ms**
+budgets. Revision9fb9a13cf847; full result retained as
+`bc63af5f-resumed-2026-10-05/pass3-performance-results.json`.
+Earlier real failures and intermediate successful measurements remain
+preserved, not replaced.
+
+The same corrected source passed full mutation28/28 with restoration, fresh
+typecheck, two separate consecutive Ada540/540 runs plus two-cycle extra,
+tooling233/233, frontend806/806 and all three validators163/231/17.
+The [shared-state investigation](/ada/socket-investigation) directly verifies
+atomic scalar ownership and object-local key maps; it does not claim that
+atomic refcounts make mutable JSON containers thread-safe. Container-copy
+semantics remain unchanged. Broader whole-initiative release review remains
+orchestrator-owned.

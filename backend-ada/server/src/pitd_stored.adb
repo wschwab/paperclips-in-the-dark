@@ -188,20 +188,24 @@ package body Pitd_Stored is
    is
    begin
       E := JSON_Null;
-      Ctx := Pitd_Normalize.Canonicalize (Kind, Id, Bytes);
+      --  Keep the original parsed entity for admission diagnostics while
+      --  normalizing from that same value, rather than parsing every read
+      --  twice. The bytes overload retains its established unreadable
+      --  context for parse/normalization failures.
+      begin
+         E := Read (Bytes);
+         Ctx := Pitd_Normalize.Canonicalize (Kind, Id, E);
+      exception
+         when others =>
+            E := JSON_Null;
+            Ctx := Pitd_Normalize.Canonicalize (Kind, Id, Bytes);
+      end;
       if Str_Field (Ctx, "outcome") = "unreadable" then
+         E := JSON_Null;
          Issues := Get (Ctx, "issues");
          Canonical := False;
          return;
       end if;
-      begin
-         E := Read (Bytes);
-      exception
-         when others =>
-            Issues := Get (Ctx, "issues");
-            Canonical := False;
-            return;
-      end;
       --  canonical per the normalizer AND the generated validator (the
       --  validator catches what the normalizer leaves to the schema, e.g.
       --  settings-bound violations the canonicalizer does not rewrite).

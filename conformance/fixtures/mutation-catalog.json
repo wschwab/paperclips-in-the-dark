@@ -63,14 +63,14 @@
       "id": "M04",
       "intendedCatchingLayer": "conformance persistence (EDGE-01 unknown-key disclosure boundary)",
       "layer": "backend-ada",
-      "mutation": "Truncate Collect_Keys at 512 entries",
+      "mutation": "Truncate Collect_Removal_Keys at 512 entries",
       "observableFailure": "an import/repair preview no longer discloses every data-dropping property beyond the buffer, violating no-silent-data-loss; the UNKNOWN-KEY near-limit cases assert exact disclosure at 512/513/600 keys",
       "restorationHash": {
-        "backend-ada/server/src/pitd_normalize.adb": "0b547690a7d5f28ef697e1d9840f6dd3008f6ae9b084d40ac230d811834636af"
+        "backend-ada/server/src/pitd_normalize.adb": "6164d6f7b5c61bf36c396ad3ef5b1bbeeb0e60541cafc8f5ff4939e526a85fc1"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb \u2014 Collect_Keys bounded key buffer; add a length < 512 gate before Append so unknown-key removal reporting truncates (AUD-003)"
+      "target": "backend-ada/server/src/pitd_normalize.adb \u2014 Collect_Removal_Keys; add a length < 512 gate before Append so unknown-key removal reporting truncates (AUD-003)"
     },
     {
       "expectedTestIds": [
@@ -103,11 +103,11 @@
       "mutation": "Inject an inline revision bump (Set_Field revision+1) plus Write_Entity immediately after the parse inside Classify_Stored \u2014 a revision-bumping persistence write during the pure read path (Stamp is declared later in the body, so the mutant inlines the bump)",
       "observableFailure": "reads mutate stored bytes and bump revisions, so character GET vs ?download=1 stop being byte-identical and seeded degraded files are rewritten by mere access (locked rule 7: reads never write)",
       "restorationHash": {
-        "backend-ada/server/src/pitd_stored.adb": "7daf58ecf45a84fdc6fe7614c5189b77ec2c73db926c687953331e35453630ff"
+        "backend-ada/server/src/pitd_stored.adb": "ca1463b79d24164997e622f333af48d66fa614c0dda5aed4d3a83db3e07122b5"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb \u2014 Classify_Stored, the ONE read/parse/admission path shared by GET, history reads, mutations, capabilities, and roster projection; documented purely read-only (never writes, never repairs). CORRECTED: the injected write now stamps the revision before persisting; the earlier write-back of the unchanged entity was byte-identical and unobservable."
+      "target": "backend-ada/server/src/pitd_stored.adb \u2014 Classify_Stored, the ONE read/parse/admission path shared by GET, history reads, mutations, capabilities, and roster projection; inject revision bump and Write_Entity after the single parse, before canonicalization. Purely read-only baseline (never writes, never repairs)."
     },
     {
       "expectedTestIds": [
@@ -188,7 +188,7 @@
       "mutation": "Auto-add trauma on overflow: the pending raise is replaced by directly appending a trauma to monitor.trauma.traumas",
       "observableFailure": "traumaPending never raises while the traumas history silently grows; LIFECYCLE-STRESS-001 asserts the pending flag and typed attention",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "bf699ebe37af8571e8a3ffcfd970a75b6f729abe27c6e23ae2796d1de42553df"
+        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
       },
       "severity": "P0",
       "status": "not-run",
@@ -204,7 +204,7 @@
       "mutation": "Clear retirement during trauma removal: the arm additionally sets isRetired false",
       "observableFailure": "trauma.remove on a retired character flips isRetired to false, silently reversing retirement",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "bf699ebe37af8571e8a3ffcfd970a75b6f729abe27c6e23ae2796d1de42553df"
+        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
       },
       "severity": "P0",
       "status": "not-run",
@@ -268,7 +268,7 @@
       "mutation": "Hardcode the tier.add CrewTierMax settings lookup to 3",
       "observableFailure": "the enforced tier ceiling disagrees with the loaded game-settings JSON (Blades CrewTierMax), so a differently-configured game is mis-bounded",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "bf699ebe37af8571e8a3ffcfd970a75b6f729abe27c6e23ae2796d1de42553df"
+        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
       },
       "severity": "P0",
       "status": "not-run",
@@ -303,7 +303,7 @@
       "mutation": "Reduce the action-dot width/height below the contracted target size",
       "observableFailure": "action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "db11a76b584070ac1a8bde53f09f01a8f8c856b1423a5e4b3fa1efdfa444c75f"
+        "frontend/src/styles/components.css": "f220cbfd51659047eb03727c0842c74abaf1610c9076448611b8f4b78d7fde3f"
       },
       "severity": "P1",
       "status": "not-run",
@@ -320,7 +320,7 @@
       "mutation": "Route '/' away from roster (replaceState target changed to /health)",
       "observableFailure": "opening the app no longer lands on the campaign roster; the default route is the wrong surface",
       "restorationHash": {
-        "frontend/src/main.ts": "8e3a6ea385c8bbd49ecbf222028d3b46eada8451a97b9e614330af9cc5faeef1"
+        "frontend/src/main.ts": "4c1d31a42f9cd44c7b87814f9d76ad8036369b0b989b310704c67228267e3033"
       },
       "severity": "P1",
       "status": "not-run",
@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "68735e2740f3b7f83ba6f484a1c350b0e63f66ff1777d2bbd45371dc327e70e0"
+        "frontend/src/api/client.ts": "71cefdbcc29964a8a9eadf685e936c2a23048abe148c8197d487fdbe8a22b42c"
       },
       "severity": "P0",
       "status": "not-run",
@@ -388,7 +388,7 @@
       "mutation": "Managed-launch wrong-dataDir acceptance: readiness accepts any ada health response regardless of the data directory it reports",
       "observableFailure": "a launcher pointed at a server started with a different --data proceeds to run the suite against foreign data; readiness must reject it",
       "restorationHash": {
-        "conformance/scripts/managed-run.mjs": "dad0fa5c697c2197b92d403288023ac53a41c3a87f03eae2443dec7c199a9a4e"
+        "conformance/scripts/managed-run.mjs": "4ee01ec50eb69a315b44a1df6426cee6992d61f4df3690a505f4f77a5650f9fc"
       },
       "severity": "P1",
       "status": "not-run",
@@ -407,7 +407,7 @@
       "mutation": "Degraded rows hidden by filtering: the degraded filter flips to row.isReadable, emptying the recovery lane",
       "observableFailure": "unreadable/unreadable-but-repairable rows vanish from the roster, so their delete/repair recovery path becomes unreachable (the O-ROSTER trap E11 exists to prevent)",
       "restorationHash": {
-        "frontend/src/pages/roster.ts": "f86fe402bccd5dfa4cb583e5fddb6e63c03dafd2e7209aa3b72de4bda84398d8"
+        "frontend/src/pages/roster.ts": "0e12dc7406b0645fe788e4a78ae31fb49fe1cfe14da8f1f04de16c8d1e8d2cef"
       },
       "severity": "P0",
       "status": "not-run",
@@ -426,7 +426,7 @@
       "mutation": "Unbounded roster rendering removed: ROSTER_PAGE_SIZE becomes Number.POSITIVE_INFINITY",
       "observableFailure": "the initial render maps the full readable set into the DOM, blowing the committed node budget and breaking pagination, focus, and status-region progress",
       "restorationHash": {
-        "frontend/src/pages/roster.ts": "f86fe402bccd5dfa4cb583e5fddb6e63c03dafd2e7209aa3b72de4bda84398d8"
+        "frontend/src/pages/roster.ts": "0e12dc7406b0645fe788e4a78ae31fb49fe1cfe14da8f1f04de16c8d1e8d2cef"
       },
       "severity": "P1",
       "status": "not-run",
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "6c824d2b2e16a3e939503931d10ab8a33f943d60e24a0ab8d2cdb5a46385f541"
+        "frontend/src/pages/character-detail.ts": "e70049bee72f9b0e744104f58ca4cb504bfdf852a90918d4fa3d0429e044017d"
       },
       "severity": "P1",
       "status": "not-run",
@@ -464,7 +464,7 @@
       "mutation": "Claim-operation coverage removed: all three dispatch arms become dead (elsif False), so claim ops fall through to the unknown-op failure",
       "observableFailure": "claim.set/customize/reset stop acquiring, customizing, and relinquishing claims; the conformance claim oracle cases fail",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "bf699ebe37af8571e8a3ffcfd970a75b6f729abe27c6e23ae2796d1de42553df"
+        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
       },
       "severity": "P0",
       "status": "not-run",

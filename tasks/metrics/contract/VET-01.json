@@ -20,8 +20,10 @@
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "DONE — order-valid VET-01 on candidate 9879bf76cea24d7b2983a1d960b8d09018a7c2a6, run strictly after REVIEW-01 DONE (Sol sequence session 01a06ba3, CLEAN-CANDIDATE: PASS) and ordered REVIEW-02 DONE (Luna/xhigh session 01a06bad, VERDICT: PASS) per spec §17.3/Batch H. All 11 literal commands EXIT 0 sequentially in clean disposable jj workspace @9879bf76 (2026-09-04T09:27:21Z-10:05:40Z, no env/args): 246 gnatprove; 471/471 conformance (58 files, incl. integrated RUN_CONFORMANCE); 214/214 tooling (14 files); typecheck; 28/28 mutation P0 19/19 P1 9/9 (rev 9879bf76cea2, 2026-09-04T09:40:59Z-10:03:26Z); 6/6 browser (10:03:32Z-10:04:50Z); benchmark all-scales-green (10:04:52Z-10:05:13Z); frontend build; 794/794 frontend (20 files); redocly 0 errors. 8/8 extras PASS (2 cycles 942/942; generators 5/5 x2; DG 21/21 + noop; fresh 6/6 matrix archived 9879bf76-vet-ordered; Track Z static; reconcile 17/17 + trace 231/231 + metrics 149/149; campaign 0/0/110 unchanged + data/games baseline hash; manifest 110/0/8 + PARITY-MANIFEST-001). Artifacts copied back validated (hashes match, originals at /tmp/vet9879-ordered/backup-orig/); workspace disposed. Raw logs /tmp/vet9879-ordered/.",
+  "status": "Corrective final gate set PASS 2026-10-06: fresh mutation28/28, typecheck, frozen benchmark4scales, four Ada540/540 cycles, tooling233/233, frontend806/806 and three validators. Broader release-review verdict remains with orchestrator; historical Wave10/pass2 failures preserved.",
   "evidence": [
+    "Wave 10 full results: agent-docs/test-audit/final-vetting.md, Wave 10 ORDER-VALID VET-01 section",
+    "Wave 10 durable raw evidence: agent-docs/test-audit/vet-evidence/bc63af5f-wave10/command-results.json plus all canonical/extra logs, mutation and performance artifacts, browser screenshots/numeric matrix, primary-data preservation manifests",
     "agent-docs/test-audit/final-vetting.md (VET-01 Final Gate Evidence section)",
     "agent-docs/test-audit/final-vetting.md (ORDER-VALID VET-01 section 2026-09-04: 11 literal EXIT 0 in clean workspace @9879bf76 after REVIEW-01 DONE 01a06ba3 + REVIEW-02 DONE 01a06bad; current authoritative record)",
     "/tmp/vet9879-ordered/ (11 canonical logs 01-11 + extra01/02a/02b/03/06 logs + ws-benchmark/ws-mutation + backup-orig/ with superseded artifacts)",
@@ -55,5 +57,67 @@
   "metricsMethodology": {
     "method": "historical evidence review (no git diff available)",
     "source": "per-card notes + iterationNotes + defectsCaughtBy"
+  }
+  ,"wave10Vetting": {
+    "candidate": "bc63af5f0cdb30391b7e86c31333d6041f825273",
+    "date": "2026-10-05",
+    "verdict": "FAIL",
+    "review01": "PASS",
+    "review02": "VERDICT: PASS, openai-codex/gpt-5.6-luna xhigh",
+    "commands": "agent-docs/test-audit/vet-evidence/bc63af5f-wave10/command-results.json",
+    "conformance": "540/540",
+    "tooling": "221/221",
+    "frontend": "794/794",
+    "mutation": "28/28, P0 19/19, P1 9/9",
+    "browser": "6/6, 77 screenshots, 45 matrix JSONs",
+    "proof": "246/246 after frontend-build prerequisite resolved",
+    "failures": [
+      "typecheck: six errors, full text in 05-typecheck.log",
+      "benchmark: scale10 roster.p50Ms 16.98>13ms, collections.p50Ms 13.76>9ms",
+      "two cycles: first 535/540, five timeout/socket failures; second 540/540; overall exit1"
+    ],
+    "preservation": "campaign-data 123 files and data/games manifests byte/hash-identical; managed root empty",
+    "tokens": null
+  }
+  ,"correction2026-10-05-resumed": {
+    "status": "Assigned corrective work complete: validator race fixed red-green, shared-state audit complete, full corrected-source campaign and all fresh final commands PASS; final recorded-evidence validators also PASS; broader release review remains orchestrator-owned",
+    "evidenceDirectory": "agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05",
+    "typecheck": {"exitCode": 0, "errors": 0},
+    "mutationAnchorCalibration": {"redFailed": 2, "greenPassed": 2, "total": 2},
+    "performanceGuards": {"initialPassed": 3, "membershipRed": "1 failed / 3 passed", "membershipGreen": "4/4", "scalarRed": "1 failed / 4 passed", "scalarGreen": "5/5", "semanticFrozenPassed": "45/45"},
+    "productionBuild": {"exitCode": 0, "seconds": 4.73, "compilerEvidence": "pitd_normalize.ali and pitd_stored.ali contain -O2, no -gnatp"},
+    "intermediateBenchmark": {"exitCode": 1, "seconds": 26.91, "remainingViolation": "scale10 collections.p50Ms 9.46 > 9ms", "heavyWindow": "exclusive; UI browser/Luna paused"},
+    "socketDiagnostics": {
+      "tracedTwoCycles": {"exitCode": 0, "seconds": 183.28, "cycles": ["540/540", "540/540"], "testTransportErrors": 0},
+      "observerEightCycleAttempt": "Interrupted by 300s tool deadline after three complete green cycles; not acceptance. Later ECONNREFUSED events reflect killed server, not accepted socket drops.",
+      "rootCause": "Original cycle-1 drops not reproduced; no speculative idle-limit/server change accepted."
+    },
+    "failedLogRetention": {"red": "3 failed / 1 passed", "green": "4/4", "greenExitCode": 0, "path": "agent-docs/test-audit/managed-run-logs/<runId>-server.log", "cleanup": "Owned temporary data/process cleanup retained; successful logs still removed"},
+    "unreproducedDecision": "Orchestrator directs unreproduced classification only if cold runs remain green; not a human decision and not a waiver of the fresh current-source VET two-cycle extra.",
+    "coldReproduction": {"revision": "bc63af5f", "workspaces": 3, "buildExitCodes": [0, 0, 0], "twoCycleExitCodes": [0, 0, 0], "cycles": ["540/540", "540/540", "540/540", "540/540", "540/540", "540/540"], "filesPerCycle": 64, "timeout": 0, "ownedWorkspacesRemoved": 3, "evidence": "cold-summary.json"},
+    "nextCommand": "None for assigned corrective gate set; orchestrator owns broader release review/handoff",
+    "finalMutation": {"exitCode": 0, "seconds": 1726.71, "killed": 28, "total": 28, "p0": "19/19", "p1": "9/9", "survivors": 0, "baselines": {"ada": 540, "tooling": 233, "frontend": 806}, "sourceRestoration": "PASS", "revision": "05a123245339", "timestamp": "2026-10-06T02:35:15.239Z", "raw": "mutation-raw-2026-10-06T02-35-15-235Z.txt"},
+    "finalMutationSourceStatus": "Fresh validator-corrected source campaign; four stale ops hashes refreshed; previous scalar/membership campaigns preserved in MUT-02 history",
+    "validatorConcurrencyFix": {"redExitCode": 1, "redReason": "valid clock.progress rejected unknown field", "greenExitCode": 0, "focusedPassed": 1, "deterministicChecks": 2, "hammerTasks": 64, "validHammerChecks": 64000, "genuineUnknownFieldStillRejected": true, "state": "Check_Fields local accumulator/boolean/nested callback; obsolete globals removed; no locks", "sourceHash": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4", "evidence": ["validator-concurrency-red.log", "validator-concurrency-green-observation.json", "validator-source-hash-review.json"]},
+    "resumeCleanup": {"exactOwnedOrphanTraceesTerminated": 64, "all64Absent": true, "untouchedDevelopmentServerPid": 56773, "evidence": "resume-owned-tracee-cleanup.json"},
+    "previousFinalAttemptPass2": {"verdict": "FAIL; stopped at second fresh Ada command", "typecheck": {"exitCode": 0, "seconds": 1.58}, "benchmark": {"exitCode": 0, "seconds": 26.30, "scales": 4}, "adaFirst": {"exitCode": 0, "seconds": 67.30, "passed": 540, "total": 540}, "adaSecond": {"exitCode": 1, "seconds": 82.16, "passed": 539, "total": 540, "failedTest": "CROSS-LOCK-008", "failure": "Test timed out in 15000ms"}, "retainedServerLog": "agent-docs/test-audit/managed-run-logs/2026-10-05T22-10-16-457Z-7535b1e3-server.log", "callbackEvidence": "All17 selected response outcomes logged before callback return; wire/client phase unresolved", "acceptanceRequirement": "After cause-specific fix rerun full final gate set from scratch, including two fresh consecutive Ada commands"},
+    "latestFinalAttempt": {
+      "verdict": "PASS specified corrective final gate set; broader release verdict not claimed",
+      "typecheck": {"exitCode": 0, "seconds": 1.53},
+      "benchmark": {"exitCode": 0, "seconds": 26.07, "scales": 4, "scale10P50Ms": {"roster": 9.87, "collections": 7.77, "mutation": 4.29}, "frozenBudgetsMs": {"roster": 13, "collections": 9, "mutation": 6.13}, "revision": "9fb9a13cf847"},
+      "adaFirst": {"exitCode": 0, "seconds": 67.84, "passed": 540, "total": 540, "files": 64},
+      "adaSecond": {"exitCode": 0, "seconds": 67.82, "passed": 540, "total": 540, "files": 64},
+      "adaTwoCycleExtra": {"exitCode": 0, "seconds": 141.84, "cycles": ["540/540", "540/540"], "filesPerCycle": 64},
+      "tooling": {"exitCode": 0, "seconds": 74.47, "passed": 233, "total": 233, "files": 18},
+      "frontend": {"exitCode": 0, "seconds": 15.05, "passed": 806, "total": 806, "files": 20},
+      "validators": {"exitCode": 0, "seconds": 2.32, "metrics": 163, "traceability": 231, "reconciliation": 17, "errors": 0, "warnings": 0},
+      "cross008Ms": [110, 84, 85, 101],
+      "sourceChangesDuringGates": false,
+      "evidence": ["pass3-final-gate-results.json", "pass3-final-observed-summary.json", "pass3-performance-results.json"],
+      "originalTransportCausality": "Not proved; prior failed evidence preserved"
+    },
+    "finalRecordedEvidenceValidation": {"exitCode": 0, "seconds": 2.40, "started": "2026-10-06T02:58:25.706118+00:00", "metrics": 163, "traceability": 231, "reconciliation": 17, "errors": 0, "warnings": 0, "log": "pass3-final-record-three-validators.log"},
+    "temporaryScriptCleanup": {"ownedScriptsArchivedAndRemoved": 13, "emptyOwnedCurlDirectoryRemoved": true, "archive": "retired-diagnostic-scripts/manifest.json", "developmentServer56773NotRestarted": true},
+    "tokens": null
   }
 }

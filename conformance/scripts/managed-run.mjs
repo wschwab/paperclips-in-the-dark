@@ -12,8 +12,8 @@
 // cleanup path (normal failure, fatal error, SIGINT/SIGTERM/SIGHUP) stops
 // them even when startup never completes. Vitest runs detached in its own
 // process group so every cleanup path can stop the whole vitest tree
-// (workers included) alongside the server. Evidence (run manifest, server
-// log, data dir) is preserved on failure and removed on success.
+// (workers included) alongside the server. Failed server logs are copied to
+// durable audit evidence; temporary manifests and data are always removed.
 //
 // Usage:
 //   npm run test:ada -- --run                      full managed suite
@@ -53,10 +53,10 @@
 //   --help              this text
 //
 // Exit code: the vitest exit code on test failure, 1 on launcher failure,
-// 0 when every cycle passed. On failure the run dir is preserved under
-// <tmp>/pitd-managed/<run-id>/ and its path is printed to stderr; on success
-// it is removed. All machine-readable facts (port, pid, paths) are printed
-// to stdout as `[managed-run] key=value` lines.
+// 0 when every cycle passed. Failed server logs are retained under
+// agent-docs/test-audit/managed-run-logs/ and their exact paths printed to
+// stderr. Temporary run directories are removed on success and failure.
+// Machine-readable facts use `[managed-run] key=value` lines.
 
 import { execFileSync, spawn } from "node:child_process";
 import { copyFile, cp, mkdir, open, rm, stat, writeFile } from "node:fs/promises";
@@ -598,6 +598,31 @@ function runVitest(vitestArgs, baseUrl) {
   return { child, promise };
 }
 
+// Stop owned children before calling this so their final diagnostics are
+// flushed. Retain only the log, outside managedRoot; never retain test data.
+async function cleanupRunEvidence(runDir, failed) {
+  try {
+    if (failed) {
+      const logFile = join(runDir, "server.log");
+      const info = await stat(logFile).catch((error) => {
+        if (error.code === "ENOENT") return null;
+        throw error;
+      });
+      if (info !== null) {
+        const evidenceDir = join(repoRoot, "agent-docs", "test-audit", "managed-run-logs");
+        await mkdir(evidenceDir, { recursive: true });
+        const retainedLog = join(evidenceDir, `${basename(runDir)}-server.log`);
+        await copyFile(logFile, retainedLog);
+        console.error(`[managed-run] retainedLog=${retainedLog}`);
+      }
+    }
+  } finally {
+    // Preservation errors must surface, but must not leak owned campaign data.
+    await rm(runDir, { recursive: true, force: true });
+    if (activeRunDirRef.current === runDir) activeRunDirRef.current = null;
+  }
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const defaults = defaultPaths();
   const opts = parseArgs(argv);
@@ -695,12 +720,11 @@ export async function main(argv = process.argv.slice(2)) {
       const label = failure.kind === "test" ? "TEST FAILED" : "SETUP FAILED";
       console.error(`[managed-run] ${label}: ${failure.reason}`);
       console.error(
-        `[managed-run] failure evidence removed: runDir=${runDir} dataDir=${dataDir} log=${logFile} port=${lastPort ?? "none"}`,
+        `[managed-run] failure data removed: runDir=${runDir} dataDir=${dataDir} port=${lastPort ?? "none"}`,
       );
       process.exitCode = failure.exitCode;
     }
-    await rm(runDir, { recursive: true, force: true });
-    if (activeRunDirRef.current === runDir) activeRunDirRef.current = null;
+    await cleanupRunEvidence(runDir, failure !== null);
     if (failure === null) console.error(`[managed-run] success; evidence removed (${runDir})`);
   }
 }
@@ -736,8 +760,11 @@ if (isMain) {
       .catch(() => {})
       .then(async () => {
         if (typeof activeRunDirRef.current === "string") {
-          await rm(activeRunDirRef.current, { recursive: true, force: true }).catch(() => {});
+          await cleanupRunEvidence(activeRunDirRef.current, true);
         }
+      })
+      .catch((error) => {
+        console.error(`[managed-run] evidence retention failed: ${error.message}`);
       })
       .finally(() => process.exit(1));
   };
@@ -745,7 +772,7 @@ if (isMain) {
   process.on("unhandledRejection", fatal);
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
     process.on(signal, () => {
-      console.error(`[managed-run] received ${signal}; stopping vitest, server, and build child and removing owned evidence`);
+      console.error(`[managed-run] received ${signal}; stopping owned children, retaining server log, and removing test data`);
       void mainCleanupAndExit(signal);
     });
   }
@@ -755,17 +782,20 @@ if (isMain) {
   });
 }
 
-// Signal-path shutdown: stop the exact spawned vitest tree first (it is the
-// active consumer), then the exact spawned server and build child, remove the
-// exact active run directory, then exit. Server and build children are
-// registered at spawn, so this also
-// works while startup (readiness poll or alr build) is still in flight.
+// Signal-path shutdown stops the exact spawned children before retaining the
+// log and removing temporary data. Registration happens before readiness or
+// build completion, so startup interruptions use the same cleanup policy.
 async function mainCleanupAndExit(signal) {
   await stopVitest(activeVitestRef.current);
   await stopServer(activeServerRef.current);
   await stopBuild(activeBuildRef.current);
-  if (typeof activeRunDirRef.current === "string") {
-    await rm(activeRunDirRef.current, { recursive: true, force: true }).catch(() => {});
+  try {
+    if (typeof activeRunDirRef.current === "string") {
+      await cleanupRunEvidence(activeRunDirRef.current, true);
+    }
+  } catch (error) {
+    console.error(`[managed-run] evidence retention failed: ${error.message}`);
+    process.exit(1);
   }
   const code = 128 + (signal === "SIGHUP" ? 1 : signal === "SIGINT" ? 2 : 15);
   process.exit(code);
