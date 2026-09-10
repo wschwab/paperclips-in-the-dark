@@ -20,8 +20,11 @@
   ],
   "implementationLoc": 0,
   "scaffoldingLoc": 0,
-  "status": "DONE — Luna ORDERED REVIEW-02 gate (GPT 5.6 Luna via openai-codex, xhigh, session 01a06bad-9fea-7be0-9d47-a5b59d7b8b7d, candidate 9879bf76cea24d7b2983a1d960b8d09018a7c2a6 head-verified): fresh run /tmp/pitd-browser/2026-09-04T09-15-43-072Z-39a98e67/ exit 0, passed=true, 6/6 journeys, 0 problems; matrix 45/45 + theme01-fresh 25/25 PASS; VERDICT: PASS. REVIEW-01 DONE (calibration 01a068e6 + sequence clean 01a06ba3) precedes this gate per spec order. Next: fresh VET-01. Session 01a06b5b artifacts retained as pre-gate diagnostic only.",
+  "status": "DONE — Wave 10 bc63af5f0cdb30391b7e86c31333d6041f825273, 2026-10-05, openai-codex/gpt-5.6-luna xhigh, VERDICT: PASS; after accepted REVIEW-01, fresh VET-01 required. Earlier fields/evidence retain historical 9879 cycle.",
   "evidence": [
+    "Wave 10 raw output: agent-docs/test-audit/browser-evidence/bc63af5f-luna-wave10/review02-luna-raw-output.txt; VERDICT: PASS, exit 0, 494.60s, no FAIL findings",
+    "Wave 10 fresh archive: agent-docs/test-audit/browser-evidence/bc63af5f-luna-wave10/luna-fresh/; browser 2026-10-05T12-04-18-542Z-b9538262: 6/6 journeys, 83/83 checkpoints, 77 screenshots, 45/45 containment/focusVisible all three viewports and themes, zero unexpected errors, 13 declared negative HTTP fixtures",
+    "Wave 10 THEME-01 2026-10-05T12-06-36-369Z-aef073d8: 25/25 checkpoints, 24 ratios 8.13:1-12.71:1, 12/12 combinations; reference-admission 11/11",
     "agent-docs/test-audit/browser-evidence/9879bf76-luna-ordered/review02-luna-ordered-verdict.md (Luna ORDERED gate: candidate 9879bf76, session 01a06bad, xhigh, VERDICT: PASS)",
     "Luna ORDERED fresh run: /tmp/pitd-browser/2026-09-04T09-15-43-072Z-39a98e67/ (candidate 9879bf76; journey-results.json 6/6 PASS checkpoints 17/8/28/6/10/14, console-network-errors.json 0 console/0 page/0 unexpected + 13 deliberate fixtures 10x409/1x422/2x500, matrix-numeric/45 + screenshots/45, theme01-fresh/ 25/25 PASS; durable archive agent-docs/test-audit/browser-evidence/9879bf76-luna-ordered/ with provenance.json head-verified, session.json, browser-gate-output.log, top-level-run.sha256, theme01-fresh.sha256, review02-luna-ordered-prompt.md)",
     "Ordered output: agent-docs/test-audit/browser-evidence/9879bf76-luna-ordered/review02-luna-ordered-output.md (VERDICT: PASS)",
@@ -39,5 +42,18 @@
   "metricsMethodology": {
     "method": "duration text extracted from notes field (Luna review invocation time)",
     "source": "\"final gate session 01a06b5b on 9879bf76 (prior: 430s xhigh first run on 0fa9d070; corrected-candidate rerun session 01a057a3 on 9c837bde, superseded)\""
+  }
+  ,"wave10Review": {
+    "candidate": "bc63af5f0cdb30391b7e86c31333d6041f825273",
+    "date": "2026-10-05",
+    "reviewerRoute": "openai-codex/gpt-5.6-luna",
+    "modelReasoningEffort": "xhigh",
+    "verdict": "VERDICT: PASS",
+    "exitCode": 0,
+    "wallClockSeconds": 494.60,
+    "tokens": null,
+    "rawOutput": "agent-docs/test-audit/browser-evidence/bc63af5f-luna-wave10/review02-luna-raw-output.txt",
+    "findings": [],
+    "nextGate": "Fresh VET-01"
   }
 }

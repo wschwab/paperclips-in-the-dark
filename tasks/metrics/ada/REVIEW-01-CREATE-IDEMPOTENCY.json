@@ -24,6 +24,21 @@
     "Independent review finding, then failing-first black-box conformance regression"
   ],
   "documentation": "docs/pages/contract/wave0/clock-taxonomy.mdx",
+  "typingCorrection": {
+    "date": "2026-10-05",
+    "scope": "Six reported typecheck errors in four new nonfrozen REVIEW-01 boundary test files",
+    "red": "User-provided VET failure evidence: unknown HTTP bodies, nullable DefaultActionPoints, and Promise.withResolvers unavailable in the existing library target; not rerun to confirm",
+    "changes": "Reuse entity and summary-list decoders; handle absent playbook action defaults as empty; use inline typed Promise executors in both synchronized curl probes",
+    "green": {
+      "cwd": "conformance",
+      "command": "npm run typecheck",
+      "compilerCommand": "tsc --noEmit",
+      "exitCode": 0,
+      "seconds": 1.75
+    },
+    "documentation": "docs/pages/contract/ops-audit.mdx",
+    "limits": "Compiler acceptance only; no backend, contract, benchmarks, mutation catalog, library-target, or frozen-test changes; no runtime or full-gate rerun"
+  },
   "evidence": {
     "audits": {
       "cwd": ".",

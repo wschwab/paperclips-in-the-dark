@@ -12,11 +12,14 @@ acceptance:
 # REVIEW-01 — calibrated independent review
 
 **Wave 9.** Finding AR-006. Depends on all implementation and documentation cards (work-spec §17): isolated disposable workspace, one realistic planted defect from the P0/P1 mutant catalog, reviewer given spec/source/commands/numeric browser evidence/screenshots but not the defect location.
-**Status:** BLOCKED — current cycle 2026-09-09 @ `f650d62c` (blind M02 calibration PASS; clean retry FAIL — B1 P1 flake FIXED 2026-09-09 (probe FAIL-to-PASS, full 3/3 794/794), B2 wording closed by Vocs rewrite, B3 residue closed 2026-09-09). Historical: 2d9c39b6 quota-BLOCKED cycle (superseded by post-reset f650 retry); 9879bf76 DONE (calibration PASS + clean PASS, per metric cycles).
+**Status:** DONE — Wave 10 candidate `bc63af5f0cdb30391b7e86c31333d6041f825273`: calibration PASS 2026-10-04; clean-candidate PASS 2026-10-05 (openai-codex/gpt-6.1-sol:medium). Earlier cycles below are historical, not current release evidence.
 **Metrics:** `tasks/metrics/contract/REVIEW-01.json`
 
 ## Log
 
+- 2026-10-05 Wave 10 (human-supplied review evidence): reviewer changed from Astra to explicit `openai-codex/gpt-6.1-sol`, thinking medium, per human instruction; Luna's required route/effort remains unchanged. Calibration PASS 2026-10-04: planted crew `xp.add` negative-branch mutant at `pitd_ops.adb:1127` found exactly (`NUM-SIGNED-001`); answer key `/tmp/review01-0627c594-plant-answer-key.txt`.
+- Correction chain preserved: `801798b8 → 0627c594 → 96654312 → e019e0ff → ba03c32e → bc63af5f` (cards `tasks/REVIEW-01-*.md`). Clean reviews: `96654312` FAIL (batch lost updates, batch idempotency); `e019e0ff` FAIL (crew-delete race, undo dangling reference); `ba03c32e` FAIL (import reference bypass); `bc63af5f0cdb30391b7e86c31333d6041f825273` PASS 2026-10-05.
+- Accepted clean evidence: Ada 540/540; tooling 221/221 isolated and concurrent with mutation; frontend 794/794; mutation 28/28; guarded-write audit of all live write callsites; import/undo/delete-race/64-burst re-probes PASS. Accepted open contract questions: `docs/pages/contract/repair-reference-policy.mdx`. These results are recorded from the human handoff, not rerun by this recorder. Required next gate: fresh REVIEW-02 on the exact candidate, then VET-01; release PASS is not yet claimed.
 - 9879 cycle calibration (session 01a068e6): planted P0 FV-023 transport-classification regression located with mechanism + failing test — CALIBRATION: PASS.
 - Quota abort (session 01a068f0) → clean retry FAIL (3 blockers, corrected: traceability AR-006 refresh, canonical VET reruns, provenance fix) → final FAIL (2 P0 ordering blockers; downstream reset to BLOCKED/PENDING) → sequence clean review PASS (Sol/xhigh session 01a06ba3, CLEAN-CANDIDATE: PASS, `/tmp/review01-9879-clean-sequence-verdict-full.md`), order intact (REVIEW-02/VET-01 stay BLOCKED/PENDING).
 - History preserved: 10bb87fb cycle blocked on 5 corrective cards. Next required after the sequence PASS: fresh REVIEW-02, then fresh VET-01; release NOT PASS until then. Recorded in `agent-docs/review01-calibrated-review.md`.

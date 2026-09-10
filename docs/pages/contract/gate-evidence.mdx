@@ -8,8 +8,118 @@ description: Committed record of the independent Luna review gates (Waves 3, 6, 
 Dated record of the independent review gates required by the ordered work
 specification and `AGENTS.md` (GPT 5.6 Luna via `openai-codex`, reasoning
 effort `xhigh`, read-only sandbox) plus the Wave 8 integration results.
-Each gate ended in exactly `VERDICT: PASS` (anything else fails the gate and
-is fixed before the next round).
+Each gate's dated entry records its explicit outcome; historical failures and
+superseded passes are retained rather than treated as current release evidence.
+
+## 2026-10-05 — Wave 10 REVIEW-01 and REVIEW-02 accepted
+
+Current release candidate: `bc63af5f0cdb30391b7e86c31333d6041f825273`.
+Per human instruction, REVIEW-01 changed from Astra to
+`openai-codex/gpt-6.1-sol` at **medium** effort. Calibration passed 2026-10-04:
+the reviewer found the planted crew `xp.add` negative branch at
+`pitd_ops.adb:1127` exactly (`NUM-SIGNED-001`), with answer key
+`/tmp/review01-0627c594-plant-answer-key.txt`.
+
+The correction chain is `801798b8 → 0627c594 → 96654312 → e019e0ff →
+ba03c32e → bc63af5f`. Clean reviews failed at `96654312` (batch lost updates,
+batch idempotency), `e019e0ff` (crew-delete race, undo dangling reference),
+and `ba03c32e` (import reference bypass), then passed at `bc63af5f` on
+2026-10-05. Human-supplied accepted evidence: Ada **540/540**, tooling
+**221/221** isolated and concurrent with mutation, frontend **794/794**,
+mutation **28/28**, guarded-write audit of all live write callsites, and
+passing import/undo/delete-race/64-burst re-probes. Accepted open contract
+questions: [repair/reference policy](/contract/repair-reference-policy).
+
+`tasks/REVIEW-01.md` and its metrics retain the earlier cycles. The older
+“current” labels below describe their dated historical snapshots, not this
+candidate. Ordered REVIEW-02 has now passed through
+**openai-codex/gpt-5.6-luna at xhigh** in a blind disposable jj workspace.
+Raw output: `agent-docs/test-audit/browser-evidence/bc63af5f-luna-wave10/review02-luna-raw-output.txt`,
+ending verbatim `VERDICT: PASS` (exit 0, 494.60 seconds). Luna inspected
+source/numeric evidence/screenshots and independently exercised fresh Chromium
+run `2026-10-05T12-04-18-542Z-b9538262`: **6/6 journeys**, **83/83 checkpoints**,
+77 screenshots, **45/45 containment and keyboard-focus matrix checks** at
+1440×1000 / 768×1024 / 390×844 in light/dark/high-contrast. Zero unexpected
+console/page/request/decode errors; 13 declared negative HTTP fixtures.
+The narrow claims grid scrolls internally without page overflow.
+Fresh THEME-01 `2026-10-05T12-06-36-369Z-aef073d8`: **25/25 checkpoints**,
+24 ratios **8.13:1–12.71:1**, 12/12 combinations; focused reference-admission
+**11/11**. Archive: `bc63af5f-luna-wave10/luna-fresh/` with provenance and
+165-file checksum manifest (`2c4b75982a6a882843bb46b7ce4c340598b1c9862462b77ead24010587550fa1`).
+No REVIEW-02 FAIL findings. Fresh VET-01 below is FAIL; no release PASS claimed.
+
+### Wave 10 VET-01 — FAIL (2026-10-05)
+
+Fresh ordered VET on the same `bc63af5f` candidate, in disposable jj workspace,
+has durable raw evidence under `agent-docs/test-audit/vet-evidence/bc63af5f-wave10/`.
+The full additive command table/failure text is in `final-vetting.md`.
+Ada **540/540**, tooling **221/221**, mutation **28/28** (P0 19/19 + P1 9/9),
+Chromium **6/6** (77 screenshots / 45 matrix JSONs), frontend **794/794**,
+frontend build and OpenAPI lint passed. CI initially lacked frontend/dist
+(exit22); literal fresh reruns after the build prerequisite passed, including
+**246/246** proof and integrated **540/540**.
+
+Release blockers: conformance typecheck **six errors**; frozen scale-10
+benchmark roster p50 **16.98ms > 13ms** and collections p50 **13.76ms > 9ms**;
+two-cycle extra first cycle **535/540** (AWS-BURST-001 timeout,
+BATCH-CONCURRENCY-002 / CROSS-LOCK-008 empty replies, PERSISTENCE-CONCURRENCY-001 /
+PERSISTENCE-IDEMPOTENCY-008 socket errors), second **540/540**, overall exit1.
+Cause remains unproven; no source/test/budget changes or green-seeking reruns.
+Generators twice **5/5**, guard **21/21**, generated-doc workflow **13/13 + 3**
+passed; primary campaign-data/games hashes unchanged and managed root empty.
+Track Z is static expected-red, non-blocking. Earlier review PASS outcomes
+do not override this **VET-01 FAIL**.
+
+### Read-performance mutation retargeting (2026-10-05)
+
+The allocation cutover separates unknown-removal keys from dictionary keys and
+normalizes the already-parsed stored entity. M04 now truncates the live
+`Collect_Removal_Keys` collector; truncating the earlier dictionary collector
+would no longer exercise its intended unknown-property disclosure failure.
+M06 inserts its forbidden persistence write immediately after the single parse,
+before canonicalization of that parsed entity. Mutant intent, severity, expected
+killer IDs, and frozen conformance expectations are unchanged.
+
+New tooling regressions `MUT-READ-001/002` failed first (wrong M04 target and
+missing M06 exact anchor), then passed **2/2** after retargeting. Raw red/green
+logs are under `agent-docs/test-audit/vet-evidence/bc63af5f-resumed-2026-10-05/`.
+These targeted checks do not constitute a full campaign or release-gate pass.
+Final restoration hashes, including frontend targets, are refreshed only after
+both concurrent source workstreams settle; the full campaign runs in an
+exclusive no-edits window.
+
+### Validator concurrency correction (2026-10-06)
+
+The second fresh scalar-corrected Ada command failed539/540 on
+CROSS-LOCK-008's15-second deadline, so its earlier mutation28/28 and benchmark
+greens do not close the release gate. Subsequent native full-file busy-roster
+captures rejected valid progress requests with **400 VALIDATION / unknown field**.
+The deterministic additive Ada regression forces two disjoint valid schemas
+to overlap at the JSON-map boundary; it first rejected valid `clock.progress`
+with the same reason. Making `Check_Fields` state/callback local then passed
+the deterministic pair,64-task/64,000 valid checks, and real unknown-field
+rejection, without locks, retries, existing timeout or frozen-suite changes.
+Details are in [the socket/validator investigation](/ada/socket-investigation).
+
+All18 catalog targets were checksummed after the source freeze. Only
+M11/M12/M16/M27's operation-package hashes required refresh to
+`5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4`.
+The fresh corrected-source campaign passed **28/28**, **0 survivors**,
+**P0 19/19 / P1 9/9**, with byte-exact restoration and green
+Ada540/tooling233/frontend806 baselines. The completed read-only audit found
+no additional unguarded request-path globals; direct dependency review confirms
+object-local key maps and atomic scalar ownership, not a blanket guarantee
+for mutable containers.
+
+The complete fresh corrective sequence then passed: typecheck, all4 frozen
+benchmark scales, two separate consecutive Ada540/540 runs, a two-cycle extra
+at540/540 twice, tooling233/233, frontend806/806 and validators163/231/17
+with zero errors/warnings. Scale10 p50 was roster9.87ms, collections7.77ms,
+mutation4.29ms against unchanged13/9/6.13ms budgets. Evidence:
+`pass3-final-gate-results.json` and `pass3-final-observed-summary.json` in the
+resumed VET root. Historical failures remain preserved; precise original
+transport/timeout causality is not proved. These are corrected-candidate
+gate results, not a substitute for the orchestrator's broader release verdict.
 
 ## 2026-09-16 — mutation catalog checkout correction (MUT-01 / MUT-02)
 
