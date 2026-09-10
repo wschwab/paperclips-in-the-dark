@@ -1,0 +1,81 @@
+---
+title: Playtest 2026-10 — Scoundrel sheet feedback
+---
+
+# Playtest 2026-10: Scoundrel sheet feedback
+
+Human playtest feedback recorded verbatim-faithfully as a backlog. Every item
+below is **status: queued** — nothing here is implemented, and no item has been
+triaged into a task card yet.
+
+Feedback from the Scoundrel sheet. Screenshot supplied with the feedback:
+[bits special-ability picker](/playtest/2026-10-bits-special-ability-picker.png).
+
+![Bits special-ability picker showing each option's name and description inside the dropdown](/playtest/2026-10-bits-special-ability-picker.png)
+
+## Backlog
+
+1. **Vice is hard to find** — *status: queued*. Its edit button renders on a
+   separate line and looks like it belongs to something else.
+
+2. **Too many clocks on a newly created scoundrel** — *status: queued*. Many
+   clocks exist that shouldn't. Suspected default clocks seeded on every new
+   character.
+
+3. **GAME MODE** — *status: queued*. Highest priority, wide-reaching, includes
+   API/backend. This is an explicit exception to frontend-only work: it is not a
+   frontend task.
+   - A prominent, always-visible indicator of whether the game is in
+     **Free Play**, **Score**, or **Downtime**, with toggling between them.
+   - Mode gates available actions (e.g. indulge vice only in downtime).
+   - Tracks the downtime actions taken.
+   - Ending a Score runs a process (XP grants, complications, etc.).
+   - The existing "end downtime" / "end score" buttons move into it.
+   - Layout: sticky/anchored so it stays visible while scrolling; use the side
+     gutters on wide screens; becomes a footer when there is no side space; must
+     stay responsive.
+   - Purpose: PitD also helps an AI agent play BitD with a user, so the API must
+     expose the current mode and enforce availability.
+   - Proposed model (orchestrator, pending human sign-off): three modes (Free
+     Play, Score, Downtime), with ordered sub-phases. Score: planning →
+     engagement → action → end. Downtime: payoff → heat → entanglements →
+     activities. Incarceration is a per-scoundrel status, not a mode. Requires
+     a contract-change card.
+
+4. **Missing: incarceration**, and the start-of-downtime complications (payoff /
+   heat / entanglements) — *status: queued*.
+
+5. **Visible flicker/rerender when deleting each clock** — *status: queued*.
+
+6. **Contacts** — *status: queued*. Preload every playbook's contacts by default
+   as "contact". Closeness should have more levels (add **confidante** and
+   **enemy**, bolder colours) and look clearly clickable. Keep the remove-contact
+   option, and keep add-contact as it is so custom contacts can still be added.
+
+7. **Layout** — *status: queued*. The rule under the header cuts through the
+   right column; the left column is too close as well.
+
+8. **Option descriptions, like Blades in the Sheets** — *status: queued*. The
+   playbook special-ability dropdown shows each option's name + description
+   inside the dropdown (see the screenshot above), with a hint that the first is
+   a good default. Apply the same to **Heritage**, **Background**, and **Vice**.
+   - The human's own reminder note asked for this screenshot; it was supplied
+     and is embedded on this page.
+   - Reference implementation (read-only, do not edit):
+     `blades-in-the-sheets/UI/Components/NewCharacter/NewCharacterSpecialAbilityCard.razor`
+     — line 13 carries the "the first is considered a good default choice" hint
+     and line 14 builds the option text as
+     `@(i => $"{DisplayText(i)} - {i.Description}")`.
+   - The same `"{Name} - {Description}"` option-text idiom appears in the
+     sibling option cards of the reference implementation:
+     `NewCharacterHeritageCard.razor`
+     (`OptionText="@(i => $"{i.Name} - {i.Description}")"`),
+     `NewCharacterBackgroundCard.razor`
+     (`OptionText="@(i => $"{i.Name} - {i.Example}")"`),
+     and `NewCharacterViceCard.razor`
+     (`OptionText="@(i => $"{i.Name} - {i.Description}")"`).
+
+9. **Permanent Actions looks great; move it to the bottom of the sheet** —
+   *status: queued*.
+
+## Crew page feedback: pending
