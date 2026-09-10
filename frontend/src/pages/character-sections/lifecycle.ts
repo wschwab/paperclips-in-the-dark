@@ -25,7 +25,7 @@ return   (() => {
       // RETIRED copy for the gameplay gate (stress already disabled above).
       retired
         ? el("p", { className: "lbl", style: "margin: 0; width: 100%;" },
-            "Retired — gameplay actions are disabled; Undo can restore the character.")
+            "Retired — gameplay actions are disabled; Undo can restore the scoundrel.")
         : null,
       pendingTrauma && !retired
         ? el("p", { className: "lbl", style: "margin: 0; width: 100%;" },

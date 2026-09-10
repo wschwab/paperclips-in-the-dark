@@ -79,6 +79,71 @@ describe("roster page (F2aa)", () => {
     vi.clearAllMocks();
   });
 
+  it.each([
+    ["empty", { characters: [], crews: [] }],
+    ["populated", rosterDTO],
+  ])("offers visible, styled creation actions on a %s roster (UI-CREATE-01)", async (_state, roster) => {
+    global.fetch = vi.fn().mockResolvedValue(ok(roster));
+    loadStylesheets();
+    document.body.append(root);
+    try {
+      mountRosterPage(root);
+      await vi.waitFor(() => expect(root.querySelector(".roster")).not.toBeNull());
+      const scoundrelPlate = root.querySelector(".roster-characters");
+      expect(scoundrelPlate?.querySelector("h2")?.textContent).toBe(`Scoundrels (${roster.characters.length})`);
+      expect(scoundrelPlate?.querySelector("summary")?.textContent).toBe("Import scoundrels…");
+      expect(scoundrelPlate?.querySelector("select")?.getAttribute("aria-label")).toBe("Choose an existing scoundrel entry to replace");
+      expect(scoundrelPlate?.querySelector(".roster-import-hint")?.textContent).toContain("Create a new scoundrel…");
+      expect(root.querySelector(".roster-status")?.textContent).toContain(`Showing ${roster.characters.length} of ${roster.characters.length} scoundrels.`);
+      if (roster.characters.length === 0) {
+        expect(scoundrelPlate?.querySelector(".empty")?.textContent).toBe("No scoundrels yet.");
+      }
+      const search = root.querySelector<HTMLInputElement>(".roster-search")!;
+      search.value = "no-such-name";
+      search.dispatchEvent(new Event("input"));
+      expect(scoundrelPlate?.querySelector(".roster-note")?.textContent).toBe("No scoundrels match “no-such-name”.");
+      expect(root.querySelector(".roster-status")?.textContent).toContain(`0 of ${roster.characters.length} scoundrels match.`);
+      for (const [plate, href, label] of [
+        [".roster-characters", "/character/create", "Create scoundrel"],
+        [".roster-crews", "/crew/create", "Create crew"],
+      ]) {
+        const action = root.querySelector<HTMLAnchorElement>(`${plate} .roster-create`);
+        expect(action?.textContent).toBe(label);
+        expect(action?.getAttribute("href")).toBe(href);
+        expect(action?.classList.contains("btn-primary")).toBe(true);
+        expect(action?.closest("details")).toBeNull();
+      }
+    } finally {
+      root.remove();
+    }
+  });
+
+  it("does not render hidden pager controls as blank buttons (UI-CREATE-01)", async () => {
+    global.fetch = vi.fn().mockResolvedValue(ok({ characters: [], crews: [] }));
+    loadStylesheets();
+    document.body.append(root);
+    try {
+      mountRosterPage(root);
+      await vi.waitFor(() => expect(root.querySelector(".roster")).not.toBeNull());
+      for (const pager of root.querySelectorAll<HTMLElement>(".roster-more")) {
+        expect(pager.hidden).toBe(true);
+        expect(getComputedStyle(pager).display).toBe("none");
+      }
+    } finally {
+      root.remove();
+    }
+  });
+
+  it("labels the scoundrel pager without changing entity identifiers", async () => {
+    global.fetch = vi.fn().mockResolvedValue(ok({
+      characters: Array.from({ length: 101 }, () => ({ ...rosterDTO.characters[0] })),
+      crews: [],
+    }));
+    mountRosterPage(root);
+    await vi.waitFor(() => expect(root.querySelector(".roster")).not.toBeNull());
+    expect(root.querySelector(".roster-characters .roster-more")?.textContent).toMatch(/^Show \d+ more scoundrels$/);
+  });
+
   it("renders characters and crews after initial load", async () => {
     global.fetch = vi.fn().mockResolvedValue(ok(rosterDTO));
 
@@ -215,7 +280,7 @@ describe("roster page (F2aa)", () => {
 
     mountRosterPage(root);
     await vi.waitFor(() => expect(root.querySelector(".degraded-row")).not.toBeNull());
-    expect(root.querySelector(".degraded-row")?.textContent).toContain("Unreadable character");
+    expect(root.querySelector(".degraded-row")?.textContent).toContain("Unreadable scoundrel");
 
     // Delete-only: no Repair affordance on an unrepairable row.
     const controlButtons = Array.from(root.querySelectorAll(".degraded-controls button"));
@@ -435,7 +500,7 @@ describe("roster page (F2aa)", () => {
     });
 
     // Header count still shows the total, not the filtered count
-    expect(root.querySelector("h2")?.textContent).toContain("Characters (3)");
+    expect(root.querySelector("h2")?.textContent).toContain("Scoundrels (3)");
   });
   it("narrowly scopes aria-live to a status region, not the whole root", async () => {
     global.fetch = vi.fn().mockResolvedValue(ok(rosterDTO));
@@ -526,7 +591,7 @@ describe("roster page (F2aa)", () => {
 
     // Counts describe the full result set, not the rendered window.
     expect(root.querySelector(".roster-characters h2")?.textContent).toContain(
-      "Characters (1000)",
+      "Scoundrels (1000)",
     );
     expect(root.querySelector(".roster-crews h2")?.textContent).toContain("Crews (30)");
 
@@ -549,7 +614,7 @@ describe("roster page (F2aa)", () => {
 
       const statusRegion = () => root.querySelector<HTMLElement>(".roster-status");
       expect(statusRegion()?.getAttribute("aria-live")).toBe("polite");
-      expect(statusRegion()?.textContent).toContain("Showing 100 of 250 characters");
+      expect(statusRegion()?.textContent).toContain("Showing 100 of 250 scoundrels");
 
       const moreBtn = root.querySelector<HTMLButtonElement>(
         ".roster-characters button.roster-more",
@@ -565,7 +630,7 @@ describe("roster page (F2aa)", () => {
       expect(document.activeElement).toBe(firstNewRow);
       // …and the compact status region announces the new window, not the
       // roster mutation itself.
-      expect(statusRegion()?.textContent).toContain("Showing 200 of 250 characters");
+      expect(statusRegion()?.textContent).toContain("Showing 200 of 250 scoundrels");
 
       // Exhausting the result set retires the control.
       const exhausted = root.querySelector<HTMLButtonElement>(
@@ -604,7 +669,7 @@ describe("roster page (F2aa)", () => {
       expect(visible[0].textContent).toContain("Zed Quillfinder");
     });
     expect(root.querySelector(".roster-status")?.textContent).toContain(
-      "1 of 300 characters match",
+      "1 of 300 scoundrels match",
     );
     // The match fits one page: no pager while filtered.
     const pager = root.querySelector<HTMLButtonElement>(
@@ -655,7 +720,7 @@ describe("roster page (F2aa)", () => {
     expect(Array.from(charList.children).every((c) => c.tagName === "LI")).toBe(true);
     const note = root.querySelector<HTMLElement>(".roster-characters .roster-note")!;
     expect(note.hidden).toBe(false);
-    expect(note.textContent).toContain("No characters match");
+    expect(note.textContent).toContain("No scoundrels match");
 
     // Clearing the query hides the note and restores the paged view.
     search.value = "";
@@ -682,7 +747,7 @@ describe("roster page (F2aa)", () => {
     search.dispatchEvent(new Event("input", { bubbles: true }));
     await vi.waitFor(() => {
       expect(root.querySelector(".roster-status")?.textContent).toContain(
-        "250 of 250 characters match",
+        "250 of 250 scoundrels match",
       );
     });
 
@@ -840,7 +905,7 @@ describe("RECOVERY-01 degraded-row classification and roster-level import", () =
     );
     expect(li).not.toBeNull();
     expect(li?.getAttribute("data-recovery-class")).toBe("repairable");
-    expect(li?.textContent).toContain("Repairable character");
+    expect(li?.textContent).toContain("Repairable scoundrel");
     // Explanation names the recovery path without exposing raw error JSON.
     expect(li?.textContent).toContain("normalized");
     const buttons = Array.from(li!.querySelectorAll("button"));
@@ -861,7 +926,7 @@ describe("RECOVERY-01 degraded-row classification and roster-level import", () =
     );
     expect(li).not.toBeNull();
     expect(li?.getAttribute("data-recovery-class")).toBe("unreadable");
-    expect(li?.textContent).toContain("Unreadable character");
+    expect(li?.textContent).toContain("Unreadable scoundrel");
     expect(li?.textContent).toContain("re-import");
     const buttons = Array.from(li!.querySelectorAll("button"));
     expect(buttons.some((b) => b.textContent === "Repair")).toBe(false);
@@ -915,7 +980,7 @@ describe("RECOVERY-01 degraded-row classification and roster-level import", () =
     );
     expect(charPanel).not.toBeNull();
     expect(crewPanel).not.toBeNull();
-    expect(charPanel?.textContent).toContain("Import characters");
+    expect(charPanel?.textContent).toContain("Import scoundrels");
     expect(crewPanel?.textContent).toContain("Import crews");
     // Create leg: flows out to the existing creation routes.
     expect(charPanel?.querySelector('a[href="/character/create"]')).not.toBeNull();
@@ -1146,6 +1211,37 @@ describe("roster row text on the torn-foot band (THEME-01)", () => {
       const { spanColor, strongColor } = mountRosterRow(state.theme, state.contrast);
       // --band-text-muted (#d6cdb8) should differ from --band-text (#efe7d6).
       expect(spanColor).not.toBe(strongColor);
+    });
+  }
+});
+
+describe("roster creation keyboard focus (UI-CREATE-01)", () => {
+  for (const state of THEME_STATES) {
+    it(`uses a focus token distinguishable from the inked band in ${state.label}`, () => {
+      loadStylesheets();
+      document.documentElement.setAttribute("data-theme", state.theme);
+      if (state.contrast) document.documentElement.setAttribute("data-contrast", "high");
+      else document.documentElement.removeAttribute("data-contrast");
+      const band = document.createElement("div");
+      band.className = "roster-characters torn-foot";
+      const heading = document.createElement("div");
+      heading.className = "roster-heading-row";
+      const action = document.createElement("a");
+      action.className = "btn-primary roster-create";
+      action.href = "/character/create";
+      action.textContent = "Create scoundrel";
+      // happy-dom cannot generate keyboard :focus-visible. Probe the same
+      // token consumed by base.css; the real Chromium checkpoint checks focus.
+      action.style.outlineColor = "var(--focus-ring)";
+      heading.append(action);
+      band.append(heading);
+      document.body.append(band);
+      try {
+        expect(contrastRatio(getComputedStyle(action).outlineColor, getComputedStyle(band).backgroundColor))
+          .toBeGreaterThanOrEqual(3);
+      } finally {
+        band.remove();
+      }
     });
   }
 });

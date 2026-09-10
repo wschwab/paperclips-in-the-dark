@@ -69,6 +69,22 @@ describe("app router (F2aa)", () => {
     expect(document.querySelector("#health-root")).toBeNull();
     expect(fetchMock.mock.calls.length).toBe(0);
   });
+  it.each([
+    ["/character/00000000-0000-4000-8000-000000000001", "Scoundrel"],
+    ["/character/00000000-0000-4000-8000-000000000001/history", "Scoundrel History"],
+  ])("uses scoundrel in the document title for %s", async (path, title) => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => "Not found",
+    });
+    window.history.replaceState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    expect(document.title).toBe(`${title} — Paperclips in the Dark`);
+    await vi.waitFor(() => {
+      expect(document.querySelector(".error-card")).not.toBeNull();
+    });
+  });
 });
 
 describe("create-page game-data error cards (FV-020)", () => {
@@ -142,6 +158,7 @@ describe("create-page game-data error cards (FV-020)", () => {
 
     window.history.replaceState({}, "", "/character/create");
     window.dispatchEvent(new PopStateEvent("popstate"));
+    expect(document.title).toBe("Create Scoundrel — Paperclips in the Dark");
 
     await vi.waitFor(() => {
       if (!document.querySelector(".error-card")) {
@@ -212,10 +229,11 @@ describe("import-route load failures (FV-020/SC-F2)", () => {
     await vi.waitFor(() => {
       expect(document.querySelector(".error-card")).not.toBeNull();
     });
+    expect(document.title).toBe("Import Scoundrel — Paperclips in the Dark");
     // One page-level h1, from the error card.
     const h1s = document.querySelectorAll("h1");
     expect(h1s.length).toBe(1);
-    expect(h1s[0]?.textContent).toBe("This character could not be loaded for import.");
+    expect(h1s[0]?.textContent).toBe("This scoundrel could not be loaded for import.");
     // Retry + roster escape are present.
     expect(document.querySelector("button.btn-primary")?.textContent).toBe("Retry");
     expect(document.querySelector('a[href="/roster"]')).not.toBeNull();

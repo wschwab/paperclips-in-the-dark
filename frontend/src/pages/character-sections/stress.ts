@@ -129,7 +129,7 @@ export function renderStressSection(ctx: SectionCtx): HTMLElement {
       style: "margin-top: 0.5em; display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;",
     },
       el("p", { className: "notice", style: "margin: 0; width: 100%;" },
-        "Stress is at its maximum — resolve the pending trauma to continue. Taking a trauma clears stress to 0, and the character is out of action for the rest of the score (ending the score releases them)."),
+        "Stress is at its maximum — resolve the pending trauma to continue. Taking a trauma clears stress to 0, and the scoundrel is out of action for the rest of the score (ending the score releases them)."),
       pickerSelect,
       takeBtn,
       availableTraumas.length === 0
@@ -321,7 +321,7 @@ return   el(
     // the state (Q42; end-score remains the release).
     outOfAction
       ? el("p", { className: "notice", style: "margin-top: 0.5em;" },
-          "This character is out of action for the remainder of the score — stress can't change until the score ends.")
+          "This scoundrel is out of action for the remainder of the score — stress can't change until the score ends.")
       : null,
     renderViceBlock(),
   );

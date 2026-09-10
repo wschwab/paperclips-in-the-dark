@@ -226,6 +226,9 @@ describe("character-detail page", () => {
 
     await vi.waitFor(() => {
       expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
+      expect(root.querySelector('[data-session-track="character"]')?.textContent).toContain("Scoundrel expressions");
+      expect(root.querySelector('[data-section="high-impact"]')?.textContent).toContain("Retire ends this scoundrel's career");
+      expect(root.querySelector('[data-section="high-impact"] button')?.getAttribute("title")).toBe("Retire this scoundrel (confirmation required)");
     });
   });
 
@@ -235,7 +238,7 @@ describe("character-detail page", () => {
 
     mountCharacterDetailPage(root, CHARACTER_ID);
 
-    expect(root.querySelector("h1")?.textContent).toContain("Character");
+    expect(root.querySelector("h1")?.textContent).toContain("Scoundrel");
     expect(root.textContent).toContain("Loading…");
   });
 
@@ -250,7 +253,7 @@ describe("character-detail page", () => {
 
     await vi.waitFor(() => {
       const err = root.querySelector(".error-card-head");
-      expect(err?.textContent).toBe("This character sheet could not be loaded.");
+      expect(err?.textContent).toBe("This scoundrel sheet could not be loaded.");
       expect(root.querySelector("button")?.textContent).toBe("Retry");
       expect(root.querySelector('a[href="/roster"]')?.textContent).toBe("Back to roster");
       const details = root.querySelector("details");
@@ -4952,8 +4955,8 @@ describe("F4 lifecycle UI", () => {
   const getStressPlus = (r: HTMLElement) => r.querySelector('button[title="Add 1 stress"]') as HTMLButtonElement | null;
   const getClearStress = (r: HTMLElement) => r.querySelector('button[title="Clear Stress — clears the chosen amount of marked stress"]') as HTMLButtonElement | null;
   const getEndScore = (r: HTMLElement) => r.querySelector('button[title^="End the score"], button[title^="Resolve the pending trauma before ending the score"]') as HTMLButtonElement | null;
-  const getRetire = (r: HTMLElement) => r.querySelector('button[title="Retire this character (confirmation required)"]') as HTMLButtonElement | null;
-  const getDelete = (r: HTMLElement) => r.querySelector('button[title="Delete this character (confirmation required, not undoable)"]') as HTMLButtonElement | null;
+  const getRetire = (r: HTMLElement) => r.querySelector('button[title="Retire this scoundrel (confirmation required)"]') as HTMLButtonElement | null;
+  const getDelete = (r: HTMLElement) => r.querySelector('button[title="Delete this scoundrel (confirmation required, not undoable)"]') as HTMLButtonElement | null;
 
   it("pending trauma blocks stress ops and end-score with TRAUMA_REQUIRED copy", async () => {
     const pending = characterDTO({
@@ -5011,6 +5014,11 @@ describe("F4 lifecycle UI", () => {
     });
 
     getEndScore(root)!.click();
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "End the score? This clears stress, takes the scoundrel out of action, " +
+      "and (optionally) resets armor and loadout — in one snapshotted change " +
+      "you can undo.",
+    );
 
     await vi.waitFor(() => {
       expect(root.textContent).toContain("0 / 9");
@@ -5044,6 +5052,11 @@ describe("F4 lifecycle UI", () => {
     });
 
     getRetire(root)!.click();
+    expect(confirmSpy).toHaveBeenCalledWith(
+      "Retire this scoundrel? This is independent of trauma — it heals harm, " +
+      "clears stress and armor, and keeps the dossier/notes, but disables " +
+      "gameplay. If it's a mistake, Undo restores the scoundrel.",
+    );
 
     await vi.waitFor(() => {
       expect(root.textContent).toContain("has retired");
@@ -5066,7 +5079,7 @@ describe("F4 lifecycle UI", () => {
       expect(root.querySelector("h1")?.textContent).toContain("(retired)");
     });
     // RETIRED banner + copy.
-    expect(root.textContent).toContain("This character has retired");
+    expect(root.textContent).toContain("This scoundrel has retired");
     // Gameplay disabled: stress + and harm add.
     expect(getStressPlus(root)!.disabled).toBe(true);
     const harmAdd = root.querySelector('button[title="Add harm"]') as HTMLButtonElement;
@@ -5884,9 +5897,9 @@ describe("CHAR-05 high-impact actions", () => {
   const getEndScore = () =>
     root.querySelector('button[title^="End the score"]') as HTMLButtonElement | null;
   const getRetire = () =>
-    root.querySelector('button[title="Retire this character (confirmation required)"]') as HTMLButtonElement | null;
+    root.querySelector('button[title="Retire this scoundrel (confirmation required)"]') as HTMLButtonElement | null;
   const getDelete = () =>
-    root.querySelector('button[title="Delete this character (confirmation required, not undoable)"]') as HTMLButtonElement | null;
+    root.querySelector('button[title="Delete this scoundrel (confirmation required, not undoable)"]') as HTMLButtonElement | null;
 
   it("separates Retire/Delete into a high-impact zone with consequence copy; End score stays outside", async () => {
     mountWith(characterDTO());

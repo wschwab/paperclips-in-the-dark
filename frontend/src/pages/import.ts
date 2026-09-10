@@ -27,7 +27,7 @@ import { renderPreviewPanel } from "../components/normalization-preview.js";
  */
 
 const KIND_LABEL: Record<EntityKind, string> = {
-  character: "Character",
+  character: "Scoundrel",
   crew: "Crew",
 };
 

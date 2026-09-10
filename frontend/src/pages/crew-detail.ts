@@ -511,7 +511,7 @@ export function mountCrewDetailPage(
       if (!currentCrew || isDeleteLoading) return;
       const confirmed = window.confirm(
         "Delete this crew permanently? This is not undoable and removes " +
-        "their history. Member characters are unlinked and standalone " +
+        "their history. Member scoundrels are unlinked and standalone " +
         "crew-owned clocks move to the campaign.",
       );
       if (!confirmed) return;

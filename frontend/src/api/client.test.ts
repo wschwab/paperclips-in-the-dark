@@ -6869,7 +6869,7 @@ describe("op-level error copy (FV-024)", () => {
       details: {},
     });
     const text = opErrorFriendlyText(err);
-    expect(text).toContain("This character has retired");
+    expect(text).toContain("This scoundrel has retired");
     expect(text).toContain("Retirement can be undone from the history view.");
     expect(text).not.toContain("RETIRED");
     expect(text).not.toContain("character is retired");

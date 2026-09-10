@@ -189,7 +189,7 @@ function renderCompletionCues(
   return el(
     "div",
     { className: "completion-cues", role: "status", "aria-label": "Completion prompts" },
-    el("h2", {}, "Complete your character"),
+    el("h2", {}, "Complete your scoundrel"),
     ...rows,
   );
 }
@@ -211,7 +211,7 @@ function renderDetail(state: RenderState): HTMLElement {
     retired
       ? el("div", { className: "character-lifecycle-banner", role: "status" },
           el("p", { className: "notice", style: "margin: 0; width: 100%;" },
-            "This character has retired. Gameplay is no longer available, but you can keep editing the dossier and notes, and Undo can restore the character if retirement was a mistake."),
+            "This scoundrel has retired. Gameplay is no longer available, but you can keep editing the dossier and notes, and Undo can restore the scoundrel if retirement was a mistake."),
         )
       : null,
     // F4: pending-trauma banner — pending blocks gameplay and end-score until
@@ -295,7 +295,7 @@ function renderLoading(): HTMLElement {
   return el(
     "section",
     { className: "character-detail-loading" },
-    el("h1", {}, "Character"),
+    el("h1", {}, "Scoundrel"),
     el("p", {}, "Loading…"),
   );
 }
@@ -1122,7 +1122,7 @@ export function mountCharacterDetailPage(
     onEndScore: () => {
       if (!currentCharacter || isEndScoreLoading) return;
       const confirmed = window.confirm(
-        "End the score? This clears stress, takes the character out of action, " +
+        "End the score? This clears stress, takes the scoundrel out of action, " +
         "and (optionally) resets armor and loadout — in one snapshotted change " +
         "you can undo.",
       );
@@ -1147,7 +1147,7 @@ export function mountCharacterDetailPage(
     onEndDowntime: () => {
       if (!currentCharacter || isDowntimeLoading) return;
       const confirmed = window.confirm(
-        "End downtime? This clears the playbook, character, and struggle " +
+        "End downtime? This clears the playbook, scoundrel, and struggle " +
         "expression tracks. Undo can restore them.",
       );
       if (!confirmed) return;
@@ -1171,9 +1171,9 @@ export function mountCharacterDetailPage(
     onRetire: () => {
       if (!currentCharacter || isRetireLoading) return;
       const confirmed = window.confirm(
-        "Retire this character? This is independent of trauma — it heals harm, " +
+        "Retire this scoundrel? This is independent of trauma — it heals harm, " +
         "clears stress and armor, and keeps the dossier/notes, but disables " +
-        "gameplay. If it's a mistake, Undo restores the character.",
+        "gameplay. If it's a mistake, Undo restores the scoundrel.",
       );
       if (!confirmed) return;
       isRetireLoading = true;
@@ -1186,7 +1186,7 @@ export function mountCharacterDetailPage(
         program,
         (character) => {
           currentCharacter = character;
-          noticeMsg = `${character.dossier.name || "This character"} has retired. Undo can restore it.`;
+          noticeMsg = `${character.dossier.name || "This scoundrel"} has retired. Undo can restore it.`;
           renderDetailWrapper();
         },
         () => { isRetireLoading = false; },
@@ -1196,8 +1196,8 @@ export function mountCharacterDetailPage(
     onDeleteCharacter: () => {
       if (!currentCharacter || isDeleteLoading) return;
       const confirmed = window.confirm(
-        "Delete this character permanently? This is not undoable and removes " +
-        "their history. Retired characters can also be deleted.",
+        "Delete this scoundrel permanently? This is not undoable and removes " +
+        "their history. Retired scoundrels can also be deleted.",
       );
       if (!confirmed) return;
       isDeleteLoading = true;
@@ -1993,12 +1993,12 @@ export function mountCharacterDetailPage(
             err instanceof ApiError
               ? `Failed to reach /api/characters/${characterId} (${err.status}): ${err.body}`
               : err instanceof DecodeError
-                ? `Invalid character response: ${err.message}`
+                ? `Invalid scoundrel response: ${err.message}`
                 : String(err);
           setChildren(
             root,
             errorCard({
-              headline: "This character sheet could not be loaded.",
+              headline: "This scoundrel sheet could not be loaded.",
               detail: msg,
               onRetry: startLoad,
             }),

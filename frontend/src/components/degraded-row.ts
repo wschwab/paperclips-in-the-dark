@@ -58,7 +58,7 @@ export interface DegradedRowOptions {
   apply: RepairApplyFn;
 }
 
-const KIND_LABEL: Record<EntityKind, string> = { character: "character", crew: "crew" };
+const KIND_LABEL: Record<EntityKind, string> = { character: "scoundrel", crew: "crew" };
 
 function friendlyNote(err: unknown): string {
   if (err instanceof StaleStateError) return "This entry changed since you opened it. Refresh the roster to get its current state, then try again.";

@@ -17,7 +17,7 @@ return   (() => {
       type: "button",
       className: "btn-danger",
       disabled: anyLoading || retired,
-      title: "Retire this character (confirmation required)",
+      title: "Retire this scoundrel (confirmation required)",
     }, state.isRetireLoading ? "…" : "Retire");
     retireBtn.addEventListener("click", handlers.onRetire);
 
@@ -25,7 +25,7 @@ return   (() => {
       type: "button",
       className: "btn-danger",
       disabled: anyLoading,
-      title: "Delete this character (confirmation required, not undoable)",
+      title: "Delete this scoundrel (confirmation required, not undoable)",
     }, state.isDeleteLoading ? "…" : "Delete");
     deleteBtn.addEventListener("click", handlers.onDeleteCharacter);
 
@@ -38,7 +38,7 @@ return   (() => {
     },
       el("p", { className: "lbl", style: "margin: 0; width: 100%; text-transform: uppercase; letter-spacing: 0.08em;" }, "Permanent actions"),
       el("p", { className: "serif", style: "margin: 0; width: 100%;" },
-        "Retire ends this character's career — gameplay closes, harm/stress/armor clear, dossier and notes stay, and Undo can restore it. Delete erases the character and their history permanently — deletion cannot be undone."),
+        "Retire ends this scoundrel's career — gameplay closes, harm/stress/armor clear, dossier and notes stay, and Undo can restore it. Delete erases the scoundrel and their history permanently — deletion cannot be undone."),
       retireBtn,
       deleteBtn,
     );

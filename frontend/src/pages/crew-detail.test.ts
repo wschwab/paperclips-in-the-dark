@@ -105,6 +105,19 @@ describe("crew-detail page", () => {
     });
   });
 
+  it("names linked scoundrels in the permanent-delete confirmation (UI-CREATE-01)", async () => {
+    global.fetch = vi.fn().mockResolvedValue(ok(crewDTO()));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => expect(root.querySelector(".crew-detail")).not.toBeNull());
+      root.querySelector<HTMLButtonElement>('button[title^="Delete this crew"]')!.click();
+      expect(confirm).toHaveBeenCalledWith(expect.stringContaining("Member scoundrels are unlinked"));
+    } finally {
+      confirm.mockRestore();
+    }
+  });
+
   it("shows loading state before the crew resolves", () => {
     global.fetch = vi.fn().mockReturnValue(new Promise(() => {}));
 

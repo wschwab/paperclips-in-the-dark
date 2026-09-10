@@ -251,6 +251,9 @@ describe("PC chargen flow", () => {
 
   it("renders per-action pickers grouped by attribute for every published action", () => {
     mountCharacterCreatePage(root, baseDeps());
+    expect(root.querySelector("h1")?.textContent).toBe("Create Scoundrel");
+    expect(root.querySelector('.pc-chargen-form button[type="submit"]')?.textContent).toBe("Create Scoundrel");
+    expect(root.querySelector("details.create-unvalidated summary")?.textContent).toBe("Advanced: create without validation (experienced scoundrel / NPC)");
 
     const groups = Array.from(root.querySelectorAll<HTMLElement>(".chargen-group"));
     expect(groups.map((g) => g.getAttribute("data-attribute"))).toEqual([
@@ -375,7 +378,8 @@ describe("PC chargen flow", () => {
     mountCharacterCreatePage(root, baseDeps({ settings: SETTINGS_NO_BUDGET }));
 
     expect(root.querySelector(".pc-chargen-form")).toBeNull();
-    expect(root.querySelector(".character-create .notice")).not.toBeNull();
+    expect(root.querySelector(".character-create .notice")?.textContent).toBe("This game does not publish a validated starting-dot budget, so scoundrels are created without Talent validation.");
+    expect(root.querySelector('.character-create-form button[type="submit"]')?.textContent).toBe("Create Scoundrel");
     // The legacy form IS the create path here — no opt-in disclosure.
     expect(root.querySelector("details.create-unvalidated")).toBeNull();
     expect(root.querySelector("#playbook")).not.toBeNull();
@@ -517,7 +521,8 @@ describe("unvalidated create path (two-step naming)", () => {
     // Phase-one succeeded, phase-two failed: retained entity linked, retry
     // control offered — no dead end, no second create POST.
     await vi.waitFor(() => {
-      expect(root.querySelector(`a[href="${sheetHref}"]`)).not.toBeNull();
+      expect(root.querySelector(`a[href="${sheetHref}"]`)?.textContent).toBe("Open scoundrel sheet");
+      expect(root.querySelector(".create-phase-two-recovery")?.textContent).toContain("The new scoundrel is kept on the roster without a name.");
       expect(root.querySelector(".create-phase-two-recovery button")).not.toBeNull();
     });
     expect(fetchMock.mock.calls.filter((c) => c[0] === "/api/characters").length).toBe(1);

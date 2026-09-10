@@ -26,7 +26,7 @@ export function completionCues(c: Character): readonly CompletionCue[] {
   const unset = (value: string): boolean => !isNonBlankString(value);
   const cues: CompletionCue[] = [];
   if (unset(c.dossier.name)) {
-    cues.push({ key: "name", label: "Give your character a name." });
+    cues.push({ key: "name", label: "Give your scoundrel a name." });
   }
   if (unset(c.dossier.alias)) {
     cues.push({ key: "alias", label: "Add an alias." });

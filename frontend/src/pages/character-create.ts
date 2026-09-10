@@ -140,7 +140,7 @@ function renderLegacyForm(gameStem: string, playbooks: string[]): HTMLElement {
     el(
       "div",
       { className: "form-actions" },
-      el("button", { type: "submit", className: "btn-primary" }, "Create Character"),
+      el("button", { type: "submit", className: "btn-primary" }, "Create Scoundrel"),
       el("a", { href: "/roster", className: "btn-secondary" }, "Cancel"),
     ),
   );
@@ -269,7 +269,7 @@ function buildPcChargenForm(
   const submitBtn = el(
     "button",
     { type: "submit", className: "btn-primary", disabled: true },
-    "Create Character",
+    "Create Scoundrel",
   );
 
   const form = el(
@@ -463,7 +463,7 @@ export function mountCharacterCreatePage(
   const page = el(
     "section",
     { className: "character-create" },
-    el("h1", {}, "Create Character"),
+    el("h1", {}, "Create Scoundrel"),
   );
 
   // -- Validated PC chargen --------------------------------------------------
@@ -477,7 +477,7 @@ export function mountCharacterCreatePage(
       void Effect.runPromise(
         Effect.match(program, {
           onSuccess: finish,
-          onFailure: (err) => fail(`Failed to create character: ${apiFailureText(err)}`),
+          onFailure: (err) => fail(`Failed to create scoundrel: ${apiFailureText(err)}`),
         }),
       );
     });
@@ -487,7 +487,7 @@ export function mountCharacterCreatePage(
       el(
         "p",
         { className: "notice", role: "note" },
-        "This game does not publish a validated starting-dot budget, so characters are created without Talent validation.",
+        "This game does not publish a validated starting-dot budget, so scoundrels are created without Talent validation.",
       ),
     );
   }
@@ -517,7 +517,7 @@ export function mountCharacterCreatePage(
       return yield* dossierUpdate(created.id, { name }, created.revision);
     });
 
-    void Effect.runPromise(Effect.match(program, { onSuccess: finish, onFailure: (err) => fail(`Failed to create character: ${apiFailureText(err)}`) }));
+    void Effect.runPromise(Effect.match(program, { onSuccess: finish, onFailure: (err) => fail(`Failed to create scoundrel: ${apiFailureText(err)}`) }));
   });
 
   if (pcFlowReady) {
@@ -527,7 +527,7 @@ export function mountCharacterCreatePage(
       el(
         "details",
         { className: "create-unvalidated" },
-        el("summary", {}, "Advanced: create without validation (experienced character / NPC)"),
+        el("summary", {}, "Advanced: create without validation (experienced scoundrel / NPC)"),
         legacyForm,
       ),
     );
@@ -577,7 +577,7 @@ export function mountCharacterCreatePage(
     const retained = phaseTwo;
     root.setAttribute("aria-busy", "true");
     setChildren(root, renderLoading());
-    const label = retained.kind === "character" ? "Character" : "Crew";
+    const label = retained.kind === "character" ? "Scoundrel" : "Crew";
     const onFail = (err: unknown) => fail(`${label} created, but naming it failed: ${apiFailureText(err)}`);
     if (retained.kind === "character") {
       const program = dossierUpdate(retained.id, { name: retained.name }, retained.revision);
@@ -600,9 +600,9 @@ export function mountCharacterCreatePage(
         renderPhaseTwoRecovery(
           `/${isChar ? "character" : "crew"}/${phaseTwo.id}`,
           message,
-          `The new ${isChar ? "character" : "crew"} is kept on the roster without a name. Retry naming it, or open its sheet directly.`,
+          `The new ${isChar ? "scoundrel" : "crew"} is kept on the roster without a name. Retry naming it, or open its sheet directly.`,
           "Retry naming",
-          isChar ? "Open character sheet" : "Open crew sheet",
+          isChar ? "Open scoundrel sheet" : "Open crew sheet",
           retryNaming,
         ),
       );

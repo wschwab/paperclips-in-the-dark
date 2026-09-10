@@ -137,7 +137,7 @@ export async function run(page, ctx) {
     .click();
   await page
     .locator("p.notice")
-    .filter({ hasText: "This character is out of action" })
+    .filter({ hasText: "This scoundrel is out of action" })
     .waitFor({ state: "visible", timeout: 15_000 });
   const afterTrauma = await readStress(page);
   if (afterTrauma.current !== 0) {
@@ -150,7 +150,7 @@ export async function run(page, ctx) {
   await endScore.click();
   await page
     .locator("p.notice")
-    .filter({ hasText: "This character is out of action" })
+    .filter({ hasText: "This scoundrel is out of action" })
     .waitFor({ state: "detached", timeout: 15_000 });
   ctx.checkpoint("end-score-releases", 1);
 

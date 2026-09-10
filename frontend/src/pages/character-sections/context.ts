@@ -72,7 +72,7 @@ export function sectionCtx(state: RenderState): SectionCtx {
   // explains the inherent stress clear + flag resets (lifecycle-matrix §4).
   const endScoreTitle = pendingTrauma
     ? "Resolve the pending trauma before ending the score"
-    : "End the score — clears stress and takes the character out of action";
+    : "End the score — clears stress and takes the scoundrel out of action";
 
   // SC-F3: derived limits come from the server-computed capability projection
   // (effective action caps, harm capacities, load limits) — the client never

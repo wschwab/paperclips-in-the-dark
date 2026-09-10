@@ -187,7 +187,7 @@ export function playbookOpErrorText(err: OpError): string {
  */
 export function describeRestore(before: Character, after: Character): string {
   if (before.isRetired !== after.isRetired) {
-    return after.isRetired ? "the retirement" : "the character (un-retired)";
+    return after.isRetired ? "the retirement" : "the scoundrel (un-retired)";
   }
   if (before.dossier.name !== after.dossier.name) {
     return `the name "${after.dossier.name || "Unnamed"}"`;

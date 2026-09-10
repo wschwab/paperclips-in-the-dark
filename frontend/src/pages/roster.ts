@@ -219,7 +219,7 @@ function createPlate<T extends CharacterSummary | CrewSummary>(
    * cycle (Show more), so the composite announcer can update. */
   onWindowChange: () => void,
 ): RosterPlate<T> {
-  const noun = kind === "character" ? "characters" : "crews";
+  const noun = kind === "character" ? "scoundrels" : "crews";
   const readable: T[] = all.filter((row) => row.isReadable);
   const degraded: T[] = all.filter((row) => !row.isReadable);
   const listEl = el("ul", {
@@ -324,10 +324,10 @@ function statusText(
   query: string,
 ): string {
   if (query) {
-    return `${charPlate.matchCount()} of ${totalChars} characters match. ` +
+    return `${charPlate.matchCount()} of ${totalChars} scoundrels match. ` +
       `${crewPlate.matchCount()} of ${totalCrews} crews match.`;
   }
-  return `Showing ${charPlate.shownCount} of ${totalChars} characters. ` +
+  return `Showing ${charPlate.shownCount} of ${totalChars} scoundrels. ` +
     `Showing ${crewPlate.shownCount} of ${totalCrews} crews.`;
 }
 
@@ -409,17 +409,17 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
     statusRegion,
     el(
       "div",
-      // LAYOUT-01: heading and its Create/import disclosure share one
-      // scanline (.roster-heading-row); DOM order is unchanged.
+      // Creation stays visible independently of roster contents and import.
       { className: "roster-characters torn-foot" },
       el(
         "div",
         { className: "roster-heading-row" },
-        el("h2", {}, `Characters (${totalChars})`),
-        createImportPanel("character", roster.characters, charImportFlow),
+        el("h2", {}, `Scoundrels (${totalChars})`),
+        el("a", { href: "/character/create", className: "btn-primary roster-create" }, "Create scoundrel"),
       ),
+      createImportPanel("character", roster.characters, charImportFlow),
       totalChars === 0
-        ? el("p", { className: "empty uneven" }, "No characters yet.")
+        ? el("p", { className: "empty uneven" }, "No scoundrels yet.")
         : charPlate.listEl,
       charPlate.noteEl,
       charPlate.moreBtn,
@@ -431,8 +431,9 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
         "div",
         { className: "roster-heading-row" },
         el("h2", {}, `Crews (${totalCrews})`),
-        createImportPanel("crew", roster.crews, crewImportFlow),
+        el("a", { href: "/crew/create", className: "btn-primary roster-create" }, "Create crew"),
       ),
+      createImportPanel("crew", roster.crews, crewImportFlow),
       totalCrews === 0
         ? el("p", { className: "empty uneven" }, "No crews yet.")
         : crewPlate.listEl,

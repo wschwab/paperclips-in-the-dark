@@ -136,7 +136,7 @@ return   (() => {
     // Score XP sub-section: three session expression tracks
     const sessionTracks: Array<{ key: keyof SessionFields; label: string; short: string }> = [
       { key: "playbookExpressions", label: "Playbook expressions", short: "playbook" },
-      { key: "characterExpressions", label: "Character expressions", short: "character" },
+      { key: "characterExpressions", label: "Scoundrel expressions", short: "character" },
       { key: "struggleExpressions", label: "Struggle expressions", short: "struggle" },
     ];
     const sessionEls = sessionTracks.map((t) => {
@@ -195,7 +195,7 @@ return   (() => {
         endDowntimeBtn.addEventListener("click", handlers.onEndDowntime);
         return el("div", { className: "downtime-row", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin-top: 0.75em;" },
           endDowntimeBtn,
-          el("span", { className: "lbl", style: "font-size: 0.9em;" }, "Clears playbook, character, and struggle expressions."),
+          el("span", { className: "lbl", style: "font-size: 0.9em;" }, "Clears playbook, scoundrel, and struggle expressions."),
         );
       })(),
       state.clampNotice

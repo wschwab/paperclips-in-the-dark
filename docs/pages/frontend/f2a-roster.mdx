@@ -2,15 +2,68 @@
 
 `/roster` is the first Ada-backed application page. It requests
 `GET /api/campaign/roster`, decodes the response with the shared frontend
-schema, and displays character and crew summaries.
+schema, and displays scoundrel and crew summaries.
 
-The page has explicit loading, error, empty, and populated states. Character
+The page has explicit loading, error, empty, and populated states. Scoundrel
 and crew UUIDs are retained as `data-character-id` and `data-crew-id`
 attributes so later detail-page slices can attach navigation without changing
 the roster data contract.
 
-F2a is deliberately read-only. Creating, editing, detail pages, history,
-undo, and stale-revision handling remain later F2 slices.
+## Creating a scoundrel or crew (UI-CREATE-01)
+
+Each roster section offers a visible **Create scoundrel** or **Create crew**
+action, even when its collection is empty or a search has no matches. These
+are native navigation links styled as primary buttons, with visible keyboard
+focus and at least 44-pixel touch targets. Import remains a separate disclosure;
+you do not need to open it to create an entity.
+
+**Create scoundrel** opens `/character/create`. The standard PC
+flow allocates Talent dots using the current game settings and submits to
+`POST /api/characters/pc` (`createPcCharacter`). The advanced experienced
+scoundrel/NPC flow uses `POST /api/characters` (`createCharacter`).
+**Create crew** opens `/crew/create` and submits to `POST /api/crews`
+(`createCrew`). Successful creation navigates to the new entity's sheet, and
+the entity is listed when you return to the roster.
+
+Exhausted pagination controls remain hidden, rather than rendering as empty,
+nonfunctional button-shaped boxes. The original report was most misleading
+on an empty roster: creation was hidden inside Import, while author button
+styles overrode the pager's native `hidden` display state. Neither create
+endpoint depended on the roster being populated.
+
+### Terminology boundary
+
+App-owned visible text calls the entity a **scoundrel**: headings, buttons,
+empty states, notices/errors, accessibility labels/titles/placeholders and
+document titles use the same noun. API/backend terminology remains
+`character`, including routes, operation/field names, schema kinds and DOM
+selectors. Backend diagnostic prose displayed verbatim, raw JSON, JSON
+pointers and player-entered names/notes are not rewritten.
+
+The separate, explicitly authorized `tasks/CONF-WORDING-01.md` card
+updates only five frozen browser expected strings to this UI terminology;
+selectors, flows and all other assertions remain unchanged.
+
+### Browser regression checkpoint
+
+The additive empty-roster checkpoint lives in
+`conformance/suites-browser/checkpoints/empty-roster-creation.mjs`. Run it
+without seeds through the managed launcher, which allocates isolated data:
+
+```sh
+PITD_BROWSER_ARTIFACTS="$PWD/agent-docs/test-audit/browser-evidence/ui-create-01" \
+  node conformance/scripts/managed-browser-smoke.mjs -- \
+  node conformance/suites-browser/checkpoints/empty-roster-creation.mjs
+```
+
+It exercises all three declared create operations, empty and non-empty
+creation, sheet landings and roster visibility, plus 72 route/viewport/theme
+matrix entries for empty/populated roster, scoundrel/crew creation,
+scoundrel detail/history/import and crew detail. Each surface checks
+app-owned visible and accessible wording, document titles and containment.
+The six BROWSER-02 journeys keep their existing flows; the
+five expected-text-only changes are recorded under CONF-WORDING-01. Run
+`npm run test:browser` in `conformance/` as their separate regression gate.
 
 ## Bounded rendering and degraded reachability (PERF-02)
 
@@ -23,7 +76,7 @@ content.
 Two invariants are deliberate:
 
 - **Counts and search describe the full result set, not the rendered
-  window.** The `Characters (N)` / `Crews (N)` headings always show total
+  window.** The `Scoundrels (N)` / `Crews (N)` headings always show total
   collection sizes, and search filters over every readable row's data (name,
   alias, playbook / crew type) before paging — matches beyond the rendered
   window stay discoverable.

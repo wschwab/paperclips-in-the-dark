@@ -146,6 +146,7 @@ describe("character-history page (F2aa)", () => {
     await vi.waitFor(() => {
       const empty = root.querySelector(".no-history");
       expect(empty?.textContent).toContain("No history snapshots yet");
+      expect(empty?.textContent).toContain("Changes you make to this scoundrel will appear here as a snapshot.");
       expect(empty?.textContent).not.toBe("(no history snapshots)");
       const back = root.querySelector('a[href="/character/c46ba7cb-993b-4fc7-974d-fb95eacd5446"]');
       expect(back).not.toBeNull();

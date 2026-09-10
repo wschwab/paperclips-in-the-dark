@@ -134,7 +134,7 @@ export async function run(page, ctx) {
     .waitFor({ state: "visible", timeout: 10_000 });
 
   const visibleCopy = (await repairableRow.textContent()) ?? "";
-  if (!visibleCopy.includes("Repairable character") || !visibleCopy.includes("normalized")) {
+  if (!visibleCopy.includes("Repairable scoundrel") || !visibleCopy.includes("normalized")) {
     throw new Error(`repairable row copy not classified visibly: "${visibleCopy.slice(0, 120)}"`);
   }
   const unreadableRowText =
@@ -142,7 +142,7 @@ export async function run(page, ctx) {
       .locator(`li[data-degraded][data-recovery-class="unreadable"]`)
       .first()
       .textContent()) ?? "";
-  if (!unreadableRowText.includes("Unreadable character") || !unreadableRowText.includes("re-import")) {
+  if (!unreadableRowText.includes("Unreadable scoundrel") || !unreadableRowText.includes("re-import")) {
     throw new Error(`unreadable row copy lacks recovery guidance: "${unreadableRowText.slice(0, 120)}"`);
   }
 

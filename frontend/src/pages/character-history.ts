@@ -50,7 +50,7 @@ function renderCharacterHistory(character: Character, history: readonly HistoryE
         ? el(
             "p",
             { className: "no-history" },
-            "No history snapshots yet. Changes you make to this character will appear here as a snapshot.",
+            "No history snapshots yet. Changes you make to this scoundrel will appear here as a snapshot.",
           )
         : el(
             "ul",
@@ -65,7 +65,7 @@ function renderLoading(): HTMLElement {
   return el(
     "section",
     { className: "character-history-loading" },
-    el("h1", {}, "Character History"),
+    el("h1", {}, "Scoundrel History"),
     el("p", {}, "Loading…"),
   );
 }
@@ -98,7 +98,7 @@ export function mountCharacterHistoryPage(
           root.setAttribute("aria-busy", "false");
           const msg =
             err instanceof ApiError
-              ? `Failed to reach API for character ${characterId} (${err.status}): ${err.body}`
+              ? `Failed to reach API for scoundrel ${characterId} (${err.status}): ${err.body}`
               : err instanceof DecodeError
                 ? `Invalid API response: ${err.message}`
                 : String(err);

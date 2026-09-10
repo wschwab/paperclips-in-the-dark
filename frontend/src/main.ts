@@ -115,7 +115,7 @@ function render(): void {
   }
 
   if (path === "/character/create") {
-    document.title = "Create Character — Paperclips in the Dark";
+    document.title = "Create Scoundrel — Paperclips in the Dark";
     const createOutlet = outlet;
     let cancelled = false;
 
@@ -130,7 +130,7 @@ function render(): void {
     // the unvalidated-only fallback (setting-absent ruling).
     const loadCreateData = () => {
       if (cancelled) return;
-      createOutlet.textContent = "Loading character options…";
+      createOutlet.textContent = "Loading scoundrel options…";
       void Effect.runPromise(
         Effect.match(
           Effect.all({
@@ -220,7 +220,7 @@ function render(): void {
   const charImportMatch = path.match(/^\/character\/([A-Za-z0-9-]+)\/import$/);
   if (charImportMatch) {
     const characterId = charImportMatch[1];
-    document.title = "Import Character — Paperclips in the Dark";
+    document.title = "Import Scoundrel — Paperclips in the Dark";
     setChildren(outlet, el("div", { className: "import-root" }));
     const importOutlet = outlet.firstElementChild as HTMLElement;
     let cancelled = false;
@@ -233,7 +233,7 @@ function render(): void {
     // never the raw 422 JSON/parser payload.
     const loadCharacter = () => {
       if (cancelled) return;
-      importOutlet.textContent = "Loading character…";
+      importOutlet.textContent = "Loading scoundrel…";
       void Effect.runPromise(
         Effect.match(getCharacter(characterId), {
           onFailure: (err) => {
@@ -241,7 +241,7 @@ function render(): void {
             setChildren(
               importOutlet,
               errorCard({
-                headline: "This character could not be loaded for import.",
+                headline: "This scoundrel could not be loaded for import.",
                 detail: importLoadErrorText(err),
                 onRetry: loadCharacter,
               }),
@@ -262,7 +262,7 @@ function render(): void {
   const charMatch = path.match(/^\/character\/([A-Za-z0-9-]+)$/);
   if (charMatch) {
     const characterId = charMatch[1];
-    document.title = "Character — Paperclips in the Dark";
+    document.title = "Scoundrel — Paperclips in the Dark";
     disposePage = mountCharacterDetailPage(outlet, characterId);
     return;
   }
@@ -270,7 +270,7 @@ function render(): void {
   const charHistoryMatch = path.match(/^\/character\/([A-Za-z0-9-]+)\/history$/);
   if (charHistoryMatch) {
     const characterId = charHistoryMatch[1];
-    document.title = "Character History — Paperclips in the Dark";
+    document.title = "Scoundrel History — Paperclips in the Dark";
     disposePage = mountCharacterHistoryPage(outlet, characterId);
     return;
   }

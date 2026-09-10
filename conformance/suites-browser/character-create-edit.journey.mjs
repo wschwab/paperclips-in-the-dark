@@ -90,7 +90,7 @@ export async function run(page, ctx) {
     const recoveryCard = page.locator(".create-phase-two-recovery");
     await recoveryCard.waitFor({ state: "visible", timeout: 15_000 });
     const cardText = (await recoveryCard.textContent()) ?? "";
-    if (!cardText.includes("Retry naming") || !cardText.includes("Open character sheet")) {
+    if (!cardText.includes("Retry naming") || !cardText.includes("Open scoundrel sheet")) {
       throw new Error(`phase-two recovery lacks its actions: "${cardText.slice(0, 160)}"`);
     }
     if (!cardText.includes("kept on the roster without a name")) {

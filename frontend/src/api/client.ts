@@ -99,7 +99,7 @@ const OP_ERROR_COPY: Readonly<Record<string, string>> = {
   NORMALIZATION_REQUIRED: "The sheet needs its data normalized before continuing.",
   NOT_FOUND: "That's no longer there — the sheet refreshes with the server state.",
   STALE_REVISION: "The sheet changed in another tab — refresh to see the latest state.",
-  RETIRED: "This character has retired — no further actions are available.",
+  RETIRED: "This scoundrel has retired — no further actions are available.",
   CONFIRM_REQUIRED: "This action needs an explicit confirmation before it can run.",
   DUPLICATE: "That already exists — enter something new.",
   SLOT_FULL_FATAL: "There's no room for that.",
@@ -118,7 +118,7 @@ const OP_ERROR_COPY: Readonly<Record<string, string>> = {
   GAME_NOT_FOUND: "The game data for this campaign couldn't be found.",
   PAYLOAD_TOO_LARGE: "That request was too large to handle.",
   TRAUMA_REQUIRED: "That requires a trauma before it can happen.",
-  OUT_OF_ACTION: "This character is out of action right now.",
+  OUT_OF_ACTION: "This scoundrel is out of action right now.",
 };
 
 /** Concise fallback for a decoded error code with no known user copy. */

@@ -21,7 +21,7 @@ import type { CharacterSummary, CrewSummary } from "../schema/campaign.js";
  * degraded but recoverable. Both render without a detail link (direct GET
  * would 422) and get the degraded repair/delete controls instead.
  */
-export const NOUN: Record<EntityKind, string> = { character: "character", crew: "crew" };
+export const NOUN: Record<EntityKind, string> = { character: "scoundrel", crew: "crew" };
 export type RecoveryClass = "repairable" | "needs-input" | "unreadable";
 
 /**

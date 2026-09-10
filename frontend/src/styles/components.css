@@ -884,15 +884,28 @@
 
 /* ── LAYOUT-01 (UX-014) repeated-row grids ───────────────────── */
 
-/* The roster Create/import disclosure shares one scanline with its section
- * heading instead of stacking beneath it. DOM order is unchanged (heading,
- * then disclosure), so AT reading order keeps its sequence. */
+/* Roster creation is a visible navigation action; import remains a separate
+ * disclosure instead of hiding the first-use path inside it. */
 .roster-heading-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75em;
   flex-wrap: wrap;
+}
+
+.roster-heading-row .roster-create {
+  /* The ring is painted outside the light button, on the inked band. */
+  --focus-ring: var(--band-text);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.roster-import-panel {
+  margin-block: 0.5em;
 }
 
 /* Gear loadout rows are a repeated-row grid: the item name owns the fluid
@@ -1312,6 +1325,13 @@
   text-decoration: none;
   line-height: 1.2;
   cursor: pointer;
+}
+/* Author display rules must not override the native hidden state (for
+ * example an exhausted roster pager would otherwise become a blank box). */
+.btn-primary[hidden],
+.btn-secondary[hidden],
+.btn-danger[hidden] {
+  display: none;
 }
 .btn-primary {
   background: var(--fill);

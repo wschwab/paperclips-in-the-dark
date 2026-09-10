@@ -53,6 +53,11 @@ describe("completionCues", () => {
     ]);
   });
 
+  it("addresses the newly created scoundrel by the UI noun (UI-CREATE-01)", () => {
+    expect(completionCues(freshCharacter()).find(cue => cue.key === "name")?.label)
+      .toBe("Give your scoundrel a name.");
+  });
+
   it("shows nothing for a complete character", () => {
     expect(completionCues(character(() => {}))).toEqual([]);
   });
