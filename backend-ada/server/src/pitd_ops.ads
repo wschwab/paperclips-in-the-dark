@@ -58,9 +58,4 @@ package Pitd_Ops is
    --  args B, returning the frozen operation-result envelope.
    function Mutate (Kind, Op : String; E, B : JSON_Value) return JSON_Value;
 
-   --  SC-A7: clock ownership and relationship reference validation for
-   --  create/update (store-accessing, so it runs in the route layer's
-   --  transaction scope).  Returns False with Bad naming the defect.
-   function Check_Clock_Refs
-     (B : JSON_Value; Self_Id : String; Bad : out Unbounded_String) return Boolean;
 end Pitd_Ops;

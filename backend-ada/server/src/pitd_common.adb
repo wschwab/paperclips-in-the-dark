@@ -1,6 +1,7 @@
 with Ada.Calendar;
 with Ada.Calendar.Formatting;
 with Ada.Directories;
+with Ada.Task_Identification;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
@@ -21,6 +22,57 @@ package body Pitd_Common is
    use type Ada.Directories.File_Kind;
    use type GNAT.OS_Lib.File_Descriptor;
    use type Interfaces.C.int;
+
+   use type Ada.Task_Identification.Task_Id;
+
+   function Lock_Id (Key : String) return String is
+     (Key (Ada.Strings.Fixed.Index (Key, "/") + 1 .. Key'Last));
+
+   protected body Entity_Lock_Registry is
+      procedure Claim (Id : String; Granted : out Boolean) is
+      begin
+         Granted := not Held.Contains (Id);
+         if Granted then Held.Include (Id, Ada.Task_Identification.Current_Task); end if;
+      end Claim;
+
+      procedure Claim_Set (Keys : JSON_Array; Granted : out Boolean) is
+         Acquired : Natural := 0;
+      begin
+         Granted := False;
+         for I in 1 .. Length (Keys) loop
+            if Held.Contains (Lock_Id (Get (Get (Keys, I)))) then return; end if;
+         end loop;
+         for I in 1 .. Length (Keys) loop
+            Held.Include (Lock_Id (Get (Get (Keys, I))), Ada.Task_Identification.Current_Task);
+            Acquired := I;
+         end loop;
+         Granted := True;
+      exception
+         when others =>
+            for I in 1 .. Acquired loop
+               Held.Exclude (Lock_Id (Get (Get (Keys, I))));
+            end loop;
+            raise;
+      end Claim_Set;
+
+      function Owned (Id : String) return Boolean is
+        (Held.Contains (Id) and then Held.Element (Id) = Ada.Task_Identification.Current_Task);
+
+      procedure Release (Id : String) is
+      begin
+         if Held.Contains (Id) and then not Owned (Id) then
+            raise Program_Error with "release by non-owner";
+         end if;
+         Held.Exclude (Id);
+      end Release;
+
+      procedure Release_Set (Keys : JSON_Array) is
+      begin
+         for I in 1 .. Length (Keys) loop
+            Release (Lock_Id (Get (Get (Keys, I))));
+         end loop;
+      end Release_Set;
+   end Entity_Lock_Registry;
 
    --  Monotonic clock for the 17-digit snapshot prefix: milliseconds since
    --  the Ada epoch, zero-padded.  Strictly increasing within a server
@@ -303,10 +355,181 @@ package body Pitd_Common is
          V := JSON_Null; Exists := True; Parse_Ok := False;
    end Try_Read_Entity;
 
+   --  Cross-entity ids in the persisted schemas: character dossier.crewId,
+   --  clock ownerKind/ownerId, and clock relatedClockIds. Crew child ids and
+   --  character's embedded healing clock are local values, not store links.
+   function Missing_Reference (Kind : String; Doc : JSON_Value) return String is
+      function Missing (Target_Kind, Target_Id : String) return Boolean is
+        (Target_Id /= "" and then (not Safe (Target_Id)
+           or else not Ada.Directories.Exists (Current_File (Target_Kind, Target_Id))));
+   begin
+      if Kind = "character" then
+         declare
+            Crew_Id : constant String := Str_Field (Get (Doc, "dossier"), "crewId");
+         begin
+            if Missing ("crew", Crew_Id) then return "crew/" & Crew_Id; end if;
+         end;
+      elsif Kind = "clock" then
+         declare
+            Owner_Kind : constant String := Str_Field (Doc, "ownerKind");
+            Owner_Id : constant String := Str_Field (Doc, "ownerId");
+            Related : constant JSON_Array := Get (Doc, "relatedClockIds");
+         begin
+            if Owner_Kind /= "campaign" and then Missing (Owner_Kind, Owner_Id) then
+               return Owner_Kind & "/" & Owner_Id;
+            end if;
+            for I in 1 .. Length (Related) loop
+               declare Related_Id : constant String := Get (Get (Related, I)); begin
+                  if Missing ("clock", Related_Id) then return "clock/" & Related_Id; end if;
+               end;
+            end loop;
+         end;
+      end if;
+      return "";
+   end Missing_Reference;
+   procedure Require_Entity_Lock (Kind, Id : String; Doc : JSON_Value) is
+   begin
+      if not Entity_Lock_Registry.Owned (Id) then
+         raise Program_Error with "entity write requires its calling task's mutex";
+      end if;
+      if Str_Field (Doc, "kind") /= Kind
+        or else (Kind /= "campaign" and then Str_Field (Doc, "id") /= Id)
+      then
+         raise Program_Error with "entity write identity mismatch";
+      end if;
+      if Kind /= "campaign" and then not Ada.Directories.Exists (Current_File (Kind, Id))
+        and then not Entity_Lock_Registry.Owned (Membership_Lock)
+      then
+         raise Program_Error with "new entity write requires membership gate";
+      end if;
+   end Require_Entity_Lock;
+
    procedure Write_Entity (Kind, Id : String; Entity : JSON_Value) is
    begin
+      Require_Entity_Write (Kind, Id, Entity);
       Atomic_Write (Current_File (Kind, Id), Entity);
    end Write_Entity;
+
+   procedure Write_Repair_Preview (Kind, Id : String; Entity : JSON_Value) is
+   begin
+      Require_Entity_Lock (Kind, Id, Entity);
+      Atomic_Write (Current_File (Kind, Id), Entity);
+   end Write_Repair_Preview;
+   --  SC-A7: clock ownership and relationship reference validation
+   --  (clock-taxonomy.mdx §5 rules 3 and 5; contract/openapi.yaml /clocks
+   --  POST and /clocks/{id}/update).  Requires store access, so create and
+   --  shared mutation admission call it within the route transaction scope.
+   --  Self_Id is the clock's own id ("" on create).
+   function Check_Clock_Refs
+     (B : JSON_Value; Self_Id : String; Bad : out Unbounded_String)
+      return Boolean
+   is
+      Ok : Boolean := True;
+      procedure Reject (Msg : String) is
+      begin
+         if Ok then Bad := To_Unbounded_String (Msg); Ok := False; end if;
+      end Reject;
+   begin
+      if Has_Field (B, "ownerKind") or else Has_Field (B, "ownerId") then
+         declare
+            OK : constant String := Str_Field (B, "ownerKind", "");
+            OI : constant String := Str_Field (B, "ownerId", "");
+         begin
+            if OK = "campaign" then
+               if OI /= "" then
+                  Reject ("campaign-owned clocks must have an empty ownerId");
+               end if;
+            elsif OK = "character" or else OK = "crew" then
+               if OI = "" then
+                  Reject ("ownerKind " & OK & " requires an ownerId");
+               elsif not Safe (OI) or else not Ada.Directories.Exists (Current_File (OK, OI)) then
+                  Reject ("ownerId does not reference an existing " & OK);
+               end if;
+            else
+               Reject ("ownerKind must be campaign, character or crew");
+            end if;
+         end;
+      end if;
+      if Has_Field (B, "relatedClockIds")
+        and then Get (B, "relatedClockIds").Kind = JSON_Array_Type
+      then
+         declare
+            A : constant JSON_Array := Get (B, "relatedClockIds");
+         begin
+            for I in 1 .. Length (A) loop
+               if Get (A, I).Kind /= JSON_String_Type then
+                  Reject ("relatedClockIds entries must be strings");
+               else
+                  declare
+                     RID : constant String := Get (Get (A, I));
+                  begin
+                     if Ok and then RID = Self_Id then
+                        Reject ("relatedClockIds must not reference the clock itself");
+                     end if;
+                     for J in 1 .. I - 1 loop
+                        if Ok and then String'(Get (Get (A, J))) = RID then
+                           Reject ("relatedClockIds must not contain duplicates");
+                           exit;
+                        end if;
+                     end loop;
+                     if Ok and then (not Safe (RID) or else not Ada.Directories.Exists (Current_File ("clock", RID))) then
+                        Reject ("relatedClockIds entry does not reference an existing standalone clock");
+                     end if;
+                  end;
+               end if;
+            end loop;
+         end;
+      end if;
+      return Ok;
+   end Check_Clock_Refs;
+
+   function Reference_Issues (Kind, Id : String; Doc : JSON_Value) return JSON_Array is
+      Bad : Unbounded_String;
+      Issues : JSON_Array := Empty_Array;
+   begin
+      if Kind = "clock" then
+         if Check_Clock_Refs (Doc, Id, Bad) then return Issues; end if;
+      elsif Kind = "character" then
+         declare Missing : constant String := Missing_Reference (Kind, Doc); begin
+            if Missing = "" then return Issues; end if;
+            Bad := To_Unbounded_String ("reference target does not exist: " & Missing);
+         end;
+      else
+         return Issues;
+      end if;
+      Append (Issues, Issue_At
+        ((if Kind = "character" then "/dossier/crewId"
+          elsif Ada.Strings.Fixed.Index (To_String (Bad), "relatedClockIds") > 0
+          then "/relatedClockIds" else "/ownerId"),
+         To_String (Bad), "valid references to existing entities"));
+      return Issues;
+   end Reference_Issues;
+
+   procedure Require_Entity_Write (Kind, Id : String; Doc : JSON_Value) is
+      Issues : JSON_Array;
+   begin
+      Require_Entity_Lock (Kind, Id, Doc);
+      Issues := Reference_Issues (Kind, Id, Doc);
+      if Length (Issues) > 0 then
+         raise Reference_Error with Str_Field (Get (Issues, 1), "reason");
+      end if;
+   end Require_Entity_Write;
+
+   procedure Initialize_Campaign (Entity : JSON_Value) is
+      Granted : Boolean;
+   begin
+      Entity_Lock_Registry.Claim ("campaign", Granted);
+      if not Granted then raise Program_Error with "campaign initialization is startup-only"; end if;
+      begin
+         Require_Entity_Write ("campaign", "campaign", Entity);
+         Atomic_Write (To_String (Data_Root) & "/campaign.json", Entity);
+      exception
+         when others =>
+            Entity_Lock_Registry.Release ("campaign");
+            raise;
+      end;
+      Entity_Lock_Registry.Release ("campaign");
+   end Initialize_Campaign;
 
    --  SC-A3: route ids of every entity directory of a kind (Q15 — the
    --  directory location is authoritative, so degraded rows keep their

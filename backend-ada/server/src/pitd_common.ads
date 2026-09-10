@@ -7,6 +7,8 @@
 with Ada.Calendar;
 with Ada.Calendar.Formatting;
 with Ada.Directories;
+with Ada.Containers.Indefinite_Ordered_Maps;
+with Ada.Task_Identification;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
 with Ada.Text_IO;
@@ -51,9 +53,30 @@ package Pitd_Common is
    function New_Snapshot_Id return String;
    function Content_Token (Bytes : String) return String;
 
+   --  One task-owned registry and one complete-document reference admission.
+   --  Delete owns its full candidate set; create takes membership before its id.
+   package Lock_Owners is new Ada.Containers.Indefinite_Ordered_Maps
+     (String, Ada.Task_Identification.Task_Id, "=" => Ada.Task_Identification."=");
+   Membership_Lock : constant String := "entity-membership|";
+   protected Entity_Lock_Registry is
+      procedure Claim (Id : String; Granted : out Boolean);
+      procedure Claim_Set (Keys : JSON_Array; Granted : out Boolean);
+      procedure Release (Id : String);
+      procedure Release_Set (Keys : JSON_Array);
+      function Owned (Id : String) return Boolean;
+   private
+      Held : Lock_Owners.Map;
+   end Entity_Lock_Registry;
+   function Check_Clock_Refs
+     (B : JSON_Value; Self_Id : String; Bad : out Unbounded_String) return Boolean;
+   function Missing_Reference (Kind : String; Doc : JSON_Value) return String;
+   function Reference_Issues (Kind, Id : String; Doc : JSON_Value) return JSON_Array;
+   Reference_Error : exception;
+   procedure Require_Entity_Write (Kind, Id : String; Doc : JSON_Value);
+
    --  Entity storage (atomic current.json writes, directory enumeration).
    function Read_File (Name : String) return String;
-   procedure Atomic_Write (Name : String; Value : JSON_Value);
+   --  Raw atomic writes are body-private; no caller can bypass admission.
    function Entity_Dir (Kind, Id : String) return String;
    function Current_File (Kind, Id : String) return String;
    function Read_Entity (Kind, Id : String) return JSON_Value;
@@ -61,6 +84,10 @@ package Pitd_Common is
      (Kind, Id : String; V : out JSON_Value;
       Exists, Parse_Ok : out Boolean);
    procedure Write_Entity (Kind, Id : String; Entity : JSON_Value);
+   --  Contract-pending exception: confirmed repair preserves previewed links.
+   --  It still requires the caller's primary mutex and matching identity.
+   procedure Write_Repair_Preview (Kind, Id : String; Entity : JSON_Value);
+   procedure Initialize_Campaign (Entity : JSON_Value);
    function Entity_Ids (Kind : String) return JSON_Array;
 
    --  SC-A2: --test-hooks crash probe (REPAIR-ATOMIC-004); armed by the

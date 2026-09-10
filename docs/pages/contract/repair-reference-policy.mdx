@@ -1,0 +1,59 @@
+---
+title: Repair reference policy — open contract question
+description: Categorized conflict between previewed schema repair and store-dependent reference validity
+---
+
+# Repair reference policy — open contract question
+
+## Category: normalization scope is underspecified
+
+PAPERCLIPS §7.1 and OpenAPI `/characters/{id}/repair` (lines 769–777) require
+confirmed repair to write the **previewed normalized result**, with one snapshot
+and revision increment. The SC-R0 canonicalization matrix defines D1–D10 and
+L1–L8 for shape, identity, enum, numeric and legacy corrections. It does not
+specify a correction for a schema-valid reference whose target is absent.
+Conversely, the crew/clock link rules require non-dangling readable references.
+Schema validity and store-dependent graph validity are different predicates.
+
+The frozen `FV-MIGRATE-CHAR-001` illustrates the gap: it copies
+`golden-character.json`, whose `dossier.crewId` is
+`8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2`, seeds only the character, and expects
+repair HTTP 200. Its post-repair assertions (test lines 323–335) check the vice
+purveyor fill, revision increment and byte-identical GET, **not crewId**. No
+managed default seed supplies that crew. This is not evidence of an intentional
+reference policy, and manufacturing a seed would hide the question.
+
+## Interim decision
+
+No silent clearing rule is invented. Per the user's explicit direction,
+**repair retains its prior reference behavior** and persists exactly the
+confirmed preview, including unresolved links. Its named repair-only storage
+operation still enforces the calling task's entity mutex and route identity.
+All other live entity writers use strict shared reference admission. Therefore the
+current guarantee is deliberately **not** an unconditional graph invariant
+across repair; the exception is visible in the write inventory and regression
+`WRITE-REF-REPAIR-001`.
+
+No frozen test, golden fixture, seed, contract operation or status declaration
+was changed to make acceptance pass.
+
+## Recommended contract decision
+
+Define one store-dependent reference-normalization policy for repair preview
+and apply. A useful policy would explicitly preview missing crew-link clearing,
+missing-owner reassignment to campaign, and missing related-clock removal,
+including pointers, previous values, replacements and warnings. Applying a
+preview must recheck its referenced state; specify whether drift returns the
+existing stale/normalization-required response or requires a fresh preview.
+Until that policy is ratified, generic “correction/removal” wording is not
+permission to silently change these schema-valid values.
+
+## Category: undeclared generic-handler operations
+
+Clock import and clock undo are accepted by the existing generic entity handler
+but have no OpenAPI operations. They remain open API-surface decisions, not
+implicit contract additions. Clock import now follows the declared
+character/crew import admission policy (HTTP 400 `INVALID_ENTRY` for unresolved
+references); clock undo retains missing-reference HTTP 404 `NOT_FOUND`.
+The frontend has no clock import/undo caller. Decide whether to declare and
+surface these operations or remove them in a separate, explicit cutover.

@@ -180,6 +180,42 @@ overlapping batch/delete writes, more than 64 affected clocks, create/delete
 membership races, private-key isolation, historical missing-reference rejection,
 valid restoration, and concurrent crew deletion/member undo.
 
+### Shared live-document write admission (2026-10-05 correction)
+
+`Pitd_Common.Write_Entity` is now the mandatory live-document persistence
+boundary: it checks task ownership of the primary entity mutex, route identity,
+the membership gate for new rows, and character/clock references. Raw
+`Atomic_Write` is private to the Common body. The registry records the owning Ada
+task, not merely whether a mutex is busy. The same complete delete discovery
+sets prevent a referenced target from disappearing behind a primary-locked
+writer; ordinary mutations are not serialized through a global write mutex.
+
+Import apply checks references under its primary mutex before history clearing
+or snapshot creation and returns the declared 400 `INVALID_ENTRY` envelope,
+with property-pointer issues. Ordinary mutations reject 400 `VALIDATION` before
+snapshots. Secondary deletion plans every resulting document and validates all
+of them before the first write or root removal. Batch validates final documents,
+not transient intermediate micro-operations, and reports a typed failed item
+without committing any entity/history.
+
+**Explicit approved repair-only exception:** confirmed repair continues to
+persist its previewed normalized result, including unresolved references. Its
+named `Write_Repair_Preview` primitive still enforces task-owned primary mutex
+and matching identity. Frozen normalization rules do not define clearing a
+schema-valid UUID because its target is absent; adding a managed crew seed
+would mask that question. [Repair reference policy](./repair-reference-policy)
+records the categorized issue and recommendation. No unconditional graph
+invariant across repair is claimed.
+
+That issue also records the pre-existing undeclared clock import surface beside
+clock undo; no frozen route/status was added. Frontend imports are bound only to
+character and crew routes (`frontend/src/api/client.ts:2025,2042`). The complete
+write inventory, including startup and intentionally historical snapshot copies,
+is in `tasks/REVIEW-01-WRITE-REFERENCE-ADMISSION.md`. Eleven new real-HTTP cases
+cover rejected imports and post-preview target deletion, a crew-import control,
+ordinary/batch dirty-document rejection, final-valid batch admission, approved
+repair behavior, and all-before-first-write secondary-delete rejection.
+
 ### HTTP burst connection budget (2026-10-05 correction)
 
 `backend-ada/server/src/pitd.adb` explicitly sets `Max_Connection => 64` at

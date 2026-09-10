@@ -74,59 +74,6 @@ package body Pitd_Callback is
    --  A set claim is all-or-none: no request waits while retaining a partial
    --  delete/undo plan. Campaign size is not bounded by the old 64-slot table.
    package String_Sets is new Ada.Containers.Indefinite_Ordered_Sets (String);
-   Membership_Lock : constant String := "entity-membership|";
-
-   function Lock_Id (Key : String) return String is
-     (Key (Ada.Strings.Fixed.Index (Key, "/") + 1 .. Key'Last));
-
-   protected Entity_Lock_Registry is
-      procedure Claim (Id : String; Granted : out Boolean);
-      procedure Claim_Set (Keys : JSON_Array; Granted : out Boolean);
-      procedure Release (Id : String);
-      procedure Release_Set (Keys : JSON_Array);
-   private
-      Held : String_Sets.Set;
-   end Entity_Lock_Registry;
-
-   protected body Entity_Lock_Registry is
-      procedure Claim (Id : String; Granted : out Boolean) is
-      begin
-         Granted := not Held.Contains (Id);
-         if Granted then Held.Include (Id); end if;
-      end Claim;
-
-      procedure Claim_Set (Keys : JSON_Array; Granted : out Boolean) is
-         Acquired : Natural := 0;
-      begin
-         Granted := False;
-         for I in 1 .. Length (Keys) loop
-            if Held.Contains (Lock_Id (Get (Get (Keys, I)))) then return; end if;
-         end loop;
-         for I in 1 .. Length (Keys) loop
-            Held.Include (Lock_Id (Get (Get (Keys, I))));
-            Acquired := I;
-         end loop;
-         Granted := True;
-      exception
-         when others =>
-            for I in 1 .. Acquired loop
-               Held.Exclude (Lock_Id (Get (Get (Keys, I))));
-            end loop;
-            raise;
-      end Claim_Set;
-
-      procedure Release (Id : String) is
-      begin
-         Held.Exclude (Id);
-      end Release;
-
-      procedure Release_Set (Keys : JSON_Array) is
-      begin
-         for I in 1 .. Length (Keys) loop
-            Held.Exclude (Lock_Id (Get (Get (Keys, I))));
-         end loop;
-      end Release_Set;
-   end Entity_Lock_Registry;
 
    --  BUG-002: bounded LRU of idempotent mutation results, keyed by
    --  method+route+entityId+Idempotency-Key with a SHA-256 hash of the raw
@@ -364,38 +311,6 @@ package body Pitd_Callback is
 
 
 
-   --  Cross-entity ids in the persisted schemas: character dossier.crewId,
-   --  clock ownerKind/ownerId, and clock relatedClockIds. Crew child ids and
-   --  character's embedded healing clock are local values, not store links.
-   function Missing_Reference (Kind : String; Doc : JSON_Value) return String is
-      function Missing (Target_Kind, Target_Id : String) return Boolean is
-        (Target_Id /= "" and then (not Safe (Target_Id)
-           or else not Ada.Directories.Exists (Current_File (Target_Kind, Target_Id))));
-   begin
-      if Kind = "character" then
-         declare
-            Crew_Id : constant String := Str_Field (Get (Doc, "dossier"), "crewId");
-         begin
-            if Missing ("crew", Crew_Id) then return "crew/" & Crew_Id; end if;
-         end;
-      elsif Kind = "clock" then
-         declare
-            Owner_Kind : constant String := Str_Field (Doc, "ownerKind");
-            Owner_Id : constant String := Str_Field (Doc, "ownerId");
-            Related : constant JSON_Array := Get (Doc, "relatedClockIds");
-         begin
-            if Owner_Kind /= "campaign" and then Missing (Owner_Kind, Owner_Id) then
-               return Owner_Kind & "/" & Owner_Id;
-            end if;
-            for I in 1 .. Length (Related) loop
-               declare Related_Id : constant String := Get (Get (Related, I)); begin
-                  if Missing ("clock", Related_Id) then return "clock/" & Related_Id; end if;
-               end;
-            end loop;
-         end;
-      end if;
-      return "";
-   end Missing_Reference;
 
    procedure Add_Reference_Locks
      (Keys : in out String_Sets.Set; Kind : String; Doc : JSON_Value) is
@@ -429,6 +344,8 @@ package body Pitd_Callback is
       Created_Ok : Boolean;
       R : JSON_Value;
       Membership_Held : Boolean := False;
+      Entity_Held : Boolean := False;
+      Entity_Id : constant String := Str_Field (E, "id");
    begin
       Schema_Check (Kind, E, Created_Ok);
       if not Created_Ok then
@@ -450,6 +367,11 @@ package body Pitd_Callback is
                          Message => "reference no longer exists: " & Missing);
          end if;
       end;
+      loop
+         Entity_Lock_Registry.Claim (Entity_Id, Entity_Held);
+         exit when Entity_Held;
+         delay 0.001;
+      end loop;
       Write_Entity (Kind, Str_Field (E, "id"), E);
       if Kind = "character" or else Kind = "crew" then
          Write_Baseline_Snapshot (Kind, Str_Field (E, "id"), Op, E);
@@ -462,11 +384,14 @@ package body Pitd_Callback is
             GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))),
             String'(Write (R, Compact => False)) & ASCII.LF);
       end if;
+      Entity_Lock_Registry.Release (Entity_Id);
+      Entity_Held := False;
       Entity_Lock_Registry.Release (Membership_Lock);
       Membership_Held := False;
       return Json_Response (R);
    exception
       when others =>
+         if Entity_Held then Entity_Lock_Registry.Release (Entity_Id); end if;
          if Membership_Held then Entity_Lock_Registry.Release (Membership_Lock); end if;
          raise;
    end Persist_Create;
@@ -932,6 +857,15 @@ package body Pitd_Callback is
       Set_Held : Boolean := False;
       Lock_Keys : JSON_Array := Empty_Array;
       Undo_Best : Unbounded_String := Null_Unbounded_String;
+      Pending_Writes : JSON_Array := Empty_Array;
+      procedure Plan_Write (Target_Kind, Target_Id : String; Doc : JSON_Value) is
+         Item : JSON_Value := Create_Object;
+      begin
+         Set_Field (Item, "kind", Target_Kind);
+         Set_Field (Item, "id", Target_Id);
+         Set_Field (Item, "document", Doc);
+         Append (Pending_Writes, Item);
+      end Plan_Write;
       Undo_Doc : JSON_Value := JSON_Null;
 
       procedure Release_Locks is
@@ -1336,7 +1270,7 @@ if Kind = "crew" then
                         then
                            Set_Field (Get (V, "dossier"), "crewId", "");
                            Stamp (V);
-                           Write_Entity ("character", Cid, V);
+                           Plan_Write ("character", Cid, V);
                         end if;
                      end;
                   end loop;
@@ -1381,7 +1315,7 @@ if Kind = "crew" then
                                     if Changed then
                                        Set_Field (V, "relatedClockIds", O);
                                        Stamp (V);
-                                       Write_Entity ("clock", Cid, V);
+                                       Plan_Write ("clock", Cid, V);
                                     end if;
                                  end;
                               end if;
@@ -1413,7 +1347,7 @@ if Kind = "crew" then
                               Set_Field (V, "ownerKind", "campaign");
                               Set_Field (V, "ownerId", "");
                               Stamp (V);
-                              Write_Entity ("clock", Cid, V);
+                              Plan_Write ("clock", Cid, V);
                               Append (Sides, Create
                                         ("clock " & Cid & " reassigned to campaign"));
                            end if;
@@ -1421,6 +1355,19 @@ if Kind = "crew" then
                      end loop;
                   end;
                end if;
+               --  Validate the complete secondary plan before any write.
+               for I in 1 .. Length (Pending_Writes) loop
+                  declare Item : constant JSON_Value := Get (Pending_Writes, I); begin
+                     Require_Entity_Write
+                       (Str_Field (Item, "kind"), Str_Field (Item, "id"), Get (Item, "document"));
+                  end;
+               end loop;
+               for I in 1 .. Length (Pending_Writes) loop
+                  declare Item : constant JSON_Value := Get (Pending_Writes, I); begin
+                     Write_Entity
+                       (Str_Field (Item, "kind"), Str_Field (Item, "id"), Get (Item, "document"));
+                  end;
+               end loop;
                Ada.Directories.Delete_Tree (Entity_Dir (Kind, Id));
                Release_Locks;
                --  SC-A4: a degraded entity has no readable DTO to embed in
@@ -1681,6 +1628,12 @@ if Kind = "crew" then
                            AWS.Messages.S400);
                      end if;
                      Doc := Clone (Tok.Doc);
+                     declare Issues : constant JSON_Array := Reference_Issues (Kind, Id, Doc); begin
+                        if Length (Issues) > 0 then
+                           Release_Locks;
+                           return Json_Response (Invalid_Entry_Result ("import", Issues), AWS.Messages.S400);
+                        end if;
+                     end;
                      --  settings-derived maxima gate (R4 gap #4): a
                      --  schema-valid document must never store trackers
                      --  above the game-settings bounds
@@ -2029,7 +1982,7 @@ if Kind = "crew" then
                   --  one snapshot (repair is a snapshot-worthy write), then
                   --  the atomic write of the previewed result
                   Snapshot (Kind, Id, "repair", E);
-                  Write_Entity (Kind, Id, Doc);
+                  Write_Repair_Preview (Kind, Id, Doc);
                   Release_Locks;
                   return Json_Response (Success_Result ("repair", Doc));
                end;
@@ -2072,6 +2025,7 @@ if Kind = "crew" then
                end;
                --  BUG-008: snapshot only for ops declared x-snapshot:true in
                --  contract/openapi.yaml.
+               Require_Entity_Write (Kind, Id, E);
                if Snapshots (Op) then Snapshot (Kind, Id, Op, Before); end if;
                Stamp (E);
                Write_Entity (Kind, Id, E);
@@ -2106,6 +2060,12 @@ if Kind = "crew" then
          return Json_Response
            (Validation_Error (Suffix, "request body is not valid JSON",
                               Root_Issues ("request body is not valid JSON")),
+            AWS.Messages.S400);
+      when Ex : Reference_Error =>
+         Release_Locks;
+         return Json_Response
+           (Validation_Error (Suffix, Ada.Exceptions.Exception_Message (Ex),
+                              Root_Issues (Ada.Exceptions.Exception_Message (Ex))),
             AWS.Messages.S400);
       when Constraint_Error =>
          Release_Locks;
@@ -2362,6 +2322,36 @@ if Kind = "crew" then
                                  Set_Field (Item, "op", Create (OpS));
                                  Set_Field (Item, "error", Err);
                                  Append (Outs, Item);
+                              end;
+                           end if;
+                        end;
+                     end loop;
+                  end if;
+                  --  Validate final documents, not transient per-op states.
+                  if OK then
+                     for I in 1 .. N loop
+                        declare Last : Boolean := Ents (I).Changed; begin
+                           for P in I + 1 .. N loop
+                              if Ents (P).Kind = Ents (I).Kind and then Ents (P).Id = Ents (I).Id then
+                                 Last := False; exit;
+                              end if;
+                           end loop;
+                           if Last then
+                              declare
+                                 Issues : constant JSON_Array := Reference_Issues
+                                   (To_String (Ents (I).Kind), To_String (Ents (I).Id), Ents (I).E);
+                              begin
+                                 if Length (Issues) > 0 then
+                                    OK := False;
+                                    declare
+                                       Item : constant JSON_Value := Get (Outs, I);
+                                       Failure : constant JSON_Value := Validation_Error
+                                         (Str_Field (Item, "op"), Str_Field (Get (Issues, 1), "reason"), Issues);
+                                    begin
+                                       Set_Field (Item, "ok", False);
+                                       Set_Field (Item, "error", JSON_Value'(Get (Failure, "error")));
+                                    end;
+                                 end if;
                               end;
                            end if;
                         end;
@@ -3121,7 +3111,7 @@ if Kind = "crew" then
    begin
       Static_Root:=To_Unbounded_String(Static_Directory);Data_Root:=To_Unbounded_String(Data_Directory);Games_Root:=To_Unbounded_String(Games_Directory);Hooks:=Test_Hooks;
       if not Ada.Directories.Exists(Data_Directory) then Ada.Directories.Create_Path(Data_Directory);end if;
-      if not Ada.Directories.Exists(Data_Directory&"/campaign.json") then Campaign:=Create_Object;Set_Field(Campaign,"kind","campaign");Set_Field(Campaign,"name","Paperclips Campaign");Set_Field(Campaign,"gameStem","blades-in-the-dark");Set_Field(Campaign,"createdAt",Now);Set_Field(Campaign,"formatVersion",Integer'(1));Atomic_Write(Data_Directory&"/campaign.json",Campaign);end if;
+      if not Ada.Directories.Exists(Data_Directory&"/campaign.json") then Campaign:=Create_Object;Set_Field(Campaign,"kind","campaign");Set_Field(Campaign,"name","Paperclips Campaign");Set_Field(Campaign,"gameStem","blades-in-the-dark");Set_Field(Campaign,"createdAt",Now);Set_Field(Campaign,"formatVersion",Integer'(1));Initialize_Campaign(Campaign);end if;
       --  SC-A5: validate and cache every game settings file (and crew
       --  catalog when present) before the server starts listening; any
       --  invalid file raises Startup_Failure and aborts startup loudly.

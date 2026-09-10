@@ -198,6 +198,55 @@
     },
     "methodology": "Additive observed-result entry. Combined sequence wall time is not a standalone campaign or total task duration. All historical entries are preserved unchanged."
   },
+  "correction2026-10-05-write-reference-admission": {
+    "finding": "REVIEW-01-WRITE-REFERENCE-ADMISSION cuts all live document writers over to shared task-owned lock/reference admission, admits complete secondary/batch final plans before writes/history changes, and rejects invalid import references with existing 400 INVALID_ENTRY.",
+    "approvedRepairException": "Explicit user-approved repair-only branch preserves confirmed preview references under the same task-mutex/identity guard. Frozen normalization rules do not define store-dependent reference clearing; no seed/fixture/frozen edits and no unconditional graph invariant across repair claimed. Categorized issue: docs/pages/contract/repair-reference-policy.mdx.",
+    "hashRefreshes": [
+      {
+        "mutants": ["M05", "M07", "M08", "M09", "M14", "M15"],
+        "path": "backend-ada/server/src/pitd_callback.adb",
+        "oldHash": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262",
+        "newHash": "d862aa6cbda13756e753c87ceb9058eb3e808a4364d6ab3847b41d0533bf6ae3"
+      },
+      {
+        "mutants": ["M11", "M12", "M16", "M27"],
+        "path": "backend-ada/server/src/pitd_ops.adb",
+        "oldHash": "595cc77953a9ea5ebe4e717f77ad4ccf44e2afa18027fc0c97740f5e974640aa",
+        "newHash": "bf699ebe37af8571e8a3ffcfd970a75b6f729abe27c6e23ae2796d1de42553df"
+      }
+    ],
+    "catalogChanges": "All 18 unique source targets checksummed; exactly ten stale hashes refreshed. No mutation intent, killer, anchor, replacement or severity changed. All prior MUT-02 entries preserved.",
+    "writeInventory": "Every write path with final file:line is recorded in tasks/REVIEW-01-WRITE-REFERENCE-ADMISSION.md and tasks/metrics/ada/REVIEW-01-WRITE-REFERENCE-ADMISSION.json.",
+    "focusedAcceptance": {
+      "exitCode": 0, "buildSeconds": 2.02, "tests": 41, "files": 6,
+      "vitestSeconds": 10.02, "wallClockSeconds": 12.59,
+      "newRegressionCases": 11, "artifact": "artifact://10653"
+    },
+    "verification": {
+      "command": "npm --prefix conformance run test:mutation", "cwd": ".", "exitCode": 0,
+      "killed": 28, "total": 28, "survived": 0, "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": {"backendAda": 540, "conformanceTooling": 221, "frontend": 794},
+      "postCampaignSourceRestoration": "PASS; all files restored to baseline and each Ada mutant followed by clean backend rebuild",
+      "revision": "1140de1de41f", "timestamp": "2026-10-05T11:21:01.710Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T11-21-01-707Z.txt",
+      "sessionArtifact": "artifact://10656"
+    },
+    "combinedVerification": {
+      "command": "npm --prefix conformance run test:ada -- --run && npm --prefix conformance run test:tooling && npm --prefix frontend test -- --run && npm --prefix conformance run test:mutation",
+      "cwd": ".", "exitCode": 0, "wallClockSeconds": 1928.41,
+      "fullAcceptance": {"ada": "540/540; 64 files", "tooling": "221/221; 14 files", "frontend": "794/794; 20 files"}
+    },
+    "validators": {
+      "command": "node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js",
+      "cwd": ".", "exitCode": 0, "metricsFilesValidated": 159,
+      "traceabilityChecksPassed": 231, "reconciliationChecksPassed": 17,
+      "errors": 0, "reconciliationWarnings": 0, "wallClockSeconds": 0.26,
+      "result": "All three ALL CHECKS PASSED; 1624 current rows retained."
+    },
+    "verificationStatus": "Full suites, three validators and 28-mutant campaign passed; independent corrective review pending.",
+    "methodology": "Additive observed-result entry. Combined wall time is not a standalone campaign or total task duration. All historical entries preserved unchanged."
+  },
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
