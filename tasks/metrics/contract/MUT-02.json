@@ -24,7 +24,7 @@
   "scaffoldingLoc": 0,
   "status": "DONE",
   "evidence": [
-    "agent-docs/test-audit/mutation-catalog.json",
+    "conformance/fixtures/mutation-catalog.json",
     "agent-docs/test-audit/mutation-results.json",
     "agent-docs/test-audit/wave3-summary.md",
     "agent-docs/test-audit/browser-evidence/reports/w8-mut02-brief.md",
@@ -33,6 +33,11 @@
     "tasks/metrics/contract/MUT-01.json"
   ],
   "notes": "Evidence-only card: catalog + campaign artifacts, no product LOC. Harness retarget and stale-bin/pitd rebuild trap documented in w9-arch01-report.md. Post-campaign bin/pitd is the last mutant's build; rebuilt via alr.",
+  "correction2026-09-16": {
+    "finding": "catalog was gitignored, broke fresh-checkout tooling suite at module load",
+    "fix": "relocated agent-docs/test-audit/mutation-catalog.json -> conformance/fixtures/mutation-catalog.json, updated CATALOG_PATH",
+    "verification": "fresh disposable jj workspace; tooling 218/218, Ada 471/471, frontend 794/794"
+  },
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",

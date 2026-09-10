@@ -2,7 +2,7 @@
 /**
  * AUDIT-0 Wave 3 — Controlled mutation harness.
  *
- * Applies each mutant from agent-docs/test-audit/mutation-catalog.json,
+ * Applies each mutant from conformance/fixtures/mutation-catalog.json,
  * builds the affected layer, runs the intended catching layer's tests,
  * and records killed/survived status.
  *
@@ -25,7 +25,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
-const CATALOG_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-catalog.json");
+const CATALOG_PATH = join(REPO_ROOT, "conformance/fixtures/mutation-catalog.json");
 const RESULTS_PATH = join(REPO_ROOT, "agent-docs/test-audit/mutation-results.json");
 
 // Input seeds the campaign runs with (mirrors managed-run.mjs --seed-defaults).

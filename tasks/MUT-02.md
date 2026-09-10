@@ -9,7 +9,7 @@ deps:
   - A11Y-01
 track: contract
 outputs:
-  - agent-docs/test-audit/mutation-catalog.json
+  - conformance/fixtures/mutation-catalog.json
   - agent-docs/test-audit/mutation-results.json
   - conformance/scripts/mutation-harness.mjs
 acceptance:
@@ -31,3 +31,4 @@ acceptance:
 - Wave 9: retargeted M01/M04/M06/M11/M12/M16/M27 to post-ARCH-01 package paths and re-ran to full kill; harness retarget and stale-bin/pitd rebuild trap documented in `agent-docs/test-audit/browser-evidence/reports/w9-arch01-report.md`.
 - 2026-08-28: final full-catalog run 28/28 killed, 0 survived (P0 19/19, P1 9/9), `generatedAt 2026-08-28T10:47:18.534Z` in `mutation-results.json`.
 - 2026-09-04 (finding-6 backfill): this tracked card created to mirror the canonical metrics record per work-spec §3.3 (`## Log`) and §5. No new implementation; no sessions/results invented.
+- 2026-09-16 (fresh-checkout correction): a blind REVIEW-01 clean-candidate pass (via disposable jj workspace) found `conformance/scripts/mutation-harness.mjs` eagerly required the gitignored `agent-docs/test-audit/mutation-catalog.json` at module load, breaking `conformance/src/mutation-harness.test.ts` and `conformance/src/sol-finding-1-3.test.ts` on any genuine fresh checkout (ENOENT before test collection). Fixed by relocating the catalog to tracked `conformance/fixtures/mutation-catalog.json` and updating `CATALOG_PATH` in the harness. Re-verified via fresh disposable jj workspace plus full regression: tooling 218/218 (incl. the two previously-broken files at 50/50), Ada 471/471, frontend 794/794.

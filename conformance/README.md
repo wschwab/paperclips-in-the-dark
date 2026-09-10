@@ -20,6 +20,22 @@ The report format is documented at `docs/pages/conformance/report-json.mdx`.
 Tooling tests for the report normalizer and shim run separately with
 `npm run test:tooling`.
 
+The mutation harness requires the versioned input
+`conformance/fixtures/mutation-catalog.json` (28 curated mutants, expected test
+IDs, and restoration hashes). It is not generated audit output and must be
+available from the checkout; do not copy it into `agent-docs/` as setup.
+`npm run test:tooling` includes both harness-importing test files through
+`src/**/*.test.ts`; `test:run` and the managed `test:ada` select only
+`suites/**/*.test.ts`. `test:mutation` invokes the harness directly and runs the
+appropriate layer suites, including tooling tests for conformance mutants.
+
+For a fresh checkout, install conformance and frontend dependencies (`npm ci` in
+each directory), build the Ada server (`alr --non-interactive build` in
+`backend-ada/server`), and build the frontend (`npm run build` in `frontend`)
+before the tooling integration tests. Then run `npm run test:tooling` and
+`npm run test:ada` from `conformance`. These commands need no local audit input
+directory. Mutation run results remain local output under `agent-docs/test-audit/`.
+
 ## Browser journeys (`npm run test:browser`)
 
 Drives real Chromium against the managed server:

@@ -11,6 +11,46 @@ effort `xhigh`, read-only sandbox) plus the Wave 8 integration results.
 Each gate ended in exactly `VERDICT: PASS` (anything else fails the gate and
 is fixed before the next round).
 
+## 2026-09-16 — mutation catalog checkout correction (MUT-01 / MUT-02)
+
+The mutation harness's required catalog is now tracked at
+`conformance/fixtures/mutation-catalog.json`, following the existing conformance
+fixture layout. Its 28 curated entries, expected killer IDs, and restoration
+hashes were moved byte-for-byte; audit results remain local generated evidence.
+Neither static imports nor missing-input failure behavior were weakened.
+
+The old location was inside the globally ignored local audit directory.
+`git status --short --ignored --untracked-files=all -- agent-docs/test-audit/mutation-catalog.json`
+reported `!! agent-docs/test-audit/mutation-catalog.json` before relocation.
+Both `mutation-harness.test.ts` and `sol-finding-1-3.test.ts` import the harness
+at module scope. `test:tooling` includes them through `src/**/*.test.ts`;
+`test:run` and `test:ada` select `suites/**/*.test.ts` instead. `test:mutation`
+loads the catalog directly and invokes tooling for its conformance-layer mutants.
+
+Earlier green runs were not fresh-checkout proof: the primary copy had the
+ignored file, and the 2026-09-04 VET notes explicitly record copying the catalog
+into disposable workspaces before running gates. Those historical outcomes
+remain recorded but do not prove catalog availability from version control.
+
+Fresh proof uses `/tmp/mutation-catalog-fix-verify`, created with
+`jj workspace add /tmp/mutation-catalog-fix-verify --name mutation-catalog-fix-verify -r @`.
+The source snapshot is `98723fb0` (empty verification child `4ad4ecbd6856`);
+normal prerequisites were installed/built there with `npm ci --no-audit --no-fund`
+in conformance and frontend, `alr --non-interactive build` in backend-ada/server,
+and `npm run build` in frontend. No ignored catalog or other audit input was
+copied in: `agent-docs` was absent before tooling, while `jj file list
+conformance/fixtures/mutation-catalog.json` listed the required fixture.
+Its SHA-256 is `93e92831a76cb1aed923d565912e7b1d48824829dd0c0f08aa87266719fddab3`.
+
+The literal full `npm run test:ada` passed **58 files / 471 tests**, and
+`npm run typecheck` passed. The first tooling attempt loaded both previously
+broken suites but had **23 failures / 195 passes** because global orphan-process
+assertions saw the concurrently running independent review's legitimate managed
+servers. That output is retained separately; no assertions were changed.
+Detailed verification outcomes are appended in the dated MUT-01 metric entry.
+This correction is not a REVIEW-01, REVIEW-02, or VET-01 completion claim;
+their ordered gate status and historical records below are unchanged.
+
   > **Authoritative current evidence (2026-09-09).** The current candidate is
   > `f650d62c` (full `f650d62c32db6a2f8e16c9f9325eadecda765e57`): REVIEW-01 is
   > BLOCKED — blind M02 calibration PASS (`clock.ts` relatedClockIds,
