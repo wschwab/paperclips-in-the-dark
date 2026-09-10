@@ -99,6 +99,15 @@ rendered window.
   health `dataDir` resolves to the exact owned directory. Cleanup runs in
   `finally` and targets only the exact owned PID/process tree and owned
   temporary directory.
+- **Orphan-check isolation (REVIEW-01-TOOLING-ORPHAN-SCOPE):** both managed launcher
+  test suites check only server PIDs announced by the launcher under test,
+  including every startup attempt and restart cycle. A host-wide command-line
+  substring match is not process ownership: unrelated or concurrent processes
+  may legitimately mention `pitd-managed`. The permanent regression for each
+  suite rejects a still-live owned server, then accepts its stopped PID while
+  an unrelated matching process remains alive. The broken-stdout regression
+  captures the owned PID before closing the pipe, so it retains an exact
+  cleanup assertion without scanning other runs.
 - **Isolation guard:** invoked by conformance, browser, mutation, benchmark, and
   integrated CI commands — not a standalone advisory blocklist.
 

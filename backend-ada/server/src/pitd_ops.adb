@@ -182,13 +182,23 @@ function New_Character (Stem, Playbook : String) return JSON_Value is
         (if Has_Field (B, "behavior") then Str_Field (B, "behavior", "bounded")
          elsif Str_Field (B, "clockKind", "project") = "rollover" then "rollover"
          else "bounded");
-      C : JSON_Value;
+      C : JSON_Value := Create_Object;
    begin
-      C := Read ("{""kind"":""clock"",""id"":""" & Id & """,""revision"":1,""formatVersion"":1,""createdAt"":""" & T & """,""updatedAt"":""" & T
-        & """,""name"":""" & Str_Field (B,"name") & """,""ownerKind"":""" & Str_Field (B,"ownerKind","campaign")
-        & """,""ownerId"":""" & Str_Field (B,"ownerId") & """,""purpose"":""" & Str_Field (B,"purpose","custom")
-        & """,""behavior"":""" & Behavior & """,""segments"":0,""size"":" & Trim_Image (Int_Field (B,"size",4))
-        & ",""rollover"":0,""relatedClockIds"":[]}");
+      Set_Field (C, "kind", "clock");
+      Set_Field (C, "id", Id);
+      Set_Field (C, "revision", Integer'(1));
+      Set_Field (C, "formatVersion", Integer'(1));
+      Set_Field (C, "createdAt", T);
+      Set_Field (C, "updatedAt", T);
+      Set_Field (C, "name", Str_Field (B, "name"));
+      Set_Field (C, "ownerKind", Str_Field (B, "ownerKind", "campaign"));
+      Set_Field (C, "ownerId", Str_Field (B, "ownerId"));
+      Set_Field (C, "purpose", Str_Field (B, "purpose", "custom"));
+      Set_Field (C, "behavior", Behavior);
+      Set_Field (C, "segments", Integer'(0));
+      Set_Field (C, "size", Int_Field (B, "size", 4));
+      Set_Field (C, "rollover", Integer'(0));
+      Set_Field (C, "relatedClockIds", Empty_Array);
       if Has_Field (B, "relatedClockIds") then
          Set_Field (C, "relatedClockIds", Clone (Get (B, "relatedClockIds")));
       end if;

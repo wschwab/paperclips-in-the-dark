@@ -1,0 +1,88 @@
+{
+  "track": "ada",
+  "implementationAgent": "clock-create-corrections (omp worker)",
+  "reviewAgent": null,
+  "date": "2026-09-24",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 1,
+    "human": 0
+  },
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "metricsMethodology": {
+    "wallClockNote": "0 denotes unmeasured total task wall time, not a measured zero duration; command durations are recorded separately.",
+    "tokensNote": "Token accounting unavailable.",
+    "locNote": "No VCS diff run; no inferred LOC totals.",
+    "scaffoldingLocNote": "Scaffolding LOC was not measured; no inferred LOC total.",
+    "method": "Recorded observed red/green command results and live HTTP smoke assertions; unmeasured total wall time uses the existing 0 convention.",
+    "source": "This record's evidence entries, session artifacts artifact://10351, artifact://10354, artifact://10357, and tasks/REVIEW-01-CLOCK-CREATE-REPLAY.md."
+  },
+  "sourceCandidate": "48b19881405fb59d351d2d45037151ca636eca2b",
+  "status": "implementation-acceptance-passed; independent review pending",
+  "passRateAtFirstDoneClaim": "476/476 full seeded Ada tests, 58/58 files",
+  "passRateAfterReview": "pending",
+  "evidence": {
+    "red": {
+      "command": "npm run test:ada -- --run suites/semantics/clocks.test.ts suites/persistence/idempotency.test.ts -t 'CLOCK-CREATE-01[678]|PERSISTENCE-IDEMPOTENCY-00[56]'",
+      "cwd": "conformance",
+      "exitCode": 1,
+      "result": "5 failed regression tests before implementation",
+      "artifact": "artifact://10351"
+    },
+    "build": {
+      "command": "XDG_RUNTIME_DIR=/tmp alr --non-interactive build",
+      "cwd": "backend-ada/server",
+      "exitCode": 0,
+      "result": "Compile/bind/link successful",
+      "seconds": 2.5
+    },
+    "focused": {
+      "command": "npm run test:ada -- --run suites/semantics/clocks.test.ts suites/persistence/idempotency.test.ts",
+      "cwd": "conformance",
+      "exitCode": 0,
+      "testsPassed": 24,
+      "filesPassed": 2,
+      "artifact": "artifact://10354"
+    },
+    "full": {
+      "command": "npm run test:ada -- --run",
+      "cwd": "conformance",
+      "exitCode": 0,
+      "testsPassed": 476,
+      "filesPassed": 58,
+      "baselineTests": 471,
+      "addedTests": 5,
+      "seconds": 53.53,
+      "artifact": "artifact://10357"
+    },
+    "smoke": {
+      "method": "Temporary Ada process plus urllib HTTP requests and persisted JSON checks; process and directory cleaned",
+      "result": {
+        "live_http_smoke": "PASS",
+        "identical_replay_bytes": true,
+        "existing_clock_unchanged": true,
+        "literal_name_persisted": true,
+        "distinct_key_independent": true,
+        "persisted_clock_count": 4
+      }
+    },
+    "tooling": "Not run for this slice: fixture wiring and tooling unchanged"
+  },
+  "task": "REVIEW-01-CLOCK-CREATE-REPLAY",
+  "testIds": [
+    "PERSISTENCE-IDEMPOTENCY-005",
+    "PERSISTENCE-IDEMPOTENCY-006"
+  ],
+  "redFailure": "Immediate retry returned distinct ID, persisted 2 clocks instead of 1; post-validation successful retry also duplicated.",
+  "notes": "Only exact replay is specified here. Same-key/different-body requires a separate contract decision because createClock declares 200/400 whereas existing entity mutation mismatch uses 409. No new mismatch branch/status/test was introduced.",
+  "defectCatchingLayer": [
+    "Independent blind review, then failing-first consumer-visible conformance regression"
+  ],
+  "card": "tasks/REVIEW-01-CLOCK-CREATE-REPLAY.md",
+  "documentation": "docs/pages/contract/wave0/clock-taxonomy.mdx"
+}

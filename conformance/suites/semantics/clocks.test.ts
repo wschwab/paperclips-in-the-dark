@@ -433,4 +433,45 @@ describe("SC-O5 frozen clock contract (clock-taxonomy.mdx)", () => {
     expect(missing.ok).toBe(false);
     expect(missing.error?.code).toBe("VALIDATION");
   });
+
+  testCase("CLOCK-CREATE-016", "quoted and control-character names round-trip unchanged", async () => {
+    const name = 'Inspect "the vault"\n雪\t\u0001';
+    const created = await api.createClock(name, "bounded", 4);
+    expect(created.ok).toBe(true);
+    expect(created.clock?.name).toBe(name);
+    if (!created.clock) throw new Error("create returned no clock");
+    expect((await api.clock(created.clock.id)).name).toBe(name);
+  });
+
+  testCase("CLOCK-CREATE-017", "literal backslash escapes in names are never decoded twice", async () => {
+    const name = String.raw`C:\new\tunnel\u0041\\end`;
+    const created = await api.createClock(name, "bounded", 4);
+    expect(created.ok).toBe(true);
+    expect(created.clock?.name).toBe(name);
+    if (!created.clock) throw new Error("create returned no clock");
+    expect((await api.clock(created.clock.id)).name).toBe(name);
+  });
+
+  testCase("CLOCK-CREATE-018", "JSON-looking names cannot replace an existing clock or its state", async () => {
+    const original = await api.createClock("Original clock", "bounded", 6);
+    if (!original.clock) throw new Error("create returned no clock");
+    const id = original.clock.id;
+    const progressed = await api.operation(await api.post(`clocks/${id}/ops/clock.progress`, { segments: 3 }));
+    expect(progressed.ok).toBe(true);
+    const before = await api.get(`clocks/${id}`);
+    const other = await api.createClock("Untouched clock", "rollover", 4);
+    if (!other.clock) throw new Error("create returned no clock");
+    const otherBefore = await api.get(`clocks/${other.clock.id}`);
+    const name = `replacement","id":"${id}`;
+    const created = await api.createClock(name, "bounded", 4);
+    expect(created.ok).toBe(true);
+    if (!created.clock) throw new Error("create returned no clock");
+    expect.soft(created.clock.id).not.toBe(id);
+    expect.soft(created.clock.name).toBe(name);
+    expect.soft((await api.get(`clocks/${id}`)).rawBody).toBe(before.rawBody);
+    expect.soft((await api.clock(id)).revision).toBe(progressed.clock?.revision);
+    expect.soft((await api.clock(id)).segments).toBe(3);
+    expect.soft((await api.get(`clocks/${other.clock.id}`)).rawBody).toBe(otherBefore.rawBody);
+    expect.soft((await api.clock(created.clock.id)).name).toBe(name);
+  });
 });

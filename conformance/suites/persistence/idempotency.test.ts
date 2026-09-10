@@ -93,4 +93,68 @@ describe("persistence idempotency scope", () => {
       expect(entries).toHaveLength(1);
     },
   );
+
+  testCase(
+    "PERSISTENCE-IDEMPOTENCY-005",
+    "an immediate identical clock-create retry replays one persisted clock while distinct keys create independently",
+    async () => {
+      const marker = await api.createClock("Clock retry scope", "bounded", 4);
+      if (!marker.clock) throw new Error("create returned no clock");
+      const body = {
+        name: `Retry clock ${marker.clock.id}`,
+        behavior: "bounded", size: 4, ownerKind: "campaign", ownerId: "",
+        purpose: "custom", relatedClockIds: [],
+      };
+      const headers = { "Idempotency-Key": `clock-create-${marker.clock.id}` };
+      const first = await api.post("clocks", body, headers);
+      const retry = await api.post("clocks", body, headers);
+      expect(first.status).toBe(200);
+      expect(retry.status).toBe(200);
+      const created = await api.operation(first);
+      expect(created.ok).toBe(true);
+      if (!created.clock) throw new Error("create returned no clock");
+      expect.soft(retry.rawBody).toBe(first.rawBody);
+      const rows = await decode(Schemas.ClockList, (await api.get("clocks")).body);
+      expect.soft(rows.filter((row) => row.name === body.name).map((row) => row.id)).toEqual([created.clock.id]);
+      expect(await api.clock(created.clock.id)).toEqual(created.clock);
+
+      const independent = await api.post("clocks", body, { "Idempotency-Key": `${headers["Idempotency-Key"]}-other` });
+      expect(independent.status).toBe(200);
+      const second = await api.operation(independent);
+      expect(second.ok).toBe(true);
+      expect(second.clock?.id).not.toBe(created.clock.id);
+      const finalRows = await decode(Schemas.ClockList, (await api.get("clocks")).body);
+      expect(finalRows.filter((row) => row.name === body.name).map((row) => row.id).sort())
+        .toEqual([created.clock.id, second.clock!.id].sort());
+    },
+  );
+
+  testCase(
+    "PERSISTENCE-IDEMPOTENCY-006",
+    "failed clock creation remains a validation error and does not consume a retry key",
+    async () => {
+      const marker = await api.createClock("Clock validation scope", "bounded", 4);
+      if (!marker.clock) throw new Error("create returned no clock");
+      const headers = { "Idempotency-Key": `clock-error-${marker.clock.id}` };
+      const body = {
+        name: `Valid clock ${marker.clock.id}`, behavior: "bounded", size: 4,
+        ownerKind: "campaign", ownerId: "", purpose: "custom", relatedClockIds: [],
+      };
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const invalid = await api.post("clocks", { ...body, name: "" }, headers);
+        expect(invalid.status).toBe(400);
+        const result = await api.operation(invalid);
+        expect(result.ok).toBe(false);
+        expect(result.error?.code).toBe("VALIDATION");
+      }
+      const valid = await api.post("clocks", body, headers);
+      expect(valid.status).toBe(200);
+      const created = await api.operation(valid);
+      expect(created.ok).toBe(true);
+      expect(created.clock?.name).toBe(body.name);
+      const retry = await api.post("clocks", body, headers);
+      expect(retry.status).toBe(200);
+      expect(retry.rawBody).toBe(valid.rawBody);
+    },
+  );
 });

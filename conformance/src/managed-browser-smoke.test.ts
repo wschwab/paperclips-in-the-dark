@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { checkOrphanAssertionIsolation } from "./managed-orphan-regression.js";
 import {
   buildChildEnv,
   childExitCode,
@@ -179,24 +180,6 @@ const execFileAsync = (
     );
   });
 
-const execFileInDir = (
-  file: string,
-  args: string[],
-  cwd: string,
-  env?: NodeJS.ProcessEnv,
-  timeoutMs = 30_000,
-): Promise<{ code: number | null; stdout: string; stderr: string }> =>
-  new Promise((resolvePromise) => {
-    execFile(
-      file,
-      args,
-      { cwd, timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024, env: { ...process.env, ...env } },
-      (error, stdout, stderr) => {
-        const code = error == null ? 0 : typeof error.code === "number" ? error.code : 1;
-        resolvePromise({ code, stdout, stderr });
-      },
-    );
-  });
 
 
 const lineValues = (stdout: string, key: string): string[] => {
@@ -219,9 +202,14 @@ const pidAlive = (pid: number): boolean => {
   }
 };
 
-const assertNoOrphanServers = async (): Promise<void> => {
-  const result = await execFileInDir("pgrep", ["-f", "pitd-managed"], conformanceDir, undefined, 10_000);
-  expect(result.stdout.trim()).toBe("");
+const assertNoOrphanServers = async (stdout: string): Promise<void> => {
+  const pids = lineValues(stdout, "pid");
+  expect(pids, "launcher must announce its owned server PIDs").not.toEqual([]);
+  for (const value of pids) {
+    const pid = Number(value);
+    expect(Number.isSafeInteger(pid) && pid > 0, `invalid server PID: ${value}`).toBe(true);
+    expect(pidAlive(pid), `owned server PID ${pid} survived cleanup`).toBe(false);
+  }
 };
 
 const makeFakeServer = async (root: string, script: string, name: string): Promise<string> => {
@@ -269,6 +257,10 @@ server.listen(port, "127.0.0.1");
 `;
 
 describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
+  it("[TOOLING-BROWSER-019] ignores unrelated argv matches but detects a live owned server", async () => {
+    await checkOrphanAssertionIsolation(browserSmokePath, "managed-browser-smoke", ["true"], assertNoOrphanServers);
+  }, 30_000);
+
   // TOOLING-BROWSER-009: success path cleans the exact owned run directory
   it("[TOOLING-BROWSER-009] success path removes the exact owned run directory", async () => {
     const root = await mkdtemp(join(tmpdir(), "sbt-success-"));
@@ -286,7 +278,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       expect(runDir).toContain("pitd-managed");
       // The exact owned run dir must not exist.
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -309,7 +301,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       expect(runDir).toContain("pitd-managed");
       // The exact owned run dir must not exist on ANY path.
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -331,7 +323,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       const runDir = lineValue(stdout, "runDir");
       expect(runDir).toContain("pitd-managed");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -353,7 +345,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       const runDir = lineValue(stdout, "runDir");
       expect(runDir).toContain("pitd-managed");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -391,7 +383,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       const runDir = lineValue(stdout, "runDir");
       expect(runDir).toContain("pitd-managed");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -427,7 +419,7 @@ describe("SAFE-02 managed-browser-smoke cleanup lifecycle", () => {
       const runDir = lineValue(stdout, "runDir");
       expect(runDir).toContain("pitd-managed");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -499,7 +491,7 @@ server.listen(port, "127.0.0.1");
       const runDir = lineValue(stdout, "runDir");
       expect(runDir).toContain("pitd-managed");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -532,7 +524,7 @@ server.listen(port, "127.0.0.1");
       expect(stderr).toMatch(/wrong implementation|dataDir|not ready/i);
       const runDir = lineValue(stdout, "runDir");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -553,7 +545,7 @@ server.listen(port, "127.0.0.1");
       expect(stderr).toContain("exited before readiness");
       const runDir = lineValue(stdout, "runDir");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }

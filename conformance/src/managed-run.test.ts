@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
+import { checkOrphanAssertionIsolation } from "./managed-orphan-regression.js";
 import {
   defaultPaths,
   parseArgs,
@@ -85,11 +86,15 @@ const pidAlive = (pid: number): boolean => {
   }
 };
 
-// No pitd may survive with a launcher-managed data dir (any such process is
-// an orphan of a managed run; manual dev servers use other data dirs).
-const assertNoOrphanServers = async (): Promise<void> => {
-  const result = await execFileAsync("pgrep", ["-af", "pitd-managed"], conformanceDir, 10_000);
-  expect(result.stdout.trim()).toBe("");
+// Every spawned attempt/cycle announces its PID before readiness.
+const assertNoOrphanServers = async (stdout: string): Promise<void> => {
+  const pids = lineValues(stdout, "pid");
+  expect(pids, "launcher must announce its owned server PIDs").not.toEqual([]);
+  for (const value of pids) {
+    const pid = Number(value);
+    expect(Number.isSafeInteger(pid) && pid > 0, `invalid server PID: ${value}`).toBe(true);
+    expect(pidAlive(pid), `owned server PID ${pid} survived cleanup`).toBe(false);
+  }
 };
 
 beforeAll(async () => {
@@ -103,6 +108,10 @@ beforeAll(async () => {
 });
 
 describe("SC-O0 managed conformance launcher", () => {
+  it("[TOOLING-MANAGED-027] ignores unrelated argv matches but detects a live owned server", async () => {
+    await checkOrphanAssertionIsolation(launcherPath, "managed-run", ["--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts"], assertNoOrphanServers);
+  }, 30_000);
+
   it("[TOOLING-MANAGED-001] forwards everything after -- to vitest verbatim", () => {
     const opts = parseArgs(["--seed", "a", "--cycles", "2", "--", "--run", "-t", "name", "suites/x.test.ts"]);
     expect(opts.seeds).toEqual(["a"]);
@@ -177,7 +186,7 @@ describe("SC-O0 managed conformance launcher", () => {
     expect(stderr).toContain("evidence removed");
     await expect(stat(runDir)).rejects.toThrow();
     expect(pidAlive(pid)).toBe(false);
-    await assertNoOrphanServers();
+    await assertNoOrphanServers(stdout);
   });
 
   it("[TOOLING-MANAGED-005] failure path removes evidence and leaves no orphan process", async () => {
@@ -192,7 +201,7 @@ describe("SC-O0 managed conformance launcher", () => {
     expect(stderr).not.toContain("evidence preserved");
     await expect(stat(runDir)).rejects.toThrow();
     expect(pidAlive(pid)).toBe(false);
-    await assertNoOrphanServers();
+    await assertNoOrphanServers(stdout);
   });
 
   it("[TOOLING-MANAGED-006] two runs get isolated ports and data dirs", async () => {
@@ -209,7 +218,7 @@ describe("SC-O0 managed conformance launcher", () => {
     expect(runDir1).toContain("pitd-managed");
     await expect(stat(runDir1)).rejects.toThrow();
     await expect(stat(runDir2)).rejects.toThrow();
-    await assertNoOrphanServers();
+    await assertNoOrphanServers(first.stdout + second.stdout);
   });
 
   it("[TOOLING-MANAGED-007] controlled restart re-seeds a fresh data dir and re-runs vitest", async () => {
@@ -245,7 +254,7 @@ describe("SC-O0 managed conformance launcher", () => {
       expect(stderr).not.toContain("evidence preserved");
       await expect(stat(runDir)).rejects.toThrow();
       for (const pid of pids) expect(pidAlive(Number(pid))).toBe(false);
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -262,23 +271,24 @@ describe("SC-O0 managed conformance launcher", () => {
     const runDir = lineValue(stdout, "runDir");
     await expect(stat(runDir)).rejects.toThrow();
     expect(pidAlive(Number(lineValue(stdout, "pid")))).toBe(false);
-    await assertNoOrphanServers();
+    await assertNoOrphanServers(stdout);
   }, 60_000);
 
   it("[TOOLING-MANAGED-009] a broken stdout pipe (EPIPE) never orphans the server", async () => {
-    // Regression: an EPIPE crash in the launcher used to skip the cleanup
-    // finally and leave the pitd running. Destroying stdout synchronously
-    // guarantees every write after spawn fails; vitest inherits the broken
-    // pipe and exits non-zero, so the launcher must take its failure path —
-    // stop the exact server PID, remove the run, and exit promptly.
-    const before = await readdir(managedRoot);
+    // Break stdout only after capturing this launcher's server PID. Subsequent
+    // readiness/vitest writes still hit EPIPE, and cleanup can be checked without
+    // scanning other processes or other runs' directories.
+    let stdout = "";
     const code = await new Promise<number>((resolvePromise) => {
       const child = spawn(
         process.execPath,
         [launcherPath, "--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts"],
         { cwd: conformanceDir },
       );
-      child.stdout.destroy();
+      child.stdout.on("data", (data) => {
+        stdout += data.toString();
+        if (/\[managed-run\] pid=\d+\r?\n/.test(stdout)) child.stdout.destroy();
+      });
       child.stderr.resume();
       const timer = setTimeout(() => {
         child.kill("SIGKILL");
@@ -290,11 +300,8 @@ describe("SC-O0 managed conformance launcher", () => {
       });
     });
     expect(code).toBe(1);
-    await assertNoOrphanServers();
-    const after = await readdir(managedRoot);
-    for (const name of after.filter((entry) => !before.includes(entry))) {
-      await rm(join(managedRoot, name), { recursive: true, force: true });
-    }
+    await assertNoOrphanServers(stdout);
+    await expect(stat(lineValue(stdout, "runDir"))).rejects.toThrow();
   });
 
   it("[TOOLING-MANAGED-010] a port collision between probe and bind retries on a fresh port", async () => {
@@ -364,7 +371,7 @@ server.listen(port, "127.0.0.1");
       expect(state.ports).toHaveLength(2);
       const runDir = lineValue(stdout, "runDir");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -399,7 +406,7 @@ process.exit(1);
       expect(stderr).not.toContain("evidence preserved");
       const runDir = lineValue(stdout, "runDir");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -433,7 +440,7 @@ server.listen(port, "127.0.0.1");
       expect(stderr).toContain("server not ready");
       const runDir = lineValue(stdout, "runDir");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -467,7 +474,7 @@ server.listen(port, "127.0.0.1");
       expect(stderr).toContain("server not ready");
       const runDir = lineValue(stdout, "runDir");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -694,7 +701,7 @@ process.exit(1);
       expect(stderr).not.toContain("evidence preserved");
       const runDir = lineValue(stdout, "runDir");
       await expect(stat(runDir)).rejects.toThrow();
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -778,7 +785,7 @@ it("blocks forever for the SC-O0 SIGINT cleanup test", async () => {
       // the blocker path in its command line.
       const orphans = await execFileAsync("pgrep", ["-af", "__sc_o0_blocker__"], conformanceDir, 10_000);
       expect(orphans.stdout.trim()).toBe("");
-      await assertNoOrphanServers();
+      await assertNoOrphanServers(stdout);
       const runDir = lineValue(stdout, "runDir");
       await rm(runDir, { recursive: true, force: true });
     } finally {
@@ -853,7 +860,7 @@ setInterval(() => {}, 1_000_000);
         const killDeadline = Date.now() + 10_000;
         while (pidAlive(serverPid) && Date.now() < killDeadline) await delay(50);
         expect(pidAlive(serverPid)).toBe(false);
-        await assertNoOrphanServers();
+        await assertNoOrphanServers(stdout);
         const runDir = lineValue(stdout, "runDir");
         await rm(runDir, { recursive: true, force: true });
       } finally {
@@ -940,7 +947,9 @@ setInterval(() => {}, 1_000_000);
         // dir) in its command line.
         const orphans = await execFileAsync("pgrep", ["-af", root], conformanceDir, 10_000);
         expect(orphans.stdout.trim()).toBe("");
-        await assertNoOrphanServers();
+        // Build was interrupted before any server could be spawned; the owned
+        // build PID above is the process whose cleanup must be checked here.
+        expect(lineValues(stdout, "pid")).toEqual([]);
       } finally {
         if (child.exitCode === null) child.kill("SIGKILL");
       }

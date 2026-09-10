@@ -811,6 +811,8 @@ package body Pitd_Callback is
       Entity_Exists, Entity_Parse_Ok : Boolean := False;
       Adm_Issues : JSON_Array := Empty_Array;
       Adm_Canonical : Boolean := False;
+      Create_Scope_Key : Unbounded_String;
+      Create_Body_Hash : Unbounded_String;
    begin
       if Id = "" then
          if not Is_Post then
@@ -840,6 +842,30 @@ package body Pitd_Callback is
                             Message => To_String (Bad));
             end if;
          end;
+         if Kind = "clock" and then Header (Request, "Idempotency-Key") /= "" then
+            if Header (Request, "Idempotency-Key")'Length > 128 then
+               return Fail (AWS.Messages.S400, "clock.create", "VALIDATION",
+                            Message => "Idempotency-Key exceeds the 128-character maximum");
+            end if;
+            Create_Scope_Key := To_Unbounded_String
+              (AWS.Status.Method (Request) & "|" & Path & "|"
+               & Header (Request, "Idempotency-Key"));
+            Create_Body_Hash := To_Unbounded_String
+              (GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))));
+            declare
+               Found, Match : Boolean;
+               Stored : Unbounded_String;
+            begin
+               Idempotency_Store.Lookup
+                 (To_String (Create_Scope_Key), To_String (Create_Body_Hash),
+                  Found, Match, Stored);
+               if Found and then Match then
+                  return Json_Text (To_String (Stored));
+               end if;
+               --  Only exact retries are covered here.  Create's contract
+               --  does not declare the existing mutation mismatch status.
+            end;
+         end if;
          if Kind = "clock" then
             --  SC-A7: ownership and relationship references need store
             --  access, so they are validated here (CLOCK-OWNER-002,
@@ -901,7 +927,13 @@ Write_Entity (Kind, Str_Field (E, "id"), E);
          if Kind = "character" or else Kind = "crew" then
             Write_Baseline_Snapshot (Kind, Str_Field (E, "id"), Kind & ".create", E);
          end if;
-         return Json_Response (Success_Result (Kind & ".create", E));
+         R := Success_Result (Kind & ".create", E);
+         if Length (Create_Scope_Key) > 0 then
+            Idempotency_Store.Store
+              (To_String (Create_Scope_Key), To_String (Create_Body_Hash),
+               String'(Write (R, Compact => False)) & ASCII.LF);
+         end if;
+         return Json_Response (R);
       end if;
       if not Safe (Id) then return Fail (AWS.Messages.S404, "get", "NOT_FOUND"); end if;
       --  BUG-001: every mutation of an existing entity claims that entity's

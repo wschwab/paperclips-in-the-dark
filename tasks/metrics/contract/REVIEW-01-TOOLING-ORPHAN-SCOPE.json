@@ -1,0 +1,71 @@
+{
+  "task": "REVIEW-01-TOOLING-ORPHAN-SCOPE",
+  "track": "contract",
+  "implementationAgent": "tooling-orphan-isolation-fix-v2 (omp worker)",
+  "reviewAgent": null,
+  "date": "2026-09-24",
+  "sourceCandidate": "48b19881405fb59d351d2d45037151ca636eca2b",
+  "iterationsToGreen": 2,
+  "wallClockMinutes": 1.8478333333333334,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "220/220 tooling tests across 14/14 files; 46/46 focused managed-launcher tests",
+  "passRateAfterReview": "pending; no additional review run for this corrective slice",
+  "implementationLoc": 0,
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 1, "human": 0 },
+  "defectCatchingLayer": ["Independent blind review finding 3, then permanent failing-first tooling regression for both affected suites"],
+  "metricsMethodology": {
+    "method": "Observed command output and process lifecycle controls; final focused/full acceptance durations only, not total task wall time",
+    "source": "artifact://10362 (red), artifact://10368 (focused), artifact://10371 (full)",
+    "wallClockNote": "Sum of final focused 46.34 s and full 64.53 s Vitest durations / 60. Lower bound; excludes research, editing, earlier checks and interrupted time.",
+    "tokensNote": "Token accounting unavailable.",
+    "locNote": "Product launcher implementation unchanged.",
+    "scaffoldingLocNote": "Test/helper and audit scaffolding LOC not independently counted."
+  },
+  "status": "implementation-acceptance-passed; independent review pending",
+  "notes": "Both orphan assertions use every exact server PID announced by their tested launcher, before readiness and across attempts/cycles. No host-wide pitd-managed scan remains. EPIPE captures owned metadata before closing stdout. Build interruption checks its recorded build PID and absence of any server announcement. No user data, product launcher change, frontend change, commit, push, or bookmark movement.",
+  "testIds": ["TOOLING-BROWSER-019", "TOOLING-MANAGED-027"],
+  "evidence": {
+    "red": {
+      "cwd": "conformance",
+      "command": "npm run test:tooling -- src/managed-browser-smoke.test.ts src/managed-run.test.ts -t 'TOOLING-BROWSER-019|TOOLING-MANAGED-027'",
+      "exitCode": 1,
+      "failedTests": 2,
+      "artifact": "artifact://10362",
+      "observedFailure": "Old browser helper expected '' but received unrelated PID 1695630; old managed-run helper expected '' but received '1695689 /usr/bin/node -e setInterval(() => {}, 1000) pitd-managed-review01-unrelated'. Both reached the assertion after the tested launcher stopped its owned server.",
+      "preliminaryRun": "artifact://10360: browser reproduced the false positive; managed-run first stopped at truncated assertion-message matching. Fixture ordering corrected before the definitive paired red, without changing old pgrep logic."
+    },
+    "initialFocusedGreen": { "artifact": "artifact://10364", "result": "4 passed, 42 skipped; new cases plus TOOLING-BROWSER-018 and TOOLING-MANAGED-009" },
+    "intermediateFull": {
+      "artifact": "artifact://10366",
+      "exitCode": 1,
+      "result": "3 failures in TOOLING-MANAGED-013/014/015 exposed missed argument migration. Fixed interrupt callsites; build path retains exact build-PID check and asserts no server announcement."
+    },
+    "focused": {
+      "cwd": "conformance",
+      "command": "npm run test:tooling -- src/managed-browser-smoke.test.ts src/managed-run.test.ts",
+      "exitCode": 0,
+      "passedTests": 46,
+      "passedFiles": 2,
+      "seconds": 46.34,
+      "artifact": "artifact://10368"
+    },
+    "full": {
+      "cwd": "conformance",
+      "command": "npm run test:tooling",
+      "exitCode": 0,
+      "passedTests": 220,
+      "passedFiles": 14,
+      "seconds": 64.53,
+      "artifact": "artifact://10371"
+    },
+    "externalProcessSmoke": {
+      "command": "npm run test:tooling -- src/managed-browser-smoke.test.ts src/managed-run.test.ts -t 'TOOLING-BROWSER-018|TOOLING-MANAGED-004'",
+      "method": "Eval spawned an independent process with pitd-managed-review01-unrelated argv before running the existing browser early-exit and managed-run success cases, verified it alive afterward, then terminated and awaited that exact ChildProcess.",
+      "unrelatedPid": 2736690,
+      "result": "2 passed, 44 skipped; unrelated process remained alive; exact-owned cleanup completed"
+    }
+  },
+  "card": "tasks/REVIEW-01-TOOLING-ORPHAN-SCOPE.md",
+  "documentation": "docs/pages/frontend/operational-behavior.mdx"
+}
