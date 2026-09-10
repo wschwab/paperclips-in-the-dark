@@ -1,0 +1,61 @@
+{
+  "task": "REVIEW-01-BATCH-CONCURRENCY",
+  "track": "ada",
+  "implementationAgent": "create-boundary-fix (omp worker)",
+  "reviewAgent": null,
+  "date": "2026-10-05",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "status": "implementation acceptance passed: full Ada/tooling/frontend, three audit validators, and 28-mutant campaign; independent review pending",
+  "passRateAtFirstDoneClaim": "514/514 Ada (61 files), 221/221 tooling (14 files), 794/794 frontend (20 files), 28/28 mutants killed",
+  "passRateAfterReview": "pending independent review of this corrective diff",
+  "sourceCandidate": "checkpoint 96654312, parent 0627c594; inherited .omo child intentionally unchanged",
+  "card": "tasks/REVIEW-01-BATCH-CONCURRENCY.md",
+  "documentation": ["docs/pages/contract/ops-audit.mdx", "docs/pages/frontend/operational-behavior.mdx"],
+  "metricsMethodology": {
+    "wallClockNote": "0 denotes unmeasured total task duration, not zero elapsed time; observed command durations are recorded separately.",
+    "tokensNote": "Token accounting unavailable.",
+    "locNote": "Implementation LOC not measured; no inferred total.",
+    "scaffoldingLocNote": "Scaffolding LOC not measured; no inferred total.",
+    "method": "Observed failing-first conformance/tooling outputs, synchronized real-HTTP stale-read negative control, build, focused/full acceptance, and generated mutation campaign results. Transport-refinement attempts are disclosed in the task card.",
+    "source": "artifact://10526, artifact://10529, artifact://10546, artifact://10548, artifact://10552"
+  },
+  "defectCatchingLayer": ["Independent review identified three defects", "Failing-first black-box HTTP regressions and live-process ownership controls"],
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 3, "human": 0 },
+  "testIds": ["BATCH-CONCURRENCY-001", "BATCH-CONCURRENCY-002", "BATCH-IDEMPOTENCY-001", "BATCH-IDEMPOTENCY-002", "BATCH-IDEMPOTENCY-003", "BATCH-IDEMPOTENCY-004", "TOOLING-MANAGED-028"],
+  "evidence": {
+    "replayRed": { "command": "npm run test:ada -- --run suites/persistence/batch-concurrency.test.ts", "cwd": "conformance", "exitCode": 1, "failed": 6, "artifact": "artifact://10526", "note": "Four replay tests failed on repeated application/history; initial two concurrency failures were Node socket resets and required transport refinement." },
+    "lockingRed": { "command": "npm run test:ada -- --run suites/persistence/batch-concurrency.test.ts -t BATCH-CONCURRENCY", "cwd": "conformance", "exitCode": 1, "failed": 2, "skipped": 4, "artifact": "artifact://10546", "note": "Pre-lock classification negative control, with replay fixes retained: all 24 operations acknowledged in each case; batch-only coin/revision 12/13, mixed writers 10/11, expected 24/25. Classification restored under locks afterward." },
+    "toolingRed": { "command": "npm run test:tooling -- src/managed-run.test.ts -t TOOLING-MANAGED-028", "cwd": "conformance", "exitCode": 1, "failed": 1, "skipped": 27, "artifact": "artifact://10529", "note": "Stopped owned PID falsely failed on an unrelated matching mutation command; live-owned positive control also exercised." },
+    "focused": { "command": "XDG_RUNTIME_DIR=/tmp alr --non-interactive build && npm --prefix ../../conformance run test:ada -- --run suites/persistence/batch-concurrency.test.ts suites/contract/batch-boundary.test.ts && npm --prefix ../../conformance run test:tooling -- src/managed-run.test.ts -t 'TOOLING-MANAGED-(013|027|028)'", "cwd": "backend-ada/server", "exitCode": 0, "buildSeconds": 1.71, "adaTests": 19, "adaFiles": 2, "toolingTests": 3, "toolingSkipped": 25, "artifact": "artifact://10548" },
+    "fullAda": { "command": "npm --prefix conformance run test:ada -- --run", "cwd": ".", "exitCode": 0, "tests": 514, "files": 61, "baselineTests": 508, "newTests": 6, "vitestSeconds": 65.75, "artifact": "artifact://10552" },
+    "fullTooling": { "command": "npm --prefix conformance run test:tooling", "cwd": ".", "exitCode": 0, "tests": 221, "files": 14, "baselineTests": 220, "newTests": 1, "vitestSeconds": 76.33, "artifact": "artifact://10552" },
+    "fullFrontend": { "command": "npm --prefix frontend test -- --run", "cwd": ".", "exitCode": 0, "tests": 794, "files": 20, "vitestSeconds": 15.60, "artifact": "artifact://10552" },
+    "mutation": {
+      "command": "npm --prefix conformance run test:mutation", "cwd": ".", "exitCode": 0,
+      "killed": 28, "total": 28, "survived": 0, "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": { "backendAda": 514, "conformanceTooling": 221, "frontend": 794 },
+      "postCampaignSourceRestoration": "PASS; all files restored to baseline, clean backend rebuilt after each Ada mutant",
+      "revision": "dfcb21d16580", "timestamp": "2026-10-05T07:03:43.058Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T07-03-43-056Z.txt",
+      "artifact": "artifact://10552"
+    },
+    "combinedAcceptance": {
+      "command": "npm --prefix conformance run test:ada -- --run && npm --prefix conformance run test:tooling && npm --prefix frontend test -- --run && npm --prefix conformance run test:mutation",
+      "cwd": ".", "exitCode": 0, "wallClockSeconds": 1811.81,
+      "note": "Wall time covers the full four-command sequence, not the standalone mutation campaign."
+    },
+    "validators": {
+      "command": "node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js",
+      "cwd": ".", "exitCode": 0, "metricsFilesValidated": 157,
+      "traceabilityChecksPassed": 231, "reconciliationChecksPassed": 17,
+      "errors": 0, "reconciliationWarnings": 0,
+      "result": "All three reported ALL CHECKS PASSED; reconciliation retained 1624 current rows."
+    }
+  },
+  "notes": "Reuses the existing scope serialization guard and shared bounded replay store. No new status, key/body mismatch policy, retries, lowered concurrency, contracts, or frozen-suite edits. Exactly six callback restoration hashes refreshed; all other catalog hashes remained current. No commits; owned diagnostic process and temporary data removed."
+}

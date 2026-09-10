@@ -89,6 +89,23 @@ operation plan. A later operation on the same entity sees the earlier planned
 state. If any item fails, none of the planned entity state, revisions, or history
 is committed; the existing HTTP 200 batch envelope carries per-item outcomes.
 
+The planner acquires **all entity locks before reading or classifying stored
+DTOs**, and retains those locks through planning, pre-batch snapshots, revision
+stamping, and persistence (PAPERCLIPS §4.2). Concurrent batches and single-entity
+mutations therefore see the preceding committed state, not a copy captured
+while another writer held the lock. `BATCH-CONCURRENCY-001/002` launch 24
+synchronized requests, covering batch-only and mixed single/batch writers.
+
+Batch `Idempotency-Key` admission reuses the create-route scope guard and the
+existing shared replay store (PAPERCLIPS §7.1): lookup, execution, and successful
+response storage are serialized under the method/route/key scope. Exact retries
+replay the original response bytes without additional entity writes, revision
+increments, or history entries; failed batches are not stored as successes.
+`BATCH-IDEMPOTENCY-001..004` cover sequential and 12-way concurrent retries,
+multi-entity application, independent route/key scopes, and recovery after a
+failed batch. This correction introduces no new status or key/body mismatch
+policy.
+
 Single-entity and batch mutations share request admission, including clock
 update ownership and relationship checks. Nonexistent owners or related clocks,
 self-links, and duplicate links are rejected before mutation. Schema-valid UUID

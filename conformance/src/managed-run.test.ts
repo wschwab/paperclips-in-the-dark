@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
-import { checkOrphanAssertionIsolation } from "./managed-orphan-regression.js";
+import { assertOwnedProcessesStopped, checkOrphanAssertionIsolation } from "./managed-orphan-regression.js";
 import {
   defaultPaths,
   parseArgs,
@@ -110,6 +110,14 @@ beforeAll(async () => {
 describe("SC-O0 managed conformance launcher", () => {
   it("[TOOLING-MANAGED-027] ignores unrelated argv matches but detects a live owned server", async () => {
     await checkOrphanAssertionIsolation(launcherPath, "managed-run", ["--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts"], assertNoOrphanServers);
+  }, 30_000);
+
+  it("[TOOLING-MANAGED-028] worker cleanup ignores an unrelated mutation command excluding the blocker suite", async () => {
+    await checkOrphanAssertionIsolation(
+      launcherPath, "managed-run", ["--run", "--passWithNoTests", "suites/__sc_o0_never__.test.ts"],
+      async (stdout) => assertOwnedProcessesStopped(lineValues(stdout, "pid").map(Number)),
+      ["npm", "run", "test:mutation", "--", "--exclude", "suites/__sc_o0_blocker__.test.ts"],
+    );
   }, 30_000);
 
   it("[TOOLING-MANAGED-001] forwards everything after -- to vitest verbatim", () => {
@@ -723,7 +731,7 @@ import { it } from "vitest";
 
 it("blocks forever for the SC-O0 SIGINT cleanup test", async () => {
   const marker = process.env.BLOCKER_MARKER;
-  if (marker) await writeFile(marker, "started\\n");
+  if (marker) await writeFile(marker, String(process.pid));
   await new Promise(() => {});
 }, 60_000);
 `,
@@ -766,6 +774,8 @@ it("blocks forever for the SC-O0 SIGINT cleanup test", async () => {
         }
         await delay(50);
       }
+      const workerPid = Number(await readFile(marker, "utf8"));
+      expect(Number.isSafeInteger(workerPid) && workerPid > 0).toBe(true);
       child.kill("SIGINT");
       const code = await Promise.race([
         exited,
@@ -780,11 +790,7 @@ it("blocks forever for the SC-O0 SIGINT cleanup test", async () => {
       expect(stderr).toContain("received SIGINT");
       expect(pidAlive(vitestPid)).toBe(false);
       expect(pidAlive(serverPid)).toBe(false);
-      // The vitest worker processes (tinypool forks) share vitest's process
-      // group, so the tree kill must have taken them down too: nothing keeps
-      // the blocker path in its command line.
-      const orphans = await execFileAsync("pgrep", ["-af", "__sc_o0_blocker__"], conformanceDir, 10_000);
-      expect(orphans.stdout.trim()).toBe("");
+      await assertOwnedProcessesStopped([vitestPid, serverPid, workerPid]);
       await assertNoOrphanServers(stdout);
       const runDir = lineValue(stdout, "runDir");
       await rm(runDir, { recursive: true, force: true });

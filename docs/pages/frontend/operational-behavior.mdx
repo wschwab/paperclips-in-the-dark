@@ -108,6 +108,15 @@ rendered window.
   an unrelated matching process remains alive. The broken-stdout regression
   captures the owned PID before closing the pipe, so it retains an exact
   cleanup assertion without scanning other runs.
+- **Interrupted-worker isolation (REVIEW-01-BATCH-CONCURRENCY):**
+  `TOOLING-MANAGED-013` records the launched Vitest PID, server PID, and the
+  executing blocker's worker PID before SIGINT. Cleanup assertions inspect only
+  those owned PIDs through `conformance/src/managed-orphan-regression.ts`, not a
+  host-wide `pgrep` for the blocker filename. `TOOLING-MANAGED-028` proves the
+  assertion rejects a live owned process, accepts it after cleanup while an
+  unrelated command containing `npm run test:mutation -- --exclude
+  suites/__sc_o0_blocker__.test.ts` remains alive, and never terminates that
+  unrelated process.
 - **Isolation guard:** invoked by conformance, browser, mutation, benchmark, and
   integrated CI commands — not a standalone advisory blocklist.
 

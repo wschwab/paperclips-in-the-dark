@@ -376,7 +376,7 @@ package body Pitd_Callback is
 
    ---------------------------------------------------------------------------
    --  Every create route uses the same canonical persistence boundary.
-   --  Handle_Create holds the scope lock until the response is stored.
+   --  Handle_Keyed_Request holds the scope lock until the response is stored.
    function Persist_Create
      (Request : AWS.Status.Data; Path, Kind, Op : String; E : JSON_Value)
       return AWS.Response.Data is
@@ -1928,14 +1928,353 @@ if Kind = "crew" then
             AWS.Messages.S400);
    end Handle_Entity;
 
+   function Handle_Batch (Request : AWS.Status.Data) return AWS.Response.Data is
+      Response : AWS.Response.Data;
+   begin
+         --  BUG-005: sequential all-or-nothing multi-op planner.
+         declare
+            B    : constant JSON_Value := Parse_Body (To_String (AWS.Status.Binary_Data (Request)));
+            Ops  : JSON_Array;
+            Outs : JSON_Array := Empty_Array;
+            OK   : Boolean := True;
+            Fail_Code, Fail_Msg : Unbounded_String := Null_Unbounded_String;
+            Batch_Ctx  : JSON_Value := JSON_Null;
+            Batch_Issues : JSON_Array := Empty_Array;
+            Batch_Canonical : Boolean := False;
+            Batch_Err  : JSON_Value := JSON_Null;
+            type Ent is record
+               Kind : Unbounded_String := Null_Unbounded_String;
+               Id   : Unbounded_String := Null_Unbounded_String;
+               Op   : Unbounded_String := Null_Unbounded_String;
+               Args : JSON_Value := JSON_Null;
+               E    : JSON_Value := JSON_Null;
+               Changed : Boolean := False;
+            end record;
+            Ents : array (1 .. Max_Batch_Operations) of Ent :=
+              (others => (Kind => Null_Unbounded_String, Id => Null_Unbounded_String,
+                          Op => Null_Unbounded_String, Args => JSON_Null,
+                          E => JSON_Null, Changed => False));
+            N    : Natural := 0;
+            Lock_Order : array (1 .. Max_Batch_Operations) of Positive :=
+              (others => 1);
+            Locked : array (1 .. Max_Batch_Operations) of Boolean := (others => False);
+         begin
+            if B.Kind = JSON_Object_Type and then not Only_Fields (B, "|ops|") then
+               Response := Json_Response
+                 (Validation_Error ("batch", "unknown batch property",
+                                    Root_Issues ("unknown batch property")),
+                  AWS.Messages.S400);
+            elsif B.Kind /= JSON_Object_Type or else not Has_Field (B, "ops") then
+               Response := Json_Response
+                 (Validation_Error ("batch", "ops must be a non-empty array",
+                                    Root_Issues ("ops must be a non-empty array")));
+            else
+               Ops := Get (B, "ops");
+               if Length (Ops) = 0 or else Length (Ops) > Max_Batch_Operations then
+                  Response := Json_Response
+                    (Validation_Error ("batch", "ops must contain 1..50 operations",
+                                       Root_Issues ("ops must contain 1..50 operations")));
+               else
+                  for I in 1 .. Length (Ops) loop
+                     declare
+                        O   : constant JSON_Value := Get (Ops, I);
+                        K, ID, OP : Unbounded_String := Null_Unbounded_String;
+                     begin
+                        if O.Kind /= JSON_Object_Type
+                          or else not Has_Field (O, "entity")
+                          or else not Has_Field (O, "id")
+                          or else not Has_Field (O, "op")
+                          or else not Has_Field (O, "args")
+                        then
+                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
+                           Fail_Msg := To_Unbounded_String ("each op requires entity, id, op, args");
+                           exit;
+                        end if;
+                        if not Only_Fields (O, "|entity|id|op|args|") then
+                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
+                           Fail_Msg := To_Unbounded_String ("unknown batch operation property");
+                           exit;
+                        end if;
+                        K := To_Unbounded_String (Str_Field (O, "entity"));
+                        if To_String (K) /= "character" and then To_String (K) /= "crew"
+                          and then To_String (K) /= "clock" then
+                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
+                           Fail_Msg := To_Unbounded_String ("entity must be character, crew or clock");
+                           exit;
+                        end if;
+                        ID := To_Unbounded_String (Str_Field (O, "id"));
+                        OP := To_Unbounded_String (Str_Field (O, "op"));
+                        if not Safe (To_String (ID)) then
+                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
+                           Fail_Msg := To_Unbounded_String ("invalid entity id");
+                           exit;
+                        end if;
+                        N := N + 1;
+                        Ents (N) := (Kind => K, Id => ID,
+                                     Op => OP, Args => Get (O, "args"),
+                                     E => JSON_Null, Changed => False);
+                        Lock_Order (N) := N;
+                     end;
+                  end loop;
+                  if OK then
+                     for I in 1 .. N - 1 loop
+                        for J in I + 1 .. N loop
+                           declare
+                              KI : constant String := To_String (Ents (Lock_Order (I)).Kind) & "/" & To_String (Ents (Lock_Order (I)).Id);
+                              KJ : constant String := To_String (Ents (Lock_Order (J)).Kind) & "/" & To_String (Ents (Lock_Order (J)).Id);
+                           begin
+                              if KJ < KI then
+                                 declare T : constant Positive := Lock_Order (I); begin
+                                    Lock_Order (I) := Lock_Order (J); Lock_Order (J) := T;
+                                 end;
+                              end if;
+                           end;
+                        end loop;
+                     end loop;
+                     for I in 1 .. N loop
+                        declare
+                           Idx : constant Positive := Lock_Order (I);
+                           H : Boolean;
+                           Already : Boolean := False;
+                           KeyI : constant String :=
+                             To_String (Ents (Idx).Kind) & "/" & To_String (Ents (Idx).Id);
+                        begin
+                           for P in 1 .. I - 1 loop
+                              if To_String (Ents (Lock_Order (P)).Kind) & "/" & To_String (Ents (Lock_Order (P)).Id) = KeyI
+                              then
+                                 Already := True; exit;
+                              end if;
+                           end loop;
+                           if not Already then
+                              --  bounded spin like the per-entity routes: a
+                              --  transiently busy registry must not fail a
+                              --  whole batch under parallel load
+                              Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
+                              for T in 1 .. 200 loop
+                                 exit when H;
+                                 delay 0.001;
+                                 Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
+                              end loop;
+                              if not H then OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
+                                 Fail_Msg := To_Unbounded_String ("too many concurrent batches");
+                                 exit;
+                              end if;
+                           end if;
+                           Locked (Idx) := not Already;
+                        end;
+                     end loop;
+                  end if;
+                  if OK then
+                     --  Read and classify only after acquiring every entity
+                     --  lock; the plan must never start from a stale DTO.
+                     for I in 1 .. N loop
+                        declare
+                           K : constant String := To_String (Ents (I).Kind);
+                           ID : constant String := To_String (Ents (I).Id);
+                        begin
+                           if Ada.Directories.Exists (Current_File (K, ID)) then
+                              Classify_Stored
+                                (K, ID, Read_File (Current_File (K, ID)),
+                                 Ents (I).E, Batch_Ctx, Batch_Issues, Batch_Canonical);
+                              if not Batch_Canonical then
+                                 OK := False;
+                                 Fail_Code := To_Unbounded_String ("INVALID_ENTITY");
+                                 Fail_Msg := To_Unbounded_String
+                                   ("entity is degraded; repair before mutating");
+                                 Batch_Err := Invalid_Entity_Error ("batch", Batch_Issues);
+                                 exit;
+                              end if;
+                           else
+                              OK := False; Fail_Code := To_Unbounded_String ("NOT_FOUND");
+                              Fail_Msg := To_Unbounded_String
+                                ("entity not found: " & K & "/" & ID);
+                              exit;
+                           end if;
+                        end;
+                     end loop;
+                  end if;
+                  if OK then
+                     for I in 1 .. N loop
+                        declare
+                           R   : JSON_Value;
+                           OpS : constant String := To_String (Ents (I).Op);
+                           KeyI : constant String :=
+                             To_String (Ents (I).Kind) & "/" & To_String (Ents (I).Id);
+                        begin
+                           for P in reverse 1 .. I - 1 loop
+                              if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
+                                and then Ents (P).Changed
+                              then
+                                 Ents (I).E := Ents (P).E;
+                                 exit;
+                              end if;
+                           end loop;
+                           --  SC-A1: batch is a write path — the stored
+                           --  entity must be canonical before mutating, and
+                           --  every mutation must keep it canonical.
+                           if not Entity_Is_Canonical
+                             (To_String (Ents (I).Kind), To_String (Ents (I).Id),
+                              Ents (I).E)
+                           then
+                              OK := False;
+                              Fail_Code := To_Unbounded_String ("INVALID_ENTITY");
+                              Fail_Msg := To_Unbounded_String
+                                ("entity is degraded; repair before mutating");
+                              exit;
+                           end if;
+                           declare
+                              Bad : Unbounded_String;
+                           begin
+                              if Validate_Mutation_Request
+                                (To_String (Ents (I).Kind), To_String (Ents (I).Id),
+                                 OpS, Ents (I).Args, Bad)
+                              then
+                                 R := Mutate (To_String (Ents (I).Kind), OpS, Ents (I).E, Ents (I).Args);
+                              else
+                                 R := Validation_Error
+                                   (OpS, To_String (Bad), Root_Issues (To_String (Bad)), Ents (I).E);
+                              end if;
+                           end;
+                           if Bool_Field (R, "ok") then
+                              declare
+                                 Batch_Mutated_Ok : Boolean;
+                              begin
+                                 Schema_Check (To_String (Ents (I).Kind), Ents (I).E,
+                                                       Batch_Mutated_Ok);
+                                 if not Batch_Mutated_Ok then
+                                    OK := False;
+                                    Fail_Code := To_Unbounded_String ("VALIDATION");
+                                    Fail_Msg := To_Unbounded_String
+                                      ("mutation result fails schema validation; nothing was written");
+                                    exit;
+                                 end if;
+                              end;
+                              Ents (I).Changed := True;
+                              declare
+                                 Item : JSON_Value := Create_Object;
+                              begin
+                                 Set_Field (Item, "ok", True);
+                                 Set_Field (Item, "op", OpS);
+                                 Append (Outs, Item);
+                              end;
+                           else
+                              OK := False;
+                              --  SC-A3: batch items carry the same whole-error
+                              --  union as the top-level error (ERR-BATCH-008).
+                              --  All planned items are still evaluated and
+                              --  reported (all-or-nothing refers to writes:
+                              --  nothing is written once any item failed).
+                              declare
+                                 Item : JSON_Value := Create_Object;
+                                 Err  : constant JSON_Value := Get (R, "error");
+                              begin
+                                 Set_Field (Item, "ok", False);
+                                 Set_Field (Item, "op", Create (OpS));
+                                 Set_Field (Item, "error", Err);
+                                 Append (Outs, Item);
+                              end;
+                           end if;
+                        end;
+                     end loop;
+                  end if;
+                  if OK then
+                     for I in 1 .. N loop
+                        declare
+                           K : constant String := To_String (Ents (I).Kind);
+                           ID : constant String := To_String (Ents (I).Id);
+                           KeyI : constant String := K & "/" & ID;
+                           Seen : Boolean := False;
+                        begin
+                           for P in 1 .. I - 1 loop
+                              if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
+                              then Seen := True; exit; end if;
+                           end loop;
+                           if not Seen and then Ents (I).Changed then
+                              declare
+                                 Before : constant JSON_Value := Clone (Read_Entity (K, ID));
+                                 Last : Positive := I;
+                              begin
+                                 for P in I + 1 .. N loop
+                                    if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI then
+                                       Last := P;
+                                    end if;
+                                 end loop;
+                                 --  The composite itself is x-snapshot:true,
+                                 --  including batches made entirely of micro-ops.
+                                 Snapshot (K, ID, "campaign.batch", Before);
+                                 Stamp (Ents (Last).E);
+                                 Write_Entity (K, ID, Ents (Last).E);
+                              end;
+                           end if;
+                        end;
+                     end loop;
+                     declare V : JSON_Value := Create_Object; begin
+                        Set_Field (V, "ok", True);
+                        Set_Field (V, "applied", Create_Object);
+                        Set_Field (Get (V, "applied"), "op", "campaign.batch");
+                        Set_Field (V, "batch", Outs);
+                        Set_Field (V, "sideEffects", Empty_Array);
+                        Set_Field (V, "error", JSON_Null);
+                        if Header (Request, "Idempotency-Key") /= "" then
+                           Idempotency_Store.Store
+                             (AWS.Status.Method (Request) & "|/api/campaign/batch|"
+                                & Header (Request, "Idempotency-Key"),
+                              GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))),
+                              String'(Write (V, Compact => False)) & ASCII.LF);
+                        end if;
+                        Response := Json_Response (V);
+                     end;
+                  else
+                     if Length (Outs) > 0 then
+                        --  SC-A3: per-item outcomes carry the failing item's
+                        --  typed union error; the batch envelope stays 200
+                        --  with batch=Outs (all-or-nothing: nothing written).
+                        declare V : JSON_Value := Create_Object; begin
+                           Set_Field (V, "ok", True);
+                           Set_Field (V, "applied", Create_Object);
+                           Set_Field (Get (V, "applied"), "op", "campaign.batch");
+                           Set_Field (V, "batch", Outs);
+                           Set_Field (V, "sideEffects", Empty_Array);
+                           Set_Field (V, "error", JSON_Null);
+                           Response := Json_Response (V);
+                        end;
+                     elsif Batch_Err.Kind = JSON_Object_Type then
+                        Response := Json_Response (Batch_Err);
+                     else
+                        Response := Json_Response
+                          (Error_Result ("batch", To_String (Fail_Code), To_String (Fail_Msg)),
+                           (if To_String (Fail_Code) = "VALIDATION"
+                            then AWS.Messages.S400 else AWS.Messages.S200));
+                     end if;
+                  end if;
+                  for I in 1 .. N loop
+                     if Locked (I) then
+                        Entity_Lock_Registry.Release (To_String (Ents (I).Id));
+                        Locked (I) := False;
+                     end if;
+                  end loop;
+               end if;
+            end if;
+         exception
+            when others =>
+               for I in 1 .. N loop
+                  if Locked (I) then
+                     Entity_Lock_Registry.Release (To_String (Ents (I).Id));
+                  end if;
+               end loop;
+               raise;
+         end;
+      return Response;
+   end Handle_Batch;
+
    --  Serialize lookup -> canonical write -> response store per scope.
    --  Validation failures are not cached.  Different-body key reuse keeps
    --  create's existing behavior; no new mismatch policy is introduced.
-   function Handle_Create
+   function Handle_Keyed_Request
      (Request : AWS.Status.Data; Path : String) return AWS.Response.Data is
       Key : constant String := Header (Request, "Idempotency-Key");
       Scope : constant String := AWS.Status.Method (Request) & "|" & Path & "|" & Key;
-      Lock_Id : constant String := "create|" & Scope;
+      Lock_Id : constant String := "idempotency|" & Scope;
       Held : Boolean := False;
       Found, Match : Boolean;
       Stored : Unbounded_String;
@@ -1944,6 +2283,8 @@ if Kind = "crew" then
       begin
          if Path = "/api/characters/pc" then
             return Handle_Pc_Create (Request);
+         elsif Path = "/api/campaign/batch" then
+            return Handle_Batch (Request);
          end if;
          return Handle_Entity (Request, Path);
       end Execute;
@@ -1954,7 +2295,8 @@ if Kind = "crew" then
       if Key'Length > 128 then
          return Fail
            (AWS.Messages.S400,
-            (if Path = "/api/characters/pc" then "character.createPc"
+            (if Path = "/api/campaign/batch" then "campaign.batch"
+             elsif Path = "/api/characters/pc" then "character.createPc"
              elsif Part (Path, 2) = "characters" then "character.create"
              elsif Part (Path, 2) = "crews" then "crew.create" else "clock.create"),
             "VALIDATION",
@@ -1981,7 +2323,7 @@ if Kind = "crew" then
             Entity_Lock_Registry.Release (Lock_Id);
          end if;
          raise;
-   end Handle_Create;
+   end Handle_Keyed_Request;
 
    --  SC-A5: game-settings startup validation and loading.  The expanded
    --  settings schema (data/games/game-settings-schema.json) is enforced
@@ -2603,316 +2945,7 @@ if Kind = "crew" then
       elsif Path="/api/capabilities" then declare V:JSON_Value:=Create_Object;begin Set_Field(V,"maxPayloadBytes",Integer(Max_Import));Set_Field(V,"maxHistorySnapshots",Integer(Max_History_Snapshots));Set_Field(V,"maxBatchOperations",Integer(Max_Batch_Operations));Response:=Json_Response(V);end;
       elsif Path="/api/campaign" then Response:=Json_Text(Read_File(To_String(Data_Root)&"/campaign.json"));
       elsif Path="/api/campaign/batch" then
-         --  BUG-005: sequential all-or-nothing multi-op planner.
-         declare
-            B    : constant JSON_Value := Parse_Body (To_String (AWS.Status.Binary_Data (Request)));
-            Ops  : JSON_Array;
-            Outs : JSON_Array := Empty_Array;
-            OK   : Boolean := True;
-            Fail_Code, Fail_Msg : Unbounded_String := Null_Unbounded_String;
-            Batch_Ctx  : JSON_Value := JSON_Null;
-            Batch_Issues : JSON_Array := Empty_Array;
-            Batch_Canonical : Boolean := False;
-            Batch_Err  : JSON_Value := JSON_Null;
-            type Ent is record
-               Kind : Unbounded_String := Null_Unbounded_String;
-               Id   : Unbounded_String := Null_Unbounded_String;
-               Op   : Unbounded_String := Null_Unbounded_String;
-               Args : JSON_Value := JSON_Null;
-               E    : JSON_Value := JSON_Null;
-               Changed : Boolean := False;
-            end record;
-            Ents : array (1 .. Max_Batch_Operations) of Ent :=
-              (others => (Kind => Null_Unbounded_String, Id => Null_Unbounded_String,
-                          Op => Null_Unbounded_String, Args => JSON_Null,
-                          E => JSON_Null, Changed => False));
-            N    : Natural := 0;
-            Lock_Order : array (1 .. Max_Batch_Operations) of Positive :=
-              (others => 1);
-            Locked : array (1 .. Max_Batch_Operations) of Boolean := (others => False);
-         begin
-            if B.Kind = JSON_Object_Type and then not Only_Fields (B, "|ops|") then
-               Response := Json_Response
-                 (Validation_Error ("batch", "unknown batch property",
-                                    Root_Issues ("unknown batch property")),
-                  AWS.Messages.S400);
-            elsif B.Kind /= JSON_Object_Type or else not Has_Field (B, "ops") then
-               Response := Json_Response
-                 (Validation_Error ("batch", "ops must be a non-empty array",
-                                    Root_Issues ("ops must be a non-empty array")));
-            else
-               Ops := Get (B, "ops");
-               if Length (Ops) = 0 or else Length (Ops) > Max_Batch_Operations then
-                  Response := Json_Response
-                    (Validation_Error ("batch", "ops must contain 1..50 operations",
-                                       Root_Issues ("ops must contain 1..50 operations")));
-               else
-                  for I in 1 .. Length (Ops) loop
-                     declare
-                        O   : constant JSON_Value := Get (Ops, I);
-                        K, ID, OP : Unbounded_String := Null_Unbounded_String;
-                     begin
-                        if O.Kind /= JSON_Object_Type
-                          or else not Has_Field (O, "entity")
-                          or else not Has_Field (O, "id")
-                          or else not Has_Field (O, "op")
-                          or else not Has_Field (O, "args")
-                        then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("each op requires entity, id, op, args");
-                           exit;
-                        end if;
-                        if not Only_Fields (O, "|entity|id|op|args|") then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("unknown batch operation property");
-                           exit;
-                        end if;
-                        K := To_Unbounded_String (Str_Field (O, "entity"));
-                        if To_String (K) /= "character" and then To_String (K) /= "crew"
-                          and then To_String (K) /= "clock" then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("entity must be character, crew or clock");
-                           exit;
-                        end if;
-                        ID := To_Unbounded_String (Str_Field (O, "id"));
-                        OP := To_Unbounded_String (Str_Field (O, "op"));
-                        if not Safe (To_String (ID)) then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("invalid entity id");
-                           exit;
-                        end if;
-                        N := N + 1;
-                        Ents (N) := (Kind => K, Id => ID,
-                                     Op => OP, Args => Get (O, "args"),
-                                     E => JSON_Null, Changed => False);
-                        Lock_Order (N) := N;
-                        --  SC-A3: batch shares the ONE stored-entity
-                        --  classification path (degraded rows → typed
-                        --  INVALID_ENTITY with repairability details).
-                        if Ada.Directories.Exists
-                          (Current_File (To_String (K), To_String (ID)))
-                        then
-                           Classify_Stored
-                             (To_String (K), To_String (ID),
-                              Read_File (Current_File (To_String (K), To_String (ID))),
-                              Ents (N).E, Batch_Ctx, Batch_Issues, Batch_Canonical);
-                           if not Batch_Canonical then
-                              OK := False;
-                              Fail_Code := To_Unbounded_String ("INVALID_ENTITY");
-                              Fail_Msg := To_Unbounded_String
-                                ("entity is degraded; repair before mutating");
-                              Batch_Err := Invalid_Entity_Error ("batch", Batch_Issues);
-                              exit;
-                           end if;
-                        else
-                           OK := False; Fail_Code := To_Unbounded_String ("NOT_FOUND");
-                           Fail_Msg := To_Unbounded_String
-                             ("entity not found: " & To_String (K) & "/" & To_String (ID));
-                           exit;
-                        end if;
-                     end;
-                  end loop;
-                  if OK then
-                     for I in 1 .. N - 1 loop
-                        for J in I + 1 .. N loop
-                           declare
-                              KI : constant String := To_String (Ents (Lock_Order (I)).Kind) & "/" & To_String (Ents (Lock_Order (I)).Id);
-                              KJ : constant String := To_String (Ents (Lock_Order (J)).Kind) & "/" & To_String (Ents (Lock_Order (J)).Id);
-                           begin
-                              if KJ < KI then
-                                 declare T : constant Positive := Lock_Order (I); begin
-                                    Lock_Order (I) := Lock_Order (J); Lock_Order (J) := T;
-                                 end;
-                              end if;
-                           end;
-                        end loop;
-                     end loop;
-                     for I in 1 .. N loop
-                        declare
-                           Idx : constant Positive := Lock_Order (I);
-                           H : Boolean;
-                           Already : Boolean := False;
-                           KeyI : constant String :=
-                             To_String (Ents (Idx).Kind) & "/" & To_String (Ents (Idx).Id);
-                        begin
-                           for P in 1 .. I - 1 loop
-                              if To_String (Ents (Lock_Order (P)).Kind) & "/" & To_String (Ents (Lock_Order (P)).Id) = KeyI
-                              then
-                                 Already := True; exit;
-                              end if;
-                           end loop;
-                           if not Already then
-                              --  bounded spin like the per-entity routes: a
-                              --  transiently busy registry must not fail a
-                              --  whole batch under parallel load
-                              Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
-                              for T in 1 .. 200 loop
-                                 exit when H;
-                                 delay 0.001;
-                                 Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
-                              end loop;
-                              if not H then OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                                 Fail_Msg := To_Unbounded_String ("too many concurrent batches");
-                                 exit;
-                              end if;
-                           end if;
-                           Locked (Idx) := not Already;
-                        end;
-                     end loop;
-                  end if;
-                  if OK then
-                     for I in 1 .. N loop
-                        declare
-                           R   : JSON_Value;
-                           OpS : constant String := To_String (Ents (I).Op);
-                           KeyI : constant String :=
-                             To_String (Ents (I).Kind) & "/" & To_String (Ents (I).Id);
-                        begin
-                           for P in reverse 1 .. I - 1 loop
-                              if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
-                                and then Ents (P).Changed
-                              then
-                                 Ents (I).E := Ents (P).E;
-                                 exit;
-                              end if;
-                           end loop;
-                           --  SC-A1: batch is a write path — the stored
-                           --  entity must be canonical before mutating, and
-                           --  every mutation must keep it canonical.
-                           if not Entity_Is_Canonical
-                             (To_String (Ents (I).Kind), To_String (Ents (I).Id),
-                              Ents (I).E)
-                           then
-                              OK := False;
-                              Fail_Code := To_Unbounded_String ("INVALID_ENTITY");
-                              Fail_Msg := To_Unbounded_String
-                                ("entity is degraded; repair before mutating");
-                              exit;
-                           end if;
-                           declare
-                              Bad : Unbounded_String;
-                           begin
-                              if Validate_Mutation_Request
-                                (To_String (Ents (I).Kind), To_String (Ents (I).Id),
-                                 OpS, Ents (I).Args, Bad)
-                              then
-                                 R := Mutate (To_String (Ents (I).Kind), OpS, Ents (I).E, Ents (I).Args);
-                              else
-                                 R := Validation_Error
-                                   (OpS, To_String (Bad), Root_Issues (To_String (Bad)), Ents (I).E);
-                              end if;
-                           end;
-                           if Bool_Field (R, "ok") then
-                              declare
-                                 Batch_Mutated_Ok : Boolean;
-                              begin
-                                 Schema_Check (To_String (Ents (I).Kind), Ents (I).E,
-                                                       Batch_Mutated_Ok);
-                                 if not Batch_Mutated_Ok then
-                                    OK := False;
-                                    Fail_Code := To_Unbounded_String ("VALIDATION");
-                                    Fail_Msg := To_Unbounded_String
-                                      ("mutation result fails schema validation; nothing was written");
-                                    exit;
-                                 end if;
-                              end;
-                              Ents (I).Changed := True;
-                              declare
-                                 Item : JSON_Value := Create_Object;
-                              begin
-                                 Set_Field (Item, "ok", True);
-                                 Set_Field (Item, "op", OpS);
-                                 Append (Outs, Item);
-                              end;
-                           else
-                              OK := False;
-                              --  SC-A3: batch items carry the same whole-error
-                              --  union as the top-level error (ERR-BATCH-008).
-                              --  All planned items are still evaluated and
-                              --  reported (all-or-nothing refers to writes:
-                              --  nothing is written once any item failed).
-                              declare
-                                 Item : JSON_Value := Create_Object;
-                                 Err  : constant JSON_Value := Get (R, "error");
-                              begin
-                                 Set_Field (Item, "ok", False);
-                                 Set_Field (Item, "op", Create (OpS));
-                                 Set_Field (Item, "error", Err);
-                                 Append (Outs, Item);
-                              end;
-                           end if;
-                        end;
-                     end loop;
-                  end if;
-                  if OK then
-                     for I in 1 .. N loop
-                        declare
-                           K : constant String := To_String (Ents (I).Kind);
-                           ID : constant String := To_String (Ents (I).Id);
-                           KeyI : constant String := K & "/" & ID;
-                           Seen : Boolean := False;
-                        begin
-                           for P in 1 .. I - 1 loop
-                              if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
-                              then Seen := True; exit; end if;
-                           end loop;
-                           if not Seen and then Ents (I).Changed then
-                              declare
-                                 Before : constant JSON_Value := Clone (Read_Entity (K, ID));
-                                 Last : Positive := I;
-                              begin
-                                 for P in I + 1 .. N loop
-                                    if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI then
-                                       Last := P;
-                                    end if;
-                                 end loop;
-                                 --  The composite itself is x-snapshot:true,
-                                 --  including batches made entirely of micro-ops.
-                                 Snapshot (K, ID, "campaign.batch", Before);
-                                 Stamp (Ents (Last).E);
-                                 Write_Entity (K, ID, Ents (Last).E);
-                              end;
-                           end if;
-                        end;
-                     end loop;
-                     declare V : JSON_Value := Create_Object; begin
-                        Set_Field (V, "ok", True);
-                        Set_Field (V, "applied", Create_Object);
-                        Set_Field (Get (V, "applied"), "op", "campaign.batch");
-                        Set_Field (V, "batch", Outs);
-                        Set_Field (V, "sideEffects", Empty_Array);
-                        Set_Field (V, "error", JSON_Null);
-                        Response := Json_Response (V);
-                     end;
-                  else
-                     if Length (Outs) > 0 then
-                        --  SC-A3: per-item outcomes carry the failing item's
-                        --  typed union error; the batch envelope stays 200
-                        --  with batch=Outs (all-or-nothing: nothing written).
-                        declare V : JSON_Value := Create_Object; begin
-                           Set_Field (V, "ok", True);
-                           Set_Field (V, "applied", Create_Object);
-                           Set_Field (Get (V, "applied"), "op", "campaign.batch");
-                           Set_Field (V, "batch", Outs);
-                           Set_Field (V, "sideEffects", Empty_Array);
-                           Set_Field (V, "error", JSON_Null);
-                           Response := Json_Response (V);
-                        end;
-                     elsif Batch_Err.Kind = JSON_Object_Type then
-                        Response := Json_Response (Batch_Err);
-                     else
-                        Response := Json_Response
-                          (Error_Result ("batch", To_String (Fail_Code), To_String (Fail_Msg)),
-                           (if To_String (Fail_Code) = "VALIDATION"
-                            then AWS.Messages.S400 else AWS.Messages.S200));
-                     end if;
-                  end if;
-                  for I in 1 .. N loop
-                     if Locked (I) then Entity_Lock_Registry.Release (To_String (Ents (I).Id)); end if;
-                  end loop;
-               end if;
-            end if;
-         end;
+         Response := Handle_Keyed_Request (Request, Path);
       elsif Path="/api/campaign/roster" then
          --  SC-A3: the roster shares the stored-entity classification path
          --  (route identity, isReadable flags); collections stay 200.
@@ -2956,12 +2989,12 @@ if Kind = "crew" then
               and then Part(Path,3)="pc" and then Part(Path,4)=""
       then
          Response := (if AWS.Status.Method (Request) = AWS.Status.POST
-                      then Handle_Create (Request, Path)
+                      then Handle_Keyed_Request (Request, Path)
                       else Handle_Pc_Create (Request));
       elsif Part(Path,1)="api" and then (Part(Path,2)="characters" or else Part(Path,2)="crews" or else Part(Path,2)="clocks") then
          Response := (if AWS.Status.Method (Request) = AWS.Status.POST
                         and then Part (Path, 3) = ""
-                      then Handle_Create (Request, Path)
+                      then Handle_Keyed_Request (Request, Path)
                       else Handle_Entity (Request, Path));
       elsif Path="/api/test-hooks/crash-mid-write" then
          --  SC-A2: crash probe (REPAIR-ATOMIC-004).  Armed only when the

@@ -124,6 +124,41 @@
     },
     "methodology": "Additive entry for second 2026-10-04 mutation refresh (batch-boundary). Historical entries and create-boundary results above remain unchanged."
   },
+  "correction2026-10-05-batch-concurrency": {
+    "finding": "REVIEW-01-BATCH-CONCURRENCY corrected batch locking/replay and interrupted-worker assertion isolation, changing the callback restoration hashes.",
+    "hashRefreshes": [{
+      "mutants": ["M05", "M07", "M08", "M09", "M14", "M15"],
+      "path": "backend-ada/server/src/pitd_callback.adb",
+      "oldHash": "1f3513e5b8850763060dfd18245d2575d2a20a1b9dbf65d57b364d772ae7cf26",
+      "newHash": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400"
+    }],
+    "catalogChanges": "All other restoration hashes matched current files; no anchor, replacement, killer, severity, or semantic intent changed.",
+    "verification": {
+      "command": "npm --prefix conformance run test:mutation",
+      "cwd": ".", "exitCode": 0, "killed": 28, "total": 28, "survived": 0,
+      "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": { "backendAda": 514, "conformanceTooling": 221, "frontend": 794 },
+      "postCampaignSourceRestoration": "PASS; all files restored to baseline and clean backend rebuilt after each Ada mutant",
+      "revision": "dfcb21d16580",
+      "timestamp": "2026-10-05T07:03:43.058Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T07-03-43-056Z.txt",
+      "sessionArtifact": "artifact://10552"
+    },
+    "combinedVerification": {
+      "command": "npm --prefix conformance run test:ada -- --run && npm --prefix conformance run test:tooling && npm --prefix frontend test -- --run && npm --prefix conformance run test:mutation",
+      "cwd": ".", "exitCode": 0, "wallClockSeconds": 1811.81,
+      "fullAcceptance": { "ada": "514/514; 61 files", "tooling": "221/221; 14 files", "frontend": "794/794; 20 files" }
+    },
+    "validators": {
+      "command": "node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js",
+      "cwd": ".", "exitCode": 0, "metricsFilesValidated": 157,
+      "traceabilityChecksPassed": 231, "reconciliationChecksPassed": 17,
+      "errors": 0, "reconciliationWarnings": 0,
+      "result": "All three reported ALL CHECKS PASSED."
+    },
+    "methodology": "Additive observed-result entry. Combined command duration is not a standalone campaign or task-total estimate. Prior correction entries and historical metrics are preserved unchanged."
+  },
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",

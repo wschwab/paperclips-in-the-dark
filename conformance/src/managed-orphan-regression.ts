@@ -5,6 +5,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect } from "vitest";
 
+// Shared assertion used by the SIGINT worker cleanup check and its controls.
+export async function assertOwnedProcessesStopped(pids: number[]): Promise<void> {
+  expect(pids, "owned process inventory must not be empty").not.toEqual([]);
+  for (const pid of pids) {
+    let alive = true;
+    try { process.kill(pid, 0); } catch { alive = false; }
+    expect(alive, `owned process PID ${pid} survived cleanup`).toBe(false);
+  }
+}
+
 // Exercise each suite's actual orphan assertion against a launcher-owned live
 // server (the leaked-server positive control), then its stopped PID while a
 // separately owned process with the old pgrep substring remains alive.
@@ -13,6 +23,7 @@ export async function checkOrphanAssertionIsolation(
   prefix: string,
   command: string[],
   assertNoOrphanServers: (stdout: string) => Promise<void>,
+  unrelatedArgs: string[] = ["pitd-managed-review01-unrelated"],
 ): Promise<void> {
   const root = await mkdtemp(join(tmpdir(), "orphan-isolation-"));
   let child: ChildProcess | undefined;
@@ -34,7 +45,7 @@ export async function checkOrphanAssertionIsolation(
     process.kill(pid, 0);
     // A no-op, empty PID set, or unrelated-process-only filter cannot pass this.
     await expect(assertNoOrphanServers(stdout)).rejects.toThrow(String(pid));
-    unrelated = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)", "pitd-managed-review01-unrelated"], { stdio: "ignore" });
+    unrelated = spawn(process.execPath, ["-e", "setInterval(() => {}, 1000)", ...unrelatedArgs], { stdio: "ignore" });
     unrelatedExit = once(unrelated, "exit");
     await once(unrelated, "spawn");
     child.kill("SIGTERM");
