@@ -1,0 +1,75 @@
+{
+  "task": "REVIEW-01-CROSS-ENTITY-LOCKS-UNDO",
+  "track": "ada",
+  "implementationAgent": "create-boundary-fix (omp worker)",
+  "reviewAgent": null,
+  "date": "2026-10-05",
+  "iterationsToGreen": 4,
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "status": "implementation acceptance passed: full Ada/tooling/frontend, three audit validators, and 28-mutant campaign; independent review pending",
+  "passRateAtFirstDoneClaim": "529/529 Ada (63 files), 221/221 tooling (14 files), 794/794 frontend (20 files), 28/28 mutants killed; focused burst 64/64 HTTP successes, zero resets",
+  "passRateAfterReview": "pending independent review of this corrective diff",
+  "sourceCandidate": "checkpoint e019e0ff; primary repository; inherited .omo child intentionally unchanged",
+  "card": "tasks/REVIEW-01-CROSS-ENTITY-LOCKS-UNDO.md",
+  "documentation": ["docs/pages/contract/ops-audit.mdx"],
+  "metricsMethodology": {
+    "wallClockNote": "0 denotes unmeasured total task duration, not zero elapsed time; observed command durations are recorded separately.",
+    "tokensNote": "Token accounting unavailable.",
+    "locNote": "Implementation LOC not measured; no inferred total.",
+    "scaffoldingLocNote": "Scaffolding LOC not measured; no inferred total.",
+    "method": "Observed failing-first real-HTTP regressions, source-wide write audit, AWS dependency source investigation, build, focused acceptance, and requested final full suites/mutation campaign. Four source acceptance rounds: initial locksets, private-key isolation correction, shared clock-validator refinement, and user-approved HTTP capacity correction.",
+    "source": "artifact://10587, artifact://10592, artifact://10594, artifact://10599, artifact://10601, artifact://10603, artifact://10605"
+  },
+  "defectCatchingLayer": ["Independent review identified two product defects", "New real-HTTP regression exposed a private-lock key collision", "Human-reported HTTP burst failures traced to AWS worker defaults and accepted-socket shedding"],
+  "defectsCaughtBy": { "compiler": 0, "conformance": 1, "review": 2, "human": 1 },
+  "testIds": ["CROSS-LOCK-001", "CROSS-LOCK-002", "CROSS-LOCK-003", "CROSS-LOCK-004", "CROSS-LOCK-005", "CROSS-LOCK-006", "CROSS-LOCK-007", "CROSS-LOCK-008", "UNDO-REF-001", "UNDO-REF-002", "UNDO-REF-003", "UNDO-REF-004", "UNDO-REF-005", "UNDO-REF-006", "AWS-BURST-001"],
+  "evidence": {
+    "initialRequestRefinement": { "command": "npm run test:ada -- --run suites/persistence/cross-entity-boundary.test.ts", "cwd": "conformance", "exitCode": 1, "artifact": "artifact://10584", "note": "Initial new requests had incorrect clock delta/name shapes; corrected only the new tests to frozen segments/purpose fields." },
+    "correctedRed": { "command": "npm run test:ada -- --run suites/persistence/cross-entity-boundary.test.ts", "cwd": "conformance", "exitCode": 1, "artifact": "artifact://10587", "vitestSeconds": 6.05, "wallClockSeconds": 6.53, "note": "Acknowledged related/owned clock writes lost; deleted crew/owner/related references restored by undo, including concurrent member undo." },
+    "privateKeyRed": { "command": "npm run test:ada -- --run suites/persistence/cross-entity-boundary.test.ts -t CROSS-LOCK-007", "cwd": "conformance", "exitCode": 1, "failed": 1, "skipped": 13, "vitestSeconds": 15.46, "wallClockSeconds": 15.99, "artifact": "artifact://10592", "note": "A valid entity-membership path id collided with the first private key and self-deadlocked. Fixed with the out-of-alphabet | suffix." },
+    "focused": { "command": "XDG_RUNTIME_DIR=/tmp alr --non-interactive build && npm --prefix ../../conformance run test:ada -- --run suites/persistence/cross-entity-boundary.test.ts suites/persistence/batch-concurrency.test.ts suites/semantics/clocks.test.ts suites/persistence/history.test.ts", "cwd": "backend-ada/server", "exitCode": 0, "buildSeconds": 2.07, "tests": 41, "files": 4, "vitestSeconds": 8.76, "wallClockSeconds": 11.41, "artifact": "artifact://10594", "note": "Before final shared clock-reference validator/unsafe-owner-id refinement; final full acceptance exercises final source." },
+    "preCapacityAcceptance": {
+      "command": "npm --prefix conformance run test:ada -- --run && npm --prefix conformance run test:tooling && npm --prefix frontend test -- --run && npm --prefix conformance run test:mutation", "cwd": ".", "exitCode": 0, "wallClockSeconds": 1907.36, "artifact": "artifact://10599",
+      "fullAda": { "tests": 528, "files": 62, "vitestSeconds": 72.10 },
+      "fullTooling": { "tests": 221, "files": 14, "vitestSeconds": 74.27 },
+      "fullFrontend": { "tests": 794, "files": 20, "vitestSeconds": 15.41 },
+      "mutation": { "killed": 28, "total": 28, "survived": 0, "P0": "19/19", "P1": "9/9", "revision": "0b0c6647b70e", "timestamp": "2026-10-05T08:46:56.114Z", "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T08-46-56-106Z.txt", "postCampaignSourceRestoration": "PASS" },
+      "note": "Acceptance before the subsequently user-approved 64-connection setting and AWS-BURST-001; retained as historical evidence, not final-source acceptance."
+    },
+    "burstRed": { "command": "npm run test:ada -- --run suites/persistence/aws-connection-burst.test.ts", "cwd": "conformance", "exitCode": 1, "failed": 1, "concurrentRequests": 64, "transportFailures": 43, "transportError": "UND_ERR_SOCKET", "vitestSeconds": 0.578, "wallClockSeconds": 1.12, "artifact": "artifact://10601", "note": "Real failing-first control with the default five workers; every request is attempted once and all promises settle before assertion." },
+    "finalFocused": { "command": "XDG_RUNTIME_DIR=/tmp alr --non-interactive build && npm --prefix ../../conformance run test:ada -- --run suites/persistence/aws-connection-burst.test.ts suites/persistence/cross-entity-boundary.test.ts suites/persistence/batch-concurrency.test.ts suites/semantics/clocks.test.ts suites/persistence/history.test.ts", "cwd": "backend-ada/server", "exitCode": 0, "buildSeconds": 0.87, "tests": 42, "files": 5, "concurrentBurstHttpSuccesses": 64, "concurrentBurstTransportFailures": 0, "vitestSeconds": 9.30, "wallClockSeconds": 10.77, "artifact": "artifact://10603" },
+    "fullAda": { "command": "npm --prefix conformance run test:ada -- --run", "cwd": ".", "exitCode": 0, "tests": 529, "files": 63, "baselineTests": 514, "newTests": 15, "vitestSeconds": 73.09, "artifact": "artifact://10605" },
+    "fullTooling": { "command": "npm --prefix conformance run test:tooling", "cwd": ".", "exitCode": 0, "tests": 221, "files": 14, "vitestSeconds": 74.76, "artifact": "artifact://10605" },
+    "fullFrontend": { "command": "npm --prefix frontend test -- --run", "cwd": ".", "exitCode": 0, "tests": 794, "files": 20, "vitestSeconds": 15.37, "artifact": "artifact://10605" },
+    "mutation": {
+      "command": "npm --prefix conformance run test:mutation", "cwd": ".", "exitCode": 0, "killed": 28, "total": 28, "survived": 0, "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": { "backendAda": 529, "conformanceTooling": 221, "frontend": 794 },
+      "postCampaignSourceRestoration": "PASS; all files restored to baseline and clean backend rebuilt after each Ada mutant",
+      "revision": "a0089ed51a38", "timestamp": "2026-10-05T09:20:14.715Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json", "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T09-20-14-709Z.txt", "artifact": "artifact://10605"
+    },
+    "combinedAcceptance": {
+      "command": "npm --prefix conformance run test:ada -- --run && npm --prefix conformance run test:tooling && npm --prefix frontend test -- --run && npm --prefix conformance run test:mutation",
+      "cwd": ".", "exitCode": 0, "wallClockSeconds": 1914.05, "note": "Observed four-command sequence, not standalone campaign duration or total task estimate."
+    },
+    "validators": {
+      "command": "node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js",
+      "cwd": ".", "exitCode": 0, "metricsFilesValidated": 158, "traceabilityChecksPassed": 231, "reconciliationChecksPassed": 17,
+      "errors": 0, "reconciliationWarnings": 0, "wallClockSeconds": 0.23,
+      "result": "All three reported ALL CHECKS PASSED; reconciliation retained 1624 current rows."
+    }
+  },
+  "awsSourceInvestigation": {
+    "dependency": "AWS 21.0.0",
+    "sourceRoot": "$HOME/.local/share/alire/releases/aws_21.0.0_57fddf8f/src/core",
+    "defaults": { "maxConnection": 5, "acceptQueueSize": 64, "derivedForceLimit": 10, "derivedCloseLimit": 20, "auxiliarySockets": 2, "forcedFirstHeaderAndIdleSeconds": 2 },
+    "shedding": "aws-net-acceptors.adb:114-120 admits new sockets with First=True; :283-286 removes the nearest-timeout non-ready socket above Close_Length; :352-356 and :600-607 shut it down with no HTTP response.",
+    "configuration": "aws-server.adb:968-993 overwrites Max_Connection with the supplied/default argument; Get_Current lazily loads home/cwd/program ini files (aws-config.adb:343-350,437-446), with no checked repository/default-home overrides found.",
+    "limitation": "The source establishes the shedding mechanism, not an exact fixed 32-request threshold or socket-level trace of the reported 23/9 outcome.",
+    "approvedCorrection": { "maxConnection": 64, "derivedForcePollThreshold": 130, "derivedClosePollThreshold": 258, "defaultLineStackBytes": 1376256, "totalReservedLineStacksMiB": 84, "note": "User explicitly approved after the read-only investigation; reserved stack capacity is not measured resident memory." }
+  },
+  "notes": "Reject missing-reference undo without normalization; declared character/crew 404 preserved, pre-existing undeclared clock undo retained by explicit user approval and documented as open contract decision. All three secondary paths audited and locked; membership-coordinated create prevents missed new rows. The only HTTP configuration change is the explicitly approved 64-connection Start argument, with an unretried 64-request regression; no new CLI/config surface, status, retry, or dependency fork. No frozen-suite/contract edits, commits, campaign-data, or .omo changes. Six callback restoration hashes refreshed without mutation intent/killer/anchor changes. Historical MUT-02 evidence preserved additively."
+}

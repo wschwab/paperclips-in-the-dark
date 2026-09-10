@@ -129,6 +129,109 @@ Regression evidence: `BATCH-ORDER-001`–`002`, `BATCH-CLOCK-REFS-001`–`005`,
 `BATCH-SNAPSHOT-001`–`004`, and `BATCH-SHAPE-001`–`002`.
 
 
+### Secondary-write and undo reference boundary (2026-10-05 correction)
+
+Deletion claims its complete, sorted `kind/id` lock set atomically before reading
+or writing any affected entity: crew deletion includes characters for crew-link
+cleanup; every deletion includes standalone clocks for related-link cleanup and
+character/crew owner reassignment. The same entity mutexes protect ordinary
+mutations and batch writes. Atomic all-or-none acquisition prevents a deletion
+from holding a partial set while waiting on a batch; candidate DTOs are read
+only after their locks are held. The registry has no fixed 64-entity capacity.
+
+A private membership gate coordinates creation and deletion while the delete
+footprint is discovered. Creation repeats reference-existence admission while
+holding that gate, so a new character/clock cannot materialize behind a deletion
+with a deleted crew, owner, or related clock. The gate's key contains `|`, which
+is outside the public path-id alphabet; it cannot alias an entity mutex.
+
+The write audit found three secondary paths: crew-link clearing, related-clock
+unlinking, and character/crew-owned clock reassignment. All now use this boundary.
+Import, repair, ordinary mutation, and undo write their already-locked primary
+entity; batch holds every changed entity lock, creation holds the membership
+gate, and campaign initialization runs before the HTTP server starts.
+
+Undo retains full snapshot restoration. Character/crew undo explicitly promises
+that behavior and declares HTTP 404 `NOT_FOUND` (`contract/openapi.yaml` lines
+823–832 and 1893–1902). Silently clearing historical links would violate that
+promise. Instead, undo locks the primary entity and the snapshot's referenced
+entities, selects the current newest snapshot again under those locks, and
+rejects restoration if any reference no longer exists. A changing snapshot
+footprint is retried only after releasing the entire set. Rejection preserves
+current bytes, revision, history entries, and snapshot files.
+
+Cross-entity references comprise character `dossier.crewId` and standalone-clock
+`ownerKind`/`ownerId` and `relatedClockIds`; crew cohort/contact ids and embedded
+character healing clocks are local, not external entity references. Clock undo
+also reuses the ordinary clock-reference validator for owner shape, self-links,
+and duplicate links: invalid definitions retain HTTP 400 `VALIDATION`; missing
+targets use HTTP 404 `NOT_FOUND`. Both cases are checked before any write or
+snapshot consumption.
+
+**Open contract decision:** the pre-existing generic clock undo route has no
+`/clocks/{id}/undo` operation in OpenAPI. It is intentionally retained, with the
+same reference validation and missing-target 404 policy, pending a separate
+contract decision. The frontend has no clock-undo caller: its clock mutation
+helper is called only by progress, reset, and delete; character and crew undo
+remain available. No frozen operation or response declaration was changed here.
+
+Regression evidence: `CROSS-LOCK-001`–`008` and `UNDO-REF-001`–`006`, including
+overlapping batch/delete writes, more than 64 affected clocks, create/delete
+membership races, private-key isolation, historical missing-reference rejection,
+valid restoration, and concurrent crew deletion/member undo.
+
+### HTTP burst connection budget (2026-10-05 correction)
+
+`backend-ada/server/src/pitd.adb` explicitly sets `Max_Connection => 64` at
+`AWS.Server.Start`. This is the HTTP worker/connection budget, separate from the
+unbounded entity-lock registry. At AWS 21.0.0's default line stack size
+`16#150000#` (1,376,256 bytes), 64 line tasks reserve approximately **84 MiB** of
+stack capacity, versus 6.56 MiB for the former five-line default; that is reserved
+capacity, not a measurement of resident memory. More workers also mean more
+scheduling and per-connection state.
+
+The previous overload supplied only the port, so `aws-server.adb:968–993`
+assigned the default five connections. AWS's zero-valued keep-alive settings
+derive force/close limits as `Max_Connection * 2` / `* 4`
+(`aws-config.adb:393–413`). The acceptor adds two auxiliary sockets
+(`aws-net-acceptors.adb:415–432`), giving former poll-set thresholds 12/22 and
+current thresholds **130/258**. The listen/back queue remains 64. Above the
+force threshold, first-header and idle waits use the default two-second force
+timeouts; increasing the listen backlog alone would not fix the lower shedding
+threshold.
+
+The source confirms a pre-HTTP accepted-socket shedding path:
+`aws-net-acceptors.adb:283–286` removes the non-ready socket nearest its timeout
+when the poll set exceeds the close threshold, and `:352–356` / `:600–607`
+shut it down without generating an HTTP response. Newly accepted sockets enter
+that same set with `First => True` (`:114–120`), not just previously served
+keep-alive sockets. This explains a genuine transport-failure mechanism.
+**There is no fixed 32-request limit**: the reported approximately-32 burst
+outcome depends on readiness, pooling, and timing, not arithmetic equating the
+burst size with a worker/queue count.
+
+AWS lazily reads home/current-directory `aws.ini` and program ini files through
+`Get_Current` (`aws-config.adb:343–350,437–446`); none were present in the checked
+repository or default home AWS configuration location. The convenience Start
+overload nevertheless overwrites `Max_Connection` with its argument/default.
+The explicit setting therefore removes ambiguity for this server without a new
+configuration surface, status code, transport retry, or dependency fork.
+
+`AWS-BURST-001` uses the normal unretried HTTP client to launch **64 concurrent
+batch requests**, requires an HTTP 200 response and successful operation for
+every request, and checks all 64 acknowledged coin/revision increments. It does
+not reduce concurrency or retry transport errors. The setting is a finite
+capacity budget, not a promise of lossless overload at arbitrary concurrency.
+Its failing-first five-worker control recorded **43/64 `UND_ERR_SOCKET`
+failures**; after the explicit setting, the same test received **64/64 HTTP 200
+successes with zero transport failures**. `tasks/REVIEW-01-CROSS-ENTITY-LOCKS-UNDO.md`
+retains both observed outputs.
+
+Source paths above are within the pinned AWS 21.0.0 release's `src/core/`
+(`$HOME/.local/share/alire/releases/aws_21.0.0_57fddf8f` in the investigated
+installation); the dependency version is fixed in the server's Alire manifest
+and lockfile.
+
 ## Error codes (contract enumeration)
 
 `NOT_FOUND, VALIDATION, STALE_REVISION, RETIRED, CONFIRM_REQUIRED, DUPLICATE,

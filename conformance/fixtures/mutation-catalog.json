@@ -85,7 +85,7 @@
       "mutation": "Change INVALID_ENTITY status from 422 to 500",
       "observableFailure": "degraded-entity direct access returns 500 instead of the frozen 422 typed client error, breaking the error union and typed recovery",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400"
+        "backend-ada/server/src/pitd_callback.adb": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262"
       },
       "severity": "P0",
       "status": "not-run",
@@ -120,7 +120,7 @@
       "mutation": "Skip the If-Match check block (if False then) so stale revisions mutate anyway",
       "observableFailure": "a stale writer overwrites recent changes with no STALE_REVISION; concurrent edits are lost silently",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400"
+        "backend-ada/server/src/pitd_callback.adb": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262"
       },
       "severity": "P0",
       "status": "not-run",
@@ -137,7 +137,7 @@
       "mutation": "Skip the pre-mutation snapshot (replaced by null)",
       "observableFailure": "snapshot-worthy mutations create no history entry, so undo has nothing to restore",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400"
+        "backend-ada/server/src/pitd_callback.adb": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262"
       },
       "severity": "P0",
       "status": "not-run",
@@ -155,7 +155,7 @@
       "mutation": "Skip snapshot consumption on undo (Delete_File replaced by null)",
       "observableFailure": "undo stops consuming snapshots, so a second undo replays stale state and history grows without bound",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400"
+        "backend-ada/server/src/pitd_callback.adb": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262"
       },
       "severity": "P0",
       "status": "not-run",
@@ -236,7 +236,7 @@
       "mutation": "Skip the W5 owner-clock reassignment (elsif False then)",
       "observableFailure": "deleting a character/crew orphans its standalone clocks instead of reassigning them to campaign ownership with bumped revisions",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400"
+        "backend-ada/server/src/pitd_callback.adb": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262"
       },
       "severity": "P1",
       "status": "not-run",
@@ -252,7 +252,7 @@
       "mutation": "Skip the W4 unlink sweep (if False then)",
       "observableFailure": "a deleted clock's id remains in other clocks' relatedClockIds, leaving stale relationship references",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400"
+        "backend-ada/server/src/pitd_callback.adb": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262"
       },
       "severity": "P1",
       "status": "not-run",

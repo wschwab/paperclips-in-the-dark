@@ -12,6 +12,7 @@
 --  Pure structural extraction; behavior lives where it always did.
 with Ada.Calendar;
 with Ada.Directories;
+with Ada.Containers.Indefinite_Ordered_Sets;
 with Ada.Streams;
 with Ada.Exceptions;
 with Ada.Strings.Fixed;
@@ -69,73 +70,62 @@ package body Pitd_Callback is
    --  Data_Root / Games_Root live in Pitd_Common (shared with storage).
    Hooks       : Boolean := False;
 
-   --  BUG-001: per-entity lock registry.  Mutations of the SAME entity
-   --  serialize on that entity's slot (held across read+mutate+snapshot+
-   --  write and released on every exit path and exception), while different
-   --  entities claim different slots and proceed in parallel.  The protected
-   --  entry barrier makes a second claimant for a held entity wait; the
-   --  registry only ever rejects a claim when all slots are busy (bounded).
-   Max_Entity_Locks : constant := 64;
-   type Entity_Lock_Entry is record
-      Id       : Unbounded_String;   --  empty when the slot is free
-      Held     : Boolean := False;
-      Revision : Integer := -1;      --  revision observed at claim time
-   end record;
-   Entity_Lock_Table : array (1 .. Max_Entity_Locks) of Entity_Lock_Entry :=
-     (others => (Null_Unbounded_String, False, -1));
+   --  Entity locks share one registry, including ordered multi-entity plans.
+   --  A set claim is all-or-none: no request waits while retaining a partial
+   --  delete/undo plan. Campaign size is not bounded by the old 64-slot table.
+   package String_Sets is new Ada.Containers.Indefinite_Ordered_Sets (String);
+   Membership_Lock : constant String := "entity-membership|";
+
+   function Lock_Id (Key : String) return String is
+     (Key (Ada.Strings.Fixed.Index (Key, "/") + 1 .. Key'Last));
 
    protected Entity_Lock_Registry is
-      procedure Claim (Id : String; Revision : Integer; Granted : out Boolean);
+      procedure Claim (Id : String; Granted : out Boolean);
+      procedure Claim_Set (Keys : JSON_Array; Granted : out Boolean);
       procedure Release (Id : String);
+      procedure Release_Set (Keys : JSON_Array);
    private
-      function Index_Of (Id : String) return Natural;
+      Held : String_Sets.Set;
    end Entity_Lock_Registry;
 
    protected body Entity_Lock_Registry is
-      function Index_Of (Id : String) return Natural is
+      procedure Claim (Id : String; Granted : out Boolean) is
       begin
-         for I in Entity_Lock_Table'Range loop
-            if To_String (Entity_Lock_Table (I).Id) = Id then return I; end if;
-         end loop;
-         return 0;
-      end Index_Of;
-
-      --  A protected entry barrier cannot reference entry parameters, so the
-      --  registry exposes a test-and-set procedure; the caller retries with a
-      --  small delay until the entity's slot is granted (bounded spin, no
-      --  busy-waiting on a held slot).
-      procedure Claim (Id : String; Revision : Integer; Granted : out Boolean) is
-      begin
-         Granted := False;
-         declare
-            Idx : constant Natural := Index_Of (Id);
-         begin
-            if Idx /= 0 then
-               if not Entity_Lock_Table (Idx).Held then
-                  Entity_Lock_Table (Idx).Held := True;
-                  Entity_Lock_Table (Idx).Revision := Revision;
-                  Granted := True;
-               end if;
-            else
-               for I in Entity_Lock_Table'Range loop
-                  if not Entity_Lock_Table (I).Held then
-                     Entity_Lock_Table (I) :=
-                       (To_Unbounded_String (Id), True, Revision);
-                     Granted := True;
-                     exit;
-                  end if;
-               end loop;
-            end if;
-         end;
+         Granted := not Held.Contains (Id);
+         if Granted then Held.Include (Id); end if;
       end Claim;
 
-      procedure Release (Id : String) is
-         Idx : constant Natural := Index_Of (Id);
+      procedure Claim_Set (Keys : JSON_Array; Granted : out Boolean) is
+         Acquired : Natural := 0;
       begin
-         if Idx /= 0 then
-            Entity_Lock_Table (Idx) := (Null_Unbounded_String, False, -1);
-         end if;
+         Granted := False;
+         for I in 1 .. Length (Keys) loop
+            if Held.Contains (Lock_Id (Get (Get (Keys, I)))) then return; end if;
+         end loop;
+         for I in 1 .. Length (Keys) loop
+            Held.Include (Lock_Id (Get (Get (Keys, I))));
+            Acquired := I;
+         end loop;
+         Granted := True;
+      exception
+         when others =>
+            for I in 1 .. Acquired loop
+               Held.Exclude (Lock_Id (Get (Get (Keys, I))));
+            end loop;
+            raise;
+      end Claim_Set;
+
+      procedure Release (Id : String) is
+      begin
+         Held.Exclude (Id);
       end Release;
+
+      procedure Release_Set (Keys : JSON_Array) is
+      begin
+         for I in 1 .. Length (Keys) loop
+            Held.Exclude (Lock_Id (Get (Get (Keys, I))));
+         end loop;
+      end Release_Set;
    end Entity_Lock_Registry;
 
    --  BUG-002: bounded LRU of idempotent mutation results, keyed by
@@ -374,6 +364,62 @@ package body Pitd_Callback is
 
 
 
+   --  Cross-entity ids in the persisted schemas: character dossier.crewId,
+   --  clock ownerKind/ownerId, and clock relatedClockIds. Crew child ids and
+   --  character's embedded healing clock are local values, not store links.
+   function Missing_Reference (Kind : String; Doc : JSON_Value) return String is
+      function Missing (Target_Kind, Target_Id : String) return Boolean is
+        (Target_Id /= "" and then (not Safe (Target_Id)
+           or else not Ada.Directories.Exists (Current_File (Target_Kind, Target_Id))));
+   begin
+      if Kind = "character" then
+         declare
+            Crew_Id : constant String := Str_Field (Get (Doc, "dossier"), "crewId");
+         begin
+            if Missing ("crew", Crew_Id) then return "crew/" & Crew_Id; end if;
+         end;
+      elsif Kind = "clock" then
+         declare
+            Owner_Kind : constant String := Str_Field (Doc, "ownerKind");
+            Owner_Id : constant String := Str_Field (Doc, "ownerId");
+            Related : constant JSON_Array := Get (Doc, "relatedClockIds");
+         begin
+            if Owner_Kind /= "campaign" and then Missing (Owner_Kind, Owner_Id) then
+               return Owner_Kind & "/" & Owner_Id;
+            end if;
+            for I in 1 .. Length (Related) loop
+               declare Related_Id : constant String := Get (Get (Related, I)); begin
+                  if Missing ("clock", Related_Id) then return "clock/" & Related_Id; end if;
+               end;
+            end loop;
+         end;
+      end if;
+      return "";
+   end Missing_Reference;
+
+   procedure Add_Reference_Locks
+     (Keys : in out String_Sets.Set; Kind : String; Doc : JSON_Value) is
+   begin
+      if Kind = "character" then
+         declare Crew_Id : constant String := Str_Field (Get (Doc, "dossier"), "crewId"); begin
+            if Crew_Id /= "" then Keys.Include ("crew/" & Crew_Id); end if;
+         end;
+      elsif Kind = "clock" then
+         declare
+            Owner_Kind : constant String := Str_Field (Doc, "ownerKind");
+            Owner_Id : constant String := Str_Field (Doc, "ownerId");
+            Related : constant JSON_Array := Get (Doc, "relatedClockIds");
+         begin
+            if Owner_Kind /= "campaign" and then Safe (Owner_Id) then
+               Keys.Include (Owner_Kind & "/" & Owner_Id);
+            end if;
+            for I in 1 .. Length (Related) loop
+               Keys.Include ("clock/" & String'(Get (Get (Related, I))));
+            end loop;
+         end;
+      end if;
+   end Add_Reference_Locks;
+
    ---------------------------------------------------------------------------
    --  Every create route uses the same canonical persistence boundary.
    --  Handle_Keyed_Request holds the scope lock until the response is stored.
@@ -382,12 +428,28 @@ package body Pitd_Callback is
       return AWS.Response.Data is
       Created_Ok : Boolean;
       R : JSON_Value;
+      Membership_Held : Boolean := False;
    begin
       Schema_Check (Kind, E, Created_Ok);
       if not Created_Ok then
          return Fail (AWS.Messages.S500, Op, "INTERNAL",
                       Message => "created entity fails schema validation");
       end if;
+      --  Freeze delete target discovery against new entity creation. A
+      --  deleted reference must be checked again after this gate is held.
+      loop
+         Entity_Lock_Registry.Claim (Membership_Lock, Membership_Held);
+         exit when Membership_Held;
+         delay 0.001;
+      end loop;
+      declare Missing : constant String := Missing_Reference (Kind, E); begin
+         if Missing /= "" then
+            Entity_Lock_Registry.Release (Membership_Lock);
+            Membership_Held := False;
+            return Fail (AWS.Messages.S400, Op, "VALIDATION",
+                         Message => "reference no longer exists: " & Missing);
+         end if;
+      end;
       Write_Entity (Kind, Str_Field (E, "id"), E);
       if Kind = "character" or else Kind = "crew" then
          Write_Baseline_Snapshot (Kind, Str_Field (E, "id"), Op, E);
@@ -400,7 +462,13 @@ package body Pitd_Callback is
             GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))),
             String'(Write (R, Compact => False)) & ASCII.LF);
       end if;
+      Entity_Lock_Registry.Release (Membership_Lock);
+      Membership_Held := False;
       return Json_Response (R);
+   exception
+      when others =>
+         if Membership_Held then Entity_Lock_Registry.Release (Membership_Lock); end if;
+         raise;
    end Persist_Create;
 
    --  CONTRACT-01 stage 2 (DEC-01 ruling): dedicated validated PC creation
@@ -814,6 +882,38 @@ package body Pitd_Callback is
 
 
 
+   function Newest_Snapshot_Name (Kind, Id : String) return String is
+      Base : constant String := Entity_Dir (Kind, Id) & "/history";
+      Search : Ada.Directories.Search_Type;
+      Ent : Ada.Directories.Directory_Entry_Type;
+      Best : Unbounded_String := Null_Unbounded_String;
+   begin
+      if Ada.Directories.Exists (Base) then
+         Ada.Directories.Start_Search
+           (Search, Base, "*.json",
+            (Ada.Directories.Ordinary_File => True, others => False));
+         while Ada.Directories.More_Entries (Search) loop
+            Ada.Directories.Get_Next_Entry (Search, Ent);
+            --  BUG-008: newest lexicographic monotonic snapshot, excluding
+            --  the create baseline except as the no-history fallback.
+            if Ada.Directories.Simple_Name (Ent) /= "_index.json"
+              and then not Is_Baseline_Snapshot (Ada.Directories.Simple_Name (Ent))
+              and then (Length (Best) = 0
+                or else Ada.Directories.Simple_Name (Ent) > To_String (Best))
+            then
+               Best := To_Unbounded_String (Ada.Directories.Simple_Name (Ent));
+            end if;
+         end loop;
+         Ada.Directories.End_Search (Search);
+      end if;
+      if Length (Best) = 0
+        and then Ada.Directories.Exists (Base & "/" & Baseline_Snapshot_Name)
+      then
+         Best := To_Unbounded_String (Baseline_Snapshot_Name);
+      end if;
+      return To_String (Best);
+   end Newest_Snapshot_Name;
+
    function Handle_Entity (Request : AWS.Status.Data; Path : String) return AWS.Response.Data is
       Plural : constant String := Part (Path, 2);
       Kind   : constant String :=
@@ -828,6 +928,79 @@ package body Pitd_Callback is
       Entity_Exists, Entity_Parse_Ok : Boolean := False;
       Adm_Issues : JSON_Array := Empty_Array;
       Adm_Canonical : Boolean := False;
+      Membership_Held : Boolean := False;
+      Set_Held : Boolean := False;
+      Lock_Keys : JSON_Array := Empty_Array;
+      Undo_Best : Unbounded_String := Null_Unbounded_String;
+      Undo_Doc : JSON_Value := JSON_Null;
+
+      procedure Release_Locks is
+      begin
+         if Set_Held then
+            Entity_Lock_Registry.Release_Set (Lock_Keys);
+            Set_Held := False;
+            Lock_Held := False;
+         elsif Lock_Held then
+            Entity_Lock_Registry.Release (Id);
+            Lock_Held := False;
+         end if;
+         if Membership_Held then
+            Entity_Lock_Registry.Release (Membership_Lock);
+            Membership_Held := False;
+         end if;
+      end Release_Locks;
+
+      procedure Plan_Locks
+        (Optimistic : Boolean; Keys : out JSON_Array;
+         Best : out Unbounded_String; Doc : out JSON_Value) is
+         Ordered : String_Sets.Set;
+         procedure Add_Kind (Target_Kind : String) is
+            A : constant JSON_Array := Entity_Ids (Target_Kind);
+         begin
+            for I in 1 .. Length (A) loop
+               Ordered.Include (Target_Kind & "/" & String'(Get (Get (A, I))));
+            end loop;
+         end Add_Kind;
+      begin
+         Ordered.Include (Kind & "/" & Id);
+         Best := Null_Unbounded_String;
+         Doc := JSON_Null;
+         if Suffix = "delete" then
+            if Kind = "crew" then Add_Kind ("character"); end if;
+            Add_Kind ("clock");
+         elsif Suffix = "undo" then
+            begin
+               Best := To_Unbounded_String (Newest_Snapshot_Name (Kind, Id));
+               if Length (Best) > 0 then
+                  Doc := Get
+                    (Read (Read_File (Entity_Dir (Kind, Id) & "/history/" & To_String (Best))),
+                     "entity");
+                  Add_Reference_Locks (Ordered, Kind, Doc);
+               end if;
+            exception
+               --  Discovery is only a lock footprint, never restored state.
+               --  A concurrent undo may remove its file before our own lock.
+               when GNATCOLL.JSON.Invalid_JSON_Stream | Ada.Text_IO.End_Error =>
+                  if not Optimistic then raise; end if;
+            end;
+         end if;
+         Keys := Empty_Array;
+         for Key of Ordered loop Append (Keys, Create (Key)); end loop;
+      end Plan_Locks;
+
+      function Covers (Owned, Needed : JSON_Array) return Boolean is
+         J : Positive := 1;
+      begin
+         for I in 1 .. Length (Needed) loop
+            while J <= Length (Owned)
+              and then String'(Get (Get (Owned, J))) < String'(Get (Get (Needed, I)))
+            loop J := J + 1; end loop;
+            if J > Length (Owned)
+              or else String'(Get (Get (Owned, J))) /= String'(Get (Get (Needed, I)))
+            then return False; end if;
+         end loop;
+         return True;
+      end Covers;
    begin
       if Id = "" then
          if not Is_Post then
@@ -903,11 +1076,40 @@ package body Pitd_Callback is
       --  BUG-001: every mutation of an existing entity claims that entity's
       --  lock BEFORE the read, and holds it across read+mutate+snapshot+
       --  write.  The lock is released on every exit path and on exception.
-      --  Different entities claim different slots and run in parallel; the
-      --  same entity is serialized via a short bounded spin on the registry.
-      if Is_Post then
+      --  Single-entity mutations remain parallel. Delete freezes membership
+      --  discovery, then claims every potential secondary target together in
+      --  the same kind/id order as batch. Undo claims its historical refs too.
+      if Is_Post and then Suffix = "delete" then
          loop
-            Entity_Lock_Registry.Claim (Id, 0, Lock_Held);
+            Entity_Lock_Registry.Claim (Membership_Lock, Membership_Held);
+            exit when Membership_Held;
+            delay 0.001;
+         end loop;
+      end if;
+      if Is_Post and then (Suffix = "delete" or else Suffix = "undo") then
+         loop
+            Plan_Locks (True, Lock_Keys, Undo_Best, Undo_Doc);
+            loop
+               Entity_Lock_Registry.Claim_Set (Lock_Keys, Set_Held);
+               exit when Set_Held;
+               delay 0.001;
+            end loop;
+            Lock_Held := True;
+            if Suffix = "delete" then exit; end if;
+            declare
+               Needed : JSON_Array;
+            begin
+               --  Under our root lock, discover the CURRENT newest snapshot.
+               --  If its refs grew while waiting, release the whole set and
+               --  retry without retaining any locks from the old footprint.
+               Plan_Locks (False, Needed, Undo_Best, Undo_Doc);
+               exit when Covers (Lock_Keys, Needed);
+            end;
+            Release_Locks;
+         end loop;
+      elsif Is_Post then
+         loop
+            Entity_Lock_Registry.Claim (Id, Lock_Held);
             exit when Lock_Held;
             delay 0.001;
          end loop;
@@ -924,7 +1126,7 @@ package body Pitd_Callback is
          E := JSON_Null;
       end if;
       if not Entity_Exists then
-         if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+         Release_Locks;
          return Fail (AWS.Messages.S404, (if Suffix = "" then "get" else Suffix),
                       "NOT_FOUND", Message => "entity not found");
       end if;
@@ -943,7 +1145,7 @@ package body Pitd_Callback is
          then
             null;
          else
-            if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+            Release_Locks;
             return Json_Response
               (Invalid_Entity_Result (Suffix, Adm_Issues), AWS.Messages.S422);
          end if;
@@ -956,7 +1158,7 @@ package body Pitd_Callback is
                AWS.Response.Set.Add_Header
                  (X, "Content-Disposition", "attachment; filename=""" & Id & ".json""");
             end if;
-            if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+            Release_Locks;
             return X;
          end;
       end if;
@@ -964,7 +1166,7 @@ package body Pitd_Callback is
          declare
             X : constant AWS.Response.Data := Json_Response (Create (History (Kind, Id)));
          begin
-            if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+            Release_Locks;
             return X;
          end;
       end if;
@@ -977,7 +1179,7 @@ package body Pitd_Callback is
             Sid   : constant String := Suffix (Suffix'First + 8 .. Suffix'Last);
             FName : constant String := Entity_Dir (Kind, Id) & "/history/" & Sid & ".json";
          begin
-            if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+            Release_Locks;
             if not Ada.Directories.Exists (FName) then
                return Fail (AWS.Messages.S404, "history.get", "NOT_FOUND");
             end if;
@@ -1003,7 +1205,7 @@ package body Pitd_Callback is
             else
                X := JSON_Null;
             end if;
-            if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+            Release_Locks;
             if X.Kind /= JSON_Object_Type then
                return Fail (AWS.Messages.S422, "capabilities.get",
                             "INVALID_ENTITY", E,
@@ -1030,7 +1232,7 @@ package body Pitd_Callback is
          --  enforced here — an over-long key is a 400 VALIDATION, never used.
          if Header (Request, "Idempotency-Key") /= "" then
             if Header (Request, "Idempotency-Key")'Length > 128 then
-               Entity_Lock_Registry.Release (Id);
+               Release_Locks;
                return Fail (AWS.Messages.S400, Suffix, "VALIDATION", E,
                             "Idempotency-Key exceeds the 128-character maximum");
             end if;
@@ -1045,7 +1247,7 @@ package body Pitd_Callback is
             begin
                Idempotency_Store.Lookup (Scope, Hash, Found, Match, Stored);
                if Found then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   if Match then
                      return Json_Text (To_String (Stored));
                   else
@@ -1064,7 +1266,7 @@ package body Pitd_Callback is
          if (Suffix = "undo" or else Suffix = "delete" or else Suffix = "retire")
            and then Header (Request, "If-Match") = ""
          then
-            Entity_Lock_Registry.Release (Id);
+            Release_Locks;
             return Json_Response
               (Validation_Error (Suffix, Suffix & " requires If-Match",
                                  Root_Issues (Suffix & " requires If-Match"), E),
@@ -1087,7 +1289,7 @@ package body Pitd_Callback is
                if Header (Request, "If-Match") /=
                  Trim_Image (Int_Field (E, "revision"))
                then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Json_Response
                     (Stale_Result (Suffix, E, Int_Field (E, "revision")),
                      AWS.Messages.S409);
@@ -1098,7 +1300,7 @@ package body Pitd_Callback is
                     Content_Token (Read_File (Current_File (Kind, Id)));
                begin
                   if Header (Request, "If-Match") /= Cur_Token then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Stale_Result (Suffix, E, -1, Cur_Token),
                         AWS.Messages.S409);
@@ -1108,7 +1310,7 @@ package body Pitd_Callback is
          end if;
          if Suffix = "delete" then
             if not Bool_Field (B, "confirm") then
-               Entity_Lock_Registry.Release (Id);
+               Release_Locks;
                return Json_Response
                  (Confirm_Required_Result ("delete", E));
             end if;
@@ -1220,7 +1422,7 @@ if Kind = "crew" then
                   end;
                end if;
                Ada.Directories.Delete_Tree (Entity_Dir (Kind, Id));
-               Entity_Lock_Registry.Release (Id);
+               Release_Locks;
                --  SC-A4: a degraded entity has no readable DTO to embed in
                --  the success envelope; the delete result carries the
                --  ok/applied/sideEffects envelope only.
@@ -1241,47 +1443,32 @@ if Kind = "crew" then
          if Suffix = "undo" then
             declare
                Base   : constant String := Entity_Dir (Kind, Id) & "/history";
-               Search : Ada.Directories.Search_Type;
-               Ent    : Ada.Directories.Directory_Entry_Type;
-               Best   : Unbounded_String := Null_Unbounded_String;
+               Best : constant Unbounded_String := Undo_Best;
             begin
-               if Ada.Directories.Exists (Base) then
-                  Ada.Directories.Start_Search
-                    (Search, Base, "*.json",
-                     (Ada.Directories.Ordinary_File => True, others => False));
-                  while Ada.Directories.More_Entries (Search) loop
-                     Ada.Directories.Get_Next_Entry (Search, Ent);
---  BUG-008: undo picks the MAXIMUM (newest) snapshot
-                     --  deterministically; the monotonic 17-digit filename
-                     --  prefix makes lexicographic order equal creation order.
-                     --  The create baseline is excluded from the search and
-                     --  used only as the fallback below (FV-028).
-                     if Ada.Directories.Simple_Name (Ent) /= "_index.json"
-                       and then not Is_Baseline_Snapshot (Ada.Directories.Simple_Name (Ent))
-                       and then (Length (Best) = 0
-                         or else Ada.Directories.Simple_Name (Ent) > To_String (Best))
-                     then
-                        Best := To_Unbounded_String (Ada.Directories.Simple_Name (Ent));
-                     end if;
-                  end loop;
-                  Ada.Directories.End_Search (Search);
-               end if;
-               if Length (Best) = 0
-                 and then Ada.Directories.Exists (Base & "/" & Baseline_Snapshot_Name)
-               then
-                  --  FV-028: a fresh entity's first undo restores the create
-                  --  baseline instead of failing with NO_HISTORY.
-                  Best := To_Unbounded_String (Baseline_Snapshot_Name);
-               end if;
                if Length (Best) = 0 then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Json_Response (No_History_Error ("undo", "no history", E));
                end if;
                declare
                   Path     : constant String := Base & "/" & To_String (Best);
-                  V        : constant JSON_Value := Read (Read_File (Path));
-                  Restored : constant JSON_Value := Get (V, "entity");
+                  Restored : constant JSON_Value := Undo_Doc;
                begin
+                  declare Missing : constant String := Missing_Reference (Kind, Restored); begin
+                     if Missing /= "" then
+                        Release_Locks;
+                        return Fail (AWS.Messages.S404, "undo", "NOT_FOUND", E,
+                                     "snapshot reference no longer exists: " & Missing);
+                     end if;
+                  end;
+                  if Kind = "clock" then
+                     declare Bad : Unbounded_String; begin
+                        if not Check_Clock_Refs (Restored, Id, Bad) then
+                           Release_Locks;
+                           return Fail (AWS.Messages.S400, "undo", "VALIDATION", E,
+                                        "invalid snapshot references: " & To_String (Bad));
+                        end if;
+                     end;
+                  end if;
                   Set_Field (Restored, "revision", Int_Field (E, "revision") + 1);
                   Set_Field (Restored, "updatedAt", Now);
                   Write_Entity (Kind, Id, Restored);
@@ -1289,7 +1476,7 @@ if Kind = "crew" then
                   --  OPT-002: keep the sidecar consistent after undo consumes
                   --  the newest snapshot.
                   Rebuild_Index (Kind, Id);
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Json_Response (Success_Result ("undo", Restored));
                end;
             end;
@@ -1315,27 +1502,27 @@ if Kind = "crew" then
                Input_Hash : Unbounded_String := Null_Unbounded_String;
             begin
                if not Entity_Exists then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Fail (AWS.Messages.S404, "import", "NOT_FOUND",
                                Message => "entity not found");
                end if;
                if B.Kind /= JSON_Object_Type or else not Has_Field (B, "entity")
                  or else Get (B, "entity").Kind /= JSON_Object_Type
                then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Fail (AWS.Messages.S400, "import", "VALIDATION", E,
                                "import requires an entity object");
                end if;
                Entity_V := Get (B, "entity");
                if Preview_Mode then
                   if not Only_Fields (B, "|entity|") then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Fail (AWS.Messages.S400, "import", "VALIDATION", E,
                                   "preview mode takes {entity} only");
                   end if;
                else
                   if not Only_Fields (B, "|entity|previewToken|confirm|") then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Fail (AWS.Messages.S400, "import", "VALIDATION", E,
                                   "import apply takes {entity, previewToken, confirm:true}");
                   end if;
@@ -1355,7 +1542,7 @@ if Kind = "crew" then
                                 & " does not match route " & Kind
                                 & " (directory is authoritative)",
                                 "kind " & Kind));
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Invalid_Entry_Result ("import", Issues), AWS.Messages.S400);
                   end;
@@ -1381,7 +1568,7 @@ if Kind = "crew" then
                      Preview : JSON_Value;
                   begin
                      if Str_Field (Ctx, "outcome") = "unreadable" then
-                        Entity_Lock_Registry.Release (Id);
+                        Release_Locks;
                         return Fail (AWS.Messages.S400, "import", "VALIDATION", E,
                                      "entity must be a JSON object");
                      end if;
@@ -1397,7 +1584,7 @@ if Kind = "crew" then
                      Preview := Preview_Result_Value
                        (Changes, Warnings, Needs, False,
                         Get (Ctx, "document"), To_String (Tok_S));
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      if Bool_Field (Ctx, "canonical") then
                         --  already canonical: 200 PreviewResult whose token
                         --  unlocks the confirming apply
@@ -1411,18 +1598,18 @@ if Kind = "crew" then
                else
                   --  apply mode: If-Match is apply-only and required
                   if Header (Request, "If-Match") = "" then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Fail (AWS.Messages.S400, "import", "VALIDATION", E,
                                   "import apply requires If-Match (entity revision or sha256: content token)");
                   end if;
                   if E.Kind = JSON_Object_Type then
                      if Header (Request, "If-Match") /= Trim_Image (Cur_Rev) then
-                        Entity_Lock_Registry.Release (Id);
+                        Release_Locks;
                         return Json_Response
                           (Stale_Result ("import", E, Cur_Rev), AWS.Messages.S409);
                      end if;
                   elsif Header (Request, "If-Match") /= To_String (Cur_Token) then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Stale_Result ("import", E, -1, To_String (Cur_Token)), AWS.Messages.S409);
                   end if;
@@ -1434,7 +1621,7 @@ if Kind = "crew" then
                         Ctx : constant JSON_Value := Canonicalize (Kind, Id, Entity_V);
                      begin
                         if Has_Change_Reason (Get (Ctx, "changes"), "unknown-key removal") then
-                           Entity_Lock_Registry.Release (Id);
+                           Release_Locks;
                            return Json_Response
                              (Invalid_Entry_Result
                                 ("import", Issues_For_Reason (Get (Ctx, "changes"),
@@ -1447,12 +1634,12 @@ if Kind = "crew" then
                     or else Get (B, "previewToken").Kind /= JSON_String_Type
                     or else Str_Field (B, "previewToken") = ""
                   then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Fail (AWS.Messages.S400, "import", "VALIDATION", E,
                                   "import apply requires the previewToken issued by the preview");
                   end if;
                   if not Bool_Field (B, "confirm") then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response (Confirm_Required_Result ("import", E));
                   end if;
                   --  redeem the single-use token; every binding must hold
@@ -1470,7 +1657,7 @@ if Kind = "crew" then
                        or else To_String (Tok.Id) /= Id
                        or else To_String (Tok.Input_Hash) /= Input_Hash
                      then
-                        Entity_Lock_Registry.Release (Id);
+                        Release_Locks;
                         return Json_Response
                           (Stale_Result ("import", E, Cur_Rev, To_String (Cur_Token)),
                            AWS.Messages.S409);
@@ -1480,7 +1667,7 @@ if Kind = "crew" then
                        or else (E.Kind /= JSON_Object_Type
                                 and then To_String (Tok.Content) /= To_String (Cur_Token))
                      then
-                        Entity_Lock_Registry.Release (Id);
+                        Release_Locks;
                         return Json_Response
                           (Stale_Result ("import", E, Cur_Rev, To_String (Cur_Token)),
                            AWS.Messages.S409);
@@ -1488,7 +1675,7 @@ if Kind = "crew" then
                      --  caller-only needs-input pointers without caller
                      --  values: INVALID_ENTRY with pointer-level details
                      if Length (Tok.Needs) > 0 then
-                        Entity_Lock_Registry.Release (Id);
+                        Release_Locks;
                         return Json_Response
                           (Invalid_Entry_Result ("import", Tok.Issues),
                            AWS.Messages.S400);
@@ -1502,7 +1689,7 @@ if Kind = "crew" then
                           Settings_Maxima_Issues (Kind, Doc);
                      begin
                         if Length (Max_Issues) > 0 then
-                           Entity_Lock_Registry.Release (Id);
+                           Release_Locks;
                            return Json_Response
                              (Invalid_Entry_Result ("import", Max_Issues),
                               AWS.Messages.S400);
@@ -1527,7 +1714,7 @@ if Kind = "crew" then
                      end;
                      Snapshot (Kind, Id, "import", Doc);
                      Write_Entity (Kind, Id, Doc);
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response (Success_Result ("import", Doc));
                   end;
                end if;
@@ -1547,7 +1734,7 @@ if Kind = "crew" then
                Cur_Token : Unbounded_String := Null_Unbounded_String;
             begin
                if not Entity_Exists then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Fail (AWS.Messages.S404, "repair-preview", "NOT_FOUND",
                                Message => "entity not found");
                end if;
@@ -1559,7 +1746,7 @@ if Kind = "crew" then
                      Append (Issues, Issue_At
                                ("", "bytes cannot be parsed as JSON; unreadable — cannot be normalized",
                                 "a parseable entity object"));
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Invalid_Entity_Result ("repair-preview", Issues),
                         AWS.Messages.S422);
@@ -1576,7 +1763,7 @@ if Kind = "crew" then
                        .. Header (Request, "If-Match")'First + 6) = "sha256:"
                   then
                      if Header (Request, "If-Match") /= To_String (Cur_Token) then
-                        Entity_Lock_Registry.Release (Id);
+                        Release_Locks;
                         return Json_Response
                           (Stale_Result ("repair-preview", E, -1, To_String (Cur_Token)),
                            AWS.Messages.S409);
@@ -1584,7 +1771,7 @@ if Kind = "crew" then
                   elsif Header (Request, "If-Match") /=
                     Trim_Image (Int_Field (E, "revision"))
                   then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Stale_Result ("repair-preview", E,
                                       Int_Field (E, "revision")),
@@ -1608,7 +1795,7 @@ if Kind = "crew" then
                         Append (Iss, Issue_At
                                   ("", "bytes cannot be parsed as JSON; unreadable — cannot be normalized",
                                    "a parseable entity object"));
-                        Entity_Lock_Registry.Release (Id);
+                        Release_Locks;
                         return Json_Response
                           (Invalid_Entity_Result ("repair-preview", Iss),
                            AWS.Messages.S422);
@@ -1714,7 +1901,7 @@ if Kind = "crew" then
                   Warnings := Get (Ctx, "warnings");
                   if Bool_Field (Ctx, "canonical") then
                      --  already canonical: nothing to confirm, no token
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Preview_Result_Value
                           (Changes, Warnings, Needs, True,
@@ -1729,7 +1916,7 @@ if Kind = "crew" then
                   Preview := Preview_Result_Value
                     (Changes, Warnings, Needs, False,
                      Get (Ctx, "document"), To_String (Tok_S));
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Json_Response
                     (Normalization_Required_Result
                        ("repair-preview", Preview, Warnings, Needs, To_String (Tok_S)),
@@ -1748,7 +1935,7 @@ if Kind = "crew" then
                Cur_Token : Unbounded_String := Null_Unbounded_String;
             begin
                if not Entity_Exists then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Fail (AWS.Messages.S404, "repair", "NOT_FOUND",
                                Message => "entity not found");
                end if;
@@ -1760,7 +1947,7 @@ if Kind = "crew" then
                      Append (Issues, Issue_At
                                ("", "bytes cannot be parsed as JSON; unreadable — cannot be normalized",
                                 "a parseable entity object"));
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Invalid_Entity_Result ("repair", Issues),
                         AWS.Messages.S422);
@@ -1770,7 +1957,7 @@ if Kind = "crew" then
                  (Content_Token (Read_File (Current_File (Kind, Id))));
                --  If-Match is required (revision or content token)
                if Header (Request, "If-Match") = "" then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Fail (AWS.Messages.S400, "repair", "VALIDATION", E,
                                "repair apply requires If-Match (entity revision or sha256: content token)");
                end if;
@@ -1780,7 +1967,7 @@ if Kind = "crew" then
                     .. Header (Request, "If-Match")'First + 6) = "sha256:"
                then
                   if Header (Request, "If-Match") /= To_String (Cur_Token) then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Stale_Result ("repair", E, -1, To_String (Cur_Token)),
                         AWS.Messages.S409);
@@ -1788,7 +1975,7 @@ if Kind = "crew" then
                elsif Header (Request, "If-Match") /=
                  Trim_Image (Int_Field (E, "revision"))
                then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Json_Response
                     (Stale_Result ("repair", E, Int_Field (E, "revision")),
                      AWS.Messages.S409);
@@ -1797,12 +1984,12 @@ if Kind = "crew" then
                  or else Get (B, "previewToken").Kind /= JSON_String_Type
                  or else Str_Field (B, "previewToken") = ""
                then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Fail (AWS.Messages.S400, "repair", "VALIDATION", E,
                                "repair apply requires the previewToken issued by repair-preview");
                end if;
                if not Bool_Field (B, "confirm") then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Json_Response (Confirm_Required_Result ("repair", E));
                end if;
                declare
@@ -1818,7 +2005,7 @@ if Kind = "crew" then
                     or else To_String (Tok.Id) /= Id
                   then
                      --  no valid preview token: preview first
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Normalization_Required_Result
                           ("repair",
@@ -1831,7 +2018,7 @@ if Kind = "crew" then
                   --  changed bytes since the preview → never act on unseen
                   --  data
                   if To_String (Tok.Input_Hash) /= To_String (Cur_Token) then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Json_Response
                        (Stale_Result ("repair", E, -1, To_String (Cur_Token)),
                         AWS.Messages.S409);
@@ -1843,7 +2030,7 @@ if Kind = "crew" then
                   --  the atomic write of the previewed result
                   Snapshot (Kind, Id, "repair", E);
                   Write_Entity (Kind, Id, Doc);
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Json_Response (Success_Result ("repair", Doc));
                end;
             end;
@@ -1863,7 +2050,7 @@ if Kind = "crew" then
             begin
                Valid := Validate_Mutation_Request (Kind, Id, Op, B, Bad);
                if not Valid then
-                  Entity_Lock_Registry.Release (Id);
+                  Release_Locks;
                   return Fail (AWS.Messages.S400, Op, "VALIDATION", E,
                                Message => To_String (Bad));
                end if;
@@ -1878,7 +2065,7 @@ if Kind = "crew" then
                begin
                   Schema_Check (Kind, E, Mutated_Ok);
                   if not Mutated_Ok then
-                     Entity_Lock_Registry.Release (Id);
+                     Release_Locks;
                      return Fail (AWS.Messages.S400, Op, "VALIDATION",
                                   Message => "mutation result fails schema validation; nothing was written");
                   end if;
@@ -1895,14 +2082,14 @@ if Kind = "crew" then
                      String'(Write (R, Compact => False)) & ASCII.LF);
                end if;
             end if;
-            Entity_Lock_Registry.Release (Id);
+            Release_Locks;
             X := Json_Response (R);
             return X;
          end;
       end;
    exception
       when Payload_Too_Large =>
-         if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+         Release_Locks;
          declare
             Body_Bytes : constant Ada.Streams.Stream_Element_Array :=
               AWS.Status.Binary_Data (Request);
@@ -1915,17 +2102,20 @@ if Kind = "crew" then
       when Malformed_JSON =>
          --  SC-A3: malformed transport JSON is a 400 VALIDATION with
          --  pointer details, never a raw exception or a 500.
-         if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+         Release_Locks;
          return Json_Response
            (Validation_Error (Suffix, "request body is not valid JSON",
                               Root_Issues ("request body is not valid JSON")),
             AWS.Messages.S400);
       when Constraint_Error =>
-         if Lock_Held then Entity_Lock_Registry.Release (Id); end if;
+         Release_Locks;
          return Json_Response
            (Validation_Error (Suffix, "invalid request",
                               Root_Issues ("invalid request")),
             AWS.Messages.S400);
+      when others =>
+         Release_Locks;
+         raise;
    end Handle_Entity;
 
    function Handle_Batch (Request : AWS.Status.Data) return AWS.Response.Data is
@@ -2049,11 +2239,11 @@ if Kind = "crew" then
                               --  bounded spin like the per-entity routes: a
                               --  transiently busy registry must not fail a
                               --  whole batch under parallel load
-                              Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
+                              Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), H);
                               for T in 1 .. 200 loop
                                  exit when H;
                                  delay 0.001;
-                                 Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), 0, H);
+                                 Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), H);
                               end loop;
                               if not H then OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
                                  Fail_Msg := To_Unbounded_String ("too many concurrent batches");
@@ -2303,7 +2493,7 @@ if Kind = "crew" then
             Message => "Idempotency-Key exceeds the 128-character maximum");
       end if;
       loop
-         Entity_Lock_Registry.Claim (Lock_Id, 0, Held);
+         Entity_Lock_Registry.Claim (Lock_Id, Held);
          exit when Held;
          delay 0.001;
       end loop;

@@ -84,6 +84,6 @@ begin
       Test_Hooks);
    AWS.Server.Start
      (Server, "Paperclips in the Dark (Ada)", Pitd_Callback.Handle'Access,
-      Port => Port);
+      Port => Port, Max_Connection => 64);
    AWS.Server.Wait (AWS.Server.Forever);
 end Pitd;

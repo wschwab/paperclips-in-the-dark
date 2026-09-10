@@ -159,6 +159,45 @@
     },
     "methodology": "Additive observed-result entry. Combined command duration is not a standalone campaign or task-total estimate. Prior correction entries and historical metrics are preserved unchanged."
   },
+  "correction2026-10-05-secondary-undo-capacity": {
+    "finding": "REVIEW-01-CROSS-ENTITY-LOCKS-UNDO adds atomic secondary-write/reference locksets and membership-coordinated creation, rejects missing-reference undo without consuming state/history, and explicitly sets the user-approved AWS Max_Connection=64.",
+    "hashRefreshes": [{
+      "mutants": ["M05", "M07", "M08", "M09", "M14", "M15"],
+      "path": "backend-ada/server/src/pitd_callback.adb",
+      "oldHash": "fa2bbe61fbb1af2863ebfa429cbc3ebdd5f156c5f73c9094696d51ec52827400",
+      "newHash": "4fb01161fd458f983e58907168dd20465e67aab8c87570ac0807829c6d93d262"
+    }],
+    "catalogChanges": "Exactly six stale hashes refreshed; all other catalog hashes were current. No mutation intent, anchor, replacement, killer, or severity changed. Startup capacity is not a catalog-mutated target.",
+    "preCapacityVerification": {
+      "command": "npm --prefix conformance run test:mutation", "cwd": ".", "exitCode": 0,
+      "killed": 28, "total": 28, "survived": 0, "baselineTests": { "backendAda": 528, "conformanceTooling": 221, "frontend": 794 },
+      "revision": "0b0c6647b70e", "timestamp": "2026-10-05T08:46:56.114Z",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T08-46-56-106Z.txt", "sessionArtifact": "artifact://10599",
+      "note": "Historical acceptance before subsequent user approval of the capacity setting and AWS-BURST-001; not final-source acceptance."
+    },
+    "verification": {
+      "command": "npm --prefix conformance run test:mutation", "cwd": ".", "exitCode": 0,
+      "killed": 28, "total": 28, "survived": 0, "P0": "19/19 killed", "P1": "9/9 killed",
+      "baselineTests": { "backendAda": 529, "conformanceTooling": 221, "frontend": 794 },
+      "postCampaignSourceRestoration": "PASS; all files restored to baseline and clean backend rebuilt after each Ada mutant",
+      "revision": "a0089ed51a38", "timestamp": "2026-10-05T09:20:14.715Z",
+      "resultPath": "agent-docs/test-audit/mutation-results.json",
+      "rawOutputPath": "agent-docs/test-audit/mutation-raw-2026-10-05T09-20-14-709Z.txt", "sessionArtifact": "artifact://10605"
+    },
+    "combinedVerification": {
+      "command": "npm --prefix conformance run test:ada -- --run && npm --prefix conformance run test:tooling && npm --prefix frontend test -- --run && npm --prefix conformance run test:mutation",
+      "cwd": ".", "exitCode": 0, "wallClockSeconds": 1914.05,
+      "fullAcceptance": { "ada": "529/529; 63 files", "tooling": "221/221; 14 files", "frontend": "794/794; 20 files" }
+    },
+    "validators": {
+      "command": "node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js",
+      "cwd": ".", "exitCode": 0, "metricsFilesValidated": 158,
+      "traceabilityChecksPassed": 231, "reconciliationChecksPassed": 17,
+      "errors": 0, "reconciliationWarnings": 0, "wallClockSeconds": 0.23,
+      "result": "All three reported ALL CHECKS PASSED; reconciliation retained 1624 current rows."
+    },
+    "methodology": "Additive observed-result entry. Combined sequence wall time is not a standalone campaign or total task duration. All historical entries are preserved unchanged."
+  },
   "metricsMethodology": {
     "method": "no grounded duration available (git commit point-in-time only)",
     "source": "searched notes, iterationNotes, evidence links, raw codex logs, git commit history",
