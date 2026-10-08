@@ -11,9 +11,18 @@ effort `xhigh`, read-only sandbox) plus the Wave 8 integration results.
 Each gate's dated entry records its explicit outcome; historical failures and
 superseded passes are retained rather than treated as current release evidence.
 
-## 2026-10-05 — Wave 10 REVIEW-01 and REVIEW-02 accepted
+## Current release candidate — 2e611e5b (2026-10-08)
 
-Current release candidate: `bc63af5f0cdb30391b7e86c31333d6041f825273`.
+Current release candidate: `2e611e5b8f9ddbdbecd047880ec83b49b69e620a` (delta baseline `bc63af5f0cdb30391b7e86c31333d6041f825273`). Ordered results, all dated 2026-10-08:
+
+1. **REVIEW-01 — PASS.** Calibrated correctness review in a disposable workspace: Ada **540/540**, frontend **806/806**, tooling **233/233** both isolated and concurrent with mutation, mutation **28/28** (P0 19/19, P1 9/9), and no P0/P1/P2 findings. Raw: `tasks/REVIEW-01.md` (2026-10-08 entry); `agent-docs/test-audit/review-evidence/2e611e5b-review01/` (`verdict.txt`, `mutation-raw-2026-10-08T19-01-59-595Z.txt`).
+2. **REVIEW-02 — PASS** (Luna, `openai-codex/gpt-5.6-luna`, xhigh). Fresh browser run `2026-10-08T19-09-10-829Z-08416a52`: **6/6** journeys, **83/83** checkpoints, 45 matrix JSONs, 77 screenshots, `problems: []`. THEME-01 managed run `2026-10-08T19-10-16-948Z-8fff51ca`: **25/25** checkpoints, 12/12 combinations, minimum contrast **8.13:1**. Raw: `agent-docs/test-audit/browser-evidence/2e611e5b-review02/` (`review02-luna-raw-output.txt` ending `VERDICT: PASS`, `provenance.json`, `luna-fresh/`).
+3. **VET-01 — PASS.** Disposable workspace `/tmp/vet01-2e611e5b`, gates run serially; each gate's final run exited 0. gnatprove **246/246**; Ada **540/540** on two fresh runs and **540/540 twice** in the two-cycle extra; tooling **233/233**; frontend **806/806**; mutation **28/28** (P0 19/19, P1 9/9, 0 survivors); Chromium **6/6** journeys; benchmark all 4 scales within frozen budgets; frontend build PASS; Redocly valid with 27 warnings. Raw: `agent-docs/test-audit/vet-evidence/2e611e5b/` (`observed-summary.json`, `commands.jsonl`, logs `01`–`14`). The first benchmark attempt (exit 1, ENOENT) has an overwritten log; it is documented, with a separately named reproduction, in that directory's `README.md`.
+4. **Final release review — PASS (2026-10-08 re-review).** The initial FAIL on F1–F4 is preserved; the re-review closes all four findings after evidence-disclosure and documentation corrections. The original failed benchmark log remains explicitly unrecoverable, and its separately named reproduction is not original evidence. Final verdict: `agent-docs/test-audit/review-evidence/2e611e5b-final/verdict.md`, section “Re-review — documentation and evidence corrections”, ending `VERDICT: PASS`. This release verdict applies to candidate `2e611e5b`, not unrelated in-flight working-copy product edits.
+
+## Historical — 2026-10-05 Wave 10 REVIEW-01 and REVIEW-02 accepted (candidate `bc63af5f`; superseded by `2e611e5b`)
+
+Historical candidate, superseded by `2e611e5b`: `bc63af5f0cdb30391b7e86c31333d6041f825273`.
 Per human instruction, REVIEW-01 changed from Astra to
 `openai-codex/gpt-6.1-sol` at **medium** effort. Calibration passed 2026-10-04:
 the reviewer found the planted crew `xp.add` negative branch at
@@ -30,9 +39,7 @@ mutation **28/28**, guarded-write audit of all live write callsites, and
 passing import/undo/delete-race/64-burst re-probes. Accepted open contract
 questions: [repair/reference policy](/contract/repair-reference-policy).
 
-`tasks/REVIEW-01.md` and its metrics retain the earlier cycles. The older
-“current” labels below describe their dated historical snapshots, not this
-candidate. Ordered REVIEW-02 has now passed through
+`tasks/REVIEW-01.md` and its metrics retain the earlier cycles. Ordered REVIEW-02 passed on `bc63af5f` through
 **openai-codex/gpt-5.6-luna at xhigh** in a blind disposable jj workspace.
 Raw output: `agent-docs/test-audit/browser-evidence/bc63af5f-luna-wave10/review02-luna-raw-output.txt`,
 ending verbatim `VERDICT: PASS` (exit 0, 494.60 seconds). Luna inspected
@@ -46,9 +53,9 @@ Fresh THEME-01 `2026-10-05T12-06-36-369Z-aef073d8`: **25/25 checkpoints**,
 24 ratios **8.13:1–12.71:1**, 12/12 combinations; focused reference-admission
 **11/11**. Archive: `bc63af5f-luna-wave10/luna-fresh/` with provenance and
 165-file checksum manifest (`2c4b75982a6a882843bb46b7ce4c340598b1c9862462b77ead24010587550fa1`).
-No REVIEW-02 FAIL findings. Fresh VET-01 below is FAIL; no release PASS claimed.
+No REVIEW-02 FAIL findings. Fresh VET-01 below was FAIL on `bc63af5f`; no release PASS was claimed.
 
-### Wave 10 VET-01 — FAIL (2026-10-05)
+### Wave 10 VET-01 — FAIL (2026-10-05, historical `bc63af5f`)
 
 Fresh ordered VET on the same `bc63af5f` candidate, in disposable jj workspace,
 has durable raw evidence under `agent-docs/test-audit/vet-evidence/bc63af5f-wave10/`.
@@ -161,19 +168,16 @@ Detailed verification outcomes are appended in the dated MUT-01 metric entry.
 This correction is not a REVIEW-01, REVIEW-02, or VET-01 completion claim;
 their ordered gate status and historical records below are unchanged.
 
-  > **Authoritative current evidence (2026-09-09).** The current candidate is
-  > `f650d62c` (full `f650d62c32db6a2f8e16c9f9325eadecda765e57`): REVIEW-01 is
-  > BLOCKED — blind M02 calibration PASS (`clock.ts` relatedClockIds,
+  > **Historical (2026-09-09, candidate `f650d62c`; superseded by `2e611e5b`).** The
+  > `f650d62c` cycle was BLOCKED at REVIEW-01: blind M02 calibration PASS (`clock.ts` relatedClockIds,
   > `/tmp/review01-f650d62c-calibration-verdict.md`) but clean retry FAIL
   > (Astra/medium, `CLEAN-CANDIDATE: FAIL`: B1 happy-dom WeakRef frontend flake
   > FIXED 2026-09-09 (probe FAIL-to-PASS, roster 5/5 43/43, full 3/3 794/794,
-  > independently verified); B2 current-cycle wording — closed by this rewrite; B3
+  > independently verified); B2 cycle wording — closed by the rewrite; B3
   > `/tmp/pitd-managed` residue — closed 2026-09-09 by exact-path removal,
   > TOOLING-MANAGED-019 1 passed / 217 filtered, root empty;
   > `/tmp/review01-f650d62c-clean-retry-verdict.md`).
-  > Required sequence: B1 fix DONE — awaiting new candidate, then REVIEW-01 clean PASS (calibration anew), then fresh Luna
-  > (REVIEW-02), then fresh VET-01, then final Astra review (medium) —
-  > downstream gates are NOT DONE and must not be marked so.
+  > Its downstream gates (new candidate, clean REVIEW-01 PASS, REVIEW-02, VET-01, final review) were never closed on `f650d62c`; they were run on `2e611e5b` (see the Current release candidate section above).
   > Explicitly historical only: the 2026-09-04 `9879bf76` order-valid gates
   > (REVIEW-01 DONE `01a06ba3`, REVIEW-02 DONE `01a06bad`, VET-01 DONE run
   > 2026-09-04T09:27:21Z–10:05:40Z, 11 literal commands EXIT 0; inventory 1618
@@ -261,7 +265,7 @@ their ordered gate status and historical records below are unchanged.
 
   **Strict decoders:** ordinary current-version decoders contain no compatibility defaults or legacy error branches (EDGE-02 / AR-012). Verified by ordered Luna REVIEW-02 (6/6 journeys, `9879bf76-luna-ordered/`) and VET-01 mutation (28/28 killed).
 
-  **Ordered sessions (current cycle `f650d62c`, REVIEW-01 BLOCKED):** blind M02 calibration PASS (`clock.ts` relatedClockIds, `CALIBRATION: PASS`, `/tmp/review01-f650d62c-calibration-verdict.md`); clean retry FAIL (Astra/medium, B1 FIXED 2026-09-09 + B2/B3 closed; awaiting new candidate + fresh REVIEW-01 rerun, `CLEAN-CANDIDATE: FAIL`, `/tmp/review01-f650d62c-clean-retry-verdict.md`). Historical 9879 sessions only: REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3`; REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run 2026-09-04T09:27:21Z–10:05:40Z. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Pending in order: new candidate (B1 fix DONE) → REVIEW-01 clean PASS → fresh REVIEW-02 → fresh VET-01 → final Astra review (thinking medium per 2026-09-08; Luna xhigh unchanged) — final PASS NOT claimed, downstream NOT DONE.
+  **Ordered sessions (historical `f650d62c` cycle, REVIEW-01 BLOCKED at the time; superseded by `2e611e5b`):** blind M02 calibration PASS (`clock.ts` relatedClockIds, `CALIBRATION: PASS`, `/tmp/review01-f650d62c-calibration-verdict.md`); clean retry FAIL (Astra/medium, B1 FIXED 2026-09-09 + B2/B3 closed; awaiting new candidate + fresh REVIEW-01 rerun, `CLEAN-CANDIDATE: FAIL`, `/tmp/review01-f650d62c-clean-retry-verdict.md`). Historical 9879 sessions only: REVIEW-01 calibration `01a068e6` + sequence clean PASS `01a06ba3`; REVIEW-02 ordered Luna/xhigh `01a06bad` (fresh 6/6, matrix 45/45, theme01-fresh 25/25, `VERDICT: PASS`); VET-01 order-valid run 2026-09-04T09:27:21Z–10:05:40Z. Prior `01a06b5b` 6/6 artifacts (`9879bf76-luna-final/`) are pre-gate diagnostic history. Pending in order as recorded at the time: new candidate (B1 fix DONE) → REVIEW-01 clean PASS → fresh REVIEW-02 → fresh VET-01 → final Astra review (thinking medium per 2026-09-08; Luna xhigh unchanged) — final PASS NOT claimed, downstream NOT DONE at that time. The `2e611e5b` cycle above has since completed REVIEW-01, REVIEW-02 and VET-01.
 
   **9c-era data:** the 2026-08-30 run on `9c837bde` (246/471/197/763, inventory 1570, campaign 4003 files) is superseded history — retained in git history and the superseded `final-vetting.md` sections, not repeated here.
 

@@ -23,6 +23,10 @@ acceptance:
 **Status:** Corrective final gate set PASS (2026-10-06): fresh mutation28/28, typecheck, all frozen benchmark scales, four Ada540/540 cycles, tooling233/233, frontend806/806 and three validators. Broader release-review verdict remains with the orchestrator; original Wave10/pass2 failures are preserved, not erased.
 **Metrics:** `tasks/metrics/contract/VET-01.json`
 
+## Runner rules
+
+- Each attempt writes a distinct log file. Never reuse a log path across attempts, and never overwrite an earlier attempt's log: a failed attempt keeps its own log and its `commands.jsonl` line even when a later attempt passes. The 2026-10-08 attempt-1 benchmark log was overwritten this way and is unrecoverable; see `agent-docs/test-audit/vet-evidence/2e611e5b/README.md`.
+
 ## Log
 
 - 2026-10-05 ordered fresh VET-01 after accepted REVIEW-01 + fresh Luna REVIEW-02 PASS: disposable jj workspace `/tmp/pitd-vet01-bc63af5f` at exact candidate; 11 canonical commands executed sequentially, durable raw logs/command timestamps/artifacts in `agent-docs/test-audit/vet-evidence/bc63af5f-wave10/`. Full results and failure text appended to `agent-docs/test-audit/final-vetting.md`.
