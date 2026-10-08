@@ -3,32 +3,36 @@
   "track": "frontend",
   "implementationAgent": "claude-haiku-5-5 (omp worker, playtest-ui-fixes)",
   "reviewAgent": "PENDING - gpt-5.6-luna (openai-codex, xhigh) review pinned to the final revision has not run",
-  "date": "2026-10-08",
-  "iterationsToGreen": 1,
-  "iterationNotes": "item 8 and item 3: one red-green cycle each. The owner-filter change needed fixture updates in existing tests (campaign-owned fixtures became scoundrel-owned, and the create expectation moved to character ownership). Item 6 stopped at the contract.",
+  "date": "2026-10-09",
+  "iterationsToGreen": 3,
+  "iterationNotes": "items 8 and 3: one red-green cycle each. Item 3 needed fixture updates in existing tests. Item 6: contract and conformance red test, backend preload green; frozen-test amendments (human-authorized) surfaced two frozen assertions that depended on the old empty-contacts default and an existing Rolodex name; a generator byte-equality check and the conformance client's three-literal enum were regenerated/updated. Frontend: red tests for the five-level decoder/cycle and badges, then green.",
   "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
-    "compiler": 0,
-    "conformance": 0,
+    "compiler": 1,
+    "conformance": 4,
     "review": 0,
-    "human": 1
+    "human": 3
   },
-  "notes": "Item 3 root cause: the human identified it. Projects listed every campaign clock, including clocks other scoundrels own. Fix is an owner filter plus owner-bound clock creation. The healing clock is by design and was not changed. Item 8: 'Name - Description' options, sourced from data/games/blades-in-the-dark.json; no descriptions invented. Item 6 (contacts) blocked: closeness is friend | contact | rival in contract/schemas/common.json:101-106, and CONTRACT-CONTACTS-01 is authorized but not started. Verification: frontend character-detail + client tests 442/442, full frontend 812 (after B), tsc clean, mutation 28/28 after refreshing M20 and M26 hashes, validators pass, Chromium evidence for items 8 and 3 at three viewports in light and dark. Items 8 and 3 share one jj change because of interleaved test hunks.",
+  "notes": "Item 3 root cause identified by the human: Projects listed every campaign clock; fix is an owner filter and owner-bound creation via existing clock.create. Item 8: option text from data/games; no invented descriptions. Item 6: five closeness levels across contract, conformance, backend and frontend; create-default preload from data/games Rolodex friends (human-authorized). Conformance caught: three-literal mirror in conformance/src/schemas.ts; API reference and capability manifest drift (frozen tooling tests); the preload breaking SEMANTICS-CHAR-CONTACTS-009 (amended, human-authorized) and SEMANTICS-CHAR-CONTACTS-001 (test data changed, human-authorized). Compiler caught a stray duplicate line and an out-of-scope mountWith reference in the frontend red test. Verification: Ada conformance 542/542; tooling 233/233; frontend 815/815; tsc clean; mutation 28/28 after refreshing pins for pitd_ops.adb (4) and normalize/character-detail; browser journeys 6/6; Chromium contrast 4.54 minimum across light, dark, high-contrast; validators pass. Items 8 and 3 share one jj change because of interleaved test hunks.",
   "metricsMethodology": {
     "method": "no grounded duration available (wall-clock not recorded for this worker run)",
-    "source": "vitest output, tsc, mutation-results.json, Chromium capture summaries (b-summary.json, a-summary.json), probes",
+    "source": "vitest output, Ada conformance and tooling logs, mutation-results.json, browser-suite log, Chromium capture summaries (a-summary.json, b-summary.json, c-summary.json), probes",
     "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
     "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
     "tokensNote": "tokens=null: token accounting not available to the worker"
   },
-  "passRateAtFirstDoneClaim": "item 8: 2 of 2 new red tests failing for the right reason; item 3: 2 of 2 new red tests failing for the right reason; no first-done claim before green",
-  "passRateAfterReview": "character-detail + client tests 442/442; tsc clean; mutation 28/28; validators pass; Chromium evidence captured. Luna review not run.",
+  "passRateAtFirstDoneClaim": "item 8: 2 of 2 red tests failing; item 3: 2 of 2 red tests failing; item 6: conformance CONTACTS-LEVELS-001 failing before backend, SEMANTICS-CHAR-CONTACTS-009 failing before preload, frontend 2 of 2 red tests failing before the decoder change; no first-done claim before green",
+  "passRateAfterReview": "Ada conformance 542/542; tooling 233/233; frontend 815/815; tsc clean; mutation 28/28; browser journeys 6/6; validators pass; Chromium evidence captured. Luna review not run.",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
-    "frontend red tests (item 8: 2, item 3: 2)",
-    "human observation (item 3 root cause)"
+    "frontend red tests (item 8: 2, item 3: 2, item 6: 2)",
+    "conformance red tests (CONTACTS-LEVELS-001, SEMANTICS-CHAR-CONTACTS-009)",
+    "conformance client schema mirror (schemas.ts)",
+    "frozen generator tests (API reference and capability manifest drift)",
+    "compiler (stray duplicate line; out-of-scope helper reference)",
+    "human observations (item 3 root cause; contacts preload ruling; 001 data change)"
   ],
-  "status": "IN PROGRESS - items 8 and 3 implemented and verified (not reviewed); item 6 blocked on CONTRACT-CONTACTS-01 (not started); Luna review not run"
+  "status": "IMPLEMENTATION COMPLETE, NOT REVIEWED - items 8, 3 and 6 implemented and verified; Luna xhigh review pinned to the final revision pending"
 }

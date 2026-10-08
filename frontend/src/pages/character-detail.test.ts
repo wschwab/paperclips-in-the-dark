@@ -5801,6 +5801,70 @@ describe("CONTRACT-05 per-scoundrel contacts", () => {
     });
   });
 
+  it("cycles closeness through the five-level scale, wrapping confidante to enemy", async () => {
+    const start = characterDTO({
+      revision: 12,
+      contacts: [{ id: CONTACT_ID, name: "Marlane, a pugilist", closeness: "confidante" }],
+    });
+    const cycled = characterDTO({
+      revision: 13,
+      contacts: [{ id: CONTACT_ID, name: "Marlane, a pugilist", closeness: "enemy" }],
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(start))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(
+        ok({ ok: true, character: cycled, applied: { op: "contact.closeness" }, sideEffects: [], error: null }),
+      );
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Cycle closeness for Marlane, a pugilist"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Cycle closeness for Marlane, a pugilist"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const cycleCall = calls.find((c) => String(c[0]).endsWith("/ops/contact.closeness"));
+      expect(cycleCall![1].body).toBe(JSON.stringify({ name: "Marlane, a pugilist", closeness: "enemy" }));
+    });
+  });
+
+  it("renders all five closeness levels as bold, distinctly coloured clickable badges", async () => {
+    const levels = ["enemy", "rival", "contact", "friend", "confidante"] as const;
+    const dto = characterDTO({
+      contacts: levels.map((closeness, i) => ({ id: `c000000${i}-0000-4000-8000-000000000000`, name: `Person ${closeness}`, closeness })),
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(dto))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}));
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    const styles: string[] = [];
+    for (const closeness of levels) {
+      await vi.waitFor(() => {
+        expect(root.querySelector(`button[title="Cycle closeness for Person ${closeness}"]`)).not.toBeNull();
+      });
+      const badge = root.querySelector(`button[title="Cycle closeness for Person ${closeness}"]`) as HTMLButtonElement;
+      expect(badge.textContent).toBe(closeness);
+      expect(badge.classList.contains("contact-closeness")).toBe(true);
+      expect(badge.style.fontWeight).toBe("700");
+      styles.push(badge.getAttribute("style") ?? "");
+    }
+    expect(new Set(styles).size).toBe(levels.length);
+  });
+
   it("removes a contact via contact.remove with the entry name", async () => {
     const removed = characterDTO({ revision: 13, contacts: [] });
     global.fetch = vi

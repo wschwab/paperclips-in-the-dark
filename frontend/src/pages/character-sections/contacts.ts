@@ -13,15 +13,20 @@ export function renderContactsSection(ctx: SectionCtx): HTMLElement {
   // playbook's BitS rolodex names (data, not code); free text stays valid.
 return   (() => {
     const contacts = c.contacts ?? [];
+    // Bold, bordered, white-text badges: each level has its own fill, and every
+    // fill keeps white text above 4.5:1 (measured in Chromium; see PLAYTEST-UI-02 records).
+    const badgeBase = "font-weight: 700; border: 2px solid; padding: 0.15em 0.6em; cursor: pointer; color: #fff;";
     const badgeStyle: Record<ContactCloseness, string> = {
-      contact: "background: #4a5568; color: #fff;",
-      friend: "background: #2f855a; color: #fff;",
-      rival: "background: #9b2c2c; color: #fff;",
+      enemy: `${badgeBase} background: #7a1212; border-color: #3d0909;`,
+      rival: `${badgeBase} background: #9b2c2c; border-color: #5c1818;`,
+      contact: `${badgeBase} background: #4a5568; border-color: #2d3748;`,
+      friend: `${badgeBase} background: #2f855a; border-color: #1c4f36;`,
+      confidante: `${badgeBase} background: #1a4f8b; border-color: #0d2b4d;`,
     };
     const rows = contacts.map((contact) => {
       const cycle = el("button", {
         type: "button",
-        className: "btn-secondary",
+        className: "btn-secondary contact-closeness",
         disabled: anyLoading,
         title: `Cycle closeness for ${contact.name}`,
         style: badgeStyle[contact.closeness],

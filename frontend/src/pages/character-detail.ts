@@ -92,7 +92,7 @@ import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/f
 import { completionCues, type CompletionCue } from "../lib/completion-cues.js";
 import { errorCard } from "../components/error-card.js";
 import type { Character } from "../schema/character.js";
-import type { ContactCloseness } from "../schema/common.js";
+import { CONTACT_CLOSENESS_ORDER, type ContactCloseness } from "../schema/common.js";
 import type { CrewSummary } from "../schema/campaign.js";
 import type { Clock, ClockSummary } from "../schema/clock.js";
 import {
@@ -990,8 +990,8 @@ export function mountCharacterDetailPage(
 
     onContactCycle: (name: string, current: ContactCloseness) => {
       if (!currentCharacter || isContactsLoading) return;
-      const next: ContactCloseness =
-        current === "contact" ? "friend" : current === "friend" ? "rival" : "contact";
+      const idx = CONTACT_CLOSENESS_ORDER.indexOf(current);
+      const next: ContactCloseness = CONTACT_CLOSENESS_ORDER[(idx + 1) % CONTACT_CLOSENESS_ORDER.length]!;
       isContactsLoading = true;
       clearNotices();
       renderDetailWrapper();

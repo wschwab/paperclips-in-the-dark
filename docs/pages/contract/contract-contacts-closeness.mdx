@@ -15,37 +15,36 @@ The default stays `contact`. Every contact is still a single family on the scoun
 | Location | Change |
 |---|---|
 | `contract/schemas/common.json` `$defs.closeness` | enum becomes `enemy`, `rival`, `contact`, `friend`, `confidante` (was `friend`, `contact`, `rival`) |
-| `contract/schemas/character.json` `contacts` | description names the five-level vocabulary |
+| `contract/schemas/character.json` `contacts` | description names the five-level vocabulary and the create default |
 | `contract/openapi.yaml` `contact.closeness` | description names the five-level vocabulary; request body still references `common.json#/$defs/closeness` |
+| `contract/openapi.yaml` `createCharacter` | description states that the new scoundrel's contacts are preloaded |
 
 No operation is added or removed. `contact.add` still defaults to `contact`. `contact.closeness` with a value outside the five levels is still a VALIDATION error.
 
-## Compatibility
+## Create default: playbook contacts are preloaded
 
-Existing stored contacts hold one of the three original values, and all three remain valid. No stored document is rewritten.
+Human-authorized 2026-10-08. A new scoundrel is created with its playbook's Rolodex friends (`data/games/*.json`, `Playbooks[].Rolodex.Friends`) at closeness `contact`. The server does this in `New_Character` (`backend-ada/server/src/pitd_ops.adb`), so API callers get the same result as the sheet. Blades in the Dark: 7 playbooks, 35 friends in total.
+
+## Frozen-test amendments (human-authorized)
+
+All edits are in `conformance/suites/semantics/character-contacts.test.ts`. Each row is an exact before and after.
+
+| Test | Line | Before | After |
+|---|---|---|---|
+| SEMANTICS-CHAR-CONTACTS-009 | 101 | `expect(character.contacts).toEqual([]);` | `expect(Array.isArray(character.contacts)).toBe(true);`, then the playbook Rolodex names assertion (names from `data/games` via `gameSetting(character.gameStem)`, never hardcoded), then `closeness === "contact"` for every entry |
+| SEMANTICS-CHAR-CONTACTS-009 | 116 | `expect(reloaded.contacts).toHaveLength(1);` | `expect(reloaded.contacts).toHaveLength(expected.length + 1);` |
+| SEMANTICS-CHAR-CONTACTS-009 | import (line 6, new) | dynamic `await import` inside the test | `import { gameSetting } from "../../src/game-data.js";` |
+| SEMANTICS-CHAR-CONTACTS-001 | 22 | `{ name: "Marlane, a pugilist" }` | `{ name: "Test Contact Unlisted" }` |
+| SEMANTICS-CHAR-CONTACTS-001 | 25 | `c.name === "Marlane, a pugilist"` | `c.name === "Test Contact Unlisted"` |
+
+Why 001 changed: `Marlane, a pugilist` is on the Cutter Rolodex, so a new Cutter already has it and `contact.add` returns a duplicate. The data change moves the test to a name that is on no playbook's Rolodex. Its assertions (default closeness `contact`, server-generated id) are unchanged. No other frozen line was changed.
 
 ## Conformance
 
-`conformance/suites/semantics/character-contacts-levels.test.ts` is a new, additive suite. It sets `confidante` and `enemy` and reads them back (`CONTACTS-LEVELS-001`), and rejects a value outside the scale (`CONTACTS-LEVELS-002`). The frozen three-level suite `character-contacts.test.ts` is unchanged.
+`conformance/suites/semantics/character-contacts-levels.test.ts` is a new, additive suite. It sets `confidante` and `enemy` and reads them back (`CONTACTS-LEVELS-001`), and rejects a value outside the scale (`CONTACTS-LEVELS-002`). The frozen three-level suite's loop (`friend`, `rival`, `contact`) is unchanged.
 
-Known follow-up: `conformance/src/schemas.ts` hard-codes the three original literals for its own response decoding. It is conformance tooling, not a suite, and is not edited by this change.
+`conformance/src/schemas.ts` mirrors the contract's closeness enum for the conformance client's request side. It was updated to the five values. This is a schema mirror, not a frozen test, and it is a recorded exception to the no-conformance-edit rule.
 
-## Create default: playbook contacts are preloaded
+## Frontend
 
-Human-authorized 2026-10-08. A new scoundrel is created with its playbook's Rolodex friends (`data/games/*.json` `Playbooks[].Rolodex.Friends`) at closeness `contact`. The server (`backend-ada/server/src/pitd_ops.adb`, `New_Character`) does this, so API callers get the same result as the sheet. The contract text is in `contract/schemas/character.json` `contacts` and `contract/openapi.yaml` `characterCreate`.
-
-### Frozen-test amendments (human-authorized, `conformance/suites/semantics/character-contacts.test.ts`)
-
-SEMANTICS-CHAR-CONTACTS-009 (fresh characters carry the REQUIRED canonical contacts array):
-
-| Line | Before | After |
-|---|---|---|
-| 101 | `expect(character.contacts).toEqual([]);` | `expect(Array.isArray(character.contacts)).toBe(true);` plus the expected-names assertion (names from `data/games` via `gameSetting(character.gameStem)`, never hardcoded) and `closeness === "contact"` for every entry |
-| 106 | `expect(reloaded.contacts).toHaveLength(1);` | `expect(reloaded.contacts).toHaveLength(expected.length + 1);` |
-| import (new line 6) | (none; the amended block used a dynamic `await import`) | `import { gameSetting } from "../../src/game-data.js";` |
-
-No other frozen line was changed.
-
-### Known failure after the preload (not yet amended)
-
-SEMANTICS-CHAR-CONTACTS-001 adds `Marlane, a pugilist`, which is on the Cutter Rolodex and is therefore already present on a new Cutter. It is not amended; a decision is pending.
+Closeness decoders (`frontend/src/schema/common.ts`) take the five values. `CONTACT_CLOSENESS_ORDER` gives the cycle order: each click moves one level up, and `confidante` wraps to `enemy`. Each level has its own bold, bordered badge with white text; contrast was measured in Chromium in light, dark, and high-contrast themes (`browser-evidence/playtest-ui-02/c-summary.json`, minimum ratio 4.54:1). The badge is a button with class `contact-closeness` and a "Cycle closeness" title. Remove and add-custom are unchanged.

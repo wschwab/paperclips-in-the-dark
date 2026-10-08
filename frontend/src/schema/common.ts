@@ -77,11 +77,13 @@ export const HarmIntensity = Schema.Literal(
 export type HarmIntensity = typeof HarmIntensity.Type;
 
 /**
- * common.json#/$defs/closeness — CONTRACT-05 (2026-08-25 correction): the
- * single relationship vocabulary, exactly friend | contact | rival.
+ * common.json#/$defs/closeness — CONTRACT-CONTACTS-01 (2026-10-08): the single
+ * relationship vocabulary, enemy | rival | contact | friend | confidante.
  */
-export const ContactCloseness = Schema.Literal("friend", "contact", "rival");
+export const ContactCloseness = Schema.Literal("enemy", "rival", "contact", "friend", "confidante");
 export type ContactCloseness = typeof ContactCloseness.Type;
+/** Closeness levels in scale order (enemy < rival < contact < friend < confidante). */
+export const CONTACT_CLOSENESS_ORDER: readonly ContactCloseness[] = ["enemy", "rival", "contact", "friend", "confidante"];
 
 export const Commitment = Schema.Literal(
   "none",
