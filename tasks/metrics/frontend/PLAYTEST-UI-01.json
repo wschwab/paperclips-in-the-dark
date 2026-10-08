@@ -2,34 +2,36 @@
   "task": "PLAYTEST-UI-01",
   "track": "frontend",
   "implementationAgent": "claude-haiku-5-5 (omp worker, playtest-ui-fixes)",
-  "reviewAgent": "gpt-5.6-luna (openai-codex, xhigh) — review #1 run; verdict FAIL on candidate identity only; substantive items 1/5/7/9 PASS",
+  "reviewAgent": "gpt-5.6-luna (openai-codex, xhigh) — review #3 on pinned revision d5847ce1: PASS. Earlier rounds: #1 FAIL (candidate identity only), #2 FAIL (manifest MIME), both resolved.",
   "date": "2026-10-08",
   "iterationsToGreen": 3,
-  "iterationNotes": "vice inline, permanent-actions order, and clock-delete render: one green iteration each after red. Column seam layout: three CSS iterations, each caught by real-Chromium numeric measurement (rule scoped to 900px block was overridden by a later base rule; left column kept an extra 18px card margin).",
+  "iterationNotes": "vice inline, permanent-actions order and clock-delete render: one green iteration each after red. Column seam layout: three CSS iterations, each caught by real-Chromium numeric measurement (rule scoped to the 900px block was overridden by a later base rule; the left column kept an extra 18px card margin). Manifest MIME: one red-green iteration (red: shell assertion failed against the existing binary; green: AWS.MIME.Add_Extension at startup).",
   "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 1,
     "conformance": 0,
-    "review": 0,
+    "review": 1,
     "human": 0
   },
-  "notes": "Red: 4 new tests failing for the right reason (clock delete sheet identity, vice not in a paragraph, permanent actions not last, CSS seam-clearance rule absent). Green: frontend 810/810 across 21 files; tsc --noEmit clean; mutation campaign 28/28 killed (P0 19/19, P1 9/9) after refreshing restorationHash for M18 and M26; browser journeys 6/6 PASS; numeric capture at 1440x1000, 768x1024, 390x844 in light and dark: scrollWidth <= innerWidth everywhere, zero seam overlaps, vice inline, permanent actions last. Compiler catch: Promise.withResolvers not in the ES2022 lib, so the test uses executor-form Promise. Luna review #1 (gpt-5.6-luna, openai-codex, xhigh): own build 21 files / 810 tests; 12 viewport×theme browser combinations (incl. high-contrast); delete-flicker checks at 1440 light and 390 dark clean (sheet identity change only on removal; no disabled/'…' flash). Items 1/5/7/9 PASS. Overall FAIL solely because the working copy `@` (de135180) did not equal the named candidate ea36a80b, since review evidence files were written into it; scoped diff to ea36a80b empty. Gate not cleared: candidate must be frozen as an immutable revision and Luna re-run.",
+  "notes": "Red: four frontend tests failing for the right reason (clock delete sheet identity, vice not in a paragraph, permanent actions not last, CSS seam-clearance rule absent). Green: frontend 810/810 across 21 files; tsc --noEmit clean; mutation campaign 28/28 killed (P0 19/19, P1 9/9) after refreshing restorationHash for M18 and M26. Browser journeys 6/6 PASS. Backend: backend-ada/ci.sh exit 0 (gnatprove 246 checks); Ada conformance suite 64 files / 540 tests; tooling 18 files / 233 tests; manifest MIME shell assertion red then green. Review #1 (gpt-5.6-luna, xhigh): FAIL on candidate identity only (working copy moved when evidence was written); items 1/5/7/9 PASS. Resolved by freezing the candidate as commits. Review #2 (pinned aab6fa2a): FAIL on one real finding, /site.webmanifest served as application/octet-stream (defect caught by review); fixed in pitd.adb. Review #3 (pinned d5847ce1): PASS on items 1/5/7/9, tab icon, and manifest MIME, 12 viewport×theme combinations, flicker and failure-path checks. Compiler catch: Promise.withResolvers not in the ES2022 lib, so the test uses executor-form Promise.",
   "metricsMethodology": {
     "method": "no grounded duration available (wall-clock not recorded for this worker run)",
-    "source": "test and build output, mutation-results.json, browser-suite log, numeric capture JSON, Luna verdict.md",
+    "source": "test and build output, mutation-results.json, browser-suite log, numeric capture JSON, backend-ada ci.sh and suite logs, Luna verdicts luna/verdict.md, luna-2/verdict.md, luna-3/verdict.md",
     "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
     "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
     "tokensNote": "tokens=null: token accounting not available to the worker"
   },
-  "passRateAtFirstDoneClaim": "4 of 4 new red tests failing for the right reason before fixes; no first-done claim before green",
-  "passRateAfterReview": "frontend 810/810; tsc clean; mutation 28/28; browser 6/6 PASS; Luna review #1 substantive PASS on 1/5/7/9, verdict FAIL on candidate identity only; re-review pending a frozen candidate",
+  "passRateAtFirstDoneClaim": "4 of 4 new frontend red tests failing for the right reason before fixes, and 1 of 1 manifest shell assertion failing against the existing binary before the fix; no first-done claim before green",
+  "passRateAfterReview": "frontend 810/810; tsc clean; mutation 28/28; browser 6/6 PASS; backend ci.sh exit 0; Ada suite 540/540; tooling 233/233; Luna review #3 on pinned d5847ce1: PASS",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
     "frontend red tests (4)",
     "real Chromium numeric capture (base-rule override and extra column margin found in layout iterations)",
-    "tsc (ES2022 lib lacks Promise.withResolvers)"
+    "tsc (ES2022 lib lacks Promise.withResolvers)",
+    "Luna review #2 (manifest served as application/octet-stream)",
+    "backend shell SPA route suite (manifest MIME red before fix)"
   ],
-  "status": "IMPLEMENTED, VERIFIED; NOT CLOSED — Luna review #1 FAIL on candidate identity only (substantive items PASS); awaiting frozen-candidate re-review. Nothing marked reviewed-PASS."
+  "status": "DONE — Luna review #3 PASS on pinned immutable revision d5847ce1b868363d4ebac6d6df8eba5bee71cdba (items 1, 5, 7, 9, tab icon, manifest MIME); earlier review FAILs (#1 identity, #2 manifest MIME) resolved"
 }
