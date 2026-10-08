@@ -1,0 +1,17 @@
+{
+  "name": "paperclips-in-the-dark-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vocs dev",
+    "build": "vocs build",
+    "preview": "vocs preview"
+  },
+  "devDependencies": {
+    "mermaid": "^11.17.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vocs": "2.10.0",
+    "waku": "1.0.0-rc.1"
+  }
+}

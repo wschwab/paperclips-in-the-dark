@@ -1,0 +1,28 @@
+---
+title: Paperclips in the Dark
+---
+
+# Paperclips in the Dark
+
+Paperclips in the Dark is an agent-first campaign sheet manager for Blades in the Dark. It is a sheet manager, not a rules engine: it enforces structural constraints such as bounded stress, harm slots, and XP tracks, but never dice mechanics, position/effect, or GM judgment. The API is defined by a frozen OpenAPI 3.1 contract, implemented by an Ada + SPARK backend, and checked by a black-box conformance suite, which is the source of truth.
+
+## Where to start
+
+- [Game mode proposal](/contract/game-mode-proposal)
+- [Roadmap](/roadmap)
+- [Spec change work specification](/contract/spec-change-work-spec)
+- [Gate evidence](/contract/gate-evidence)
+- [F2 sheet plan](/frontend/f2-sheet-plan)
+- [Context economy](/orchestration/context-economy)
+
+## Running these docs locally
+
+```sh
+cd docs
+npm ci
+npm run dev      # live-reloading server; prints the local URL
+npm run build    # static build into docs/dist
+npm run preview  # serve the static build
+```
+
+Pages are `.mdx` (or `.md`) files under `docs/pages/`. To add a page, add it to the sidebar in `docs/vocs.config.ts`. MDX parses bare `{`, `}` and `<` in prose as JavaScript expressions or JSX, so escape them (for example `\{` or `&lt;`) or wrap them in inline code.

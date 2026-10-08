@@ -59,6 +59,18 @@ cd conformance && npm ci && BASE_URL=http://localhost:9657 npx vitest run
 Toolchain: [Alire](https://alire.ada.dev) (`alr`), GNAT ≥ 16, gnatprove via
 crate dependency. See `backend-ada/AGENTS.md` for the hard-won toolchain notes.
 
+## Docs
+
+The project docs are a vocs site in `docs/`. To run it locally:
+
+```sh
+cd docs
+npm ci
+npm run dev
+```
+
+The landing page is `docs/pages/index.mdx`.
+
 ## Provenance & credit
 
 Domain semantics, test cases, and game data lean on

@@ -17,7 +17,7 @@ On `StaleRevisionError` during a mutation:
    - Show a non-blocking notice: "Sheet refreshed because it changed elsewhere"
    - Auto-dismiss the notice after 3 seconds.
 4. If the refetch fails:
-   - Show an error message: "Sheet refresh failed (${status}): ${body}"
+   - Show an error message: "Sheet refresh failed ($\{status\}): $\{body\}"
    - User remains on the page and can retry their mutation once the sheet is stable.
 
 The UI does not attempt to merge or re-apply the failed mutation. This preserves

@@ -144,7 +144,7 @@ value the canonicalizer fills; **rule** = fill / conversion / needs-input decisi
 | `character#/dossier/vice/description` | "" | canonical empty. | `FILL` |
 | `character#/dossier/vice/name` | "" | canonical empty; completeness pointer. | `FILL` |
 | `character#/dossier/vice/purveyor/description` | "" | see purveyor/name. | `LEGACY` |
-| `character#/dossier/vice/purveyor/name` | "" | legacy C# vice lacks purveyor (L4): fill {name:"",description:""}; completeness pointer. | `LEGACY` |
+| `character#/dossier/vice/purveyor/name` | "" | legacy C# vice lacks purveyor (L4): fill \{name:"",description:""\}; completeness pointer. | `LEGACY` |
 | `character#/formatVersion` | 1 | current version-1; no bump (Q5). | `FILL` |
 | `character#/fund/satchel/coins` | 0 | canonical empty. | `FILL` |
 | `character#/fund/satchel/max` | settings-derived | C# FundSatchel BoundedInteger(4) (BitD); SC-C3 migrates; needs-input when gameStem unresolved. | `DERIVED` |
@@ -383,7 +383,7 @@ value the canonicalizer fills; **rule** = fill / conversion / needs-input decisi
 | `common#/$defs/vice/description` | "" | canonical empty string. | `FILL` |
 | `common#/$defs/vice/name` | "" | canonical empty string. | `FILL` |
 | `common#/$defs/vice/purveyor/description` | "" | see purveyor/name. | `LEGACY` |
-| `common#/$defs/vice/purveyor/name` | "" | legacy C# DossierVice has no purveyor (L4): missing purveyor subtree fills {name:"", description:""}; canonical empty. | `LEGACY` |
+| `common#/$defs/vice/purveyor/name` | "" | legacy C# DossierVice has no purveyor (L4): missing purveyor subtree fills \{name:"", description:""\}; canonical empty. | `LEGACY` |
 
 Completeness note (work spec, "Completeness"): a present canonical empty at a
 completeness pointer (`/dossier/name`, `/dossier/alias`, `/dossier/look`,
