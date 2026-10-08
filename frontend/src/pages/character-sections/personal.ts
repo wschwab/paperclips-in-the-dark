@@ -3,7 +3,7 @@
  * character-detail page's render pass. DOM output is unchanged.
  */
 import { el } from "../../lib/dom.js";
-import { gameDataDescription } from "../character-domain.js";
+import { gameDataDescription, namedOptionLabel } from "../character-domain.js";
 import { gameDataOptions } from "../character-domain.js";
 import type { DossierField } from "../character-domain.js";
 import type { SectionCtx } from "./context.js";
@@ -100,7 +100,7 @@ export function renderPersonalSection(ctx: SectionCtx): HTMLElement {
         "aria-label": `${label} (choose)`,
         disabled: anyLoading,
       },
-        ...optionNames.map((n) => el("option", { value: n }, n)),
+        ...optionNames.map((n) => el("option", { value: n }, namedOptionLabel(n, gameDataDescription(gameData, key, n)))),
         el("option", { value: "__custom__" }, "Custom…"),
       ) as HTMLSelectElement;
       select.value = isCustom ? "__custom__" : editor.option;

@@ -1930,6 +1930,7 @@ export function createClock(
   name: string,
   behavior: "bounded" | "rollover",
   size: number,
+  owner: { ownerKind: "campaign" } | { ownerKind: "character"; ownerId: string } = { ownerKind: "campaign" },
 ): Effect.Effect<Clock, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
     const opResult = yield* fetchOperation("/api/clocks", {
@@ -1940,8 +1941,8 @@ export function createClock(
       },
       body: JSON.stringify({
         name,
-        ownerKind: "campaign",
-        ownerId: "",
+        ownerKind: owner.ownerKind,
+        ownerId: owner.ownerKind === "character" ? owner.ownerId : "",
         purpose: "custom",
         behavior,
         size,

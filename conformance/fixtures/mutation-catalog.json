@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "71cefdbcc29964a8a9eadf685e936c2a23048abe148c8197d487fdbe8a22b42c"
+        "frontend/src/api/client.ts": "5bec5e7b1f94209e55b3efa4bbaeee83f470efb592a6d7d22b8d9f8f114b999a"
       },
       "severity": "P0",
       "status": "not-run",
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "6c3c7554703b94512bc6be202654d3dfdb6580798d43129daf829daa1e0fd685"
+        "frontend/src/pages/character-detail.ts": "0253706eb5f7ab433b62a1b76449877865fd34789d33fa76dbfb7ebae45611ee"
       },
       "severity": "P1",
       "status": "not-run",

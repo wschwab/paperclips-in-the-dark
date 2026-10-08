@@ -109,16 +109,21 @@ export function gameDataOptions(
   return list.filter((x) => x && typeof x === "object") as Array<Record<string, unknown>>;
 }
 
-/** Game-data description for a named option (heritage Description / background Example). */
+/** Game-data description for a named option (heritage Description / background Example / vice Description). */
 export function gameDataDescription(
   gameData: Record<string, unknown> | null,
-  key: "heritage" | "background",
+  key: "heritage" | "background" | "vice",
   name: string,
 ): string | null {
   const entry = gameDataOptions(gameData, key).find((o) => o.Name === name);
   if (!entry) return null;
-  const desc = key === "heritage" ? entry.Description : entry.Example;
+  const desc = key === "background" ? entry.Example : entry.Description;
   return typeof desc === "string" ? desc : null;
+}
+
+/** Picker option text, as in Blades in the Sheets: "Name - Description". With no game-data description the bare name stands, so nothing is invented. */
+export function namedOptionLabel(name: string, description: string | null): string {
+  return description ? `${name} - ${description}` : name;
 }
 
 /** Sources (purveyor strings) for a vice name, from game data Vices[].Sources. */

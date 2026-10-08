@@ -11,7 +11,7 @@ export function renderProjectsSection(ctx: SectionCtx): HTMLElement {
   // -- Projects (F2s) ----------------------------------------------------
 
 return   (() => {
-    const clocks = state.clocks ?? [];
+    const clocks = (state.clocks ?? []).filter((clk) => clk.ownerKind === "character" && clk.ownerId === ctx.c.id);
     // The create form exposes the current bounded/rollover contract behavior.
     const kindOptions: Array<{ value: "bounded" | "rollover"; label: string }> = [
       { value: "bounded", label: "project" },

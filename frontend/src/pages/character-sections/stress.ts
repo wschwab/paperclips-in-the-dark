@@ -5,7 +5,7 @@
 import { el } from "../../lib/dom.js";
 import { stressTrack } from "../../components/stress-track.js";
 import { gameDataOptions } from "../character-domain.js";
-import { viceSources } from "../character-domain.js";
+import { viceSources, gameDataDescription, namedOptionLabel } from "../character-domain.js";
 import type { SectionCtx } from "./context.js";
 
 export function renderStressSection(ctx: SectionCtx): HTMLElement {
@@ -198,7 +198,7 @@ export function renderStressSection(ctx: SectionCtx): HTMLElement {
       "aria-label": "Vice (choose)",
       disabled: anyLoading,
     },
-      ...optionNames.map((n) => el("option", { value: n }, n)),
+      ...optionNames.map((n) => el("option", { value: n }, namedOptionLabel(n, gameDataDescription(gameData, "vice", n)))),
       el("option", { value: "__custom__" }, "Custom…"),
     ) as HTMLSelectElement;
     viceSelect.value = isCustom ? "__custom__" : editor.option;

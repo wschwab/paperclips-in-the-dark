@@ -1775,7 +1775,7 @@ export function mountCharacterDetailPage(
       clearNotices();
       renderDetailWrapper();
 
-      const program = createClock(name, behavior, size);
+      const program = createClock(name, behavior, size, { ownerKind: "character", ownerId: characterId });
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => {

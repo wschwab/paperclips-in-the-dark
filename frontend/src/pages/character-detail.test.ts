@@ -3253,6 +3253,26 @@ describe("character-detail page", () => {
       expect(details?.textContent).toContain("When you protect a teammate, take +1d.");
     });
 
+    it("take-ability options read 'Name - Description' and the hint names the first option as a good default", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_ABILITIES_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Take ability"]')).not.toBeNull();
+      });
+      const select = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+      expect(Array.from(select.options).find((o) => o.value === "Bodyguard")?.textContent).toBe("Bodyguard - When you protect a teammate, take +1d.");
+      expect(root.querySelector(".character-playbook")?.textContent).toContain("the first is considered a good default choice");
+    });
+
     it("XP tracker +/− posts playbookXpAdd and clear posts playbookXpClear", async () => {
       const added = playbookDTO({
         revision: 13,
@@ -4567,8 +4587,8 @@ describe("F2s Projects", () => {
       createdAt: "2026-07-24T00:00:00.000Z",
       updatedAt: "2026-07-24T00:00:00.000Z",
       name: "Infiltrate the Bluecoats",
-      ownerKind: "campaign",
-      ownerId: "",
+      ownerKind: "character",
+      ownerId: CHARACTER_ID,
       purpose: "custom",
       relatedClockIds: [],
       behavior: "bounded",
@@ -4585,8 +4605,8 @@ describe("F2s Projects", () => {
       kind: "clock",
       id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
       name: "Infiltrate the Bluecoats",
-      ownerKind: "campaign",
-      ownerId: "",
+      ownerKind: "character",
+      ownerId: CHARACTER_ID,
       purpose: "custom",
       behavior: "bounded",
       segments: 2,
@@ -4682,8 +4702,8 @@ describe("F2s Projects", () => {
         expect.objectContaining({
           body: JSON.stringify({
             name: "Secure the Docks",
-            ownerKind: "campaign",
-            ownerId: "",
+            ownerKind: "character",
+            ownerId: CHARACTER_ID,
             purpose: "custom",
             behavior: "rollover",
             size: 8,
@@ -4697,6 +4717,20 @@ describe("F2s Projects", () => {
       expect(row?.querySelector(".project-clock-name")?.textContent).toContain("Secure the Docks");
       expect(row?.querySelector(".project-clock-progress")?.textContent).toContain("0 / 8");
     });
+  });
+
+  it("Projects lists only the clocks this scoundrel owns, not every campaign clock", async () => {
+    mountWithClocks([
+      clockSummaryDTO({ id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4e", name: "Campaign Clock", ownerKind: "campaign", ownerId: "" }),
+      clockSummaryDTO({ id: "a1111111-1111-4111-8111-111111111111", name: "Own Clock", ownerKind: "character", ownerId: CHARACTER_ID }),
+      clockSummaryDTO({ id: "c3333333-3333-4333-8333-333333333333", name: "Crew Clock", ownerKind: "crew", ownerId: "d4444444-4444-4444-8444-444444444444" }),
+    ]);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector(".project-clock")).not.toBeNull();
+    });
+    const names = Array.from(root.querySelectorAll(".project-clock .project-clock-name")).map((n) => n.textContent);
+    expect(names).toEqual(["Own Clock"]);
   });
 
   it("progress + posts clock.progress (no If-Match for a readable summary row) and updates segments", async () => {
@@ -5427,8 +5461,8 @@ describe("FV-012 focus restoration", () => {
       kind: "clock",
       id: "b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d",
       name: "Infiltrate the Bluecoats",
-      ownerKind: "campaign",
-      ownerId: "",
+      ownerKind: "character",
+      ownerId: CHARACTER_ID,
       purpose: "custom",
       behavior: "bounded",
       segments: 2,
@@ -5972,6 +6006,35 @@ describe("CHAR-05 high-impact actions", () => {
     const line = root.querySelector('button[title="Edit Vice"]')!.closest("p");
     expect(line).not.toBeNull();
     expect(line!.querySelector("strong")).not.toBeNull();
+  });
+
+  it("named pickers show 'Name - Description' options for vice, heritage and background", async () => {
+    mountWith(characterDTO());
+
+    const cancel = '.vice-editor button[title="Cancel"], .field-editing button[title="Cancel"]';
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit Vice"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Edit Vice"]') as HTMLButtonElement).click();
+    const vice = root.querySelector('select[aria-label="Vice (choose)"]') as HTMLSelectElement;
+    expect(Array.from(vice.options).find((o) => o.value === "Obligation")?.textContent).toBe("Obligation - You're devoted to a family, a cause, an organization, etc.");
+    (root.querySelector(cancel) as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit Heritage"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Edit Heritage"]') as HTMLButtonElement).click();
+    const heritage = root.querySelector('select[aria-label="Heritage (choose)"]') as HTMLSelectElement;
+    expect(Array.from(heritage.options).find((o) => o.value === "Akoros")?.textContent).toBe("Akoros - Akoros is the largest and most industrialized land in the Imperium.");
+    (root.querySelector(cancel) as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit Background"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Edit Background"]') as HTMLButtonElement).click();
+    const background = root.querySelector('select[aria-label="Background (choose)"]') as HTMLSelectElement;
+    expect(Array.from(background.options).find((o) => o.value === "Academic")?.textContent).toBe("Academic - A scholar, a professor or student from Doskvol Academy, etc.");
   });
 
   it("places the Permanent actions section after every other sheet section", async () => {

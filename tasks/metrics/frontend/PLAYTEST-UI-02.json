@@ -1,0 +1,34 @@
+{
+  "task": "PLAYTEST-UI-02",
+  "track": "frontend",
+  "implementationAgent": "claude-haiku-5-5 (omp worker, playtest-ui-fixes)",
+  "reviewAgent": "PENDING - gpt-5.6-luna (openai-codex, xhigh) review pinned to the final revision has not run",
+  "date": "2026-10-08",
+  "iterationsToGreen": 1,
+  "iterationNotes": "item 8 and item 3: one red-green cycle each. The owner-filter change needed fixture updates in existing tests (campaign-owned fixtures became scoundrel-owned, and the create expectation moved to character ownership). Item 6 stopped at the contract.",
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "Item 3 root cause: the human identified it. Projects listed every campaign clock, including clocks other scoundrels own. Fix is an owner filter plus owner-bound clock creation. The healing clock is by design and was not changed. Item 8: 'Name - Description' options, sourced from data/games/blades-in-the-dark.json; no descriptions invented. Item 6 (contacts) blocked: closeness is friend | contact | rival in contract/schemas/common.json:101-106, and CONTRACT-CONTACTS-01 is authorized but not started. Verification: frontend character-detail + client tests 442/442, full frontend 812 (after B), tsc clean, mutation 28/28 after refreshing M20 and M26 hashes, validators pass, Chromium evidence for items 8 and 3 at three viewports in light and dark. Items 8 and 3 share one jj change because of interleaved test hunks.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (wall-clock not recorded for this worker run)",
+    "source": "vitest output, tsc, mutation-results.json, Chromium capture summaries (b-summary.json, a-summary.json), probes",
+    "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens=null: token accounting not available to the worker"
+  },
+  "passRateAtFirstDoneClaim": "item 8: 2 of 2 new red tests failing for the right reason; item 3: 2 of 2 new red tests failing for the right reason; no first-done claim before green",
+  "passRateAfterReview": "character-detail + client tests 442/442; tsc clean; mutation 28/28; validators pass; Chromium evidence captured. Luna review not run.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend red tests (item 8: 2, item 3: 2)",
+    "human observation (item 3 root cause)"
+  ],
+  "status": "IN PROGRESS - items 8 and 3 implemented and verified (not reviewed); item 6 blocked on CONTRACT-CONTACTS-01 (not started); Luna review not run"
+}

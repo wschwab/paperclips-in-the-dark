@@ -5,7 +5,7 @@
 import { el } from "../../lib/dom.js";
 import { xpBoxes } from "./shared.js";
 import { extractSpecialAbilities } from "../character-domain.js";
-import { abilityDescription } from "../character-domain.js";
+import { abilityDescription, namedOptionLabel } from "../character-domain.js";
 import type { SectionCtx } from "./context.js";
 
 export function renderPlaybookSection(ctx: SectionCtx): HTMLElement {
@@ -104,7 +104,7 @@ return   (() => {
       disabled: gameplayDisabled || eligible.length === 0,
     },
       el("option", { value: "" }, "Ability"),
-      ...eligible.map((sa) => el("option", { value: String(sa.Name) }, String(sa.Name))),
+      ...eligible.map((sa) => el("option", { value: String(sa.Name) }, namedOptionLabel(String(sa.Name), typeof sa.Description === "string" ? sa.Description : null))),
     ) as HTMLSelectElement;
 
     const abilityDetails = el("details", { className: "ability-description" },
@@ -150,6 +150,7 @@ return   (() => {
       c.playbook.abilities.length === 0
         ? el("p", {}, "(none)")
         : el("div", { style: "display: flex; flex-direction: column;" }, ...abilityEntries),
+      el("p", { className: "serif", style: "margin: 0.25em 0;" }, "If you're unsure which one to pick, the first is considered a good default choice."),
       el("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center; flex-wrap: wrap;" },
         abilitySelect,
         takeBtn,
