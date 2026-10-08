@@ -91,3 +91,7 @@ curl --fail --silent \
    | python3 -c 'import sys,json; d=json.load(sys.stdin); assert "characters" in d'
 test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
    "http://127.0.0.1:$PORT/assets/does-not-exist.js")" = "404"
+
+# Web app manifest: served with its registered media type (not octet-stream).
+test "$(curl --silent --output /dev/null --write-out '%{content_type}' \
+   "http://127.0.0.1:$PORT/site.webmanifest")" = "application/manifest+json"

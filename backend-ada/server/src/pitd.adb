@@ -2,6 +2,7 @@ with Ada.Command_Line;
 with Ada.Directories;
 with Ada.Strings.Unbounded;
 with AWS.Server;
+with AWS.MIME;
 with Pitd_Callback;
 
 procedure Pitd is
@@ -82,6 +83,9 @@ begin
    Pitd_Callback.Configure
      (To_String (Static_Dir), To_String (Data_Dir), To_String (Games_Dir),
       Test_Hooks);
+   --  Web app manifest: AWS has no built-in entry for .webmanifest, so it
+   --  would fall back to application/octet-stream. Register its media type.
+   AWS.MIME.Add_Extension ("webmanifest", "application/manifest+json");
    AWS.Server.Start
      (Server, "Paperclips in the Dark (Ada)", Pitd_Callback.Handle'Access,
       Port => Port, Max_Connection => 64);
