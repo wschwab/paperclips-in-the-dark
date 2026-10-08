@@ -66,7 +66,7 @@
       "mutation": "Truncate Collect_Removal_Keys at 512 entries",
       "observableFailure": "an import/repair preview no longer discloses every data-dropping property beyond the buffer, violating no-silent-data-loss; the UNKNOWN-KEY near-limit cases assert exact disclosure at 512/513/600 keys",
       "restorationHash": {
-        "backend-ada/server/src/pitd_normalize.adb": "6164d6f7b5c61bf36c396ad3ef5b1bbeeb0e60541cafc8f5ff4939e526a85fc1"
+        "backend-ada/server/src/pitd_normalize.adb": "466720078e8532be959e52dd0e8dfbcc1b4914921947b60c56477b72f3c867bd"
       },
       "severity": "P0",
       "status": "not-run",
@@ -188,7 +188,7 @@
       "mutation": "Auto-add trauma on overflow: the pending raise is replaced by directly appending a trauma to monitor.trauma.traumas",
       "observableFailure": "traumaPending never raises while the traumas history silently grows; LIFECYCLE-STRESS-001 asserts the pending flag and typed attention",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
+        "backend-ada/server/src/pitd_ops.adb": "299ae5f416216cbd0e3a14453312d429ce7eafd16f0cae698e20b965a49b3ce3"
       },
       "severity": "P0",
       "status": "not-run",
@@ -204,7 +204,7 @@
       "mutation": "Clear retirement during trauma removal: the arm additionally sets isRetired false",
       "observableFailure": "trauma.remove on a retired character flips isRetired to false, silently reversing retirement",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
+        "backend-ada/server/src/pitd_ops.adb": "299ae5f416216cbd0e3a14453312d429ce7eafd16f0cae698e20b965a49b3ce3"
       },
       "severity": "P0",
       "status": "not-run",
@@ -268,7 +268,7 @@
       "mutation": "Hardcode the tier.add CrewTierMax settings lookup to 3",
       "observableFailure": "the enforced tier ceiling disagrees with the loaded game-settings JSON (Blades CrewTierMax), so a differently-configured game is mis-bounded",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
+        "backend-ada/server/src/pitd_ops.adb": "299ae5f416216cbd0e3a14453312d429ce7eafd16f0cae698e20b965a49b3ce3"
       },
       "severity": "P0",
       "status": "not-run",
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "0253706eb5f7ab433b62a1b76449877865fd34789d33fa76dbfb7ebae45611ee"
+        "frontend/src/pages/character-detail.ts": "2e6c0d4edbf51673c50f2273b6508ed6febbd6cc0a833099e6f7f22488712fd9"
       },
       "severity": "P1",
       "status": "not-run",
@@ -464,7 +464,7 @@
       "mutation": "Claim-operation coverage removed: all three dispatch arms become dead (elsif False), so claim ops fall through to the unknown-op failure",
       "observableFailure": "claim.set/customize/reset stop acquiring, customizing, and relinquishing claims; the conformance claim oracle cases fail",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "5bab9b5508ce17d24568c3d142e4bc7fef456d56e6f3235ae0890e94c161c2e4"
+        "backend-ada/server/src/pitd_ops.adb": "299ae5f416216cbd0e3a14453312d429ce7eafd16f0cae698e20b965a49b3ce3"
       },
       "severity": "P0",
       "status": "not-run",

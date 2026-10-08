@@ -656,7 +656,7 @@ package body Pitd_Schema_Validators is
 
    procedure Check_Enum_Closeness (V : JSON_Value; Ptr : String) is
    begin
-      Check_Enum (V, Ptr, "|friend|contact|rival|");
+      Check_Enum (V, Ptr, "|enemy|rival|contact|friend|confidante|");
    end Check_Enum_Closeness;
 
    procedure Check_Enum_Hold (V : JSON_Value; Ptr : String) is

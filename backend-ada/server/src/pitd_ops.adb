@@ -210,6 +210,33 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
             Set_Field (Get (C, "talent"), "attributes", Out_A);
          end;
       end if;
+      --  CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): a new scoundrel is
+      --  preloaded with its playbook's Rolodex friends at closeness "contact".
+      --  Names come from the game-settings JSON (Playbooks[].Rolodex.Friends).
+      declare
+         Contacts : JSON_Array := Empty_Array;
+         PBs      : constant JSON_Array := Get (G, "Playbooks");
+      begin
+         for I in 1 .. Length (PBs) loop
+            if Str_Field (Get (PBs, I), "Name") = Playbook and then Has_Field (Get (PBs, I), "Rolodex") then
+               declare
+                  Friends : constant JSON_Array := Get (Get (Get (PBs, I), "Rolodex"), "Friends");
+               begin
+                  for J in 1 .. Length (Friends) loop
+                     declare
+                        X : JSON_Value := Create_Object;
+                     begin
+                        Set_Field (X, "id", New_Id);
+                        Set_Field (X, "name", String'(Get (Get (Friends, J))));
+                        Set_Field (X, "closeness", "contact");
+                        Append (Contacts, X);
+                     end;
+                  end loop;
+               end;
+            end if;
+         end loop;
+         Set_Field (C, "contacts", Contacts);
+      end;
       return C;
    end New_Character;
 
@@ -519,9 +546,9 @@ elsif Op = "clock.create" then
          return Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
                                   Spec ("profession", JSON_String_Type)), Bad);
       elsif Op = "contact.closeness" and then Kind = "character" then
-         --  CONTRACT-05: set closeness friend|contact|rival on the named contact.
+         --  CONTRACT-CONTACTS-01: set closeness enemy|rival|contact|friend|confidante on the named contact.
          return Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
-                                  Spec ("closeness", JSON_String_Type, En => "friend|contact|rival")), Bad);
+                                  Spec ("closeness", JSON_String_Type, En => "enemy|rival|contact|friend|confidante")), Bad);
       elsif Op = "contact.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "faction.set-status" then
@@ -1034,7 +1061,7 @@ elsif Op = "harm.add" then
          end;
       elsif Op="contact.closeness" and then Kind="character" then
          --  CONTRACT-05: set the named contact's closeness
-         --  (friend|contact|rival). Unknown name -> VALIDATION (ruling).
+         --  (enemy|rival|contact|friend|confidante). Unknown name -> VALIDATION (ruling).
          declare A:constant JSON_Array:=Get(E,"contacts");Found:Boolean:=False;begin
             for I in 1..Length(A) loop
                if Str_Field(Get(A,I),"name")=Str_Field(B,"name") then Set_Field(Get(A,I),"closeness",Str_Field(B,"closeness"));Found:=True;end if;

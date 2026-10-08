@@ -1283,11 +1283,11 @@ package body Pitd_Normalize is
          end;
       end if;
       Set_Field (X, "name", N_Str_Required (V, "name", Ptr & "/name", C));
-      --  CONTRACT-05 correction: closeness is exactly friend|contact|rival.
+      --  CONTRACT-CONTACTS-01: closeness is exactly enemy|rival|contact|friend|confidante.
       --  Legacy close-friend values are NOT auto-migrated — a stored legacy
       --  value is needs-input (documented value migration, spec page).
       Set_Field (X, "closeness", N_Enum (V, "closeness", Ptr & "/closeness", C,
-                                         "|friend|contact|rival|",
+                                         "|enemy|rival|contact|friend|confidante|",
                                          No_Legacy));
       return X;
    end Char_Contact_Item;
