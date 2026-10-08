@@ -164,7 +164,7 @@ export function renderStressSection(ctx: SectionCtx): HTMLElement {
       overindulgedDismiss.addEventListener("click", handlers.onOverindulgedDismiss);
       return el("div", { className: "character-vice", "data-focus-key": "vice" },
         el("h3", { className: "lbl" }, "Vice"),
-        el("p", {}, el("strong", {}, v.name || "(not set)")),
+        el("p", {}, el("strong", {}, v.name || "(not set)"), " ", editBtn),
         v.description ? el("p", { className: "serif" }, v.description) : null,
         v.purveyor.name
           ? el("p", { className: "vice-purveyor" },
@@ -183,7 +183,6 @@ export function renderStressSection(ctx: SectionCtx): HTMLElement {
             )
           : null,
         el("div", { style: "display: flex; gap: 0.5em; align-items: center;" },
-          editBtn,
           clearAmountInput,
           clearStressBtn,
         ),

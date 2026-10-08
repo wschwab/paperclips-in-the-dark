@@ -250,11 +250,11 @@ function renderDetail(state: RenderState): HTMLElement {
       : null,
 
     renderLifecycleSection(ctx),
-    renderHighImpactSection(ctx),
     renderActionsSection(ctx),
     renderNotesSection(ctx),
     renderContactsSection(ctx),
     renderNotebookSection(ctx),
+    renderHighImpactSection(ctx),
 
   );
 
@@ -1846,7 +1846,6 @@ export function mountCharacterDetailPage(
       if (!clk) return;
       isClocksLoading = true;
       clearNotices();
-      renderDetailWrapper();
 
       //  A degraded row deletes via its deleteToken (sha256 content token);
       //  a readable row's token is "" and the delete requires the current

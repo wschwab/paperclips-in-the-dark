@@ -684,6 +684,11 @@
   gap: 18px;
   grid-template-columns: minmax(0, 1fr);
 }
+/* the torn seam hangs 18px below the masthead; the masthead reserves its depth
+ * so the seam never overlaps the first card (PLAYTEST-UI-01 item 7). */
+.character-detail > .character-header {
+  margin-bottom: var(--torn-depth-lg);
+}
 
 /* LAYOUT-01: wide sheets flow their section cards through two balanced
  * text columns instead of paired grid rows. Sequential pair packing always
@@ -711,6 +716,15 @@
   }
   .character-detail > :first-child,
   .crew-detail > :first-child {
+    margin-top: 0;
+  }
+  /* the seam reserves its depth plus the 18px column gap under the masthead;
+   * the card after it takes no extra top margin, so both columns start at the
+   * same offset beneath the seam (PLAYTEST-UI-01 item 7). */
+  .character-detail > .character-header {
+    margin-bottom: calc(var(--torn-depth-lg) + 18px);
+  }
+  .character-detail > .character-header + * {
     margin-top: 0;
   }
   /* masthead + alerts read across the whole sheet; everything else packs */

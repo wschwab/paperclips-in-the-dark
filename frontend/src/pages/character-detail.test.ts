@@ -4875,6 +4875,47 @@ describe("F2s Projects", () => {
     });
   });
 
+  it("keeps the sheet mounted while a clock delete is pending, then removes the clock in one render", async () => {
+    let settleDelete: (value: unknown) => void = () => {};
+    const pendingDelete = new Promise((resolve) => {
+      settleDelete = resolve;
+    });
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO()))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([clockSummaryDTO()]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(ok(clockDTO()))
+      .mockImplementationOnce(() => pendingDelete);
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]')).not.toBeNull();
+    });
+    const sheetBefore = root.querySelector(".character-detail");
+    const rowBefore = root.querySelector('.project-clock[data-clock-id="b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d"]');
+    (root.querySelector('button[title="Delete clock: Infiltrate the Bluecoats"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        "/api/clocks/b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d/delete",
+        expect.anything(),
+      );
+    });
+    // In flight: the sheet is not rebuilt, so the clock row does not flash
+    // through a disabled "…" state before the server answers.
+    expect(root.querySelector(".character-detail")).toBe(sheetBefore);
+    expect(root.querySelector('.project-clock[data-clock-id="b0b1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d"]')).toBe(rowBefore);
+
+    settleDelete(ok(clockOk(clockDTO(), "delete")));
+    await vi.waitFor(() => {
+      expect(root.querySelector(".project-clock")).toBeNull();
+    });
+  });
+
   it("surfaces a VALIDATION op error when clock creation is rejected server-side", async () => {
     const opErr = {
       ok: false,
@@ -5920,6 +5961,28 @@ describe("CHAR-05 high-impact actions", () => {
     // its own lifecycle row.
     expect(zone.contains(getEndScore()!)).toBe(false);
     expect(getEndScore()!.closest('[data-section="lifecycle"]')).not.toBeNull();
+  });
+
+  it("renders the Edit Vice control inline with the vice name, not on its own line", async () => {
+    mountWith(characterDTO());
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit Vice"]')).not.toBeNull();
+    });
+    const line = root.querySelector('button[title="Edit Vice"]')!.closest("p");
+    expect(line).not.toBeNull();
+    expect(line!.querySelector("strong")).not.toBeNull();
+  });
+
+  it("places the Permanent actions section after every other sheet section", async () => {
+    mountWith(characterDTO());
+
+    await vi.waitFor(() => {
+      expect(getEndScore()).not.toBeNull();
+    });
+    const sheet = root.querySelector(".character-detail")!;
+    const keyed = Array.from(sheet.children).filter((child) => child.hasAttribute("data-section"));
+    expect(keyed[keyed.length - 1]?.getAttribute("data-section")).toBe("high-impact");
   });
 
   it("styles the permanent actions as danger controls while End score stays ordinary", async () => {

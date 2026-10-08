@@ -303,7 +303,7 @@
       "mutation": "Reduce the action-dot width/height below the contracted target size",
       "observableFailure": "action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "f220cbfd51659047eb03727c0842c74abaf1610c9076448611b8f4b78d7fde3f"
+        "frontend/src/styles/components.css": "ccb12ed21f01241c5f33fc0c80d8d8e4a0d8e5f99cb206692954f2245f354a25"
       },
       "severity": "P1",
       "status": "not-run",
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "e70049bee72f9b0e744104f58ca4cb504bfdf852a90918d4fa3d0429e044017d"
+        "frontend/src/pages/character-detail.ts": "6c3c7554703b94512bc6be202654d3dfdb6580798d43129daf829daa1e0fd685"
       },
       "severity": "P1",
       "status": "not-run",

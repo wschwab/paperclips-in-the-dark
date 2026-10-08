@@ -4,9 +4,10 @@ title: Playtest 2026-10 — Scoundrel sheet feedback
 
 # Playtest 2026-10: Scoundrel sheet feedback
 
-Human playtest feedback recorded verbatim-faithfully as a backlog. Every item
-below is **status: queued** — nothing here is implemented, and no item has been
-triaged into a task card yet.
+Human playtest feedback recorded verbatim-faithfully as a backlog. Items 1, 5, 7
+and 9 are **done, pending independent review** (task `PLAYTEST-UI-01`). All other
+items below remain **status: queued**; none of them has been triaged into a task
+card yet.
 
 Feedback from the Scoundrel sheet. Screenshot supplied with the feedback:
 
@@ -14,8 +15,9 @@ Feedback from the Scoundrel sheet. Screenshot supplied with the feedback:
 
 ## Backlog
 
-1. **Vice is hard to find** — *status: queued*. Its edit button renders on a
-   separate line and looks like it belongs to something else.
+1. **Vice is hard to find** — *status: done, pending independent review* (task
+   `PLAYTEST-UI-01`). The Edit Vice button now sits inline beside the vice name
+   instead of on its own line.
 
 2. **Too many clocks on a newly created scoundrel** — *status: queued*. Many
    clocks exist that shouldn't. Suspected default clocks seeded on every new
@@ -44,15 +46,22 @@ Feedback from the Scoundrel sheet. Screenshot supplied with the feedback:
 4. **Missing: incarceration**, and the start-of-downtime complications (payoff /
    heat / entanglements) — *status: queued*.
 
-5. **Visible flicker/rerender when deleting each clock** — *status: queued*.
+5. **Visible flicker/rerender when deleting each clock** — *status: done, pending
+   independent review* (task `PLAYTEST-UI-01`). Cause: the delete handler
+   re-rendered the whole sheet with every clock control disabled and showing "…"
+   before the request, then again on success. The sheet now stays mounted while
+   the delete is in flight and re-renders once when the clock is removed.
 
 6. **Contacts** — *status: queued*. Preload every playbook's contacts by default
    as "contact". Closeness should have more levels (add **confidante** and
    **enemy**, bolder colours) and look clearly clickable. Keep the remove-contact
    option, and keep add-contact as it is so custom contacts can still be added.
 
-7. **Layout** — *status: queued*. The rule under the header cuts through the
-   right column; the left column is too close as well.
+7. **Layout** — *status: done, pending independent review* (task
+   `PLAYTEST-UI-01`). The masthead now reserves the torn-seam depth plus the
+   sheet gap, so the seam stays out of both columns and both columns start at
+   the same offset beneath it. Checked numerically at 1440, 768 and 390 in light
+   and dark.
 
 8. **Option descriptions, like Blades in the Sheets** — *status: queued*. The
    playbook special-ability dropdown shows each option's name + description
@@ -75,6 +84,18 @@ Feedback from the Scoundrel sheet. Screenshot supplied with the feedback:
      (`OptionText="@(i => $"{i.Name} - {i.Description}")"`).
 
 9. **Permanent Actions looks great; move it to the bottom of the sheet** —
-   *status: queued*.
+   *status: done, pending independent review* (task `PLAYTEST-UI-01`). The
+   Permanent actions section now renders as the last section of the scoundrel
+   sheet, after Notebook. Its content and behaviour are unchanged.
+
+## Tab icon
+
+Not a playtest item; added alongside the sheet work. The app now ships a favicon
+(`frontend/public/favicon.svg`, PNG fallbacks `favicon-32.png`, `favicon-16.png`,
+`apple-touch-icon.png`) and a `site.webmanifest`, linked from
+`frontend/index.html`. Design by GPT-6 Astra; the paperclip is a simplified
+silhouette in the bladesinthedark.com ink/bone/red palette. Status: built into
+`dist/`; all icon links return 200 in headless Chromium; the paperclip is legible
+at 32px and recognizable but soft at 16px.
 
 ## Crew page feedback: pending

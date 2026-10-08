@@ -1,0 +1,35 @@
+{
+  "task": "PLAYTEST-UI-01",
+  "track": "frontend",
+  "implementationAgent": "claude-haiku-5-5 (omp worker, playtest-ui-fixes)",
+  "reviewAgent": "gpt-5.6-luna (openai-codex, xhigh) — review #1 run; verdict FAIL on candidate identity only; substantive items 1/5/7/9 PASS",
+  "date": "2026-10-08",
+  "iterationsToGreen": 3,
+  "iterationNotes": "vice inline, permanent-actions order, and clock-delete render: one green iteration each after red. Column seam layout: three CSS iterations, each caught by real-Chromium numeric measurement (rule scoped to 900px block was overridden by a later base rule; left column kept an extra 18px card margin).",
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Red: 4 new tests failing for the right reason (clock delete sheet identity, vice not in a paragraph, permanent actions not last, CSS seam-clearance rule absent). Green: frontend 810/810 across 21 files; tsc --noEmit clean; mutation campaign 28/28 killed (P0 19/19, P1 9/9) after refreshing restorationHash for M18 and M26; browser journeys 6/6 PASS; numeric capture at 1440x1000, 768x1024, 390x844 in light and dark: scrollWidth <= innerWidth everywhere, zero seam overlaps, vice inline, permanent actions last. Compiler catch: Promise.withResolvers not in the ES2022 lib, so the test uses executor-form Promise. Luna review #1 (gpt-5.6-luna, openai-codex, xhigh): own build 21 files / 810 tests; 12 viewport×theme browser combinations (incl. high-contrast); delete-flicker checks at 1440 light and 390 dark clean (sheet identity change only on removal; no disabled/'…' flash). Items 1/5/7/9 PASS. Overall FAIL solely because the working copy `@` (de135180) did not equal the named candidate ea36a80b, since review evidence files were written into it; scoped diff to ea36a80b empty. Gate not cleared: candidate must be frozen as an immutable revision and Luna re-run.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (wall-clock not recorded for this worker run)",
+    "source": "test and build output, mutation-results.json, browser-suite log, numeric capture JSON, Luna verdict.md",
+    "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens=null: token accounting not available to the worker"
+  },
+  "passRateAtFirstDoneClaim": "4 of 4 new red tests failing for the right reason before fixes; no first-done claim before green",
+  "passRateAfterReview": "frontend 810/810; tsc clean; mutation 28/28; browser 6/6 PASS; Luna review #1 substantive PASS on 1/5/7/9, verdict FAIL on candidate identity only; re-review pending a frozen candidate",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend red tests (4)",
+    "real Chromium numeric capture (base-rule override and extra column margin found in layout iterations)",
+    "tsc (ES2022 lib lacks Promise.withResolvers)"
+  ],
+  "status": "IMPLEMENTED, VERIFIED; NOT CLOSED — Luna review #1 FAIL on candidate identity only (substantive items PASS); awaiting frozen-candidate re-review. Nothing marked reviewed-PASS."
+}
