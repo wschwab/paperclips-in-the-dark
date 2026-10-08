@@ -1,0 +1,31 @@
+---
+title: Contact closeness levels (CONTRACT-CONTACTS-01)
+---
+
+# Contact closeness levels
+
+**Ruling:** 2026-10-08, human. Contact closeness gains two levels, **confidante** and **enemy**, for a five-level scale:
+
+`enemy < rival < contact < friend < confidante`
+
+The default stays `contact`. Every contact is still a single family on the scoundrel sheet.
+
+## Contract change
+
+| Location | Change |
+|---|---|
+| `contract/schemas/common.json` `$defs.closeness` | enum becomes `enemy`, `rival`, `contact`, `friend`, `confidante` (was `friend`, `contact`, `rival`) |
+| `contract/schemas/character.json` `contacts` | description names the five-level vocabulary |
+| `contract/openapi.yaml` `contact.closeness` | description names the five-level vocabulary; request body still references `common.json#/$defs/closeness` |
+
+No operation is added or removed. `contact.add` still defaults to `contact`. `contact.closeness` with a value outside the five levels is still a VALIDATION error.
+
+## Compatibility
+
+Existing stored contacts hold one of the three original values, and all three remain valid. No stored document is rewritten.
+
+## Conformance
+
+`conformance/suites/semantics/character-contacts-levels.test.ts` is a new, additive suite. It sets `confidante` and `enemy` and reads them back (`CONTACTS-LEVELS-001`), and rejects a value outside the scale (`CONTACTS-LEVELS-002`). The frozen three-level suite `character-contacts.test.ts` is unchanged.
+
+Known follow-up: `conformance/src/schemas.ts` hard-codes the three original literals for its own response decoding. It is conformance tooling, not a suite, and is not edited by this change.

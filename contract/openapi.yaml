@@ -1462,7 +1462,7 @@ paths:
     post:
       operationId: characterContactCloseness
       x-snapshot: true
-      description: "CONTRACT-05 (2026-08-25 correction): set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION."
+      description: "CONTRACT-05 (2026-08-25 correction; CONTRACT-CONTACTS-01 2026-10-08): set the closeness level of the named contact (enemy | rival | contact | friend | confidante). Unknown name → VALIDATION."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true

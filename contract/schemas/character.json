@@ -419,7 +419,7 @@
       }
     },
     "contacts": {
-      "description": "CONTRACT-05 (2026-08-25 correction of the 2026-08-24 card): the per-scoundrel relationship list, EVOLVED from the former BitS rolodex surface by human ruling ('instead of calling it Rolodex, let's just call it Contacts') — exactly one family. Required canonical array; empty means no entries. Closeness vocabulary is exactly friend | contact | rival; legacy close-friend values are NOT auto-migrated (update stored documents; see docs/pages/contract/contract-c5-character-contacts.mdx).",
+      "description": "CONTRACT-05 (2026-08-25 correction of the 2026-08-24 card): the per-scoundrel relationship list, EVOLVED from the former BitS rolodex surface by human ruling ('instead of calling it Rolodex, let's just call it Contacts') — exactly one family. Required canonical array; empty means no entries. Closeness vocabulary is exactly enemy | rival | contact | friend | confidante (CONTRACT-CONTACTS-01, 2026-10-08 ruling; ordered enemy < rival < contact < friend < confidante). Legacy close-friend values are NOT auto-migrated (update stored documents; see docs/pages/contract/contract-c5-character-contacts.mdx).",
       "type": "array",
       "items": {
         "type": "object",

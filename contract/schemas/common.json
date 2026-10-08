@@ -100,9 +100,11 @@
     },
     "closeness": {
       "enum": [
-        "friend",
+        "enemy",
+        "rival",
         "contact",
-        "rival"
+        "friend",
+        "confidante"
       ]
     },
     "commitment": {
