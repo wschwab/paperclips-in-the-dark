@@ -40,7 +40,8 @@ const NonEmptyString = Schema.String.pipe(Schema.minLength(1));
 const HarmIntensity = Schema.Literal("lesser", "moderate", "severe", "fatal");
 // CONTRACT-05 (2026-08-25 correction): single closeness vocabulary — the
 // character contacts list evolved from the former rolodex surface.
-const Closeness = Schema.Literal("friend", "contact", "rival");
+// CONTRACT-CONTACTS-01 (2026-10-08): five levels, mirrors common.json#/$defs/closeness.
+const Closeness = Schema.Literal("enemy", "rival", "contact", "friend", "confidante");
 const Commitment = Schema.Literal("none", "light", "normal", "heavy", "encumbered");
 const Hold = Schema.Literal("strong", "weak");
 const CohortType = Schema.Literal("gang", "expert");
