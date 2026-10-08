@@ -3,6 +3,7 @@ import { api } from "../../src/api.js";
 import { decode, Schemas, assertResponseValid } from "../../src/schemas.js";
 import { testCase } from "../../src/test-case.js";
 import { newCharacter, successfulCharacter } from "../../src/suite-helpers.js";
+import { gameSetting } from "../../src/game-data.js";
 
 // CONTRACT-05 (human ruling 2026-08-24; 2026-08-25 correction): per-scoundrel
 // Contacts — the single relationship family, EVOLVED from the former rolodex
@@ -18,10 +19,10 @@ import { newCharacter, successfulCharacter } from "../../src/suite-helpers.js";
 describe("CONTRACT-05 per-scoundrel contacts", () => {
   testCase("SEMANTICS-CHAR-CONTACTS-001", "contact.add writes a contact with default closeness 'contact' and a server id", async () => {
     const character = await newCharacter();
-    const result = await api.characterOp(character.id, "contact.add", { name: "Marlane, a pugilist" });
+    const result = await api.characterOp(character.id, "contact.add", { name: "Test Contact Unlisted" });
     expect(result.ok).toBe(true);
     assertResponseValid("characterContactAdd", 200, result);
-    const added = successfulCharacter(result).contacts.find((c) => c.name === "Marlane, a pugilist");
+    const added = successfulCharacter(result).contacts.find((c) => c.name === "Test Contact Unlisted");
     expect(added?.closeness).toBe("contact");
     expect(added?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
@@ -98,11 +99,20 @@ describe("CONTRACT-05 per-scoundrel contacts", () => {
     // every ordinary current-version character document must carry the key
     // (no sparse overlay beside claimOverrides item fields).
     const character = await newCharacter();
-    expect(character.contacts).toEqual([]);
+    // CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): a new scoundrel is preloaded
+    // with its playbook's Rolodex friends at closeness "contact". Expected names come from
+    // data/games at test time, never hardcoded.
+    expect(Array.isArray(character.contacts)).toBe(true);
+    const setting = gameSetting(character.gameStem) as unknown as {
+      Playbooks: Array<{ Name: string; Rolodex: { Friends: string[] } }>;
+    };
+    const expected = setting.Playbooks.find((p) => p.Name === character.playbook.name)?.Rolodex.Friends ?? [];
+    expect(character.contacts.map((c) => c.name)).toEqual(expected);
+    expect(character.contacts.every((c) => c.closeness === "contact")).toBe(true);
     const added = await api.characterOp(character.id, "contact.add", { name: "Roslyn Kellis, a noble" });
     expect(added.ok).toBe(true);
     expect(successfulCharacter(added).contacts.find((c) => c.name === "Roslyn Kellis, a noble")?.closeness).toBe("contact");
     const reloaded = await api.character(character.id);
-    expect(reloaded.contacts).toHaveLength(1);
+    expect(reloaded.contacts).toHaveLength(expected.length + 1);
   });
 });

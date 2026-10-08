@@ -478,6 +478,8 @@ Responses:
 
 `POST /characters`
 
+Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact.
+
 Parameters: `idempotencyKey`
 
 Snapshot: `false`
@@ -1521,7 +1523,7 @@ Responses:
 
 `POST /characters/{id}/ops/contact.closeness`
 
-CONTRACT-05 (2026-08-25 correction): set the closeness level of the named contact (friend | contact | rival). Unknown name → VALIDATION.
+CONTRACT-05 (2026-08-25 correction; CONTRACT-CONTACTS-01 2026-10-08): set the closeness level of the named contact (enemy | rival | contact | friend | confidante). Unknown name → VALIDATION.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 

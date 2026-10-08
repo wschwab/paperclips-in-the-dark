@@ -29,3 +29,23 @@ Existing stored contacts hold one of the three original values, and all three re
 `conformance/suites/semantics/character-contacts-levels.test.ts` is a new, additive suite. It sets `confidante` and `enemy` and reads them back (`CONTACTS-LEVELS-001`), and rejects a value outside the scale (`CONTACTS-LEVELS-002`). The frozen three-level suite `character-contacts.test.ts` is unchanged.
 
 Known follow-up: `conformance/src/schemas.ts` hard-codes the three original literals for its own response decoding. It is conformance tooling, not a suite, and is not edited by this change.
+
+## Create default: playbook contacts are preloaded
+
+Human-authorized 2026-10-08. A new scoundrel is created with its playbook's Rolodex friends (`data/games/*.json` `Playbooks[].Rolodex.Friends`) at closeness `contact`. The server (`backend-ada/server/src/pitd_ops.adb`, `New_Character`) does this, so API callers get the same result as the sheet. The contract text is in `contract/schemas/character.json` `contacts` and `contract/openapi.yaml` `characterCreate`.
+
+### Frozen-test amendments (human-authorized, `conformance/suites/semantics/character-contacts.test.ts`)
+
+SEMANTICS-CHAR-CONTACTS-009 (fresh characters carry the REQUIRED canonical contacts array):
+
+| Line | Before | After |
+|---|---|---|
+| 101 | `expect(character.contacts).toEqual([]);` | `expect(Array.isArray(character.contacts)).toBe(true);` plus the expected-names assertion (names from `data/games` via `gameSetting(character.gameStem)`, never hardcoded) and `closeness === "contact"` for every entry |
+| 106 | `expect(reloaded.contacts).toHaveLength(1);` | `expect(reloaded.contacts).toHaveLength(expected.length + 1);` |
+| import (new line 6) | (none; the amended block used a dynamic `await import`) | `import { gameSetting } from "../../src/game-data.js";` |
+
+No other frozen line was changed.
+
+### Known failure after the preload (not yet amended)
+
+SEMANTICS-CHAR-CONTACTS-001 adds `Marlane, a pugilist`, which is on the Cutter Rolodex and is therefore already present on a new Cutter. It is not amended; a decision is pending.

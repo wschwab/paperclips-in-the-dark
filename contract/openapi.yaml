@@ -550,6 +550,7 @@ paths:
     post:
       operationId: createCharacter
       x-snapshot: false
+      description: "Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact."
       parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
