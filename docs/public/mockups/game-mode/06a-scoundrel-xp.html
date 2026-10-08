@@ -1,0 +1,689 @@
+<!doctype html>
+<html data-theme="light" lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   Scoundrel XP · Game mode mockup
+  </title>
+  <link href="mockup.css" rel="stylesheet"/>
+ </head>
+ <body>
+  <!-- Static review artifact. Inherits the real application's paper/ink tokens, bundled faces, torn masthead and ruled sheet furniture. Per-scoundrel, non-linear mode rail stays in the left gutter on desktop and becomes a footer on narrow screens. Demonstration values only; controls do not persist or call the API. -->
+  <header class="app-bar torn-foot">
+   <a class="app-title uneven" href="index.html">
+    Paperclips in the Dark
+   </a>
+   <nav>
+    <a href="index.html">
+     Mockup gallery
+    </a>
+    <a href="crew-sheet.html">
+     The Drowned Bells
+    </a>
+   </nav>
+   <small>
+    Design mockup · illustrative scoundrel
+   </small>
+  </header>
+  <div class="workspace">
+   <aside class="mode-panel">
+    <h2>
+     Game mode
+    </h2>
+    <p class="small scope">
+     For Nyelle only
+    </p>
+    <nav aria-label="Scoundrel game mode" class="mode-switch">
+     <a class="" href="01-free-play.html">
+      Free Play
+     </a>
+     <a class="active" href="02-planning.html">
+      Score
+     </a>
+     <a class="" href="07-downtime.html">
+      Downtime
+     </a>
+    </nav>
+    <div class="panel-content">
+     <h3>
+      Score in progress
+     </h3>
+     <p class="small">
+      Stealth plan
+     </p>
+     <a class="btn-primary" href="06a-scoundrel-xp.html">
+      End Score
+     </a>
+     <hr/>
+     <button class="btn-secondary" id="desperate">
+      + Desperate action XP
+     </button>
+     <p class="small" id="xp-feedback">
+      Mark 1 XP in the attribute you rolled.
+      <a class="srd-link" href="https://bladesinthedark.com/advancement">
+       SRD ↗
+      </a>
+     </p>
+     <select aria-label="Desperate action attribute">
+      <option>
+       Insight
+      </option>
+      <option>
+       Prowess
+      </option>
+      <option>
+       Resolve
+      </option>
+     </select>
+     <hr/>
+     <p class="small">
+      A table aid, not a rules engine. Nothing here blocks your sheet.
+     </p>
+    </div>
+   </aside>
+   <main class="sheet">
+    <header class="masthead torn-foot torn-foot-lg">
+     <div class="meta">
+      Scoundrel · Lurk · Blades in the Dark
+     </div>
+     <h1>
+      Nyelle Vale
+     </h1>
+     <div class="alias">
+      “Wren”
+     </div>
+     <div class="meta" style="margin-top:10px">
+      The Drowned Bells · Tier I · Crow’s Foot
+     </div>
+    </header>
+    <div class="sheet-columns">
+     <section class="sheet-card">
+      <h2>
+       Personal
+      </h2>
+      <div class="ledger">
+       <span class="lbl">
+        Heritage
+       </span>
+       <span>
+        Skovlan
+       </span>
+      </div>
+      <div class="ledger">
+       <span class="lbl">
+        Background
+       </span>
+       <span>
+        Underworld · former runner
+       </span>
+      </div>
+      <div class="ledger">
+       <span class="lbl">
+        Vice
+       </span>
+       <span>
+        Gambling · The Silver Stag
+       </span>
+      </div>
+     </section>
+     <section class="sheet-card focus-load" data-committed-loadout="true">
+      <h2>
+       Loadout
+       <a class="srd-link" href="https://bladesinthedark.com/planning-engagement">
+        SRD ↗
+       </a>
+      </h2>
+      <div class="load-choice">
+       <button data-limit="3" data-load="Light" disabled="">
+        Light · 3
+       </button>
+       <button class="selected" data-limit="5" data-load="Normal" disabled="">
+        Normal · 5
+       </button>
+       <button data-limit="6" data-load="Heavy" disabled="">
+        Heavy · 6
+       </button>
+      </div>
+      <p class="small">
+       Choose your load; declare items as you use them.
+      </p>
+      <label class="gear">
+       <input checked="" data-bulk="0" data-gear="0" disabled="" type="checkbox"/>
+       Fine lockpicks
+       <span style="float:right">
+        0 load
+       </span>
+      </label>
+      <label class="gear">
+       <input checked="" data-bulk="1" data-gear="1" disabled="" type="checkbox"/>
+       A blade or two
+       <span style="float:right">
+        1 load
+       </span>
+      </label>
+      <label class="gear">
+       <input data-bulk="2" data-gear="2" disabled="" type="checkbox"/>
+       Climbing gear
+       <span style="float:right">
+        2 load
+       </span>
+      </label>
+      <label class="gear">
+       <input data-bulk="1" data-gear="3" disabled="" type="checkbox"/>
+       Burglary gear
+       <span style="float:right">
+        1 load
+       </span>
+      </label>
+      <p class="lbl load-total">
+       1 of 5 load committed · Normal
+      </p>
+      <a class="change-loadout small" href="05-score-change-loadout.html">
+       Change loadout
+      </a>
+     </section>
+     <section class="sheet-card">
+      <h2>
+       Actions &amp; attributes
+       <a class="srd-link" href="https://bladesinthedark.com/actions-attributes">
+        SRD ↗
+       </a>
+      </h2>
+      <div class="actions">
+       <div>
+        <h3>
+         Insight
+        </h3>
+        <div class="action-line">
+         <span>
+          Hunt
+         </span>
+         <span class="dots">
+          ●○○○
+         </span>
+        </div>
+        <div class="action-line">
+         <span>
+          Study
+         </span>
+         <span class="dots">
+          ●○○○
+         </span>
+        </div>
+        <div class="action-line">
+         <span>
+          Survey
+         </span>
+         <span class="dots">
+          ●●○○
+         </span>
+        </div>
+        <div class="action-line">
+         <span>
+          Tinker
+         </span>
+         <span class="dots">
+          ○○○○
+         </span>
+        </div>
+       </div>
+       <div>
+        <h3>
+         Prowess
+        </h3>
+        <div class="action-line">
+         <span>
+          Finesse
+         </span>
+         <span class="dots">
+          ●●○○
+         </span>
+        </div>
+        <div class="action-line">
+         <span>
+          Prowl
+         </span>
+         <span class="dots">
+          ●●●○
+         </span>
+        </div>
+        <div class="action-line">
+         <span>
+          Skirmish
+         </span>
+         <span class="dots">
+          ●○○○
+         </span>
+        </div>
+        <div class="action-line">
+         <span>
+          Wreck
+         </span>
+         <span class="dots">
+          ○○○○
+         </span>
+        </div>
+       </div>
+      </div>
+      <h3 style="margin-top:14px">
+       Resolve
+      </h3>
+      <div class="actions">
+       <div class="action-line">
+        <span>
+         Attune
+        </span>
+        <span class="dots">
+         ○○○○
+        </span>
+       </div>
+       <div class="action-line">
+        <span>
+         Command
+        </span>
+        <span class="dots">
+         ○○○○
+        </span>
+       </div>
+       <div class="action-line">
+        <span>
+         Consort
+        </span>
+        <span class="dots">
+         ●○○○
+        </span>
+       </div>
+       <div class="action-line">
+        <span>
+         Sway
+        </span>
+        <span class="dots">
+         ●○○○
+        </span>
+       </div>
+      </div>
+     </section>
+     <section class="sheet-card">
+      <h2>
+       Stress &amp; trauma
+       <a class="srd-link" href="https://bladesinthedark.com/stress-trauma">
+        SRD ↗
+       </a>
+      </h2>
+      <div class="track">
+       <i class="filled">
+       </i>
+       <i class="filled">
+       </i>
+       <i class="filled">
+       </i>
+       <i class="filled">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+      </div>
+      <button class="btn-secondary">
+       + Stress
+      </button>
+      <button class="btn-secondary">
+       − Stress
+      </button>
+      <p class="lbl" style="margin-top:14px">
+       Trauma
+      </p>
+      <span class="trauma-stamp" data-stamped="1">
+       Haunted
+      </span>
+      <span class="trauma-stamp" data-stamped="0">
+       Reckless
+      </span>
+     </section>
+     <section class="sheet-card">
+      <h2>
+       Harm &amp; healing
+       <a class="srd-link" href="https://bladesinthedark.com/downtime-activities">
+        SRD ↗
+       </a>
+      </h2>
+      <table class="harm-table">
+       <tr>
+        <td>
+         3
+        </td>
+        <td>
+         —
+        </td>
+        <td>
+         Need help
+        </td>
+       </tr>
+       <tr>
+        <td>
+         2
+        </td>
+        <td>
+         Cracked ribs
+        </td>
+        <td>
+         −1d
+        </td>
+       </tr>
+       <tr>
+        <td>
+         1
+        </td>
+        <td>
+         Bruised
+        </td>
+        <td>
+         Less effect
+        </td>
+       </tr>
+      </table>
+      <p class="small">
+       Healing clock · 1 / 4
+      </p>
+     </section>
+     <section class="sheet-card">
+      <details>
+       <summary>
+        Projects
+        <span class="small">
+         · 2
+        </span>
+       </summary>
+       <div class="ledger">
+        <span>
+         Find the sunken vault
+        </span>
+        <strong>
+         3 / 8
+        </strong>
+       </div>
+       <div class="ledger">
+        <span>
+         Earn the gondoliers’ trust
+        </span>
+        <strong>
+         2 / 6
+        </strong>
+       </div>
+      </details>
+     </section>
+     <section class="sheet-card">
+      <details>
+       <summary>
+        Contacts
+        <span class="small">
+         · 3
+        </span>
+       </summary>
+       <div class="ledger">
+        <span>
+         ↑ Roslyn, a tavern owner
+        </span>
+        <span>
+         Friend
+        </span>
+       </div>
+       <div class="ledger">
+        <span>
+         ↓ Darmot, a Bluecoat
+        </span>
+        <span>
+         Rival
+        </span>
+       </div>
+       <div class="ledger">
+        <span>
+         Harker, a locksmith
+        </span>
+        <span>
+         Contact
+        </span>
+       </div>
+      </details>
+     </section>
+     <section class="sheet-card">
+      <h2>
+       Playbook &amp; abilities
+       <a class="srd-link" href="https://bladesinthedark.com/character-playbook">
+        SRD ↗
+       </a>
+      </h2>
+      <h3>
+       Infiltrator
+      </h3>
+      <p>
+       You are not affected by quality or Tier when you bypass security measures.
+      </p>
+      <div class="ledger">
+       <span class="lbl">
+        Coin
+       </span>
+       <span>
+        ●●○○
+       </span>
+      </div>
+      <div class="ledger">
+       <span class="lbl">
+        Stash
+       </span>
+       <span>
+        6
+       </span>
+      </div>
+     </section>
+    </div>
+   </main>
+  </div>
+  <div class="overlay">
+   <section aria-label="Scoundrel XP" aria-modal="true" class="dialog" role="dialog">
+    <div class="dialog-header">
+     <div>
+      <h2>
+       Scoundrel XP
+      </h2>
+      <span class="flow-label">
+       Score resolution · 1 of 6
+      </span>
+     </div>
+     <a class="btn-secondary" href="05-score.html">
+      Close
+     </a>
+    </div>
+    <ol aria-label="Score resolution" class="stepper">
+     <li class="current">
+      <a aria-current="step" href="06a-scoundrel-xp.html">
+       Scoundrel XP
+      </a>
+     </li>
+     <li class="">
+      <a href="06b-payoff.html">
+       Payoff
+      </a>
+     </li>
+     <li class="">
+      <a href="06c-heat.html">
+       Heat
+      </a>
+     </li>
+     <li class="">
+      <a href="06d-entanglements.html">
+       Entanglements
+      </a>
+     </li>
+     <li class="">
+      <a href="06e-crew-xp.html">
+       Crew XP
+      </a>
+     </li>
+     <li class="">
+      <a href="06f-crew-rep.html">
+       Crew Rep
+      </a>
+     </li>
+    </ol>
+    <p class="small">
+     An end-of-session review, offered here for convenience. You decide when to use it.
+    </p>
+    <div class="question">
+     <span class="lbl">
+      Playbook
+     </span>
+     Did you address a challenge with stealth or evasion?
+    </div>
+    <div class="question">
+     <span class="lbl">
+      Scoundrel
+     </span>
+     Did you express your beliefs, drives, heritage, or background?
+    </div>
+    <div class="question">
+     <span class="lbl">
+      Struggle
+     </span>
+     Did you struggle with issues from your vice or traumas?
+    </div>
+    <p class="note">
+     <strong>
+      Minimum XP reminder:
+     </strong>
+     for each trigger that happened at all, mark 1 XP; if it happened a lot, mark 2 XP. Success isn’t required. No trigger means no automatic XP.
+    </p>
+    <p>
+     Mark this XP on any attribute or your playbook track. Desperate-action XP is already marked during play.
+    </p>
+    <div class="xp-tracks">
+     <div>
+      <span class="lbl">
+       Playbook
+      </span>
+      <div class="track">
+       <i class="filled">
+       </i>
+       <i class="filled">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+      </div>
+      <button class="btn-secondary" data-mark="Playbook">
+       +1 Playbook XP
+      </button>
+     </div>
+     <div>
+      <span class="lbl">
+       Insight
+      </span>
+      <div class="track">
+       <i class="filled">
+       </i>
+       <i class="filled">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+      </div>
+      <button class="btn-secondary" data-mark="Insight">
+       +1 Insight XP
+      </button>
+     </div>
+     <div>
+      <span class="lbl">
+       Prowess
+      </span>
+      <div class="track">
+       <i class="filled">
+       </i>
+       <i class="filled">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+      </div>
+      <button class="btn-secondary" data-mark="Prowess">
+       +1 Prowess XP
+      </button>
+     </div>
+     <div>
+      <span class="lbl">
+       Resolve
+      </span>
+      <div class="track">
+       <i class="filled">
+       </i>
+       <i class="filled">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+       <i class="">
+       </i>
+      </div>
+      <button class="btn-secondary" data-mark="Resolve">
+       +1 Resolve XP
+      </button>
+     </div>
+    </div>
+    <p aria-live="polite" class="small mark-feedback">
+     Choose a track for each mark.
+    </p>
+    <p class="small">
+     Confirm with your GM before marking XP.
+    </p>
+    <div class="reference">
+     <a class="srd-link" href="https://bladesinthedark.com/advancement">
+      SRD ↗
+     </a>
+    </div>
+    <footer class="dialog-footer">
+     <a class="btn-secondary" href="05-score.html">
+      Back
+     </a>
+     <div class="right">
+      <a class="btn-secondary" href="07-downtime.html">
+       Leave flow
+      </a>
+      <a class="btn-primary" href="06b-payoff.html">
+       Next
+      </a>
+     </div>
+    </footer>
+   </section>
+  </div>
+  <script src="mockup.js">
+  </script>
+ </body>
+</html>

@@ -119,5 +119,28 @@
     "finalRecordedEvidenceValidation": {"exitCode": 0, "seconds": 2.40, "started": "2026-10-06T02:58:25.706118+00:00", "metrics": 163, "traceability": 231, "reconciliation": 17, "errors": 0, "warnings": 0, "log": "pass3-final-record-three-validators.log"},
     "temporaryScriptCleanup": {"ownedScriptsArchivedAndRemoved": 13, "emptyOwnedCurlDirectoryRemoved": true, "archive": "retired-diagnostic-scripts/manifest.json", "developmentServer56773NotRestarted": true},
     "tokens": null
+  },
+  "vet2e611e5b-2026-10-08": {
+    "candidate": "2e611e5b8f9ddbdbecd047880ec83b49b69e620a",
+    "date": "2026-10-08",
+    "verdict": "PASS for the full gate set in this run; broader release verdict not claimed here",
+    "workspacePreparation": "cp -a of primary agent-docs/ into disposable workspace (gitignored inputs); after an ENOENT benchmark failure on the first attempt; gates 01-04 retained from the first run",
+    "gates": {
+      "frontendBuildPrereq": {"exitCode": 0, "seconds": 3.43},
+      "backendCi": {"exitCode": 0, "seconds": 33.63},
+      "backendCiConformance": {"exitCode": 0, "seconds": 66.97},
+      "typecheck": {"exitCode": 0, "seconds": 1.61},
+      "benchmark": {"exitCode": 0, "seconds": 21.52, "scales": 4, "scale10P50Ms": {"roster": 2.35, "collections": 1.96, "mutation": 1.32}, "frozenBudgetsMs": {"roster": 13, "collections": 9, "mutation": 6.13}},
+      "adaFresh": [{"passed": 540, "total": 540, "files": 64, "exitCode": 0, "seconds": 60.70}, {"passed": 540, "total": 540, "files": 64, "exitCode": 0, "seconds": 60.86}],
+      "adaTwoCycleExtra": {"exitCode": 0, "seconds": 128.49, "cycles": ["540/540", "540/540"]},
+      "tooling": {"exitCode": 0, "seconds": 78.59, "passed": 233, "total": 233, "files": 18},
+      "frontendVitest": {"exitCode": 0, "seconds": 14.07, "passed": 806, "total": 806, "files": 20},
+      "mutation": {"exitCode": 0, "seconds": 1573.69, "killed": 28, "total": 28, "survived": 0, "P0": "19/19", "P1": "9/9", "revision": "2e611e5b8f9d"},
+      "browser": {"exitCode": 0, "seconds": 77.96, "journeys": "6/6"},
+      "frontendBuild": {"exitCode": 0, "seconds": 3.42},
+      "redocly": {"exitCode": 0, "seconds": 3.97, "warnings": 27}
+    },
+    "evidence": "agent-docs/test-audit/vet-evidence/2e611e5b/ (commands.jsonl, 01-14 logs, observed-summary.json, mutation-results.json, mutation-raw, performance-results.json, performance-raw)",
+    "tokens": null
   }
 }

@@ -1,0 +1,288 @@
+/*
+ * base.css — global element styles, paper grain, type defaults, focus.
+ * Consumes semantic tokens from theme.css. No hex here.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  position: relative;
+}
+
+/* paper grain — ::before so --grain-opacity can fade it per theme
+ * (high-contrast sets opacity to 0). SVG turbulence is inline; nothing
+ * external serves the texture. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.85'/></svg>");
+  background-size: 200px 200px;
+  mix-blend-mode: var(--grain-blend);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* fade-in: respect --transition if user prefers motion is honored by
+ * media query; otherwise reduced-motion makes this instant. */
+body {
+  animation: page-fade 220ms ease-out;
+}
+@keyframes page-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Headings & sheet furniture ─────────────────────────────── */
+
+/* FV-008: unbroken user-entered names must wrap inside the sheet column.
+ * anywhere (not break-word) also shrinks the heading's min-content size so
+ * flex/grid parents let it wrap instead of widening the page. */
+h1, h2, h3, h4 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.15rem; letter-spacing: 0.04em; }
+
+/* small-caps label furniture: action names, track labels, stamps */
+.lbl {
+  font-family: var(--font-label);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.hotkey {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* flavor / long-form print */
+.serif {
+  font-family: var(--font-serif);
+}
+
+.typewriter {
+  font-family: var(--font-typewriter);
+}
+
+.epigraph {
+  font-family: var(--font-epigraph);
+  font-style: italic;
+}
+
+/* ── Focus ────────────────────────────────────────────────────
+ * Always visible, never removed. Every interactive element gets a ring
+ * on keyboard focus in --focus-ring — a token deliberately distinct from
+ * the error reds (THEME-02/UX-016: red says "error", the ring says
+ * "you are here"). Mouse focus also draws it because sheet furniture
+ * isn't traditional controls. */
+:focus { outline: none; }
+:focus-visible {
+  outline: var(--border-thick) solid var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: calc(var(--radius) + 1px);
+}
+/* some furniture paints its own inset fill; keep the ring readable */
+:focus-visible::after {
+  content: "";
+}
+
+/* ── Links & inline rules ───────────────────────────────────── */
+
+a {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: var(--border-thin);
+  text-underline-offset: 2px;
+}
+a:hover {
+  text-decoration-thickness: var(--border-medium);
+}
+
+/* skip link — visually hidden until focused (Design Audit F-13) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+/* generic visually-hidden helper — content present for AT, hidden visually */
+.visually-hidden {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.skip-link:focus-visible {
+  left: var(--gutter);
+  top: var(--gutter);
+  width: auto;
+  height: auto;
+  clip-path: none;
+  background: var(--surface-raised);
+  border: var(--border-thick) solid var(--focus-ring);
+  padding: 0.5em 0.9em;
+  z-index: 100;
+  color: var(--link);
+}
+
+hr {
+  border: 0;
+  border-top: var(--border-medium) solid var(--rule-heavy);
+  margin-block: 1rem;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: var(--border-thin) solid var(--rule-heavy);
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast);
+}
+button:hover {
+  background: var(--surface-sunk);
+  border-color: var(--accent);
+}
+button:active {
+  background: var(--surface-sunk);
+}
+
+/* ── Form controls (F2aa) ─────────────────────────────────
+ * Native <select>, <input>, <textarea> share the sheet furniture language:
+ * Oswald labels are the page's job — the controls themselves inherit the
+ * body font, sit on raised paper, and draw a focus ring (non-red, THEME-02)
+ * like every other interactive element. Selects keep the native arrow
+ * (accessibility / OS behavior); the frame and type match the theme tokens. */
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: var(--border-thin) solid var(--rule-heavy);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  transition: border-color var(--transition-fast),
+              background var(--transition-fast);
+}
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--rule-heavy);
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: var(--border-thick) solid var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: calc(var(--radius) + 1px);
+}
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: default;
+  opacity: 0.55;
+  background: var(--surface-sunk);
+}
+input::placeholder,
+textarea::placeholder {
+  /* Design Audit F-19: --text-faint measured 3.04:1 (light) / 3.49:1
+   * (dark), under the 4.5:1 normal-text floor. Placeholders carry real
+   * format instructions (e.g. "Fearsome, Independent"), so they use
+   * --text-muted (6.00:1 / 6.99:1). */
+  color: var(--text-muted);
+}
+select option {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+/* FV-008: a native <select> sizes to its longest option — a long
+ * user-entered name (e.g. a crew name in the character sheet's
+ * membership picker) would otherwise widen the page. Let selects shrink
+ * and cap at their container; the dropdown still lists every option. */
+select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* health page (F0) keeps working under the themed shell */
+.health,
+.health-error,
+.health-loading {
+  max-width: var(--sheet-width);
+  margin: 0 auto;
+  padding: 0 var(--gutter) var(--gutter);
+}
+.health table {
+  border-collapse: collapse;
+  width: min(480px, 100%);
+  background: var(--surface-raised);
+}
+.health th,
+.health td {
+  border: var(--border-thin) solid var(--rule);
+  padding: 6px 10px;
+  text-align: left;
+}
+.health th {
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  width: 9em;
+}
+.health-error .error {
+  color: var(--accent);
+  font-family: var(--font-typewriter);
+}

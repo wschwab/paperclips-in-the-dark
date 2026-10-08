@@ -222,4 +222,31 @@
     "evidenceSource": "Human handoff; recorder did not rerun these suites",
     "nextGate": "Fresh REVIEW-02, then VET-01"
   }
+  ,"review01DatedEntries": [
+    {
+      "date": "2026-10-08",
+      "candidate": "2e611e5b8f9ddbdbecd047880ec83b49b69e620a",
+      "baseline": "bc63af5f0cdb30391b7e86c31333d6041f825273",
+      "reviewerRoute": "openai-codex/gpt-6.1-sol",
+      "modelReasoningEffort": "medium",
+      "calibration": "Accepted prior blind calibration from history://review01-sol; not repeated",
+      "verdict": "PASS",
+      "findings": [],
+      "checks": {
+        "adaBuild": "PASS",
+        "adaConformance": "540/540",
+        "frontend": "806/806",
+        "toolingIsolated": "233/233",
+        "toolingConcurrentWithMutation": "233/233",
+        "mutation": "28/28 killed; P0 19/19; P1 9/9; byte-exact restoration",
+        "frozenBrowserWording": "Exactly five string substitutions; otherwise byte-identical in three frozen modules",
+        "directProbes": "All four 24-way create-key replays; 24 batches; keyed batch replay; mixed writers; deletion/reference races; undo/import admission with preserved state; 64 unretried reads; signed XP; stress overflow; 640 heterogeneous validations"
+      },
+      "sourceAudit": "Atomic GNATCOLL scalar ownership; Check_Fields state task-local; remaining shared request state protected and configuration startup-only; no new guarded-write bypass",
+      "rawOutputPath": "agent-docs/test-audit/review-evidence/2e611e5b-review01/",
+      "setupHistory": "Completed initial suite/probe evidence retained across interruption. Lost disposable /tmp workspace recreated at exact candidate. Full resumed campaign initially lacked frontend dependencies and stopped before mutants; preserved failed log, installed prerequisite, complete rerun passed. Final tooling run was genuinely isolated after mutation.",
+      "workspaceCleanup": "jj workspace forget review01-clean-2e611e5b and rm -rf /tmp/review01-2e611e5b-clean completed",
+      "scope": "Correctness review only; accepted repair-reference exception retained; no visual or broader release PASS claimed"
+    }
+  ]
 }

@@ -1,0 +1,171 @@
+{
+  "entry": "index.html",
+  "screens": [
+    {
+      "html": "01-free-play.html",
+      "desktop_png": "01-free-play.png",
+      "narrow_png": "01-free-play-narrow.png"
+    },
+    {
+      "html": "02-planning.html",
+      "desktop_png": "02-planning.png"
+    },
+    {
+      "html": "03-loadout.html",
+      "desktop_png": "03-loadout.png"
+    },
+    {
+      "html": "04-engagement.html",
+      "desktop_png": "04-engagement.png"
+    },
+    {
+      "html": "05-score.html",
+      "desktop_png": "05-score.png"
+    },
+    {
+      "html": "05-score-change-loadout.html",
+      "desktop_png": "05-score-change-loadout.png"
+    },
+    {
+      "html": "06a-scoundrel-xp.html",
+      "desktop_png": "06a-scoundrel-xp.png"
+    },
+    {
+      "html": "06b-payoff.html",
+      "desktop_png": "06b-payoff.png"
+    },
+    {
+      "html": "06c-heat.html",
+      "desktop_png": "06c-heat.png"
+    },
+    {
+      "html": "06d-entanglements.html",
+      "desktop_png": "06d-entanglements.png"
+    },
+    {
+      "html": "06e-crew-xp.html",
+      "desktop_png": "06e-crew-xp.png"
+    },
+    {
+      "html": "06f-crew-rep.html",
+      "desktop_png": "06f-crew-rep.png"
+    },
+    {
+      "html": "07-downtime.html",
+      "desktop_png": "07-downtime.png",
+      "narrow_png": "07-downtime-narrow.png"
+    }
+  ],
+  "viewport": {
+    "desktop": [
+      1440,
+      900
+    ],
+    "narrow": [
+      390,
+      844
+    ]
+  },
+  "capture": "Real /usr/bin/chromium; device scale factor 1; document.fonts.ready awaited; every PNG re-captured after revisions and visually reviewed.",
+  "load_limits": {
+    "source": "data/games/blades-in-the-dark.json",
+    "json_path": "LoadMaxima.CommitmentMaxBulk",
+    "Light": 3,
+    "Normal": 5,
+    "Heavy": 6
+  },
+  "rules_verified": [
+    "https://bladesinthedark.com/planning-engagement",
+    "https://bladesinthedark.com/payoff",
+    "https://bladesinthedark.com/heat",
+    "https://bladesinthedark.com/entanglements",
+    "https://bladesinthedark.com/advancement",
+    "https://bladesinthedark.com/downtime-activities",
+    "https://bladesinthedark.com/fortune-roll",
+    "https://bladesinthedark.com/core-system"
+  ],
+  "notes": [
+    "Mockups only show what changes; the real sheet retains every section in every mode.",
+    "Crew editors are local demonstration controls only and never call the API.",
+    "Commit-load links carry selected items and load into Engagement and Score; Back/Close preserve the previous committed loadout."
+  ],
+  "files": [
+    "01-free-play-narrow.png",
+    "01-free-play.html",
+    "01-free-play.png",
+    "02-planning.html",
+    "02-planning.png",
+    "03-loadout.html",
+    "03-loadout.png",
+    "04-engagement.html",
+    "04-engagement.png",
+    "05-score-change-loadout.html",
+    "05-score-change-loadout.png",
+    "05-score.html",
+    "05-score.png",
+    "06a-scoundrel-xp.html",
+    "06a-scoundrel-xp.png",
+    "06b-payoff.html",
+    "06b-payoff.png",
+    "06c-heat.html",
+    "06c-heat.png",
+    "06d-entanglements.html",
+    "06d-entanglements.png",
+    "06e-crew-xp.html",
+    "06e-crew-xp.png",
+    "06f-crew-rep.html",
+    "06f-crew-rep.png",
+    "07-downtime-narrow.png",
+    "07-downtime.html",
+    "07-downtime.png",
+    "base.css",
+    "browser-evidence.json",
+    "components.css",
+    "crew-sheet.html",
+    "fonts.css",
+    "fonts/LICENSE.md",
+    "fonts/alegreya-OFL.txt",
+    "fonts/alegreya-italic-400-700-latin-ext.woff2",
+    "fonts/alegreya-italic-400-700-latin.woff2",
+    "fonts/alegreya-normal-400-800-latin-ext.woff2",
+    "fonts/alegreya-normal-400-800-latin.woff2",
+    "fonts/alegreya-sans-normal-400-cyrillic-ext.woff2",
+    "fonts/alegreya-sans-normal-400-cyrillic.woff2",
+    "fonts/alegreya-sans-normal-400-latin-ext.woff2",
+    "fonts/alegreya-sans-normal-400-latin.woff2",
+    "fonts/alegreya-sans-normal-500-cyrillic-ext.woff2",
+    "fonts/alegreya-sans-normal-500-cyrillic.woff2",
+    "fonts/alegreya-sans-normal-500-latin-ext.woff2",
+    "fonts/alegreya-sans-normal-500-latin.woff2",
+    "fonts/alegreya-sans-normal-700-cyrillic-ext.woff2",
+    "fonts/alegreya-sans-normal-700-cyrillic.woff2",
+    "fonts/alegreya-sans-normal-700-latin-ext.woff2",
+    "fonts/alegreya-sans-normal-700-latin.woff2",
+    "fonts/alegreya-sans.self.css",
+    "fonts/alegreya.self.css",
+    "fonts/alegreyasans-OFL.txt",
+    "fonts/im-fell-english-italic-400-latin.woff2",
+    "fonts/im-fell-english-normal-400-latin.woff2",
+    "fonts/im-fell-english.self.css",
+    "fonts/imfellenglish-OFL.txt",
+    "fonts/league-gothic-normal-400-latin-ext.woff2",
+    "fonts/league-gothic-normal-400-latin.woff2",
+    "fonts/league-gothic.self.css",
+    "fonts/leaguegothic-OFL.txt",
+    "fonts/oswald-OFL.txt",
+    "fonts/oswald-normal-200-700-cyrillic-ext.woff2",
+    "fonts/oswald-normal-200-700-cyrillic.woff2",
+    "fonts/oswald-normal-200-700-latin-ext.woff2",
+    "fonts/oswald-normal-200-700-latin.woff2",
+    "fonts/oswald.self.css",
+    "fonts/special-elite-normal-400-latin-ext.woff2",
+    "fonts/special-elite-normal-400-latin.woff2",
+    "fonts/special-elite.self.css",
+    "fonts/specialelite-LICENSE.txt",
+    "index.html",
+    "manifest.json",
+    "mockup.css",
+    "mockup.js",
+    "theme.css"
+  ]
+}

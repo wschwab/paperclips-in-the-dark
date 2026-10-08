@@ -1,0 +1,257 @@
+[
+  {
+    "name": "01-free-play",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": null,
+    "footer": null,
+    "panel": {
+      "bottom": 564.640625,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "01-free-play-narrow",
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "innerHeight": 844,
+    "dialog": null,
+    "footer": null,
+    "panel": {
+      "bottom": 844,
+      "position": "fixed"
+    },
+    "personal": true
+  },
+  {
+    "name": "02-planning",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 553,
+      "scrollHeight": 553,
+      "bottom": 769.671875
+    },
+    "footer": {
+      "bottom": 741.671875
+    },
+    "panel": {
+      "bottom": 564.640625,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "03-loadout",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 531,
+      "scrollHeight": 531,
+      "bottom": 758.609375
+    },
+    "footer": {
+      "bottom": 730.609375
+    },
+    "panel": {
+      "bottom": 564.640625,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "04-engagement",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 730,
+      "scrollHeight": 730,
+      "bottom": 857.890625
+    },
+    "footer": {
+      "bottom": 829.890625
+    },
+    "panel": {
+      "bottom": 564.640625,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "05-score",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": null,
+    "footer": null,
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "05-score-change-loadout",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 551,
+      "scrollHeight": 551,
+      "bottom": 768.609375
+    },
+    "footer": {
+      "bottom": 740.609375
+    },
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "06a-scoundrel-xp",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 761,
+      "scrollHeight": 761,
+      "bottom": 873.453125
+    },
+    "footer": {
+      "bottom": 851.453125
+    },
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "06b-payoff",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 766,
+      "scrollHeight": 777,
+      "bottom": 876
+    },
+    "footer": {
+      "bottom": 864.78125
+    },
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "06c-heat",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 766,
+      "scrollHeight": 777,
+      "bottom": 876
+    },
+    "footer": {
+      "bottom": 865.3125
+    },
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "06d-entanglements",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 735,
+      "scrollHeight": 735,
+      "bottom": 860.59375
+    },
+    "footer": {
+      "bottom": 838.59375
+    },
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "06e-crew-xp",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 593,
+      "scrollHeight": 593,
+      "bottom": 789.671875
+    },
+    "footer": {
+      "bottom": 767.671875
+    },
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "06f-crew-rep",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": {
+      "clientHeight": 593,
+      "scrollHeight": 593,
+      "bottom": 789.671875
+    },
+    "footer": {
+      "bottom": 767.671875
+    },
+    "panel": {
+      "bottom": 648.109375,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "07-downtime",
+    "innerWidth": 1440,
+    "scrollWidth": 1425,
+    "innerHeight": 900,
+    "dialog": null,
+    "footer": null,
+    "panel": {
+      "bottom": 879.46875,
+      "position": "sticky"
+    },
+    "personal": true
+  },
+  {
+    "name": "07-downtime-narrow",
+    "innerWidth": 390,
+    "scrollWidth": 375,
+    "innerHeight": 844,
+    "dialog": null,
+    "footer": null,
+    "panel": {
+      "bottom": 844,
+      "position": "fixed"
+    },
+    "personal": true
+  }
+]
