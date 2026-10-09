@@ -70,3 +70,11 @@ acceptance:
 - Chromium (`playtest-ui-02/capture-c.mjs`, `c-summary.json`, `c-badges-*.png`): 3 viewports x light, dark, high-contrast light and dark. Minimum white-text contrast 4.54:1 (>= 4.5). Overflow ok, no page errors, one click advances "contact" to "friend" on the server.
 - Verification: Ada conformance 542/542; tooling 233/233; mutation 28/28 after refreshing pins for `pitd_ops.adb` (4 mutants + the normalize pin) and `character-detail.ts` (M26); browser journeys 6/6 PASS; validators pass.
 - Commits: contract `opulzpvt` (588ecc1c), backend `yooxkzxm` (1108884f), frontend and records are the working change `vnlsswlv`. A+B remains one change (`zurxxsmx`).
+
+## Luna review (final, pinned)
+
+- Independent review: gpt-5.6-luna (openai-codex, xhigh), pinned to `41945594690dc67cc6a6446a4ab31b3387e8189f` (change `vnlsswlv`; ancestry `ed3d98e8` → `wslwwkyo` → `mqwxtpyp` → `opulzpvt` → `yooxkzxm` → `vnlsswlv`).
+- **VERDICT: PASS.** Verdict: `agent-docs/test-audit/browser-evidence/playtest-ui-02/luna-final/verdict.md`; raw output and 12 Chromium screenshots alongside it.
+- Luna's checks: `npm run build` exit 0; vitest 21 files / 815 tests; `tsc --noEmit` exit 0; 12/12 viewport x theme combinations in Chromium; minimum badge contrast 4.54:1; overflow ok; five-level badges; a server-recorded click; remove and add-custom work; picker text `Name - Description`; Projects ownership (campaign clock hidden, character-owned clock shown).
+- No findings. The frozen-test amendments were checked against the docs page's before/after table.
+- Status: PASS on the pinned revision. Records are final at that revision.
