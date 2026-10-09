@@ -475,6 +475,39 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
   });
 });
 
+describe("GAME-MODE-03 Luna round 3 finding: committed gear is listed once", () => {
+  // Live server shape (verified): a committed item is in BOTH gear.loadout and gear.availableGear
+  // (availableGear is every owned item). The checklist must show each name once, checked when committed.
+  const gearDto = () => characterDTO({
+    mode: "score",
+    modeFlow: { kind: "score-start", step: "loadout" },
+    gear: {
+      loadout: [{ name: "Climbing gear", bulk: 2 }],
+      availableGear: [{ name: "Climbing gear", bulk: 2 }, { name: "Fine lockpicks", bulk: 0 }],
+      commitment: "normal",
+      isCommitmentLocked: false,
+      maxBulk: 5,
+    },
+  });
+
+  it("the Score Loadout checklist lists each owned item once, checked only when committed", async () => {
+    await mountWith(gearDto());
+    const rows = Array.from(root.querySelectorAll(".game-mode-popup label.gear")) as HTMLLabelElement[];
+    expect(rows.map((r) => r.textContent?.replace(/\s+/g, " ").trim())).toEqual(["Climbing gear 2 load", "Fine lockpicks 0 load"]);
+    const boxes = rows.map((r) => r.querySelector("input") as HTMLInputElement);
+    expect(boxes.map((b) => b.checked)).toEqual([true, false]);
+  });
+
+  it("the Change-loadout checklist lists each owned item once, with the proposal checked", async () => {
+    await mountWith(gearDto());
+    (Array.from(root.querySelectorAll('[data-section="committed-loadout"] button')).find((b) => b.textContent === "Change loadout") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-confirm")).not.toBeNull());
+    const rows = Array.from(root.querySelectorAll(".game-mode-confirm label.gear")) as HTMLLabelElement[];
+    expect(rows.map((r) => r.textContent?.replace(/\s+/g, " ").trim())).toEqual(["Climbing gear 2 load", "Fine lockpicks 0 load"]);
+    expect(rows.map((r) => (r.querySelector("input") as HTMLInputElement).checked)).toEqual([true, false]);
+  });
+});
+
 describe("GAME-MODE-03 Luna round 2 findings", () => {
   it("the Resolution stepper shows the approved step names, not enum ids", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));

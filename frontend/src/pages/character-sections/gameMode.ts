@@ -295,25 +295,38 @@ function renderLoadoutChoices(ctx: SectionCtx, gm: GameModeHandlers): HTMLElemen
   );
 }
 
+/**
+ * Every owned item, once. The server's availableGear lists all owned items and a
+ * committed item also appears in loadout, so the checklist keys on name.
+ */
+function ownedItems(g: SectionCtx["c"]["gear"]): Array<{ name: string; bulk: number }> {
+  const byName = new Map<string, { name: string; bulk: number }>();
+  for (const item of [...g.availableGear, ...g.loadout]) {
+    if (!byName.has(item.name)) byName.set(item.name, { name: item.name, bulk: item.bulk });
+  }
+  return [...byName.values()];
+}
+
 function renderGearChecklist(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
   const g = ctx.c.gear;
-  const row = (item: { name: string; bulk: number }, committed: boolean) => {
-    const cb = h("input", { type: "checkbox", checked: committed, disabled: ctx.anyLoading }) as HTMLInputElement;
+  const committed = new Set(g.loadout.map((i) => i.name));
+  const row = (item: { name: string; bulk: number }) => {
+    const on = committed.has(item.name);
+    const cb = h("input", { type: "checkbox", checked: on, disabled: ctx.anyLoading }) as HTMLInputElement;
     cb.addEventListener("change", () => gm.onLoadoutToggle(item.name, cb.checked));
     return h("label", { className: "gear" }, cb, ` ${item.name} `, h("span", { className: "small" }, `${item.bulk} load`));
   };
   const used = g.loadout.reduce((sum, i) => sum + i.bulk, 0);
   return h("div", { className: "game-mode-loadout" },
     h("p", { className: "lbl" }, `${used} of ${g.maxBulk} load committed`),
-    ...g.availableGear.map((i) => row(i, false)),
-    ...g.loadout.map((i) => row(i, true)),
+    ...ownedItems(g).map(row),
   );
 }
 
 /** Replacement checklist: every known item, checked when the proposal includes it. Nothing commits until Confirm. */
 function renderProposalChecklist(ctx: SectionCtx, gm: GameModeHandlers, proposal: LoadoutProposal): HTMLElement {
   const g = ctx.c.gear;
-  const all = [...g.loadout, ...g.availableGear];
+  const all = ownedItems(g);
   const row = (item: { name: string; bulk: number }) => {
     const on = proposal.items.includes(item.name);
     const cb = h("input", { type: "checkbox", checked: on, disabled: ctx.anyLoading }) as HTMLInputElement;
