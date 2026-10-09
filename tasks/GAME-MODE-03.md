@@ -48,13 +48,27 @@ full 28/28 mutation campaign. The independent Luna xhigh review has NOT passed o
 The latest review (`b3b3eff4`) did not run: the openai-codex provider returned
 `usage_limit_reached`. It has to be re-run once the limit resets. Nothing here is marked reviewed.
 
-**Current revision:** `b3b3eff450f413abae7bc034504788a25f8a1567` (change `utytlmwq`, round-4 fixes),
-on top of the backend roster commit `654c3cff` (GAME-MODE-02) and the Ada commit `86ae8333`.
+**Current revision:** `5fcb5325e91c9f5739dacc534e66f29dd4e5daf4` (change `wysqlwpo`, F1 and F10 fixes),
+on top of `b3b3eff4` (round-4 fixes), the backend roster commit `654c3cff` (GAME-MODE-02) and `86ae8333`.
+Luna has not reviewed `5fcb5325`; it runs once the openai-codex usage limit resets.
 
 **Design source:** `docs/pages/contract/game-mode-proposal.mdx`, `tasks/GAME-MODE-01.md`, and the
 approved mockups in `docs/public/mockups/game-mode/`.
 
-## Verification at the current revision (`b3b3eff4`)
+## Verification at the current revision (`5fcb5325`)
+
+Code is identical to the verified revision of the F1/F10 fix; the records commit adds no code.
+
+- `npx tsc --noEmit` exit 0; `npx vitest run` 25 files, 862 tests passed; `npm run build` exit 0.
+- `npm run test:browser` 6/6 journeys PASS (after the non-blocking Resolution backdrop, see F1 below).
+- `npm run test:mutation` 28/28 killed, P0 19/19, P1 9/9 (exit 0). M26 pin refreshed to `b73c5658…`.
+- Chromium capture at `5fcb5325`: 117 rows, 0 overflow, 0 page errors, contrast >= 4.5:1. Resolution
+  entanglements screenshots show the overlay and the matching band table.
+
+The verification below is for the previous revision `b3b3eff4`; its Ada and tooling counts still hold
+because no backend file changed.
+
+## Verification at `b3b3eff4`
 
 - `npx tsc --noEmit` exit 0.
 - `npx vitest run` 25 files, 861 tests passed.
@@ -107,8 +121,8 @@ Raw outputs: `luna/raw-output-<pin>.txt` for each round, and `luna/stderr-<pin>.
 - A partial-failure in the Change-loadout chain (for example, a write fails midway) leaves earlier writes applied. The sheet shows the gear error, but no rollback exists.
 - The stale-crew reconcile path is implemented, not covered by a test.
 - The Engagement factor table and the Loadout copy are the approved mockup wording; they are not from game data.
-- Open Luna items from the earlier round `9f18cdcf` (superseded review, `luna/verdict-9f18cdcf-superseded.md`):
-  - F10: the Entanglements "Show all" renders three compact paragraphs, not the approved SRD table with result and heat columns (`06d-entanglements.html`). Not fixed.
-  - F1 (part): Score popups are overlays now; the Resolution surface is still an inline sheet card. The approved Resolution mockups are dialogs. Not fixed.
-  Later rounds did not re-raise these, but they were not verified against the fix either.
-- Outstanding gate: Luna PASS on a final revision. Blocked by the provider usage limit (see the Luna table).
+- Fixed after `9f18cdcf` (superseded review, `luna/verdict-9f18cdcf-superseded.md`):
+  - F10: the entanglement table now matches mockup 06d. The initial view shows the matching heat band (Result | Heat band). "Show all" reveals the full matrix (Result | Heat 0–3 | Heat 4–5 | Heat 6+). The text is transcribed from the mockup because `data/games` has no entanglement table. Red tests: `game-mode-sheet.test.ts` round-5 and `game-mode.test.ts` band mapping.
+  - F1: the Resolution surface is an aria-modal dialog outside the sheet, titled with the step name and "Score resolution · N of 6", like the Score popups. Its backdrop does not capture pointer events, so the sheet stays operable beneath it. Without this, the frozen `lifecycle` journey failed (the overlay intercepted the stress control after End Score).
+- Open question for the human: the Score popups (Planning, Loadout, Engagement, Change loadout) still use a blocking backdrop, while Resolution does not. The design says advise, never block; please decide whether the Score popups should also pass clicks through.
+- Outstanding gate: Luna PASS on `5fcb5325`. Blocked by the provider usage limit (see the Luna table).
