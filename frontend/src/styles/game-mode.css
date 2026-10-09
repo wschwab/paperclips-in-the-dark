@@ -224,3 +224,38 @@
   text-align: left;
   vertical-align: top;
 }
+
+/* Entanglement tables (approved mockup 06d): the matching band, then the full Show all matrix. */
+.ent-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+
+.ent-table th,
+.ent-table td {
+  border-bottom: var(--border-thin) solid var(--rule);
+  padding: 0.3em 0.4em;
+  text-align: left;
+  vertical-align: top;
+}
+
+.all-entanglements > summary {
+  cursor: pointer;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.5em;
+}
+
+/* Resolution is an aria-modal dialog, but it advises without blocking: the backdrop
+ * neither dims nor captures pointer events, so the sheet stays operable beneath it. */
+.game-mode-resolution {
+  background: transparent;
+  pointer-events: none;
+}
+
+.game-mode-resolution .game-mode-popup-card {
+  pointer-events: auto;
+}

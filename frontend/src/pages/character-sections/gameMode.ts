@@ -13,13 +13,15 @@ import {
   PLAN_APPROACHES,
   RESOLUTION_LABELS,
   RESOLUTION_STEPS,
+  type ResolutionStep,
   SCORE_START_STEPS,
   SRD,
   choiceForCommitment,
   commitmentFor,
   desperateAttributes,
   downtimeRemaining,
-  entanglementRows,
+  ENTANGLEMENT_ROWS,
+  entanglementCurrent,
   loadLimitFor,
   stepAfter,
   stepBefore,
@@ -31,7 +33,6 @@ export interface GameModeUi {
   /** The linked crew, loaded for the Resolution editors; null when unlinked or not loaded. */
   linkedCrew: Crew | null;
   /** Show the full entanglement table (Show all disclosure). */
-  showAllEntanglements: boolean;
   /** A proposed loadout replacement awaiting Confirm change (Back / Leave flow cancels). */
   loadoutChange: LoadoutProposal | null;
   /** Planning approach picked in the popup (assistance only; not persisted). */
@@ -51,7 +52,6 @@ export interface GameModeHandlers {
   onLoadoutCommitment: (choice: LoadChoice) => void;
   onLoadoutToggle: (name: string, commit: boolean) => void;
   onDesperate: (attribute: string) => void;
-  onToggleAllEntanglements: () => void;
   onDowntimeAdjust: (delta: number, reason: "coin" | "gift" | "correction") => void;
   onDowntimeSpend: (activity: string, description: string) => void;
   onCrewDelta: (track: "rep" | "coin" | "heat" | "xp", delta: number) => void;
@@ -279,6 +279,11 @@ export function renderScorePopup(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   return overlay(`Score ${step}`, "game-mode-popup", "", title, body, [backBtn, leave, nextBtn]);
 }
 
+/** Entanglement result table (approved mockup 06d). Head rows then body rows. */
+function entanglementTable(head: HTMLElement[], body: HTMLElement[]): HTMLElement {
+  return h("table", { className: "rule-table ent-table" }, h("tbody", {}, ...head, ...body));
+}
+
 /** The approved engagement factor table (mockup 04-engagement wording). */
 const ENGAGEMENT_FACTORS: Array<{ factor: string; advantage: string; disadvantage: string }> = [
   { factor: "Operation", advantage: "Particularly bold or daring", disadvantage: "Overly complex; contingent on many factors" },
@@ -455,11 +460,21 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       break;
     case "entanglements": {
       const heat = crew?.heat.current ?? 0;
+      const current = entanglementCurrent(heat);
       content = h("div", {},
-        h("p", { className: "serif" }, `Crew heat is ${crew ? heat : "unknown"}. Roll dice equal to wanted level and use the highest die; at wanted level zero, roll two dice and keep the lowest. Outcomes are handled at the table.`),
-        ...entanglementRows(heat, ui.showAllEntanglements).map((r) =>
-          h("p", { className: "small", "data-heat-band": r.heat }, `Heat ${r.heat}: ${r.outcomes.join(" or ")}`)),
-        (() => { const b = h("button", { type: "button", "aria-expanded": ui.showAllEntanglements ? "true" : "false" }, ui.showAllEntanglements ? "Hide full table" : "Show all"); b.addEventListener("click", gm.onToggleAllEntanglements); return b; })(),
+        h("p", { className: "serif" }, "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result."),
+        h("div", { className: "current-heat" },
+          h("strong", {}, crew ? `Crew’s current heat: ${heat}` : "Link a crew to see its heat."),
+          h("span", {}, ` · Matching band · Heat ${current.band}`)),
+        entanglementTable([
+          h("tr", {}, h("th", {}, "Result"), h("th", {}, `Heat ${current.band}`)),
+        ], current.rows.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result), h("td", {}, r.outcome)))),
+        h("details", { className: "all-entanglements" },
+          h("summary", {}, "Show all"),
+          entanglementTable(
+            [h("tr", {}, h("th", {}, "Result"), ...["0–3", "4–5", "6+"].map((b) => h("th", {}, `Heat ${b}`)))],
+            ENTANGLEMENT_ROWS.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result), ...(["0–3", "4–5", "6+"] as const).map((b) => h("td", {}, r.outcomes[b])))),
+          )),
         h("p", { className: "small" }, srdLink(SRD.entanglements)));
       break;
     }
@@ -496,12 +511,19 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   leave.addEventListener("click", () => gm.onFlowSet("none", ""));
   const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, next ? "Next" : "Next: Downtime");
   nextBtn.addEventListener("click", () => (next ? gm.onFlowSet("resolution", next) : gm.onMode("downtime")));
-  return h("section", { className: "sheet-card game-mode-resolution", "data-section": "resolution", "aria-label": "Resolution", style: "grid-column: 1 / -1;" },
-    h("h2", {}, `Resolution · step ${idx + 1} of ${RESOLUTION_STEPS.length}`),
-    h("p", { className: "small" }, "Confirm with your GM before you mark anything."),
-    stepper,
-    content,
-    h("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; flex-wrap: wrap;" }, backBtn, skip, skipAll, leave, nextBtn),
+  // Resolution is an approved overlay dialog (aria-modal), like the Score popups (mockups 06a-06f).
+  return overlay(
+    "Resolution",
+    "resolution",
+    "game-mode-resolution",
+    RESOLUTION_LABELS[step as ResolutionStep],
+    [
+      h("p", { className: "small" }, `Score resolution · ${idx + 1} of ${RESOLUTION_STEPS.length}`),
+      h("p", { className: "small" }, "Confirm with your GM before you mark anything."),
+      stepper,
+      content,
+    ],
+    [backBtn, skip, skipAll, leave, nextBtn].filter((b): b is HTMLButtonElement => b !== null),
   );
 }
 

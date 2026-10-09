@@ -261,7 +261,6 @@ function renderDetail(state: RenderState): HTMLElement {
     // GAME-MODE-03: Score shows the committed loadout, the Score popup and the
     // Resolution stepper. They are assistance only and gate no operation.
     state.c.mode === "score" ? renderCommittedLoadout(ctx, state.handlers.gm, state.gameMode) : null,
-    renderResolution(ctx, state.handlers.gm, state.gameMode),
     renderStressSection(ctx),
     renderTraumasSection(ctx),
     renderHealthSection(ctx),
@@ -327,6 +326,7 @@ function renderDetail(state: RenderState): HTMLElement {
     sheet,
     renderScorePopup(ctx, state.handlers.gm, state.gameMode),
     renderLoadoutConfirm(ctx, state.handlers.gm, state.gameMode),
+    renderResolution(ctx, state.handlers.gm, state.gameMode),
   );
  }
 
@@ -434,7 +434,6 @@ export function mountCharacterDetailPage(
   // character; only presentation state and the linked crew are kept here.
   let isGameModeLoading = false;
   let linkedCrew: Crew | null = null;
-  let gmShowAllEntanglements = false;
   let gmLoadoutChange: LoadoutProposal | null = null;
   let gmPlanApproach: string | null = null;
   let gmCrewNotice: string | null = null;
@@ -785,10 +784,6 @@ export function mountCharacterDetailPage(
     },
     // A desperate action is ordinary attribute XP, marked now (not deferred to Resolution).
     onDesperate: (attribute) => handlers.onAttributeXpDelta(attribute, 1),
-    onToggleAllEntanglements: () => {
-      gmShowAllEntanglements = !gmShowAllEntanglements;
-      renderDetailWrapper();
-    },
     onDowntimeAdjust: (delta, reason) => {
       if (!currentCharacter || isGameModeLoading) return;
       isGameModeLoading = true;
@@ -2159,7 +2154,6 @@ export function mountCharacterDetailPage(
       c: currentCharacter,
       gameMode: {
         linkedCrew,
-        showAllEntanglements: gmShowAllEntanglements,
         loadoutChange: gmLoadoutChange,
         planApproach: gmPlanApproach,
         crewNotice: gmCrewNotice,

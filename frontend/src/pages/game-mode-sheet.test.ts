@@ -301,19 +301,6 @@ describe("GAME-MODE-03 sheet", () => {
     confirmSpy.mockRestore();
   });
 
-  it("filters entanglements by crew heat and reveals the full table with Show all", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 4, max: 9 } }));
-    await vi.waitFor(() => {
-      expect(root.querySelector("[data-heat-band]")).not.toBeNull();
-    });
-    expect(Array.from(root.querySelectorAll("[data-heat-band]")).map((p) => p.getAttribute("data-heat-band"))).toEqual(["4–5"]);
-    const showAll = Array.from(root.querySelectorAll(".game-mode-resolution button")).find((b) => b.textContent === "Show all") as HTMLButtonElement;
-    showAll.click();
-    await vi.waitFor(() => {
-      expect(Array.from(root.querySelectorAll("[data-heat-band]")).map((p) => p.getAttribute("data-heat-band"))).toEqual(["1–3", "4–5", "6"]);
-    });
-  });
-
   it("shows the downtime budget as remaining of free plus paid, and never blocks a spend when over", async () => {
     const { calls } = await mountWith(characterDTO({ mode: "downtime", downtime: { free: 2, paid: 0, spent: 3, activities: [] } }));
     const remaining = root.querySelector("[data-downtime-remaining]");
@@ -462,7 +449,7 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-rep" } }));
     await vi.waitFor(() => expect(root.querySelector('[data-crew-track="rep"]')).not.toBeNull());
     expect(root.querySelector('[data-crew-track="rep"] button')?.textContent).toBe("Update crew rep");
-    const footer = Array.from(root.querySelector(".game-mode-resolution")!.lastElementChild!.querySelectorAll("button")).map((b) => b.textContent);
+    const footer = Array.from(root.querySelectorAll(".game-mode-resolution .game-mode-popup-footer button")).map((b) => b.textContent);
     expect(footer).toEqual(["Back", "Skip", "Skip Resolution", "Leave flow", "Next: Downtime"]);
   });
 
@@ -472,6 +459,35 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     expect(menu).not.toBeNull();
     expect(menu!.closest(".mode-panel")).toBeNull();
     expect(Array.from(menu!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(expect.arrayContaining(["Acquire Asset", "Train", "Other"]));
+  });
+});
+
+describe("GAME-MODE-03 Luna round 5 findings (F10, F1)", () => {
+  it("entanglements show the matching heat band table, and Show all reveals the full result-by-heat table", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 4, max: 9 } }));
+    await vi.waitFor(() => expect(root.querySelector("table.ent-table")).not.toBeNull());
+    const first = root.querySelector("table.ent-table")!;
+    expect(Array.from(first.querySelectorAll("tr th")).map((t) => t.textContent)).toEqual(["Result", "Heat 4–5", "1–3", "4–5", "6"]);
+    expect(first.textContent).toContain("Gang Trouble or Questioning");
+    expect(first.textContent).toContain("Reprisals or Unquiet Dead");
+    expect(first.textContent).toContain("Show of Force");
+    const full = root.querySelector("details.all-entanglements table.ent-table")!;
+    expect(full, "full table inside Show all").not.toBeNull();
+    expect(Array.from(full.querySelectorAll("tr")[0]!.querySelectorAll("th")).map((t) => t.textContent)).toEqual(["Result", "Heat 0–3", "Heat 4–5", "Heat 6+"]);
+    expect(full.textContent).toContain("Gang Trouble or The Usual Suspects");
+    expect(full.textContent).toContain("Flipped or Interrogation");
+    expect(full.textContent).toContain("Demonic Notice or Show of Force");
+    expect(full.textContent).toContain("Cooperation");
+    expect(full.textContent).toContain("Arrest");
+  });
+
+  it("the Resolution surface is an aria-modal overlay outside the sheet, with the six-step title and subtitle", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
+    const dialog = root.querySelector(".game-mode-resolution")!;
+    expect(dialog.getAttribute("aria-modal")).toBe("true");
+    expect(dialog.closest(".character-detail")).toBeNull();
+    expect(dialog.querySelector("h2")?.textContent).toBe("Payoff");
+    expect(dialog.textContent).toContain("Score resolution · 2 of 6");
   });
 });
 

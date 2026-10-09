@@ -142,20 +142,34 @@ export function stepBefore(kind: "score-start" | "resolution", step: string): st
 }
 
 /**
- * Entanglement rows, as the approved design shows them. Heat 1–3 is Gang
- * Trouble or Questioning; 4–5 is Reprisals or Unquiet Dead; 6 is Show of Force.
- * Only the matching band shows unless `showAll` is set. The Heat-4 band is the
- * approved default illustration.
+ * Entanglement table, transcribed from the approved mockup 06d-entanglements.html
+ * (no game-data source exists for it). Heat bands: 0–3, 4–5, 6+.
  */
-export const ENTANGLEMENT_TABLE = [
-  { heat: "1–3", band: [1, 3] as const, outcomes: ["Gang Trouble", "Questioning"] },
-  { heat: "4–5", band: [4, 5] as const, outcomes: ["Reprisals", "Unquiet Dead"] },
-  { heat: "6", band: [6, 6] as const, outcomes: ["Show of Force"] },
+export const ENTANGLEMENT_BANDS = [
+  { label: "0–3", min: 0, max: 3 },
+  { label: "4–5", min: 4, max: 5 },
+  { label: "6+", min: 6, max: Number.POSITIVE_INFINITY },
+] as const;
+
+export type EntanglementBandLabel = (typeof ENTANGLEMENT_BANDS)[number]["label"];
+
+export const ENTANGLEMENT_ROWS: ReadonlyArray<{ result: string; outcomes: Record<EntanglementBandLabel, string> }> = [
+  { result: "1–3", outcomes: { "0–3": "Gang Trouble or The Usual Suspects", "4–5": "Gang Trouble or Questioning", "6+": "Flipped or Interrogation" } },
+  { result: "4–5", outcomes: { "0–3": "Rivals or Unquiet Dead", "4–5": "Reprisals or Unquiet Dead", "6+": "Demonic Notice or Show of Force" } },
+  { result: "6", outcomes: { "0–3": "Cooperation", "4–5": "Show of Force", "6+": "Arrest" } },
 ];
 
-export function entanglementRows(heat: number, showAll: boolean): Array<(typeof ENTANGLEMENT_TABLE)[number]> {
-  if (showAll) return [...ENTANGLEMENT_TABLE];
-  return ENTANGLEMENT_TABLE.filter((r) => heat >= r.band[0] && heat <= r.band[1]);
+/** The heat band a crew's current heat falls in. */
+export function entanglementBand(heat: number): (typeof ENTANGLEMENT_BANDS)[number] {
+  const band = ENTANGLEMENT_BANDS.find((b) => heat >= b.min && heat <= b.max);
+  if (band === undefined) throw new Error(`heat ${heat} is outside every entanglement band`);
+  return band;
+}
+
+/** The matching band's results for the initial view (Show all shows every band). */
+export function entanglementCurrent(heat: number): { band: EntanglementBandLabel; rows: Array<{ result: string; outcome: string }> } {
+  const band = entanglementBand(heat).label;
+  return { band, rows: ENTANGLEMENT_ROWS.map((r) => ({ result: r.result, outcome: r.outcomes[band] })) };
 }
 
 /**

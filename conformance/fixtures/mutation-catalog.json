@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "43e1bd6fc663e7501b55bb6521e58d08849bd672784ca0af8947ef8ae762a384"
+        "frontend/src/pages/character-detail.ts": "b73c565834e8c0644fabf524bf1b18060e8660eedbebe8f4c5d344857b3f008c"
       },
       "severity": "P1",
       "status": "not-run",

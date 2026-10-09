@@ -5,7 +5,8 @@ import {
   LOAD_CHOICES,
   cursorForMode,
   downtimeRemaining,
-  entanglementRows,
+  entanglementCurrent,
+  entanglementBand,
   isValidModeFlow,
   loadLimitFor,
   payoffRepSuggestion,
@@ -62,11 +63,20 @@ describe("game mode domain (GAME-MODE-03)", () => {
     expect(cursorForMode("downtime")).toEqual({ kind: "none", step: "" });
   });
 
-  it("filters entanglements by heat, with the full table behind Show all", () => {
-    expect(entanglementRows(1, false).map((r) => r.heat)).toEqual(["1–3"]);
-    expect(entanglementRows(4, false).map((r) => r.heat)).toEqual(["4–5"]);
-    expect(entanglementRows(6, false).map((r) => r.heat)).toEqual(["6"]);
-    expect(entanglementRows(4, true).map((r) => r.heat)).toEqual(["1–3", "4–5", "6"]);
+  it("maps crew heat to the approved entanglement bands 0–3, 4–5, 6+ and lists the matching results", () => {
+    expect(entanglementBand(0).label).toBe("0–3");
+    expect(entanglementBand(3).label).toBe("0–3");
+    expect(entanglementBand(4).label).toBe("4–5");
+    expect(entanglementBand(5).label).toBe("4–5");
+    expect(entanglementBand(6).label).toBe("6+");
+    expect(entanglementBand(9).label).toBe("6+");
+    const current = entanglementCurrent(4);
+    expect(current.band).toBe("4–5");
+    expect(current.rows).toEqual([
+      { result: "1–3", outcome: "Gang Trouble or Questioning" },
+      { result: "4–5", outcome: "Reprisals or Unquiet Dead" },
+      { result: "6", outcome: "Show of Force" },
+    ]);
   });
 
   it("suggests payoff rep as 2 plus the target-minus-crew tier difference, never below zero", () => {
