@@ -189,3 +189,38 @@
     display: none;
   }
 }
+
+/* Stepper entries are direct-selection controls; the current step is marked. */
+.resolution-stepper button {
+  font: inherit;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  border: var(--border-thin) solid var(--rule);
+  padding: 0.2em 0.5em;
+  cursor: pointer;
+}
+
+.resolution-stepper button[aria-current="step"] {
+  border-color: var(--fill-border);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.engagement-factors {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+
+.engagement-factors th,
+.engagement-factors td {
+  border-bottom: var(--border-thin) solid var(--rule);
+  padding: 0.3em 0.4em;
+  text-align: left;
+  vertical-align: top;
+}

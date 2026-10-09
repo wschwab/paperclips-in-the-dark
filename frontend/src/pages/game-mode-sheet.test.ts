@@ -475,6 +475,49 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
   });
 });
 
+describe("GAME-MODE-03 Luna round 4 findings", () => {
+  it("Planning Back is enabled and returns to the score sheet (clears the popup cursor)", async () => {
+    const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "planning" } }));
+    const back = Array.from(root.querySelectorAll(".game-mode-popup button")).find((b) => b.textContent === "Back") as HTMLButtonElement;
+    expect(back.disabled).toBe(false);
+    back.click();
+    await vi.waitFor(() => {
+      const call = calls.find((c) => c.url.endsWith("/ops/mode.flow.set"));
+      expect(call).toBeTruthy();
+      expect(call!.init.body).toBe(JSON.stringify({ kind: "none", step: "" }));
+    });
+  });
+
+  it("Engagement shows the approved factor table: Operation, Plan's detail, People, Other elements", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "engagement" } }));
+    const table = root.querySelector(".game-mode-popup table.engagement-factors")!;
+    expect(table, "factor table").not.toBeNull();
+    const rowHeads = Array.from(table.querySelectorAll("tbody th")).map((th) => th.textContent);
+    expect(rowHeads).toEqual(["Operation", "Plan’s detail", "People", "Other elements"]);
+    const text = table.textContent ?? "";
+    expect(text).toContain("Particularly bold or daring");
+    expect(text).toContain("Overly complex; contingent on many factors");
+    expect(text).toContain("Exposes a vulnerability; hits the target where they’re weakest");
+    expect(text).toContain("The target is strongest here; special defenses or preparations");
+    expect(text).toContain("Friends or contacts provide aid or insight");
+    expect(text).toContain("Enemies or rivals interfere");
+    expect(text).toContain("A lower-Tier target; a helpful district situation");
+    expect(text).toContain("A higher-Tier target; a harmful district situation");
+  });
+
+  it("the Resolution stepper offers six direct-selection controls that set the stored step", async () => {
+    const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
+    const stepButtons = Array.from(root.querySelectorAll(".resolution-stepper button")) as HTMLButtonElement[];
+    expect(stepButtons.map((b) => b.textContent)).toEqual(["1. Scoundrel XP", "2. Payoff", "3. Heat", "4. Entanglements", "5. Crew XP", "6. Crew Rep"]);
+    stepButtons[2]!.click();
+    await vi.waitFor(() => {
+      const call = calls.find((c) => c.url.endsWith("/ops/mode.flow.set"));
+      expect(call).toBeTruthy();
+      expect(call!.init.body).toBe(JSON.stringify({ kind: "resolution", step: "heat" }));
+    });
+  });
+});
+
 describe("GAME-MODE-03 Luna round 3 finding: committed gear is listed once", () => {
   // Live server shape (verified): a committed item is in BOTH gear.loadout and gear.availableGear
   // (availableGear is every owned item). The checklist must show each name once, checked when committed.

@@ -261,21 +261,38 @@ export function renderScorePopup(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       h("ul", { className: "small" },
         h("li", {}, "Start with 1d for sheer luck."),
         h("li", {}, "+1d for each major advantage."),
-        h("li", {}, "−1d for each major disadvantage."),
-        h("li", {}, "Cover the operation, the plan's detail, target defenses and vulnerabilities, helpful friends and contacts, interfering enemies and rivals, Tier, and other circumstances.")),
+        h("li", {}, "−1d for each major disadvantage.")),
+      engagementFactors(),
       h("p", { className: "small", "data-starting-position": "" },
         "Starting position: Critical: past the first obstacle, controlled next · 6: controlled · 4/5: risky · 1–3: desperate. Roll at the table. This reminder doesn’t roll dice or require a result."),
       h("p", { className: "small" }, srdLink(SRD.planning)),
     );
   }
-  const backBtn = h("button", { type: "button", disabled: ctx.anyLoading || back === null }, "Back");
-  backBtn.addEventListener("click", () => back && gm.onFlowSet("score-start", back));
+  // Back on Planning returns to the score sheet (cursor cleared; mode stays Score).
+  const backBtn = h("button", { type: "button", disabled: ctx.anyLoading }, "Back");
+  backBtn.addEventListener("click", () => (back ? gm.onFlowSet("score-start", back) : gm.onFlowSet("none", "")));
   const leave = h("button", { type: "button", disabled: ctx.anyLoading }, "Leave flow");
   leave.addEventListener("click", () => gm.onFlowSet("none", ""));
   const nextLabel = next === "engagement" ? "Next: Engagement" : next === "loadout" ? "Next: Loadout" : "Enter Score";
   const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, nextLabel);
   nextBtn.addEventListener("click", () => (next ? gm.onFlowSet("score-start", next) : gm.onFlowSet("none", "")));
   return overlay(`Score ${step}`, "game-mode-popup", "", title, body, [backBtn, leave, nextBtn]);
+}
+
+/** The approved engagement factor table (mockup 04-engagement wording). */
+const ENGAGEMENT_FACTORS: Array<{ factor: string; advantage: string; disadvantage: string }> = [
+  { factor: "Operation", advantage: "Particularly bold or daring", disadvantage: "Overly complex; contingent on many factors" },
+  { factor: "Plan’s detail", advantage: "Exposes a vulnerability; hits the target where they’re weakest", disadvantage: "The target is strongest here; special defenses or preparations" },
+  { factor: "People", advantage: "Friends or contacts provide aid or insight", disadvantage: "Enemies or rivals interfere" },
+  { factor: "Other elements", advantage: "A lower-Tier target; a helpful district situation", disadvantage: "A higher-Tier target; a harmful district situation" },
+];
+
+function engagementFactors(): HTMLElement {
+  return h("table", { className: "engagement-factors" },
+    h("thead", {}, h("tr", {}, h("th", {}, "Consider"), h("th", {}, "Advantage · +1d"), h("th", {}, "Disadvantage · −1d"))),
+    h("tbody", {},
+      ...ENGAGEMENT_FACTORS.map((row) =>
+        h("tr", {}, h("th", { scope: "row" }, row.factor), h("td", {}, row.advantage), h("td", {}, row.disadvantage)))));
 }
 
 function renderLoadoutChoices(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
@@ -394,9 +411,13 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   const crew = ui.linkedCrew;
   const linked = crew !== null;
   const attrs = desperateAttributes(ctx.gameData);
+  // Direct selection: each step is a control that sets the stored step (no completion prerequisite).
   const stepper = h("ol", { className: "resolution-stepper", "aria-label": "Resolution steps" },
-    ...RESOLUTION_STEPS.map((s, i) =>
-      h("li", { "aria-current": s === step ? "step" : undefined, className: s === step ? "active" : "" }, `${i + 1}. ${RESOLUTION_LABELS[s]}`)));
+    ...RESOLUTION_STEPS.map((s, i) => {
+      const btn = h("button", { type: "button", "aria-current": s === step ? "step" : undefined, disabled: ctx.anyLoading }, `${i + 1}. ${RESOLUTION_LABELS[s]}`);
+      btn.addEventListener("click", () => gm.onFlowSet("resolution", s));
+      return h("li", { className: s === step ? "active" : "" }, btn);
+    }));
   let content: HTMLElement;
   switch (step) {
     case "scoundrel-xp":
