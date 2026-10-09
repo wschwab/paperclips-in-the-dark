@@ -26,6 +26,16 @@ export const RESOLUTION_STEPS = [
 ] as const;
 
 export type ScoreStartStep = (typeof SCORE_START_STEPS)[number];
+
+/** Display names for the Resolution steps, as the approved stepper shows them. */
+export const RESOLUTION_LABELS: Record<ResolutionStep, string> = {
+  "scoundrel-xp": "Scoundrel XP",
+  payoff: "Payoff",
+  heat: "Heat",
+  entanglements: "Entanglements",
+  "crew-xp": "Crew XP",
+  "crew-rep": "Crew Rep",
+};
 export type ResolutionStep = (typeof RESOLUTION_STEPS)[number];
 
 /** Approved Planning approaches with the mockup's one-line descriptions. UI assistance only; no contract op. */

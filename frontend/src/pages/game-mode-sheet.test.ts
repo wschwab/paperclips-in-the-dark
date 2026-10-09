@@ -233,7 +233,7 @@ describe("GAME-MODE-03 sheet", () => {
     const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
     const steps = Array.from(root.querySelectorAll(".resolution-stepper li")).map((li) => li.textContent);
     expect(steps).toHaveLength(6);
-    expect(root.querySelector(".resolution-stepper [aria-current='step']")?.textContent).toContain("payoff");
+    expect(root.querySelector(".resolution-stepper [aria-current='step']")?.textContent).toContain("Payoff");
     await vi.waitFor(() => {
       expect(root.querySelector('[data-crew-track="rep"]')).not.toBeNull();
     });
@@ -472,6 +472,30 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     expect(menu).not.toBeNull();
     expect(menu!.closest(".mode-panel")).toBeNull();
     expect(Array.from(menu!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(expect.arrayContaining(["Acquire Asset", "Train", "Other"]));
+  });
+});
+
+describe("GAME-MODE-03 Luna round 2 findings", () => {
+  it("the Resolution stepper shows the approved step names, not enum ids", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
+    const labels = Array.from(root.querySelectorAll(".resolution-stepper li")).map((li) => li.textContent);
+    expect(labels).toEqual([
+      "1. Scoundrel XP",
+      "2. Payoff",
+      "3. Heat",
+      "4. Entanglements",
+      "5. Crew XP",
+      "6. Crew Rep",
+    ]);
+  });
+
+  it("the Downtime activity menu is in the Game Mode panel on wide screens and duplicated in the sheet for narrow screens", async () => {
+    await mountWith(characterDTO({ mode: "downtime", downtime: { free: 2, paid: 0, spent: 0, activities: [] } }));
+    const panelMenu = root.querySelector('.mode-panel [data-section="downtime-activities-panel"]');
+    expect(panelMenu, "panel copy exists").not.toBeNull();
+    expect(Array.from(panelMenu!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(expect.arrayContaining(["Train", "Other"]));
+    const sheetMenu = root.querySelector('.character-detail [data-section="downtime-activities"]');
+    expect(sheetMenu, "sheet copy exists").not.toBeNull();
   });
 });
 

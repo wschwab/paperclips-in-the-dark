@@ -257,7 +257,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
     renderPersonalSection(ctx),
     // GAME-MODE-03: the Downtime activity menu sits in the sheet, above the fixed footer on narrow screens.
-    state.c.mode === "downtime" ? renderDowntimeActivities(ctx, state.handlers.gm) : null,
+    state.c.mode === "downtime" ? renderDowntimeActivities(ctx, state.handlers.gm, "sheet") : null,
     // GAME-MODE-03: Score shows the committed loadout, the Score popup and the
     // Resolution stepper. They are assistance only and gate no operation.
     state.c.mode === "score" ? renderCommittedLoadout(ctx, state.handlers.gm, state.gameMode) : null,

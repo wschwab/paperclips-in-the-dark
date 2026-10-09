@@ -11,6 +11,7 @@ import {
   LOAD_CHOICES,
   ONE_PLAYER_WARNING,
   PLAN_APPROACHES,
+  RESOLUTION_LABELS,
   RESOLUTION_STEPS,
   SCORE_START_STEPS,
   SRD,
@@ -143,21 +144,30 @@ function renderDowntimeBudget(ctx: SectionCtx, gm: GameModeHandlers): HTMLElemen
   );
 }
 
-/** Downtime activity menu: rendered in the sheet (above the fixed footer on narrow screens). */
-export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
+/**
+ * Downtime activity menu. Two copies share one behaviour: the panel copy shows on
+ * wide screens (approved panel), the sheet copy above the fixed footer on narrow
+ * screens (approved narrow mockup). CSS shows exactly one per layout.
+ */
+export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers, variant: "panel" | "sheet"): HTMLElement {
   const desc = h("input", { type: "text", "aria-label": "Activity description", placeholder: "what you did" }) as HTMLInputElement;
   const activityButtons = DOWNTIME_ACTIVITIES.map(({ value, label }) => {
     const b = h("button", { type: "button", disabled: ctx.anyLoading, title: `Record activity: ${label}` }, label);
     b.addEventListener("click", () => gm.onDowntimeSpend(value, desc.value.trim()));
     return b;
   });
-  return h("section", { className: "sheet-card game-mode-activities", "data-section": "downtime-activities", style: "grid-column: 1 / -1;" },
-    h("h2", {}, "Downtime activities"),
+  const body = [
     h("p", { className: "small" }, "Each explicit activity pick spends one unit. Helping someone is their Recover, not yours. Over-budget spending is allowed."),
     desc,
     h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap; margin-top: 0.25em;" }, ...activityButtons),
     h("p", { className: "small" }, srdLink(SRD.downtime)),
-  );
+  ];
+  if (variant === "panel") {
+    return h("div", { className: "game-mode-block game-mode-activities-panel", "data-section": "downtime-activities-panel" },
+      h("h3", { className: "lbl" }, "Downtime activities"), ...body);
+  }
+  return h("section", { className: "sheet-card game-mode-activities game-mode-activities-sheet", "data-section": "downtime-activities", style: "grid-column: 1 / -1;" },
+    h("h2", {}, "Downtime activities"), ...body);
 }
 
 function renderScorePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
@@ -193,7 +203,7 @@ export function renderGameModePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: G
   const body = c.mode === "score"
     ? renderScorePanel(ctx, gm, ui)
     : c.mode === "downtime"
-      ? renderDowntimeBudget(ctx, gm)
+      ? h("div", {}, renderDowntimeBudget(ctx, gm), renderDowntimeActivities(ctx, gm, "panel"))
       : section("Free Play", h("p", { className: "serif", style: "margin: 0.25em 0;" },
           "The sheet works as usual. Pick Score or Downtime when you want guided assistance."));
   return h("aside", { className: "mode-panel", "data-section": "game-mode", "aria-label": "Game mode" },
@@ -373,7 +383,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   const attrs = desperateAttributes(ctx.gameData);
   const stepper = h("ol", { className: "resolution-stepper", "aria-label": "Resolution steps" },
     ...RESOLUTION_STEPS.map((s, i) =>
-      h("li", { "aria-current": s === step ? "step" : undefined, className: s === step ? "active" : "" }, `${i + 1}. ${s}`)));
+      h("li", { "aria-current": s === step ? "step" : undefined, className: s === step ? "active" : "" }, `${i + 1}. ${RESOLUTION_LABELS[s]}`)));
   let content: HTMLElement;
   switch (step) {
     case "scoundrel-xp":

@@ -175,3 +175,17 @@
 .game-mode-activities {
   min-width: 0;
 }
+
+/* One activity menu per layout: the panel copy on wide screens, the sheet copy
+ * above the fixed footer on narrow screens. */
+@media (min-width: 1100px) {
+  .game-mode-activities-sheet {
+    display: none;
+  }
+}
+
+@media (max-width: 1099px) {
+  .game-mode-activities-panel {
+    display: none;
+  }
+}
