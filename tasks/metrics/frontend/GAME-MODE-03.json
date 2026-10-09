@@ -2,36 +2,36 @@
   "task": "GAME-MODE-03",
   "track": "frontend",
   "implementationAgent": "claude-haiku-5-5 (omp worker, game-mode frontend)",
-  "reviewAgent": "PENDING - gpt-5.6-luna (openai-codex, xhigh) review not run; real-Chromium evidence not run; 28/28 mutation campaign not run",
+  "reviewAgent": "gpt-5.6-luna (openai-codex, xhigh): FAIL on pins 654c3cff, e16bd9bb, 0ee1bbc3, d90fea3a; review of b3b3eff4 NOT RUN (provider usage_limit_reached). No PASS recorded.",
   "date": "2026-10-09",
-  "iterationsToGreen": 5,
-  "iterationNotes": "domain and client: one red-green each. Sheet integration written before its DOM tests (deviation recorded); three first-run DOM failures fixed (crew load path). Skip confirms: red then green. Required decoder fields: red then green, widened to mode and modeFlow per the contract's required list. Client ops renamed to operationIds for PARITY-HUMAN-003.",
+  "iterationsToGreen": 9,
+  "iterationNotes": "Five Luna rounds each returned FAIL with specific findings, fixed red-green: round 1 nine findings (654c3cff), round 2 two (e16bd9bb), round 3 one (0ee1bbc3), round 4 three (d90fea3a). Plus domain, client, sheet, skip-confirm, decoder and roster-summary red-green cycles earlier. The sixth review (b3b3eff4) did not run.",
   "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
     "compiler": 3,
-    "conformance": 1,
-    "review": 0,
+    "conformance": 2,
+    "review": 15,
     "human": 3
   },
-  "notes": "Human-raised defects: Skip must confirm (design says skippable after a confirm); downtime and the other contract-required fields must be required; client functions must carry operationIds for PARITY-HUMAN-003. Compiler caught wrong crew/fund field names and an unsupported onclick prop. Conformance (PARITY-HUMAN-003) caught the non-operationId client names; fixed by rename and M20 pin refresh. Verification at this point: tsc clean; vitest 24 files / 841 tests; build exit 0; conformance npm run test:ada 66 files / 576 tests passed. Chromium evidence, Luna review and the 28/28 mutation campaign NOT run.",
+  "notes": "Review (Luna xhigh) caught: overlay popups not aria-modal and inside the sheet; missing Planning approach descriptions; Engagement footer and starting-position reminder; Change-loadout replacement flow with no choices or checklist and a commit-on-open defect; End Score notice claiming stress cleared; crew editor labels; missing Crew Rep Skip and final footer; Downtime menu placement (wide and narrow); enum ids in the Resolution stepper; duplicated committed gear rows; Planning Back disabled; missing engagement factor table; non-selectable Resolution steps. Conformance caught PARITY-HUMAN-003 operationId naming and the roster summary decode (campaign.json mode). Compiler caught field names and an unsupported prop. Human caught: Skip must confirm; required contract fields. Gates at b3b3eff4: tsc 0; vitest 25 files / 861 tests; build 0; browser journeys 6/6 PASS; Chromium capture 117 rows, 0 overflow, 0 page errors, contrast >= 4.5. NOT RUN: Luna PASS on the final revision (usage limit), 28/28 mutation campaign, fresh Ada run at the final revision.",
   "metricsMethodology": {
     "method": "no grounded duration available (wall-clock not recorded for this worker run)",
-    "source": "vitest output, tsc, production build, conformance test:ada log, catalog hash comparison",
+    "source": "vitest output, tsc, production build, browser-suite logs, Chromium capture summary, Luna raw outputs per pin",
     "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
     "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
     "tokensNote": "tokens=null: token accounting not available to the worker"
   },
-  "passRateAtFirstDoneClaim": "domain: red (module missing); client: red (ops missing); skip confirms: 2 of 2 red; required fields: red; no first-done claim before green",
-  "passRateAfterReview": "vitest 841/841 across 24 files; tsc clean; build exit 0; Ada test:ada 576/576. Chromium, Luna and the 28/28 campaign not run.",
+  "passRateAtFirstDoneClaim": "every finding was red before its fix (for example: 2 of 2 Skip-confirm tests; 3 of 3 round-4 tests; 2 of 2 round-3 duplicate-gear tests); no review-PASS claimed",
+  "passRateAfterReview": "gates green at b3b3eff4; Luna PASS not achieved (4 FAIL rounds, 1 round blocked by provider usage limit)",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
-    "frontend red tests (domain, client, skip confirms, required decoder fields)",
-    "frontend DOM tests (linked crew load path)",
-    "compiler (field names, unsupported prop)",
-    "conformance PARITY-HUMAN-003 (operationId naming)",
-    "human review (skip confirm, required fields, naming)"
+    "frontend red tests (domain, client, sheet, decoder, roster summary)",
+    "conformance (PARITY-HUMAN-003, roster summary decode)",
+    "Chromium browser journeys (roster decode, sheet containment at 1280)",
+    "independent review, Luna xhigh (five rounds)",
+    "human review (Skip confirm, required fields, operationId naming)"
   ],
-  "status": "IMPLEMENTED, NOT REVIEWED - frontend and Ada suite green; Chromium evidence, Luna review and 28/28 mutation campaign pending"
+  "status": "NOT ACCEPTED - implementation complete for all findings raised; Luna xhigh PASS pending (latest review b3b3eff4 blocked by provider usage limit); 28/28 mutation campaign and fresh Ada run at the final revision pending"
 }

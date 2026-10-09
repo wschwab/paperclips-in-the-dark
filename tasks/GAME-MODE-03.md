@@ -3,10 +3,13 @@ id: GAME-MODE-03
 title: Per-scoundrel game mode frontend (mode panel, Score, Resolution, downtime)
 deps:
   - GAME-MODE-01
+  - GAME-MODE-02
 track: frontend
 outputs:
   - frontend/src/schema/character.ts
   - frontend/src/schema/operation-result.ts
+  - frontend/src/schema/campaign.ts
+  - frontend/src/schema/campaign-summary.test.ts
   - frontend/src/api/client.ts
   - frontend/src/api/game-mode-client.test.ts
   - frontend/src/pages/game-mode.ts
@@ -22,71 +25,83 @@ outputs:
   - frontend/src/styles/game-mode.css
   - frontend/src/main.ts
   - conformance/fixtures/mutation-catalog.json
+  - agent-docs/test-audit/browser-evidence/game-mode/
 acceptance:
-  - mode panel (sticky left gutter wide, footer narrow) with Free Play / Score / Downtime switching
-  - Score start popups Planning, Loadout, Engagement; load limits read from settings
-  - Score loadout display with change-after-confirm; Projects and Contacts collapsed in Score
-  - + Desperate action XP (ordinary attribute XP); End Score with confirm
-  - six-step Resolution stepper; Skip (optional steps and the whole Resolution) after a confirm; XP questions only in Scoundrel XP; crew editors carry the exact one-player warning
+  - mode panel (sticky left gutter wide, fixed footer narrow); Free Play / Score / Downtime switching
+  - Score popups Planning, Loadout, Engagement as aria-modal overlays; load limits from settings; approved copy and factor table
+  - Score committed loadout; Change loadout proposal that commits only on Confirm change; Projects and Contacts collapsed in Score
+  - + Desperate action XP (ordinary attribute XP); End Score confirm with the approved notice
+  - six-step Resolution stepper of direct-selection controls; Skip after a confirm on optional steps and Skip Resolution; Next: Downtime on the last step
+  - XP questions only in Scoundrel XP; direct crew editors with the exact one-player warning and approved labels
   - entanglements filtered by crew heat with Show all
-  - downtime tracker (+1 coin, +1 gift, -1 correction; activity spends)
+  - downtime budget in the panel; activity menu in the panel (wide) or the sheet (narrow)
   - SRD links; Personal always visible; advise, never block
+  - roster summary decodes mode (campaign.json characterSummary)
   - client ops named by operationId (PARITY-HUMAN-003)
-  - frontend tests, typecheck and build green; Ada suite green
-  - real-Chromium evidence at 1440x1000, 768x1024, 390x844 in light, dark, high contrast; Luna review; 28/28 mutation campaign
+  - frontend tests, typecheck and build green; 6/6 browser journeys; real-Chromium evidence; Luna review PASS on the final revision; 28/28 mutation campaign
 ---
 
 # GAME-MODE-03 — per-scoundrel game mode frontend
 
-**Status:** IMPLEMENTED, NOT REVIEWED. Frontend suite 841 tests / 24 files, `tsc` clean, build
-green. Ada conformance `npm run test:ada`: 66 files, 576/576, including PARITY-HUMAN-003. **Not
-done yet:** real-Chromium evidence, the Luna review, and the 28/28 mutation campaign. These
-are waiting on this round's stop; nothing has been run for them.
+**Status:** NOT ACCEPTED. The implementation is complete for every finding raised so far, and
+the gates are green, but the independent Luna xhigh review has NOT passed on any revision.
+The latest review (`b3b3eff4`) did not run: the openai-codex provider returned
+`usage_limit_reached`. It has to be re-run once the limit resets. Nothing here is marked reviewed.
 
-**Design source:** `docs/pages/contract/game-mode-proposal.mdx`, `tasks/GAME-MODE-01.md`, the
+**Current revision:** `b3b3eff450f413abae7bc034504788a25f8a1567` (change `utytlmwq`, round-4 fixes),
+on top of the backend roster commit `654c3cff` (GAME-MODE-02) and the Ada commit `86ae8333`.
+
+**Design source:** `docs/pages/contract/game-mode-proposal.mdx`, `tasks/GAME-MODE-01.md`, and the
 approved mockups in `docs/public/mockups/game-mode/`.
 
-## Log
+## Verification at the current revision (`b3b3eff4`)
 
-- Red first, domain and client: `pages/game-mode.test.ts` (module missing) and
-  `api/game-mode-client.test.ts` (five ops missing). Green after `pages/game-mode.ts` and the client ops.
-- Process deviation: the sheet integration was written before `pages/game-mode-sheet.test.ts`. Its
-  three first-run failures were real (linked crew not loaded on first render) and were fixed.
-- Skip confirms (red first): two tests failed, `confirm` never called. Green: optional-step Skip
-  and a new "Skip Resolution" button both call `window.confirm` before `mode.flow.set`.
-- Required fields (red first): a decode test required `mode`, `modeFlow` and `downtime`; it failed
-  because `mode` decoded as missing-but-defaulted. Now all three are required in the decoder, matching
-  `contract/schemas/character.json` `required`. The "not available" budget branch and its test are removed.
-  This is wider than the request, which named downtime only: `mode` and `modeFlow` are also in the
-  contract's required list, so they are required too.
-- Client ops renamed to their OpenAPI operationIds (PARITY-HUMAN-003 looks them up by name):
-  `characterModeSet`, `characterModeFlowSet`, `characterDowntimeSpend`, `characterDowntimeAdjust`,
-  `characterDowntimeReset`. The wiring check requires the name and a listener in the routed page group,
-  which `character-detail.ts` supplies.
-- Hand-built character fixtures gained the required fields (`client.test.ts`, `character-detail.test.ts`,
-  `character-history.test.ts`, `character-create.test.ts`). Crew fixtures are unchanged.
-- Catalog pins refreshed: M19 `main.ts`, M20 `client.ts`, M26 `character-detail.ts`. Not yet
-  re-run as a campaign.
-- End Score confirm copy corrected to the approved rule (one existing assertion updated).
-- Verification at this point: `tsc --noEmit` exit 0; `npx vitest run` 24 files / 841 tests passed;
-  `npm run build` exit 0; `cd conformance && npm run test:ada` exit 0, 66 files / 576 tests passed.
+- `npx tsc --noEmit` exit 0.
+- `npx vitest run` 25 files, 861 tests passed.
+- `npm run build` exit 0.
+- `cd conformance && npm run test:browser` 6/6 journeys PASS (run at `b3b3eff4`).
+- Chromium capture `agent-docs/test-audit/browser-evidence/game-mode/capture.mjs` at `b3b3eff4`:
+  117 rows (13 states x 3 viewports x 3 themes), 0 overflow, 0 page errors, minimum contrast
+  at or above 4.5:1. Screenshots and `summary.json` are in that folder.
+- The catalog pin for `frontend/src/pages/character-detail.ts` (M26) is `43e1bd6f…` and matches the file.
+- **Not run:** the 28/28 mutation campaign. It is a required gate. Run `npm run test:mutation`
+  in `conformance/` once the Luna review is settled.
+- **Not run:** the Ada suite again at this revision. The backend commit reports Ada 577/577.
 
-## Design decisions in the code
+## Luna review history (openai-codex, gpt-5.6-luna, xhigh)
 
-- Nothing gates an operation. Every control is enabled except during an in-flight request.
-- Score popups and the Resolution step come from the stored `modeFlow` cursor, so they survive reloads.
-- Load limits come from `LoadMaxima.CommitmentMaxBulk`; desperate attributes come from `Attributes`.
-- Desperate action XP is the existing attribute XP op (+1), marked immediately.
-- "My share · coin" is the existing fund op on this scoundrel's own purse.
-- Crew writes use the existing crew track ops with the observed crew revision as `If-Match`. A stale
-  response shows a reconcile notice and reloads the crew. Every crew editor carries the exact one-player warning.
-- Constants that are design content, not limits: approaches, the downtime activity menu, the entanglement
-  bands, and the Payoff/Heat guide text.
+Each round pinned a revision and returned FAIL with specific findings. Each finding was fixed
+red-green and committed, then the review was repeated.
 
-## Known gaps (not yet verified)
+| Pin | Result | Findings and fix |
+|---|---|---|
+| `9f18cdcf` | FAIL (superseded before the next pin) | Planning, loadout, End Score, crew, Crew Rep and Downtime defects. Its verdict is `luna/verdict-9f18cdcf-superseded.md`. |
+| `654c3cff` | FAIL, nine findings | Overlay popups; Planning descriptions; Engagement footer and reminder; Change-loadout replacement flow; End Score notice; crew labels; Crew Rep Skip and footer; Downtime menu on narrow. Its original `verdict.md` was overwritten; the findings are recorded in `luna/verdict-654c3cff-FINDINGS.md` from the output read before the overwrite. Fixed in `e16bd9bb`. |
+| `e16bd9bb` | FAIL, two findings | Downtime menu should be in the panel on wide screens (fixed by showing a panel copy and a sheet copy, one per layout). Stepper showed enum ids (fixed with approved names). Fixed in `0ee1bbc3`. |
+| `0ee1bbc3` | FAIL, one finding | Committed gear listed twice in the checklists (the server lists a committed item in both `gear.loadout` and `gear.availableGear`). Fixed in `d90fea3a`, keyed by name. |
+| `d90fea3a` | FAIL, three findings | Planning Back disabled (now returns to the score sheet); Engagement factor table missing (added with approved wording); Resolution steps not selectable (now six direct-selection controls). Fixed in `b3b3eff4`. Verdict: `luna/verdict-d90fea3a.md`. |
+| `b3b3eff4` | NOT RUN | `openai-codex` returned `usage_limit_reached`. No verdict. |
 
-- Browser behaviour is unverified: no Chromium run yet. The 1100px breakpoint and footer are unchecked.
+Raw outputs: `luna/raw-output-<pin>.txt` for each round, and `luna/stderr-<pin>.txt`.
+
+## Process notes
+
+- Red-first is recorded for each finding (a new test per finding, run and failing for the stated reason).
+- Process deviation (round 1): the sheet integration was written before its DOM tests. Three first-run
+  failures were real (linked crew not loaded on first render) and were fixed.
+- Decoders: `mode`, `modeFlow` and `downtime` are required on Character, matching the contract's
+  required list. `mode` on the roster summary is optional, matching `campaign.json` (absent on degraded rows).
+  `OperationResult` gains `mode` and `suggestedOps`.
+- Client ops are named by their OpenAPI operationIds (`characterModeSet`, `characterModeFlowSet`,
+  `characterDowntimeSpend`, `characterDowntimeAdjust`, `characterDowntimeReset`), as PARITY-HUMAN-003 requires.
+- The Change-loadout proposal commits only on Confirm change, as explicit gear writes (level first, then
+  removals, then additions), each using the revision from the previous write.
+- Confirmations: Skip on optional steps and Skip Resolution each ask first.
+- End Score notice says partial stress was kept unless stress was full (the contract rule).
+
+## Known gaps
+
+- A partial-failure in the Change-loadout chain (for example, a write fails midway) leaves earlier writes applied. The sheet shows the gear error, but no rollback exists.
 - The stale-crew reconcile path is implemented, not covered by a test.
-- Undo for End Score relies on the sheet's existing undo.
-- The mutation campaign (28/28) has not run; the catalog pins are refreshed but unverified by a campaign.
-- Routing of the GAME-MODE-01 metrics validator failure is handled by the other worker, not this card.
+- The Engagement factor table and the Loadout copy are the approved mockup wording; they are not from game data.
+- Outstanding gates above: Luna PASS, 28/28 mutation campaign, and a fresh Ada run at the final revision.
