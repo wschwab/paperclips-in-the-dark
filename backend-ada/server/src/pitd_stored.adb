@@ -177,15 +177,16 @@ package body Pitd_Stored is
    --  four normalizer outcomes: canonical / repairable / needs-input /
    --  unreadable).  Direct GET, history reads, mutations, batch,
    --  capabilities, and collection projection all share this function.
-   --  E is the raw parsed entity (JSON_Null for unreadable), Ctx the
+   --  E is the parsed entity with absent GAME-MODE-01 top-level fields
+   --  overlaid for legacy characters (JSON_Null for unreadable), Ctx the
    --  normalizer context, Issues the pointer-level admission details, and
-   --  Canonical whether the stored bytes admit without repair.  Purely
-   --  read-only: never writes, never repairs.
+   --  Canonical whether the view admits without repair. Purely read-only.
    procedure Classify_Stored
      (Kind, Id : String; Bytes : String;
       E : out JSON_Value; Ctx : out JSON_Value;
       Issues : out JSON_Array; Canonical : out Boolean)
    is
+      Game_Mode_Defaults_Added : Boolean := False;
    begin
       E := JSON_Null;
       --  Keep the original parsed entity for admission diagnostics while
@@ -195,11 +196,25 @@ package body Pitd_Stored is
       begin
          E := Read (Bytes);
          Ctx := Pitd_Normalize.Canonicalize (Kind, Id, E);
+         if Kind = "character" and then E.Kind = JSON_Object_Type then
+            Game_Mode_Defaults_Added :=
+              not Has_Field (E, "mode") or else not Has_Field (E, "modeFlow")
+              or else not Has_Field (E, "downtime");
+            if Game_Mode_Defaults_Added then
+               Ensure_Game_Mode_Defaults (E);
+            end if;
+         end if;
       exception
          when others =>
             E := JSON_Null;
             Ctx := Pitd_Normalize.Canonicalize (Kind, Id, Bytes);
       end;
+      if Game_Mode_Defaults_Added then
+         --  Route serialization needs to distinguish a legacy read view
+         --  from a complete document whose raw bytes remain authoritative.
+         --  This internal marker is not part of the entity or preview DTO.
+         Set_Field (Ctx, "gameModeDefaultsAdded", True);
+      end if;
       if Str_Field (Ctx, "outcome") = "unreadable" then
          E := JSON_Null;
          Issues := Get (Ctx, "issues");

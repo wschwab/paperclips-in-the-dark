@@ -23,6 +23,7 @@ package body Pitd_Summary is
       Set_Field (X, "alias", Str_Field (D, "alias"));
       Set_Field (X, "playbook", Str_Field (Get (C, "playbook"), "name"));
       Set_Field (X, "gameStem", Str_Field (C, "gameStem"));
+      Set_Field (X, "mode", Str_Field (C, "mode"));
       Set_Field (X, "crewId", Str_Field (D, "crewId"));
       Set_Field (X, "stress", Int_Field (Get (M, "stress"), "current"));
       Set_Field (X, "traumas", T);

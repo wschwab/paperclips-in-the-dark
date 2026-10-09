@@ -1,0 +1,28 @@
+==> building core
+Note: Building paperclips_core=0.1.0/paperclips_core.gpr...
+Success: Build finished successfully in 0.23 seconds.
+==> testing core
+Bind
+   [gprbind]      core_tests.bexch
+   [Ada]          core_tests.ali
+Link
+   [link]         core_tests.adb
+==> building server
+Note: Building paperclips_server=0.1.0/paperclips_server.gpr...
+gprbuild: "pitd" up to date
+Success: Build finished successfully in 0.29 seconds.
+==> testing executable-relative launch defaults
+launch-path regression passed from /tmp
+  dataDir: /tmp/pitd-launch-paths.UUyJdZ/data
+  port: 58887
+  pid: 3606478
+==> testing SPA deep-link routes
+  dataDir: /tmp/pitd-spa.N8ZDWA/data
+  port: 58715
+  pid: 3606567
+==> proving core
+Phase 1 of 3: generation of data representation information ...
+Phase 2 of 3: generation of Global contracts ...
+Phase 3 of 3: flow analysis and proof ...
+Success: all checks proved (246 checks).
+Summary logged in /home/x/code/paperclips-in-the-dark/backend-ada/core/obj/gnatprove/gnatprove.out

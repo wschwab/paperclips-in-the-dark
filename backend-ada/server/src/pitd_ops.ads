@@ -35,6 +35,8 @@ package Pitd_Ops is
      (Current, Maximum, Amount : Natural; New_Value, Applied : out Natural);
 
    --  Creation templates (SC-A6: settings-derived, no game-domain literal).
+   --  Characters initialize persisted mode/flow and the settings-snapshot
+   --  downtime budget through Pitd_Common.Ensure_Game_Mode_Defaults.
    function New_Character (Stem, Playbook : String) return JSON_Value;
    function New_Crew (Stem, Crew_Type : String) return JSON_Value;
    function New_Clock (B : JSON_Value) return JSON_Value;
@@ -56,6 +58,11 @@ package Pitd_Ops is
 
    --  The ONE operation router: dispatches every entity op against E with
    --  args B, returning the frozen operation-result envelope.
+   --  GAME-MODE-01: mode.set/mode.flow.set are assistance-only, including
+   --  on retired characters. Downtime bookkeeping preserves existing
+   --  lifecycle admission and never charges funds or applies outcomes.
+   --  All five operations are snapshot-worthy; callers retain ownership
+   --  of atomic history, revision stamping, idempotency and undo.
    function Mutate (Kind, Op : String; E, B : JSON_Value) return JSON_Value;
 
 end Pitd_Ops;

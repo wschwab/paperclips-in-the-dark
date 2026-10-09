@@ -1,0 +1,9 @@
+Note: Building paperclips_server=0.1.0/paperclips_server.gpr...
+Compile
+   [Ada]          pitd_callback.adb
+Bind
+   [gprbind]      pitd.bexch
+   [Ada]          pitd.ali
+Link
+   [link]         pitd.adb
+Success: Build finished successfully in 6.50 seconds.

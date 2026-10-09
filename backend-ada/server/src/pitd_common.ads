@@ -17,7 +17,6 @@ with GNAT.OS_Lib;
 with GNAT.SHA256;
 with GNATCOLL.JSON;
 with Interfaces.C;
-with Pitd_Error;
 
 package Pitd_Common is
    pragma SPARK_Mode (Off);
@@ -126,6 +125,14 @@ package Pitd_Common is
    function Ability_Description (Kind, Name : String; E : JSON_Value) return String;
    procedure Mastery_State (E : JSON_Value; Total, Marked : out Integer);
    function Rating_Cap (E : JSON_Value) return Integer;
+
+   --  Stored assistance defaults fill omissions only; malformed existing
+   --  values remain available to the normal validation/repair pipeline.
+   function Default_Mode_Flow return JSON_Value;
+   function Default_Downtime (E : JSON_Value) return JSON_Value;
+   procedure Ensure_Game_Mode_Defaults (E : JSON_Value);
+   --  Response-only projection; never changes E or grants eligibility.
+   procedure Add_Game_Mode_Assistance (R, E : JSON_Value);
 
    --  Operation-result envelope (typed whole-error union + success shape).
    function Root_Issues (Message : String) return JSON_Array;

@@ -921,8 +921,12 @@ end Snapshot;
       S : JSON_Array := Empty_Array;
    begin
       Set_Field (A, "op", Op);
-      if Requested /= Integer'First then Set_Field (A, "requested", Requested); end if;
-      if Effective /= Integer'First then Set_Field (A, "effective", Effective); end if;
+      if Requested /= Integer'First or else Op = "downtime.adjust" then
+         Set_Field (A, "requested", Requested);
+      end if;
+      if Effective /= Integer'First or else Op = "downtime.adjust" then
+         Set_Field (A, "effective", Effective);
+      end if;
       if Landed /= "" then Set_Field (A, "landedIntensity", Landed); end if;
       if Side /= "" then Append (S, Create (Side)); end if;
       Set_Field (R, "ok", True); Set_Field (R, "applied", A);
@@ -933,6 +937,7 @@ end Snapshot;
       if Entity.Kind = JSON_Object_Type then
          Set_Field (R, Str_Field (Entity, "kind"), Entity);
       end if;
+      Add_Game_Mode_Assistance (R, Entity);
       return R;
    end Success_Result;
 
@@ -1338,6 +1343,88 @@ end Snapshot;
               then Int_Field (Get (G, "ActionCap"), "Mastery", 0)
               else Int_Field (Get (G, "ActionCap"), "Base", 0));
    end Rating_Cap;
+
+   function Default_Mode_Flow return JSON_Value is
+      F : JSON_Value := Create_Object;
+   begin
+      Set_Field (F, "kind", "none");
+      Set_Field (F, "step", "");
+      return F;
+   end Default_Mode_Flow;
+
+   function Default_Downtime (E : JSON_Value) return JSON_Value is
+      G : constant JSON_Value := Game (Str_Field (E, "gameStem"));
+      D : JSON_Value := Create_Object;
+   begin
+      Set_Field
+        (D, "free", Int_Field (Obj_Field (G, "DowntimeSettings"), "FreeActivities"));
+      Set_Field (D, "paid", Integer'(0));
+      Set_Field (D, "spent", Integer'(0));
+      Set_Field (D, "activities", Empty_Array);
+      return D;
+   end Default_Downtime;
+
+   procedure Ensure_Game_Mode_Defaults (E : JSON_Value) is
+   begin
+      if E.Kind /= JSON_Object_Type then return; end if;
+      if not Has_Field (E, "mode") then
+         Set_Field (E, "mode", "free-play");
+      end if;
+      if not Has_Field (E, "modeFlow") then
+         Set_Field (E, "modeFlow", Default_Mode_Flow);
+      end if;
+      if not Has_Field (E, "downtime") then
+         Set_Field (E, "downtime", Default_Downtime (E));
+      end if;
+   end Ensure_Game_Mode_Defaults;
+
+   procedure Add_Game_Mode_Assistance (R, E : JSON_Value) is
+      Mode : constant String := Str_Field (E, "mode");
+      Flow : constant JSON_Value := Obj_Field (E, "modeFlow");
+      Step : constant String := Str_Field (Flow, "step");
+      Ops : JSON_Array := Empty_Array;
+   begin
+      --  Callers supply returned readable state, not previews or raw degraded
+      --  documents. No settings refresh, lifecycle gate, or entity mutation.
+      if R.Kind /= JSON_Object_Type
+        or else Str_Field (E, "kind") /= "character"
+        or else (Mode /= "free-play" and then Mode /= "score"
+                 and then Mode /= "downtime")
+      then
+         return;
+      end if;
+      Append (Ops, Create ("mode.set"));
+      if Mode = "score" then
+         Append (Ops, Create ("mode.flow.set"));
+         if Str_Field (Flow, "kind") = "resolution" then
+            if Step = "scoundrel-xp" then
+               Append (Ops, Create ("playbook-xp.add"));
+               Append (Ops, Create ("attribute-xp.add"));
+            elsif Step = "payoff" then
+               Append (Ops, Create ("fund.gain"));
+            else
+               Append (Ops, Create ("note.add"));
+            end if;
+         else
+            Append (Ops, Create ("gear.set-commitment"));
+            Append (Ops, Create ("gear.commit"));
+            Append (Ops, Create ("stress.add"));
+            Append (Ops, Create ("attribute-xp.add"));
+         end if;
+      elsif Mode = "downtime" then
+         Append (Ops, Create ("downtime.spend"));
+         Append (Ops, Create ("downtime.adjust"));
+         Append (Ops, Create ("stress.clear"));
+         Append (Ops, Create ("harm.healing-clock"));
+         Append (Ops, Create ("harm.heal"));
+      else
+         Append (Ops, Create ("dossier.update"));
+         Append (Ops, Create ("contact.add"));
+         Append (Ops, Create ("note.add"));
+      end if;
+      Set_Field (R, "mode", Mode);
+      Set_Field (R, "suggestedOps", Ops);
+   end Add_Game_Mode_Assistance;
 
    function Content_Token (Bytes : String) return String is
      ("sha256:" & GNAT.SHA256.Digest (Bytes));

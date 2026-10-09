@@ -1,0 +1,92 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/semantics/game-mode.test.ts suites/lifecycle/lifecycle-state-machine.test.ts -t GAME-MODE|LIFECYCLE-ENDSCORE-002
+OK: canonical managed launcher
+[managed-run] runId=2026-10-09T12-01-01-326Z-c3c8dd9f
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=GAME-MODE-02-working
+[managed-run] testCommand=--run suites/semantics/game-mode.test.ts suites/lifecycle/lifecycle-state-machine.test.ts -t GAME-MODE|LIFECYCLE-ENDSCORE-002
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-09T12-01-01-326Z-c3c8dd9f/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-09T12-01-01-326Z-c3c8dd9f/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-09T12-01-01-326Z-c3c8dd9f
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-09T12-01-01-326Z-c3c8dd9f/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-09T12-01-01-326Z-c3c8dd9f/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-09T12-01-01-326Z-c3c8dd9f/data (dir)
+[managed-run] port=35353
+[managed-run] baseUrl=http://127.0.0.1:35353
+[managed-run] pid=3527673
+[managed-run] ready=http://127.0.0.1:35353
+[managed-run] vitestPid=3527743
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-1] blades-in-the-dark canonical defaults snapshot runtime settings, without read projections 105ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-2] scum-and-villainy canonical defaults snapshot runtime settings, without read projections 93ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-3] rus-blades-in-the-dark canonical defaults snapshot runtime settings, without read projections 132ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ISOLATION-001] linked scoundrels, crew and campaign never share mode or budget 217ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-free-play] free-play → free-play never resets gameplay 130ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-score] free-play → score never resets gameplay 89ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-downtime] free-play → downtime never resets gameplay 128ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-free-play] score → free-play never resets gameplay 88ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-score] score → score never resets gameplay 130ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-downtime] score → downtime never resets gameplay 89ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-free-play] downtime → free-play never resets gameplay 130ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-score] downtime → score never resets gameplay 90ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-downtime] downtime → downtime never resets gameplay 130ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-SAME-001] reselecting Score retains resolution cursor and activity records 88ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-001] forward/back/direct navigation, closing and finishing resolution award nothing 739ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-002] unlinked scoundrels jump into resolution from every mode; none preserves mode 260ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-001] all explicit activities remain legal below zero without changing mode 262ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-002] coin/gift record already-paid extras and signed corrections without charging funds or rep 211ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-003] explicit reset snapshots current allowance and clears records, preserving mode and gameplay 89ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-free-play] ordinary mutations and mixed entity batch have no free-play gate or implicit spending 131ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-score] ordinary mutations and mixed entity batch have no score gate or implicit spending 90ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-downtime] ordinary mutations and mixed entity batch have no downtime gate or implicit spending 90ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-1] mode.set snapshots, revision guards, exact retry and undo follow existing conventions 264ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-2] mode.flow.set snapshots, revision guards, exact retry and undo follow existing conventions 258ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-3] downtime.spend snapshots, revision guards, exact retry and undo follow existing conventions 261ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-4] downtime.adjust snapshots, revision guards, exact retry and undo follow existing conventions 261ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-5] downtime.reset snapshots, revision guards, exact retry and undo follow existing conventions 258ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-LEGACY-001] legacy import missing new fields receives canonical stored defaults 87ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-001] partial stress and committed gear persist; atomic budget reset enters resolution and undo restores all 303ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-002] resolved trauma flags clear without resetting committed loadout 87ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-004] partial stress cleanup is exercised directly without new tracker setup 84ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-003] full stress retains the existing pending-trauma rejection, not a mode/budget error 88ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BATCH-001] new tracker operations compose in order without mode or exhausted-budget gates 129ms
+ ✓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-VALIDATION-001] malformed modes, cursors and counters use existing VALIDATION and never mutate 392ms
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-001] stress reaching max sets traumaPending and returns typed attention
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-002] stress overflow never auto-adds trauma
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-003] stress.add while trauma pending is rejected with TRAUMA_REQUIRED
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-004] stress.add and stress.clear while out of action are rejected with OUT_OF_ACTION
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-TRAUMA-001] trauma resolution records the trauma, clears stress to 0, clears pending, marks out-of-action and stressClearPending
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-TRAUMA-002] trauma.add without pending trauma is rejected with VALIDATION
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-TRAUMA-003] duplicate trauma is rejected with DUPLICATE
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-ENDSCORE-001] end-score while trauma pending is rejected with TRAUMA_REQUIRED
+ ✓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-ENDSCORE-002] end-score preserves partial stress and resets both out-of-action flags 58ms
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-ENDSCORE-003] end-score performs all selected cleanup in exactly one snapshot (one history entry; undo restores prior state)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-001] explicit retirement requires confirm:true (CONFIRM_REQUIRED otherwise)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-002] explicit retirement succeeds below maximum trauma
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-003] retirement cleanup clears stress, harm, healing clock, armor and preserves dossier/playbook/trauma history/notes/gear/fund
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-004] voluntary and final-trauma retirement produce identical post-cleanup state (shared cleanup)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-005] retired characters remain readable and deletable
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-006] retired dossier, name, note and notebook edits remain allowed
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-007] retired gameplay mutations return RETIRED
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-008] trauma.remove after retirement does not clear isRetired
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-009] undo restores the complete pre-retirement state (isRetired false again)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DEADISH-001] fatal harm triggers deadish cleanup: clears stress and pending state, preserves all harm
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DEADISH-002] deadish is caused only by fatal harm (no free-standing toggle; isDeadish derived from fatal array)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DEADISH-003] removing the fatal harm ends deadish (recovery)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DELETE-001] deletion requires confirmation and removes entity and history
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DERIVED-001] canUndo and historyCount are derived response-time fields that track snapshot consumption and are never persisted
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-INVARIANTS-001] no reachable state has traumaPending and isOutOfAction both true; stressClearPending equals isOutOfAction
+
+ Test Files  2 passed (2)
+      Tests  35 passed | 24 skipped (59)
+   Start at  15:01:01
+   Duration  6.74s (transform 64ms, setup 0ms, collect 498ms, tests 6.04s, environment 0ms, prepare 57ms)
+
+[managed-run] success; evidence removed (/tmp/pitd-managed/2026-10-09T12-01-01-326Z-c3c8dd9f)

@@ -22,6 +22,13 @@ package Pitd_Normalize is
    --  normalizer outcomes and, when possible, produces the canonicalized
    --  document plus the ordered change list.  The import/repair preview and
    --  apply transactions (SC-A2) and stored admission (SC-A3) consume this.
+   --  Absent GAME-MODE-01 top-level fields receive legacy defaults without
+   --  changes (downtime requires resolved settings). Present nulls/nested
+   --  omissions use conventional fills, coercions and minimum clamps.
+   --  Valid downtime
+   --  counters and activity order are preserved; free is filled from game
+   --  settings only when absent/null, never refreshed for a present value.
+   --  Invalid mode/flow enums and kind/step pairs require caller input.
    --
    --  Result object fields (JSON):
    --    outcome  "canonical" | "repairable" | "needs-input" | "unreadable"

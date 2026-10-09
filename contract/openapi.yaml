@@ -83,7 +83,7 @@ components:
       type: object
       required: [delta, reason]
       additionalProperties: false
-      description: "Signed uncapped adjustment. coin/gift require delta=1 and record an already-paid/gifted extra activity; correction permits any signed integer. No automatic coin/rep charge or fund changes. Invalid delta/reason pairing uses VALIDATION."
+      description: "Signed uncapped adjustment for coin, gift or correction. Record already-paid/gifted extra activities or explicit signed corrections without automatic coin/rep charge or fund changes. delta must be an integer and reason must be declared; +1 is the UI control, not an API restriction."
       properties:
         delta: { type: integer }
         reason: { type: string, enum: [coin, gift, correction] }
@@ -1760,9 +1760,9 @@ paths:
       x-snapshot: true
       description: >
         Add signed delta to downtime.paid without clamp or maximum.
-        coin/gift require delta=1: record an already-paid/gifted extra activity,
-        never charge coin or rep or mutate funds. correction permits any signed
-        integer including -1 and zero. Preserve spent and activity records;
+        coin/gift record already-paid/gifted activity adjustments, never charge
+        coin or rep or mutate funds. All reasons accept any signed integer,
+        including -1 and zero. Preserve spent and activity records;
         reason describes this request, not a new stored record field.
         Available in every mode, including negative remaining. Does not change
         mode or apply outcomes. applied.requested/effective are signed delta

@@ -170,7 +170,7 @@ package body Pitd_Normalize is
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|" &
      "updatedAt|isRetired|isDeadish|traumaPending|isOutOfAction|" &
      "stressClearPending|dossier|monitor|talent|playbook|gear|fund|" &
-     "contacts|session|notebook|";
+     "contacts|session|notebook|mode|modeFlow|downtime|";
    Allowed_Named_Desc : constant String := "|name|description|";
    Allowed_Vice : constant String := "|name|description|purveyor|";
    Allowed_Monitor : constant String := "|stress|trauma|harm|armor|";
@@ -196,6 +196,9 @@ package body Pitd_Normalize is
    Allowed_Char_Contact : constant String := "|id|name|closeness|";
    Allowed_Session : constant String :=
      "|playbookExpressions|characterExpressions|struggleExpressions|max|";
+   Allowed_Mode_Flow : constant String := "|kind|step|";
+   Allowed_Downtime : constant String := "|free|paid|spent|activities|";
+   Allowed_Downtime_Activity : constant String := "|activity|description|";
    Allowed_Crew : constant String :=
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|" &
      "updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|" &
@@ -1838,6 +1841,128 @@ package body Pitd_Normalize is
       return X;
    end N_Session;
 
+   function N_Mode_Flow (O : JSON_Value; C : in out N_Ctx) return JSON_Value is
+      X : JSON_Value := Default_Mode_Flow;
+      Src : JSON_Value;
+   begin
+      if not Has_Field (O, "modeFlow") then
+         return X;
+      end if;
+      if Get (O, "modeFlow").Kind = JSON_Null_Type then
+         Add_Change (C, "/modeFlow", "missing/null fill", JSON_Null, Clone (X),
+                     "Missing required property /modeFlow: filled with canonical default");
+         return X;
+      end if;
+      Src := Get (O, "modeFlow");
+      if Src.Kind /= JSON_Object_Type then
+         Add_Needs (C, "/modeFlow", "wrong type: expected an object", "an object");
+         return Clone (Src);
+      end if;
+      List_Removals (Src, "/modeFlow", Allowed_Mode_Flow, C);
+      Set_Field (X, "kind",
+                 N_Enum (Src, "kind", "/modeFlow/kind", C,
+                         "|none|score-start|resolution|", No_Legacy, "none"));
+      Set_Field (X, "step", N_Str (Src, "step", "/modeFlow/step", "", C));
+      declare
+         Flow_Kind : constant String := Str_Field (X, "kind");
+         Step : constant String := Str_Field (X, "step");
+      begin
+         if Get (X, "kind").Kind = JSON_String_Type
+           and then Get (X, "step").Kind = JSON_String_Type
+           and then In_Allowed (Flow_Kind, "|none|score-start|resolution|")
+           and then not
+             ((Flow_Kind = "none" and then Step = "")
+              or else (Flow_Kind = "score-start"
+                       and then In_Allowed (Step, "|planning|loadout|engagement|"))
+              or else (Flow_Kind = "resolution"
+                       and then In_Allowed
+                         (Step, "|scoundrel-xp|payoff|heat|entanglements|crew-xp|crew-rep|")))
+         then
+            Add_Needs (C, "/modeFlow/step", "step does not match flow kind",
+                       "a step declared for modeFlow.kind");
+         end if;
+      end;
+      return X;
+   end N_Mode_Flow;
+
+   function N_Downtime
+     (O, Defaults : JSON_Value; S : Settings_Ref; C : in out N_Ctx)
+      return JSON_Value
+   is
+      X : JSON_Value := Create_Object;
+      Src : JSON_Value := Create_Object;
+      Missing : Boolean := False;
+      Activities : JSON_Value;
+      Records : JSON_Array := Empty_Array;
+   begin
+      if not Has_Field (O, "downtime") and then S.G.Kind = JSON_Object_Type then
+         return Default_Downtime (Defaults);
+      end if;
+      if not Has_Field (O, "downtime")
+        or else Get (O, "downtime").Kind = JSON_Null_Type
+      then
+         Missing := True;
+      elsif Get (O, "downtime").Kind = JSON_Object_Type then
+         Src := Get (O, "downtime");
+         List_Removals (Src, "/downtime", Allowed_Downtime, C);
+      else
+         Add_Needs (C, "/downtime", "wrong type: expected an object", "an object");
+         return Clone (Get (O, "downtime"));
+      end if;
+      if (not Has_Field (Src, "free")
+          or else Get (Src, "free").Kind = JSON_Null_Type)
+        and then S.G.Kind = JSON_Object_Type
+      then
+         declare
+            Free : constant JSON_Value := Get (Default_Downtime (Defaults), "free");
+         begin
+            Set_Field (X, "free", Free);
+            Add_Change (C, "/downtime/free", "derived fill", JSON_Null, Clone (Free),
+                        "Missing required property /downtime/free: filled from DowntimeSettings.FreeActivities");
+         end;
+      else
+         Set_Field (X, "free",
+                    N_Int_Derived (Src, "free", "/downtime/free", S,
+                                   "DowntimeSettings.FreeActivities", 0, C));
+      end if;
+      Set_Field (X, "paid", N_Int (Src, "paid", "/downtime/paid", 0, C));
+      Set_Field (X, "spent", N_Int (Src, "spent", "/downtime/spent", 0, C, Min => 0));
+      Activities := N_Array (Src, "activities", "/downtime/activities", C);
+      if Activities.Kind = JSON_Array_Type then
+         declare A : constant JSON_Array := Get (Activities); begin
+            for I in 1 .. Length (A) loop
+               declare
+                  V : constant JSON_Value := Get (A, I);
+                  Ptr : constant String := "/downtime/activities/" & Trim_Image (I - 1);
+                  Item : JSON_Value := Create_Object;
+               begin
+                  if V.Kind /= JSON_Object_Type then
+                     Add_Needs (C, Ptr, "wrong type: expected an object", "an object item");
+                     Append (Records, V);
+                  else
+                     List_Removals (V, Ptr, Allowed_Downtime_Activity, C);
+                     Set_Field (Item, "activity",
+                                N_Enum (V, "activity", Ptr & "/activity", C,
+                                        "|acquire-asset|long-term-project|recover|reduce-heat|train|indulge-vice|other|",
+                                        No_Legacy));
+                     Set_Field (Item, "description",
+                                N_Str (V, "description", Ptr & "/description", "", C));
+                     Append (Records, Item);
+                  end if;
+               end;
+            end loop;
+         end;
+         Set_Field (X, "activities", Records);
+      else
+         Set_Field (X, "activities", Activities);
+      end if;
+      if Missing then
+         Add_Change (C, "/downtime", "missing/null fill", JSON_Null, Clone (X),
+                     "Missing required property /downtime: filled with canonical budget");
+      end if;
+      return X;
+   end N_Downtime;
+
    function Canonicalize_Character
      (V : JSON_Value; Kind, Id : String; C : in out N_Ctx) return JSON_Value
    is
@@ -1918,6 +2043,15 @@ package body Pitd_Normalize is
       Set_Field (O, "traumaPending", N_Bool (V, "traumaPending", "/traumaPending", C));
       Set_Field (O, "isOutOfAction", N_Bool (V, "isOutOfAction", "/isOutOfAction", C));
       Set_Field (O, "stressClearPending", N_Bool (V, "stressClearPending", "/stressClearPending", C));
+      if not Has_Field (V, "mode") then
+         Set_Field (O, "mode", "free-play");
+      else
+         Set_Field (O, "mode",
+                    N_Enum (V, "mode", "/mode", C,
+                            "|free-play|score|downtime|", No_Legacy, "free-play"));
+      end if;
+      Set_Field (O, "modeFlow", N_Mode_Flow (V, C));
+      Set_Field (O, "downtime", N_Downtime (V, O, S, C));
       Set_Field (O, "dossier", N_Dossier (V, C));
       Set_Field (O, "monitor", N_Monitor (V, S, C));
       Set_Field (O, "talent", N_Talent (V, S, C));

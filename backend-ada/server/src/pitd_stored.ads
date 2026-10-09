@@ -10,11 +10,14 @@ package Pitd_Stored is
 
    use GNATCOLL.JSON;
 
-   --  SC-A3: the ONE stored-entity classification path.  E is the raw
-   --  parsed entity (JSON_Null for unreadable), Ctx the normalizer context,
-   --  Issues the pointer-level admission details, and Canonical whether the
-   --  stored bytes admit without repair.  Purely read-only: never writes,
-   --  never repairs.
+   --  SC-A3: the ONE stored-entity classification path. E is the parsed
+   --  entity with absent top-level mode/modeFlow/downtime overlaid for legacy
+   --  characters (JSON_Null for unreadable). Existing malformed fields are
+   --  never replaced. Ctx is the normalizer context, with internal
+   --  gameModeDefaultsAdded=true only when this overlay occurred; routes
+   --  serialize E for that legacy view, otherwise preserve the raw bytes.
+   --  Issues contains pointer-level admission details; Canonical indicates
+   --  admission without repair. Never writes or increments revision.
    procedure Classify_Stored
      (Kind, Id : String; Bytes : String;
       E : out JSON_Value; Ctx : out JSON_Value;

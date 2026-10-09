@@ -1,0 +1,153 @@
+{
+  "task": "GAME-MODE-02",
+  "track": "ada",
+  "date": "2026-10-09",
+  "implementationAgent": "mode-mockups with GameModeAdaOps, GameModeAdaCommon and GameModeAdaLegacy workers",
+  "reviewAgent": null,
+  "iterationsToGreen": 4,
+  "wallClockMinutes": 64.87,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "Ada 576/576; two controlled cycles 576/576 each; tooling 233/233; frontend campaign baseline 841/841; full mutation 28/28 killed.",
+  "passRateAfterReview": "No independent reviewer assigned; human-authorized additive fixtures retain exact assertions. Final mechanical acceptance is green.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 6,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "conformance",
+    "tooling",
+    "human"
+  ],
+  "notes": [
+    "All 35 original card reds are green; no mode-based gating, automatic charge, new HTTP status or permanent frontend source edit.",
+    "Six resolved source/calibration issues: adjustment constraint, legacy preview classification, strict DTO bindings, canonical fixture omissions, exact human-op list omissions, legacy unlink admission.",
+    "Human-reported missing GAME-MODE-01 metrics metadata fixed, historical RED evidence unchanged.",
+    "Backend-only deferral was superseded before any filtered run: full 28/28 campaign executed after frontend freeze.",
+    "Managed tooling timeouts can leave temporary suite fixtures; sibling owned prior leak cleanup.",
+    "ci.sh uses default single-cycle conformance when enabled; an additional canonical two-cycle run passed 576 cases in each cycle."
+  ],
+  "metricsMethodology": {
+    "method": "Direct canonical command outputs plus source-level resolved-issue grouping; no fabricated commit provenance.",
+    "source": "tasks/GAME-MODE-02.md and tasks/metrics/ada/GAME-MODE-02-*.log",
+    "wallClockNote": "Measured acceptance/correction phase since first backend build; excludes earlier implementation before this retained timer.",
+    "tokensNote": "Token accounting unavailable; null is supported unknown.",
+    "locNote": "No VCS commands authorized; implementation diff LOC not measured.",
+    "scaffoldingLocNote": "No VCS commands authorized; scaffolding diff LOC not measured.",
+    "defectsNote": "Counts are distinct resolved causes, not failed test counts; six conformance-discovered causes plus one human-reported metrics-metadata cause.",
+    "iterationsNote": "Four full Ada acceptance iterations: 148 failures, then 5, then frontend-only 1, then 0; separate focused work reached all 35 card cases green earlier."
+  },
+  "status": "GREEN \u2014 full frozen acceptance completed; no mutation deferral remains",
+  "verification": {
+    "build": {
+      "exitCode": 0,
+      "seconds": 6.51
+    },
+    "focused": {
+      "exitCode": 0,
+      "seconds": 7.13
+    },
+    "generation": {
+      "exitCode": 0,
+      "seconds": 0.25
+    },
+    "ada": {
+      "exitCode": 0,
+      "seconds": 69.64
+    },
+    "tooling": {
+      "exitCode": 0,
+      "seconds": 68.25
+    },
+    "proof": {
+      "exitCode": 0,
+      "seconds": 2.01
+    },
+    "validators": {
+      "exitCode": 0,
+      "metricsFilesValidated": 168,
+      "traceabilityChecks": 231,
+      "reconciliationChecks": 17
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "seconds": 1.56
+    },
+    "ci": {
+      "exitCode": 0,
+      "seconds": 1.61
+    },
+    "ada-two-cycle": {
+      "exitCode": 0,
+      "seconds": 148.1
+    },
+    "mutation": {
+      "exitCode": 0,
+      "seconds": 1709.65
+    },
+    "docs": {
+      "exitCode": 0,
+      "seconds": 20.87
+    }
+  },
+  "mutation": {
+    "scope": "full",
+    "expectedMutants": 28,
+    "fullCampaignDeferred": false,
+    "reason": "Human authorized full campaign after both working trees froze; backend-only campaign was never started.",
+    "command": "PITD_REVISION=GAME-MODE-02-working XDG_RUNTIME_DIR=/tmp npm --prefix conformance run test:mutation",
+    "changedBackendHashFiles": 5,
+    "refreshedCatalogEntries": 13,
+    "killed": 28,
+    "P0": {
+      "killed": 19,
+      "total": 19
+    },
+    "P1": {
+      "killed": 9,
+      "total": 9
+    },
+    "historicalDeferralSuperseded": true,
+    "uniqueTargetHashesAligned": 18,
+    "sourceRestorationVerified": true,
+    "canonicalArtifact": "agent-docs/test-audit/mutation-results.json",
+    "rawOutput": "agent-docs/test-audit/mutation-raw-2026-10-09T12-56-48-210Z.txt",
+    "greenBaselines": {
+      "backendAda": 576,
+      "frontend": 841,
+      "tooling": 233
+    }
+  },
+  "acceptanceCounts": {
+    "ada": {
+      "passed": 576,
+      "total": 576,
+      "files": 66
+    },
+    "adaTwoCycle": {
+      "passedPerCycle": [
+        576,
+        576
+      ],
+      "passedExecutions": 1152
+    },
+    "tooling": {
+      "passed": 233,
+      "total": 233
+    },
+    "sparkProof": {
+      "proved": 246,
+      "total": 246
+    },
+    "docs": {
+      "generatedFiles": 145
+    },
+    "frontendObservedMutationBaseline": {
+      "passed": 841,
+      "total": 841
+    }
+  }
+}

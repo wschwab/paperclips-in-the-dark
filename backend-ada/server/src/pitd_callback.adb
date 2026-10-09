@@ -1086,7 +1086,10 @@ package body Pitd_Callback is
       end if;
       if Suffix = "" then
          declare
-            X : AWS.Response.Data := Json_Text (Read_File (Current_File (Kind, Id)));
+            X : AWS.Response.Data :=
+              (if Bool_Field (Ctx, "gameModeDefaultsAdded")
+               then Json_Response (E)
+               else Json_Text (Read_File (Current_File (Kind, Id))));
          begin
             if AWS.Status.Parameter (Request, "download") = "1" then
                AWS.Response.Set.Add_Header
@@ -1261,11 +1264,18 @@ if Kind = "crew" then
                      declare
                         Cid : constant String := Get (Get (A, I));
                         V   : JSON_Value;
-                        Exists, Parse_Ok : Boolean;
+                        Char_Ctx : JSON_Value;
+                        Char_Issues : JSON_Array;
+                        Char_Canonical : Boolean;
                      begin
-                        Try_Read_Entity ("character", Cid, V, Exists, Parse_Ok);
-                        if V.Kind = JSON_Object_Type
-                          and then Entity_Is_Canonical ("character", Cid, V)
+                        begin
+                           Classify_Stored
+                             ("character", Cid, Read_File (Current_File ("character", Cid)),
+                              V, Char_Ctx, Char_Issues, Char_Canonical);
+                        exception
+                           when others => Char_Canonical := False;
+                        end;
+                        if Char_Canonical
                           and then Str_Field (Get (V, "dossier"), "crewId") = Id
                         then
                            Set_Field (Get (V, "dossier"), "crewId", "");
@@ -1382,7 +1392,10 @@ if Kind = "crew" then
                   Set_Field (R, "applied", A2);
                   Set_Field (R, "sideEffects", Sides);
                   Set_Field (R, "error", JSON_Null);
-                  if Adm_Canonical then Set_Field (R, Kind, E); end if;
+                  if Adm_Canonical then
+                     Set_Field (R, Kind, E);
+                     Add_Game_Mode_Assistance (R, E);
+                  end if;
                   return Json_Response (R);
                end;
             end;
@@ -2633,7 +2646,7 @@ if Kind = "crew" then
          "CrewStashBaseCapacity|LoadMaxima|" &
          "ActionCap|SessionExpressionMax|DevelopCoinCostMultiplier|" &
          "ClockPurposes|StartingAbility|ExtraDescription|" &
-         "StartingActionDots|StartingActionDotMax|",
+         "StartingActionDots|StartingActionDotMax|DowntimeSettings|",
          Where);
       S_Require_Str (V, "Name", Where);
       S_Require_Arr (V, "Playbooks", Where);
@@ -2651,6 +2664,14 @@ if Kind = "crew" then
          S_No_Extra (FS, "|Min|Max|", Where);
          S_Require_Int (FS, "Min", Where);
          S_Require_Int (FS, "Max", Where);
+      end;
+      declare
+         DT : constant JSON_Value := S_Obj (V, "DowntimeSettings", Where);
+      begin
+         S_No_Extra (DT, "|FreeActivities|", Where);
+         if S_Int (DT, "FreeActivities", Where) < 0 then
+            Settings_Error (Where, "DowntimeSettings.FreeActivities must be nonnegative");
+         end if;
       end;
       S_Require_Int (V, "StressMax", Where);
       S_Require_Int (V, "TraumaMax", Where);

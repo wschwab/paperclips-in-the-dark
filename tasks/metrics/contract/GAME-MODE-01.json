@@ -6,6 +6,23 @@
   "implementationAgent": "mode-mockups with bounded contract/oracle/settings workers",
   "reviewAgent": null,
   "iterationsToGreen": null,
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "No green claim: accepted RED boundary, 34/34 new cases fail and amended LIFECYCLE-ENDSCORE-002 fails.",
+  "passRateAfterReview": "No independent green review; compatible unchanged frozen cases 4/4 pass at the RED boundary.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "defectCatchingLayer": ["contract", "conformance", "human"],
+  "notes": "Metrics metadata repaired during GAME-MODE-02; historical evidence remains unchanged. Defect counters were not instrumented: zero entries are reporting placeholders, not claims that no defects occurred.",
+  "metricsMethodology": {
+    "method": "Recorded command evidence; unavailable retrospective measurements are identified rather than estimated.",
+    "source": "tasks/GAME-MODE-01.md and tasks/metrics/contract/GAME-MODE-01-*.log",
+    "wallClockNote": "Historical elapsed task time was not measured; 0 is an explicit unmeasured placeholder.",
+    "tokensNote": "Token accounting unavailable; null is the supported unknown value.",
+    "locNote": "No VCS commands authorized; implementation diff LOC not measured.",
+    "scaffoldingLocNote": "No VCS commands authorized; scaffolding diff LOC not measured."
+  },
   "verification": {
     "tooling": {
       "exitCode": 1,

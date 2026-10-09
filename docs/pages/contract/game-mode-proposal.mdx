@@ -4,11 +4,11 @@ title: Game mode — approved design and per-scoundrel API proposal
 
 # Game mode — approved design and per-scoundrel API proposal
 
-> **Design and API decisions frozen by the human; implementation not shipped.**
+> **Design and API decisions frozen by the human.**
 > The revised mockups were approved as “looks really great”. GAME-MODE-01
-> declares the per-scoundrel contract and new red conformance oracles.
-> This replaces the former campaign-wide/gated design without implementing
-> backend or frontend behavior; this card stops at the red-test boundary.
+> declares the per-scoundrel contract and red conformance oracles; GAME-MODE-02
+> implements the Ada backend and passes the acceptance recorded below.
+> Frontend delivery has its own card. The campaign-wide/gated design is obsolete.
 
 <p>
   <a href="/mockups/game-mode/index.html">Open the approved mockup gallery</a>
@@ -459,3 +459,76 @@ in `LIFECYCLE-ENDSCORE-003`, `SEMANTICS-COMPOSITES-003`,
 The separate French creation HTTP 500 is recorded in
 [the backend backlog](/backlog/french-game-creation-500), not GAME-MODE-01’s red
 oracle list.
+
+### GAME-MODE-02 self-correction: adjustments and legacy defaults
+
+The initial contract descriptions incorrectly constrained coin/gift adjustments
+to `delta = 1`. That was an invented API restriction: the approved **+1 UI
+control does not restrict the generic adjustment operation**. The human
+authorized removing it from the descriptions and Ada implementation. All
+declared reasons (`coin`, `gift`, `correction`) accept any signed integer delta;
+reason/integer validation stays, and no coin or rep is charged automatically.
+The frozen gift-2/gift-3 setup cases remain unchanged.
+
+Absent new top-level `mode`, `modeFlow`, and `downtime` properties are silent
+legacy migration defaults, not confirmation-required repairs. Legacy import
+preview returns 200 when the rest of the document is canonical. Stored legacy
+reads expose defaults without rewriting files or incrementing revisions;
+present null/malformed values and incomplete nested objects retain ordinary
+normalization/admission behavior. Modern complete documents retain their
+existing raw-byte GET/export behavior.
+
+### GAME-MODE-02 authorized contract-fixture additions
+
+The human authorized the shared Effect bindings in
+`conformance/src/schemas.ts` to mirror the approved character, operation-result
+and readable-summary fields, using the same tooling exception as
+CONTRACT-CONTACTS-01. Excess-property rejection remains enabled.
+
+The canonical `conformance/fixtures/golden-character.json` had **no mode,
+workflow or budget fields before**. It now additionally contains
+`mode: "free-play"`, `modeFlow: {kind: "none", step: ""}` and
+`downtime: {free: 2, paid: 0, spent: 0, activities: []}`; 2 is the fixture
+game’s configured free allowance. Existing fixture fields and test assertions
+remain unchanged. Dedicated legacy cases continue testing absent fields.
+
+`PARITY-HUMAN-003`’s exact required-human list changes **24 → 28**, adding only
+`characterModeSet`, `characterModeFlowSet`, `characterDowntimeSpend` and
+`characterDowntimeAdjust`. Exact-set equality and interactive reachability
+assertions are not weakened.
+
+`downtime.reset` is intentionally an **agent/maintenance operation**, not a
+human control in the approved panel: completed End Score resets the budget
+automatically; the panel exposes spending and paid/gift/correction adjustments,
+not a separate reset button. Its API remains available for explicit maintenance
+without inventing another UI affordance.
+
+### GAME-MODE-02 Ada backend acceptance
+
+The backend stores per-scoundrel mode, workflow and uncapped budget state,
+implements all five operations with existing persistence conventions, and adds
+advisory mode/suggestions to readable operation results. Real game settings
+load with `DowntimeSettings`; defaults also cover legacy reads, import previews
+and linked-scoundrel cleanup during crew deletion without read-time writes.
+No mode-based rejection, automatic coin charge, new HTTP status, campaign
+fan-out, or breaking removal of the optional loadout-reset flag is introduced.
+
+Canonical real-settings Ada acceptance passes **576/576** tests, including all
+35 previously red cases and `PARITY-HUMAN-003`. Controlled restart coverage
+passes **576/576 in each of two cycles**. The canonical backend CI script
+passes core tests, launch-path and SPA regressions, and **246/246 SPARK proof
+checks**. Tooling passes **233/233** and conformance TypeScript checking passes.
+
+After the frontend landed and both trees froze, the human superseded the
+earlier backend-only mutation deferral: the **full 28/28 campaign passes**
+(P0 **19/19**, P1 **9/9**) with green Ada **576**, frontend **841**, and tooling
+**233** baselines. The harness verifies every temporary mutation is restored.
+Five changed backend targets’ hashes were refreshed in 13 catalog entries;
+frontend target hashes were supplied by its worker. There is no outstanding
+full-campaign deferral.
+
+Evidence and exact commands are in `tasks/GAME-MODE-02.md`,
+`tasks/metrics/ada/GAME-MODE-02.json` and the associated command logs.
+GAME-MODE-01’s missing required metrics metadata was repaired without altering
+its historical RED evidence. Managed tooling timeouts can leave temporary
+suite fixtures behind; this lesson is recorded in the backend card.

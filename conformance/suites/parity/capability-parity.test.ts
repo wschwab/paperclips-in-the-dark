@@ -65,6 +65,7 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   "repairCharacterPreview", "repairCharacterApply", "repairCrewPreview", "repairCrewApply",
   "dossierUpdate", "noteAdd", "noteRemove", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove",
   "stressFix",
+  "characterModeSet", "characterModeFlowSet", "characterDowntimeSpend", "characterDowntimeAdjust",
 ];
 
 /** Runtime narrowing for JSON bodies: object and not an array. */

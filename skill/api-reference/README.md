@@ -1803,7 +1803,7 @@ Responses:
 
 `POST /characters/{id}/ops/downtime.adjust`
 
-Add signed delta to downtime.paid without clamp or maximum. coin/gift require delta=1: record an already-paid/gifted extra activity, never charge coin or rep or mutate funds. correction permits any signed integer including -1 and zero. Preserve spent and activity records; reason describes this request, not a new stored record field. Available in every mode, including negative remaining. Does not change mode or apply outcomes. applied.requested/effective are signed delta and equal on success. Existing unrelated lifecycle, revision, idempotency, snapshot and undo rules apply.
+Add signed delta to downtime.paid without clamp or maximum. coin/gift record already-paid/gifted activity adjustments, never charge coin or rep or mutate funds. All reasons accept any signed integer, including -1 and zero. Preserve spent and activity records; reason describes this request, not a new stored record field. Available in every mode, including negative remaining. Does not change mode or apply outcomes. applied.requested/effective are signed delta and equal on success. Existing unrelated lifecycle, revision, idempotency, snapshot and undo rules apply.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 

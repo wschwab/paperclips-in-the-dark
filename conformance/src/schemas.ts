@@ -53,6 +53,29 @@ const ClockPurpose = Schema.Literal(
   "long-term-project", "faction", "score", "custom",
 );
 
+// GAME-MODE-01: stored advisory assistance; mirrors character.json exactly.
+const GameMode = Schema.Literal("free-play", "score", "downtime");
+const ModeFlow = Schema.Struct({
+  kind: Schema.Literal("none", "score-start", "resolution"),
+  step: Schema.Literal(
+    "", "planning", "loadout", "engagement", "scoundrel-xp", "payoff",
+    "heat", "entanglements", "crew-xp", "crew-rep",
+  ),
+});
+const DowntimeActivity = Schema.Literal(
+  "acquire-asset", "long-term-project", "recover", "reduce-heat",
+  "train", "indulge-vice", "other",
+);
+const Downtime = Schema.Struct({
+  free: NonNegativeInt,
+  paid: Schema.Int,
+  spent: NonNegativeInt,
+  activities: Schema.Array(Schema.Struct({
+    activity: DowntimeActivity,
+    description: Schema.String,
+  })),
+});
+
 const BoundedInteger = Schema.Struct({ current: NonNegativeInt, max: NonNegativeInt });
 const Experience = Schema.Struct({ points: NonNegativeInt, max: NonNegativeInt });
 const NamedDescription = Schema.Struct({ name: Schema.String, description: Schema.String });
@@ -83,6 +106,9 @@ const Character = Schema.Struct({
   traumaPending: Schema.Boolean,
   isOutOfAction: Schema.Boolean,
   stressClearPending: Schema.Boolean,
+  mode: GameMode,
+  modeFlow: ModeFlow,
+  downtime: Downtime,
   dossier: Schema.Struct({
     name: Schema.String,
     crewId: Schema.String.pipe(
@@ -343,6 +369,8 @@ const OperationError = OperationErrorNewShape;
 const OperationResult = Schema.Struct({
   ok: Schema.Boolean,
   character: Schema.optional(Character),
+  mode: Schema.optional(GameMode),
+  suggestedOps: Schema.optional(Schema.Array(Schema.String)),
   crew: Schema.optional(Crew),
   clock: Schema.optional(Clock),
   applied: Schema.Struct({
@@ -387,6 +415,7 @@ const CharacterSummary = Schema.Struct({
   isDeadish: Schema.Boolean,
   revision: Revision,
   isReadable: Schema.Boolean,
+  mode: Schema.optional(GameMode),
   isRepairable: Schema.Boolean,
   isComplete: Schema.Boolean,
   deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),

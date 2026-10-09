@@ -3,6 +3,8 @@
 --  recovery instruction, and detail shape (operation-result.json
 --  $defs/operationError + common.json $defs).  Messages are short human
 --  strings; no document bytes or exception text ever enter them.
+with Pitd_Common;
+
 package body Pitd_Error is
    function Error_Value
      (Op, Code : String; Status : Integer; Message : String;
@@ -35,6 +37,7 @@ package body Pitd_Error is
       Set_Field (R, "applied", A);
       Set_Field (R, "sideEffects", Empty_Array);
       Set_Field (R, "error", E);
+      Pitd_Common.Add_Game_Mode_Assistance (R, Entity);
       return R;
    end Error_Value;
 

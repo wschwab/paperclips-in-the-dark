@@ -58,6 +58,9 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "faction.set-status" or else Op = "faction.remove"
         or else Op = "end-score" or else Op = "end-downtime"
         or else Op = "retire"
+        or else Op = "mode.set" or else Op = "mode.flow.set"
+        or else Op = "downtime.spend" or else Op = "downtime.adjust"
+        or else Op = "downtime.reset"
         or else Op = "claim.set" or else Op = "claim.customize"
         or else Op = "claim.reset"
       then
@@ -132,6 +135,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
       Set_Field (C, "traumaPending", False);
       Set_Field (C, "isOutOfAction", False);
       Set_Field (C, "stressClearPending", False);
+      Ensure_Game_Mode_Defaults (C);
       Set_Field (Dossier, "name", "");
       Set_Field (Dossier, "crewId", "");
       Set_Field (Dossier, "alias", "");
@@ -558,6 +562,51 @@ elsif Op = "clock.create" then
          return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "upgrade.mark" or else Op = "upgrade.unmark" then
          return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
+      elsif Op = "mode.set" then
+         return Check_Fields
+           (B, Spec_List'(1 => Spec ("mode", JSON_String_Type,
+                                    En => "free-play|score|downtime")), Bad);
+      elsif Op = "mode.flow.set" then
+         if not Check_Fields
+           (B, (Spec ("kind", JSON_String_Type, En => "none|score-start|resolution"),
+                Spec ("step", JSON_String_Type,
+                      En => "|planning|loadout|engagement|scoundrel-xp|payoff|heat|entanglements|crew-xp|crew-rep")), Bad)
+         then
+            return False;
+         end if;
+         declare
+            Flow_Kind : constant String := Str_Field (B, "kind");
+            Step : constant String := Str_Field (B, "step");
+         begin
+            if (Flow_Kind = "none" and then Step = "")
+              or else (Flow_Kind = "score-start"
+                       and then (Step = "planning" or else Step = "loadout"
+                                 or else Step = "engagement"))
+              or else (Flow_Kind = "resolution"
+                       and then (Step = "scoundrel-xp" or else Step = "payoff"
+                                 or else Step = "heat" or else Step = "entanglements"
+                                 or else Step = "crew-xp" or else Step = "crew-rep"))
+            then
+               return True;
+            end if;
+            Bad := To_Unbounded_String ("invalid mode flow kind/step pairing");
+            return False;
+         end;
+      elsif Op = "downtime.spend" then
+         return Check_Fields
+           (B, (Spec ("activity", JSON_String_Type,
+                      En => "acquire-asset|long-term-project|recover|reduce-heat|train|indulge-vice|other"),
+                Spec ("description", JSON_String_Type)), Bad);
+      elsif Op = "downtime.adjust" then
+         if not Check_Fields
+           (B, (Spec ("delta", JSON_Int_Type),
+                Spec ("reason", JSON_String_Type, En => "coin|gift|correction")), Bad)
+         then
+            return False;
+         end if;
+         return True;
+      elsif Op = "downtime.reset" then
+         return Check_Fields (B, Spec_List'(1 .. 0 => <>), Bad);
       elsif Op = "end-score" then
          --  W15: the body is optional — a missing or empty body is valid;
          --  only present fields are constrained.
@@ -669,15 +718,62 @@ begin
       --  allow-list proceeds: dossier.update, note.add/remove, notebook.set,
       --  trauma.remove (the trauma-history correction path — never
       --  recomputes isRetired), plus the direct entity ops handled before
-      --  Mutate (undo/delete/import) and all reads.  Every gameplay
-      --  mutation — including trauma.add and end-score — returns RETIRED.
+      --  Mutate (undo/delete/import) and all reads. Assistance-only
+      --  mode.set/mode.flow.set also proceed; gameplay mutations return RETIRED.
       if Kind = "character" and then Bool_Field (E, "isRetired")
         and then Op /= "dossier.update" and then Op /= "note.add"
         and then Op /= "note.remove" and then Op /= "notebook.set"
         and then Op /= "trauma.remove"
+        and then Op /= "mode.set" and then Op /= "mode.flow.set"
       then return Retired_Error (Op, "character is retired", E); end if;
 
-      if Op = "stress.add" then
+      if Op = "mode.set" or else Op = "mode.flow.set"
+        or else Op = "downtime.spend" or else Op = "downtime.adjust"
+        or else Op = "downtime.reset"
+      then
+         if Kind /= "character" then
+            return Validation_Error (Op, "character-only operation",
+                                     Root_Issues ("character-only operation"), E);
+         end if;
+         if Op = "mode.set" then
+            if Str_Field (B, "mode") /= Str_Field (E, "mode") then
+               Set_Field (E, "mode", Str_Field (B, "mode"));
+               declare
+                  Flow : JSON_Value := Default_Mode_Flow;
+               begin
+                  if Str_Field (B, "mode") = "score" then
+                     Set_Field (Flow, "kind", "score-start");
+                     Set_Field (Flow, "step", "planning");
+                  end if;
+                  Set_Field (E, "modeFlow", Flow);
+               end;
+            end if;
+         elsif Op = "mode.flow.set" then
+            Set_Field (E, "modeFlow", Clone (B));
+            if Str_Field (B, "kind") /= "none" then
+               Set_Field (E, "mode", "score");
+            end if;
+         elsif Op = "downtime.spend" then
+            declare
+               D : constant JSON_Value := Get (E, "downtime");
+               Activities : JSON_Array := Get (D, "activities");
+            begin
+               Append (Activities, Clone (B));
+               Set_Field (D, "activities", Activities);
+               Set_Field (D, "spent", Int_Field (D, "spent") + 1);
+            end;
+         elsif Op = "downtime.adjust" then
+            declare
+               D : constant JSON_Value := Get (E, "downtime");
+            begin
+               Requested := Int_Field (B, "delta");
+               Set_Field (D, "paid", Int_Field (D, "paid") + Requested);
+               Effective := Requested;
+            end;
+         else
+            Set_Field (E, "downtime", Default_Downtime (E));
+         end if;
+      elsif Op = "stress.add" then
          Target := Get (Get (E,"monitor"),"stress"); Requested := Int_Field (B,"delta");
          --  LIFECYCLE gates: a pending trauma blocks until resolved;
          --  an out-of-action character is blocked until end-score releases.
@@ -1650,6 +1746,12 @@ elsif Op = "harm.add" then
             return Trauma_Required_Error
               (Op, "pending trauma must be resolved before end-score", E);
          end if;
+         --  Admission precedes every selected cleanup, including armor.
+         if Bool_Field (B, "resetLoadoutCommitment", False)
+           and then Bool_Field (Get (E, "gear"), "isCommitmentLocked")
+         then
+            return Commitment_Locked_Error (Op, "commitment is locked", E);
+         end if;
          if Bool_Field (B, "clearArmorUsed", False) then
             declare A : constant JSON_Value := Get (Get (E, "monitor"), "armor"); begin
                Set_Field (A, "standardUsed", False);
@@ -1659,16 +1761,27 @@ elsif Op = "harm.add" then
          end if;
          if Bool_Field (B, "resetLoadoutCommitment", False) then
             declare G : constant JSON_Value := Get (E, "gear"); begin
-               if Bool_Field (G, "isCommitmentLocked") then
-                  return Commitment_Locked_Error (Op, "commitment is locked", E);
-               end if;
                Set_Field (G, "loadout", Empty_Array);
                Set_Field (G, "commitment", "none");
             end;
          end if;
-         --  W15: a successful end-score always clears stress and releases
-         --  the out-of-action state.
-         Set_Field (Get (Get (E, "monitor"), "stress"), "current", Integer'(0));
+         --  GAME-MODE-01: partial stress persists; only a full meter clears.
+         declare
+            Stress : constant JSON_Value := Get (Get (E, "monitor"), "stress");
+            Maximum : constant Integer :=
+              Settings_Int ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                             Game (Str_Field (E, "gameStem"))), "StressMax", 0);
+            Flow : JSON_Value := Default_Mode_Flow;
+         begin
+            if Int_Field (Stress, "current") = Maximum then
+               Set_Field (Stress, "current", Integer'(0));
+            end if;
+            Set_Field (E, "mode", "score");
+            Set_Field (Flow, "kind", "resolution");
+            Set_Field (Flow, "step", "scoundrel-xp");
+            Set_Field (E, "modeFlow", Flow);
+            Set_Field (E, "downtime", Default_Downtime (E));
+         end;
          Set_Field (E, "isOutOfAction", False);
          Set_Field (E, "stressClearPending", False);
       elsif Op = "retire" then

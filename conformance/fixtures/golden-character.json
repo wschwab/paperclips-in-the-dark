@@ -13,6 +13,9 @@
   "traumaPending": false,
   "isOutOfAction": false,
   "stressClearPending": false,
+  "mode": "free-play",
+  "modeFlow": { "kind": "none", "step": "" },
+  "downtime": { "free": 2, "paid": 0, "spent": 0, "activities": [] },
   "dossier": {
     "name": "Brenda Hilton",
     "crewId": "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2",
