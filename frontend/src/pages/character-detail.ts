@@ -100,12 +100,14 @@ import type { Crew } from "../schema/crew.js";
 import {
   renderGameModePanel,
   renderScorePopup,
+  renderLoadoutConfirm,
+  renderDowntimeActivities,
   renderCommittedLoadout,
   renderResolution,
   type GameModeHandlers,
   type GameModeUi,
 } from "./character-sections/gameMode.js";
-import { LOAD_CHOICES, commitmentFor } from "./game-mode.js";
+import { commitmentFor, type LoadoutProposal } from "./game-mode.js";
 import { el, setChildren } from "../lib/dom.js";
 import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
 import { completionCues, type CompletionCue } from "../lib/completion-cues.js";
@@ -254,10 +256,11 @@ function renderDetail(state: RenderState): HTMLElement {
     renderCompletionCues(completionCues(c), state.dismissedCues, state.handlers.onDismissCue),
 
     renderPersonalSection(ctx),
+    // GAME-MODE-03: the Downtime activity menu sits in the sheet, above the fixed footer on narrow screens.
+    state.c.mode === "downtime" ? renderDowntimeActivities(ctx, state.handlers.gm) : null,
     // GAME-MODE-03: Score shows the committed loadout, the Score popup and the
     // Resolution stepper. They are assistance only and gate no operation.
     state.c.mode === "score" ? renderCommittedLoadout(ctx, state.handlers.gm, state.gameMode) : null,
-    renderScorePopup(ctx, state.handlers.gm, state.gameMode),
     renderResolution(ctx, state.handlers.gm, state.gameMode),
     renderStressSection(ctx),
     renderTraumasSection(ctx),
@@ -318,9 +321,12 @@ function renderDetail(state: RenderState): HTMLElement {
       }, formatErrorSummary(error)),
     );
   }
+  // Score popups are overlay dialogs (aria-modal) outside the sheet; they gate nothing.
   return el("div", { className: "game-mode-layout" },
     renderGameModePanel(ctx, state.handlers.gm, state.gameMode),
     sheet,
+    renderScorePopup(ctx, state.handlers.gm, state.gameMode),
+    renderLoadoutConfirm(ctx, state.handlers.gm, state.gameMode),
   );
  }
 
@@ -429,7 +435,7 @@ export function mountCharacterDetailPage(
   let isGameModeLoading = false;
   let linkedCrew: Crew | null = null;
   let gmShowAllEntanglements = false;
-  let gmLoadoutChange: (typeof LOAD_CHOICES)[number] | null = null;
+  let gmLoadoutChange: LoadoutProposal | null = null;
   let gmPlanApproach: string | null = null;
   let gmCrewNotice: string | null = null;
   let coinNotice: string | null = null;
@@ -695,16 +701,43 @@ export function mountCharacterDetailPage(
       gmPlanApproach = approach;
       renderDetailWrapper();
     },
-    onLoadoutChange: (choice) => {
-      gmLoadoutChange = choice;
+    onLoadoutChange: (proposal) => {
+      gmLoadoutChange = proposal;
       renderDetailWrapper();
     },
+    onLoadoutProposalChoice: (choice) => {
+      if (gmLoadoutChange === null) return;
+      gmLoadoutChange = { ...gmLoadoutChange, commitment: choice };
+      renderDetailWrapper();
+    },
+    onLoadoutProposalItem: (name, committed) => {
+      if (gmLoadoutChange === null) return;
+      const rest = gmLoadoutChange.items.filter((n) => n !== name);
+      gmLoadoutChange = { ...gmLoadoutChange, items: committed ? [...rest, name] : rest };
+      renderDetailWrapper();
+    },
+    // Confirm applies the proposal as explicit gear writes: level first, then removals, then additions.
+    // Each write uses the revision returned by the previous one. Nothing commits before this point.
     onLoadoutConfirm: () => {
-      if (!currentCharacter || isGameModeLoading || gmLoadoutChange === null) return;
+      const change = gmLoadoutChange;
+      if (!currentCharacter || isGameModeLoading || change === null) return;
+      const current = currentCharacter;
+      const have = new Set(current.gear.loadout.map((i) => i.name));
+      const want = new Set(change.items);
+      const removed = [...have].filter((n) => !want.has(n));
+      const added = [...want].filter((n) => !have.has(n));
+      const levelKey = change.commitment === null ? null : commitmentFor(change.commitment);
+      const needsLevel = levelKey !== null && levelKey !== current.gear.commitment;
       isGameModeLoading = true;
       clearNotices();
       renderDetailWrapper();
-      const program = gearSetCommitment(characterId, commitmentFor(gmLoadoutChange), currentCharacter.revision);
+      const program = Effect.gen(function* () {
+        let c: Character = current;
+        if (needsLevel && levelKey !== null) c = yield* gearSetCommitment(characterId, levelKey, c.revision);
+        for (const name of removed) c = yield* gearUncommit(characterId, name, c.revision);
+        for (const name of added) c = yield* gearCommit(characterId, name, c.revision);
+        return c;
+      });
       runCharacterMutate(
         "gear",
         program,
@@ -1364,13 +1397,17 @@ export function mountCharacterDetailPage(
       clearNotices();
       renderDetailWrapper();
 
+      const stressBefore = currentCharacter.monitor.stress;
       const program = endScore(characterId, currentCharacter.revision);
       runCharacterMutate(
         "lifecycle",
         program,
         (character) => {
           currentCharacter = character;
-          noticeMsg = "Score ended — stress cleared.";
+          // Stress clears only when it was completely full (contract); partial stress persists.
+          noticeMsg = stressBefore.current >= stressBefore.max
+            ? "Score ended — stress cleared."
+            : "Score ended — partial stress kept.";
           renderDetailWrapper();
         },
         () => { isEndScoreLoading = false; },

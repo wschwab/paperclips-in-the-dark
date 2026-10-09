@@ -192,7 +192,8 @@ describe("GAME-MODE-03 sheet", () => {
     const change = Array.from(root.querySelectorAll('[data-section="committed-loadout"] button')).find((b) => b.textContent === "Change loadout") as HTMLButtonElement;
     change.click();
     await vi.waitFor(() => {
-      expect(root.querySelector(".game-mode-confirm")?.textContent).toContain("Back cancels; Confirm commits.");
+      expect(root.querySelector(".game-mode-confirm")?.textContent).toContain("Your scoundrel is already on a score.");
+    expect(Array.from(root.querySelectorAll(".game-mode-confirm button")).map((b) => b.textContent)).toContain("Confirm change");
     });
   });
 
@@ -318,7 +319,7 @@ describe("GAME-MODE-03 sheet", () => {
     const remaining = root.querySelector("[data-downtime-remaining]");
     expect(remaining?.getAttribute("data-downtime-remaining")).toBe("-1");
     expect(root.querySelector(".mode-panel .notice")?.textContent).toContain("Over the soft budget");
-    const train = Array.from(root.querySelectorAll(".mode-panel button")).find((b) => b.textContent === "Train") as HTMLButtonElement;
+    const train = Array.from(root.querySelectorAll('[data-section="downtime-activities"] button')).find((b) => b.textContent === "Train") as HTMLButtonElement;
     expect(train.disabled).toBe(false);
     train.click();
     await vi.waitFor(() => {
@@ -348,3 +349,132 @@ describe("GAME-MODE-03 sheet", () => {
     });
   });
 });
+
+// Luna FAIL findings on revision 654c3cff (GAME-MODE-03 review). Each test pins
+// the approved mockup behaviour; expected copy is quoted from docs/public/mockups/game-mode.
+describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
+  it("Planning is an overlay dialog (aria-modal) outside the sheet, with the six approach descriptions", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "planning" } }));
+    const dialog = root.querySelector(".game-mode-popup")!;
+    expect(dialog.getAttribute("aria-modal")).toBe("true");
+    expect(dialog.closest(".character-detail")).toBeNull();
+    const text = dialog.textContent ?? "";
+    expect(text).toContain("Do violence to a target.");
+    expect(text).toContain("Lure, trick, or manipulate.");
+    expect(text).toContain("Trespass unseen.");
+    expect(text).toContain("Engage a supernatural power.");
+    expect(text).toContain("Negotiate, bargain, or persuade.");
+    expect(text).toContain("Carry cargo or people through danger.");
+    const footer = Array.from(dialog.querySelectorAll("button")).map((b) => b.textContent);
+    expect(footer).toEqual(expect.arrayContaining(["Back", "Leave flow", "Next: Loadout"]));
+  });
+
+  it("Engagement footer ends with Enter Score and shows the approved starting-position reminder", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "engagement" } }));
+    const dialog = root.querySelector(".game-mode-popup")!;
+    const footer = Array.from(dialog.querySelectorAll("button")).map((b) => b.textContent);
+    expect(footer).toEqual(["Back", "Leave flow", "Enter Score"]);
+    expect(dialog.textContent).toContain("Critical: past the first obstacle, controlled next");
+    expect(dialog.textContent).toContain("This reminder doesn’t roll dice or require a result.");
+  });
+
+  it("Change loadout opens a confirmation with Light/Normal/Heavy, gear checkboxes and Back/Leave flow/Confirm change", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } }));
+    const change = Array.from(root.querySelectorAll('[data-section="committed-loadout"] button')).find((b) => b.textContent === "Change loadout") as HTMLButtonElement;
+    change.click();
+    await vi.waitFor(() => {
+      expect(root.querySelector(".game-mode-confirm")).not.toBeNull();
+    });
+    const confirm = root.querySelector(".game-mode-confirm")!;
+    expect(Array.from(confirm.querySelectorAll("button")).map((b) => b.textContent)).toEqual(expect.arrayContaining(["Light · 3", "Normal · 5", "Heavy · 6"]));
+    expect(confirm.querySelectorAll("input[type='checkbox']").length).toBeGreaterThanOrEqual(2);
+    expect(Array.from(confirm.querySelectorAll("button")).map((b) => b.textContent)).toEqual(expect.arrayContaining(["Back", "Leave flow", "Confirm change"]));
+    // The proposed level starts at the current commitment (normal), not the first choice.
+    expect(confirm.querySelector("button[aria-pressed='true']")?.textContent).toBe("Normal · 5");
+  });
+
+  it("Change loadout Back cancels the proposal and sends no gear write; Confirm change applies the proposed items", async () => {
+    const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } }));
+    const openChange = () => (Array.from(root.querySelectorAll('[data-section="committed-loadout"] button')).find((b) => b.textContent === "Change loadout") as HTMLButtonElement).click();
+    openChange();
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-confirm")).not.toBeNull());
+    const confirm = root.querySelector(".game-mode-confirm")!;
+    // Uncheck "Fine lockpicks" and check "Climbing gear" in the proposal.
+    const boxes = Array.from(confirm.querySelectorAll("input[type='checkbox']")) as HTMLInputElement[];
+    const lock = boxes.find((b) => b.closest("label")?.textContent?.includes("Fine lockpicks"))!;
+    const climb = boxes.find((b) => b.closest("label")?.textContent?.includes("Climbing gear"))!;
+    lock.click();
+    climb.click();
+    (Array.from(confirm.querySelectorAll("button")).find((b) => b.textContent === "Back") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-confirm")).toBeNull());
+    expect(calls.some((c) => c.url.includes("/ops/gear."))).toBe(false);
+
+    openChange();
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-confirm")).not.toBeNull());
+    // Re-query after each click: every checkbox change re-renders the proposal.
+    const box = (name: string) => Array.from(root.querySelectorAll(".game-mode-confirm input[type='checkbox']") as NodeListOf<HTMLInputElement>)
+      .find((b) => b.closest("label")?.textContent?.includes(name))!;
+    box("Fine lockpicks").click();
+    await vi.waitFor(() => expect(box("Climbing gear").checked).toBe(false));
+    box("Climbing gear").click();
+    await vi.waitFor(() => expect(box("Climbing gear").checked).toBe(true));
+    (Array.from(root.querySelectorAll(".game-mode-confirm button")).find((b) => b.textContent === "Confirm change") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(calls.some((c) => c.url.endsWith("/ops/gear.uncommit"))).toBe(true);
+      expect(calls.some((c) => c.url.endsWith("/ops/gear.commit"))).toBe(true);
+    });
+  });
+
+  it("End Score with partial stress does not claim stress was cleared", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } });
+    const endedDto = characterDTO({ mode: "score", revision: 13, modeFlow: { kind: "resolution", step: "scoundrel-xp" } });
+    const api = mockApi(dto);
+    const base = global.fetch as unknown as (url: string, init?: RequestInit) => Promise<unknown>;
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === `/api/characters/${CHARACTER_ID}/end-score`) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, character: endedDto, applied: { op: "end-score" }, sideEffects: [], error: null }) };
+      }
+      return base(url, init);
+    }) as unknown as typeof fetch;
+    void api;
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => expect(root.querySelector(".mode-panel")).not.toBeNull());
+    (Array.from(root.querySelectorAll(".mode-panel button")).find((b) => b.textContent === "End Score") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.textContent).toContain("Score ended"));
+    expect(root.textContent).not.toContain("stress cleared");
+    expect(root.textContent).toContain("partial stress kept");
+    confirmSpy.mockRestore();
+  });
+
+  it("direct crew editors use the approved update labels per step", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
+    await vi.waitFor(() => expect(root.querySelector('[data-crew-track="rep"]')).not.toBeNull());
+    expect(root.querySelector('[data-crew-track="rep"] button')?.textContent).toBe("Update crew");
+    expect(root.querySelector('[data-crew-track="coin"] button')?.textContent).toBe("Update crew");
+  });
+
+  it("Crew XP and Crew Rep use the approved update labels, and Crew Rep offers a confirmed Skip and Next: Downtime", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }));
+    await vi.waitFor(() => expect(root.querySelector('[data-crew-track="xp"]')).not.toBeNull());
+    expect(root.querySelector('[data-crew-track="xp"] button')?.textContent).toBe("Update crew XP");
+    cleanupRoot();
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-rep" } }));
+    await vi.waitFor(() => expect(root.querySelector('[data-crew-track="rep"]')).not.toBeNull());
+    expect(root.querySelector('[data-crew-track="rep"] button')?.textContent).toBe("Update crew rep");
+    const footer = Array.from(root.querySelector(".game-mode-resolution")!.lastElementChild!.querySelectorAll("button")).map((b) => b.textContent);
+    expect(footer).toEqual(["Back", "Skip", "Skip Resolution", "Leave flow", "Next: Downtime"]);
+  });
+
+  it("the Downtime activity menu lives in the sheet (above the fixed footer on narrow), not only in the panel", async () => {
+    await mountWith(characterDTO({ mode: "downtime", downtime: { free: 2, paid: 0, spent: 0, activities: [] } }));
+    const menu = root.querySelector('[data-section="downtime-activities"]');
+    expect(menu).not.toBeNull();
+    expect(menu!.closest(".mode-panel")).toBeNull();
+    expect(Array.from(menu!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(expect.arrayContaining(["Acquire Asset", "Train", "Other"]));
+  });
+});
+
+function cleanupRoot() {
+  root.innerHTML = "";
+}

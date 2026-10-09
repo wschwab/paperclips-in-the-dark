@@ -28,8 +28,29 @@ export const RESOLUTION_STEPS = [
 export type ScoreStartStep = (typeof SCORE_START_STEPS)[number];
 export type ResolutionStep = (typeof RESOLUTION_STEPS)[number];
 
-/** Approved Planning approaches (SRD Planning). UI assistance only; no contract op. */
-export const PLAN_APPROACHES = ["Assault", "Deception", "Stealth", "Occult", "Social", "Transport"] as const;
+/** Approved Planning approaches with the mockup's one-line descriptions. UI assistance only; no contract op. */
+export const PLAN_APPROACHES = [
+  { value: "Assault", description: "Do violence to a target." },
+  { value: "Deception", description: "Lure, trick, or manipulate." },
+  { value: "Stealth", description: "Trespass unseen." },
+  { value: "Occult", description: "Engage a supernatural power." },
+  { value: "Social", description: "Negotiate, bargain, or persuade." },
+  { value: "Transport", description: "Carry cargo or people through danger." },
+] as const;
+
+/** A load level, as the Loadout popup and confirmation show it. */
+export type LoadChoice = (typeof LOAD_CHOICES)[number];
+
+/** Settings commitment key -> design load level; "none" has no level. */
+export function choiceForCommitment(key: string): LoadChoice | null {
+  return LOAD_CHOICES.find((c) => c.toLowerCase() === key) ?? null;
+}
+
+/** A proposed committed loadout awaiting Confirm change (Back/Leave flow cancels). */
+export interface LoadoutProposal {
+  commitment: LoadChoice | null;
+  items: string[];
+}
 
 /** Approved downtime activity menu (contract downtimeActivity enum), in display order. */
 export const DOWNTIME_ACTIVITIES = [
