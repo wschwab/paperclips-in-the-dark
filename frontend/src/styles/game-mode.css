@@ -10,9 +10,17 @@
 @media (min-width: 1100px) {
   .game-mode-layout {
     display: grid;
-    grid-template-columns: 15em minmax(0, 1fr);
+    grid-template-columns: minmax(0, 15em) minmax(0, 1fr);
     gap: 1.25em;
     align-items: start;
+  }
+  /* The sheet's wide max-width must yield to the gutter: the grid track may
+   * shrink, and the sheet may shrink with it (containment at 1100-1280px). */
+  .game-mode-layout > .character-detail {
+    max-width: none;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
   }
   .game-mode-layout > .mode-panel {
     position: sticky;
