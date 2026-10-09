@@ -78,3 +78,7 @@ acceptance:
 - Luna's checks: `npm run build` exit 0; vitest 21 files / 815 tests; `tsc --noEmit` exit 0; 12/12 viewport x theme combinations in Chromium; minimum badge contrast 4.54:1; overflow ok; five-level badges; a server-recorded click; remove and add-custom work; picker text `Name - Description`; Projects ownership (campaign clock hidden, character-owned clock shown).
 - No findings. The frozen-test amendments were checked against the docs page's before/after table.
 - Status: PASS on the pinned revision. Records are final at that revision.
+
+## Test title rename (human-approved)
+
+- SEMANTICS-CHAR-CONTACTS-009 title (line 97, title string only). Before: `fresh characters carry the REQUIRED canonical empty contacts array`. After: `fresh characters carry the REQUIRED contacts array preloaded with playbook Rolodex friends`. The comment at lines 98-100 has no "empty", so it is unchanged. `character-contacts.test.ts` passes against Ada: 9 of 9. Before/after also in `docs/pages/contract/contract-contacts-closeness.mdx`.

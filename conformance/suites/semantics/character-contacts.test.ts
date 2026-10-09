@@ -94,7 +94,7 @@ describe("CONTRACT-05 per-scoundrel contacts", () => {
     expect(history[2]?.op).toBe("contact.add");
   });
 
-  testCase("SEMANTICS-CHAR-CONTACTS-009", "fresh characters carry the REQUIRED canonical empty contacts array", async () => {
+  testCase("SEMANTICS-CHAR-CONTACTS-009", "fresh characters carry the REQUIRED contacts array preloaded with playbook Rolodex friends", async () => {
     // contacts returned to the required list in the 2026-08-25 correction:
     // every ordinary current-version character document must carry the key
     // (no sparse overlay beside claimOverrides item fields).

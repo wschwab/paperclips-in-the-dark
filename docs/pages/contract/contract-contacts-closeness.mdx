@@ -48,3 +48,14 @@ Why 001 changed: `Marlane, a pugilist` is on the Cutter Rolodex, so a new Cutter
 ## Frontend
 
 Closeness decoders (`frontend/src/schema/common.ts`) take the five values. `CONTACT_CLOSENESS_ORDER` gives the cycle order: each click moves one level up, and `confidante` wraps to `enemy`. Each level has its own bold, bordered badge with white text; contrast was measured in Chromium in light, dark, and high-contrast themes (`browser-evidence/playtest-ui-02/c-summary.json`, minimum ratio 4.54:1). The badge is a button with class `contact-closeness` and a "Cycle closeness" title. Remove and add-custom are unchanged.
+
+## Test title rename (human-approved)
+
+SEMANTICS-CHAR-CONTACTS-009, title string only (`conformance/suites/semantics/character-contacts.test.ts` line 97). The test ID and assertions are unchanged.
+
+| | Title |
+|---|---|
+| Before | `fresh characters carry the REQUIRED canonical empty contacts array` |
+| After | `fresh characters carry the REQUIRED contacts array preloaded with playbook Rolodex friends` |
+
+The comment block below the title (lines 98-100) does not use the word "empty", so it is unchanged. The file passes against Ada: 9 of 9.
