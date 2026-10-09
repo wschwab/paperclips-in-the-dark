@@ -14,7 +14,7 @@
     "review": 15,
     "human": 3
   },
-  "notes": "Review (Luna xhigh) caught: overlay popups not aria-modal and inside the sheet; missing Planning approach descriptions; Engagement footer and starting-position reminder; Change-loadout replacement flow with no choices or checklist and a commit-on-open defect; End Score notice claiming stress cleared; crew editor labels; missing Crew Rep Skip and final footer; Downtime menu placement (wide and narrow); enum ids in the Resolution stepper; duplicated committed gear rows; Planning Back disabled; missing engagement factor table; non-selectable Resolution steps. Conformance caught PARITY-HUMAN-003 operationId naming and the roster summary decode (campaign.json mode). Compiler caught field names and an unsupported prop. Human caught: Skip must confirm; required contract fields. Gates at b3b3eff4: tsc 0; vitest 25 files / 861 tests; build 0; browser journeys 6/6 PASS; Chromium capture 117 rows, 0 overflow, 0 page errors, contrast >= 4.5. NOT RUN: Luna PASS on the final revision (usage limit), 28/28 mutation campaign, fresh Ada run at the final revision.",
+  "notes": "Review (Luna xhigh) caught: overlay popups not aria-modal and inside the sheet; missing Planning approach descriptions; Engagement footer and starting-position reminder; Change-loadout replacement flow with no choices or checklist and a commit-on-open defect; End Score notice claiming stress cleared; crew editor labels; missing Crew Rep Skip and final footer; Downtime menu placement (wide and narrow); enum ids in the Resolution stepper; duplicated committed gear rows; Planning Back disabled; missing engagement factor table; non-selectable Resolution steps. Conformance caught PARITY-HUMAN-003 operationId naming and the roster summary decode (campaign.json mode). Compiler caught field names and an unsupported prop. Human caught: Skip must confirm; required contract fields. Gates at b3b3eff4: tsc 0; vitest 25 files / 861 tests; build 0; browser journeys 6/6 PASS; Chromium capture 117 rows, 0 overflow, 0 page errors, contrast >= 4.5. Luna PASS on the final revision NOT achieved (usage limit). Mutation 28/28 and Ada 577/577 run at b3b3eff4. Open from superseded review 9f18cdcf: F10 entanglement SRD table, F1 Resolution inline surface.",
   "metricsMethodology": {
     "method": "no grounded duration available (wall-clock not recorded for this worker run)",
     "source": "vitest output, tsc, production build, browser-suite logs, Chromium capture summary, Luna raw outputs per pin",
@@ -23,7 +23,7 @@
     "tokensNote": "tokens=null: token accounting not available to the worker"
   },
   "passRateAtFirstDoneClaim": "every finding was red before its fix (for example: 2 of 2 Skip-confirm tests; 3 of 3 round-4 tests; 2 of 2 round-3 duplicate-gear tests); no review-PASS claimed",
-  "passRateAfterReview": "gates green at b3b3eff4; Luna PASS not achieved (4 FAIL rounds, 1 round blocked by provider usage limit)",
+  "passRateAfterReview": "gates at b3b3eff4: Ada 577/577; tooling 233/233; vitest 861/861; tsc exit 0; browser 6/6; mutation 28/28 (P0 19/19, P1 9/9). Luna PASS not achieved.",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
@@ -33,5 +33,5 @@
     "independent review, Luna xhigh (five rounds)",
     "human review (Skip confirm, required fields, operationId naming)"
   ],
-  "status": "NOT ACCEPTED - implementation complete for all findings raised; Luna xhigh PASS pending (latest review b3b3eff4 blocked by provider usage limit); 28/28 mutation campaign and fresh Ada run at the final revision pending"
+  "status": "NOT ACCEPTED - reachable gates green at b3b3eff4 (Ada 577/577, tooling 233/233, vitest 861/861, tsc 0, browser 6/6, mutation 28/28); Luna xhigh PASS pending (provider usage limit); open items: superseded-review F10 entanglement table and F1 Resolution inline surface"
 }

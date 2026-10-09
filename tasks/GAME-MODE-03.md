@@ -43,8 +43,8 @@ acceptance:
 
 # GAME-MODE-03 — per-scoundrel game mode frontend
 
-**Status:** NOT ACCEPTED. The implementation is complete for every finding raised so far, and
-the gates are green, but the independent Luna xhigh review has NOT passed on any revision.
+**Status:** NOT ACCEPTED. Every reachable gate is green at `b3b3eff4` (below), including the
+full 28/28 mutation campaign. The independent Luna xhigh review has NOT passed on any revision.
 The latest review (`b3b3eff4`) did not run: the openai-codex provider returned
 `usage_limit_reached`. It has to be re-run once the limit resets. Nothing here is marked reviewed.
 
@@ -64,9 +64,12 @@ approved mockups in `docs/public/mockups/game-mode/`.
   117 rows (13 states x 3 viewports x 3 themes), 0 overflow, 0 page errors, minimum contrast
   at or above 4.5:1. Screenshots and `summary.json` are in that folder.
 - The catalog pin for `frontend/src/pages/character-detail.ts` (M26) is `43e1bd6f…` and matches the file.
-- **Not run:** the 28/28 mutation campaign. It is a required gate. Run `npm run test:mutation`
-  in `conformance/` once the Luna review is settled.
-- **Not run:** the Ada suite again at this revision. The backend commit reports Ada 577/577.
+- `cd conformance && npm run test:ada`: 67 files, 577/577 passed (exit 0).
+- `cd conformance && npm run test:tooling`: 18 files, 233/233 passed (exit 0).
+- `npm run test:mutation` (conformance): 28/28 killed, P0 19/19, P1 9/9; post-campaign source
+  verification PASS (exit 0).
+- Only `tasks/GAME-MODE-03.md` and `tasks/metrics/frontend/GAME-MODE-03.json` differ from `b3b3eff4`
+  in code-free paths; the code verified is the code at `b3b3eff4`.
 
 ## Luna review history (openai-codex, gpt-5.6-luna, xhigh)
 
@@ -104,4 +107,8 @@ Raw outputs: `luna/raw-output-<pin>.txt` for each round, and `luna/stderr-<pin>.
 - A partial-failure in the Change-loadout chain (for example, a write fails midway) leaves earlier writes applied. The sheet shows the gear error, but no rollback exists.
 - The stale-crew reconcile path is implemented, not covered by a test.
 - The Engagement factor table and the Loadout copy are the approved mockup wording; they are not from game data.
-- Outstanding gates above: Luna PASS, 28/28 mutation campaign, and a fresh Ada run at the final revision.
+- Open Luna items from the earlier round `9f18cdcf` (superseded review, `luna/verdict-9f18cdcf-superseded.md`):
+  - F10: the Entanglements "Show all" renders three compact paragraphs, not the approved SRD table with result and heat columns (`06d-entanglements.html`). Not fixed.
+  - F1 (part): Score popups are overlays now; the Resolution surface is still an inline sheet card. The approved Resolution mockups are dialogs. Not fixed.
+  Later rounds did not re-raise these, but they were not verified against the fix either.
+- Outstanding gate: Luna PASS on a final revision. Blocked by the provider usage limit (see the Luna table).
