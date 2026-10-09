@@ -1,0 +1,94 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --games /tmp/GAME-MODE-01-baseline-games-813mzweq -- --run suites/semantics/game-mode.test.ts -t GAME-MODE-DEFAULT-4
+OK: canonical managed launcher
+[managed-run] runId=2026-10-09T11-40-07-111Z-cdb0b979
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/tmp/GAME-MODE-01-baseline-games-813mzweq
+[managed-run] revision=GAME-MODE-01-red
+[managed-run] testCommand=--run suites/semantics/game-mode.test.ts -t GAME-MODE-DEFAULT-4
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979/data (dir)
+[managed-run] port=33291
+[managed-run] baseUrl=http://127.0.0.1:33291
+[managed-run] pid=3486688
+[managed-run] ready=http://127.0.0.1:33291
+[managed-run] vitestPid=3486755
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-1] blades-in-the-dark canonical defaults snapshot runtime settings, without read projections
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-2] scum-and-villainy canonical defaults snapshot runtime settings, without read projections
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-3] rus-blades-in-the-dark canonical defaults snapshot runtime settings, without read projections
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-4] français-blades-in-the-dark canonical defaults snapshot runtime settings, without read projections 17ms
+   → {"method":"POST","path":"/api/characters","request":{"gameStem":"français-blades-in-the-dark","playbook":"Surineur (Cutter)"},"response":{"status":500,"body":{"applied":{"op":"character.create"},"error":{"code":"VALIDATION","details":{"issues":[{"expected":"a schema-valid request","pointer":"","reason":"created entity fails schema validation"}]},"message":"created entity fails schema validation","recovery":"Fix the request per the listed issues and retry.","retryable":true,"status":400},"ok":false,"sideEffects":[]}}}: expected 500 to be 200 // Object.is equality
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ISOLATION-001] linked scoundrels, crew and campaign never share mode or budget
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-free-play] free-play → free-play never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-score] free-play → score never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-downtime] free-play → downtime never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-free-play] score → free-play never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-score] score → score never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-downtime] score → downtime never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-free-play] downtime → free-play never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-score] downtime → score never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-downtime] downtime → downtime never resets gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-SAME-001] reselecting Score retains resolution cursor and activity records
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-001] forward/back/direct navigation, closing and finishing resolution award nothing
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-002] unlinked scoundrels jump into resolution from every mode; none preserves mode
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-001] all explicit activities remain legal below zero without changing mode
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-002] coin/gift record already-paid extras and signed corrections without charging funds or rep
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-003] explicit reset snapshots current allowance and clears records, preserving mode and gameplay
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-free-play] ordinary mutations and mixed entity batch have no free-play gate or implicit spending
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-score] ordinary mutations and mixed entity batch have no score gate or implicit spending
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-downtime] ordinary mutations and mixed entity batch have no downtime gate or implicit spending
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-1] mode.set snapshots, revision guards, exact retry and undo follow existing conventions
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-2] mode.flow.set snapshots, revision guards, exact retry and undo follow existing conventions
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-3] downtime.spend snapshots, revision guards, exact retry and undo follow existing conventions
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-4] downtime.adjust snapshots, revision guards, exact retry and undo follow existing conventions
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-5] downtime.reset snapshots, revision guards, exact retry and undo follow existing conventions
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-LEGACY-001] legacy import missing new fields receives canonical stored defaults
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-001] partial stress and committed gear persist; atomic budget reset enters resolution and undo restores all
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-002] resolved trauma flags clear without resetting committed loadout
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-004] partial stress cleanup is exercised directly without new tracker setup
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-003] full stress retains the existing pending-trauma rejection, not a mode/budget error
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BATCH-001] new tracker operations compose in order without mode or exhausted-budget gates
+ ↓ suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-VALIDATION-001] malformed modes, cursors and counters use existing VALIDATION and never mutate
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-4] français-blades-in-the-dark canonical defaults snapshot runtime settings, without read projections
+AssertionError: {"method":"POST","path":"/api/characters","request":{"gameStem":"français-blades-in-the-dark","playbook":"Surineur (Cutter)"},"response":{"status":500,"body":{"applied":{"op":"character.create"},"error":{"code":"VALIDATION","details":{"issues":[{"expected":"a schema-valid request","pointer":"","reason":"created entity fails schema validation"}]},"message":"created entity fails schema validation","recovery":"Fix the request per the listed issues and retry.","retryable":true,"status":400},"ok":false,"sideEffects":[]}}}: expected 500 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+ ❯ create suites/semantics/game-mode.test.ts:104:7
+    102|     method: "POST", path: "/api/characters", request,
+    103|     response: { status: response.status, body: response.body },
+    104|   })).toBe(200);
+       |       ^
+    105|   const result = success(response);
+    106|   return fixtureCharacter(result.character);
+ ❯ suites/semantics/game-mode.test.ts:147:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 skipped (35)
+   Start at  14:40:07
+   Duration  412ms (transform 55ms, setup 0ms, collect 286ms, tests 17ms, environment 0ms, prepare 30ms)
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979 dataDir=/tmp/pitd-managed/2026-10-09T11-40-07-111Z-cdb0b979/data port=33291
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-09T11-40-07-111Z-cdb0b979-server.log

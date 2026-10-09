@@ -1,0 +1,74 @@
+---
+title: French game creation returns HTTP 500
+---
+
+# French game creation returns HTTP 500
+
+**Status: queued — pre-existing backend bug, outside GAME-MODE-01.**
+Recorded during the contract card’s red probes on 2026-10-09. Do not implement
+or amend its behavior as part of game mode. The former `GAME-MODE-DEFAULT-4`
+case has been removed from that card’s oracle list; its failure evidence is
+retained separately.
+
+## Exact observed exchange
+
+Request:
+
+```http
+POST /api/characters
+Content-Type: application/json
+```
+
+```json
+{"gameStem":"français-blades-in-the-dark","playbook":"Surineur (Cutter)"}
+```
+
+Response: **HTTP 500**, with the existing JSON envelope:
+
+```json
+{
+  "applied": {"op":"character.create"},
+  "error": {
+    "code":"VALIDATION",
+    "details": {
+      "issues": [{
+        "expected":"a schema-valid request",
+        "pointer":"",
+        "reason":"created entity fails schema validation"
+      }]
+    },
+    "message":"created entity fails schema validation",
+    "recovery":"Fix the request per the listed issues and retry.",
+    "retryable":true,
+    "status":400
+  },
+  "ok":false,
+  "sideEffects":[]
+}
+```
+
+The response is internally inconsistent: the transport is **HTTP 500**, while
+`error.status` is **400** and `error.retryable` is **true**. The recovery text
+asks the caller to fix a request built from registered game/playbook data.
+Neither a new status nor a special-case fallback is proposed here; the bug
+needs a separate contract/implementation investigation.
+
+## Evidence and suspected cause
+
+- Game source: `data/games/français-blades-in-the-dark.json`; its first playbook
+  is `Surineur (Cutter)` and language is `Français`.
+- Exact capture: `tasks/metrics/contract/GAME-MODE-01-french-500.log`.
+- Probe used the existing Ada executable through the canonical managed launcher
+  with isolated data and a temporary pre-game-mode settings copy (only the new
+  `DowntimeSettings` block was removed to permit old-server startup). No backend
+  runtime code was changed by GAME-MODE-01.
+- **Suspected cause [INFERENCE]:** the unchanged `Character.gameStem` schema
+  pattern `^[A-Za-z0-9-]+$` allows ASCII only, but the registered stem contains
+  `ç`. This matches the generic “created entity fails schema validation”
+  response, but the empty issue pointer does not prove which field failed.
+- Human classified the bug as pre-existing. A specific main-revision provenance
+  was not independently checked with agent-run VCS, which remained prohibited.
+
+A separate fix should reconcile the installed game catalogue with accepted
+stems and investigate the HTTP/envelope/retry classification together, rather
+than swallowing the validation error or special-casing this request.
