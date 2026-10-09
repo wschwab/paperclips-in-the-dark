@@ -532,3 +532,31 @@ Evidence and exact commands are in `tasks/GAME-MODE-02.md`,
 GAME-MODE-01’s missing required metrics metadata was repaired without altering
 its historical RED evidence. Managed tooling timeouts can leave temporary
 suite fixtures behind; this lesson is recorded in the backend card.
+
+### Live roster consumer-parity correction
+
+Mode on readable summaries was intended and **already declared** in
+`campaign.json` characterSummary.properties.mode. It is not in that schema’s
+`required` array and there is no conditional required clause: degraded rows
+omit it. The description requires readable-row presence, now asserted by the
+new live test. An optional frontend mode enum therefore mirrors the actual
+schema; it must not become unconditionally required for degraded rows.
+
+The six browser failures came from the independently stale **frontend Effect
+mirror**, not a missing contract property or a lax conformance decoder.
+Conformance already strictly validated roster responses through the JSON
+contract and its own current mirror; it had not run the independent frontend
+mirror against those live responses.
+
+NEW `GAME-MODE-ROSTER-001` closes that seam: strict full-roster contract
+validation, excess-key/invalid-mode negative controls, all three modes, and the
+actual frontend decoder consuming the same live body. With the human-authorized
+historical decoder from GAME-MODE-03 revision `23d54b38` in a temporary directory,
+it fails red on unexpected `mode`; with the corrected consumer it passes.
+The real frontend is never replaced or edited by this backend worker.
+
+Follow-up Ada acceptance is **577/577** (67 files), tooling **233/233**, and
+conformance typechecking passes. Canonical artifacts are regenerated. Backend
+summary emission is unchanged, so no new summary hash or conditional mutation
+rerun is needed; the previously verified full **28/28** remains historical
+evidence. Details and logs are in the GAME-MODE-02 card and metrics.

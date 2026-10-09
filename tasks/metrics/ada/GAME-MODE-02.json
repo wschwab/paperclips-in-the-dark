@@ -7,6 +7,36 @@
   "iterationsToGreen": 4,
   "wallClockMinutes": 64.87,
   "tokens": null,
+  "rosterCorrection": {
+    "testId": "GAME-MODE-ROSTER-001",
+    "modeIntendedOnReadableSummary": true,
+    "modeAlreadyDeclaredInContract": true,
+    "modeRequiredBySchema": false,
+    "readablePresenceRequiredByDescription": true,
+    "rootCause": "Independent frontend Effect summary mirror lacked mode; conformance contract and its strict mirror already accepted the declared field.",
+    "red": {
+      "exitCode": 1,
+      "failed": 1,
+      "historicalConsumerRevision": "23d54b38",
+      "reproduction": "User-authorized jj file show; historical consumer copied to temporary directory and selected through temporary Vitest aliases. Live Ada/contract unchanged; real frontend untouched; temp removed.",
+      "failure": "Frontend decodeRoster rejects mode as unexpected after strict contract/conformance checks passed.",
+      "log": "tasks/metrics/ada/GAME-MODE-02-roster-red.log"
+    },
+    "green": { "exitCode": 0, "passed": 1, "log": "tasks/metrics/ada/GAME-MODE-02-roster-green.log" },
+    "acceptance": {
+      "ada": { "passed": 577, "total": 577, "files": 67, "log": "tasks/metrics/ada/GAME-MODE-02-roster-ada.log" },
+      "tooling": { "passed": 233, "total": 233, "log": "tasks/metrics/ada/GAME-MODE-02-roster-tooling.log" },
+      "typecheck": { "exitCode": 0, "log": "tasks/metrics/ada/GAME-MODE-02-roster-typecheck.log" },
+      "generation": { "exitCode": 0, "log": "tasks/metrics/ada/GAME-MODE-02-roster-generation.log" }
+    },
+    "backendSummaryChanged": false,
+    "mutationRerun": "Not triggered: summary/backend unchanged; prior verified 28/28 is historical, not a new campaign.",
+    "realFrontendEdited": false,
+    "vcsException": "Only exact authorized read-only jj file show -r 23d54b38 frontend/src/schema/campaign.ts.",
+    "summaryRestorationHashUnchanged": "2e85d41d8131c744226ec5dc1eef7e0c69327694526a7b10407349d336a3bd14",
+    "docs": { "exitCode": 0, "generatedFiles": 145, "log": "tasks/metrics/ada/GAME-MODE-02-roster-docs.log" },
+    "validators": { "exitCode": 0, "metricsFiles": 168, "traceabilityChecks": 231, "reconciliationChecks": 17, "log": "tasks/metrics/ada/GAME-MODE-02-roster-validators.log" }
+  },
   "passRateAtFirstDoneClaim": "Ada 576/576; two controlled cycles 576/576 each; tooling 233/233; frontend campaign baseline 841/841; full mutation 28/28 killed.",
   "passRateAfterReview": "No independent reviewer assigned; human-authorized additive fixtures retain exact assertions. Final mechanical acceptance is green.",
   "implementationLoc": "unknown",

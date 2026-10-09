@@ -144,3 +144,46 @@ label, not a fabricated commit ID.
   **17/17**, 0 errors/warnings.
 - Vocs build passes: **145 files generated**. Commands and logs are recorded
   in the metrics JSON; no independent review or VCS-derived LOC is claimed.
+
+## Follow-up — live roster consumer parity
+
+Mode on readable character summaries was intended in GAME-MODE-01. It was
+already declared in `campaign.json` characterSummary.properties.mode and
+mirrored by conformance. It is **not in the schema required array**, and there
+is no conditional JSON Schema required clause. The description requires it
+on readable rows; degraded rows omit it. The frontend’s corrected optional
+enum matches that schema, and the new live test asserts readable-row presence.
+
+The browser failure was the independent frontend Effect mirror omitting mode.
+The conformance decoder was not lax: it rejects excess properties, and existing
+collection-schemas coverage already validates getRoster through the contract
+and its strict mirror. That cannot detect an independently stale frontend
+mirror; the new test exercises that actual consumer against the same live body.
+
+NEW `GAME-MODE-ROSTER-001` strictly validates the entire live roster through
+AJV and conformance Effect, checks each mode, rejects an undeclared row key and
+an invalid mode, then invokes the actual frontend decoder. The frontend worker’s
+fix landed before the properly registered new test ran, so no original live
+RED is claimed. The human authorized historical temp-only reproduction:
+
+- Exact authorized read: `jj file show -r 23d54b38 frontend/src/schema/campaign.ts`.
+- Copied historical decoder into `/tmp`; temporary Vitest aliases redirect only
+  the consumer module/common import. Live Ada, contract and real frontend stay
+  untouched. Temporary directory is removed automatically.
+- Historical **RED: 1/1 failed**, `mode is unexpected` at the frontend decoder,
+  after contract/conformance validation and strict negative controls passed.
+- Correct current consumer: **GREEN: 1/1**; full Ada **577/577** in 67 files;
+  tooling **233/233** and conformance typecheck pass. Canonical artifacts
+  regenerated. No backend/contract/mirror change or summary hash refresh was
+  necessary; the conditional mutation rerun was not triggered (prior 28/28
+  remains historical evidence, not a new run).
+
+Logs: `tasks/metrics/ada/GAME-MODE-02-roster-{red,green,ada,tooling,typecheck,generation}.log`.
+No real frontend edits; only the single specifically authorized read-only jj
+command was run. No other VCS commands.
+
+Follow-up records validation passes: 168 metrics files / 0 errors, 231/231
+traceability checks and 17/17 reconciliation checks. Vocs build passes with
+145 generated files. `pitd_summary.adb` remains SHA-256
+`2e85d41d8131c744226ec5dc1eef7e0c69327694526a7b10407349d336a3bd14`,
+the existing refreshed M01 target hash.
