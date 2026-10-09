@@ -242,7 +242,7 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
     expect(result.error?.code).toBe("TRAUMA_REQUIRED");
   });
 
-  testCase("LIFECYCLE-ENDSCORE-002", "end-score clears stress to zero and resets both out-of-action flags", async () => {
+  testCase("LIFECYCLE-ENDSCORE-002", "end-score preserves partial stress and resets both out-of-action flags", async () => {
     const character = await newRawCharacter();
     const stressed = await characterOpRaw(character.id, "stress.add", { delta: 4 }, character.revision);
     expect(stressed.ok).toBe(true);
@@ -251,7 +251,7 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
     // still performs the inherent cleanup.
     const result = await entityPostRaw(character.id, "end-score", {}, stressed.character?.revision);
     expect(result.ok).toBe(true);
-    expect(result.character?.monitor.stress.current).toBe(0);
+    expect(result.character?.monitor.stress.current).toBe(4);
     expect(result.character?.isOutOfAction).toBe(false);
     expect(result.character?.stressClearPending).toBe(false);
   });

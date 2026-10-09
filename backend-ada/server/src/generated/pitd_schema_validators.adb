@@ -458,10 +458,25 @@ package body Pitd_Schema_Validators is
    end Check_Prop;
 
    Required_Character : constant String :=
-     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|dossier|monitor|talent|playbook|gear|contacts|session|notebook|isRetired|isDeadish|traumaPending|isOutOfAction|stressClearPending|";
+     "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|dossier|monitor|talent|playbook|gear|contacts|session|notebook|isRetired|isDeadish|traumaPending|isOutOfAction|stressClearPending|mode|modeFlow|downtime|";
 
    Allowed_Character : constant String :=
      Required_Character & "|fund|";
+
+   Required_Mode_Flow : constant String :=
+     "|kind|step|";
+
+   Allowed_Mode_Flow : constant String := Required_Mode_Flow;
+
+   Required_Downtime : constant String :=
+     "|free|paid|spent|activities|";
+
+   Allowed_Downtime : constant String := Required_Downtime;
+
+   Required_Activity : constant String :=
+     "|activity|description|";
+
+   Allowed_Activity : constant String := Required_Activity;
 
    Required_Dossier : constant String :=
      "|name|crewId|alias|look|notes|background|heritage|vice|";
@@ -627,7 +642,8 @@ package body Pitd_Schema_Validators is
    Required_Character_Summary : constant String :=
      "|kind|id|name|alias|playbook|gameStem|crewId|stress|traumas|isRetired|isDeadish|revision|isReadable|isRepairable|isComplete|deleteToken|canUndo|historyCount|";
 
-   Allowed_Character_Summary : constant String := Required_Character_Summary;
+   Allowed_Character_Summary : constant String :=
+     Required_Character_Summary & "|mode|";
 
    Required_Clock_Summary : constant String :=
      "|kind|id|name|ownerKind|ownerId|purpose|behavior|segments|size|rollover|relatedClockIds|isReadable|isRepairable|isComplete|deleteToken|";
@@ -648,6 +664,16 @@ package body Pitd_Schema_Validators is
      "|snapshotId|takenAt|op|";
 
    Allowed_History_Entry : constant String := Required_History_Entry;
+
+   procedure Check_Enum_Mode (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|free-play|score|downtime|");
+   end Check_Enum_Mode;
+
+   procedure Check_Enum_Downtime_Activity (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Enum (V, Ptr, "|acquire-asset|long-term-project|recover|reduce-heat|train|indulge-vice|other|");
+   end Check_Enum_Downtime_Activity;
 
    procedure Check_Enum_Commitment (V : JSON_Value; Ptr : String) is
    begin
@@ -753,6 +779,34 @@ package body Pitd_Schema_Validators is
    begin
       Check_Const (V, Ptr, "crew");
    end Check_Const_Crew_Summary_Kind;
+
+   procedure Check_Mode_Flow (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Mode_Flow, Allowed_Mode_Flow);
+      Check_Prop (V, Ptr, "kind", Check_Str'Access);
+      Check_Prop (V, Ptr, "step", Check_Str'Access);
+   end Check_Mode_Flow;
+
+   procedure Check_Activity (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Activity, Allowed_Activity);
+      Check_Prop (V, Ptr, "activity", Check_Enum_Downtime_Activity'Access);
+      Check_Prop (V, Ptr, "description", Check_Str'Access);
+   end Check_Activity;
+
+   procedure Check_Activities (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Array (V, Ptr, Check_Activity'Access);
+   end Check_Activities;
+
+   procedure Check_Downtime (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Downtime, Allowed_Downtime);
+      Check_Prop (V, Ptr, "free", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "paid", Check_Any_Int'Access);
+      Check_Prop (V, Ptr, "spent", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "activities", Check_Activities'Access);
+   end Check_Downtime;
 
    procedure Check_Named_Description (V : JSON_Value; Ptr : String) is
    begin
@@ -976,6 +1030,9 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "traumaPending", Check_Bool'Access);
       Check_Prop (V, Ptr, "isOutOfAction", Check_Bool'Access);
       Check_Prop (V, Ptr, "stressClearPending", Check_Bool'Access);
+      Check_Prop (V, Ptr, "mode", Check_Enum_Mode'Access);
+      Check_Prop (V, Ptr, "modeFlow", Check_Mode_Flow'Access);
+      Check_Prop (V, Ptr, "downtime", Check_Downtime'Access);
       Check_Prop (V, Ptr, "dossier", Check_Dossier'Access);
       Check_Prop (V, Ptr, "monitor", Check_Monitor'Access);
       Check_Prop (V, Ptr, "talent", Check_Talent'Access);
@@ -1181,6 +1238,7 @@ package body Pitd_Schema_Validators is
    procedure Check_Character_Summary (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Character_Summary, Allowed_Character_Summary);
+      Check_Prop (V, Ptr, "mode", Check_Enum_Mode'Access);
       Check_Prop (V, Ptr, "kind", Check_Const_Character_Summary_Kind'Access);
       Check_Prop (V, Ptr, "id", Check_Uuid'Access);
       Check_Prop (V, Ptr, "name", Check_Str'Access);
@@ -1343,6 +1401,9 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "traumaPending", Check_Bool'Access);
       Check_Prop (V, "", "isOutOfAction", Check_Bool'Access);
       Check_Prop (V, "", "stressClearPending", Check_Bool'Access);
+      Check_Prop (V, "", "mode", Check_Enum_Mode'Access);
+      Check_Prop (V, "", "modeFlow", Check_Mode_Flow'Access);
+      Check_Prop (V, "", "downtime", Check_Downtime'Access);
       Check_Prop (V, "", "dossier", Check_Dossier'Access);
       Check_Prop (V, "", "monitor", Check_Monitor'Access);
       Check_Prop (V, "", "talent", Check_Talent'Access);
@@ -1357,6 +1418,7 @@ package body Pitd_Schema_Validators is
    procedure Validate_Character_Summary (V : JSON_Value) is
    begin
       Check_Object (V, "", Required_Character_Summary, Allowed_Character_Summary);
+      Check_Prop (V, "", "mode", Check_Enum_Mode'Access);
       Check_Prop (V, "", "kind", Check_Const_Character_Summary_Kind'Access);
       Check_Prop (V, "", "id", Check_Uuid'Access);
       Check_Prop (V, "", "name", Check_Str'Access);

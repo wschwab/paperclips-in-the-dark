@@ -14,8 +14,11 @@ export interface GameSetting {
   }>;
   Traumas: string[];
   TraumaMax: number;
+  StressMax: number;
   RecoveryClockSize: number;
   ActionPointMaximum: number;
+  /** Required nonnegative integer allowance; no maximum (GAME-MODE-01). */
+  DowntimeSettings: { FreeActivities: number };
   /** Optional PC-allocation budget (CONTRACT-01); absent until a game publishes it. */
   StartingActionDots?: number;
   /** Optional per-action starting cap (CONTRACT-01); absent until a game publishes it. */

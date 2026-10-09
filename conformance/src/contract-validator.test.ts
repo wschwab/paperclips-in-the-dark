@@ -14,6 +14,7 @@ function makeCharacterSummary(overrides: Record<string, unknown> = {}) {
     playbook: "Cutter",
     gameStem: "blades-in-the-dark",
     crewId: uuid,
+    mode: "free-play",
     stress: 0,
     traumas: [],
     isRetired: false,

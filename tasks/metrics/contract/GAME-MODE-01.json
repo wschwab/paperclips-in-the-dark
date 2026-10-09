@@ -1,0 +1,351 @@
+{
+  "task": "GAME-MODE-01",
+  "track": "contract",
+  "date": "2026-10-09",
+  "status": "RED STOP — contract and new oracles frozen; no backend/frontend implementation",
+  "implementationAgent": "mode-mockups with bounded contract/oracle/settings workers",
+  "reviewAgent": null,
+  "iterationsToGreen": null,
+  "verification": {
+    "tooling": {
+      "exitCode": 1,
+      "seconds": 103.95,
+      "log": "tasks/metrics/contract/GAME-MODE-01-tooling.log"
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "seconds": 1.61,
+      "log": "tasks/metrics/contract/GAME-MODE-01-typecheck.log"
+    },
+    "docs": {
+      "exitCode": 0,
+      "log": "tasks/metrics/contract/GAME-MODE-01-docs.log"
+    },
+    "count-calibration": {
+      "exitCode": 0,
+      "seconds": 1.1,
+      "log": "tasks/metrics/contract/GAME-MODE-01-count-calibration.log"
+    },
+    "generator-parity": {
+      "exitCode": 0,
+      "log": "tasks/metrics/contract/GAME-MODE-01-generator-parity.log"
+    }
+  },
+  "generation": {
+    "exitCode": 0,
+    "parityTests": [
+      "TOOLING-GEN-001",
+      "TOOLING-GEN-002",
+      "TOOLING-GEN-003",
+      "TOOLING-GEN-004",
+      "ORACLE-01"
+    ],
+    "allPassed": true
+  },
+  "red": {
+    "command": "PITD_REVISION=GAME-MODE-01-red npm run test:ada -- --games <temporary pre-feature settings copy> -- --run <game-mode/lifecycle/composites/endpoints suites> -t <GAME-MODE plus five frozen IDs>",
+    "exitCode": 1,
+    "testCount": 34,
+    "failed": 34,
+    "testFailures": [
+      {
+        "id": "GAME-MODE-DEFAULT-1",
+        "status": "failed",
+        "failure": "expected [ 'free-play', 'score', 'downtime' ] to include undefined"
+      },
+      {
+        "id": "GAME-MODE-DEFAULT-2",
+        "status": "failed",
+        "failure": "expected [ 'free-play', 'score', 'downtime' ] to include undefined"
+      },
+      {
+        "id": "GAME-MODE-DEFAULT-3",
+        "status": "failed",
+        "failure": "expected [ 'free-play', 'score', 'downtime' ] to include undefined"
+      },
+      {
+        "id": "GAME-MODE-ISOLATION-001",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-free-play-free-play",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-free-play-score",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-free-play-downtime",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-score-free-play",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-score-score",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-score-downtime",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-downtime-free-play",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-downtime-score",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-TRANSITION-downtime-downtime",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-SAME-001",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-FLOW-001",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-FLOW-002",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-BUDGET-001",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-BUDGET-002",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-BUDGET-003",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-ORDINARY-free-play",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-ORDINARY-score",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-ORDINARY-downtime",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-PERSISTENCE-1",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-PERSISTENCE-2",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-PERSISTENCE-3",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-PERSISTENCE-4",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-PERSISTENCE-5",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-LEGACY-001",
+        "status": "failed",
+        "failure": "expected [ 'free-play', 'score', 'downtime' ] to include undefined"
+      },
+      {
+        "id": "GAME-MODE-ENDSCORE-001",
+        "status": "failed",
+        "failure": "expected false to be true // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-ENDSCORE-002",
+        "status": "failed",
+        "failure": "expected [ 'free-play', 'score', 'downtime' ] to include undefined"
+      },
+      {
+        "id": "GAME-MODE-ENDSCORE-004",
+        "status": "failed",
+        "failure": "expected +0 to be 8 // Object.is equality"
+      },
+      {
+        "id": "GAME-MODE-ENDSCORE-003",
+        "status": "failed",
+        "failure": "expected { applied: { op: 'end-score' }, …(3) } to match object { ok: false, mode: 'free-play', …(1) }"
+      },
+      {
+        "id": "GAME-MODE-BATCH-001",
+        "status": "failed",
+        "failure": "expected [ false, false, false, false ] to deeply equal [ true, true, true, true ]"
+      },
+      {
+        "id": "GAME-MODE-VALIDATION-001",
+        "status": "failed",
+        "failure": "expected 200 to be 400 // Object.is equality"
+      }
+    ],
+    "settingsCompatibility": "Current Ada rejects DowntimeSettings at startup. Canonical launcher used a throwaway copy with only that newly added settings block removed; repository settings still supply test expectations. No application shim/backend edit.",
+    "log": "tasks/metrics/contract/GAME-MODE-01-red.log",
+    "selectedFrozenResults": [
+      {
+        "id": "LIFECYCLE-TRAUMA-003",
+        "status": "passed"
+      },
+      {
+        "id": "LIFECYCLE-ENDSCORE-002",
+        "status": "failed",
+        "failure": "expected +0 to be 4 // Object.is equality"
+      },
+      {
+        "id": "LIFECYCLE-ENDSCORE-003",
+        "status": "passed"
+      },
+      {
+        "id": "CONTRACT-CHARACTER-END-SCORE-001",
+        "status": "passed"
+      },
+      {
+        "id": "SEMANTICS-COMPOSITES-003",
+        "status": "passed"
+      }
+    ],
+    "finalRunFailedTotal": 35,
+    "finalRunPassedTotal": 4,
+    "frenchExcluded": true,
+    "note": "Final canonical launcher selected34 new game-mode cases plus5 frozen reconciliation cases. French creation case removed from this card, not skipped."
+  },
+  "fullToolingObserved": {
+    "passed": 224,
+    "failed": 9,
+    "total": 233,
+    "beforeCalibrationFix": true,
+    "endpointCountBefore": 107,
+    "endpointCountAfter": 112,
+    "focusedCalibrationAfterFix": {
+      "passed": 20,
+      "failed": 0
+    },
+    "remainingExpectedRuntimeFailures": [
+      "TOOLING-MANAGED-004",
+      "TOOLING-MANAGED-007",
+      "TOOLING-MANAGED-008",
+      "TOOLING-MANAGED-022",
+      "TOOLING-MANAGED-024",
+      "TOOLING-MANAGED-025",
+      "TOOLING-MANAGED-026",
+      "TOOLING-MANAGED-013"
+    ],
+    "note": "Full suite not rerun after authorized count-data update. Eight remaining runtime failures attributed to settings-startup incompatibility; accepted by human as expected RED at this boundary."
+  },
+  "toolingDataEdits": [
+    "conformance/src/game-data.ts: DowntimeSettings and existing StressMax type declarations",
+    "conformance/src/contract-validator.test.ts: positive character-summary mode fixture",
+    "conformance/src/endpoint-schema-map.test.ts: ENDPOINT-MAP-001 path count 107→112"
+  ],
+  "frozenConformanceEdits": true,
+  "frozenConflicts": [
+    "LIFECYCLE-ENDSCORE-002 — original semantic conflict now amended to retain partial4; currentAda still clears0"
+  ],
+  "frenchCreation": {
+    "exchange": {
+      "method": "POST",
+      "path": "/api/characters",
+      "request": {
+        "gameStem": "français-blades-in-the-dark",
+        "playbook": "Surineur (Cutter)"
+      },
+      "response": {
+        "status": 500,
+        "body": {
+          "applied": {
+            "op": "character.create"
+          },
+          "error": {
+            "code": "VALIDATION",
+            "details": {
+              "issues": [
+                {
+                  "expected": "a schema-valid request",
+                  "pointer": "",
+                  "reason": "created entity fails schema validation"
+                }
+              ]
+            },
+            "message": "created entity fails schema validation",
+            "recovery": "Fix the request per the listed issues and retry.",
+            "retryable": true,
+            "status": 400
+          },
+          "ok": false,
+          "sideEffects": []
+        }
+      }
+    },
+    "log": "tasks/metrics/contract/GAME-MODE-01-french-500.log",
+    "revisionClaim": "Existing Ada executable observed; no main revision provenance verified by agent-run VCS.",
+    "scope": "Separate pre-existing bug, human-confirmed; excluded from game-mode red list",
+    "backlog": "docs/pages/backlog/french-game-creation-500.mdx",
+    "formerlyTestId": "GAME-MODE-DEFAULT-4"
+  },
+  "limitations": [
+    "Successful full-stress cleanup is not reachable via sanctioned current ordinary ops: full sets traumaPending and end-score rejects pending; trauma resolution already clears stress. Partial-persistence and full/pending rejection are covered."
+  ],
+  "vcsCommandsRunByAgent": false,
+  "campaignDataTouched": false,
+  "authorizedFrozenEdits": [
+    {
+      "id": "LIFECYCLE-ENDSCORE-002",
+      "before": "expect(result.character?.monitor.stress.current).toBe(0)",
+      "after": "expect(result.character?.monitor.stress.current).toBe(4)",
+      "titleAligned": true,
+      "otherAssertionsUnchanged": true
+    }
+  ],
+  "resolvedFrozenConflicts": [
+    "LIFECYCLE-TRAUMA-003",
+    "LIFECYCLE-ENDSCORE-003",
+    "CONTRACT-CHARACTER-END-SCORE-001",
+    "SEMANTICS-COMPOSITES-003"
+  ],
+  "resetLoadoutCommitment": {
+    "preservedExistingOptionalFlag": true,
+    "default": false,
+    "truePreservesExistingCleanupAndLockError": true
+  },
+  "vocsGeneratedFiles": 145
+}

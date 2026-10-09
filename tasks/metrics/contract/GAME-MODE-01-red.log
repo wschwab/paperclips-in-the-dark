@@ -1,0 +1,640 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --games /tmp/GAME-MODE-01-baseline-games-engyamie -- --run suites/semantics/game-mode.test.ts suites/lifecycle/lifecycle-state-machine.test.ts suites/semantics/composites.test.ts suites/contract/endpoints.test.ts -t GAME-MODE|LIFECYCLE-ENDSCORE-002|LIFECYCLE-ENDSCORE-003|SEMANTICS-COMPOSITES-003|LIFECYCLE-TRAUMA-003|CONTRACT-CHARACTER-END-SCORE-001
+OK: canonical managed launcher
+[managed-run] runId=2026-10-09T11-46-39-092Z-1a947cd0
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/tmp/GAME-MODE-01-baseline-games-engyamie
+[managed-run] revision=GAME-MODE-01-red
+[managed-run] testCommand=--run suites/semantics/game-mode.test.ts suites/lifecycle/lifecycle-state-machine.test.ts suites/semantics/composites.test.ts suites/contract/endpoints.test.ts -t GAME-MODE|LIFECYCLE-ENDSCORE-002|LIFECYCLE-ENDSCORE-003|SEMANTICS-COMPOSITES-003|LIFECYCLE-TRAUMA-003|CONTRACT-CHARACTER-END-SCORE-001
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0/data (dir)
+[managed-run] port=39411
+[managed-run] baseUrl=http://127.0.0.1:39411
+[managed-run] pid=3497865
+[managed-run] ready=http://127.0.0.1:39411
+[managed-run] vitestPid=3497932
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-1] blades-in-the-dark canonical defaults snapshot runtime settings, without read projections 18ms
+   → expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-2] scum-and-villainy canonical defaults snapshot runtime settings, without read projections 46ms
+   → expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-3] rus-blades-in-the-dark canonical defaults snapshot runtime settings, without read projections 44ms
+   → expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ISOLATION-001] linked scoundrels, crew and campaign never share mode or budget 174ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-free-play] free-play → free-play never resets gameplay 44ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-score] free-play → score never resets gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-downtime] free-play → downtime never resets gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-free-play] score → free-play never resets gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-score] score → score never resets gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-downtime] score → downtime never resets gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-free-play] downtime → free-play never resets gameplay 44ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-score] downtime → score never resets gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-downtime] downtime → downtime never resets gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-SAME-001] reselecting Score retains resolution cursor and activity records 44ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-001] forward/back/direct navigation, closing and finishing resolution award nothing 46ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-002] unlinked scoundrels jump into resolution from every mode; none preserves mode 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-001] all explicit activities remain legal below zero without changing mode 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-002] coin/gift record already-paid extras and signed corrections without charging funds or rep 130ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-003] explicit reset snapshots current allowance and clears records, preserving mode and gameplay 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-free-play] ordinary mutations and mixed entity batch have no free-play gate or implicit spending 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-score] ordinary mutations and mixed entity batch have no score gate or implicit spending 44ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-downtime] ordinary mutations and mixed entity batch have no downtime gate or implicit spending 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-1] mode.set snapshots, revision guards, exact retry and undo follow existing conventions 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-2] mode.flow.set snapshots, revision guards, exact retry and undo follow existing conventions 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-3] downtime.spend snapshots, revision guards, exact retry and undo follow existing conventions 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-4] downtime.adjust snapshots, revision guards, exact retry and undo follow existing conventions 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-5] downtime.reset snapshots, revision guards, exact retry and undo follow existing conventions 43ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-LEGACY-001] legacy import missing new fields receives canonical stored defaults 86ms
+   → expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-001] partial stress and committed gear persist; atomic budget reset enters resolution and undo restores all 132ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-002] resolved trauma flags clear without resetting committed loadout 88ms
+   → expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-004] partial stress cleanup is exercised directly without new tracker setup 85ms
+   → expected +0 to be 8 // Object.is equality
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-003] full stress retains the existing pending-trauma rejection, not a mode/budget error 87ms
+   → expected { applied: { op: 'end-score' }, …(3) } to match object { ok: false, mode: 'free-play', …(1) }
+(3 matching properties omitted from actual)
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BATCH-001] new tracker operations compose in order without mode or exhausted-budget gates 44ms
+   → expected [ false, false, false, false ] to deeply equal [ true, true, true, true ]
+ × suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-VALIDATION-001] malformed modes, cursors and counters use existing VALIDATION and never mutate 43ms
+   → expected 200 to be 400 // Object.is equality
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-001] stress reaching max sets traumaPending and returns typed attention
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-002] stress overflow never auto-adds trauma
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-003] stress.add while trauma pending is rejected with TRAUMA_REQUIRED
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-STRESS-004] stress.add and stress.clear while out of action are rejected with OUT_OF_ACTION
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-TRAUMA-001] trauma resolution records the trauma, clears stress to 0, clears pending, marks out-of-action and stressClearPending
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-TRAUMA-002] trauma.add without pending trauma is rejected with VALIDATION
+ ✓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-TRAUMA-003] duplicate trauma is rejected with DUPLICATE 104ms
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-ENDSCORE-001] end-score while trauma pending is rejected with TRAUMA_REQUIRED
+ × suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-ENDSCORE-002] end-score preserves partial stress and resets both out-of-action flags 87ms
+   → expected +0 to be 4 // Object.is equality
+ ✓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-ENDSCORE-003] end-score performs all selected cleanup in exactly one snapshot (one history entry; undo restores prior state) 130ms
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-001] explicit retirement requires confirm:true (CONFIRM_REQUIRED otherwise)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-002] explicit retirement succeeds below maximum trauma
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-003] retirement cleanup clears stress, harm, healing clock, armor and preserves dossier/playbook/trauma history/notes/gear/fund
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-004] voluntary and final-trauma retirement produce identical post-cleanup state (shared cleanup)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-005] retired characters remain readable and deletable
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-006] retired dossier, name, note and notebook edits remain allowed
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-007] retired gameplay mutations return RETIRED
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-008] trauma.remove after retirement does not clear isRetired
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-RETIRE-009] undo restores the complete pre-retirement state (isRetired false again)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DEADISH-001] fatal harm triggers deadish cleanup: clears stress and pending state, preserves all harm
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DEADISH-002] deadish is caused only by fatal harm (no free-standing toggle; isDeadish derived from fatal array)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DEADISH-003] removing the fatal harm ends deadish (recovery)
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DELETE-001] deletion requires confirmation and removes entity and history
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-DERIVED-001] canUndo and historyCount are derived response-time fields that track snapshot consumption and are never persisted
+ ↓ suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-INVARIANTS-001] no reachable state has traumaPending and isOutOfAction both true; stressClearPending equals isOutOfAction
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-HEALTH-001] GET /api/health
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CAMPAIGN-001] GET /api/campaign
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-ROSTER-001] GET /api/campaign/roster
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-MEMBERS-001] GET /api/campaign/crew/{crew}/members
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-BATCH-001] POST /api/campaign/batch
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-GAMES-001] GET /api/games
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-GAME-001] GET /api/games/blades-in-the-dark
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-GAME-PLAYBOOKS-001] GET /api/games/blades-in-the-dark/playbooks
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-GAME-PLAYBOOK-001] GET /api/games/blades-in-the-dark/playbooks/Cutter
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-GAME-HERITAGES-001] GET /api/games/blades-in-the-dark/heritages
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-GAME-CREWS-001] GET /api/games/blades-in-the-dark/crews
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-GAME-CREW-TYPE-001] GET /api/games/blades-in-the-dark/crews/Assassins
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTERS-LIST-001] GET /api/characters
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-CREATE-001] POST /api/characters
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-GET-001] GET /api/characters/{character}
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-HISTORY-001] GET /api/characters/{character}/history
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-SNAPSHOT-001] GET /api/characters/{character}/history/{snapshot}
+ ✓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-END-SCORE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/end-score 44ms
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-END-DOWNTIME-001] POST /api/characters/00000000-0000-4000-8000-000000000000/end-downtime
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREWS-LIST-001] GET /api/crews
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-CREATE-001] POST /api/crews
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-GET-001] GET /api/crews/{crew}
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-HISTORY-001] GET /api/crews/{crew}/history
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-SNAPSHOT-001] GET /api/crews/{crew}/history/{snapshot}
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CLOCKS-LIST-001] GET /api/clocks
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CLOCK-CREATE-001] POST /api/clocks
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CLOCK-GET-001] GET /api/clocks/{clock}
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-DELETE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/delete
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-IMPORT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/import
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-UNDO-001] POST /api/characters/00000000-0000-4000-8000-000000000000/undo
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-STRESS-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/stress.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-STRESS-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/stress.clear
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-TRAUMA-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/trauma.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-TRAUMA-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/trauma.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-HARM-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-HARM-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-HARM-HEAL-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.heal
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-HARM-HEALING-CLOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/harm.healing-clock
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-ARMOR-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/armor.set
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/playbook-xp.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-PLAYBOOK-XP-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/playbook-xp.clear
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute-xp.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-ATTRIBUTE-XP-CLEAR-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute-xp.clear
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-ATTRIBUTE-LEVELUP-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/attribute.levelup
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-ACTION-SET-RATING-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/action.set-rating
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-ABILITY-TAKE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/ability.take
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-ABILITY-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/ability.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-COMMIT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.commit
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-UNCOMMIT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.uncommit
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-SET-COMMITMENT-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.set-commitment
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-CLEAR-COMMITMENTS-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.clear-commitments
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-LOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.lock
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-GEAR-UNLOCK-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/gear.unlock
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-FUND-GAIN-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.gain
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-FUND-SPEND-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.spend
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-FUND-LIQUIDATE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/fund.liquidate
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-CONTACT-ADD-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/contact.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-CONTACT-REMOVE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/contact.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-CONTACT-CLOSENESS-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/contact.closeness
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-DOSSIER-UPDATE-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/dossier.update
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-SESSION-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/session.set
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CHARACTER-OPS-NOTEBOOK-SET-001] POST /api/characters/00000000-0000-4000-8000-000000000000/ops/notebook.set
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-DELETE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/delete
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-IMPORT-001] POST /api/crews/00000000-0000-4000-8000-000000000002/import
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-UNDO-001] POST /api/crews/00000000-0000-4000-8000-000000000002/undo
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-HEAT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/heat.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-WANTED-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/wanted.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-REP-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/rep.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-TIER-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/tier.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-HOLD-SET-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/hold.set
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-XP-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/xp.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-XP-CLEAR-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/xp.clear
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-ABILITY-TAKE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/ability.take
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-ABILITY-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/ability.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-UPGRADE-MARK-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/upgrade.mark
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-UPGRADE-UNMARK-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/upgrade.unmark
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-COHORT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-COHORT-UPDATE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.update
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-COHORT-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/cohort.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-CONTACT-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/contact.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-CONTACT-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/contact.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-FACTION-SET-STATUS-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/faction.set-status
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-FACTION-REMOVE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/faction.remove
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-COIN-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/coin.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-STASH-ADD-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/stash.add
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CREW-OPS-FIELDS-UPDATE-001] POST /api/crews/00000000-0000-4000-8000-000000000002/ops/fields.update
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CLOCK-DELETE-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/delete
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CLOCK-OPS-CLOCK-PROGRESS-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/ops/clock.progress
+ ↓ suites/contract/endpoints.test.ts > contract v1 endpoint coverage > [CONTRACT-CLOCK-OPS-CLOCK-RESET-001] POST /api/clocks/00000000-0000-4000-8000-000000000001/ops/clock.reset
+ ↓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-001] campaign.batch applies ops sequentially, reports per-op outcomes, and writes one history entry
+ ↓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-002] a batch with an invalid middle op rolls back atomically leaving revisions and state unchanged
+ ✓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-003] end-score clears armor used and resets loadout commitment 156ms
+ ↓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-004] end-downtime clears session expressions and applies the caller-supplied vice relief
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 35 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/lifecycle/lifecycle-state-machine.test.ts > lifecycle state machine (SC-O6 oracle) > [LIFECYCLE-ENDSCORE-002] end-score preserves partial stress and resets both out-of-action flags
+AssertionError: expected +0 to be 4 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 4[39m
+[31m+ 0[39m
+
+ ❯ suites/lifecycle/lifecycle-state-machine.test.ts:254:54
+    252|     const result = await entityPostRaw(character.id, "end-score", {}, …
+    253|     expect(result.ok).toBe(true);
+    254|     expect(result.character?.monitor.stress.current).toBe(4);
+       |                                                      ^
+    255|     expect(result.character?.isOutOfAction).toBe(false);
+    256|     expect(result.character?.stressClearPending).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-1] blades-in-the-dark canonical defaults snapshot runtime settings, without read projections
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-2] scum-and-villainy canonical defaults snapshot runtime settings, without read projections
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-DEFAULT-3] rus-blades-in-the-dark canonical defaults snapshot runtime settings, without read projections
+AssertionError: expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ ❯ rawCharacter suites/semantics/game-mode.test.ts:52:17
+     50|   expect(body.id).toBeTypeOf("string");
+     51|   expect(Number.isInteger(body.revision)).toBe(true);
+     52|   expect(MODES).toContain(body.mode);
+       |                 ^
+     53|   const downtime = object(body.downtime);
+     54|   for (const key of ["free", "paid", "spent"]) expect(Number.isInteger…
+ ❯ read suites/semantics/game-mode.test.ts:65:10
+ ❯ suites/semantics/game-mode.test.ts:148:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ISOLATION-001] linked scoundrels, crew and campaign never share mode or budget
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:184:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-free-play] free-play → free-play never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-score] free-play → score never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-free-play-downtime] free-play → downtime never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-free-play] score → free-play never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-score] score → score never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-score-downtime] score → downtime never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-free-play] downtime → free-play never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-score] downtime → score never resets gameplay
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-TRANSITION-downtime-downtime] downtime → downtime never resets gameplay
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:196:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-SAME-001] reselecting Score retains resolution cursor and activity records
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:209:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-001] forward/back/direct navigation, closing and finishing resolution award nothing
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:221:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-FLOW-002] unlinked scoundrels jump into resolution from every mode; none preserves mode
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:245:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-001] all explicit activities remain legal below zero without changing mode
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:264:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-002] coin/gift record already-paid extras and signed corrections without charging funds or rep
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:280:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BUDGET-003] explicit reset snapshots current allowance and clears records, preserving mode and gameplay
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:293:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-free-play] ordinary mutations and mixed entity batch have no free-play gate or implicit spending
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-score] ordinary mutations and mixed entity batch have no score gate or implicit spending
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ORDINARY-downtime] ordinary mutations and mixed entity batch have no downtime gate or implicit spending
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:307:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-1] mode.set snapshots, revision guards, exact retry and undo follow existing conventions
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-2] mode.flow.set snapshots, revision guards, exact retry and undo follow existing conventions
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-3] downtime.spend snapshots, revision guards, exact retry and undo follow existing conventions
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-4] downtime.adjust snapshots, revision guards, exact retry and undo follow existing conventions
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-PERSISTENCE-5] downtime.reset snapshots, revision guards, exact retry and undo follow existing conventions
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:335:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-LEGACY-001] legacy import missing new fields receives canonical stored defaults
+AssertionError: expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ ❯ rawCharacter suites/semantics/game-mode.test.ts:52:17
+     50|   expect(body.id).toBeTypeOf("string");
+     51|   expect(Number.isInteger(body.revision)).toBe(true);
+     52|   expect(MODES).toContain(body.mode);
+       |                 ^
+     53|   const downtime = object(body.downtime);
+     54|   for (const key of ["free", "paid", "spent"]) expect(Number.isInteger…
+ ❯ returned suites/semantics/game-mode.test.ts:85:21
+ ❯ importEntity suites/semantics/game-mode.test.ts:141:10
+ ❯ suites/semantics/game-mode.test.ts:370:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-001] partial stress and committed gear persist; atomic budget reset enters resolution and undo restores all
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ success suites/semantics/game-mode.test.ts:80:19
+     78|   expect(response.status).toBe(200);
+     79|   const body = object(response.body);
+     80|   expect(body.ok).toBe(true);
+       |                   ^
+     81|   return body as unknown as Result; // Raw result envelope, asserted i…
+     82| }
+ ❯ returned suites/semantics/game-mode.test.ts:84:18
+ ❯ op suites/semantics/game-mode.test.ts:110:72
+ ❯ suites/semantics/game-mode.test.ts:384:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-002] resolved trauma flags clear without resetting committed loadout
+AssertionError: expected [ 'free-play', 'score', 'downtime' ] to include undefined
+ ❯ rawCharacter suites/semantics/game-mode.test.ts:52:17
+     50|   expect(body.id).toBeTypeOf("string");
+     51|   expect(Number.isInteger(body.revision)).toBe(true);
+     52|   expect(MODES).toContain(body.mode);
+       |                 ^
+     53|   const downtime = object(body.downtime);
+     54|   for (const key of ["free", "paid", "spent"]) expect(Number.isInteger…
+ ❯ returned suites/semantics/game-mode.test.ts:85:21
+ ❯ endpoint suites/semantics/game-mode.test.ts:114:10
+ ❯ suites/semantics/game-mode.test.ts:421:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-004] partial stress cleanup is exercised directly without new tracker setup
+AssertionError: expected +0 to be 8 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 8[39m
+[31m+ 0[39m
+
+ ❯ suites/semantics/game-mode.test.ts:437:42
+    435|     const result = success(await api.post(`characters/${character.id}/…
+    436|     const after = fixtureCharacter(result.character);
+    437|     expect(after.monitor.stress.current).toBe(stressMax - 1);
+       |                                          ^
+    438|     expect(after.mode).toBe("score");
+    439|     expect(after.modeFlow).toEqual({ kind: "resolution", step: "scound…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-ENDSCORE-003] full stress retains the existing pending-trauma rejection, not a mode/budget error
+AssertionError: expected { applied: { op: 'end-score' }, …(3) } to match object { ok: false, mode: 'free-play', …(1) }
+(3 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "error": {[22m
+[2m      "code": "TRAUMA_REQUIRED",[22m
+[2m      "status": 200,[22m
+[2m    },[22m
+[32m-   "mode": "free-play",[39m
+[2m    "ok": false,[22m
+[2m  }[22m
+
+ ❯ suites/semantics/game-mode.test.ts:448:27
+    446|     const response = await api.post(`characters/${character.id}/end-sc…
+    447|     expect(response.status).toBe(200);
+    448|     expect(response.body).toMatchObject({ ok: false, mode: "free-play"…
+       |                           ^
+    449|     const failure = object(response.body);
+    450|     expect(Array.isArray(failure.suggestedOps)).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-BATCH-001] new tracker operations compose in order without mode or exhausted-budget gates
+AssertionError: expected [ false, false, false, false ] to deeply equal [ true, true, true, true ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   true,[39m
+[32m-   true,[39m
+[32m-   true,[39m
+[32m-   true,[39m
+[31m+   false,[39m
+[31m+   false,[39m
+[31m+   false,[39m
+[31m+   false,[39m
+[2m  ][22m
+
+ ❯ suites/semantics/game-mode.test.ts:465:52
+    463|     ] });
+    464|     const result = success(response);
+    465|     expect(result.batch?.map((entry) => entry.ok)).toEqual([true, true…
+       |                                                    ^
+    466|     const after = await read(character.id);
+    467|     expect(after.mode).toBe("downtime");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/35]⎯
+
+ FAIL  suites/semantics/game-mode.test.ts > GAME-MODE-01 per-scoundrel advisory modes > [GAME-MODE-VALIDATION-001] malformed modes, cursors and counters use existing VALIDATION and never mutate
+AssertionError: expected 200 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 200[39m
+
+ ❯ suites/semantics/game-mode.test.ts:492:31
+    490|     for (const [name, args] of cases) {
+    491|       const response = await api.post(`characters/${character.id}/ops/…
+    492|       expect(response.status).toBe(400);
+       |                               ^
+    493|       expect(response.body).toMatchObject({ ok: false, error: { code: …
+    494|       expect(await read(character.id)).toEqual(character);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/35]⎯
+
+
+ Test Files  2 failed | 2 passed (4)
+      Tests  35 failed | 4 passed | 115 skipped (154)
+   Start at  14:46:39
+   Duration  3.84s (transform 78ms, setup 0ms, collect 1.01s, tests 2.45s, environment 0ms, prepare 111ms)
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0 dataDir=/tmp/pitd-managed/2026-10-09T11-46-39-092Z-1a947cd0/data port=39411
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-09T11-46-39-092Z-1a947cd0-server.log

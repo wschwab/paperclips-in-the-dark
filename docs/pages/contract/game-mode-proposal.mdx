@@ -4,11 +4,11 @@ title: Game mode — approved design and per-scoundrel API proposal
 
 # Game mode — approved design and per-scoundrel API proposal
 
-> **Design approved by the human; API changes proposed, not implemented.**
-> The revised mockups were approved as “looks really great”. This page replaces
-> the earlier campaign-wide phase resource and operation-gating proposal.
-> This documentation change does not modify the contract, backend, frontend,
-> game settings, or conformance suites.
+> **Design and API decisions frozen by the human; implementation not shipped.**
+> The revised mockups were approved as “looks really great”. GAME-MODE-01
+> declares the per-scoundrel contract and new red conformance oracles.
+> This replaces the former campaign-wide/gated design without implementing
+> backend or frontend behavior; this card stops at the red-test boundary.
 
 <p>
   <a href="/mockups/game-mode/index.html">Open the approved mockup gallery</a>
@@ -170,49 +170,46 @@ eligibility, dice results, treatment, entanglement consequences, or incarceratio
 
 The following are current contract facts, not implemented game-mode behavior:
 
-- The character DTO has identity, revision, dossier, monitor, talent, playbook,
-  gear, session, and lifecycle state, but no game-mode state:
-  `contract/schemas/character.json:6-30`.
-- End Score retains stress and out-of-action cleanup when Resolution begins.
-  **Stress clears only when the meter was completely full; otherwise it
-  persists. Committed loadout is retained.** This human-confirmed behavior is
-  authoritative for GAME-MODE-01. The existing contract text at
-  `contract/openapi.yaml:1574-1606` says stress always clears and offers
-  loadout-reset flags; that text and any frozen tests asserting it must be
-  reported as conflicts, not silently treated as the approved behavior.
+- The character DTO retains identity, revision, dossier, monitor, talent,
+  playbook, gear, session and lifecycle state. GAME-MODE-01 adds stored mode,
+  workflow and budget directly to `contract/schemas/character.json`.
+- End Score retains out-of-action cleanup when Resolution begins. **Stress
+  clears only when completely full; otherwise it persists. Committed loadout
+  is retained by default.** The existing optional `resetLoadoutCommitment`
+  flag remains supported and defaults to false; explicit true opts into the
+  existing cleanup and locked-commitment error. Only the original partial-stress
+  assertion in `LIFECYCLE-ENDSCORE-002` requires amendment.
 - Existing `end-downtime` clears session expressions and accepts caller-supplied
   vice relief; it is not a mode switch:
-  `contract/openapi.yaml:1647-1666`.
+  `endDowntime` in `contract/openapi.yaml`.
 - Existing mutation routes include attribute/playbook XP, personal fund gain/
   spend, and crew heat, rep, XP, and coin operations:
-  `contract/openapi.yaml:1129-1174,1379-1418,1905-1949,1985-1999,2349-2363`.
-- `OperationResult` currently carries `ok`, `applied`, `sideEffects`, `error`,
-  and an entity on successful entity-targeted operations, plus derived undo
-  metadata: `contract/schemas/operation-result.json:6-70`.
-  Its schema is closed, so new response assistance fields require an explicit
-  contract change, not undocumented backend properties.
-- The existing error envelope and HTTP mapping are fixed in
-  `contract/openapi.yaml:317-339` and
-  `contract/schemas/operation-result.json:138-730`.
+  `contract/openapi.yaml`.
+- `OperationResult` retains `ok`, `applied`, `sideEffects`, `error`, returned
+  entities, and derived undo metadata. GAME-MODE-01 adds conditional `mode` and
+  advisory `suggestedOps` in `contract/schemas/operation-result.json`, not a
+  parallel result envelope.
+- The error envelope and HTTP mapping in `contract/openapi.yaml` and
+  `contract/schemas/operation-result.json` are unchanged.
 
 The new design is a sheet aid layered onto those operations. It does not need
 a campaign-state resource, campaign-mode storage, a roster-wide transition,
 or a campaign-level score-ending composite.
 
-## 3. Proposed per-scoundrel API
+## 3. Frozen per-scoundrel API contract
 
-This section is **proposed contract work**, not an assertion that these fields
-or routes already exist. API/domain naming remains `character`; human-facing
-copy remains **scoundrel**.
+GAME-MODE-01 declares these fields/routes in the contract. This is **not a claim
+that the current server implements them**. API/domain naming remains
+`character`; human-facing copy remains **scoundrel**.
 
-### Character state and derived assistance
+### Character state and operation-result assistance
 
 Add `mode` to the character, with `free-play`, `score`, or `downtime`. Default
 new and migrated scoundrels to `free-play`. Persist this state in the existing
 character document using its revision, atomic write, snapshots, and undo;
 **no new campaign resource or revision**.
 
-Proposed accompanying workflow/budget fields:
+Stored workflow/budget fields (illustrative state):
 
 ```json
 {
@@ -222,8 +219,10 @@ Proposed accompanying workflow/budget fields:
     "step": "payoff"
   },
   "downtime": {
+    "free": 2,
+    "paid": 0,
     "spent": 0,
-    "adjustment": 0
+    "activities": []
   }
 }
 ```
@@ -235,19 +234,23 @@ resolution steps are `scoundrel-xp`, `payoff`, `heat`, `entanglements`,
 operation-eligibility phase**. Back, Next, or direct step selection can move
 freely without requiring earlier work to be completed.
 
-The contract card must declare every field and enum, canonical defaults, and
-migration behavior. Remaining is a **derived signed integer**:
-`freeActivities + adjustment - spent`. Settings provide `freeActivities`;
-neither the allowance nor remaining is duplicated as a stored maximum.
-Expose allowance/remaining in the character capability/read projection.
+Store mode, workflow, and budget state **directly in `character.json`**. The
+budget counters are stored state: `free` snapshots
+`DowntimeSettings.FreeActivities` at initialization/completed-score reset;
+`paid` records explicit extras (including gifts) and signed corrections;
+`spent` records completed activity spends. The available budget is
+**`free + paid - spent`**, which may be negative. No maximum is declared.
+Activity records contain `{activity, description}`. Mode/flow changes leave
+these counters untouched. A changed settings allowance takes effect on the
+next explicit budget reset, not by rewriting an existing budget during a read.
 
-Add **`mode` and `suggestedOps` to character read responses and character-targeted
-operation responses**, including fresh roster character summaries where mode
-is shown. `suggestedOps` is a derived list of dotted operation names, not
-persisted, and **not an allowlist**. For example, Score can suggest
-`attribute-xp.add`, gear operations, and `end-score`; Downtime can suggest
-`downtime.spend` and relevant existing sheet mutations. Resolution suggestions
-can reflect its displayed step without excluding any other operation.
+`GET /api/characters/{id}` retains its existing **Character** schema. There is
+**no separate `characterRead` projection** or transient budget DTO.
+Add advisory **`suggestedOps` only to `operation-result.json`**, beside the
+existing result fields and current character `mode`. Suggestions are not
+persisted and **not an allowlist**. Score can suggest attribute XP, gear, and
+End Score; Downtime can suggest activity tracking and existing sheet mutations.
+Resolution suggestions can follow the displayed step without excluding any op.
 
 Crew responses remain crew responses: they do not acquire a shared crew/campaign
 mode. A scoundrel flow reads its own mode separately when editing the crew.
@@ -261,10 +264,10 @@ All new character routes use the existing op-style POST pattern under
 |---|---|
 | `mode.set` — `POST /api/characters/{id}/ops/mode.set` | `{mode}`. Any of the three choices from any current mode. Entering Score offers Planning; leaving a workflow clears its active cursor but does not apply cleanup, XP, crew changes, or a budget reset. Selecting an already-current mode does not restart bookkeeping. |
 | `mode.flow.set` — `POST /api/characters/{id}/ops/mode.flow.set` | `{kind, step}` from the declared workflow enums. Saves the assistance cursor for Back/Next/direct step selection. Selecting a Score workflow establishes Score for this scoundrel rather than failing because its previous mode differed. No completion prerequisites. |
-| **`end-score` — existing `POST /api/characters/{id}/end-score`** | Atomically enters **Resolution / Scoundrel XP**, clears out-of-action flags, and clears stress **only if completely full**. Partial stress persists. **Committed loadout is retained.** Reset this scoundrel’s activity budget after the completed score; no reset on later mode changes. It does not award XP, update the crew, or change another scoundrel. Invoking it outside Score is not a mode error. |
-| `downtime.spend` — `POST /api/characters/{id}/ops/downtime.spend` | `{activity, description}`; activity is one of the six menu names or Other. Explicitly record the activity and increment `spent` by one. Available in every mode and even when remaining is zero/negative; it does not auto-change mode or derive an outcome. The contract card defines canonical activity-record fields and undo coverage. |
-| `downtime.adjust` — `POST /api/characters/{id}/ops/downtime.adjust` | `{delta, reason}` with reasons coin, gift, correction. +1 (coin) records an **already-paid** extra activity; +1 (gift) likewise adds an available activity. Neither charges any coin or rep automatically. −1 is an explicit correction. Available in every mode. |
-| `downtime.reset` — `POST /api/characters/{id}/ops/downtime.reset` | Explicitly clears spent/adjustment and current-budget records. Successful End Score resets the budget after the completed score, in the same character mutation. Selecting or reselecting any mode, resuming a popup, and completing Resolution never reset it again. |
+| **`end-score` — existing `POST /api/characters/{id}/end-score`** | Atomically enters **Resolution / Scoundrel XP**, clears out-of-action flags, and clears stress **only if completely full**. Partial stress persists. **Committed loadout is retained by default.** Preserve optional `resetLoadoutCommitment` (default false); explicit true retains existing opt-in cleanup/lock checks. The approved UI omits it. Reset this scoundrel’s budget after the completed score. No automatic XP/crew award or other-scoundrel change; no mode error outside Score. |
+| `downtime.spend` — `POST /api/characters/{id}/ops/downtime.spend` | `{activity, description}`; activity is one of the six menu names or Other. Append the explicit activity record and increment stored `spent` by one. Available in every mode and even when `free + paid - spent` is zero/negative; no automatic mode change or activity outcome. |
+| `downtime.adjust` — `POST /api/characters/{id}/ops/downtime.adjust` | `{delta, reason}` with reasons coin, gift, correction. +1 (coin) records an **already-paid** extra activity in stored `paid`; +1 (gift) likewise adds an available activity. Neither charges coin or rep. −1 is an explicit correction. Available in every mode. |
+| `downtime.reset` — `POST /api/characters/{id}/ops/downtime.reset` | Snapshots free activities from settings and clears stored paid/spent/activity records. Successful End Score resets this budget after the completed score in the same character mutation. Mode changes, popup resume, and completing Resolution never reset it again. |
 
 Completing Resolution selects Downtime for this scoundrel using `mode.set`;
 leaving early can do the same without any forced awards. Step navigation and
@@ -320,9 +323,9 @@ Pure `mode.set` changes assistance, not gameplay rewards or lifecycle state.
 Response assistance must reflect the latest returned character. On failures,
 include it only where the existing envelope can supply current character
 state; do not invent a mode on a missing/unreadable entity. The contract card
-must specify the conditional presence rules for these new success/read
-projections and existing failure families. Generate agent references from the
-resulting contract rather than hand-authoring a second eligibility policy.
+must specify conditional presence for operation results and existing failure
+families; plain character reads retain the canonical Character shape. Generate
+agent references from the resulting contract rather than hand-authoring a second eligibility policy.
 
 ## 4. Frozen human decisions — GAME-MODE-01
 
@@ -330,19 +333,17 @@ All three previously open decisions are resolved:
 
 1. **End Score cleanup occurs when Resolution begins.** Clear out-of-action
    state then. Clear stress only if the meter was completely full; retain
-   partial stress. **Do not clear the committed loadout.** The character mutation,
-   Resolution entry, and completed-score budget reset are atomic and undoable
-   together. Existing contradictory contract text/frozen tests must be listed
-   explicitly in the contract-card report.
-2. **The activity budget is uncapped where possible.** Free activities come from
-   settings. Signed remaining may be negative; spending never fails because
-   the soft allowance is exhausted. Reset the budget **after a completed
-   score**, never on a mode switch or on navigating Resolution. If a schema
-   representation requires a maximum, obtain a very high value **50 from
-   settings**, never from a hardcoded implementation maximum. Prefer no
-   artificial budget maximum. Any new game-settings keys/files require the
-   human’s authorization before editing `data/games/`; `campaign-data/` is
-   off-limits.
+   partial stress. **The approved UI does not clear the committed loadout.**
+   Preserve existing optional `resetLoadoutCommitment`, default false, for
+   callers explicitly requesting that cleanup. The character mutation,
+   Resolution entry, and completed-score budget reset remain atomic and undoable.
+2. **The activity budget is uncapped.** `DowntimeSettings.FreeActivities` comes
+   from game settings: the human authorized **2** per the SRD in every game
+   file sharing the settings schema. Signed remaining may be negative; spending
+   never fails because the soft allowance is exhausted. Reset the budget
+   **after a completed score**, never on a mode switch or on navigating
+   Resolution. The schema declares **no maximum**. Only game-settings JSON and
+   its validating definitions are in scope; `campaign-data/` is off-limits.
 3. **+1 (coin) records an already-paid extra activity.** It adds one to this
    scoundrel’s available activities and **never automatically charges coin**.
    Gifts behave the same way without implying a payment. Fund/crew balance
@@ -362,12 +363,12 @@ behavior; no worker substitutes the former campaign-wide design.
 
 ### Card 1 — Contract change: per-scoundrel state and advisory API
 
-- Add character mode, workflow cursor, activity records/budget fields, canonical
-  defaults, import/repair migration, and derived allowance/remaining projections.
+- Add stored character mode, workflow cursor, activity records and free/paid/spent
+  budget counters, canonical defaults, and import/repair migration.
 - Add `mode.set`, cursor navigation, `downtime.spend`, adjustment/reset contracts;
   extend existing end-score to enter Resolution with the agreed cleanup timing.
-- Specify `mode`/`suggestedOps` on reads and operation responses, including
-  conditional failure presence, using the existing envelope and status table.
+- Specify stored mode on character reads and mode/suggestedOps on operation results,
+  including conditional failures, using the existing envelope and status table.
 - Declare settings-driven free activities and already-paid adjustment semantics. Declare
   snapshot, undo, revision, idempotency, and batch behavior for every new op.
 - No campaign mode resource, mode-based rejection, new error code, new status,
@@ -415,8 +416,8 @@ behavior; no worker substitutes the former campaign-wide design.
   their exact envelope/status/recovery semantics.
 - Exercise free-activity settings variations, signed remaining, spending at
   zero/below zero, adjustments, completed-score reset, no automatic payment, undo, and retry.
-- Verify current `mode`/`suggestedOps` response projections are advisory, match
-  returned state, and do not become a hidden allowlist.
+- Verify stored mode/budget state on reads and advisory `mode`/`suggestedOps`
+  on operation results; suggestions never become a hidden allowlist.
 - Cover character/crew revision separation and exactly-once retry of explicit
   writes. UI/browser acceptance additionally verifies no duplicate crew award,
   cancel/confirm loadout behavior, Personal visibility, and soft budget controls.
@@ -430,3 +431,31 @@ behavior; no worker substitutes the former campaign-wide design.
 - 2026-10-09 — human froze full-meter-only stress clearing, committed-loadout
   retention, uncapped/settings-derived budgets reset after completed scores,
   and already-paid coin/gift adjustments. No product questions remain.
+- 2026-10-09 — human selected direct stored Character mode/workflow/budget
+  counters and operation-result-only suggestions; no characterRead projection.
+
+### Contract tooling calibration
+
+GAME-MODE-01 retains the existing **one OpenAPI path per dotted operation**
+convention used by `contact.add`. Its five new character operations increase
+the path count **107 → 112**; the human authorized updating the
+`ENDPOINT-MAP-001` tooling fixture accordingly. No generic transport resource,
+second logical-operation manifest section, or new HTTP status is introduced.
+The `ORACLE-CAL-008` positive character-summary fixture gains stored mode; the
+Character validator registry name remains unchanged.
+
+### Authorized frozen-test amendment
+
+`LIFECYCLE-ENDSCORE-002` remains the sole original frozen-semantic conflict:
+after adding partial stress **4**, its assertion changes from
+`expect(result.character?.monitor.stress.current).toBe(0)` **before** to
+`expect(result.character?.monitor.stress.current).toBe(4)` **after**.
+The human authorized this one assertion and a matching descriptive title;
+out-of-action flag assertions and all other frozen cases are unchanged.
+
+Restoring optional `resetLoadoutCommitment` clears the compatibility conflicts
+in `LIFECYCLE-ENDSCORE-003`, `SEMANTICS-COMPOSITES-003`,
+`LIFECYCLE-TRAUMA-003`, and `CONTRACT-CHARACTER-END-SCORE-001`.
+The separate French creation HTTP 500 is recorded in
+[the backend backlog](/backlog/french-game-creation-500), not GAME-MODE-01’s red
+oracle list.

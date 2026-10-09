@@ -90,6 +90,10 @@ const HUMAN_CONTROL = {
     "Reachable crew free-text editing control (name, lair, reputation, huntingGrounds, crewTypeName).",
   crewNoteAdd: "Reachable crew note-append control (allowed after retirement).",
   crewNoteRemove: "Reachable crew note-removal control (allowed after retirement).",
+  characterModeSet: "Reachable per-scoundrel Free Play / Score / Downtime switcher; every mode remains selectable.",
+  characterModeFlowSet: "Reachable Planning / Loadout / Engagement and Resolution Back/Next navigation; no prerequisite or automatic award.",
+  characterDowntimeSpend: "Reachable downtime activity menu; soft budget never disables an activity.",
+  characterDowntimeAdjust: "Reachable +1 (coin), +1 (gift), and correction controls; records already-paid activities without charging funds.",
 };
 
 // disposition: "human" | "agent"; categories explain the obligation.
@@ -123,6 +127,12 @@ const TABLE = {
   crewFieldsUpdate: { disposition: "human", categories: ["sheet-management"] },
   crewNoteAdd: { disposition: "human", categories: ["sheet-management"] },
   crewNoteRemove: { disposition: "human", categories: ["sheet-management"] },
+  // GAME-MODE-01: approved sheet assistance controls, available regardless of mode.
+  characterModeSet: { disposition: "human", categories: ["sheet-management"] },
+  characterModeFlowSet: { disposition: "human", categories: ["sheet-management"] },
+  characterDowntimeSpend: { disposition: "human", categories: ["sheet-management"] },
+  characterDowntimeAdjust: { disposition: "human", categories: ["sheet-management"] },
+  characterDowntimeReset: { disposition: "agent" },
   // CONTRACT-03 (DEC-03 ruling): the FIX_ correction family is a designated
   // sheet-management surface with its own gating — reachable only behind the
   // frontend corrections toggle.

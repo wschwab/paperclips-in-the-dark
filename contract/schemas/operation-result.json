@@ -8,6 +8,16 @@
   "properties": {
     "ok": { "type": "boolean" },
     "character": { "$ref": "character.json" },
+    "mode": {
+      "$ref": "character.json#/$defs/mode",
+      "description": "Required on character-targeted results whenever character or error.entity supplies readable current character state; matches that returned character, including failures. Absent for missing/unreadable state and crew/clock-only responses."
+    },
+    "suggestedOps": {
+      "type": "array",
+      "items": { "type": "string" },
+      "readOnly": true,
+      "description": "Same conditional presence as mode; derived dotted operation names from latest returned character mode/flow, including op-level failure state. Never persisted or added to character/read/roster/capabilities; never an eligibility allowlist. Score may suggest attribute-xp.add, gear operations and end-score; Downtime may suggest downtime.spend and sheet mutations. Batch items retain their existing outcome-only shape."
+    },
     "crew": { "$ref": "crew.json" },
     "clock": { "$ref": "clock.json" },
     "canUndo": {

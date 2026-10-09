@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 110
+Operations: 115
 
 ## Conventions
 
@@ -172,6 +172,11 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/session.set` | [`sessionSet`](#sessionset) | false |
 | POST | `/characters/{id}/ops/notebook.set` | [`notebookSet`](#notebookset) | false |
 | POST | `/characters/{id}/end-score` | [`endScore`](#endscore) | true |
+| POST | `/characters/{id}/ops/mode.set` | [`characterModeSet`](#charactermodeset) | true |
+| POST | `/characters/{id}/ops/mode.flow.set` | [`characterModeFlowSet`](#charactermodeflowset) | true |
+| POST | `/characters/{id}/ops/downtime.spend` | [`characterDowntimeSpend`](#characterdowntimespend) | true |
+| POST | `/characters/{id}/ops/downtime.adjust` | [`characterDowntimeAdjust`](#characterdowntimeadjust) | true |
+| POST | `/characters/{id}/ops/downtime.reset` | [`characterDowntimeReset`](#characterdowntimereset) | true |
 | POST | `/characters/{id}/ops/note.add` | [`noteAdd`](#noteadd) | true |
 | POST | `/characters/{id}/ops/note.remove` | [`noteRemove`](#noteremove) | true |
 | POST | `/characters/{id}/end-downtime` | [`endDowntime`](#enddowntime) | true |
@@ -334,6 +339,30 @@ schema:
           id: { type: string }
           op: { type: string, description: "dotted op name, e.g. stress.add" }
           args: { type: object }
+        oneOf:
+          - properties:
+              entity: { const: character }
+              op: { const: mode.set }
+              args: { $ref: "#/components/schemas/CharacterModeSet" }
+          - properties:
+              entity: { const: character }
+              op: { const: mode.flow.set }
+              args: { $ref: "#/components/schemas/CharacterModeFlowSet" }
+          - properties:
+              entity: { const: character }
+              op: { const: downtime.spend }
+              args: { $ref: "#/components/schemas/CharacterDowntimeSpend" }
+          - properties:
+              entity: { const: character }
+              op: { const: downtime.adjust }
+              args: { $ref: "#/components/schemas/CharacterDowntimeAdjust" }
+          - properties:
+              entity: { const: character }
+              op: { const: downtime.reset }
+              args: { $ref: "#/components/schemas/CharacterDowntimeReset" }
+          - properties:
+              op:
+                not: { enum: [mode.set, mode.flow.set, downtime.spend, downtime.adjust, downtime.reset] }
 ```
 
 Responses:
@@ -558,7 +587,7 @@ None
 
 Responses:
 
-- `200`: character DTO
+- `200`: Canonical character DTO, byte-identical to current.json; no derived budget/suggestion fields. Reads never write. Migration fills absent mode/flow/downtime defaults without rejecting legacy documents solely for those omissions.
 - `404`: OperationResult
 - `422`: OperationResult
 
@@ -1670,7 +1699,7 @@ Responses:
 
 `POST /characters/{id}/end-score`
 
-Composite helper; body optional — a missing or empty body is valid (W15). A successful end-score ALWAYS clears stress to 0 and resets both out-of-action flags (isOutOfAction, stressClearPending); optional flags select additional score cleanup (clearArmorUsed, resetLoadoutCommitment). One snapshot and exactly one history entry: any mid-composite failure (e.g. COMMITMENT_LOCKED from resetLoadoutCommitment) fails the whole operation — nothing applied, no snapshot written. Gates: retired → RETIRED; traumaPending → TRAUMA_REQUIRED — the pending trauma must be resolved first, end-score can never erase an unresolved trauma (LIFECYCLE-ENDSCORE-001); isOutOfAction does NOT block — end-score is the release. Degraded entity → 422 INVALID_ENTITY.
+Composite helper; body optional — missing or empty body remains valid. Success clears stress to 0 ONLY if current stress equals its settings- derived maximum; partial stress persists. Resets isOutOfAction and stressClearPending, retains committed loadout, commitment and its lock by default (unless resetLoadoutCommitment=true is explicitly supplied), sets mode=score and modeFlow={kind:resolution,step:scoundrel-xp}, and resets downtime={free:current DowntimeSettings.FreeActivities,paid:0, spent:0,activities:[]} after the completed score. free is a stored snapshot refreshed only at initialization or budget reset, not a live read projection. Optional clearArmorUsed retains its existing cleanup. Existing optional resetLoadoutCommitment defaults to false; true clears loadout and sets commitment=none, preserving its existing COMMITMENT_LOCKED failure when locked. The approved UI does not request this optional reset. All effects are atomic in one snapshot and exactly one history entry; failures apply nothing and write no snapshot. No automatic XP, crew awards, fund changes or changes to another character. Mode never gates end-score. Existing gates remain: retired → RETIRED; traumaPending → TRAUMA_REQUIRED (never erase unresolved trauma); isOutOfAction does not block. Degraded entity → 422 INVALID_ENTITY.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1684,7 +1713,130 @@ schema:
   additionalProperties: false
   properties:
     clearArmorUsed: { type: boolean }
-    resetLoadoutCommitment: { type: boolean }
+    resetLoadoutCommitment:
+      type: boolean
+      default: false
+      description: "Existing opt-in cleanup: clear loadout and set commitment=none. Omitted/false retains committed loadout; true on a locked commitment retains existing COMMITMENT_LOCKED."
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+
+## characterModeSet
+
+`POST /characters/{id}/ops/mode.set`
+
+Any mode from any current mode. Changing to score sets modeFlow={kind:score-start,step:planning}; changing to free-play or downtime clears the cursor to {kind:none,step:empty string}. Selecting the current mode preserves the cursor and bookkeeping. Pure assistance changes do not alter stress, lifecycle flags, gear, funds, XP, crew, or downtime budget. No gameplay/lifecycle gate applies to this assistance-only operation. Existing revision, idempotency, atomic write, history and undo conventions apply.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterModeSet" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+
+## characterModeFlowSet
+
+`POST /characters/{id}/ops/mode.flow.set`
+
+Save freely selected assistance cursor. Semantic kind/step constraints: none requires empty step; score-start only planning/loadout/engagement; resolution only scoundrel-xp/payoff/heat/entanglements/crew-xp/crew-rep. Invalid pair → existing VALIDATION. score-start or resolution establishes mode=score regardless of prior mode; none preserves mode and clears the cursor. No sequence/completion/crew-link prerequisites or gameplay gates. Back/Next/direct selection never applies XP, crew awards, cleanup, or downtime reset. Uses existing revision/idempotency/snapshot/undo rules.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterModeFlowSet" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+
+## characterDowntimeSpend
+
+`POST /characters/{id}/ops/downtime.spend`
+
+Explicit activity record: append exactly {activity,description} and increment downtime.spent by one, atomically with one snapshot. All modes and zero/negative remaining are valid; never auto-change mode or apply fictional outcomes, XP, project/healing/training/vice, funds or crew mutations. Helping another character does not implicitly spend an activity. Other sheet mutations never implicitly call this operation. Existing unrelated lifecycle rules, revision/idempotency and undo apply.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterDowntimeSpend" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+
+## characterDowntimeAdjust
+
+`POST /characters/{id}/ops/downtime.adjust`
+
+Add signed delta to downtime.paid without clamp or maximum. coin/gift require delta=1: record an already-paid/gifted extra activity, never charge coin or rep or mutate funds. correction permits any signed integer including -1 and zero. Preserve spent and activity records; reason describes this request, not a new stored record field. Available in every mode, including negative remaining. Does not change mode or apply outcomes. applied.requested/effective are signed delta and equal on success. Existing unrelated lifecycle, revision, idempotency, snapshot and undo rules apply.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterDowntimeAdjust" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+
+## characterDowntimeReset
+
+`POST /characters/{id}/ops/downtime.reset`
+
+Explicitly reset downtime={free:current DowntimeSettings.FreeActivities, paid:0,spent:0,activities:[]} atomically with one snapshot; preserve mode/flow and all unrelated state. free is a persisted settings snapshot, not recomputed by reads or later settings changes. The only implicit reset is successful end-score, in that composite's snapshot. Mode changes/reselection, popup resume, navigation and completing Resolution never reset it again. Existing unrelated lifecycle rules, revision, idempotency and undo apply; no mode or budget gate.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterDowntimeReset" }
 ```
 
 Responses:

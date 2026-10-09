@@ -1,0 +1,31 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:tooling
+npm notice run vitest run --config vitest.tooling.config.ts src/endpoint-schema-map.test.ts
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-001] the map covers every path in the OpenAPI spec 101ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-002] GET /campaign maps status 200 to 'campaign' 24ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-003] GET /campaign/roster maps status 200 to 'roster' 22ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-004] GET /characters maps status 200 to 'characterSummary' 24ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-005] GET /characters/{id} maps status 200 to 'character' 23ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-006] POST /characters/{id}/ops/stress.add maps status 200 to 'operationResult' 22ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-007] GET /characters/{id}/history maps status 200 to 'historyEntry' 21ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-008] GET /crews maps status 200 to 'crewSummary' 24ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-009] POST /characters/{id}/repair-preview maps status 200 to 'previewResult' 21ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-010] error statuses (404, 409, 422) on op endpoints map to 'operationResult' 21ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-015] unresolved endpoint throws 22ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-016] unresolved status throws 22ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-013] the map is deterministic (two calls return the same object) 43ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-017] derives responses by operationId and distinguishes a schema from explicit no-body 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-018] rejects unsupported inline response schemas clearly 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-019] rejects a response with an empty status from the derived map 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-020] rejects duplicate and missing operationIds 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-014] POST /characters/pc maps 200/400/404 to 'operationResult' 22ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-021] includes a newly supplied fake endpoint automatically 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-022] assertResponseValid rejects the wrong operationId/status body 43ms
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  14:39:32
+   Duration  840ms (transform 44ms, setup 0ms, collect 268ms, tests 459ms, environment 0ms, prepare 31ms)
+

@@ -1,6 +1,9 @@
 {
 	"Name": "Scum and Villainy",
 	"Language": "English",
+	"DowntimeSettings": {
+		"FreeActivities": 2
+	},
 	"Playbooks": [
 		{
 			"Name": "Mechanic",

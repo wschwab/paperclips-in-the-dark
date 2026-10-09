@@ -36,6 +36,10 @@
       ],
       "additionalProperties": false,
       "properties": {
+        "mode": {
+          "$ref": "character.json#/$defs/mode",
+          "description": "Required for readable rows; absent for degraded rows rather than inventing a mode."
+        },
         "kind": { "const": "character", "description": "route-derived row kind" },
         "id": { "$ref": "common.json#/$defs/uuid" },
         "name": { "type": "string" },

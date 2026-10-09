@@ -1,6 +1,9 @@
 {
 	"Name": "Blades in the Dark",
 	"Language": "Français",
+	"DowntimeSettings": {
+		"FreeActivities": 2
+	},
 	"Playbooks": [
 		{
 			"Name": "Surineur (Cutter)",

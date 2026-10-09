@@ -1,6 +1,9 @@
 {
 	"Name": "Клинки во тьме",
 	"Language": "Русский",
+	"DowntimeSettings": {
+		"FreeActivities": 2
+	},
 	"Playbooks": [
 		{
 			"Name": "Головорез (Cutter)",

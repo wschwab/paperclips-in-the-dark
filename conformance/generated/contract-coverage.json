@@ -334,6 +334,231 @@
       "collection": false
     },
     {
+      "operationId": "characterDowntimeAdjust",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.adjust",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeAdjust",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.adjust",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeAdjust",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.adjust",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeAdjust",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.adjust",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeAdjust",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.adjust",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeReset",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.reset",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeReset",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.reset",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeReset",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.reset",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeReset",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.reset",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeReset",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.reset",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeSpend",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.spend",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeSpend",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.spend",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeSpend",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.spend",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeSpend",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.spend",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeSpend",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.spend",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeFlowSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.flow.set",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeFlowSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.flow.set",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeFlowSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.flow.set",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeFlowSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.flow.set",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeFlowSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.flow.set",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.set",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.set",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.set",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.set",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterModeSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.set",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "clockProgress",
       "method": "POST",
       "path": "/clocks/{id}/ops/clock.progress",

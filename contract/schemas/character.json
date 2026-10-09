@@ -3,6 +3,7 @@
   "$id": "https://paperclips-in-the-dark/schemas/character.json",
   "title": "Character",
   "type": "object",
+  "description": "Canonical stored character DTO, also returned byte-identically by character detail reads and raw exports. GAME-MODE-01 migration fills absent mode=free-play, modeFlow={kind:none,step:empty string}, downtime={free:the game's DowntimeSettings.FreeActivities,paid:0,spent:0,activities:[]} without rejecting legacy documents solely for these omissions; existing normalization handles partial/null import and repair. Reads never write. All mode/workflow/downtime fields are stored, revisioned and undoable; no derived assistance fields are added to character/read/roster/capability responses. suggestedOps belongs only to OperationResult.",
   "required": [
     "kind",
     "id",
@@ -25,7 +26,10 @@
     "isDeadish",
     "traumaPending",
     "isOutOfAction",
-    "stressClearPending"
+    "stressClearPending",
+    "mode",
+    "modeFlow",
+    "downtime"
   ],
   "additionalProperties": false,
   "properties": {
@@ -75,6 +79,38 @@
     "stressClearPending": {
       "type": "boolean",
       "description": "set and cleared together with isOutOfAction; records that end-score owes a stress clear"
+    },
+    "mode": {
+      "$ref": "#/$defs/mode",
+      "description": "Stored per-character advisory mode; default free-play. Never an operation eligibility gate."
+    },
+    "modeFlow": {
+      "$ref": "#/$defs/modeFlow",
+      "description": "Stored assistance cursor; default {kind:none,step:empty string}. Navigation never applies rewards or budget resets."
+    },
+    "downtime": {
+      "type": "object",
+      "required": ["free", "paid", "spent", "activities"],
+      "additionalProperties": false,
+      "description": "Stored current-budget counters. Initialize/reset free from the character game's DowntimeSettings.FreeActivities (2 in all sharing games), paid=0, spent=0, activities=[]. free is a persisted allowance snapshot, not recomputed by reads or settings changes; successful end-score or explicit downtime.reset refreshes it from then-current settings. Remaining is computed by clients as free+paid-spent, may be negative and is not a response field or hard cap. Mode/flow changes never reset counters.",
+      "properties": {
+        "free": { "type": "integer", "minimum": 0, "description": "Stored settings-derived free-activity allowance snapshot; no hard maximum." },
+        "paid": { "type": "integer", "default": 0, "description": "Stored signed extra-activity/correction counter, changed by downtime.adjust; no automatic fund charge and no hard maximum." },
+        "spent": { "type": "integer", "minimum": 0, "default": 0 },
+        "activities": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["activity", "description"],
+            "additionalProperties": false,
+            "properties": {
+              "activity": { "$ref": "#/$defs/downtimeActivity" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      }
     },
     "dossier": {
       "type": "object",
@@ -486,6 +522,25 @@
     { "pointer": "/playbook/name", "predicate": "nonBlankString" }
   ],
   "$defs": {
+    "mode": {
+      "type": "string",
+      "enum": ["free-play", "score", "downtime"],
+      "default": "free-play"
+    },
+    "modeFlow": {
+      "type": "object",
+      "required": ["kind", "step"],
+      "additionalProperties": false,
+      "description": "Semantic kind/step pairing is mandatory: none requires empty step; score-start permits only planning, loadout, engagement; resolution permits only scoundrel-xp, payoff, heat, entanglements, crew-xp, crew-rep. Invalid pairs are VALIDATION, not mode errors. These constraints apply to stored canonical data and requests. No sequencing or completion prerequisite.",
+      "properties": {
+        "kind": { "type": "string", "enum": ["none", "score-start", "resolution"], "default": "none" },
+        "step": { "type": "string", "enum": ["", "planning", "loadout", "engagement", "scoundrel-xp", "payoff", "heat", "entanglements", "crew-xp", "crew-rep"], "default": "" }
+      }
+    },
+    "downtimeActivity": {
+      "type": "string",
+      "enum": ["acquire-asset", "long-term-project", "recover", "reduce-heat", "train", "indulge-vice", "other"]
+    },
     "gearItems": {
       "type": "array",
       "items": {

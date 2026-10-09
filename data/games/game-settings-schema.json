@@ -566,6 +566,19 @@
 	},
 	"type": "object",
 	"properties": {
+		"DowntimeSettings": {
+			"type": "object",
+			"properties": {
+				"FreeActivities": {
+					"type": "integer",
+					"minimum": 0
+				}
+			},
+			"additionalProperties": false,
+			"required": [
+				"FreeActivities"
+			]
+		},
 		"Name": {
 			"type": [
 				"string"
@@ -734,6 +747,7 @@
 	},
 	"additionalProperties": false,
 	"required": [
+		"DowntimeSettings",
 		"Name",
 		"Playbooks",
 		"Traumas",

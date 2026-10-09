@@ -1,0 +1,16 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:tooling
+npm notice run vitest run --config vitest.tooling.config.ts src/generators.test.ts
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-001] completeness module regenerates byte-identically and idempotently 40ms
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-002] API reference regenerates byte-identically with all SC-C5 sections 54ms
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-003] capability manifest regenerates byte-identically and covers every operationId 90ms
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-004] Ada validator metadata regenerates byte-identically and idempotently 60ms
+ ✓ src/generators.test.ts > SC-C5 generators > [ORACLE-01] contract coverage is deterministic, current, and complete 587ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  14:47:03
+   Duration  951ms (transform 18ms, setup 0ms, collect 15ms, tests 830ms, environment 0ms, prepare 29ms)
+
