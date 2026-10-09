@@ -1,4 +1,5 @@
 import type { DossierField } from "./character-domain.js";
+import type { GameModeHandlers, GameModeUi } from "./character-sections/gameMode.js";
 import type { Character } from "../schema/character.js";
 import type { CrewSummary } from "../schema/campaign.js";
 import type { ClockSummary } from "../schema/clock.js";
@@ -177,10 +178,14 @@ export interface RenderState {
   // Editing
   editing: EditingState | null;
   namedEditor: NamedEditorState | null;
+  /** GAME-MODE-03: presentation state for the mode panel, popups and Resolution. */
+  gameMode: GameModeUi;
   /** Re-render the page (used by nested editors after DOM-driven state changes). */
   rerender: () => void;
   // Handlers
   handlers: {
+    /** GAME-MODE-03: per-scoundrel mode, Score, Resolution, downtime and crew handlers. */
+    gm: GameModeHandlers;
     onStressTrack: (next: number) => void;
     onStressDelta: (delta: number) => void;
     /** CONTRACT-02: reads the amount input from the Vice panel. */

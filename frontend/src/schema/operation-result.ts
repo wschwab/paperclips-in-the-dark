@@ -140,6 +140,10 @@ export const OperationResult = Schema.Struct({
   crew: Schema.optional(Crew),
   clock: Schema.optional(Clock),
   canUndo: Schema.optional(Schema.Boolean),
+  // GAME-MODE-01: advisory mode on character-targeted results; suggestedOps
+  // are derived hints, never an allowlist.
+  mode: Schema.optional(Schema.Literal("free-play", "score", "downtime")),
+  suggestedOps: Schema.optional(Schema.Array(Schema.String)),
   historyCount: Schema.optional(
     Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   ),

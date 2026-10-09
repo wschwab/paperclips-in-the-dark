@@ -2102,3 +2102,55 @@ export function repairCrewApply(
 > {
   return repairApply("crew", id, ifMatch, previewToken, `/api/crews/${id}/repair`);
 }
+
+// ---------------------------------------------------------------------------
+// GAME-MODE-01 / GAME-MODE-03 — per-scoundrel mode, workflow cursor and soft
+// downtime budget. Assistance only: no operation here is gated by mode.
+// ---------------------------------------------------------------------------
+
+/** Set the scoundrel's advisory mode (any choice from any mode). */
+export function characterModeSet(
+  id: string,
+  mode: "free-play" | "score" | "downtime",
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "mode.set", revision, { mode });
+}
+
+/** Save the displayed workflow cursor (Back / Next / direct step selection). */
+export function characterModeFlowSet(
+  id: string,
+  kind: "none" | "score-start" | "resolution",
+  step: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "mode.flow.set", revision, { kind, step });
+}
+
+/** Record one explicit downtime activity (spends one budget unit). */
+export function characterDowntimeSpend(
+  id: string,
+  activity: string,
+  description: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "downtime.spend", revision, { activity, description });
+}
+
+/** Adjust the budget: coin/gift record already-paid extras (+1); correction is any signed delta. */
+export function characterDowntimeAdjust(
+  id: string,
+  delta: number,
+  reason: "coin" | "gift" | "correction",
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "downtime.adjust", revision, { delta, reason });
+}
+
+/** Explicit reset: free re-snapshots from settings; paid, spent and activities clear. */
+export function characterDowntimeReset(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "downtime.reset", revision, {});
+}

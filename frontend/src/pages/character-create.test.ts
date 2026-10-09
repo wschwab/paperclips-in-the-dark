@@ -112,6 +112,9 @@ function characterDTO(overrides: Record<string, unknown> = {}): Record<string, u
     fund: { satchel: { coins: 0, max: 12 }, stash: { coins: 0, max: 16 } },
     // CONTRACT-05: canonical create emits the REQUIRED empty contacts array.
     contacts: [],
+    mode: "free-play",
+    modeFlow: { kind: "none", step: "" },
+    downtime: { free: 2, paid: 0, spent: 0, activities: [] },
     session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5 },
     notebook: "",
     ...overrides,

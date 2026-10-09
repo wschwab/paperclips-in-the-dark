@@ -61,6 +61,9 @@ const characterDTO = {
   },
   fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
   contacts: [],
+  mode: "free-play",
+  modeFlow: { kind: "none", step: "" },
+  downtime: { free: 2, paid: 0, spent: 0, activities: [] },
   session: {
     playbookExpressions: 0,
     characterExpressions: 0,

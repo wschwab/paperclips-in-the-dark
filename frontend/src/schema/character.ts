@@ -20,6 +20,49 @@ import {
   type CompletenessRecord,
 } from "./generated/completeness.js";
 
+// GAME-MODE-01 (contract): per-scoundrel advisory mode, workflow cursor and
+// soft downtime budget. Stored on the character; never an operation gate.
+export const GameMode = Schema.Literal("free-play", "score", "downtime");
+export type GameMode = typeof GameMode.Type;
+
+export const ModeFlow = Schema.Struct({
+  kind: Schema.Literal("none", "score-start", "resolution"),
+  step: Schema.Literal(
+    "",
+    "planning",
+    "loadout",
+    "engagement",
+    "scoundrel-xp",
+    "payoff",
+    "heat",
+    "entanglements",
+    "crew-xp",
+    "crew-rep",
+  ),
+});
+export type ModeFlow = typeof ModeFlow.Type;
+
+export const DowntimeActivity = Schema.Struct({
+  activity: Schema.Literal(
+    "acquire-asset",
+    "long-term-project",
+    "recover",
+    "reduce-heat",
+    "train",
+    "indulge-vice",
+    "other",
+  ),
+  description: Schema.String,
+});
+
+export const Downtime = Schema.Struct({
+  free: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+  paid: Schema.Number.pipe(Schema.int()),
+  spent: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+  activities: Schema.Array(DowntimeActivity),
+});
+export type Downtime = typeof Downtime.Type;
+
 const GearItem = Schema.Struct({
   name: Schema.String.pipe(Schema.minLength(1)),
   bulk: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
@@ -177,6 +220,10 @@ export const Character = Schema.Struct({
   traumaPending: Schema.Boolean,
   isOutOfAction: Schema.Boolean,
   stressClearPending: Schema.Boolean,
+  // GAME-MODE-01 contract: mode, modeFlow and downtime are required canonical fields.
+  mode: GameMode,
+  modeFlow: ModeFlow,
+  downtime: Downtime,
   dossier: Dossier,
   monitor: Monitor,
   talent: Talent,

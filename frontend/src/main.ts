@@ -18,6 +18,7 @@ import "./styles/fonts.css";
 import "./styles/theme.css";
 import "./styles/base.css";
 import "./styles/components.css";
+import "./styles/game-mode.css";
 
 initTheme();
 

@@ -1,0 +1,37 @@
+{
+  "task": "GAME-MODE-03",
+  "track": "frontend",
+  "implementationAgent": "claude-haiku-5-5 (omp worker, game-mode frontend)",
+  "reviewAgent": "PENDING - gpt-5.6-luna (openai-codex, xhigh) review not run; real-Chromium evidence not run; 28/28 mutation campaign not run",
+  "date": "2026-10-09",
+  "iterationsToGreen": 5,
+  "iterationNotes": "domain and client: one red-green each. Sheet integration written before its DOM tests (deviation recorded); three first-run DOM failures fixed (crew load path). Skip confirms: red then green. Required decoder fields: red then green, widened to mode and modeFlow per the contract's required list. Client ops renamed to operationIds for PARITY-HUMAN-003.",
+  "wallClockMinutes": 0,
+  "tokens": null,
+  "defectsCaughtBy": {
+    "compiler": 3,
+    "conformance": 1,
+    "review": 0,
+    "human": 3
+  },
+  "notes": "Human-raised defects: Skip must confirm (design says skippable after a confirm); downtime and the other contract-required fields must be required; client functions must carry operationIds for PARITY-HUMAN-003. Compiler caught wrong crew/fund field names and an unsupported onclick prop. Conformance (PARITY-HUMAN-003) caught the non-operationId client names; fixed by rename and M20 pin refresh. Verification at this point: tsc clean; vitest 24 files / 841 tests; build exit 0; conformance npm run test:ada 66 files / 576 tests passed. Chromium evidence, Luna review and the 28/28 mutation campaign NOT run.",
+  "metricsMethodology": {
+    "method": "no grounded duration available (wall-clock not recorded for this worker run)",
+    "source": "vitest output, tsc, production build, conformance test:ada log, catalog hash comparison",
+    "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens=null: token accounting not available to the worker"
+  },
+  "passRateAtFirstDoneClaim": "domain: red (module missing); client: red (ops missing); skip confirms: 2 of 2 red; required fields: red; no first-done claim before green",
+  "passRateAfterReview": "vitest 841/841 across 24 files; tsc clean; build exit 0; Ada test:ada 576/576. Chromium, Luna and the 28/28 campaign not run.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend red tests (domain, client, skip confirms, required decoder fields)",
+    "frontend DOM tests (linked crew load path)",
+    "compiler (field names, unsupported prop)",
+    "conformance PARITY-HUMAN-003 (operationId naming)",
+    "human review (skip confirm, required fields, naming)"
+  ],
+  "status": "IMPLEMENTED, NOT REVIEWED - frontend and Ada suite green; Chromium evidence, Luna review and 28/28 mutation campaign pending"
+}

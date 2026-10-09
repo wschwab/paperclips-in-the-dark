@@ -70,6 +70,9 @@ function characterDTO(overrides: Record<string, unknown> = {}) {
     },
     fund: { satchel: { coins: 0, max: 2 }, stash: { coins: 0, max: 8 } },
     contacts: [],
+    mode: "free-play",
+    modeFlow: { kind: "none", step: "" },
+    downtime: { free: 2, paid: 0, spent: 0, activities: [] },
     session: {
       playbookExpressions: 0,
       characterExpressions: 0,
@@ -5090,9 +5093,10 @@ describe("F4 lifecycle UI", () => {
 
     getEndScore(root)!.click();
     expect(confirmSpy).toHaveBeenCalledWith(
-      "End the score? This clears stress, takes the scoundrel out of action, " +
-      "and (optionally) resets armor and loadout — in one snapshotted change " +
-      "you can undo.",
+      "End the score? This takes the scoundrel out of action and clears the " +
+      "out-of-action flags. Stress clears only when it is completely full; " +
+      "partial stress and the committed loadout are kept. Resolution follows, " +
+      "and Undo restores the score.",
     );
 
     await vi.waitFor(() => {

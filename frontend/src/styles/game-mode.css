@@ -1,0 +1,130 @@
+/* ── Per-scoundrel game mode (GAME-MODE-03) ──────────────────────────
+ * The mode panel is a sticky left gutter on wide sheets and a fixed footer
+ * on narrow ones. Everything it holds is assistance: nothing here disables
+ * an operation. Sheet furniture (torn seams, ruling) comes from components.css. */
+
+.game-mode-layout {
+  padding-bottom: 0;
+}
+
+@media (min-width: 1100px) {
+  .game-mode-layout {
+    display: grid;
+    grid-template-columns: 15em minmax(0, 1fr);
+    gap: 1.25em;
+    align-items: start;
+  }
+  .game-mode-layout > .mode-panel {
+    position: sticky;
+    top: 1em;
+    max-height: calc(100vh - 2em);
+    overflow: auto;
+  }
+}
+
+@media (max-width: 1099px) {
+  .game-mode-layout {
+    padding-bottom: 42vh;
+  }
+  .game-mode-layout > .mode-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    max-height: 40vh;
+    overflow: auto;
+    border-top: var(--border-medium) solid var(--rule-heavy);
+    background: var(--surface-raised);
+    padding: 0.5em 0.75em;
+  }
+}
+
+.mode-panel {
+  border: var(--border-thin) solid var(--rule);
+  background: var(--surface-raised);
+  border-radius: var(--radius);
+  padding: 0.75em;
+  min-width: 0;
+}
+
+.mode-panel h2 {
+  margin: 0 0 0.25em;
+}
+
+.mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em;
+  margin: 0.5em 0;
+}
+
+.mode-switch button[aria-pressed="true"],
+.mode-switch button.active {
+  background: var(--fill);
+  color: var(--surface);
+}
+
+.game-mode-block {
+  margin-top: 0.5em;
+}
+
+.score-collapsed {
+  margin-top: 0.5em;
+}
+
+.score-collapsed > summary {
+  cursor: pointer;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.game-mode-popup,
+.game-mode-resolution {
+  min-width: 0;
+}
+
+.resolution-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em;
+  list-style: none;
+  padding: 0;
+  margin: 0.5em 0;
+}
+
+.resolution-stepper li {
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: var(--border-thin) solid var(--rule);
+  padding: 0.2em 0.5em;
+  color: var(--text-muted);
+}
+
+.resolution-stepper li[aria-current="step"] {
+  border-color: var(--fill-border);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.game-mode-crew-editor,
+.game-mode-share {
+  border-top: var(--border-thin) solid var(--rule);
+  margin-top: 0.5em;
+  padding-top: 0.5em;
+}
+
+.game-mode-confirm {
+  border: var(--border-medium) solid var(--accent-strong);
+  padding: 0.5em 0.75em;
+  margin-top: 0.5em;
+}
+
+.game-mode-loadout .gear {
+  display: flex;
+  gap: 0.35em;
+  align-items: center;
+}

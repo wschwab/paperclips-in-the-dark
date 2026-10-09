@@ -85,8 +85,27 @@ import {
   listCrews,
   type SessionFields,
   type FundOpResult,
+  characterModeSet,
+  characterModeFlowSet,
+  characterDowntimeAdjust,
+  characterDowntimeSpend,
+  getCrew,
+  crewRepAdd,
+  crewCoinAdd,
+  crewHeatAdd,
+  crewXpAdd,
 } from "../api/client.js";
 import type { CharacterCapabilities } from "../api/client.js";
+import type { Crew } from "../schema/crew.js";
+import {
+  renderGameModePanel,
+  renderScorePopup,
+  renderCommittedLoadout,
+  renderResolution,
+  type GameModeHandlers,
+  type GameModeUi,
+} from "./character-sections/gameMode.js";
+import { LOAD_CHOICES, commitmentFor } from "./game-mode.js";
 import { el, setChildren } from "../lib/dom.js";
 import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
 import { completionCues, type CompletionCue } from "../lib/completion-cues.js";
@@ -194,6 +213,12 @@ function renderCompletionCues(
   );
 }
 
+/** Score mode collapses Projects and Contacts into expandable sections; their contents stay mounted. */
+function collapseInScore(mode: Character["mode"], node: HTMLElement, title: string): HTMLElement {
+  if (mode !== "score") return node;
+  return el("details", { className: "score-collapsed" }, el("summary", {}, title), node);
+}
+
 function renderDetail(state: RenderState): HTMLElement {
   const ctx = sectionCtx(state);
   const { c, retired, pendingTrauma } = ctx;
@@ -229,6 +254,11 @@ function renderDetail(state: RenderState): HTMLElement {
     renderCompletionCues(completionCues(c), state.dismissedCues, state.handlers.onDismissCue),
 
     renderPersonalSection(ctx),
+    // GAME-MODE-03: Score shows the committed loadout, the Score popup and the
+    // Resolution stepper. They are assistance only and gate no operation.
+    state.c.mode === "score" ? renderCommittedLoadout(ctx, state.handlers.gm, state.gameMode) : null,
+    renderScorePopup(ctx, state.handlers.gm, state.gameMode),
+    renderResolution(ctx, state.handlers.gm, state.gameMode),
     renderStressSection(ctx),
     renderTraumasSection(ctx),
     renderHealthSection(ctx),
@@ -236,7 +266,7 @@ function renderDetail(state: RenderState): HTMLElement {
     renderPlaybookSection(ctx),
     renderGearSection(ctx),
     renderCoinSection(ctx),
-    renderProjectsSection(ctx),
+    collapseInScore(state.c.mode, renderProjectsSection(ctx), "Projects"),
     // CHAR-03: sectioned operation errors render inside their card; only
     // sheet-level problems (no originating control) keep this bottom alert.
     state.error && !state.error.section
@@ -252,7 +282,7 @@ function renderDetail(state: RenderState): HTMLElement {
     renderLifecycleSection(ctx),
     renderActionsSection(ctx),
     renderNotesSection(ctx),
-    renderContactsSection(ctx),
+    collapseInScore(state.c.mode, renderContactsSection(ctx), "Contacts"),
     renderNotebookSection(ctx),
     renderHighImpactSection(ctx),
 
@@ -288,7 +318,10 @@ function renderDetail(state: RenderState): HTMLElement {
       }, formatErrorSummary(error)),
     );
   }
-  return sheet;
+  return el("div", { className: "game-mode-layout" },
+    renderGameModePanel(ctx, state.handlers.gm, state.gameMode),
+    sheet,
+  );
  }
 
 function renderLoading(): HTMLElement {
@@ -391,6 +424,14 @@ export function mountCharacterDetailPage(
   let clocks: readonly ClockSummary[] | null = null;
   let isCoinLoading = false;
   let isClocksLoading = false;
+  // GAME-MODE-03: per-scoundrel mode UI state. Mode, flow and budget live on the
+  // character; only presentation state and the linked crew are kept here.
+  let isGameModeLoading = false;
+  let linkedCrew: Crew | null = null;
+  let gmShowAllEntanglements = false;
+  let gmLoadoutChange: (typeof LOAD_CHOICES)[number] | null = null;
+  let gmPlanApproach: string | null = null;
+  let gmCrewNotice: string | null = null;
   let coinNotice: string | null = null;
   let clocksNotice: string | null = null;
 
@@ -587,6 +628,197 @@ export function mountCharacterDetailPage(
     clocks = idx >= 0
       ? list.map((x, i) => (i === idx ? row : x))
       : [...list, row];
+  };
+
+  /** Load the linked crew for Resolution editors (score/resolution only; unlinked stays null). */
+  const refreshLinkedCrew = () => {
+    const crewId = currentCharacter?.dossier.crewId ?? "";
+    if (!crewId) {
+      linkedCrew = null;
+      return;
+    }
+    void Effect.runPromise(
+      Effect.match(getCrew(crewId), {
+        onFailure: () => {
+          if (cancelled) return;
+          linkedCrew = null;
+          renderDetailWrapper();
+        },
+        onSuccess: (crew) => {
+          if (cancelled) return;
+          linkedCrew = crew;
+          renderDetailWrapper();
+        },
+      }),
+    );
+  };
+  const needsLinkedCrew = (c: Character) => c.mode === "score" || c.modeFlow.kind === "resolution";
+
+  const gmHandlers: GameModeHandlers = {
+    onMode: (mode) => {
+      if (!currentCharacter || isGameModeLoading) return;
+      isGameModeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = characterModeSet(characterId, mode, currentCharacter.revision);
+      runCharacterMutate(
+        "lifecycle",
+        program,
+        (character) => {
+          currentCharacter = character;
+          gmLoadoutChange = null;
+          if (needsLinkedCrew(character)) refreshLinkedCrew();
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+      );
+    },
+    onFlowSet: (kind, step) => {
+      if (!currentCharacter || isGameModeLoading) return;
+      isGameModeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = characterModeFlowSet(characterId, kind, step, currentCharacter.revision);
+      runCharacterMutate(
+        "lifecycle",
+        program,
+        (character) => {
+          currentCharacter = character;
+          gmLoadoutChange = null;
+          if (needsLinkedCrew(character)) refreshLinkedCrew();
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+      );
+    },
+    onPlanApproach: (approach) => {
+      gmPlanApproach = approach;
+      renderDetailWrapper();
+    },
+    onLoadoutChange: (choice) => {
+      gmLoadoutChange = choice;
+      renderDetailWrapper();
+    },
+    onLoadoutConfirm: () => {
+      if (!currentCharacter || isGameModeLoading || gmLoadoutChange === null) return;
+      isGameModeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = gearSetCommitment(characterId, commitmentFor(gmLoadoutChange), currentCharacter.revision);
+      runCharacterMutate(
+        "gear",
+        program,
+        (character) => {
+          currentCharacter = character;
+          gmLoadoutChange = null;
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+      );
+    },
+    onLoadoutCommitment: (choice) => {
+      if (!currentCharacter || isGameModeLoading) return;
+      isGameModeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = gearSetCommitment(characterId, commitmentFor(choice), currentCharacter.revision);
+      runCharacterMutate(
+        "gear",
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+      );
+    },
+    onLoadoutToggle: (name, commit) => {
+      if (!currentCharacter || isGameModeLoading) return;
+      isGameModeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = commit
+        ? gearCommit(characterId, name, currentCharacter.revision)
+        : gearUncommit(characterId, name, currentCharacter.revision);
+      runCharacterMutate(
+        "gear",
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+      );
+    },
+    // A desperate action is ordinary attribute XP, marked now (not deferred to Resolution).
+    onDesperate: (attribute) => handlers.onAttributeXpDelta(attribute, 1),
+    onToggleAllEntanglements: () => {
+      gmShowAllEntanglements = !gmShowAllEntanglements;
+      renderDetailWrapper();
+    },
+    onDowntimeAdjust: (delta, reason) => {
+      if (!currentCharacter || isGameModeLoading) return;
+      isGameModeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = characterDowntimeAdjust(characterId, delta, reason, currentCharacter.revision);
+      runCharacterMutate(
+        "lifecycle",
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+      );
+    },
+    onDowntimeSpend: (activity, description) => {
+      if (!currentCharacter || isGameModeLoading) return;
+      isGameModeLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = characterDowntimeSpend(characterId, activity, description, currentCharacter.revision);
+      runCharacterMutate(
+        "lifecycle",
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+      );
+    },
+    onCrewDelta: (track, delta) => {
+      const crew = linkedCrew;
+      if (!crew || isGameModeLoading || delta === 0) return;
+      isGameModeLoading = true;
+      clearNotices();
+      gmCrewNotice = null;
+      renderDetailWrapper();
+      // Every crew write carries the observed crew revision (If-Match).
+      const program =
+        track === "rep" ? crewRepAdd(crew.id, delta, crew.revision)
+          : track === "coin" ? crewCoinAdd(crew.id, delta, crew.revision)
+            : track === "heat" ? crewHeatAdd(crew.id, delta, crew.revision)
+              : crewXpAdd(crew.id, delta, crew.revision);
+      runMutation(
+        transport,
+        null,
+        program,
+        (result) => {
+          linkedCrew = result.crew;
+          renderDetailWrapper();
+        },
+        () => { isGameModeLoading = false; },
+        undefined,
+        () => {
+          gmCrewNotice = "The crew changed elsewhere. Check its current value, then reconcile before applying again.";
+          refreshLinkedCrew();
+        },
+      );
+    },
+    // "My share" edits this scoundrel's personal fund, never the crew.
+    onMyShare: (delta) => handlers.onFundDelta(delta),
   };
 
   const handlers = {
@@ -1122,9 +1354,10 @@ export function mountCharacterDetailPage(
     onEndScore: () => {
       if (!currentCharacter || isEndScoreLoading) return;
       const confirmed = window.confirm(
-        "End the score? This clears stress, takes the scoundrel out of action, " +
-        "and (optionally) resets armor and loadout — in one snapshotted change " +
-        "you can undo.",
+        "End the score? This takes the scoundrel out of action and clears the " +
+        "out-of-action flags. Stress clears only when it is completely full; " +
+        "partial stress and the committed loadout are kept. Resolution follows, " +
+        "and Undo restores the score.",
       );
       if (!confirmed) return;
       isEndScoreLoading = true;
@@ -1887,6 +2120,13 @@ export function mountCharacterDetailPage(
     if (!pendingFocus) pendingFocus = captureFocusTarget(root);
     setChildren(root, renderDetail({
       c: currentCharacter,
+      gameMode: {
+        linkedCrew,
+        showAllEntanglements: gmShowAllEntanglements,
+        loadoutChange: gmLoadoutChange,
+        planApproach: gmPlanApproach,
+        crewNotice: gmCrewNotice,
+      } satisfies GameModeUi,
       gameData,
       playbookData,
       caps,
@@ -1941,7 +2181,7 @@ export function mountCharacterDetailPage(
       editing,
       namedEditor,
       rerender: renderDetailWrapper,
-      handlers: wrappedHandlers,
+      handlers: { ...wrappedHandlers, gm: gmHandlers },
     }));
     if (pendingFocus && applyFocusTarget(root, pendingFocus)) pendingFocus = null;
     // CHAR-03: the routed section alert must be visible when it fully sits
@@ -2023,6 +2263,7 @@ export function mountCharacterDetailPage(
             crews = crewList.right;
           }
           experienceCondition = extractExperienceCondition(playbookData, gameData, character.playbook.name);
+          if (needsLinkedCrew(character)) refreshLinkedCrew();
           renderDetailWrapper();
         },
       }),
