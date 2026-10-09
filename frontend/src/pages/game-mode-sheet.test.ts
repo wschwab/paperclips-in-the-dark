@@ -205,6 +205,29 @@ describe("GAME-MODE-03 sheet", () => {
     expect(limits).toEqual(["Light · 3", "Normal · 5", "Heavy · 6"]);
   });
 
+  it("Score Loadout popup shows the load choices with the gear checklist and the approved footer", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "loadout" } }));
+    const popup = root.querySelector(".game-mode-popup")!;
+    expect(popup, "popup present").not.toBeNull();
+    const labels = Array.from(popup.querySelectorAll("label.gear")).map((l) => l.textContent?.replace(/\s+/g, " ").trim());
+    expect(labels).toEqual(expect.arrayContaining(["Fine lockpicks 0 load", "Climbing gear 2 load"]));
+    expect(popup.querySelectorAll("label.gear input[type='checkbox']").length).toBeGreaterThanOrEqual(2);
+    const footer = Array.from(popup.querySelectorAll("button")).map((b) => b.textContent);
+    expect(footer).toEqual(expect.arrayContaining(["Back", "Leave flow", "Next: Engagement"]));
+    expect(popup.textContent).toContain("Choose items now or declare more during the score");
+    expect(popup.textContent).toContain("never blocks play");
+  });
+
+  it("Resolution Payoff shows the coin guide, the tithe rule and the Leave flow footer", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
+    const body = root.querySelector(".game-mode-resolution")!;
+    expect(body.textContent).toContain("2 minor");
+    expect(body.textContent).toContain("10+ major");
+    expect(body.textContent).toContain("crew Tier + 1 coin");
+    const footer = Array.from(body.querySelectorAll("button")).map((b) => b.textContent);
+    expect(footer).toEqual(expect.arrayContaining(["Back", "Leave flow", "Next"]));
+  });
+
   it("walks the Resolution stepper with stored steps and shows the one-player warning on crew editors", async () => {
     const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
     const steps = Array.from(root.querySelectorAll(".resolution-stepper li")).map((li) => li.textContent);

@@ -220,14 +220,18 @@ export function renderScorePopup(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
           h("p", { className: "small" }, "The GM frames the first obstacle. The sheet neither rolls nor requires a result."));
   const backBtn = h("button", { type: "button", disabled: ctx.anyLoading || back === null }, "Back");
   backBtn.addEventListener("click", () => back && gm.onFlowSet("score-start", back));
-  const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, next ? "Next" : "Close");
+  const nextLabel = next ? `Next: ${next === "engagement" ? "Engagement" : next === "loadout" ? "Loadout" : next}` : "Close";
+  const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, nextLabel);
   nextBtn.addEventListener("click", () => (next ? gm.onFlowSet("score-start", next) : gm.onFlowSet("none", "")));
-  const closeBtn = h("button", { type: "button", disabled: ctx.anyLoading }, "Close");
+  const closeBtn = h("button", { type: "button", disabled: ctx.anyLoading }, "Leave flow");
   closeBtn.addEventListener("click", () => gm.onFlowSet("none", ""));
   return h("section", { className: "sheet-card game-mode-popup", role: "dialog", "aria-modal": "false", "aria-label": `Score ${step}`, "data-section": "game-mode-popup", style: "grid-column: 1 / -1;" },
     h("h2", {}, `Score · ${step === "planning" ? "Planning" : step === "loadout" ? "Loadout" : "Engagement"}`),
     body,
-    h("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; flex-wrap: wrap;" }, closeBtn, backBtn, nextBtn),
+    step === "loadout"
+      ? h("p", { className: "small" }, "Choose items now or declare more during the score. This suggests a load limit; it never blocks play.")
+      : null,
+    h("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; flex-wrap: wrap;" }, backBtn, closeBtn, nextBtn),
   );
 }
 
@@ -243,7 +247,7 @@ function renderLoadoutChoices(ctx: SectionCtx, gm: GameModeHandlers): HTMLElemen
   });
   return h("div", {},
     h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap;" }, ...choices),
-    h("p", { className: "small" }, "Choose a load level; limits come from the game settings."),
+    h("p", { className: "small" }, "Choose the load and items for this scoundrel. Limits come from the game settings."),
     renderGearChecklist(ctx, gm),
   );
 }
@@ -319,7 +323,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
         h("p", { className: "serif" }, "Crew receives 2 rep, plus or minus the target-minus-crew Tier difference, minimum zero. A completely quiet score earns zero rep."),
         h("ul", { className: "small" },
           h("li", {}, "Coin guide: 2 minor, 4 small, 6 standard, 8 big, 10+ major."),
-          h("li", {}, "If owed, tithe is crew Tier + 1 coin.")),
+          h("li", {}, "If a boss is owed, subtract crew Tier + 1 coin as tithe. Ask your GM whether a tithe applies.")),
         crew ? crewEditor("Rep", crew.rep.current, "rep", ctx, ui, gm) : h("p", { className: "small" }, "Link a crew to edit its rep and coin here."),
         crew ? crewEditor("Coin", crew.coin, "coin", ctx, ui, gm) : null,
         myShareEditor(ctx, gm),
@@ -357,6 +361,9 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   backBtn.addEventListener("click", () => back && gm.onFlowSet("resolution", back));
   const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, next ? "Next" : "Finish");
   nextBtn.addEventListener("click", () => (next ? gm.onFlowSet("resolution", next) : gm.onMode("downtime")));
+  // The approved footer offers Leave flow on every step; it clears the cursor and changes no game state.
+  const leave = h("button", { type: "button", disabled: ctx.anyLoading }, "Leave flow");
+  leave.addEventListener("click", () => gm.onFlowSet("none", ""));
   // Design: skippable after a confirm, for optional steps and for the whole Resolution.
   const skip = (idx === 4 || idx === 5) && next !== null ? h("button", { type: "button", disabled: ctx.anyLoading }, "Skip") : null;
   skip?.addEventListener("click", () => {
@@ -375,7 +382,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
     h("p", { className: "small" }, "Confirm with your GM before you mark anything."),
     stepper,
     content,
-    h("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; flex-wrap: wrap;" }, backBtn, skip, skipAll, nextBtn),
+    h("div", { style: "display: flex; gap: 0.5em; margin-top: 0.5em; flex-wrap: wrap;" }, backBtn, skip, skipAll, leave, nextBtn),
   );
 }
 

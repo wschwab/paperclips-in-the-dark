@@ -61,6 +61,9 @@ export const CharacterSummary = Schema.Struct({
   deleteToken: Schema.String.pipe(Schema.pattern(/^(sha256:[0-9a-f]{64})?$/)),
   canUndo: Schema.Boolean,
   historyCount: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+  // campaign.json#/$defs/characterSummary: mode is NOT in required; readable rows
+  // carry the stored mode, degraded rows omit it. Validated against the same enum.
+  mode: Schema.optional(Schema.Literal("free-play", "score", "downtime")),
 }).pipe(Schema.annotations({ identifier: "CharacterSummary" }));
 
 export type CharacterSummary = typeof CharacterSummary.Type;
