@@ -168,14 +168,16 @@ alone.
 - Exercise every affected route in light and dark themes; include high contrast
   when theme or contrast behavior can be affected. Capture screenshots of the
   changed surfaces even though the implementing model cannot judge them.
-- Before completion, obtain an independent review from **GPT 5.6 Luna** through
-  the **openai-codex** provider at **xhigh** reasoning effort. The reviewer must
+- Before completion, obtain an independent review from **GPT 6.1 Sol** (`openai-codex/gpt-6.1-sol`) through
+  the **openai-codex** provider at **xhigh** reasoning effort. This reviewer was
+  authorized by the human on 2026-10-11 and replaces GPT 5.6 Luna for this gate.
+  The reviewer must
   inspect the source, numeric browser evidence, and screenshots, independently
   exercise the affected browser path, and return an explicit evidence-backed
   PASS or FAIL.
 - A review from another model, provider, or effort level does not satisfy this
   gate. Every FAIL finding must be fixed, applicable checks rerun, and the same
-  Luna/openai-codex/xhigh review repeated until PASS.
+  Sol/openai-codex/xhigh review repeated until PASS.
 
 ## General
 
