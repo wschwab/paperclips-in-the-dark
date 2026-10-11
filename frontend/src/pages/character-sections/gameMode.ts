@@ -120,7 +120,7 @@ function renderModeSwitch(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
 }
 
 /** Downtime budget and soft adjustments (panel). The activity menu is in the sheet (see renderDowntimeActivities). */
-function renderDowntimeBudget(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
+function renderDowntimeBudget(ctx: SectionCtx, gm: GameModeHandlers, variant: "panel" | "sheet"): HTMLElement {
   const d = ctx.c.downtime;
   const remaining = downtimeRemaining(d);
   const total = d.free + d.paid;
@@ -130,7 +130,8 @@ function renderDowntimeBudget(ctx: SectionCtx, gm: GameModeHandlers): HTMLElemen
     b.addEventListener("click", () => gm.onDowntimeAdjust(delta, reason));
     return b;
   };
-  return section("Downtime budget",
+  // One copy per layout (CSS): the panel on wide screens, the activities card on narrow (approved 07-downtime).
+  return h("div", { className: `game-mode-budget-${variant}` }, section("Downtime budget",
     h("p", { className: "serif", style: "margin: 0.25em 0;", "data-downtime-remaining": String(remaining) },
       `${dots} ${remaining} of ${total} left`),
     remaining < 0
@@ -141,7 +142,7 @@ function renderDowntimeBudget(ctx: SectionCtx, gm: GameModeHandlers): HTMLElemen
       adjust(1, "gift", "+1 (gift)"),
       adjust(-1, "correction", "−1"),
     ),
-  );
+  ));
 }
 
 /**
@@ -159,7 +160,7 @@ export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers, 
   const body = [
     h("p", { className: "small" }, "Each explicit activity pick spends one unit. Helping someone is their Recover, not yours. Over-budget spending is allowed."),
     desc,
-    h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap; margin-top: 0.25em;" }, ...activityButtons),
+    h("div", { className: "activity-menu" }, ...activityButtons),
     h("p", { className: "small" }, srdLink(SRD.downtime)),
   ];
   if (variant === "panel") {
@@ -167,7 +168,7 @@ export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers, 
       h("h3", { className: "lbl" }, "Downtime activities"), ...body);
   }
   return h("section", { className: "sheet-card game-mode-activities game-mode-activities-sheet", "data-section": "downtime-activities", style: "grid-column: 1 / -1;" },
-    h("h2", {}, "Downtime activities"), ...body);
+    h("h2", {}, "Downtime activities"), renderDowntimeBudget(ctx, gm, "sheet"), ...body);
 }
 
 function renderScorePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
@@ -203,7 +204,7 @@ export function renderGameModePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: G
   const body = c.mode === "score"
     ? renderScorePanel(ctx, gm, ui)
     : c.mode === "downtime"
-      ? h("div", {}, renderDowntimeBudget(ctx, gm), renderDowntimeActivities(ctx, gm, "panel"))
+      ? h("div", {}, renderDowntimeBudget(ctx, gm, "panel"), renderDowntimeActivities(ctx, gm, "panel"))
       : section("Free Play", h("p", { className: "serif", style: "margin: 0.25em 0;" },
           "The sheet works as usual. Pick Score or Downtime when you want guided assistance."));
   return h("aside", { className: "mode-panel", "data-section": "game-mode", "aria-label": "Game mode" },
@@ -243,11 +244,14 @@ export function renderScorePopup(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   if (step === "planning") {
     body.push(
       h("p", { className: "serif" }, "Choose the plan your scoundrel is joining, then choose your loadout."),
-      h("div", { style: "display: flex; gap: 0.5em; flex-wrap: wrap;" },
+      // Each approach is one selectable card: its title and description are inside the button (approved 02-planning).
+      h("div", { className: "approach-grid" },
         ...PLAN_APPROACHES.map((p) => {
-          const b = h("button", { type: "button", "aria-pressed": ui.planApproach === p.value ? "true" : "false", disabled: ctx.anyLoading }, p.value);
-          b.addEventListener("click", () => gm.onPlanApproach(p.value));
-          return h("div", { className: "approach", style: "max-width: 12em;" }, b, h("p", { className: "small", style: "margin: 0.2em 0 0;" }, p.description));
+          const card = h("button", { type: "button", className: "approach-card", "aria-pressed": ui.planApproach === p.value ? "true" : "false", disabled: ctx.anyLoading },
+            h("strong", {}, p.value),
+            h("span", { className: "small" }, p.description));
+          card.addEventListener("click", () => gm.onPlanApproach(p.value));
+          return card;
         })),
       h("p", { className: "small" }, srdLink(SRD.planning)),
     );
@@ -435,7 +439,8 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   switch (step) {
     case "scoundrel-xp":
       content = h("div", {},
-        h("p", { className: "serif" }, "End-of-session review. For each trigger that occurred, mark at least 1 XP; 2 if it occurred a lot. No trigger means no automatic award."),
+        h("p", { className: "serif" }, "End-of-session review. For each trigger that occurred, mark at least 1 XP; 2 if it occurred a lot. Success isn’t required. No trigger means no automatic XP."),
+        h("p", {}, "Mark this XP on any attribute or your playbook track. Desperate-action XP is already marked during play."),
         h("ul", { className: "small" },
           h("li", {}, ctx.state.experienceCondition
             ? `Playbook-specific challenge: ${ctx.state.experienceCondition}.`
@@ -464,6 +469,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
     case "heat":
       content = h("div", {},
         h("p", { className: "serif" }, "Base heat: 0 smooth or quiet, 2 contained, 4 loud or chaotic, 6 wild. Add +1 for a high-profile or well-connected target, +1 hostile turf, +1 at war, +2 if killing was involved."),
+        h("p", { className: "note" }, crew ? `At ${crew.heat.max} heat, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements.` : "At the crew’s heat maximum, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements."),
         crewEditor("Heat", crew?.heat.current ?? null, "heat", "Update crew", ctx, gm, linked),
         h("p", { className: "small" }, srdLink(SRD.heat)));
       break;
@@ -472,7 +478,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       const current = entanglementCurrent(heat);
       content = h("div", {},
         h("p", { className: "serif", style: "font-weight: 600;" }, "Before you roll: check that nobody else on the crew is already rolling entanglements for this score."),
-        h("p", { className: "serif" }, "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result. Otherwise use the highest die, as with a fortune roll."),
+        h("p", { className: "serif" }, "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result. Otherwise use the highest die, as with a fortune roll. The GM generates the entanglement for the crew."),
         h("div", { className: "current-heat" },
           h("strong", {}, crew ? `Crew’s current heat: ${heat}` : "Link a crew to see its heat."),
           h("span", {}, ` · Matching band · Heat ${current.band}`)),
@@ -510,8 +516,9 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   }
   const back = stepBefore("resolution", step);
   const next = stepAfter("resolution", step);
-  const backBtn = h("button", { type: "button", disabled: ctx.anyLoading || back === null }, "Back");
-  backBtn.addEventListener("click", () => back && gm.onFlowSet("resolution", back));
+  // The first step's Back returns to the Score sheet (approved 06a: first Back links to 05-score).
+  const backBtn = h("button", { type: "button", disabled: ctx.anyLoading }, "Back");
+  backBtn.addEventListener("click", () => (back ? gm.onFlowSet("resolution", back) : gm.onFlowSet("none", "")));
   const isOptional = idx === 4 || idx === 5;
   // Optional steps (Crew XP, Crew Rep) skip after a confirm. Skipping Crew Rep ends Resolution into Downtime.
   const skip = isOptional ? h("button", { type: "button", disabled: ctx.anyLoading }, "Skip") : null;

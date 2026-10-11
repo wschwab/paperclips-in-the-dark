@@ -34,3 +34,21 @@ describe("round 2 visual states (R2-01, R2-07)", () => {
     expect(css).toMatch(/\.mode-switch\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
   });
 });
+
+// Sol 6.1 round 3 (R3-02): one Downtime budget per layout, and a two-column activity menu on narrow.
+describe("narrow Downtime card layout (R3-02)", () => {
+  it("hides the panel budget on narrow and the sheet budget on wide", () => {
+    // Each rule must sit inside the media block that governs its layout (the nearest preceding @media).
+    const governing = (selector: string) => {
+      const at = css.search(new RegExp(`${selector}\\s*\\{\\s*display:\\s*none`));
+      expect(at, selector).toBeGreaterThan(-1);
+      return css.slice(0, at).lastIndexOf("@media");
+    };
+    expect(css.slice(governing("\\.game-mode-budget-panel"), governing("\\.game-mode-budget-panel") + 40)).toContain("max-width: 1099px");
+    expect(css.slice(governing("\\.game-mode-budget-sheet"), governing("\\.game-mode-budget-sheet") + 40)).toContain("min-width: 1100px");
+  });
+  it("lays the sheet activity menu out as two columns with Other spanning the row", () => {
+    expect(css).toMatch(/\.game-mode-activities-sheet \.activity-menu\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+    expect(css).toMatch(/\.game-mode-activities-sheet \.activity-menu button:last-child\s*\{[^}]*grid-column:\s*1 \/ -1/);
+  });
+});

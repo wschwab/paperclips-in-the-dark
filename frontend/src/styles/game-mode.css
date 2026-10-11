@@ -169,10 +169,6 @@
   margin: 0 0 0.5em;
 }
 
-.game-mode-popup .approach {
-  min-width: 0;
-}
-
 .game-mode-activities {
   min-width: 0;
 }
@@ -189,6 +185,32 @@
   .game-mode-activities-panel {
     display: none;
   }
+  .game-mode-budget-panel {
+    display: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .game-mode-budget-sheet {
+    display: none;
+  }
+}
+
+/* Narrow Downtime card (Sol 6.1 R3-02, approved 07-downtime-narrow): two activity columns, Other spans the row. */
+.game-mode-activities-panel .activity-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em;
+  margin-top: 0.25em;
+}
+.game-mode-activities-sheet .activity-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35em;
+  margin-top: 0.25em;
+}
+.game-mode-activities-sheet .activity-menu button:last-child {
+  grid-column: 1 / -1;
 }
 
 /* Stepper entries are direct-selection controls; the current step is marked. */
@@ -284,4 +306,32 @@
 .game-mode-block button[aria-pressed="true"] {
   background: var(--fill);
   color: var(--surface);
+}
+
+/* Planning cards (Sol 6.1 R3-03, approved 02-planning and mockup.css .plan-grid): two columns wide,
+ * one column at 760px and below. The selected card has an outline and a sunk surface. */
+.game-mode-popup .approach-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5em;
+}
+.game-mode-popup .approach-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25em;
+  min-width: 0;
+  padding: 0.75em;
+  text-align: left;
+  white-space: normal;
+}
+.game-mode-popup .approach-card[aria-pressed="true"] {
+  background: var(--surface-sunk);
+  color: var(--text);
+  outline: 2px solid var(--fill);
+}
+@media (max-width: 760px) {
+  .game-mode-popup .approach-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

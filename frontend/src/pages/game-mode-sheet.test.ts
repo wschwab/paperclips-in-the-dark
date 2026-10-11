@@ -462,6 +462,87 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
   });
 });
 
+describe("GAME-MODE-03 Sol round-3 Planning cards (R3-03)", () => {
+  it("R3-03: each Planning approach is one selectable card holding its title and description", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "planning" } }));
+    const cards = Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-popup .approach-card"));
+    expect(cards).toHaveLength(6);
+    for (const card of cards) {
+      expect(card.tagName).toBe("BUTTON");
+      expect(card.getAttribute("aria-pressed")).not.toBeNull();
+    }
+    expect(cards[2]!.textContent).toContain("Stealth");
+    expect(cards[2]!.textContent).toContain("Trespass unseen.");
+  });
+
+  it("R3-03: clicking the description itself selects the approach", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "planning" } }));
+    const stealth = Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-popup .approach-card"))[2]!;
+    const description = Array.from(stealth.querySelectorAll("span, p")).find((n) => n.textContent === "Trespass unseen.") as HTMLElement;
+    description.click();
+    await vi.waitFor(() => {
+      const card = Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-popup .approach-card"))[2]!;
+      expect(card.getAttribute("aria-pressed")).toBe("true");
+    });
+  });
+});
+
+describe("GAME-MODE-03 Sol round-3 narrow Downtime card (R3-02)", () => {
+  it("R3-02: the sheet activities card carries the budget readout and adjustments, not only the panel", async () => {
+    await mountWith(characterDTO({ mode: "downtime", downtime: { free: 2, paid: 1, spent: 0, activities: [] } }));
+    const card = root.querySelector('[data-section="downtime-activities"]')!;
+    expect(card.querySelector("[data-downtime-remaining]")).not.toBeNull();
+    const labels = Array.from(card.querySelectorAll("button")).map((b) => b.textContent);
+    expect(labels).toEqual(expect.arrayContaining(["+1 (coin)", "+1 (gift)", "−1"]));
+  });
+
+  it("R3-02: the activity menu is one two-column grid in the sheet card, with Other last and spanning the row", async () => {
+    await mountWith(characterDTO({ mode: "downtime", downtime: { free: 2, paid: 1, spent: 0, activities: [] } }));
+    const menu = root.querySelector('[data-section="downtime-activities"] .activity-menu')!;
+    expect(menu).not.toBeNull();
+    const labels = Array.from(menu.querySelectorAll("button")).map((b) => b.textContent);
+    expect(labels[labels.length - 1]).toBe("Other");
+    expect(labels).toHaveLength(7);
+    // The layout belongs to the stylesheet: an inline display would override the sheet grid.
+    expect(menu.getAttribute("style") ?? "").not.toContain("display");
+  });
+});
+
+describe("GAME-MODE-03 Sol round-3 first-step Back (R3-01)", () => {
+  it("R3-01: the first Resolution step's Back is enabled and returns to the Score sheet", async () => {
+    const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" } }));
+    const back = Array.from(root.querySelectorAll(".game-mode-resolution button")).find((b) => b.textContent === "Back") as HTMLButtonElement;
+    expect(back.disabled).toBe(false);
+    back.click();
+    await vi.waitFor(() => {
+      const call = calls.find((c) => c.url.endsWith("/ops/mode.flow.set"));
+      expect(call).toBeTruthy();
+      expect(call!.init.body).toBe(JSON.stringify({ kind: "none", step: "" }));
+    });
+  });
+});
+
+describe("GAME-MODE-03 Sol round-3 approved reminders (R3-04)", () => {
+  it("R3-04a: Scoundrel XP carries the success and track-assignment reminders", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" } }));
+    const text = root.querySelector(".game-mode-resolution")?.textContent ?? "";
+    expect(text).toContain("Success isn’t required. No trigger means no automatic XP.");
+    expect(text).toContain("Mark this XP on any attribute or your playbook track. Desperate-action XP is already marked during play.");
+  });
+
+  it("R3-04b: Heat carries the reminder with the crew's own heat maximum (never a literal 9)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "heat" } }), crewDTO({ heat: { current: 4, max: 7 } }));
+    const text = root.querySelector(".game-mode-resolution")?.textContent ?? "";
+    expect(text).toContain("At 7 heat, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements.");
+  });
+
+  it("R3-04c: Entanglements says the GM generates the entanglement", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 4, max: 9 } }));
+    const text = root.querySelector(".game-mode-resolution")?.textContent ?? "";
+    expect(text).toContain("Otherwise use the highest die, as with a fortune roll. The GM generates the entanglement for the crew.");
+  });
+});
+
 describe("Entanglements: SRD text, roll reminder and per-entanglement disclosures", () => {
   const REMINDER = "Before you roll: check that nobody else on the crew is already rolling entanglements for this score.";
 
