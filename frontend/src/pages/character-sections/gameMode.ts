@@ -437,15 +437,16 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       content = h("div", {},
         h("p", { className: "serif" }, "End-of-session review. For each trigger that occurred, mark at least 1 XP; 2 if it occurred a lot. No trigger means no automatic award."),
         h("ul", { className: "small" },
-          h("li", {}, "Playbook-specific challenge (for example stealth or evasion for the Lurk)."),
+          h("li", {}, ctx.state.experienceCondition
+            ? `Playbook-specific challenge: ${ctx.state.experienceCondition}.`
+            : "Playbook-specific challenge."),
           h("li", {}, "Expressed beliefs, drives, heritage, or background."),
           h("li", {}, "Struggled with vice or traumas.")),
         h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap;" },
           playbookMark(ctx),
           ...attrs.map((a) => {
-            const b = h("button", { type: "button", disabled: ctx.anyLoading }, `+1 ${a}`);
-            b.addEventListener("click", () => ctx.handlers.onAttributeXpDelta(a, 1));
-            return b;
+            const xp = ctx.c.talent.attributes.find((attr) => attr.name === a)?.experience ?? null;
+            return trackMark(ctx, a, xp, `+1 ${a}`, () => ctx.handlers.onAttributeXpDelta(a, 1));
           })),
         h("p", { className: "small" }, srdLink(SRD.advancement)));
       break;
@@ -470,7 +471,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       const heat = crew?.heat.current ?? 0;
       const current = entanglementCurrent(heat);
       content = h("div", {},
-        h("p", { className: "serif" }, "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result."),
+        h("p", { className: "serif" }, "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result. Otherwise use the highest die, as with a fortune roll."),
         h("div", { className: "current-heat" },
           h("strong", {}, crew ? `Crew’s current heat: ${heat}` : "Link a crew to see its heat."),
           h("span", {}, ` · Matching band · Heat ${current.band}`)),
@@ -483,18 +484,25 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
             [h("tr", {}, h("th", {}, "Result"), ...["0–3", "4–5", "6+"].map((b) => h("th", {}, `Heat ${b}`)))],
             ENTANGLEMENT_ROWS.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result), ...(["0–3", "4–5", "6+"] as const).map((b) => h("td", {}, r.outcomes[b])))),
           )),
+        h("h3", {}, "Bring the trouble into play"),
+        h("p", {}, "Bring the entanglement into play immediately, or hold off until an appropriate moment. Entanglements manifest fully before the PCs have a chance to avoid them."),
+        h("p", { className: "small" }, "Confirm with your GM. Resolve the fiction at the table; this sheet doesn’t choose an outcome."),
         h("p", { className: "small" }, srdLink(SRD.entanglements)));
       break;
     }
     case "crew-xp":
       content = h("div", {},
-        h("p", { className: "serif" }, "Optional: update crew XP here, or skip."),
-        crewEditor("XP", crew?.experience.points ?? null, "xp", "Update crew XP", ctx, gm, linked));
+        h("p", { className: "serif" }, "Add the agreed crew XP directly here. Review crew triggers at the end of the session: 1 XP if a trigger occurred, 2 if it happened multiple times or in a major way."),
+        crewEditor("XP", crew?.experience.points ?? null, "xp", "Update crew XP", ctx, gm, linked),
+        h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
+        h("p", { className: "small" }, srdLink(SRD.advancement)));
       break;
     default:
       content = h("div", {},
         h("p", { className: "serif" }, "Optional: update crew rep here, or skip. If rep was already recorded during Payoff, skip: this is not a second award."),
-        crewEditor("Rep", crew?.rep.current ?? null, "rep", "Update crew rep", ctx, gm, linked));
+        crewEditor("Rep", crew?.rep.current ?? null, "rep", "Update crew rep", ctx, gm, linked),
+        h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
+        h("p", { className: "small" }, srdLink(SRD.payoff)));
   }
   const back = stepBefore("resolution", step);
   const next = stepAfter("resolution", step);
@@ -535,10 +543,17 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   );
 }
 
+/** A track's current total beside its +1 control (Sol 6.1 R2-03): the award shows the progress it changes. */
+function trackMark(ctx: SectionCtx, label: string, xp: { points: number; max: number } | null, button: string, onClick: () => void): HTMLElement {
+  const total = xp ? `${label} ${xp.points} of ${xp.max} XP` : label;
+  const b = h("button", { type: "button", disabled: ctx.anyLoading }, button);
+  b.addEventListener("click", onClick);
+  return h("span", { style: "display: inline-flex; align-items: center; gap: 0.35em;" }, h("span", { className: "small" }, total), b);
+}
+
 function playbookMark(ctx: SectionCtx): HTMLElement {
-  const b = h("button", { type: "button", disabled: ctx.anyLoading }, "+1 Playbook XP");
-  b.addEventListener("click", () => ctx.handlers.onPlaybookXpDelta(1));
-  return b;
+  const xp = ctx.c.playbook.experience;
+  return trackMark(ctx, "Playbook", xp, "+1 Playbook XP", () => ctx.handlers.onPlaybookXpDelta(1));
 }
 
 function myShareEditor(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {

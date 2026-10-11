@@ -113,7 +113,7 @@ const GAME_DATA = {
   Vices: [],
   Heritages: [],
   Backgrounds: [],
-  Playbooks: [],
+  Playbooks: [{ Name: "Cutter", ExperienceCondition: "You addressed a challenge with violence or coercion" }],
 };
 
 const PLAYBOOK_DATA = { Name: "Spider", SpecialAbilities: [], Items: [], Rolodex: { Name: "Friends", Friends: [] }, DefaultActionPoints: [] };
@@ -459,6 +459,52 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     expect(menu).not.toBeNull();
     expect(menu!.closest(".mode-panel")).toBeNull();
     expect(Array.from(menu!.querySelectorAll("button")).map((b) => b.textContent)).toEqual(expect.arrayContaining(["Acquire Asset", "Train", "Other"]));
+  });
+});
+
+describe("GAME-MODE-03 Sol 6.1 round 2 finding (R2-03)", () => {
+  it("R2-03: Scoundrel XP shows each track's current total beside its mark", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" } }));
+    const text = root.querySelector(".game-mode-resolution")?.textContent ?? "";
+    expect(text).toContain("Playbook 4 of 8 XP");
+  });
+});
+
+describe("GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05)", () => {
+  it("R2-02: Scoundrel XP shows this playbook's condition, not the generic Lurk example", async () => {
+    await mountWith(characterDTO({ mode: "score", playbook: { name: "Cutter", experience: { points: 0, max: 8 }, abilities: [] }, modeFlow: { kind: "resolution", step: "scoundrel-xp" } }));
+    const text = root.querySelector(".game-mode-resolution")?.textContent ?? "";
+    expect(text).toContain("violence or coercion");
+    expect(text).not.toContain("for example stealth or evasion for the Lurk");
+  });
+
+  it("R2-04: Entanglements carries the highest-die rule and the bring-into-play reminder", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 4, max: 9 } }));
+    const text = root.querySelector(".game-mode-resolution")?.textContent ?? "";
+    expect(text).toContain("Otherwise use the highest die, as with a fortune roll");
+    expect(text).toContain("Bring the entanglement into play immediately");
+    expect(text).toContain("manifest fully before the PCs have a chance to avoid them");
+  });
+
+  it("R2-05: Crew XP gives the 1 XP / 2 XP guidance and the Advancement SRD link", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
+    const dialog = root.querySelector(".game-mode-resolution")!;
+    expect(dialog.textContent).toContain("1 XP if a trigger occurred, 2 if it happened multiple times or in a major way");
+    expect(dialog.querySelector('a[href="https://bladesinthedark.com/advancement"]')).not.toBeNull();
+  });
+
+  it("R2-05: Crew Rep links to the Payoff SRD page", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-rep" } }), crewDTO({}));
+    expect(root.querySelector('.game-mode-resolution a[href="https://bladesinthedark.com/payoff"]')).not.toBeNull();
+  });
+});
+
+describe("GAME-MODE-03 Sol 6.1 round 2 findings (R2-06)", () => {
+  it("R2-06: the End Score tooltip does not promise an out-of-action transition", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } }));
+    const endScore = Array.from(root.querySelectorAll("button")).find((b) => b.textContent === "End Score") as HTMLButtonElement;
+    expect(endScore.title).not.toContain("takes the scoundrel out of action");
+    expect(endScore.title).toContain("only when it is completely full");
   });
 });
 

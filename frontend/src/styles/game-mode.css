@@ -62,8 +62,8 @@
 }
 
 .mode-switch {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.35em;
   margin: 0.5em 0;
 }
@@ -277,4 +277,11 @@
     inset: 0 0 40vh 0;
     align-items: flex-start;
   }
+}
+
+/* Pressed planning and load choices (Sol 6.1 R2-01): a filled selected state, not just aria. */
+.game-mode-popup button[aria-pressed="true"],
+.game-mode-block button[aria-pressed="true"] {
+  background: var(--fill);
+  color: var(--surface);
 }

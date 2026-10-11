@@ -24,3 +24,13 @@ describe("mode switch stays reachable during Resolution (F1)", () => {
     expect(narrowResolution![1], "overlay ends at the footer strip").toMatch(/inset:\s*0\s+0\s+40vh\s+0/);
   });
 });
+
+// Sol 6.1 round 2: R2-01 selected choice state, R2-07 equal three-choice mode strip.
+describe("round 2 visual states (R2-01, R2-07)", () => {
+  it("R2-01: pressed planning/load choices render a filled selected state", () => {
+    expect(css).toMatch(/\.game-mode-popup button\[aria-pressed="true"\][\s\S]*?background:\s*var\(--fill\)/);
+  });
+  it("R2-07: the mode switch is one row of three equal choices at wide widths", () => {
+    expect(css).toMatch(/\.mode-switch\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+  });
+});
