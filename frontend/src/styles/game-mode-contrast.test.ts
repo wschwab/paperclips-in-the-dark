@@ -52,3 +52,11 @@ describe("narrow Downtime card layout (R3-02)", () => {
     expect(css).toMatch(/\.game-mode-activities-sheet \.activity-menu button:last-child\s*\{[^}]*grid-column:\s*1 \/ -1/);
   });
 });
+
+// Sol 6.1 round 4 (R4-01): the selected wide "Downtime" label must sit inside its fill. The
+// measured overhang was 11.6 px before the fix; the Chromium check (mode-label-check.mjs) is the proof.
+describe("mode-switch label fits its track (R4-01)", () => {
+  it("gives the mode buttons fitting padding and a smaller label size", () => {
+    expect(css).toMatch(/\.mode-switch button\s*\{[^}]*padding-left:\s*0\.3em[^}]*padding-right:\s*0\.3em[^}]*font-size:\s*0\.85em/);
+  });
+});

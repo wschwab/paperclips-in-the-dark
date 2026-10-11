@@ -68,6 +68,15 @@
   margin: 0.5em 0;
 }
 
+/* R4-01: the three equal wide columns (about 67 px) must hold "Downtime" inside its fill. The base
+ * button padding (12px sides) pushed the selected label past the edge; the mode buttons fit their track. */
+.mode-switch button {
+  min-width: 0;
+  padding-left: 0.3em;
+  padding-right: 0.3em;
+  font-size: 0.85em;
+}
+
 .mode-switch button[aria-pressed="true"],
 .mode-switch button.active {
   background: var(--fill);
