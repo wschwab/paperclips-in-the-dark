@@ -9,6 +9,7 @@
  * limits.
  */
 import type { GameMode, ModeFlow, Downtime } from "../schema/character.js";
+import { ENTANGLEMENT_BANDS, type EntanglementBandLabel, ENTANGLEMENT_ROWS } from "../data/entanglements.js";
 
 export const MODES: readonly GameMode[] = ["free-play", "score", "downtime"];
 
@@ -147,24 +148,6 @@ export function stepAfter(kind: "score-start" | "resolution", step: string): str
 export function stepBefore(kind: "score-start" | "resolution", step: string): string | null {
   return neighbour(kind === "score-start" ? SCORE_START_STEPS : RESOLUTION_STEPS, step, -1);
 }
-
-/**
- * Entanglement table, transcribed from the approved mockup 06d-entanglements.html
- * (no game-data source exists for it). Heat bands: 0–3, 4–5, 6+.
- */
-export const ENTANGLEMENT_BANDS = [
-  { label: "0–3", min: 0, max: 3 },
-  { label: "4–5", min: 4, max: 5 },
-  { label: "6+", min: 6, max: Number.POSITIVE_INFINITY },
-] as const;
-
-export type EntanglementBandLabel = (typeof ENTANGLEMENT_BANDS)[number]["label"];
-
-export const ENTANGLEMENT_ROWS: ReadonlyArray<{ result: string; outcomes: Record<EntanglementBandLabel, string> }> = [
-  { result: "1–3", outcomes: { "0–3": "Gang Trouble or The Usual Suspects", "4–5": "Gang Trouble or Questioning", "6+": "Flipped or Interrogation" } },
-  { result: "4–5", outcomes: { "0–3": "Rivals or Unquiet Dead", "4–5": "Reprisals or Unquiet Dead", "6+": "Demonic Notice or Show of Force" } },
-  { result: "6", outcomes: { "0–3": "Cooperation", "4–5": "Show of Force", "6+": "Arrest" } },
-];
 
 /** The heat band a crew's current heat falls in. */
 export function entanglementBand(heat: number): (typeof ENTANGLEMENT_BANDS)[number] {

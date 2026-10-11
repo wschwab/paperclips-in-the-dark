@@ -20,7 +20,6 @@ import {
   commitmentFor,
   desperateAttributes,
   downtimeRemaining,
-  ENTANGLEMENT_ROWS,
   entanglementCurrent,
   loadLimitFor,
   stepAfter,
@@ -28,6 +27,7 @@ import {
   type LoadChoice,
   type LoadoutProposal,
 } from "../game-mode.js";
+import { ENTANGLEMENT_ROWS, entanglementsInBand, ENTANGLEMENT_DESCRIPTIONS, ENTANGLEMENTS_SRD_URL } from "../../data/entanglements.js";
 
 export interface GameModeUi {
   /** The linked crew, loaded for the Resolution editors; null when unlinked or not loaded. */
@@ -471,6 +471,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       const heat = crew?.heat.current ?? 0;
       const current = entanglementCurrent(heat);
       content = h("div", {},
+        h("p", { className: "serif", style: "font-weight: 600;" }, "Before you roll: check that nobody else on the crew is already rolling entanglements for this score."),
         h("p", { className: "serif" }, "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result. Otherwise use the highest die, as with a fortune roll."),
         h("div", { className: "current-heat" },
           h("strong", {}, crew ? `Crew’s current heat: ${heat}` : "Link a crew to see its heat."),
@@ -484,10 +485,13 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
             [h("tr", {}, h("th", {}, "Result"), ...["0–3", "4–5", "6+"].map((b) => h("th", {}, `Heat ${b}`)))],
             ENTANGLEMENT_ROWS.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result), ...(["0–3", "4–5", "6+"] as const).map((b) => h("td", {}, r.outcomes[b])))),
           )),
+        h("div", { className: "entanglement-descriptions" },
+          ...entanglementsInBand(current.band).map((name) =>
+            h("details", {}, h("summary", {}, name), h("p", { className: "small" }, ENTANGLEMENT_DESCRIPTIONS[name] ?? "")))),
         h("h3", {}, "Bring the trouble into play"),
         h("p", {}, "Bring the entanglement into play immediately, or hold off until an appropriate moment. Entanglements manifest fully before the PCs have a chance to avoid them."),
         h("p", { className: "small" }, "Confirm with your GM. Resolve the fiction at the table; this sheet doesn’t choose an outcome."),
-        h("p", { className: "small" }, srdLink(SRD.entanglements)));
+        h("p", { className: "small" }, "Source: Blades in the Dark SRD (CC-BY). ", srdLink(ENTANGLEMENTS_SRD_URL)));
       break;
     }
     case "crew-xp":

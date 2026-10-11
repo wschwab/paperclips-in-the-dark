@@ -462,6 +462,37 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
   });
 });
 
+describe("Entanglements: SRD text, roll reminder and per-entanglement disclosures", () => {
+  const REMINDER = "Before you roll: check that nobody else on the crew is already rolling entanglements for this score.";
+
+  it("shows the roll reminder near the top and lists the heat-4 column's five entanglements as disclosures", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 4, max: 9 } }));
+    const dialog = root.querySelector(".game-mode-resolution")!;
+    expect(dialog.textContent!.indexOf(REMINDER)).toBeGreaterThanOrEqual(0);
+    expect(dialog.textContent!.indexOf(REMINDER)).toBeLessThan(dialog.textContent!.indexOf("Heat 4–5"));
+    const items = Array.from(root.querySelectorAll(".entanglement-descriptions > details"));
+    expect(items.map((d) => d.querySelector("summary")?.textContent)).toEqual([
+      "Gang Trouble", "Questioning", "Reprisals", "Unquiet Dead", "Show of Force",
+    ]);
+    const reprisals = items[2] as HTMLDetailsElement;
+    expect(reprisals.open).toBe(false);
+    expect(reprisals.textContent).toContain("An enemy faction makes a move against you");
+  });
+
+  it("lists the heat-6 column's entanglements for a crew at heat 6", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 6, max: 9 } }));
+    const names = Array.from(root.querySelectorAll(".entanglement-descriptions > details summary")).map((s) => s.textContent);
+    expect(names).toEqual(["Flipped", "Interrogation", "Demonic Notice", "Show of Force", "Arrest"]);
+  });
+
+  it("attributes the SRD text with a CC-BY note and an SRD ↗ link", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 4, max: 9 } }));
+    const dialog = root.querySelector(".game-mode-resolution")!;
+    expect(dialog.textContent).toContain("Source: Blades in the Dark SRD (CC-BY).");
+    expect(dialog.querySelector('a[href="https://bladesinthedark.com/entanglements"]')?.textContent).toContain("SRD ↗");
+  });
+});
+
 describe("GAME-MODE-03 Sol 6.1 round 2 finding (R2-03)", () => {
   it("R2-03: Scoundrel XP shows each track's current total beside its mark", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" } }));
