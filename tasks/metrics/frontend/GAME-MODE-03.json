@@ -2,10 +2,10 @@
   "task": "GAME-MODE-03",
   "track": "frontend",
   "implementationAgent": "claude-haiku-5-5 (omp worker, game-mode frontend)",
-  "reviewAgent": "gpt-5.6-luna (openai-codex, xhigh): FAIL on pins 654c3cff, e16bd9bb, 0ee1bbc3, d90fea3a; review of b3b3eff4 NOT RUN (provider usage_limit_reached). No PASS recorded.",
+  "reviewAgent": "gpt-6.1-sol (openai-codex, xhigh; authorized 2026-10-11): round 1 (7c158df3) FAIL, eight findings; round 2 (74f9ecc7) FAIL, seven findings; round 3 (3c6a4658) FAIL, four findings; round 4 (c6b76439) blocked by usage_limit_reached on two attempts, no verdict. Earlier Luna rounds: FAIL on pins 654c3cff, e16bd9bb, 0ee1bbc3, d90fea3a; b3b3eff4 NOT RUN (usage limit). No PASS recorded.",
   "date": "2026-10-09",
   "iterationsToGreen": 9,
-  "iterationNotes": "Five Luna rounds each returned FAIL with specific findings, fixed red-green: round 1 nine findings (654c3cff), round 2 two (e16bd9bb), round 3 one (0ee1bbc3), round 4 three (d90fea3a). Plus domain, client, sheet, skip-confirm, decoder and roster-summary red-green cycles earlier. The sixth review (b3b3eff4) did not run.",
+  "iterationNotes": "Five Luna rounds each returned FAIL with specific findings, fixed red-green: round 1 nine findings (654c3cff), round 2 two (e16bd9bb), round 3 one (0ee1bbc3), round 4 three (d90fea3a). Sol 6.1 rounds: 7c158df3 eight findings (fixed in 74f9ecc7), 74f9ecc7 seven (fixed in 94a98001), 3c6a4658 four (fixed in c6b76439), c6b76439 review blocked by the provider limit. Plus domain, client, sheet, skip-confirm, decoder and roster-summary red-green cycles earlier. The sixth Luna review (b3b3eff4) did not run.",
   "wallClockMinutes": 0,
   "tokens": null,
   "defectsCaughtBy": {
