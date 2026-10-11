@@ -55,7 +55,44 @@ Luna has not reviewed `5fcb5325`; it runs once the openai-codex usage limit rese
 **Design source:** `docs/pages/contract/game-mode-proposal.mdx`, `tasks/GAME-MODE-01.md`, and the
 approved mockups in `docs/public/mockups/game-mode/`.
 
-## Verification at the current revision (`5fcb5325`)
+## Verification at the current revision (`3c6a4658`; code at `5f19ee2b`)
+
+Code changes since `5fcb5325`: Sol round-1 fixes (`74f9ecc7`), Sol round-2 fixes (`94a98001`), and the
+Entanglements rework (`5f19ee2b`). `3c6a4658` is the backlog record commit (docs only).
+
+- `npx tsc --noEmit` exit 0; `npx vitest run` 27 files, 884 tests passed; `npm run build` exit 0.
+- `npm run test:browser` 6/6 journeys PASS (on the entanglement build).
+- `npm run test:mutation` 28/28 killed, P0 19/19, P1 9/9 (exit 0). Pins: `frontend/src/pages/character-detail.ts`
+  (M26) `f4b99f8a…`; `frontend/src/main.ts` and `frontend/src/api/client.ts` unchanged. No pin covers the entanglement files.
+- Entanglements Chromium check (`browser-evidence/game-mode/entanglements-check.mjs`, output
+  `entanglements-check.json`, 9 rows = 3 sizes x 3 themes): heat 4 selects band 4–5; reminder above the
+  table (top 235/206/282 px light at 1440/768/390); five disclosures collapsed, first expands on click;
+  Show all shows 4 rows; no horizontal overflow; mode switch reachable; attribution present; summary
+  contrast at least 12:1; 0 page errors. Screenshots `entanglements-<w>x<h>-<theme>.png`.
+
+## Sol 6.1 review history (openai-codex, gpt-6.1-sol, xhigh)
+
+| Pin | Result | Findings and fix |
+|---|---|---|
+| `7c158df3` | FAIL, eight findings (F1–F8) | Mode switch covered by the narrow Resolution card (F1); load totals used absolute max not commitment allowance (F2); Cutter condition missing (F3); crew editor copy contradicted delta behaviour (F4); high-contrast hover 3.58:1 (F5); approved content missing (F6); approved layouts (F7); End Score confirm wording (F8). Verdict `sol-6.1/verdict-7c158df3.md`. Fixed in `74f9ecc7`: F1 (narrow overlay `inset: 0 0 40vh 0`, cascade order fixed), F2 (`loadLimitFor` maps the contract key to the settings level name), F4, F5, F8. F3, F6, F7 were only partly addressed (see Known gaps). |
+| `74f9ecc7` | FAIL, seven findings (R2-01–R2-07) | Pressed planning/load choices had no selected state (R2-01); Scoundrel XP showed the Lurk example, not the playbook condition (R2-02); no track totals beside XP marks (R2-03); Entanglements lacked the highest-die rule and the bring-into-play reminder (R2-04); Crew XP and Crew Rep lacked guidance and SRD links (R2-05); End Score tooltip contradicted the flow (R2-06); mode switch wrapped to two rows (R2-07). Verdict `sol-6.1/verdict-74f9ecc7-round2.md`. The round-2 reviewer ran on the round-1 prompt text (`review-prompt-round2-74f9ecc7-as-run.md`); its findings were still valid for `74f9ecc7`. Fixed in `94a98001` (gates: browser 6/6, mutation 28/28). |
+| `3c6a4658` | pending | Round 3: round-2 fixes plus the Entanglements rework (`5f19ee2b`). Verdict to be recorded at `sol-6.1/verdict.md`. |
+
+## Entanglements (round-3 direction from the human)
+
+- The table and the twelve SRD descriptions are in `frontend/src/data/entanglements.ts`, transcribed from
+  <https://bladesinthedark.com/entanglements> (CC-BY). `data/games/blades-in-the-dark.json` has no entanglement
+  table, and adding one would need a settings-schema change through the Ada loader, so a frontend data module
+  is the home (the existing planning and engagement tables are frontend modules too). The descriptions are the
+  SRD main paragraphs; the SRD's example quotes are omitted.
+- The table selects the column for the crew's current heat (unchanged behaviour).
+- The reminder "Before you roll: check that nobody else on the crew is already rolling entanglements for this score." sits at the top of the step.
+- Under the table, each of the five entanglements in the crew's heat column is a `<details>` disclosure with its SRD text.
+  No roll input exists, so there is no highlight or auto-expand; the disclosure list is the design.
+- Show all still shows the full matrix. The attribution line and an SRD ↗ link are under the step.
+
+## Verification at the previous revision (`5fcb5325`)
+
 
 Code is identical to the verified revision of the F1/F10 fix; the records commit adds no code.
 
@@ -125,4 +162,6 @@ Raw outputs: `luna/raw-output-<pin>.txt` for each round, and `luna/stderr-<pin>.
   - F10: the entanglement table now matches mockup 06d. The initial view shows the matching heat band (Result | Heat band). "Show all" reveals the full matrix (Result | Heat 0–3 | Heat 4–5 | Heat 6+). The text is transcribed from the mockup because `data/games` has no entanglement table. Red tests: `game-mode-sheet.test.ts` round-5 and `game-mode.test.ts` band mapping.
   - F1: the Resolution surface is an aria-modal dialog outside the sheet, titled with the step name and "Score resolution · N of 6", like the Score popups. Its backdrop does not capture pointer events, so the sheet stays operable beneath it. Without this, the frozen `lifecycle` journey failed (the overlay intercepted the stress control after End Score).
 - Open question for the human: the Score popups (Planning, Loadout, Engagement, Change loadout) still use a blocking backdrop, while Resolution does not. The design says advise, never block; please decide whether the Score popups should also pass clicks through.
-- Outstanding gate: Luna PASS on `5fcb5325`. Blocked by the provider usage limit (see the Luna table).
+- Outstanding gate: Sol 6.1 PASS on `3c6a4658` (round 3), still pending. Rounds 1 and 2 returned FAIL (see the Sol table). The earlier Luna gate on `5fcb5325` is superseded: the reviewer is now GPT 6.1 Sol per AGENTS.md.
+- Round-1 layout items not re-verified after round 2: the Planning two-column grid, the Score popup subtitle "Start a Score · N of 3" and header Close, the footer split, the mode-panel equal cells, and the Payoff/Heat reference tables (Sol F7). Round 3 must confirm each one, or report it as still open.
+- Round-1 F6 items fixed in round 2 (`94a98001`): Crew XP and Crew Rep guidance and SRD links, the Entanglements highest-die rule and reminder. Confirm with the round-3 review.
