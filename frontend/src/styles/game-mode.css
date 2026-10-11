@@ -34,6 +34,7 @@
   .game-mode-layout {
     padding-bottom: 42vh;
   }
+
   .game-mode-layout > .mode-panel {
     position: fixed;
     left: 0;
@@ -258,4 +259,22 @@
 
 .game-mode-resolution .game-mode-popup-card {
   pointer-events: auto;
+}
+
+/* High-contrast hover (Sol 6.1 F5): the shared secondary link ink on the sunk hover fill fell
+ * to 3.58:1. Helper buttons keep the ink token on hover, which stays above 4.5:1. */
+:root[data-contrast="high"] .game-mode-popup .btn-secondary:hover,
+:root[data-contrast="high"] .mode-panel .btn-secondary:hover,
+:root[data-contrast="high"] [data-section="committed-loadout"] .btn-secondary:hover {
+  color: var(--text);
+}
+
+/* Narrow Resolution overlay (Sol 6.1 F1): it stops above the fixed mode footer strip (max 40vh),
+ * so the switcher stays reachable during Resolution. This rule sits after the base overlay rules
+ * so its inset wins the cascade. */
+@media (max-width: 1099px) {
+  .game-mode-resolution {
+    inset: 0 0 40vh 0;
+    align-items: flex-start;
+  }
 }

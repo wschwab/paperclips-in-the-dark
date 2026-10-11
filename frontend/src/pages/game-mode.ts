@@ -98,11 +98,18 @@ export function downtimeRemaining(d: Downtime): number {
   return d.free + d.paid - d.spent;
 }
 
-/** Load limit for a commitment from settings `LoadMaxima.CommitmentMaxBulk`, or null when absent. */
+/**
+ * Load allowance for a commitment from settings `LoadMaxima.CommitmentMaxBulk`, or null when absent.
+ * The settings key is the design level name (Light, Normal, Heavy, Encumbered); the contract's
+ * commitment is lowercase (light, normal, heavy, encumbered). Both forms are accepted.
+ */
 export function loadLimitFor(gameData: Settings, commitment: string): number | null {
   const load = asRecord(gameData?.LoadMaxima);
   const table = asRecord(load?.CommitmentMaxBulk);
-  const value = table?.[commitment];
+  // Accept the design level name (Light / Normal / Heavy / Encumbered) or the contract's lowercase key.
+  const LEVEL_NAMES: Record<string, string> = { light: "Light", normal: "Normal", heavy: "Heavy", encumbered: "Encumbered" };
+  const level = LEVEL_NAMES[commitment.toLowerCase()] ?? null;
+  const value = level === null ? table?.[commitment] : table?.[level];
   return typeof value === "number" ? value : null;
 }
 

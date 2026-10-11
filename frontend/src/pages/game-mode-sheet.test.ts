@@ -462,6 +462,45 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
   });
 });
 
+describe("GAME-MODE-03 Sol 6.1 findings (F8, F4, F2)", () => {
+  it("F8: the End Score confirmation does not claim the scoundrel goes out of action", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } }));
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    (Array.from(root.querySelectorAll(".mode-panel button")).find((b) => b.textContent === "End Score") as HTMLButtonElement).click();
+    const message = String(confirmSpy.mock.calls[0]?.[0] ?? "");
+    expect(message).not.toContain("out of action");
+    expect(message).toContain("Stress clears only when it is completely full");
+    expect(message).toContain("Resolution follows");
+    confirmSpy.mockRestore();
+  });
+
+  it("F4: the crew editor copy describes the amount added (a delta), not a displayed total", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "heat" } }), crewDTO({ heat: { current: 4, max: 9 } }));
+    await vi.waitFor(() => expect(root.querySelector('[data-crew-track="heat"]')).not.toBeNull());
+    const editor = root.querySelector('[data-crew-track="heat"]')!;
+    expect(editor.textContent).not.toContain("the current total, not the amount");
+    expect(editor.textContent).toContain("Enter the amount to add");
+    expect(editor.textContent).toContain("current 4");
+  });
+
+  it("F2: load totals use the selected commitment allowance (Normal 5, Heavy 6), not the absolute maximum", async () => {
+    await mountWith(characterDTO({
+      mode: "score",
+      modeFlow: { kind: "score-start", step: "loadout" },
+      gear: {
+        loadout: [{ name: "Fine lockpicks", bulk: 0 }],
+        availableGear: [{ name: "Fine lockpicks", bulk: 0 }, { name: "Climbing gear", bulk: 2 }],
+        commitment: "normal",
+        isCommitmentLocked: false,
+        maxBulk: 9,
+      },
+    }));
+    const popup = root.querySelector(".game-mode-popup")!;
+    expect(popup.textContent).toContain("of 5 load committed");
+    expect(popup.textContent).not.toContain("of 9 load");
+  });
+});
+
 describe("GAME-MODE-03 Luna round 5 findings (F10, F1)", () => {
   it("entanglements show the matching heat band table, and Show all reveals the full result-by-heat table", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "entanglements" } }), crewDTO({ heat: { current: 4, max: 9 } }));

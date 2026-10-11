@@ -92,7 +92,7 @@ function crewEditor(
   return h("div", { className: "game-mode-crew-editor", "data-crew-track": track },
     h("p", { className: "lbl", style: "margin: 0;" }, `${label} · current ${current ?? "—"}`),
     h("p", { className: "small", style: "margin: 0 0 0.25em;" },
-      "Enter the amount to add (use a minus to subtract). The field shows the current total, not the amount."),
+      "Enter the amount to add (use a minus to subtract). The number on the left is the current total; your entry is added to it."),
     h("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" }, input, apply),
     h("p", { className: "small notice", role: "note", style: "margin: 0.25em 0 0;" }, ONE_PLAYER_WARNING),
   );
@@ -340,9 +340,17 @@ function renderGearChecklist(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement
   };
   const used = g.loadout.reduce((sum, i) => sum + i.bulk, 0);
   return h("div", { className: "game-mode-loadout" },
-    h("p", { className: "lbl" }, `${used} of ${g.maxBulk} load committed`),
+    h("p", { className: "lbl" }, loadTotalText(used, loadLimitFor(ctx.gameData, g.commitment), "committed")),
     ...ownedItems(g).map(row),
   );
+}
+
+/**
+ * "N of L load <verb>" with L the commitment's settings-derived allowance. Without
+ * an allowance from settings the total stands alone; no maximum is invented.
+ */
+function loadTotalText(total: number, allowance: number | null, verb: "committed" | "proposed"): string {
+  return allowance === null ? `${total} load ${verb}` : `${total} of ${allowance} load ${verb}`;
 }
 
 /** Replacement checklist: every known item, checked when the proposal includes it. Nothing commits until Confirm. */
@@ -357,7 +365,7 @@ function renderProposalChecklist(ctx: SectionCtx, gm: GameModeHandlers, proposal
   };
   const load = all.filter((i) => proposal.items.includes(i.name)).reduce((s, i) => s + i.bulk, 0);
   return h("div", { className: "game-mode-loadout" },
-    h("p", { className: "lbl" }, `${load} of ${g.maxBulk} load proposed${proposal.commitment ? ` · ${proposal.commitment}` : ""}`),
+    h("p", { className: "lbl" }, loadTotalText(load, proposal.commitment ? loadLimitFor(ctx.gameData, commitmentFor(proposal.commitment)) : null, "proposed")),
     ...all.map(row),
   );
 }
@@ -373,7 +381,7 @@ export function renderCommittedLoadout(ctx: SectionCtx, gm: GameModeHandlers, _u
   }));
   return h("section", { className: "sheet-card focus-load", "data-section": "committed-loadout", style: "grid-column: 1 / -1;" },
     h("h2", {}, "Loadout", " ", srdLink(SRD.planning)),
-    h("p", { className: "lbl" }, `${used} of ${g.maxBulk} load committed · ${g.commitment}`),
+    h("p", { className: "lbl" }, loadTotalText(used, loadLimitFor(ctx.gameData, g.commitment), "committed") + ` · ${g.commitment}`),
     h("ul", {}, ...g.loadout.map((i) => h("li", {}, `${i.name} · ${i.bulk} load`))),
     change,
   );

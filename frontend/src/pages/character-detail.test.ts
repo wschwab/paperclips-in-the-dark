@@ -5093,8 +5093,8 @@ describe("F4 lifecycle UI", () => {
 
     getEndScore(root)!.click();
     expect(confirmSpy).toHaveBeenCalledWith(
-      "End the score? This takes the scoundrel out of action and clears the " +
-      "out-of-action flags. Stress clears only when it is completely full; " +
+      "End the score? This ends the score and opens Resolution. Stress clears " +
+      "only when it is completely full; " +
       "partial stress and the committed loadout are kept. Resolution follows, " +
       "and Undo restores the score.",
     );
