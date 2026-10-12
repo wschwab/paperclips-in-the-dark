@@ -92,3 +92,12 @@ The frontend owner handles its error decoder and the combined mutation campaign.
 This worker does not edit frontend or run VCS commands. Current acceptance
 results are recorded in the card and command logs; this page does not substitute
 an unexercised claim for those gates.
+
+## Frontend handling
+
+The frontend decodes INTERNAL as its own branch (`frontend/src/schema/operation-result.ts`): status 500,
+`retryable` literally `false`, the canonical recovery text as a literal, and `details` as a strict empty
+object that rejects any key. The user-facing message (`frontend/src/api/client.ts`) says the server hit a
+problem and asks the user to report it. It shows no retry prompt, and it does not reuse the generic
+"sheet refreshes" fallback used for unknown codes. The change is recorded in `tasks/INTERNAL-ERROR-01.md`
+(frontend record, commit `94d9cd86`).

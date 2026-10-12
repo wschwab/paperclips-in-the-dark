@@ -1,0 +1,33 @@
+{
+  "task": "INTERNAL-ERROR-01",
+  "track": "frontend",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator, frontend decoder and display)",
+  "reviewAgent": "none for the frontend change; combined mutation campaign run at 94d9cd86 (28/28); no Sol or Luna review requested for this change",
+  "date": "2026-10-12",
+  "iterationsToGreen": 2,
+  "iterationNotes": "Red 1: the canonical INTERNAL body did not decode (INTERNAL not in the operation union) and the display gave the generic fallback. Green 1: INTERNAL branch with EmptyDetails. Red 2: the extra-details test passed through, because Effect's Struct({}) does not reject excess keys. Green 2: details as Record with Never values, which rejects any key. The backend-side and pin work is recorded in INTERNAL-ERROR-01.md.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Frontend red tests caught two defects in the change: the INTERNAL body did not decode, and the strict empty details accepted extra keys. The second was caught by a rejection test written before the fix, not by review. The retryable literal and the recovery literal are enforced by the decoder and tested with rejection cases. The display text has no retry wording, asserted in the test.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded for this coordinator run",
+    "source": "vitest output (913/913), tsc, production build, browser-suite log (6/6), combined mutation campaign log (28/28), sha256sum of pinned targets",
+    "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens recorded as 0: token accounting is not available"
+  },
+  "passRateAtFirstDoneClaim": "2 of 2 INTERNAL frontend red tests failed before their fixes (positive decode and display); the rejection test for extra details also failed before the strict-empty fix",
+  "passRateAfterReview": "gates at 94d9cd86: vitest 913/913 (29 files); tsc 0; build 0; browser 6/6; mutation 28/28 (P0 19/19, P1 9/9). No review verdict is claimed.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend red tests (schema/internal-error.test.ts): decode, rejection cases, display"
+  ],
+  "status": "frontend complete at 94d9cd86; INTERNAL-ERROR-01 contract and backend at 8d24d530; mutation pins refreshed (pitd_callback.adb 6, pitd_ops.adb 4, api/client.ts 1)"
+}

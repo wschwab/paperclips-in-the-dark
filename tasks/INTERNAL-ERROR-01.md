@@ -127,6 +127,18 @@ Command evidence is retained in `tasks/metrics/ada/INTERNAL-ERROR-01-*.log`.
 Metrics report measured wall time and unknown token/LOC counts honestly; no
 independent review or unrun campaign result is claimed.
 
+## Frontend record (commit `94d9cd86`)
+
+Contract and backend are at `8d24d530`; the frontend change and the catalog refresh are at `94d9cd86`.
+
+- Decoder (`frontend/src/schema/operation-result.ts`): an INTERNAL branch with `code` INTERNAL, `status` 500, `message` string, `retryable` literal `false`, the exact recovery text as a literal, and `details` as a strict empty object. `Schema.Struct({})` does not reject extra keys under `onExcessProperty: "error"`, so `details` uses `Schema.Record({ key: Schema.String, value: Schema.Never })`. Other codes are unchanged.
+- `ErrorCode` (`frontend/src/schema/common.ts`) includes `INTERNAL`.
+- Display (`frontend/src/api/client.ts`, `OP_ERROR_COPY.INTERNAL`): "The server hit a problem and couldn't finish that. Please report it.", followed by the server's recovery text. No retry wording.
+- Red-green tests: `frontend/src/schema/internal-error.test.ts` (6 tests). The positive decode and display tests failed before the change. The extra-details rejection passed through until the strict-empty record replaced `Struct({})`.
+- Gates at `94d9cd86`: vitest 913/913 (29 files), tsc exit 0, build exit 0, browser journeys 6/6, combined mutation campaign 28/28 (P0 19/19, P1 9/9). The campaign was run by the coordinator on the committed state, which needs an empty working copy.
+- Pins refreshed in `conformance/fixtures/mutation-catalog.json` (verified with `sha256sum`): `pitd_callback.adb` = `52c19974…340d97` (6 entries), `pitd_ops.adb` = `21fca1ba…932e99` (4 entries), `frontend/src/api/client.ts` = `07f6c0be…bbc00db` (1 entry, M20).
+- Metrics: `tasks/metrics/frontend/INTERNAL-ERROR-01.json`.
+
 ## Coordination and combined mutation hand-off
 
 The other worker owns the frontend INTERNAL decoder and the combined mutation
