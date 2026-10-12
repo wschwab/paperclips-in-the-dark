@@ -140,7 +140,8 @@ export const ErrorCode = Schema.Literal(
 export type ErrorCode = typeof ErrorCode.Type;
 
 export const GameStem = Schema.String.pipe(
-  Schema.pattern(/^[A-Za-z0-9-]+$/),
+  // Mirrors contract/schemas/character.json#/$properties/gameStem: ASCII alphanumerics, hyphens, Latin U+00C0–U+024F.
+  Schema.pattern(/^[A-Za-z0-9À-ɏ-]+$/),
   Schema.annotations({ identifier: "GameStem" }),
 );
 export type GameStem = typeof GameStem.Type;
