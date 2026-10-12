@@ -83,9 +83,26 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
     loadStylesheets();
     const { shell, outlet } = renderShell({ currentPath: "/crew/create" });
     document.body.appendChild(shell);
-    mountCrewCreatePage(outlet, "blades-in-the-dark", ["Assassins"], vi.fn());
+    mountCrewCreatePage(outlet, "blades-in-the-dark", [{ name: "Assassins", description: null }], vi.fn());
     expect(shell.querySelector(".app-bar.torn-foot")).not.toBeNull();
     assertFirstH1ClearsSeam(outlet);
+  });
+
+  it("labels each crew type option 'Name - Description' from its game-data Hook (PLAYBOOK-BLURBS-01)", () => {
+    const { shell, outlet } = renderShell({ currentPath: "/crew/create" });
+    document.body.appendChild(shell);
+    mountCrewCreatePage(
+      outlet,
+      "blades-in-the-dark",
+      [
+        { name: "Assassins", description: "You're professional murderers—death is your business." },
+        { name: "Bravos", description: null },
+      ],
+      vi.fn(),
+    );
+    const options = Array.from(outlet.querySelectorAll<HTMLOptionElement>("#crewType option")).map((o) => [o.value, o.textContent]);
+    expect(options).toContainEqual(["Assassins", "Assassins - You're professional murderers—death is your business."]);
+    expect(options).toContainEqual(["Bravos", "Bravos"]);
   });
 
   it("POSTs create then fields.update with the name, delivering the named DTO", async () => {
@@ -99,7 +116,7 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
       );
 
     const onCreated = vi.fn();
-    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins", "Shadows"], onCreated);
+    mountCrewCreatePage(root, "blades-in-the-dark", [{ name: "Assassins", description: null }, { name: "Shadows", description: null }], onCreated);
 
     submit("The Red Sashes");
 
@@ -127,7 +144,7 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(ok(createdResp(created)));
 
     const onCreated = vi.fn();
-    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], onCreated);
+    mountCrewCreatePage(root, "blades-in-the-dark", [{ name: "Assassins", description: null }], onCreated);
 
     submit("");
 
@@ -152,7 +169,7 @@ describe("crew-create page (Design Audit F-12 two-step naming)", () => {
     global.fetch = fetchMock;
 
     const onCreated = vi.fn();
-    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], onCreated);
+    mountCrewCreatePage(root, "blades-in-the-dark", [{ name: "Assassins", description: null }], onCreated);
 
     const sheetHref = "/crew/f1e2d3c4-b5a6-4c7d-8e9f-0a1b2c3d4e5f";
 
@@ -240,7 +257,7 @@ describe("crew create form accessible names (FV-025)", () => {
   }
 
   it("gives gameStem/name/crewType accessible names via visible label associations", () => {
-    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], vi.fn());
+    mountCrewCreatePage(root, "blades-in-the-dark", [{ name: "Assassins", description: null }], vi.fn());
 
     const expected: Record<string, string> = {
       gameStem: "Game",
@@ -261,7 +278,7 @@ describe("crew create form accessible names (FV-025)", () => {
   });
 
   it("keeps ids unique and labels associated after an invalid submit (validation)", () => {
-    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], vi.fn());
+    mountCrewCreatePage(root, "blades-in-the-dark", [{ name: "Assassins", description: null }], vi.fn());
     // Validation gate: required crew type missing → the form stays mounted
     // (no fetch, no re-render) — ids must stay unique and labels intact.
     (root.querySelector("form") as HTMLFormElement).dispatchEvent(
@@ -290,7 +307,7 @@ describe("crew create form accessible names (FV-025)", () => {
     global.fetch = fetchMock;
 
     const onCreated = vi.fn();
-    mountCrewCreatePage(root, "blades-in-the-dark", ["Assassins"], onCreated);
+    mountCrewCreatePage(root, "blades-in-the-dark", [{ name: "Assassins", description: null }], onCreated);
     const idsUnique = () => {
       const ids = Array.from(root.querySelectorAll<HTMLElement>("[id]")).map((n) => n.id);
       expect(new Set(ids).size).toBe(ids.length);

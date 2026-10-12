@@ -578,7 +578,7 @@
 		},
 		{
 			"Name": "Whisper",
-			"Hook": "Whispers are good at magical stuff and dealing with ghosts. Play whisper a Whisper if you want to meddle with arcane powers.",
+			"Hook": "Whispers are good at magical stuff and dealing with ghosts. Play a Whisper if you want to meddle with arcane powers.",
 			"SpecialAbilities": [
 				{
 					"TimesTakeable": 1,

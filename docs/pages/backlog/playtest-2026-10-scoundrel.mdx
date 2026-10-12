@@ -74,6 +74,12 @@ Feedback from the Scoundrel sheet. Screenshot supplied with the feedback:
    a good default. Apply the same to **Heritage**, **Background**, and **Vice**.
    - The human's own reminder note asked for this screenshot; it was supplied
      and is embedded on this page.
+   - **Playbook and crew type pickers (PLAYBOOK-BLURBS-01, done, pending the mutation campaign):** each
+     scoundrel playbook option reads `Name - Description`, with the description taken from the game
+     data's `Playbooks[].Hook`. Each crew type option reads the same way from `CrewTypes[].Hook`. The
+     Hook lines already existed in `data/games` (no text was copied from the reference or invented).
+     The Whisper hook typo ("Play whisper a Whisper") is fixed in `data/games/blades-in-the-dark.json`.
+     Task record `tasks/PLAYBOOK-BLURBS-01.md`.
    - Reference implementation (read-only, do not edit):
      `blades-in-the-sheets/UI/Components/NewCharacter/NewCharacterSpecialAbilityCard.razor`
      — line 13 carries the "the first is considered a good default choice" hint

@@ -1,11 +1,12 @@
 import { Effect } from "effect";
-import { createCrew, crewFieldsUpdate, apiFailureText } from "../api/client.js";
+import { createCrew, crewFieldsUpdate, apiFailureText, type PickerOption } from "../api/client.js";
+import { namedOptionLabel } from "./character-domain.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Crew } from "../schema/crew.js";
 
-function renderForm(gameStem: string, crewTypes: string[]): HTMLElement {
+function renderForm(gameStem: string, crewTypes: PickerOption[]): HTMLElement {
   const crewTypeOptions = crewTypes.map((ct) =>
-    el("option", { value: ct }, ct),
+    el("option", { value: ct.name }, namedOptionLabel(ct.name, ct.description)),
   );
 
   const form = el(
@@ -124,7 +125,7 @@ function renderPhaseTwoRecovery(
 export function mountCrewCreatePage(
   root: HTMLElement,
   gameStem: string,
-  crewTypes: string[],
+  crewTypes: PickerOption[],
   onCreated: (crew: Crew) => void,
 ): () => void {
   let cancelled = false;

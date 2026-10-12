@@ -6,7 +6,9 @@ import {
   createPcCharacter,
   crewFieldsUpdate,
   dossierUpdate,
+  type PickerOption,
 } from "../api/client.js";
+import { namedOptionLabel } from "./character-domain.js";
 import {
   actionGroupsFromSettings,
   pcAllocationReady,
@@ -24,10 +26,11 @@ import { actionDots } from "../components/action-dots.js";
 /** Everything the create hub needs up front; main.ts loads these in parallel. */
 export interface CharacterCreateDeps {
   gameStem: string;
-  playbooks: string[];
+  /** Playbook options: game-data name and Hook (the picker label is "Name - Description"). */
+  playbooks: PickerOption[];
   /** Raw game-settings payload (`getGame`) — budget derivation input. */
   settings: Record<string, unknown>;
-  crewTypes: string[];
+  crewTypes: PickerOption[];
   onCreated: (character: Character) => void;
   onCrewCreated: (crew: Crew) => void;
 }
@@ -94,9 +97,9 @@ function renderPhaseTwoRecovery(
  * kept as the experienced-character/NPC path and as the only path when the
  * game publishes no PC allocation budget (CONTRACT-01 setting-absent).
  */
-function renderLegacyForm(gameStem: string, playbooks: string[]): HTMLElement {
+function renderLegacyForm(gameStem: string, playbooks: PickerOption[]): HTMLElement {
   const playbookOptions = playbooks.map((pb) =>
-    el("option", { value: pb }, pb),
+    el("option", { value: pb.name }, namedOptionLabel(pb.name, pb.description)),
   );
 
   return el(
@@ -201,7 +204,7 @@ function renderRequiredAfterCreate(): HTMLElement {
  * (DEC-01 ruling); switching playbooks re-derives them from scratch.
  */
 function buildPcChargenForm(
-  playbooks: string[],
+  playbooks: PickerOption[],
   budget: PcBudget,
   groups: ChargenGroup[],
   settings: Record<string, unknown>,
@@ -215,7 +218,7 @@ function buildPcChargenForm(
     "select",
     { id: "pc-playbook", className: "form-input", required: true },
     el("option", { value: "" }, "Select a playbook..."),
-    ...playbooks.map((pb) => el("option", { value: pb }, pb)),
+    ...playbooks.map((pb) => el("option", { value: pb.name }, namedOptionLabel(pb.name, pb.description))),
   );
 
   const unspentEl = el("span", { "data-chargen-unspent": "" }, String(budget.startingActionDots));
@@ -347,7 +350,7 @@ function buildPcChargenForm(
  * /crew/create page performs directly.
  */
 function buildCrewFlow(
-  crewTypes: string[],
+  crewTypes: PickerOption[],
   onConfirm: (crewType: string, name: string) => void,
 ): HTMLElement {
   let step = 1;
@@ -365,7 +368,7 @@ function buildCrewFlow(
         "select",
         { id: "crew-type-step", className: "form-input" },
         el("option", { value: "" }, "Select a crew type..."),
-        ...crewTypes.map((ct) => el("option", { value: ct, selected: ct === crewType || undefined }, ct)),
+        ...crewTypes.map((ct) => el("option", { value: ct.name, selected: ct.name === crewType || undefined }, namedOptionLabel(ct.name, ct.description))),
       );
       const next = el("button", { type: "button", className: "btn-primary crew-next", disabled: !crewType }, "Next");
       next.addEventListener("click", () => {

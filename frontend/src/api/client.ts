@@ -509,7 +509,19 @@ export function getCharacterHistory(id: string): Effect.Effect<readonly HistoryE
   });
 }
 
-export function getPlaybookList(gameStem: string): Effect.Effect<readonly string[], ApiError | DecodeError> {
+/** A picker option: the game-data name and its one-line Hook (null when the data has none). */
+export interface PickerOption {
+  readonly name: string;
+  readonly description: string | null;
+}
+
+/** The game-data Hook of one entry, or null. Blank or non-string Hooks are not descriptions. */
+function hookDescription(entry: object): string | null {
+  const hook = (entry as { Hook?: unknown }).Hook;
+  return typeof hook === "string" && hook.trim() !== "" ? hook : null;
+}
+
+export function getPlaybookList(gameStem: string): Effect.Effect<readonly PickerOption[], ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/games/${gameStem}/playbooks`);
     return yield* Effect.try({
@@ -517,11 +529,11 @@ export function getPlaybookList(gameStem: string): Effect.Effect<readonly string
         if (!Array.isArray(raw)) {
           throw new Error("Expected playbooks array");
         }
-        return raw.map((pb: unknown) => {
+        return raw.map((pb: unknown): PickerOption => {
           if (typeof pb === "object" && pb !== null && "Name" in pb) {
             const name = (pb as { Name?: unknown }).Name;
             if (typeof name === "string") {
-              return name;
+              return { name, description: hookDescription(pb) };
             }
           }
           throw new Error("Invalid playbook structure");
@@ -589,7 +601,7 @@ export function getCrewHistory(id: string): Effect.Effect<readonly HistoryEntry[
   });
 }
 
-export function getCrewTypeList(gameStem: string): Effect.Effect<readonly string[], ApiError | DecodeError> {
+export function getCrewTypeList(gameStem: string): Effect.Effect<readonly PickerOption[], ApiError | DecodeError> {
   return Effect.gen(function* () {
     const raw = yield* fetchJson(`/api/games/${gameStem}/crews`);
     return yield* Effect.try({
@@ -601,11 +613,11 @@ export function getCrewTypeList(gameStem: string): Effect.Effect<readonly string
         if (!Array.isArray(crewTypes)) {
           throw new Error("CrewTypes is not an array");
         }
-        return crewTypes.map((ct: unknown) => {
+        return crewTypes.map((ct: unknown): PickerOption => {
           if (typeof ct === "object" && ct !== null && "Name" in ct) {
             const name = (ct as { Name?: unknown }).Name;
             if (typeof name === "string") {
-              return name;
+              return { name, description: hookDescription(ct) };
             }
           }
           throw new Error("Invalid crew type structure");

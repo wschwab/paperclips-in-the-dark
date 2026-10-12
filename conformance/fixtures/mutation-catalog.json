@@ -303,7 +303,7 @@
       "mutation": "Reduce the action-dot width/height below the contracted target size",
       "observableFailure": "action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "ccb12ed21f01241c5f33fc0c80d8d8e4a0d8e5f99cb206692954f2245f354a25"
+        "frontend/src/styles/components.css": "17ea466dc3583d882fea1002e3f79366fa6413183c2f436184dd0d8d9ec9e922"
       },
       "severity": "P1",
       "status": "not-run",
@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "07f6c0be1ddda1d7c8de4e4fb6119b87f3bf9a696ffc6a5d478b94c5bbbc00db"
+        "frontend/src/api/client.ts": "2a350771a9e8307e0115997549c5912459a5811324b39520986b7e0be6decd09"
       },
       "severity": "P0",
       "status": "not-run",

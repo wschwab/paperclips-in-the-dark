@@ -194,9 +194,15 @@ const SETTINGS_WITH_BUDGET: Record<string, unknown> = {
 function baseDeps(overrides: Partial<CharacterCreateDeps> = {}): CharacterCreateDeps {
   return {
     gameStem: "blades-in-the-dark",
-    playbooks: ["Spider", "Cutter"],
+    playbooks: [
+      { name: "Spider", description: "Spiders are good at masterminding maneuvers." },
+      { name: "Cutter", description: "Cutters are good at winning fights." },
+    ],
     settings: SETTINGS_WITH_BUDGET,
-    crewTypes: ["Assassins", "Bravos"],
+    crewTypes: [
+      { name: "Assassins", description: "You're professional murderers." },
+      { name: "Bravos", description: null },
+    ],
     onCreated: vi.fn(),
     onCrewCreated: vi.fn(),
     ...overrides,
@@ -206,6 +212,27 @@ function baseDeps(overrides: Partial<CharacterCreateDeps> = {}): CharacterCreate
 // ---------------------------------------------------------------------------
 // PC chargen flow (CONTRACT-01 stage 3)
 // ---------------------------------------------------------------------------
+
+describe("playbook picker descriptions (PLAYBOOK-BLURBS-01)", () => {
+  it("labels each playbook option 'Name - Description' from its game-data Hook", () => {
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    mountCharacterCreatePage(root, {
+      gameStem: "blades-in-the-dark",
+      playbooks: [
+        { name: "Cutter", description: "Cutters are good at winning fights, with violence and with intimidation." },
+        { name: "Hound", description: null },
+      ],
+      settings: SETTINGS_WITH_BUDGET,
+      crewTypes: [],
+      onCreated: vi.fn(),
+      onCrewCreated: vi.fn(),
+    });
+    const options = Array.from(root.querySelectorAll<HTMLOptionElement>("#pc-playbook option")).map((o) => [o.value, o.textContent]);
+    expect(options).toContainEqual(["Cutter", "Cutter - Cutters are good at winning fights, with violence and with intimidation."]);
+    expect(options).toContainEqual(["Hound", "Hound"]);
+  });
+});
 
 describe("PC chargen flow", () => {
   let root: HTMLElement;

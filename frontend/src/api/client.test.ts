@@ -470,9 +470,9 @@ describe("getPlaybookList", () => {
 
   it("fetches /api/games/{gameStem}/playbooks and decodes playbook names", async () => {
     const playbookData = [
-      { Name: "Cutter" },
+      { Name: "Cutter", Hook: "Cutters are good at winning fights." },
       { Name: "Hound" },
-      { Name: "Spider" },
+      { Name: "Spider", Hook: "Spiders are good at masterminding maneuvers." },
     ];
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -481,7 +481,12 @@ describe("getPlaybookList", () => {
     });
 
     const result = await Effect.runPromise(getPlaybookList("blades-in-the-dark"));
-    expect(result).toEqual(["Cutter", "Hound", "Spider"]);
+    // PLAYBOOK-BLURBS-01: each option carries its game-data Hook as the description (null when absent).
+    expect(result).toEqual([
+      { name: "Cutter", description: "Cutters are good at winning fights." },
+      { name: "Hound", description: null },
+      { name: "Spider", description: "Spiders are good at masterminding maneuvers." },
+    ]);
     expect(global.fetch).toHaveBeenCalledWith("/api/games/blades-in-the-dark/playbooks", {
       headers: { Accept: "application/json" },
     });
@@ -650,9 +655,9 @@ describe("getCrewTypeList", () => {
   it("fetches /api/games/{gameStem}/crews and decodes crew type names", async () => {
     const crewSettingsData = {
       CrewTypes: [
-        { Name: "Assassins" },
+        { Name: "Assassins", Hook: "You're professional murderers." },
         { Name: "Blades" },
-        { Name: "Bravos" },
+        { Name: "Bravos", Hook: "You're violent thugs." },
       ],
     };
 
@@ -662,7 +667,12 @@ describe("getCrewTypeList", () => {
     });
 
     const result = await Effect.runPromise(getCrewTypeList("blades-in-the-dark"));
-    expect(result).toEqual(["Assassins", "Blades", "Bravos"]);
+    // PLAYBOOK-BLURBS-01: each crew type carries its game-data Hook as the description (null when absent).
+    expect(result).toEqual([
+      { name: "Assassins", description: "You're professional murderers." },
+      { name: "Blades", description: null },
+      { name: "Bravos", description: "You're violent thugs." },
+    ]);
     expect(global.fetch).toHaveBeenCalledWith("/api/games/blades-in-the-dark/crews", {
       headers: { Accept: "application/json" },
     });

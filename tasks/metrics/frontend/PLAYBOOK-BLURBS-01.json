@@ -1,0 +1,35 @@
+{
+  "task": "PLAYBOOK-BLURBS-01",
+  "track": "frontend",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator, picker descriptions and data fix)",
+  "reviewAgent": "none; no Sol or Luna review requested for this change",
+  "date": "2026-10-12",
+  "iterationsToGreen": 2,
+  "iterationNotes": "Red 1: decoder, picker-label and data-guard tests written against the intended shape (options with description; Whisper typo absent). Green 1: PickerOption decoding, namedOptionLabel in both create pages, data typo fix. Red 2 was the stale-pin check: components.css pin found stale from ERROR-SCREEN-01 and refreshed; no test change. Browser evidence captured after green.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "Human decided the content (use the existing game-data Hook lines). Search found the hooks already in data/games for every edition, so no copy from blades-in-the-sheets was needed. The backend and schema already accept Hook, so no Ada change. Whisper typo fixed in data/games/blades-in-the-dark.json only. A stale mutation pin for components.css from ERROR-SCREEN-01 was caught by a check during this change and refreshed; the miss is recorded in tasks/PLAYBOOK-BLURBS-01.md.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded for this coordinator run",
+    "source": "vitest output (926/926), tsc, production build, browser-suite log (6/6), Chromium probe check.json (9 rows), live endpoint probe, sha256sum of pinned targets",
+    "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens recorded as 0: token accounting is not available"
+  },
+  "passRateAtFirstDoneClaim": "red tests failed before the change: 14 failures in the first run (decoders, picker labels, data guards); the typo guard failed on the data before the fix",
+  "passRateAfterReview": "gates at the commit: vitest 926/926 (31 files); tsc 0; build 0; browser 6/6. Mutation campaign not run (awaiting approval). No review verdict is claimed.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend red tests (client decoders, create-page option labels, data guards for hooks and the Whisper typo)",
+    "live endpoint probe (confirmed the backend already returns Hook)",
+    "Chromium probe (option text at 3 sizes x 3 themes)"
+  ],
+  "status": "complete pending mutation approval: picker descriptions from game data, Whisper typo fixed, pins refreshed (client.ts, components.css); mutation campaign not yet run"
+}
