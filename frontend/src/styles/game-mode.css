@@ -344,3 +344,45 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* F7 residual (Sol focused check, 8642bf5a; approved 02-planning, mockup.css .dialog-header and
+ * .dialog-footer): the Score popup header splits the title and "Start a Score · N of 3" from Close. */
+.game-mode-popup .popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+.game-mode-popup .popup-header .flow-label {
+  display: block;
+  font-size: 0.85em;
+}
+
+/* Footer split: Back on the left; Leave flow and Next on the right. */
+.game-mode-popup-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5em;
+  flex-wrap: wrap;
+  margin-top: 0.75em;
+}
+.game-mode-popup-footer .left,
+.game-mode-popup-footer .right {
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+}
+
+/* Payoff and Heat reference tables: two columns (approved 06b, 06c), one column at 760px and below. */
+.game-mode-resolution .two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1em;
+}
+@media (max-width: 760px) {
+  .game-mode-resolution .two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+

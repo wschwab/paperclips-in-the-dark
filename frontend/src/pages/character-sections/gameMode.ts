@@ -7,6 +7,7 @@ import { el } from "../../lib/dom.js";
 import type { Crew } from "../../schema/crew.js";
 import type { SectionCtx } from "./context.js";
 import {
+  type ScoreStartStep,
   DOWNTIME_ACTIVITIES,
   LOAD_CHOICES,
   ONE_PLAYER_WARNING,
@@ -217,7 +218,12 @@ export function renderGameModePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: G
 }
 
 /** Overlay dialog frame for the Score popups (approved surface: aria-modal over the sheet). */
-function overlay(label: string, dataSection: string, extraClass: string, title: string, body: HTMLElement[], footer: HTMLElement[]): HTMLElement {
+/** Footer split as approved: Back on the left; Leave flow and Next on the right (mockups 02, 03, 06a-f). */
+type OverlayFooter = { left: HTMLElement[]; right: HTMLElement[] };
+/** Score popup header (approved 02/03/04): "Start a Score · N of 3" beside the title, Close on the right. */
+type PopupHeader = { subtitle: string; close: HTMLElement };
+
+function overlay(label: string, dataSection: string, extraClass: string, title: string, body: HTMLElement[], footer: OverlayFooter, header?: PopupHeader): HTMLElement {
   return h("section", {
     className: `game-mode-popup ${extraClass}`,
     role: "dialog",
@@ -226,9 +232,13 @@ function overlay(label: string, dataSection: string, extraClass: string, title: 
     "data-section": dataSection,
   },
     h("div", { className: "game-mode-popup-card" },
-      h("h2", {}, title),
+      header
+        ? h("div", { className: "popup-header" }, h("div", {}, h("h2", {}, title), h("span", { className: "flow-label" }, header.subtitle)), header.close)
+        : h("h2", {}, title),
       ...body,
-      h("div", { className: "game-mode-popup-footer", style: "display: flex; gap: 0.5em; margin-top: 0.75em; flex-wrap: wrap;" }, ...footer),
+      h("div", { className: "game-mode-popup-footer" },
+        h("div", { className: "left" }, ...footer.left),
+        h("div", { className: "right" }, ...footer.right)),
     ));
 }
 
@@ -239,7 +249,7 @@ export function renderScorePopup(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   const step = flow.step;
   const back = stepBefore("score-start", step);
   const next = stepAfter("score-start", step);
-  const title = step === "planning" ? "Score · Planning" : step === "loadout" ? "Score · Loadout" : "Score · Engagement";
+  const title = step === "planning" ? "Planning" : step === "loadout" ? "Loadout" : "Engagement";
   const body: HTMLElement[] = [];
   if (step === "planning") {
     body.push(
@@ -280,7 +290,35 @@ export function renderScorePopup(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   const nextLabel = next === "engagement" ? "Next: Engagement" : next === "loadout" ? "Next: Loadout" : "Enter Score";
   const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, nextLabel);
   nextBtn.addEventListener("click", () => (next ? gm.onFlowSet("score-start", next) : gm.onFlowSet("none", "")));
-  return overlay(`Score ${step}`, "game-mode-popup", "", title, body, [backBtn, leave, nextBtn]);
+  const close = h("button", { type: "button", className: "btn-secondary", disabled: ctx.anyLoading }, "Close");
+  close.addEventListener("click", () => gm.onFlowSet("none", ""));
+  const position = SCORE_START_STEPS.indexOf(step as ScoreStartStep) + 1;
+  return overlay(`Score ${step}`, "game-mode-popup", "", title, body,
+    { left: [backBtn], right: [leave, nextBtn] },
+    { subtitle: `Start a Score · ${position} of ${SCORE_START_STEPS.length}`, close });
+}
+
+/** Approved reference rows (mockups 06b-payoff and 06c-heat). */
+const PAYOFF_GUIDE: ReadonlyArray<readonly [string, string]> = [
+  ["2", "A minor job; several full purses"],
+  ["4", "A small job; a strongbox"],
+  ["6", "A standard score; decent loot"],
+  ["8", "A big score; serious loot"],
+  ["10+", "A major score; impressive loot"],
+];
+const HEAT_EXPOSURE: ReadonlyArray<readonly [string, string]> = [
+  ["0", "Smooth & quiet; low exposure"],
+  ["2", "Contained; standard exposure"],
+  ["4", "Loud & chaotic; high exposure"],
+  ["6", "Wild; devastating exposure"],
+];
+
+/** A two-column reference table: a header row, then one row per approved entry. */
+function referenceTable(head: readonly [string, string], rows: ReadonlyArray<readonly [string, string]>): HTMLElement {
+  return h("table", { className: "rule-table reference-table" },
+    h("tbody", {},
+      h("tr", {}, h("th", { scope: "col" }, head[0]), h("th", { scope: "col" }, head[1])),
+      ...rows.map(([a, b]) => h("tr", {}, h("th", { scope: "row" }, a), h("td", {}, b)))));
 }
 
 /** Entanglement result table (approved mockup 06d). Head rows then body rows. */
@@ -416,7 +454,7 @@ export function renderLoadoutConfirm(ctx: SectionCtx, gm: GameModeHandlers, ui: 
       h("p", { className: "small" }, "Choose items now or declare more during the score. This suggests a load limit; it never blocks play."),
       h("p", { className: "small" }, srdLink(SRD.planning)),
     ],
-    [back, leave, confirm]);
+    { left: [back], right: [leave, confirm] });
 }
 
 /** Resolution: six-step stepper, Back/Next stored as the cursor, step content with crew editors. */
@@ -457,10 +495,12 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       break;
     case "payoff":
       content = h("div", {},
-        h("p", { className: "serif" }, "Crew receives 2 rep, plus or minus the target-minus-crew Tier difference, minimum zero. A completely quiet score earns zero rep."),
-        h("ul", { className: "small" },
-          h("li", {}, "Coin guide: 2 minor, 4 small, 6 standard, 8 big, 10+ major."),
-          h("li", {}, "If a boss is owed, subtract crew Tier + 1 coin as tithe. Ask your GM whether a tithe applies.")),
+        h("div", { className: "two-col" },
+          h("div", {},
+            h("p", { className: "serif" }, "Crew receives 2 rep, plus or minus the target-minus-crew Tier difference, minimum zero. A completely quiet score earns zero rep."),
+            h("ul", { className: "small" },
+              h("li", {}, "If a boss is owed, subtract crew Tier + 1 coin as tithe. Ask your GM whether a tithe applies."))),
+          h("div", {}, referenceTable(["Coin", "Score"], PAYOFF_GUIDE))),
         crewEditor("Rep", crew?.rep.current ?? null, "rep", "Update crew", ctx, gm, linked),
         crewEditor("Coin", crew?.coin ?? null, "coin", "Update crew", ctx, gm, linked),
         myShareEditor(ctx, gm),
@@ -468,7 +508,9 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       break;
     case "heat":
       content = h("div", {},
-        h("p", { className: "serif" }, "Base heat: 0 smooth or quiet, 2 contained, 4 loud or chaotic, 6 wild. Add +1 for a high-profile or well-connected target, +1 hostile turf, +1 at war, +2 if killing was involved."),
+        h("div", { className: "two-col" },
+          h("div", {}, referenceTable(["Heat", "Exposure"], HEAT_EXPOSURE)),
+          h("div", {}, h("p", { className: "serif" }, "Base heat above. Add +1 for a high-profile or well-connected target, +1 hostile turf, +1 at war, +2 if killing was involved."))),
         h("p", { className: "note" }, crew ? `At ${crew.heat.max} heat, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements.` : "At the crew’s heat maximum, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements."),
         crewEditor("Heat", crew?.heat.current ?? null, "heat", "Update crew", ctx, gm, linked),
         h("p", { className: "small" }, srdLink(SRD.heat)));
@@ -550,7 +592,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
       stepper,
       content,
     ],
-    [backBtn, skip, skipAll, leave, nextBtn].filter((b): b is HTMLButtonElement => b !== null),
+    { left: [backBtn], right: [skip, skipAll, leave, nextBtn].filter((b): b is HTMLButtonElement => b !== null) },
   );
 }
 

@@ -219,11 +219,11 @@ describe("GAME-MODE-03 sheet", () => {
     expect(popup.textContent).toContain("never blocks play");
   });
 
-  it("Resolution Payoff shows the coin guide, the tithe rule and the Leave flow footer", async () => {
+  it("Resolution Payoff shows the approved coin table, the tithe rule and the Leave flow footer", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
     const body = root.querySelector(".game-mode-resolution")!;
-    expect(body.textContent).toContain("2 minor");
-    expect(body.textContent).toContain("10+ major");
+    expect(body.textContent).toContain("A minor job; several full purses");
+    expect(body.textContent).toContain("A major score; impressive loot");
     expect(body.textContent).toContain("crew Tier + 1 coin");
     const footer = Array.from(body.querySelectorAll("button")).map((b) => b.textContent);
     expect(footer).toEqual(expect.arrayContaining(["Back", "Leave flow", "Next"]));
@@ -359,7 +359,7 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
   it("Engagement footer ends with Enter Score and shows the approved starting-position reminder", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "engagement" } }));
     const dialog = root.querySelector(".game-mode-popup")!;
-    const footer = Array.from(dialog.querySelectorAll("button")).map((b) => b.textContent);
+    const footer = Array.from(dialog.querySelectorAll(".game-mode-popup-footer button")).map((b) => b.textContent);
     expect(footer).toEqual(["Back", "Leave flow", "Enter Score"]);
     expect(dialog.textContent).toContain("Critical: past the first obstacle, controlled next");
     expect(dialog.textContent).toContain("This reminder doesn’t roll dice or require a result.");
@@ -519,6 +519,78 @@ describe("GAME-MODE-03 Sol round-3 first-step Back (R3-01)", () => {
       expect(call).toBeTruthy();
       expect(call!.init.body).toBe(JSON.stringify({ kind: "none", step: "" }));
     });
+  });
+});
+
+describe("GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a)", () => {
+  it("F7-1: the Score popup header carries the title, the 'Start a Score · N of 3' subtitle and a Close control", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "planning" } }));
+    const header = root.querySelector(".game-mode-popup .popup-header")!;
+    expect(header.querySelector("h2")?.textContent).toBe("Planning");
+    expect(header.querySelector(".flow-label")?.textContent).toBe("Start a Score · 1 of 3");
+    expect(header.querySelector("button")?.textContent).toBe("Close");
+  });
+
+  it("F7-1: Loadout and Engagement carry 2 of 3 and 3 of 3", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "loadout" } }));
+    expect(root.querySelector(".game-mode-popup .popup-header .flow-label")?.textContent).toBe("Start a Score · 2 of 3");
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "engagement" } }));
+    expect(root.querySelector(".game-mode-popup .popup-header .flow-label")?.textContent).toBe("Start a Score · 3 of 3");
+  });
+
+  it("F7-1: the header Close returns to the Score sheet (flow cleared, mode kept)", async () => {
+    const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "planning" } }));
+    const close = Array.from(root.querySelectorAll(".game-mode-popup .popup-header button")).find((b) => b.textContent === "Close") as HTMLButtonElement;
+    close.click();
+    await vi.waitFor(() => {
+      const call = calls.find((c) => c.url.endsWith("/ops/mode.flow.set"));
+      expect(call?.init.body).toBe(JSON.stringify({ kind: "none", step: "" }));
+    });
+  });
+
+  it("F7-2: the footer splits Back on the left and Leave flow with Next on the right", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "planning" } }));
+    const left = Array.from(root.querySelectorAll(".game-mode-popup .game-mode-popup-footer > .left button")).map((b) => b.textContent);
+    const right = Array.from(root.querySelectorAll(".game-mode-popup .game-mode-popup-footer > .right button")).map((b) => b.textContent);
+    expect(left).toEqual(["Back"]);
+    expect(right).toEqual(["Leave flow", "Next: Loadout"]);
+  });
+
+  it("F7-2: the Resolution footer keeps Back left and Skip, Skip Resolution, Leave flow, Next right", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
+    const left = Array.from(root.querySelectorAll(".game-mode-resolution .game-mode-popup-footer > .left button")).map((b) => b.textContent);
+    const right = Array.from(root.querySelectorAll(".game-mode-resolution .game-mode-popup-footer > .right button")).map((b) => b.textContent);
+    expect(left).toEqual(["Back"]);
+    expect(right).toEqual(["Skip", "Skip Resolution", "Leave flow", "Next"]);
+  });
+
+  it("F7-4: Payoff shows the approved Coin / Score table beside the rep and tithe reference", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
+    const body = root.querySelector(".game-mode-resolution")!;
+    expect(body.querySelector(".two-col")).not.toBeNull();
+    const rows = Array.from(body.querySelectorAll("table.reference-table tr")).map((r) => Array.from(r.children).map((c) => c.textContent));
+    expect(rows).toEqual([
+      ["Coin", "Score"],
+      ["2", "A minor job; several full purses"],
+      ["4", "A small job; a strongbox"],
+      ["6", "A standard score; decent loot"],
+      ["8", "A big score; serious loot"],
+      ["10+", "A major score; impressive loot"],
+    ]);
+  });
+
+  it("F7-4: Heat shows the approved Heat / Exposure table beside the modifiers", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "heat" } }), crewDTO({ heat: { current: 4, max: 9 } }));
+    const body = root.querySelector(".game-mode-resolution")!;
+    expect(body.querySelector(".two-col")).not.toBeNull();
+    const rows = Array.from(body.querySelectorAll("table.reference-table tr")).map((r) => Array.from(r.children).map((c) => c.textContent));
+    expect(rows).toEqual([
+      ["Heat", "Exposure"],
+      ["0", "Smooth & quiet; low exposure"],
+      ["2", "Contained; standard exposure"],
+      ["4", "Loud & chaotic; high exposure"],
+      ["6", "Wild; devastating exposure"],
+    ]);
   });
 });
 
