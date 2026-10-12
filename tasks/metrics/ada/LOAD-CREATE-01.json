@@ -1,0 +1,60 @@
+{
+  "task": "LOAD-CREATE-01",
+  "track": "ada",
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": null,
+  "date": "2026-10-12",
+  "iterationsToGreen": 0,
+  "wallClockMinutes": 9.8,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "Current binary on actual copied human data: 5/5 real-client checks pass; two legacy files remain byte-identical. No production patch or live restart.",
+  "passRateAfterReview": "No independent review claimed. Human narrowed this phase to current-copy investigation and compatibility proposal.",
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "human"
+  ],
+  "notes": [
+    "Human live load/create report traced to the October6 running executable, while current binary was rebuilt October12.",
+    "Actual frontend clients reject live Character.mode as missing; exhaustive decoding also finds modeFlow and downtime missing.",
+    "Current binary correctly defaults real legacy data without writing it and creates on the temp copy.",
+    "No source/decoder/style/description edits, campaign-data writes, live restart, VCS commands or mutation campaign.",
+    "Both health versions are0.2.0; simple version comparison cannot detect the mismatch. Generated compiled contract compatibility identity is proposed only."
+  ],
+  "metricsMethodology": {
+    "method": "Observed process inode/timestamp facts, exact HTTP captures, actual frontend client effects and cmp byte checks.",
+    "source": "tasks/LOAD-CREATE-01.md and tasks/metrics/ada/LOAD-CREATE-01-*.log",
+    "tokensNote": "Token accounting unavailable; null is supported unknown.",
+    "locNote": "Zero production implementation lines changed.",
+    "scaffoldingLocNote": "No script/scaffold files created; probe executed in eval.",
+    "iterationNote": "Investigation only; no source implementation red-green iteration."
+  },
+  "status": "Investigation complete; current-copy checks green; human owns live restart; compatibility check proposal only",
+  "observations": {
+    "liveCharacterDecodeFailures": 2,
+    "liveCrewAndRosterDecodePasses": 2,
+    "currentCopyClientPasses": 5,
+    "legacyBytePreservationPasses": 2,
+    "livePid": 1054006,
+    "liveExecutableInode": 140904474,
+    "currentExecutableInode": 362380975,
+    "bothHealthVersions": "0.2.0",
+    "temporaryServerStopped": true
+  },
+  "verification": {
+    "implementationGatesRun": false,
+    "reason": "Latest human direction requests isolated current-runtime investigation and proposal, no production implementation patch.",
+    "mutationRun": false,
+    "changedMutationTargets": []
+  },
+  "openItems": [
+    "Human restarts live Ada and checks actual app afterwards.",
+    "Human decides whether to authorize a separate compatibility metadata/client feature."
+  ]
+}

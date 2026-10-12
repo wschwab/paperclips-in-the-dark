@@ -1,0 +1,99 @@
+---
+title: Scoundrel loading and creation — stale development backend
+---
+
+# LOAD-CREATE-01: stale development backend
+
+**Finding: the current binary handles the human's legacy data correctly.**
+The human must restart their live Ada server; this worker does not restart it
+or modify `campaign-data/`. No decoder was loosened and no production patch was
+needed for the reproduced data.
+
+## Live failure and root cause
+
+Vite's `/api` proxy points to localhost:9657 (`frontend/vite.config.ts:9`).
+That listener is the existing Ada PID 1054006, whose executable inode 140904474
+was built on October 6. The current `backend-ada/server/bin/pitd` has a different
+inode, 362380975, and was built on October 12. Rebuilding a file does not replace
+an already-running process's loaded executable.
+
+Read-only live requests show both the original Spider and the recently created
+Lurk omit the required `mode`, `modeFlow` and `downtime` fields. The actual
+frontend `getCharacter` fails at `frontend/src/api/client.ts:322`:
+
+```text
+Character
+└─ ["mode"]
+   └─ is missing
+```
+
+Exhaustive decoding reports all three missing fields. Their canonical required
+schema declarations are `frontend/src/schema/character.ts:224–226`.
+Creation uses `frontend/src/api/client.ts:535–544`, the operation decoder at
+`:219`, and the nested Character at
+`frontend/src/schema/operation-result.ts:151`; a malformed successful envelope
+becomes the generic DecodeError at `frontend/src/api/client.ts:281–283`.
+The original live POST was not repeated: doing so would write human data.
+A recently created Lurk already exists, so a UI creation failure must not be
+assumed to mean no entity was persisted.
+
+Live crew and roster responses do decode through the actual frontend clients.
+The observed sheet failure is therefore specifically the missing Character
+fields, not a contacts-closeness, game-stem or INTERNAL-error decoding failure.
+
+## Current binary on an isolated copy
+
+The worker copied the actual `campaign-data/` into a temporary runtime and
+started the current binary against that copy and the real `data/games/`.
+The actual frontend client functions, not a permissive alternate decoder,
+produced these results:
+
+| Check | Result |
+|---|---|
+| Original pre-game-mode Spider | Loads and strictly decodes |
+| Recently created pre-game-mode Lurk | Loads and strictly decodes |
+| Existing crew | Loads and strictly decodes |
+| Existing roster | Loads and strictly decodes |
+| POST a new Lurk, on the copy only | HTTP200 and strictly decodes |
+
+Both legacy scoundrels receive `mode: free-play`,
+`modeFlow: {kind: none, step: ""}`, and a downtime budget with free 2, paid 0,
+spent 0 and an empty activity list. The copied legacy files still lack these
+fields on disk and remain byte-identical to their original files after reads.
+The existing backend normalization is the correct migration boundary:
+`pitd_normalize.adb:1848–1849`, `:1898–1899` and `:2046–2054` supply silent
+legacy defaults. No manual data rewrite or frontend fallback is needed.
+
+This reproduces the user's data, not just a newly generated test fixture.
+The isolated checks support restarting the live backend with the current binary
+and the same game/data directories as the operational fix. The human's actual
+restart and post-restart browser result remain unobserved.
+
+## Why conformance did not catch the live mismatch
+
+Managed conformance launches a current binary on an isolated runtime/port.
+It does not interrogate the unrelated, long-running human dev process targeted
+by Vite. A passing managed suite cannot establish that the human's listener was
+restarted after a wire-contract change. The missing fields are defaulted by
+current code; the October 6 executable does not contain that code.
+
+## Proposed compatibility check — not implemented
+
+An early compatibility check would be useful, with actionable copy such as:
+“Your backend is older than this app. Restart the backend, then refresh.”
+However, a comparison of the existing health `version` alone would **not** catch
+this incident: both old and current processes report **0.2.0**.
+
+Prefer a generated, compiled-in contract compatibility identifier, accompanied
+by a build identifier for diagnostics, and a frontend expected identifier.
+Check it once before loading sheets or submitting creation; distinguish an
+unsupported backend from network failure. This needs an explicit contract/client
+change, since health responses are strictly decoded. Do not add blind retries,
+automatic server restarts or relaxed entity schemas. The human asked for a
+proposal only; no health/version check has been built.
+
+Evidence: `tasks/metrics/ada/LOAD-CREATE-01-live-responses.log` preserves exact
+read-only live responses, and `LOAD-CREATE-01-decoder-probe.log` preserves actual
+client outcomes and current-copy request/response bodies. The original live
+creation response was not captured or invented. Task record:
+`tasks/LOAD-CREATE-01.md`.

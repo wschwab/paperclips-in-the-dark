@@ -1,0 +1,244 @@
+{
+  "results": [
+    {
+      "label": "live-existing",
+      "ok": false,
+      "error": "DecodeError",
+      "message": "decode failed: Character\n└─ [\"mode\"]\n   └─ is missing",
+      "cause": "Character\n└─ [\"mode\"]\n   └─ is missing"
+    },
+    {
+      "label": "live-human-created",
+      "ok": false,
+      "error": "DecodeError",
+      "message": "decode failed: Character\n└─ [\"mode\"]\n   └─ is missing",
+      "cause": "Character\n└─ [\"mode\"]\n   └─ is missing"
+    },
+    {
+      "label": "live-crew",
+      "ok": true,
+      "id": "00b6a2a0-8114-4ac3-8391-1245271b5491",
+      "mode": null,
+      "modeFlow": null,
+      "downtime": null
+    },
+    {
+      "label": "live-roster",
+      "ok": true,
+      "id": null,
+      "mode": null,
+      "modeFlow": null,
+      "downtime": null,
+      "characters": 2,
+      "crews": 1
+    },
+    {
+      "label": "live-exhaustive-required-fields",
+      "ok": false,
+      "cause": "Character\n├─ [\"mode\"]\n│  └─ is missing\n├─ [\"modeFlow\"]\n│  └─ is missing\n└─ [\"downtime\"]\n   └─ is missing"
+    },
+    {
+      "label": "current-existing",
+      "ok": true,
+      "id": "7e558e39-1116-4aa3-8cbf-8b18a52b15af",
+      "mode": "free-play",
+      "modeFlow": {
+        "kind": "none",
+        "step": ""
+      },
+      "downtime": {
+        "free": 2,
+        "paid": 0,
+        "spent": 0,
+        "activities": []
+      }
+    },
+    {
+      "label": "current-human-created",
+      "ok": true,
+      "id": "04a433b9-89d1-4127-8689-431900291317",
+      "mode": "free-play",
+      "modeFlow": {
+        "kind": "none",
+        "step": ""
+      },
+      "downtime": {
+        "free": 2,
+        "paid": 0,
+        "spent": 0,
+        "activities": []
+      }
+    },
+    {
+      "label": "current-crew",
+      "ok": true,
+      "id": "00b6a2a0-8114-4ac3-8391-1245271b5491",
+      "mode": null,
+      "modeFlow": null,
+      "downtime": null
+    },
+    {
+      "label": "current-roster",
+      "ok": true,
+      "id": null,
+      "mode": null,
+      "modeFlow": null,
+      "downtime": null,
+      "characters": 2,
+      "crews": 1
+    },
+    {
+      "label": "current-create",
+      "ok": true,
+      "id": "b7799187-c316-42d2-8494-3f274413e88a",
+      "mode": "free-play",
+      "modeFlow": {
+        "kind": "none",
+        "step": ""
+      },
+      "downtime": {
+        "free": 2,
+        "paid": 0,
+        "spent": 0,
+        "activities": []
+      }
+    }
+  ],
+  "captures": [
+    {
+      "base": "http://127.0.0.1:9657",
+      "path": "/api/characters/7e558e39-1116-4aa3-8cbf-8b18a52b15af",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "7270",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"contacts\": [\n    {\n      \"closeness\": \"friend\",\n      \"id\": \"4098926a-867a-4b89-8a51-61a46c611a2b\",\n      \"name\": \"Augus, a master architect\"\n    },\n    {\n      \"closeness\": \"rival\",\n      \"id\": \"99597156-7ed1-4983-8195-414276515952\",\n      \"name\": \"Salia, an information broker\"\n    }\n  ],\n  \"createdAt\": \"2026-10-05T16:19:17.82Z\",\n  \"dossier\": {\n    \"alias\": \"Luna\",\n    \"background\": {\n      \"description\": \"A shopkeeper, a merchant, a skilled crafts-person, a shipping agent, etc.\",\n      \"name\": \"Trade\"\n    },\n    \"crewId\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n    \"heritage\": {\n      \"description\": \"Akoros is the largest and most industrialized land in the Imperium, and is home to the capitol city as well as Duskwall itself. They\\u2019re known as a diverse conglomeration of cultures that have grown together in close proximity for centuries, somewhat like Europe.\",\n      \"name\": \"Akoros\"\n    },\n    \"look\": \"Constant manic intensity, wide staring pale eyes. Full-length dark dresses, lace around the neck, full sleeves.\",\n    \"name\": \"Aneeya Bludsoe\",\n    \"notes\": [\n      \"I've picked Trade for Luna's background, I suspect she was a simple shop worker until she saw something which rattled her sanity, though I'm not sure what.\"\n    ],\n    \"vice\": {\n      \"description\": \"You\\u2019re dedicated to an unseen power, forgotten god, ancestor, etc.\",\n      \"name\": \"Faith\",\n      \"purveyor\": {\n        \"description\": \"Stern nun\",\n        \"name\": \"Mother Narya, House of the Weeping Lady, Six Towers.\"\n      }\n    }\n  },\n  \"formatVersion\": 1,\n  \"fund\": {\n    \"satchel\": {\n      \"coins\": 2,\n      \"max\": 4\n    },\n    \"stash\": {\n      \"coins\": 0,\n      \"max\": 40\n    }\n  },\n  \"gameName\": \"Blades in the Dark\",\n  \"gameStem\": \"blades-in-the-dark\",\n  \"gear\": {\n    \"availableGear\": [\n    ],\n    \"commitment\": \"none\",\n    \"isCommitmentLocked\": false,\n    \"loadout\": [\n    ],\n    \"maxBulk\": 9\n  },\n  \"id\": \"7e558e39-1116-4aa3-8cbf-8b18a52b15af\",\n  \"isDeadish\": false,\n  \"isOutOfAction\": false,\n  \"isRetired\": false,\n  \"kind\": \"character\",\n  \"language\": \"English\",\n  \"monitor\": {\n    \"armor\": {\n      \"hasHeavy\": false,\n      \"hasSpecial\": false,\n      \"hasStandard\": false,\n      \"heavyUsed\": false,\n      \"specialUsed\": false,\n      \"standardUsed\": false\n    },\n    \"harm\": {\n      \"fatal\": [\n      ],\n      \"healingClock\": {\n        \"rollover\": 0,\n        \"segments\": 0,\n        \"size\": 4\n      },\n      \"lesser\": [\n      ],\n      \"moderate\": [\n      ],\n      \"severe\": [\n      ]\n    },\n    \"stress\": {\n      \"current\": 0,\n      \"max\": 9\n    },\n    \"trauma\": {\n      \"max\": 4,\n      \"traumas\": [\n      ]\n    }\n  },\n  \"notebook\": \"keeping some playtesting notes here:\\n- Vice is a bit hard to find, the edit button is rendering on a different line, I thought it went to something else\\n- There were a ton of clocks set on chargen that shouldn't have been there, I'm assuming they're included with every new char?\\n- I still want a prominent, always-visible box describing if the game is currently in Downtime, Score, or Free Play, and allowing toggling between them. Depending on what mode the game is in, certain actions should be available or unavailable. Ending a Score should invoke some kind of process granting experience and rolling complications, etc. This should extend to the API/backend too. This would involve some rearranging in the UI too - the 'end downtime' button would be moved off where it is, same with the 'end score' button.\\n- Come to think of it, there's nothing in place for incarceration. Nothing for whatever the complications at the beginning of downtime are either.\\n- There's a weird flicker/rerender when I would delete each clock\\n- All the contacts for each scoundrel playbook should be 'loaded', defaulting as contacts. I like the clicking to change closeness, but think there should be more options than just friend/contact/rival (confidante/enemy sound fitting imho, and with bolder colors), and it needs to be more obvious that it's clickable - I like the remove contact option, and adding a contact should remain as-is so that custom contacts can be added.\\n- The second column (rightmost) is rendering such that the bar underneath the header cuts through it, and I think even the left column cuts it a bit too close.\\n- <if you're seeing this, please ask for a screenshot from Blades in the Sheets of the Playbook abilities, it's meant as a reminder to me, but I seem to have not remembered> I like how Blades in the Sheets handles giving information about the Playbook abilities - they handle a number of other details like this too. The user should be able to have an idea about what the option is before selecting it, and it should be packaged cleanly together in the dropdown menu imho. Heritage, Background, and Vice would all benefit from this too.\\n- Permanent Actions looks great, and should be moved to the bottom of the sheet\",\n  \"playbook\": {\n    \"abilities\": [\n      {\n        \"description\": \"You gain +1d to Consort when you gather information on a target for a score. You get +1d to the engagement roll for that operation.\",\n        \"name\": \"Weaving the Web\",\n        \"timesTaken\": 1\n      }\n    ],\n    \"experience\": {\n      \"max\": 8,\n      \"points\": 0\n    },\n    \"name\": \"Spider\"\n  },\n  \"revision\": 24,\n  \"session\": {\n    \"characterExpressions\": 0,\n    \"max\": 2,\n    \"playbookExpressions\": 0,\n    \"struggleExpressions\": 0\n  },\n  \"stressClearPending\": false,\n  \"talent\": {\n    \"attributes\": [\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Hunt\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Study\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Survey\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Tinker\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Insight\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Finesse\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Prowl\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Skirmish\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Wreck\",\n            \"rating\": 1\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Prowess\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Attune\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Command\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Consort\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Sway\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Resolve\"\n      }\n    ]\n  },\n  \"traumaPending\": false,\n  \"updatedAt\": \"2026-10-05T16:49:35.52Z\"\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:9657",
+      "path": "/api/characters/04a433b9-89d1-4127-8689-431900291317",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "3701",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"contacts\": [\n  ],\n  \"createdAt\": \"2026-10-12T12:04:55.83Z\",\n  \"dossier\": {\n    \"alias\": \"\",\n    \"background\": {\n      \"description\": \"\",\n      \"name\": \"\"\n    },\n    \"crewId\": \"\",\n    \"heritage\": {\n      \"description\": \"\",\n      \"name\": \"\"\n    },\n    \"look\": \"\",\n    \"name\": \"\",\n    \"notes\": [\n    ],\n    \"vice\": {\n      \"description\": \"\",\n      \"name\": \"\",\n      \"purveyor\": {\n        \"description\": \"\",\n        \"name\": \"\"\n      }\n    }\n  },\n  \"formatVersion\": 1,\n  \"fund\": {\n    \"satchel\": {\n      \"coins\": 2,\n      \"max\": 4\n    },\n    \"stash\": {\n      \"coins\": 0,\n      \"max\": 40\n    }\n  },\n  \"gameName\": \"Blades in the Dark\",\n  \"gameStem\": \"blades-in-the-dark\",\n  \"gear\": {\n    \"availableGear\": [\n    ],\n    \"commitment\": \"none\",\n    \"isCommitmentLocked\": false,\n    \"loadout\": [\n    ],\n    \"maxBulk\": 9\n  },\n  \"id\": \"04a433b9-89d1-4127-8689-431900291317\",\n  \"isDeadish\": false,\n  \"isOutOfAction\": false,\n  \"isRetired\": false,\n  \"kind\": \"character\",\n  \"language\": \"English\",\n  \"monitor\": {\n    \"armor\": {\n      \"hasHeavy\": false,\n      \"hasSpecial\": false,\n      \"hasStandard\": false,\n      \"heavyUsed\": false,\n      \"specialUsed\": false,\n      \"standardUsed\": false\n    },\n    \"harm\": {\n      \"fatal\": [\n      ],\n      \"healingClock\": {\n        \"rollover\": 0,\n        \"segments\": 0,\n        \"size\": 4\n      },\n      \"lesser\": [\n      ],\n      \"moderate\": [\n      ],\n      \"severe\": [\n      ]\n    },\n    \"stress\": {\n      \"current\": 0,\n      \"max\": 9\n    },\n    \"trauma\": {\n      \"max\": 4,\n      \"traumas\": [\n      ]\n    }\n  },\n  \"notebook\": \"\",\n  \"playbook\": {\n    \"abilities\": [\n    ],\n    \"experience\": {\n      \"max\": 8,\n      \"points\": 0\n    },\n    \"name\": \"Lurk\"\n  },\n  \"revision\": 1,\n  \"session\": {\n    \"characterExpressions\": 0,\n    \"max\": 2,\n    \"playbookExpressions\": 0,\n    \"struggleExpressions\": 0\n  },\n  \"stressClearPending\": false,\n  \"talent\": {\n    \"attributes\": [\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Hunt\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Study\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Survey\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Tinker\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Insight\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Finesse\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Prowl\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Skirmish\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Wreck\",\n            \"rating\": 1\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Prowess\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Attune\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Command\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Consort\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Sway\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Resolve\"\n      }\n    ]\n  },\n  \"traumaPending\": false,\n  \"updatedAt\": \"2026-10-12T12:04:55.83Z\"\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:9657",
+      "path": "/api/crews/00b6a2a0-8114-4ac3-8391-1245271b5491",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "1315",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"claimOverrides\": [\n  ],\n  \"claimedClaimIds\": [\n    \"turf-2\"\n  ],\n  \"cohorts\": [\n    {\n      \"cohortKind\": \"gang\",\n      \"description\": \"\",\n      \"edges\": [\n      ],\n      \"expertType\": \"\",\n      \"flaws\": [\n      ],\n      \"gangType\": \"Rovers\",\n      \"harm\": \"healthy\",\n      \"hasArmor\": true,\n      \"id\": \"44538a58-3388-4a62-8a56-42a341937818\",\n      \"quality\": 1,\n      \"scale\": 1\n    }\n  ],\n  \"coin\": 0,\n  \"contacts\": [\n  ],\n  \"createdAt\": \"2026-10-05T16:13:36.11Z\",\n  \"crewTypeName\": \"Smugglers\",\n  \"experience\": {\n    \"max\": 10,\n    \"points\": 0\n  },\n  \"factions\": [\n  ],\n  \"formatVersion\": 1,\n  \"gameName\": \"Blades in the Dark\",\n  \"gameStem\": \"blades-in-the-dark\",\n  \"heat\": {\n    \"current\": 0,\n    \"max\": 9\n  },\n  \"hold\": \"weak\",\n  \"huntingGrounds\": \"\",\n  \"id\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n  \"kind\": \"crew\",\n  \"lair\": \"ornate abandoned mausoleum\",\n  \"language\": \"English\",\n  \"name\": \"Gravediggers\",\n  \"notes\": [\n  ],\n  \"rep\": {\n    \"current\": 1,\n    \"max\": 12\n  },\n  \"reputation\": \"Savvy\",\n  \"revision\": 16,\n  \"specialAbilities\": [\n    {\n      \"name\": \"Underground Maps and Passkeys\",\n      \"timesTaken\": 1\n    }\n  ],\n  \"stash\": 0,\n  \"stashCapacity\": 4,\n  \"tier\": 0,\n  \"turf\": 2,\n  \"updatedAt\": \"2026-10-05T16:17:48.43Z\",\n  \"upgrades\": [\n  ],\n  \"wanted\": {\n    \"current\": 0,\n    \"max\": 4\n  }\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:9657",
+      "path": "/api/campaign/roster",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "1555",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"characters\": [\n    {\n      \"alias\": \"Luna\",\n      \"canUndo\": true,\n      \"crewId\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n      \"deleteToken\": \"\",\n      \"gameStem\": \"blades-in-the-dark\",\n      \"historyCount\": 17,\n      \"id\": \"7e558e39-1116-4aa3-8cbf-8b18a52b15af\",\n      \"isComplete\": true,\n      \"isDeadish\": false,\n      \"isReadable\": true,\n      \"isRepairable\": true,\n      \"isRetired\": false,\n      \"kind\": \"character\",\n      \"name\": \"Aneeya Bludsoe\",\n      \"playbook\": \"Spider\",\n      \"revision\": 24,\n      \"stress\": 0,\n      \"traumas\": [\n      ]\n    },\n    {\n      \"alias\": \"\",\n      \"canUndo\": false,\n      \"crewId\": \"\",\n      \"deleteToken\": \"\",\n      \"gameStem\": \"blades-in-the-dark\",\n      \"historyCount\": 0,\n      \"id\": \"04a433b9-89d1-4127-8689-431900291317\",\n      \"isComplete\": false,\n      \"isDeadish\": false,\n      \"isReadable\": true,\n      \"isRepairable\": true,\n      \"isRetired\": false,\n      \"kind\": \"character\",\n      \"name\": \"\",\n      \"playbook\": \"Lurk\",\n      \"revision\": 1,\n      \"stress\": 0,\n      \"traumas\": [\n      ]\n    }\n  ],\n  \"crews\": [\n    {\n      \"canUndo\": true,\n      \"crewType\": \"Smugglers\",\n      \"deleteToken\": \"\",\n      \"gameStem\": \"blades-in-the-dark\",\n      \"heat\": 0,\n      \"historyCount\": 15,\n      \"hold\": \"weak\",\n      \"id\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n      \"isComplete\": false,\n      \"isReadable\": true,\n      \"isRepairable\": true,\n      \"kind\": \"crew\",\n      \"memberCount\": 1,\n      \"name\": \"Gravediggers\",\n      \"rep\": 1,\n      \"revision\": 16,\n      \"tier\": 0,\n      \"wanted\": 0\n    }\n  ]\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:35431",
+      "path": "/api/characters/7e558e39-1116-4aa3-8cbf-8b18a52b15af",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "7442",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"contacts\": [\n    {\n      \"closeness\": \"friend\",\n      \"id\": \"4098926a-867a-4b89-8a51-61a46c611a2b\",\n      \"name\": \"Augus, a master architect\"\n    },\n    {\n      \"closeness\": \"rival\",\n      \"id\": \"99597156-7ed1-4983-8195-414276515952\",\n      \"name\": \"Salia, an information broker\"\n    }\n  ],\n  \"createdAt\": \"2026-10-05T16:19:17.82Z\",\n  \"dossier\": {\n    \"alias\": \"Luna\",\n    \"background\": {\n      \"description\": \"A shopkeeper, a merchant, a skilled crafts-person, a shipping agent, etc.\",\n      \"name\": \"Trade\"\n    },\n    \"crewId\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n    \"heritage\": {\n      \"description\": \"Akoros is the largest and most industrialized land in the Imperium, and is home to the capitol city as well as Duskwall itself. They\\u2019re known as a diverse conglomeration of cultures that have grown together in close proximity for centuries, somewhat like Europe.\",\n      \"name\": \"Akoros\"\n    },\n    \"look\": \"Constant manic intensity, wide staring pale eyes. Full-length dark dresses, lace around the neck, full sleeves.\",\n    \"name\": \"Aneeya Bludsoe\",\n    \"notes\": [\n      \"I've picked Trade for Luna's background, I suspect she was a simple shop worker until she saw something which rattled her sanity, though I'm not sure what.\"\n    ],\n    \"vice\": {\n      \"description\": \"You\\u2019re dedicated to an unseen power, forgotten god, ancestor, etc.\",\n      \"name\": \"Faith\",\n      \"purveyor\": {\n        \"description\": \"Stern nun\",\n        \"name\": \"Mother Narya, House of the Weeping Lady, Six Towers.\"\n      }\n    }\n  },\n  \"downtime\": {\n    \"activities\": [\n    ],\n    \"free\": 2,\n    \"paid\": 0,\n    \"spent\": 0\n  },\n  \"formatVersion\": 1,\n  \"fund\": {\n    \"satchel\": {\n      \"coins\": 2,\n      \"max\": 4\n    },\n    \"stash\": {\n      \"coins\": 0,\n      \"max\": 40\n    }\n  },\n  \"gameName\": \"Blades in the Dark\",\n  \"gameStem\": \"blades-in-the-dark\",\n  \"gear\": {\n    \"availableGear\": [\n    ],\n    \"commitment\": \"none\",\n    \"isCommitmentLocked\": false,\n    \"loadout\": [\n    ],\n    \"maxBulk\": 9\n  },\n  \"id\": \"7e558e39-1116-4aa3-8cbf-8b18a52b15af\",\n  \"isDeadish\": false,\n  \"isOutOfAction\": false,\n  \"isRetired\": false,\n  \"kind\": \"character\",\n  \"language\": \"English\",\n  \"mode\": \"free-play\",\n  \"modeFlow\": {\n    \"kind\": \"none\",\n    \"step\": \"\"\n  },\n  \"monitor\": {\n    \"armor\": {\n      \"hasHeavy\": false,\n      \"hasSpecial\": false,\n      \"hasStandard\": false,\n      \"heavyUsed\": false,\n      \"specialUsed\": false,\n      \"standardUsed\": false\n    },\n    \"harm\": {\n      \"fatal\": [\n      ],\n      \"healingClock\": {\n        \"rollover\": 0,\n        \"segments\": 0,\n        \"size\": 4\n      },\n      \"lesser\": [\n      ],\n      \"moderate\": [\n      ],\n      \"severe\": [\n      ]\n    },\n    \"stress\": {\n      \"current\": 0,\n      \"max\": 9\n    },\n    \"trauma\": {\n      \"max\": 4,\n      \"traumas\": [\n      ]\n    }\n  },\n  \"notebook\": \"keeping some playtesting notes here:\\n- Vice is a bit hard to find, the edit button is rendering on a different line, I thought it went to something else\\n- There were a ton of clocks set on chargen that shouldn't have been there, I'm assuming they're included with every new char?\\n- I still want a prominent, always-visible box describing if the game is currently in Downtime, Score, or Free Play, and allowing toggling between them. Depending on what mode the game is in, certain actions should be available or unavailable. Ending a Score should invoke some kind of process granting experience and rolling complications, etc. This should extend to the API/backend too. This would involve some rearranging in the UI too - the 'end downtime' button would be moved off where it is, same with the 'end score' button.\\n- Come to think of it, there's nothing in place for incarceration. Nothing for whatever the complications at the beginning of downtime are either.\\n- There's a weird flicker/rerender when I would delete each clock\\n- All the contacts for each scoundrel playbook should be 'loaded', defaulting as contacts. I like the clicking to change closeness, but think there should be more options than just friend/contact/rival (confidante/enemy sound fitting imho, and with bolder colors), and it needs to be more obvious that it's clickable - I like the remove contact option, and adding a contact should remain as-is so that custom contacts can be added.\\n- The second column (rightmost) is rendering such that the bar underneath the header cuts through it, and I think even the left column cuts it a bit too close.\\n- <if you're seeing this, please ask for a screenshot from Blades in the Sheets of the Playbook abilities, it's meant as a reminder to me, but I seem to have not remembered> I like how Blades in the Sheets handles giving information about the Playbook abilities - they handle a number of other details like this too. The user should be able to have an idea about what the option is before selecting it, and it should be packaged cleanly together in the dropdown menu imho. Heritage, Background, and Vice would all benefit from this too.\\n- Permanent Actions looks great, and should be moved to the bottom of the sheet\",\n  \"playbook\": {\n    \"abilities\": [\n      {\n        \"description\": \"You gain +1d to Consort when you gather information on a target for a score. You get +1d to the engagement roll for that operation.\",\n        \"name\": \"Weaving the Web\",\n        \"timesTaken\": 1\n      }\n    ],\n    \"experience\": {\n      \"max\": 8,\n      \"points\": 0\n    },\n    \"name\": \"Spider\"\n  },\n  \"revision\": 24,\n  \"session\": {\n    \"characterExpressions\": 0,\n    \"max\": 2,\n    \"playbookExpressions\": 0,\n    \"struggleExpressions\": 0\n  },\n  \"stressClearPending\": false,\n  \"talent\": {\n    \"attributes\": [\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Hunt\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Study\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Survey\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Tinker\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Insight\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Finesse\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Prowl\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Skirmish\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Wreck\",\n            \"rating\": 1\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Prowess\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Attune\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Command\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Consort\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Sway\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Resolve\"\n      }\n    ]\n  },\n  \"traumaPending\": false,\n  \"updatedAt\": \"2026-10-05T16:49:35.52Z\"\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:35431",
+      "path": "/api/characters/04a433b9-89d1-4127-8689-431900291317",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "3873",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"contacts\": [\n  ],\n  \"createdAt\": \"2026-10-12T12:04:55.83Z\",\n  \"dossier\": {\n    \"alias\": \"\",\n    \"background\": {\n      \"description\": \"\",\n      \"name\": \"\"\n    },\n    \"crewId\": \"\",\n    \"heritage\": {\n      \"description\": \"\",\n      \"name\": \"\"\n    },\n    \"look\": \"\",\n    \"name\": \"\",\n    \"notes\": [\n    ],\n    \"vice\": {\n      \"description\": \"\",\n      \"name\": \"\",\n      \"purveyor\": {\n        \"description\": \"\",\n        \"name\": \"\"\n      }\n    }\n  },\n  \"downtime\": {\n    \"activities\": [\n    ],\n    \"free\": 2,\n    \"paid\": 0,\n    \"spent\": 0\n  },\n  \"formatVersion\": 1,\n  \"fund\": {\n    \"satchel\": {\n      \"coins\": 2,\n      \"max\": 4\n    },\n    \"stash\": {\n      \"coins\": 0,\n      \"max\": 40\n    }\n  },\n  \"gameName\": \"Blades in the Dark\",\n  \"gameStem\": \"blades-in-the-dark\",\n  \"gear\": {\n    \"availableGear\": [\n    ],\n    \"commitment\": \"none\",\n    \"isCommitmentLocked\": false,\n    \"loadout\": [\n    ],\n    \"maxBulk\": 9\n  },\n  \"id\": \"04a433b9-89d1-4127-8689-431900291317\",\n  \"isDeadish\": false,\n  \"isOutOfAction\": false,\n  \"isRetired\": false,\n  \"kind\": \"character\",\n  \"language\": \"English\",\n  \"mode\": \"free-play\",\n  \"modeFlow\": {\n    \"kind\": \"none\",\n    \"step\": \"\"\n  },\n  \"monitor\": {\n    \"armor\": {\n      \"hasHeavy\": false,\n      \"hasSpecial\": false,\n      \"hasStandard\": false,\n      \"heavyUsed\": false,\n      \"specialUsed\": false,\n      \"standardUsed\": false\n    },\n    \"harm\": {\n      \"fatal\": [\n      ],\n      \"healingClock\": {\n        \"rollover\": 0,\n        \"segments\": 0,\n        \"size\": 4\n      },\n      \"lesser\": [\n      ],\n      \"moderate\": [\n      ],\n      \"severe\": [\n      ]\n    },\n    \"stress\": {\n      \"current\": 0,\n      \"max\": 9\n    },\n    \"trauma\": {\n      \"max\": 4,\n      \"traumas\": [\n      ]\n    }\n  },\n  \"notebook\": \"\",\n  \"playbook\": {\n    \"abilities\": [\n    ],\n    \"experience\": {\n      \"max\": 8,\n      \"points\": 0\n    },\n    \"name\": \"Lurk\"\n  },\n  \"revision\": 1,\n  \"session\": {\n    \"characterExpressions\": 0,\n    \"max\": 2,\n    \"playbookExpressions\": 0,\n    \"struggleExpressions\": 0\n  },\n  \"stressClearPending\": false,\n  \"talent\": {\n    \"attributes\": [\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Hunt\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Study\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Survey\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Tinker\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Insight\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Finesse\",\n            \"rating\": 1\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Prowl\",\n            \"rating\": 2\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Skirmish\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Wreck\",\n            \"rating\": 1\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Prowess\"\n      },\n      {\n        \"actions\": [\n          {\n            \"maxRating\": 4,\n            \"name\": \"Attune\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Command\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Consort\",\n            \"rating\": 0\n          },\n          {\n            \"maxRating\": 4,\n            \"name\": \"Sway\",\n            \"rating\": 0\n          }\n        ],\n        \"experience\": {\n          \"max\": 6,\n          \"points\": 0\n        },\n        \"name\": \"Resolve\"\n      }\n    ]\n  },\n  \"traumaPending\": false,\n  \"updatedAt\": \"2026-10-12T12:04:55.83Z\"\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:35431",
+      "path": "/api/crews/00b6a2a0-8114-4ac3-8391-1245271b5491",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "1315",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"claimOverrides\": [\n  ],\n  \"claimedClaimIds\": [\n    \"turf-2\"\n  ],\n  \"cohorts\": [\n    {\n      \"cohortKind\": \"gang\",\n      \"description\": \"\",\n      \"edges\": [\n      ],\n      \"expertType\": \"\",\n      \"flaws\": [\n      ],\n      \"gangType\": \"Rovers\",\n      \"harm\": \"healthy\",\n      \"hasArmor\": true,\n      \"id\": \"44538a58-3388-4a62-8a56-42a341937818\",\n      \"quality\": 1,\n      \"scale\": 1\n    }\n  ],\n  \"coin\": 0,\n  \"contacts\": [\n  ],\n  \"createdAt\": \"2026-10-05T16:13:36.11Z\",\n  \"crewTypeName\": \"Smugglers\",\n  \"experience\": {\n    \"max\": 10,\n    \"points\": 0\n  },\n  \"factions\": [\n  ],\n  \"formatVersion\": 1,\n  \"gameName\": \"Blades in the Dark\",\n  \"gameStem\": \"blades-in-the-dark\",\n  \"heat\": {\n    \"current\": 0,\n    \"max\": 9\n  },\n  \"hold\": \"weak\",\n  \"huntingGrounds\": \"\",\n  \"id\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n  \"kind\": \"crew\",\n  \"lair\": \"ornate abandoned mausoleum\",\n  \"language\": \"English\",\n  \"name\": \"Gravediggers\",\n  \"notes\": [\n  ],\n  \"rep\": {\n    \"current\": 1,\n    \"max\": 12\n  },\n  \"reputation\": \"Savvy\",\n  \"revision\": 16,\n  \"specialAbilities\": [\n    {\n      \"name\": \"Underground Maps and Passkeys\",\n      \"timesTaken\": 1\n    }\n  ],\n  \"stash\": 0,\n  \"stashCapacity\": 4,\n  \"tier\": 0,\n  \"turf\": 2,\n  \"updatedAt\": \"2026-10-05T16:17:48.43Z\",\n  \"upgrades\": [\n  ],\n  \"wanted\": {\n    \"current\": 0,\n    \"max\": 4\n  }\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:35431",
+      "path": "/api/campaign/roster",
+      "method": "GET",
+      "request": null,
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "1609",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"characters\": [\n    {\n      \"alias\": \"\",\n      \"canUndo\": false,\n      \"crewId\": \"\",\n      \"deleteToken\": \"\",\n      \"gameStem\": \"blades-in-the-dark\",\n      \"historyCount\": 0,\n      \"id\": \"04a433b9-89d1-4127-8689-431900291317\",\n      \"isComplete\": false,\n      \"isDeadish\": false,\n      \"isReadable\": true,\n      \"isRepairable\": true,\n      \"isRetired\": false,\n      \"kind\": \"character\",\n      \"mode\": \"free-play\",\n      \"name\": \"\",\n      \"playbook\": \"Lurk\",\n      \"revision\": 1,\n      \"stress\": 0,\n      \"traumas\": [\n      ]\n    },\n    {\n      \"alias\": \"Luna\",\n      \"canUndo\": true,\n      \"crewId\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n      \"deleteToken\": \"\",\n      \"gameStem\": \"blades-in-the-dark\",\n      \"historyCount\": 17,\n      \"id\": \"7e558e39-1116-4aa3-8cbf-8b18a52b15af\",\n      \"isComplete\": true,\n      \"isDeadish\": false,\n      \"isReadable\": true,\n      \"isRepairable\": true,\n      \"isRetired\": false,\n      \"kind\": \"character\",\n      \"mode\": \"free-play\",\n      \"name\": \"Aneeya Bludsoe\",\n      \"playbook\": \"Spider\",\n      \"revision\": 24,\n      \"stress\": 0,\n      \"traumas\": [\n      ]\n    }\n  ],\n  \"crews\": [\n    {\n      \"canUndo\": true,\n      \"crewType\": \"Smugglers\",\n      \"deleteToken\": \"\",\n      \"gameStem\": \"blades-in-the-dark\",\n      \"heat\": 0,\n      \"historyCount\": 15,\n      \"hold\": \"weak\",\n      \"id\": \"00b6a2a0-8114-4ac3-8391-1245271b5491\",\n      \"isComplete\": false,\n      \"isReadable\": true,\n      \"isRepairable\": true,\n      \"kind\": \"crew\",\n      \"memberCount\": 1,\n      \"name\": \"Gravediggers\",\n      \"rep\": 1,\n      \"revision\": 16,\n      \"tier\": 0,\n      \"wanted\": 0\n    }\n  ]\n}\n"
+    },
+    {
+      "base": "http://127.0.0.1:35431",
+      "path": "/api/characters",
+      "method": "POST",
+      "request": "{\"gameStem\":\"blades-in-the-dark\",\"playbook\":\"Lurk\"}",
+      "status": 200,
+      "headers": {
+        "connection": "keep-alive",
+        "content-length": "5243",
+        "content-type": "application/json; charset=utf-8",
+        "date": "Mon, 12 Oct 2026 12:11:49 GMT",
+        "server": "AWS (Ada Web Server) v20.0"
+      },
+      "body": "{\n  \"applied\": {\n    \"op\": \"character.create\"\n  },\n  \"character\": {\n    \"contacts\": [\n      {\n        \"closeness\": \"contact\",\n        \"id\": \"a51482f4-3451-4489-8428-e4147b32702b\",\n        \"name\": \"Telda, a beggar\"\n      },\n      {\n        \"closeness\": \"contact\",\n        \"id\": \"de5b91b8-9551-4aa0-8237-a752155b0918\",\n        \"name\": \"Darmot, a bluecoat\"\n      },\n      {\n        \"closeness\": \"contact\",\n        \"id\": \"45f5c144-e040-44b9-8088-37a0161a1ca4\",\n        \"name\": \"Frake, a locksmith\"\n      },\n      {\n        \"closeness\": \"contact\",\n        \"id\": \"5baf7d21-ea18-45c9-8f44-115529484556\",\n        \"name\": \"Roslyn Kellis, a noble\"\n      },\n      {\n        \"closeness\": \"contact\",\n        \"id\": \"8aa45110-6a51-4486-8737-635e11016031\",\n        \"name\": \"Petra, a city clerk\"\n      }\n    ],\n    \"createdAt\": \"2026-10-12T12:11:49.20Z\",\n    \"dossier\": {\n      \"alias\": \"\",\n      \"background\": {\n        \"description\": \"\",\n        \"name\": \"\"\n      },\n      \"crewId\": \"\",\n      \"heritage\": {\n        \"description\": \"\",\n        \"name\": \"\"\n      },\n      \"look\": \"\",\n      \"name\": \"\",\n      \"notes\": [\n      ],\n      \"vice\": {\n        \"description\": \"\",\n        \"name\": \"\",\n        \"purveyor\": {\n          \"description\": \"\",\n          \"name\": \"\"\n        }\n      }\n    },\n    \"downtime\": {\n      \"activities\": [\n      ],\n      \"free\": 2,\n      \"paid\": 0,\n      \"spent\": 0\n    },\n    \"formatVersion\": 1,\n    \"fund\": {\n      \"satchel\": {\n        \"coins\": 2,\n        \"max\": 4\n      },\n      \"stash\": {\n        \"coins\": 0,\n        \"max\": 40\n      }\n    },\n    \"gameName\": \"Blades in the Dark\",\n    \"gameStem\": \"blades-in-the-dark\",\n    \"gear\": {\n      \"availableGear\": [\n      ],\n      \"commitment\": \"none\",\n      \"isCommitmentLocked\": false,\n      \"loadout\": [\n      ],\n      \"maxBulk\": 9\n    },\n    \"id\": \"b7799187-c316-42d2-8494-3f274413e88a\",\n    \"isDeadish\": false,\n    \"isOutOfAction\": false,\n    \"isRetired\": false,\n    \"kind\": \"character\",\n    \"language\": \"English\",\n    \"mode\": \"free-play\",\n    \"modeFlow\": {\n      \"kind\": \"none\",\n      \"step\": \"\"\n    },\n    \"monitor\": {\n      \"armor\": {\n        \"hasHeavy\": false,\n        \"hasSpecial\": false,\n        \"hasStandard\": false,\n        \"heavyUsed\": false,\n        \"specialUsed\": false,\n        \"standardUsed\": false\n      },\n      \"harm\": {\n        \"fatal\": [\n        ],\n        \"healingClock\": {\n          \"rollover\": 0,\n          \"segments\": 0,\n          \"size\": 4\n        },\n        \"lesser\": [\n        ],\n        \"moderate\": [\n        ],\n        \"severe\": [\n        ]\n      },\n      \"stress\": {\n        \"current\": 0,\n        \"max\": 9\n      },\n      \"trauma\": {\n        \"max\": 4,\n        \"traumas\": [\n        ]\n      }\n    },\n    \"notebook\": \"\",\n    \"playbook\": {\n      \"abilities\": [\n      ],\n      \"experience\": {\n        \"max\": 8,\n        \"points\": 0\n      },\n      \"name\": \"Lurk\"\n    },\n    \"revision\": 1,\n    \"session\": {\n      \"characterExpressions\": 0,\n      \"max\": 2,\n      \"playbookExpressions\": 0,\n      \"struggleExpressions\": 0\n    },\n    \"stressClearPending\": false,\n    \"talent\": {\n      \"attributes\": [\n        {\n          \"actions\": [\n            {\n              \"maxRating\": 4,\n              \"name\": \"Hunt\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Study\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Survey\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Tinker\",\n              \"rating\": 0\n            }\n          ],\n          \"experience\": {\n            \"max\": 6,\n            \"points\": 0\n          },\n          \"name\": \"Insight\"\n        },\n        {\n          \"actions\": [\n            {\n              \"maxRating\": 4,\n              \"name\": \"Finesse\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Prowl\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Skirmish\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Wreck\",\n              \"rating\": 0\n            }\n          ],\n          \"experience\": {\n            \"max\": 6,\n            \"points\": 0\n          },\n          \"name\": \"Prowess\"\n        },\n        {\n          \"actions\": [\n            {\n              \"maxRating\": 4,\n              \"name\": \"Attune\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Command\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Consort\",\n              \"rating\": 0\n            },\n            {\n              \"maxRating\": 4,\n              \"name\": \"Sway\",\n              \"rating\": 0\n            }\n          ],\n          \"experience\": {\n            \"max\": 6,\n            \"points\": 0\n          },\n          \"name\": \"Resolve\"\n        }\n      ]\n    },\n    \"traumaPending\": false,\n    \"updatedAt\": \"2026-10-12T12:11:49.20Z\"\n  },\n  \"error\": null,\n  \"mode\": \"free-play\",\n  \"ok\": true,\n  \"sideEffects\": [\n  ],\n  \"suggestedOps\": [\n    \"mode.set\",\n    \"dossier.update\",\n    \"contact.add\",\n    \"note.add\"\n  ]\n}\n"
+    }
+  ]
+}
