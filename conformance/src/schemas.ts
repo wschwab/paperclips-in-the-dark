@@ -335,6 +335,16 @@ const NormalizationRequiredError = Schema.Struct({
   token: Schema.String.pipe(Schema.minLength(1)),
 });
 
+/** INTERNAL (server defect): fixed recovery text, retryable literal false, details strictly {}, no entity. */
+const InternalError = Schema.Struct({
+  code: Schema.Literal("INTERNAL"),
+  status: Schema.Literal(500),
+  message: Schema.String,
+  retryable: Schema.Literal(false),
+  recovery: Schema.Literal("This is a server defect. Report it; do not change the request."),
+  details: EmptyDetails,
+});
+
 const OperationErrorNewShape = Schema.Union(
   opError("VALIDATION", 400, ErrorPointerDetails, "optional"),
   opError("INVALID_ENTRY", 400, ErrorPointerDetails),
@@ -362,6 +372,7 @@ const OperationErrorNewShape = Schema.Union(
   opError("PAYLOAD_TOO_LARGE", 413, ErrorLimitDetails),
   opError("TRAUMA_REQUIRED", 200, EmptyDetails, "required"),
   opError("OUT_OF_ACTION", 200, EmptyDetails, "required"),
+  InternalError,
 );
 
 const OperationError = OperationErrorNewShape;

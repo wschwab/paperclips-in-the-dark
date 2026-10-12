@@ -804,7 +804,7 @@ describe("contract error union (SC-O7)", () => {
         CANNOT_LEVEL_UP: 200, RATING_MAXED: 200, UPGRADE_MAXED: 200, INSUFFICIENT_FUNDS: 200,
         SATCHEL_FULL: 200, OVER_BULK: 200, NO_COMMITMENT: 200, COMMITMENT_LOCKED: 200,
         NO_HISTORY: 200, GAME_NOT_FOUND: 200, PAYLOAD_TOO_LARGE: 413, TRAUMA_REQUIRED: 200,
-        OUT_OF_ACTION: 200,
+        OUT_OF_ACTION: 200, INTERNAL: 500,
       };
       const DETAIL_REF: Record<string, string> = {
         VALIDATION: "errorPointerDetails", INVALID_ENTRY: "errorPointerDetails", INVALID_ENTITY: "errorPointerDetails",

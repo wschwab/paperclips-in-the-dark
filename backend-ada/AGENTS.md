@@ -41,6 +41,10 @@ confirmed against the selected release.
 - The core is SPARK_Mode (On) and IO-free. The AWS server is an explicit
   SPARK_Mode (Off) boundary by design; do not pull filesystem or HTTP code
   into core/.
+- AWS `Binary_Data` is overloaded: `Binary_Data (Request)'Length` has an
+  ambiguous result type. Use
+  `Ada.Strings.Unbounded.Length (AWS.Status.Binary_Data (Request))` for the
+  unbounded-string overload without allocating a `To_String` copy.
 
 ## SPARK / gnatprove loop
 

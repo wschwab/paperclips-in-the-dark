@@ -41,6 +41,8 @@ package Pitd_Error is
    function Validation_Error
      (Op, Message : String; Issues : JSON_Array;
       Entity : JSON_Value := JSON_Null) return JSON_Value;
+   --  Message must be a safe server-authored string, never exception text.
+   function Internal_Error (Op, Message : String) return JSON_Value;
    function Invalid_Entry_Error (Op : String; Issues : JSON_Array)
      return JSON_Value;
    function Invalid_Entity_Error (Op : String; Issues : JSON_Array)

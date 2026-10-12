@@ -359,7 +359,7 @@ components:
         Locked status table (spec-change-work-spec, stored-entity
         classification): VALIDATION 400, INVALID_ENTRY 400, INVALID_ENTITY 422,
         NORMALIZATION_REQUIRED 409, NOT_FOUND 404, STALE_REVISION 409,
-        PAYLOAD_TOO_LARGE 413. All remaining codes (CONFIRM_REQUIRED, DUPLICATE,
+        PAYLOAD_TOO_LARGE 413, INTERNAL 500. All remaining codes (CONFIRM_REQUIRED, DUPLICATE,
         SLOT_FULL_FATAL, CANNOT_HEAL, ARMOR_NOT_AVAILABLE, ABILITY_MAXED,
         CANNOT_LEVEL_UP, RATING_MAXED, UPGRADE_MAXED, INSUFFICIENT_FUNDS,
         SATCHEL_FULL, OVER_BULK, NO_COMMITMENT, COMMITMENT_LOCKED, NO_HISTORY,
@@ -393,6 +393,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "./schemas/campaign.json#/$defs/health" }
+        "500": { $ref: "#/components/responses/OpResult" }
 
   # ------------------------------------------------------------ capabilities
   # Advisory projections (governing spec "Limits and capabilities"): the
@@ -410,6 +411,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ServiceCapabilities" }
+        "500": { $ref: "#/components/responses/OpResult" }
 
   /campaign:
     get:
@@ -420,6 +422,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "./schemas/campaign.json#/$defs/campaign" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /campaign/roster:
     get:
       operationId: getRoster
@@ -429,6 +432,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "./schemas/campaign.json#/$defs/roster" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /campaign/crew/{crewId}/members:
     get:
       operationId: getCrewMembers
@@ -444,6 +448,7 @@ paths:
                 items: { $ref: "./schemas/campaign.json#/$defs/characterSummary" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /campaign/batch:
     post:
       operationId: batch
@@ -506,6 +511,7 @@ paths:
                             not: { enum: [mode.set, mode.flow.set, downtime.spend, downtime.adjust, downtime.reset] }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
 
   /games:
     get:
@@ -524,6 +530,7 @@ paths:
                     name: { type: string }
                     stem: { type: string }
                     language: { type: string }
+        "500": { $ref: "#/components/responses/OpResult" }
   /games/{stem}:
     get:
       operationId: getGame
@@ -536,6 +543,7 @@ paths:
             application/json:
               schema: { type: object }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /games/{stem}/playbooks:
     get:
       operationId: listPlaybooks
@@ -548,6 +556,7 @@ paths:
             application/json:
               schema: { type: array, items: { type: object } }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /games/{stem}/playbooks/{playbook}:
     get:
       operationId: getPlaybook
@@ -561,6 +570,7 @@ paths:
             application/json:
               schema: { type: object }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /games/{stem}/heritages:
     get:
       operationId: listHeritages
@@ -573,6 +583,7 @@ paths:
             application/json:
               schema: { type: array, items: { type: object } }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /games/{stem}/crews:
     get:
       operationId: getCrewSettings
@@ -585,6 +596,7 @@ paths:
             application/json:
               schema: { type: object }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /games/{stem}/crews/{crewType}:
     get:
       operationId: getCrewTypeSettings
@@ -598,6 +610,7 @@ paths:
             application/json:
               schema: { type: object }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
 
   # ------------------------------------------------------------ characters
   /characters:
@@ -611,6 +624,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: "./schemas/campaign.json#/$defs/characterSummary" }
+        "500": { $ref: "#/components/responses/OpResult" }
     post:
       operationId: createCharacter
       x-snapshot: false
@@ -629,6 +643,7 @@ paths:
                 playbook: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/pc:
     post:
       operationId: createPcCharacter
@@ -688,6 +703,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}:
     get:
       operationId: getCharacter
@@ -703,6 +719,7 @@ paths:
               schema: { $ref: "#/components/schemas/Character" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/capabilities:
     get:
       operationId: getCharacterCapabilities
@@ -722,6 +739,7 @@ paths:
               schema: { $ref: "#/components/schemas/CharacterCapabilities" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/delete:
     post:
       operationId: deleteCharacter
@@ -748,6 +766,7 @@ paths:
         "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/import:
     post:
       operationId: importCharacter
@@ -793,6 +812,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "413": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/repair-preview:
     post:
       operationId: repairCharacterPreview
@@ -827,6 +847,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/repair:
     post:
       operationId: repairCharacterApply
@@ -852,6 +873,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/history:
     get:
       operationId: listCharacterHistory
@@ -866,6 +888,7 @@ paths:
                 items: { $ref: "./schemas/campaign.json#/$defs/historyEntry" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/history/{snapshotId}:
     get:
       operationId: getCharacterSnapshot
@@ -880,6 +903,7 @@ paths:
               schema: { $ref: "#/components/schemas/Character" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/undo:
     post:
       operationId: undoCharacter
@@ -897,6 +921,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/retire:
     post:
       operationId: retireCharacter
@@ -924,6 +949,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
 
   /characters/{id}/ops/stress.add:
     post:
@@ -951,6 +977,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/stress.clear:
     post:
       operationId: stressClear
@@ -989,6 +1016,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/stress.fix:
     post:
       operationId: stressFix
@@ -1024,6 +1052,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/trauma.add:
     post:
       operationId: traumaAdd
@@ -1060,6 +1089,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/trauma.remove:
     post:
       operationId: traumaRemove
@@ -1087,6 +1117,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/harm.add:
     post:
       operationId: harmAdd
@@ -1108,6 +1139,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/harm.remove:
     post:
       operationId: harmRemove
@@ -1129,6 +1161,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/harm.heal:
     post:
       operationId: harmHeal
@@ -1150,6 +1183,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/harm.healing-clock:
     post:
       operationId: harmHealingClock
@@ -1170,6 +1204,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/armor.set:
     post:
       operationId: armorSet
@@ -1191,6 +1226,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/playbook-xp.add:
     post:
       operationId: playbookXpAdd
@@ -1206,6 +1242,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/playbook-xp.clear:
     post:
       operationId: playbookXpClear
@@ -1216,6 +1253,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/attribute-xp.add:
     post:
       operationId: attributeXpAdd
@@ -1237,6 +1275,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/attribute-xp.clear:
     post:
       operationId: attributeXpClear
@@ -1256,6 +1295,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/attribute.levelup:
     post:
       operationId: attributeLevelup
@@ -1277,6 +1317,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/action.set-rating:
     post:
       operationId: actionSetRating
@@ -1298,6 +1339,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/ability.take:
     post:
       operationId: abilityTake
@@ -1313,6 +1355,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/ability.remove:
     post:
       operationId: abilityRemove
@@ -1328,6 +1371,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.add:
     post:
       operationId: gearAdd
@@ -1348,6 +1392,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.remove:
     post:
       operationId: gearRemove
@@ -1363,6 +1408,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.commit:
     post:
       operationId: gearCommit
@@ -1378,6 +1424,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.uncommit:
     post:
       operationId: gearUncommit
@@ -1393,6 +1440,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.set-commitment:
     post:
       operationId: gearSetCommitment
@@ -1413,6 +1461,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.clear-commitments:
     post:
       operationId: gearClearCommitments
@@ -1423,6 +1472,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.lock:
     post:
       operationId: gearLock
@@ -1432,6 +1482,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.unlock:
     post:
       operationId: gearUnlock
@@ -1441,6 +1492,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/fund.gain:
     post:
       operationId: fundGain
@@ -1461,6 +1513,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/fund.spend:
     post:
       operationId: fundSpend
@@ -1481,6 +1534,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/fund.liquidate:
     post:
       operationId: fundLiquidate
@@ -1501,6 +1555,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/contact.add:
     post:
       operationId: characterContactAdd
@@ -1523,6 +1578,7 @@ paths:
         "409": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/contact.closeness:
     post:
       operationId: characterContactCloseness
@@ -1546,6 +1602,7 @@ paths:
         "409": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/contact.remove:
     post:
       operationId: characterContactRemove
@@ -1568,6 +1625,7 @@ paths:
         "409": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/dossier.update:
     post:
       operationId: dossierUpdate
@@ -1595,6 +1653,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/session.set:
     post:
       operationId: sessionSet
@@ -1617,6 +1676,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/notebook.set:
     post:
       operationId: notebookSet
@@ -1636,6 +1696,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/end-score:
     post:
       operationId: endScore
@@ -1680,6 +1741,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/mode.set:
     post:
       operationId: characterModeSet
@@ -1705,6 +1767,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/mode.flow.set:
     post:
       operationId: characterModeFlowSet
@@ -1730,6 +1793,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/downtime.spend:
     post:
       operationId: characterDowntimeSpend
@@ -1754,6 +1818,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/downtime.adjust:
     post:
       operationId: characterDowntimeAdjust
@@ -1780,6 +1845,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/downtime.reset:
     post:
       operationId: characterDowntimeReset
@@ -1805,6 +1871,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/note.add:
     post:
       operationId: noteAdd
@@ -1825,6 +1892,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/note.remove:
     post:
       operationId: noteRemove
@@ -1845,6 +1913,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/end-downtime:
     post:
       operationId: endDowntime
@@ -1865,6 +1934,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
 
   # ------------------------------------------------------------ crews
   /crews:
@@ -1878,6 +1948,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: "./schemas/campaign.json#/$defs/crewSummary" }
+        "500": { $ref: "#/components/responses/OpResult" }
     post:
       operationId: createCrew
       x-snapshot: false
@@ -1895,6 +1966,7 @@ paths:
                 crewType: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}:
     get:
       operationId: getCrew
@@ -1908,6 +1980,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Crew" }
         "404": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/capabilities:
     get:
       operationId: getCrewCapabilities
@@ -1927,6 +2000,7 @@ paths:
               schema: { $ref: "#/components/schemas/CrewCapabilities" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/delete:
     post:
       operationId: deleteCrew
@@ -1955,6 +2029,7 @@ paths:
         "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/import:
     post:
       operationId: importCrew
@@ -1999,6 +2074,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "413": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/repair-preview:
     post:
       operationId: repairCrewPreview
@@ -2033,6 +2109,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/repair:
     post:
       operationId: repairCrewApply
@@ -2058,6 +2135,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/history:
     get:
       operationId: listCrewHistory
@@ -2072,6 +2150,7 @@ paths:
                 items: { $ref: "./schemas/campaign.json#/$defs/historyEntry" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/history/{snapshotId}:
     get:
       operationId: getCrewSnapshot
@@ -2086,6 +2165,7 @@ paths:
               schema: { $ref: "#/components/schemas/Crew" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/undo:
     post:
       operationId: undoCrew
@@ -2103,6 +2183,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/heat.add:
     post:
       operationId: heatAdd
@@ -2118,6 +2199,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/wanted.add:
     post:
       operationId: wantedAdd
@@ -2133,6 +2215,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/rep.add:
     post:
       operationId: repAdd
@@ -2148,6 +2231,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/tier.add:
     post:
       operationId: tierAdd
@@ -2163,6 +2247,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/hold.set:
     post:
       operationId: holdSet
@@ -2183,6 +2268,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/xp.add:
     post:
       operationId: crewXpAdd
@@ -2198,6 +2284,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/note.add:
     post:
       operationId: crewNoteAdd
@@ -2218,6 +2305,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/note.remove:
     post:
       operationId: crewNoteRemove
@@ -2238,6 +2326,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/turf.add:
     post:
       operationId: turfAdd
@@ -2258,6 +2347,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/xp.clear:
     post:
       operationId: crewXpClear
@@ -2267,6 +2357,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/ability.take:
     post:
       operationId: crewAbilityTake
@@ -2281,6 +2372,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/ability.remove:
     post:
       operationId: crewAbilityRemove
@@ -2295,6 +2387,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/claim.set:
     post:
       operationId: crewClaimSet
@@ -2316,6 +2409,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/claim.customize:
     post:
       operationId: crewClaimCustomize
@@ -2339,6 +2433,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/claim.reset:
     post:
       operationId: crewClaimReset
@@ -2359,6 +2454,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/upgrade.mark:
     post:
       operationId: upgradeMark
@@ -2374,6 +2470,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/upgrade.unmark:
     post:
       operationId: upgradeUnmark
@@ -2389,6 +2486,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/cohort.add:
     post:
       operationId: cohortAdd
@@ -2416,6 +2514,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/cohort.update:
     post:
       operationId: cohortUpdate
@@ -2446,6 +2545,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/cohort.remove:
     post:
       operationId: cohortRemove
@@ -2465,6 +2565,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/contact.add:
     post:
       operationId: crewContactAdd
@@ -2486,6 +2587,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/contact.remove:
     post:
       operationId: crewContactRemove
@@ -2506,6 +2608,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/faction.set-status:
     post:
       operationId: factionSetStatus
@@ -2527,6 +2630,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/faction.remove:
     post:
       operationId: factionRemove
@@ -2547,6 +2651,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/coin.add:
     post:
       operationId: coinAdd
@@ -2562,6 +2667,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/stash.add:
     post:
       operationId: stashAdd
@@ -2577,6 +2683,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /crews/{id}/ops/fields.update:
     post:
       operationId: crewFieldsUpdate
@@ -2601,6 +2708,7 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
 
   # ------------------------------------------------------------ clocks
   /clocks:
@@ -2614,6 +2722,7 @@ paths:
               schema:
                 type: array
                 items: { $ref: "./schemas/campaign.json#/$defs/clockSummary" }
+        "500": { $ref: "#/components/responses/OpResult" }
     post:
       operationId: createClock
       x-snapshot: false
@@ -2653,6 +2762,7 @@ paths:
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}:
     get:
       operationId: getClock
@@ -2665,6 +2775,7 @@ paths:
               schema: { $ref: "#/components/schemas/Clock" }
         "404": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/update:
     post:
       operationId: updateClock
@@ -2706,6 +2817,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/delete:
     post:
       operationId: deleteClock
@@ -2728,6 +2840,7 @@ paths:
         "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/ops/clock.progress:
     post:
       operationId: clockProgress
@@ -2760,6 +2873,7 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /clocks/{id}/ops/clock.reset:
     post:
       operationId: clockReset
@@ -2779,3 +2893,4 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }

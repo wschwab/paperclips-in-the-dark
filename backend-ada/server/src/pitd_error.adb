@@ -101,6 +101,14 @@ package body Pitd_Error is
          Pointer_Details (Issues), Entity);
    end Validation_Error;
 
+   function Internal_Error (Op, Message : String) return JSON_Value is
+   begin
+      return Error_Value
+        (Op, "INTERNAL", 500, Message, False,
+         "This is a server defect. Report it; do not change the request.",
+         Empty_Details);
+   end Internal_Error;
+
    function Invalid_Entry_Error (Op : String; Issues : JSON_Array)
      return JSON_Value
    is

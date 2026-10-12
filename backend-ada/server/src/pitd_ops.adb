@@ -1846,9 +1846,6 @@ elsif Op = "harm.add" then
          end;
       end if;
       return Success_Result (Op,E,Requested,Effective);
-   exception when Constraint_Error =>
-      return Validation_Error (Op, "invalid operation arguments",
-                               Root_Issues ("invalid operation arguments"), E);
    end Mutate;
 
 

@@ -164,7 +164,8 @@
         "INVALID_ENTITY",
         "NORMALIZATION_REQUIRED",
         "TRAUMA_REQUIRED",
-        "OUT_OF_ACTION"
+        "OUT_OF_ACTION",
+        "INTERNAL"
       ]
     },
     "errorPointer": {

@@ -89,6 +89,7 @@ Every failure carries the whole-error discriminated union (`operation-result.jso
 | `PAYLOAD_TOO_LARGE` | 413 | limit + current | The request exceeds the payload bound (details.limit): split or reduce it. |
 | `TRAUMA_REQUIRED` | 200 | none | Resolve the pending trauma first (trauma.add); end-score cannot erase an unresolved trauma. |
 | `OUT_OF_ACTION` | 200 | none | The character is out of action until end-score: run end-score (or lifecycle cleanup) to release. |
+| `INTERNAL` | 500 | object — Empty object: no detail shape. No entity, preview, or token accompanies INTERNAL. | This is a server defect. Report it; do not change the request. |
 
 ## Lifecycle attention codes
 
@@ -241,6 +242,7 @@ None
 Responses:
 
 - `200`: ok
+- `500`: OperationResult
 
 ## getServiceCapabilities
 
@@ -257,6 +259,7 @@ None
 Responses:
 
 - `200`: service capabilities
+- `500`: OperationResult
 
 ## getCampaign
 
@@ -273,6 +276,7 @@ None
 Responses:
 
 - `200`: campaign metadata
+- `500`: OperationResult
 
 ## getRoster
 
@@ -289,6 +293,7 @@ None
 Responses:
 
 - `200`: all character + crew summaries
+- `500`: OperationResult
 
 ## getCrewMembers
 
@@ -307,6 +312,7 @@ Responses:
 - `200`: characters linked to this crew
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## batch
 
@@ -368,6 +374,7 @@ schema:
 Responses:
 
 - `200`: OperationResult
+- `500`: OperationResult
 
 ## listGames
 
@@ -384,6 +391,7 @@ None
 Responses:
 
 - `200`: installed games
+- `500`: OperationResult
 
 ## getGame
 
@@ -401,6 +409,7 @@ Responses:
 
 - `200`: full game-settings JSON (authored data, served verbatim from data/games/)
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## listPlaybooks
 
@@ -418,6 +427,7 @@ Responses:
 
 - `200`: playbook name + hook list
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## getPlaybook
 
@@ -435,6 +445,7 @@ Responses:
 
 - `200`: full playbook settings
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## listHeritages
 
@@ -452,6 +463,7 @@ Responses:
 
 - `200`: heritage list
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## getCrewSettings
 
@@ -469,6 +481,7 @@ Responses:
 
 - `200`: crew game settings
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## getCrewTypeSettings
 
@@ -486,6 +499,7 @@ Responses:
 
 - `200`: full crew type settings
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## listCharacters
 
@@ -502,6 +516,7 @@ None
 Responses:
 
 - `200`: character summaries
+- `500`: OperationResult
 
 ## createCharacter
 
@@ -528,6 +543,7 @@ schema:
 Responses:
 
 - `200`: OperationResult
+- `500`: OperationResult
 
 ## createPcCharacter
 
@@ -572,6 +588,7 @@ Responses:
 - `200`: OperationResult
 - `400`: OperationResult
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## getCharacter
 
@@ -590,6 +607,7 @@ Responses:
 - `200`: Canonical character DTO, byte-identical to current.json; no derived budget/suggestion fields. Reads never write. Migration fills absent mode/flow/downtime defaults without rejecting legacy documents solely for those omissions.
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## getCharacterCapabilities
 
@@ -608,6 +626,7 @@ Responses:
 - `200`: character capabilities
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## deleteCharacter
 
@@ -631,6 +650,7 @@ Responses:
 - `400`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## importCharacter
 
@@ -655,6 +675,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `413`: OperationResult
+- `500`: OperationResult
 
 ## repairCharacterPreview
 
@@ -682,6 +703,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## repairCharacterApply
 
@@ -706,6 +728,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## listCharacterHistory
 
@@ -724,6 +747,7 @@ Responses:
 - `200`: snapshot list, newest first
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## getCharacterSnapshot
 
@@ -742,6 +766,7 @@ Responses:
 - `200`: snapshot DTO (read-only)
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## undoCharacter
 
@@ -764,6 +789,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## retireCharacter
 
@@ -788,6 +814,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## stressAdd
 
@@ -812,6 +839,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## stressClear
 
@@ -841,6 +869,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## stressFix
 
@@ -870,6 +899,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## traumaAdd
 
@@ -899,6 +929,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## traumaRemove
 
@@ -928,6 +959,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## harmAdd
 
@@ -956,6 +988,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## harmRemove
 
@@ -984,6 +1017,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## harmHeal
 
@@ -1012,6 +1046,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## harmHealingClock
 
@@ -1039,6 +1074,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## armorSet
 
@@ -1067,6 +1103,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## playbookXpAdd
 
@@ -1089,6 +1126,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## playbookXpClear
 
@@ -1109,6 +1147,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## attributeXpAdd
 
@@ -1137,6 +1176,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## attributeXpClear
 
@@ -1162,6 +1202,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## attributeLevelup
 
@@ -1190,6 +1231,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## actionSetRating
 
@@ -1218,6 +1260,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## abilityTake
 
@@ -1240,6 +1283,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## abilityRemove
 
@@ -1262,6 +1306,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearAdd
 
@@ -1288,6 +1333,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearRemove
 
@@ -1310,6 +1356,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearCommit
 
@@ -1332,6 +1379,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearUncommit
 
@@ -1354,6 +1402,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearSetCommitment
 
@@ -1381,6 +1430,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearClearCommitments
 
@@ -1401,6 +1451,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearLock
 
@@ -1419,6 +1470,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## gearUnlock
 
@@ -1437,6 +1489,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## fundGain
 
@@ -1464,6 +1517,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## fundSpend
 
@@ -1491,6 +1545,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## fundLiquidate
 
@@ -1518,6 +1573,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## characterContactAdd
 
@@ -1547,6 +1603,7 @@ Responses:
 - `409`: OperationResult
 - `400`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## characterContactCloseness
 
@@ -1577,6 +1634,7 @@ Responses:
 - `409`: OperationResult
 - `400`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## characterContactRemove
 
@@ -1606,6 +1664,7 @@ Responses:
 - `409`: OperationResult
 - `400`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## dossierUpdate
 
@@ -1640,6 +1699,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## sessionSet
 
@@ -1669,6 +1729,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## notebookSet
 
@@ -1694,6 +1755,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## endScore
 
@@ -1726,6 +1788,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## characterModeSet
 
@@ -1750,6 +1813,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## characterModeFlowSet
 
@@ -1774,6 +1838,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## characterDowntimeSpend
 
@@ -1798,6 +1863,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## characterDowntimeAdjust
 
@@ -1822,6 +1888,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## characterDowntimeReset
 
@@ -1846,6 +1913,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## noteAdd
 
@@ -1873,6 +1941,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## noteRemove
 
@@ -1900,6 +1969,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## endDowntime
 
@@ -1927,6 +1997,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## listCrews
 
@@ -1943,6 +2014,7 @@ None
 Responses:
 
 - `200`: crew summaries
+- `500`: OperationResult
 
 ## createCrew
 
@@ -1967,6 +2039,7 @@ schema:
 Responses:
 
 - `200`: OperationResult
+- `500`: OperationResult
 
 ## getCrew
 
@@ -1984,6 +2057,7 @@ Responses:
 
 - `200`: crew DTO (byte-identical to disk)
 - `404`: OperationResult
+- `500`: OperationResult
 
 ## getCrewCapabilities
 
@@ -2002,6 +2076,7 @@ Responses:
 - `200`: crew capabilities
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## deleteCrew
 
@@ -2025,6 +2100,7 @@ Responses:
 - `400`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## importCrew
 
@@ -2049,6 +2125,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `413`: OperationResult
+- `500`: OperationResult
 
 ## repairCrewPreview
 
@@ -2076,6 +2153,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## repairCrewApply
 
@@ -2100,6 +2178,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## listCrewHistory
 
@@ -2118,6 +2197,7 @@ Responses:
 - `200`: snapshot list, newest first
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## getCrewSnapshot
 
@@ -2136,6 +2216,7 @@ Responses:
 - `200`: snapshot DTO
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## undoCrew
 
@@ -2158,6 +2239,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## heatAdd
 
@@ -2180,6 +2262,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## wantedAdd
 
@@ -2202,6 +2285,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## repAdd
 
@@ -2224,6 +2308,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## tierAdd
 
@@ -2246,6 +2331,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## holdSet
 
@@ -2273,6 +2359,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewXpAdd
 
@@ -2295,6 +2382,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewNoteAdd
 
@@ -2322,6 +2410,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewNoteRemove
 
@@ -2349,6 +2438,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## turfAdd
 
@@ -2376,6 +2466,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewXpClear
 
@@ -2394,6 +2485,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewAbilityTake
 
@@ -2414,6 +2506,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewAbilityRemove
 
@@ -2434,6 +2527,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewClaimSet
 
@@ -2462,6 +2556,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewClaimCustomize
 
@@ -2492,6 +2587,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewClaimReset
 
@@ -2519,6 +2615,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## upgradeMark
 
@@ -2541,6 +2638,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## upgradeUnmark
 
@@ -2563,6 +2661,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## cohortAdd
 
@@ -2598,6 +2697,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## cohortUpdate
 
@@ -2635,6 +2735,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## cohortRemove
 
@@ -2660,6 +2761,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewContactAdd
 
@@ -2688,6 +2790,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewContactRemove
 
@@ -2715,6 +2818,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## factionSetStatus
 
@@ -2743,6 +2847,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## factionRemove
 
@@ -2770,6 +2875,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## coinAdd
 
@@ -2792,6 +2898,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## stashAdd
 
@@ -2814,6 +2921,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## crewFieldsUpdate
 
@@ -2845,6 +2953,7 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## listClocks
 
@@ -2861,6 +2970,7 @@ None
 Responses:
 
 - `200`: all standalone clocks (campaign-, character-, and crew-owned)
+- `500`: OperationResult
 
 ## createClock
 
@@ -2899,6 +3009,7 @@ Responses:
 
 - `200`: OperationResult
 - `400`: OperationResult
+- `500`: OperationResult
 
 ## getClock
 
@@ -2917,6 +3028,7 @@ Responses:
 - `200`: clock DTO
 - `404`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## updateClock
 
@@ -2955,6 +3067,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## deleteClock
 
@@ -2978,6 +3091,7 @@ Responses:
 - `400`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
 
 ## clockProgress
 
@@ -3007,6 +3121,7 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult
 
 ## clockReset
 
@@ -3029,3 +3144,4 @@ Responses:
 - `404`: OperationResult
 - `409`: OperationResult
 - `422`: OperationResult
+- `500`: OperationResult

@@ -4,12 +4,12 @@ title: French game creation returns HTTP 500
 
 # French game creation returns HTTP 500
 
-**Status: registered-edition creation fixed by FRENCH-CREATE-01; internal-error
-classification gap remains open pending human approval.**
-The original exchange below is historical evidence from GAME-MODE-01, not the
-current French creation response. The human approved the stem fix and instructed
-this card to leave the server-defect classification path unchanged until an
-internal contract code/status is approved.
+**Status: resolved.** FRENCH-CREATE-01 fixes registered-edition creation;
+the human-approved INTERNAL-ERROR-01 closes the independent server-defect
+classification gap. The original exchange below is historical GAME-MODE-01
+evidence, not the current French creation response. FRENCH-CREATE-01 correctly
+left the internal branch unchanged until the human approved a new 500 contract
+response; [the approved INTERNAL contract](/contract/internal-errors) now exists.
 
 ## Exact observed exchange
 
@@ -112,32 +112,37 @@ contract decoding, isolated stem admission, and existing request/domain-error
 envelope controls. French creation now succeeds without changing New_Character
 defaults, which further isolates the root cause.
 
-## Open: server-generated invalid entity has no internal contract branch
+## INTERNAL-ERROR-01: server-defect classification resolved
 
 A valid request whose server-generated DTO fails its own schema is a **server
-defect**, not client VALIDATION. No INTERNAL/SERVER_ERROR/500 error variant
-exists in the current contract or typed error constructors:
+defect**, not client VALIDATION. Before this approved follow-on card:
 
-- `backend-ada/server/src/pitd_callback.adb:352` (Persist_Create) requests
+- `backend-ada/server/src/pitd_callback.adb:352` (Persist_Create) requested
   HTTP 500 with the backend label INTERNAL.
-- `backend-ada/server/src/pitd_common.adb:910–911` (Error_Result) maps every
+- `backend-ada/server/src/pitd_common.adb:910–911` (Error_Result) mapped an
   unrecognized label to Validation_Error.
-- `backend-ada/server/src/pitd_error.adb:99` constructs VALIDATION with status
-  400 and retryable true, causing the observed transport/body disagreement.
+- `backend-ada/server/src/pitd_error.adb:99` constructed VALIDATION with status
+  400 and retryable true, causing the historical transport/body disagreement.
 
-The human explicitly instructed FRENCH-CREATE-01 to **leave this path’s
-classification unchanged** while requesting approval for an internal branch.
-No new code/status, client-error relabeling, or suppression is introduced here.
-The remaining open decision is the approved internal-error contract variant
-and its non-client recovery semantics. The catalogue fix prevents the French
-request from reaching this defective path; it does not claim the generic
-invariant-failure envelope has been fixed.
+The human approved **INTERNAL / HTTP 500 / error.status 500 / retryable false**,
+with recovery: “This is a server defect. Report it; do not change the request.”
+The explicit typed constructor and dispatch now preserve that classification.
+Server-generated invalid DTOs and unexpected runtime/storage faults use it;
+known malformed JSON and invalid client bodies remain VALIDATION400. All 115
+routed operations declare the shared 500 envelope. No production fault hook,
+path or operation ID was added.
+
+New strict-schema and existing crash-mid-write-seam tests first failed against
+the missing variant and the old HTTP400 fault response, then passed. The valid
+faulting request preserves the old document and revision, exposes no exception
+diagnostics, and leaves the service usable. This closes the classification gap;
+the separate stem-pattern fix and historical evidence remain intact.
 
 Frontend GameStem mirror alignment is handed to its owner by the human; this
 worker does not edit frontend. Acceptance evidence and final counts are recorded
 in `tasks/FRENCH-CREATE-01.md` and its metrics.
 
-## Reachable acceptance and combined mutation hand-off
+## FRENCH-CREATE-01 historical acceptance and mutation hand-off
 
 Real-settings Ada passes **583/583** tests in 68 files; the controlled restart
 run passes **583/583 in each of two cycles**. Tooling passes **233/233**,
@@ -145,8 +150,22 @@ conformance typechecking passes, and SPARK proves **246/246** checks.
 The records validate with **169 metrics files**, **231/231 traceability**
 checks and **17/17 reconciliation** checks.
 
-The frontend worker is still mid-review. The human instructed this worker
-**not to run a mutation campaign now**: one combined **28/28** run will follow
-after both workers finish. No existing mutation target was changed by the stem
-fix (generated validators are not catalog targets), so there is no own target
-hash refresh to apply. A future combined result is not claimed here.
+During FRENCH-CREATE-01, the frontend worker was mid-review and the human
+instructed this worker not to run mutations concurrently. No existing mutation
+target changed in the stem fix; generated validators are not catalog targets.
+Those counts and the deferred campaign belong to that completed card.
+
+## INTERNAL-ERROR-01 acceptance and integration
+
+The new suite passes **4/4**, after the initial **2 red / 1 pass**.
+Full real-settings Ada now passes **587/587** in **69 files**, with **587/587
+in each restart cycle**. Tooling remains **233/233**, conformance typechecking
+passes, and SPARK proves **246/246** checks. Metrics validate **170 files**
+without errors, traceability **231/231**, and reconciliation **17/17**.
+
+The frontend owner handles the INTERNAL decoder and the combined mutation
+campaign. This worker does not edit frontend or run the campaign. The changed
+callback and mutation-source target hashes are frozen and handed to that
+campaign owner for catalog refresh. No unrun 28/28 outcome is claimed.
+The contract change, additive frozen amendment and evidence are recorded in
+`tasks/INTERNAL-ERROR-01.md` and its metrics.

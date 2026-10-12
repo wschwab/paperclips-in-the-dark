@@ -1,0 +1,148 @@
+{
+  "task": "INTERNAL-ERROR-01",
+  "track": "ada",
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": null,
+  "date": "2026-10-12",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 30.71,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "Implementation gates green: new4/4; Ada587/587; two cycles587 each; tooling233/233; proof246; conformance typecheck passes. Combined mutation and frontend belong to the other worker.",
+  "passRateAfterReview": "No independent review claimed. Human explicitly approved INTERNAL500 and additive frozen enum/status amendments.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "conformance": 1,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "compiler",
+    "conformance",
+    "human"
+  ],
+  "notes": [
+    "The initial red exposed the missing envelope variant and old400 fault classification; client control already passed.",
+    "Compiler caught ambiguous AWS Binary_Data Length overload, corrected without a To_String allocation.",
+    "API-reference drift gate required the new curated recovery entry; it was fixed rather than disabled.",
+    "No frontend edits or VCS commands. Frontend decoder and combined mutation belong to their designated owner."
+  ],
+  "metricsMethodology": {
+    "method": "Canonical command logs; measured elapsed phase; distinct root-cause counts, no VCS estimates.",
+    "source": "tasks/INTERNAL-ERROR-01.md and tasks/metrics/ada/INTERNAL-ERROR-01-*.log",
+    "wallClockNote": "Measured since the first red command, including investigation and acceptance.",
+    "tokensNote": "Token accounting unavailable; null is supported unknown.",
+    "locNote": "No VCS commands authorized; diff LOC unknown.",
+    "scaffoldingLocNote": "No VCS commands authorized; scaffolding LOC unknown.",
+    "iterationNote": "One accepted conformance red-to-green cycle; two build attempts and recovery-registry regeneration repair are separately recorded."
+  },
+  "status": "Contract and backend complete; all assigned gates green. Frontend and combined mutation owned by designated other worker.",
+  "contractChange": {
+    "newCode": "INTERNAL",
+    "httpStatus": 500,
+    "errorStatus": 500,
+    "retryable": false,
+    "recovery": "This is a server defect. Report it; do not change the request.",
+    "enumBefore": 26,
+    "enumAfter": 27,
+    "routedOperations": 115,
+    "new500Declarations": 115,
+    "coverageRows": 485,
+    "newPaths": 0,
+    "newOperationIds": 0
+  },
+  "frozenAmendments": [
+    {
+      "id": "ERR-MISMATCH-006",
+      "file": "conformance/suites/contract/error-union.test.ts",
+      "before": "STATUS_TABLE ending OUT_OF_ACTION: 200, no INTERNAL entry",
+      "after": "Every old entry retained; appended INTERNAL: 500",
+      "assertionsWeakened": false
+    }
+  ],
+  "red": {
+    "failed": 2,
+    "passed": 1,
+    "total": 3,
+    "runId": "2026-10-12T10-35-47-976Z-ae8f5767",
+    "failures": [
+      "INTERNAL-ERROR-SCHEMA-001: old schema rejects variant",
+      "INTERNAL-ERROR-FAULT-001: actual HTTP400, expected500"
+    ],
+    "log": "tasks/metrics/ada/INTERNAL-ERROR-01-red.log"
+  },
+  "acceptanceCounts": {
+    "focused": 4,
+    "ada": 587,
+    "adaFiles": 69,
+    "twoCyclePerCycle": 587,
+    "twoCycleExecutions": 1174,
+    "tooling": 233,
+    "toolingFiles": 18,
+    "proof": 246,
+    "typecheck": "pass"
+  },
+  "verification": {
+    "generation": {
+      "exitCode": 0
+    },
+    "build": {
+      "exitCode": 0
+    },
+    "focused": {
+      "exitCode": 0
+    },
+    "ada": {
+      "exitCode": 0,
+      "seconds": 75.04
+    },
+    "ada-two-cycle": {
+      "exitCode": 0,
+      "seconds": 158.83
+    },
+    "tooling": {
+      "exitCode": 0,
+      "seconds": 81.4
+    },
+    "proof": {
+      "exitCode": 0,
+      "seconds": 1.94
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "seconds": 1.83
+    },
+    "validators": {
+      "exitCode": 0
+    },
+    "docs": {
+      "exitCode": 0
+    }
+  },
+  "mutation": {
+    "runByThisWorker": false,
+    "owner": "frontend/combined-campaign owner",
+    "reason": "Human assigned one combined campaign to the other worker; avoid simultaneous temporary mutations.",
+    "stableBackendTargetHashes": {
+      "backend-ada/server/src/pitd_callback.adb": "52c19974a0297c67d931ee5badfc6fd658a0fa8e027eefbc1da7beb28f340d97",
+      "backend-ada/server/src/pitd_ops.adb": "21fca1ba8033d647b466eadc7336039d5f2412d47c2b3e98af5074f47e932e99"
+    },
+    "catalogRefresh": "Stable target hashes handed to parent; shared catalog left with campaign owner."
+  },
+  "openItems": [],
+  "finalRecords": {
+    "docs": {
+      "exitCode": 0,
+      "generatedFiles": 147,
+      "log": "tasks/metrics/ada/INTERNAL-ERROR-01-docs.log"
+    },
+    "validators": {
+      "exitCode": 0,
+      "metricsFiles": 170,
+      "traceabilityChecks": 231,
+      "reconciliationChecks": 17,
+      "log": "tasks/metrics/ada/INTERNAL-ERROR-01-validators.log"
+    }
+  }
+}

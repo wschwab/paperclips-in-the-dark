@@ -733,10 +733,27 @@
               "description": "The current entity DTO."
             }
           }
+        },
+        {
+          "type": "object",
+          "required": ["code", "status", "message", "retryable", "recovery", "details"],
+          "additionalProperties": false,
+          "properties": {
+            "code": { "const": "INTERNAL" },
+            "status": { "const": 500, "description": "Server defect: HTTP 500 with the typed error body (OpResult convention); any routed operation may return it." },
+            "message": { "type": "string", "description": "Generic server-defect message; safe to show verbatim. Never exception text, file paths, or stored content." },
+            "retryable": { "const": false, "description": "A server defect is not cured by replaying the request unchanged." },
+            "recovery": { "const": "This is a server defect. Report it; do not change the request.", "description": "Fixed instruction; the request is not at fault." },
+            "details": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Empty object: no detail shape. No entity, preview, or token accompanies INTERNAL."
+            }
+          }
         }
       ],
       "discriminator": { "propertyName": "code" },
-      "description": "Whole-error discriminated union: one branch per errorCode, discriminated on code. Every branch declares code, status (the HTTP status the error is delivered with), message, retryable (the operation may succeed after the documented recovery action — never blind replay), recovery (instruction), and the typed per-code details; entity/preview/token accompany where applicable. Top-level error and batch[].error share this schema. Status values follow the locked table (spec-change-work-spec, stored-entity classification): VALIDATION 400, INVALID_ENTRY 400, INVALID_ENTITY 422, NORMALIZATION_REQUIRED 409, NOT_FOUND 404, STALE_REVISION 409, PAYLOAD_TOO_LARGE 413; all remaining codes are domain failures delivered with HTTP 200 and the typed error body."
+      "description": "Whole-error discriminated union: one branch per errorCode, discriminated on code. Every branch declares code, status (the HTTP status the error is delivered with), message, retryable (the operation may succeed after the documented recovery action — never blind replay), recovery (instruction), and the typed per-code details; entity/preview/token accompany where applicable. Top-level error and batch[].error share this schema. Status values follow the locked table (spec-change-work-spec, stored-entity classification): VALIDATION 400, INVALID_ENTRY 400, INVALID_ENTITY 422, NORMALIZATION_REQUIRED 409, NOT_FOUND 404, STALE_REVISION 409, PAYLOAD_TOO_LARGE 413, INTERNAL 500; all remaining codes are domain failures delivered with HTTP 200 and the typed error body."
     }
   },
   "description": "Exactly one of character/crew/clock is present when ok=true and the op targets an entity; none on pure failures. Entity-targeted results additionally carry the derived canUndo/historyCount fields (never stored, computed at response time); batch items do not. On failure ok=false and error is a member of the typed whole-error union ($defs/operationError); batch[].error uses the same union."

@@ -1,0 +1,94 @@
+---
+title: INTERNAL — server defects, not invalid requests
+---
+
+# INTERNAL — server defects, not invalid requests
+
+**Human-approved contract change: INTERNAL-ERROR-01.** This formalizes the
+backend’s existing `INTERNAL` label as a real error-envelope variant and
+explicit HTTP **500** response. It is the approved exception to the former
+status/code set, not an undocumented new response.
+
+## Meaning and exact shape
+
+A valid request can encounter a server defect: an unexpected runtime/storage
+failure, or a server-generated DTO failing its own schema. The caller must not
+be told to repair that request. The response remains the existing operation
+result envelope:
+
+```json
+{
+  "ok": false,
+  "applied": {"op": "request"},
+  "sideEffects": [],
+  "error": {
+    "code": "INTERNAL",
+    "status": 500,
+    "message": "Internal server failure",
+    "retryable": false,
+    "recovery": "This is a server defect. Report it; do not change the request.",
+    "details": {}
+  }
+}
+```
+
+The transport and `error.status` are both **500**. `retryable` is literally
+**false**; the recovery text above is canonical. Details are a strict empty
+object. This branch does not carry an entity, normalization preview or token,
+since an unexpected server failure is not an authoritative current-state view.
+Messages are controlled safe text. Exception names, stack traces, filesystem
+paths and parser diagnostics remain in server logs, never the error response.
+
+## Request errors and domain errors are unchanged
+
+Malformed JSON and invalid request shape remain `VALIDATION` / HTTP **400**,
+with pointer details and the existing corrective-action recovery semantics.
+Existing operation-level domain failures retain their established codes/statuses.
+Do not replace those with INTERNAL merely because the operation did not succeed.
+Conversely, do not catch an unexpected server/storage exception and call it
+client VALIDATION.
+
+The existing generic callback can fail while serving any declared API operation,
+including reads. Consequently every routed OpenAPI operation declares a **500**
+response referencing the existing `OpResult` response. No path, operation ID,
+retry endpoint or second error channel is added.
+
+## Why this was needed
+
+The [French creation investigation](/backlog/french-game-creation-500) proved a
+separate game-stem schema defect and fixed it in FRENCH-CREATE-01. It also found
+an independent contract gap: `Persist_Create` requested HTTP500/INTERNAL,
+`Error_Result` did not recognize that label, and its fallback constructed
+VALIDATION/status400/retryable true. The former top-level exception handler
+also mislabeled unexpected faults as invalid requests.
+
+INTERNAL-ERROR-01 supplies the missing typed constructor and explicit dispatch,
+keeps server-generated invalid DTO failures internal, and separates known
+request parsing failures from unexpected server faults. It does not undo the
+registered-edition stem fix or its catalogue-driven tests.
+
+## Red-green coverage and integration
+
+New `INTERNAL-ERROR-SCHEMA-001` rejects the old missing variant, then verifies
+strict acceptance and rejection of wrong status, retryability, recovery and
+extra details. New `INTERNAL-ERROR-FAULT-001` reuses the existing guarded
+`--test-hooks` / `crash-mid-write` seam: a valid stress operation must produce
+INTERNAL500, preserve old bytes/revision, leak no exception text, release its
+resources, and leave the service usable. No new production fault endpoint is
+introduced. `INTERNAL-ERROR-CLIENT-001` protects both missing request fields and
+raw malformed JSON as VALIDATION400. `INTERNAL-ERROR-OPENAPI-001` checks every
+operation’s shared 500 declaration.
+
+Conformance’s strict mirror and canonical validators/reference/manifest/coverage
+are regenerated or updated with the contract. The common error-code enum expands
+**26 → 27**, preserving every existing member. All **115** routed operations
+gain a 500 declaration; generated coverage now contains **485 response rows**.
+The one frozen amendment is additive: `ERR-MISMATCH-006`’s `STATUS_TABLE` keeps
+every previous entry (ending with `OUT_OF_ACTION: 200`) and appends
+`INTERNAL: 500`. No existing assertion is removed or weakened. Exact evidence
+and exercised counts are recorded in `tasks/INTERNAL-ERROR-01.md` and its metrics.
+
+The frontend owner handles its error decoder and the combined mutation campaign.
+This worker does not edit frontend or run VCS commands. Current acceptance
+results are recorded in the card and command logs; this page does not substitute
+an unexercised claim for those gates.

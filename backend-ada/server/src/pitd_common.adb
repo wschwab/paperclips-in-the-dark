@@ -906,6 +906,8 @@ end Snapshot;
          return Game_Not_Found_Error (Op, Message);
       elsif Code = "PAYLOAD_TOO_LARGE" then
          return Payload_Too_Large_Error (Op, Message, Integer (Max_Import), 0);
+      elsif Code = "INTERNAL" then
+         return Internal_Error (Op, Message);
       end if;
       --  every remaining code is the VALIDATION branch (pointer details)
       return Validation_Error (Op, Message, Root_Issues (Message), Entity);

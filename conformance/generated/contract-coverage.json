@@ -28,6 +28,15 @@
       "collection": false
     },
     {
+      "operationId": "abilityRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/ability.remove",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "abilityTake",
       "method": "POST",
       "path": "/characters/{id}/ops/ability.take",
@@ -50,6 +59,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/ability.take",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "abilityTake",
+      "method": "POST",
+      "path": "/characters/{id}/ops/ability.take",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -82,6 +100,15 @@
       "collection": false
     },
     {
+      "operationId": "actionSetRating",
+      "method": "POST",
+      "path": "/characters/{id}/ops/action.set-rating",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "armorSet",
       "method": "POST",
       "path": "/characters/{id}/ops/armor.set",
@@ -104,6 +131,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/armor.set",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "armorSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/armor.set",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -136,6 +172,15 @@
       "collection": false
     },
     {
+      "operationId": "attributeLevelup",
+      "method": "POST",
+      "path": "/characters/{id}/ops/attribute.levelup",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "attributeXpAdd",
       "method": "POST",
       "path": "/characters/{id}/ops/attribute-xp.add",
@@ -163,6 +208,15 @@
       "collection": false
     },
     {
+      "operationId": "attributeXpAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/attribute-xp.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "attributeXpClear",
       "method": "POST",
       "path": "/characters/{id}/ops/attribute-xp.clear",
@@ -185,6 +239,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/attribute-xp.clear",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "attributeXpClear",
+      "method": "POST",
+      "path": "/characters/{id}/ops/attribute-xp.clear",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -199,6 +262,15 @@
       "collection": false
     },
     {
+      "operationId": "batch",
+      "method": "POST",
+      "path": "/campaign/batch",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "characterContactAdd",
       "method": "POST",
       "path": "/characters/{id}/ops/contact.add",
@@ -239,6 +311,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/contact.add",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -289,6 +370,15 @@
       "collection": false
     },
     {
+      "operationId": "characterContactCloseness",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.closeness",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "characterContactRemove",
       "method": "POST",
       "path": "/characters/{id}/ops/contact.remove",
@@ -329,6 +419,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/contact.remove",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterContactRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/contact.remove",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -379,6 +478,15 @@
       "collection": false
     },
     {
+      "operationId": "characterDowntimeAdjust",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.adjust",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "characterDowntimeReset",
       "method": "POST",
       "path": "/characters/{id}/ops/downtime.reset",
@@ -419,6 +527,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/downtime.reset",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDowntimeReset",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.reset",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -469,6 +586,15 @@
       "collection": false
     },
     {
+      "operationId": "characterDowntimeSpend",
+      "method": "POST",
+      "path": "/characters/{id}/ops/downtime.spend",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "characterModeFlowSet",
       "method": "POST",
       "path": "/characters/{id}/ops/mode.flow.set",
@@ -514,6 +640,15 @@
       "collection": false
     },
     {
+      "operationId": "characterModeFlowSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.flow.set",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "characterModeSet",
       "method": "POST",
       "path": "/characters/{id}/ops/mode.set",
@@ -559,6 +694,15 @@
       "collection": false
     },
     {
+      "operationId": "characterModeSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/mode.set",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "clockProgress",
       "method": "POST",
       "path": "/clocks/{id}/ops/clock.progress",
@@ -604,6 +748,15 @@
       "collection": false
     },
     {
+      "operationId": "clockProgress",
+      "method": "POST",
+      "path": "/clocks/{id}/ops/clock.progress",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "clockReset",
       "method": "POST",
       "path": "/clocks/{id}/ops/clock.reset",
@@ -644,6 +797,15 @@
       "method": "POST",
       "path": "/clocks/{id}/ops/clock.reset",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "clockReset",
+      "method": "POST",
+      "path": "/clocks/{id}/ops/clock.reset",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -676,6 +838,15 @@
       "collection": false
     },
     {
+      "operationId": "cohortAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/cohort.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "cohortRemove",
       "method": "POST",
       "path": "/crews/{id}/ops/cohort.remove",
@@ -698,6 +869,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/cohort.remove",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "cohortRemove",
+      "method": "POST",
+      "path": "/crews/{id}/ops/cohort.remove",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -730,6 +910,15 @@
       "collection": false
     },
     {
+      "operationId": "cohortUpdate",
+      "method": "POST",
+      "path": "/crews/{id}/ops/cohort.update",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "coinAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/coin.add",
@@ -752,6 +941,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/coin.add",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "coinAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/coin.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -766,6 +964,15 @@
       "collection": false
     },
     {
+      "operationId": "createCharacter",
+      "method": "POST",
+      "path": "/characters",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "createClock",
       "method": "POST",
       "path": "/clocks",
@@ -779,6 +986,15 @@
       "method": "POST",
       "path": "/clocks",
       "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "createClock",
+      "method": "POST",
+      "path": "/clocks",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -793,6 +1009,15 @@
       "collection": false
     },
     {
+      "operationId": "createCrew",
+      "method": "POST",
+      "path": "/crews",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "createPcCharacter",
       "method": "POST",
       "path": "/characters/pc",
@@ -815,6 +1040,15 @@
       "method": "POST",
       "path": "/characters/pc",
       "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "createPcCharacter",
+      "method": "POST",
+      "path": "/characters/pc",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -847,6 +1081,15 @@
       "collection": false
     },
     {
+      "operationId": "crewAbilityRemove",
+      "method": "POST",
+      "path": "/crews/{id}/ops/ability.remove",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewAbilityTake",
       "method": "POST",
       "path": "/crews/{id}/ops/ability.take",
@@ -869,6 +1112,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/ability.take",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewAbilityTake",
+      "method": "POST",
+      "path": "/crews/{id}/ops/ability.take",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -901,6 +1153,15 @@
       "collection": false
     },
     {
+      "operationId": "crewClaimCustomize",
+      "method": "POST",
+      "path": "/crews/{id}/ops/claim.customize",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewClaimReset",
       "method": "POST",
       "path": "/crews/{id}/ops/claim.reset",
@@ -923,6 +1184,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/claim.reset",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewClaimReset",
+      "method": "POST",
+      "path": "/crews/{id}/ops/claim.reset",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -955,6 +1225,15 @@
       "collection": false
     },
     {
+      "operationId": "crewClaimSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/claim.set",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewContactAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/contact.add",
@@ -977,6 +1256,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/contact.add",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewContactAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/contact.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1009,6 +1297,15 @@
       "collection": false
     },
     {
+      "operationId": "crewContactRemove",
+      "method": "POST",
+      "path": "/crews/{id}/ops/contact.remove",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewFieldsUpdate",
       "method": "POST",
       "path": "/crews/{id}/ops/fields.update",
@@ -1031,6 +1328,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/fields.update",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewFieldsUpdate",
+      "method": "POST",
+      "path": "/crews/{id}/ops/fields.update",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1063,6 +1369,15 @@
       "collection": false
     },
     {
+      "operationId": "crewNoteAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewNoteRemove",
       "method": "POST",
       "path": "/crews/{id}/ops/note.remove",
@@ -1085,6 +1400,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/note.remove",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewNoteRemove",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.remove",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1117,6 +1441,15 @@
       "collection": false
     },
     {
+      "operationId": "crewXpAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/xp.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewXpClear",
       "method": "POST",
       "path": "/crews/{id}/ops/xp.clear",
@@ -1139,6 +1472,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/xp.clear",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewXpClear",
+      "method": "POST",
+      "path": "/crews/{id}/ops/xp.clear",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1180,6 +1522,15 @@
       "collection": false
     },
     {
+      "operationId": "deleteCharacter",
+      "method": "POST",
+      "path": "/characters/{id}/delete",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "deleteClock",
       "method": "POST",
       "path": "/clocks/{id}/delete",
@@ -1216,6 +1567,15 @@
       "collection": false
     },
     {
+      "operationId": "deleteClock",
+      "method": "POST",
+      "path": "/clocks/{id}/delete",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "deleteCrew",
       "method": "POST",
       "path": "/crews/{id}/delete",
@@ -1252,6 +1612,15 @@
       "collection": false
     },
     {
+      "operationId": "deleteCrew",
+      "method": "POST",
+      "path": "/crews/{id}/delete",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "dossierUpdate",
       "method": "POST",
       "path": "/characters/{id}/ops/dossier.update",
@@ -1279,6 +1648,15 @@
       "collection": false
     },
     {
+      "operationId": "dossierUpdate",
+      "method": "POST",
+      "path": "/characters/{id}/ops/dossier.update",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "endDowntime",
       "method": "POST",
       "path": "/characters/{id}/end-downtime",
@@ -1301,6 +1679,15 @@
       "method": "POST",
       "path": "/characters/{id}/end-downtime",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "endDowntime",
+      "method": "POST",
+      "path": "/characters/{id}/end-downtime",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1351,6 +1738,15 @@
       "collection": false
     },
     {
+      "operationId": "endScore",
+      "method": "POST",
+      "path": "/characters/{id}/end-score",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "factionRemove",
       "method": "POST",
       "path": "/crews/{id}/ops/faction.remove",
@@ -1373,6 +1769,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/faction.remove",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "factionRemove",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.remove",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1405,6 +1810,15 @@
       "collection": false
     },
     {
+      "operationId": "factionSetStatus",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.set-status",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "fundGain",
       "method": "POST",
       "path": "/characters/{id}/ops/fund.gain",
@@ -1427,6 +1841,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/fund.gain",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "fundGain",
+      "method": "POST",
+      "path": "/characters/{id}/ops/fund.gain",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1459,6 +1882,15 @@
       "collection": false
     },
     {
+      "operationId": "fundLiquidate",
+      "method": "POST",
+      "path": "/characters/{id}/ops/fund.liquidate",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "fundSpend",
       "method": "POST",
       "path": "/characters/{id}/ops/fund.spend",
@@ -1481,6 +1913,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/fund.spend",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "fundSpend",
+      "method": "POST",
+      "path": "/characters/{id}/ops/fund.spend",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1513,6 +1954,15 @@
       "collection": false
     },
     {
+      "operationId": "gearAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "gearClearCommitments",
       "method": "POST",
       "path": "/characters/{id}/ops/gear.clear-commitments",
@@ -1535,6 +1985,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/gear.clear-commitments",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "gearClearCommitments",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.clear-commitments",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1567,6 +2026,15 @@
       "collection": false
     },
     {
+      "operationId": "gearCommit",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.commit",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "gearLock",
       "method": "POST",
       "path": "/characters/{id}/ops/gear.lock",
@@ -1589,6 +2057,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/gear.lock",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "gearLock",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.lock",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1621,6 +2098,15 @@
       "collection": false
     },
     {
+      "operationId": "gearRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.remove",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "gearSetCommitment",
       "method": "POST",
       "path": "/characters/{id}/ops/gear.set-commitment",
@@ -1643,6 +2129,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/gear.set-commitment",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "gearSetCommitment",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-commitment",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1675,6 +2170,15 @@
       "collection": false
     },
     {
+      "operationId": "gearUncommit",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.uncommit",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "gearUnlock",
       "method": "POST",
       "path": "/characters/{id}/ops/gear.unlock",
@@ -1697,6 +2201,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/gear.unlock",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "gearUnlock",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.unlock",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1708,6 +2221,15 @@
       "status": "200",
       "kind": "schema",
       "schemaName": "campaign",
+      "collection": false
+    },
+    {
+      "operationId": "getCampaign",
+      "method": "GET",
+      "path": "/campaign",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
       "collection": false
     },
     {
@@ -1733,6 +2255,15 @@
       "method": "GET",
       "path": "/characters/{id}",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "getCharacter",
+      "method": "GET",
+      "path": "/characters/{id}",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1763,6 +2294,15 @@
       "collection": false
     },
     {
+      "operationId": "getCharacterCapabilities",
+      "method": "GET",
+      "path": "/characters/{id}/capabilities",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "getCharacterSnapshot",
       "method": "GET",
       "path": "/characters/{id}/history/{snapshotId}",
@@ -1785,6 +2325,15 @@
       "method": "GET",
       "path": "/characters/{id}/history/{snapshotId}",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "getCharacterSnapshot",
+      "method": "GET",
+      "path": "/characters/{id}/history/{snapshotId}",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1817,6 +2366,15 @@
       "collection": false
     },
     {
+      "operationId": "getClock",
+      "method": "GET",
+      "path": "/clocks/{id}",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "getCrew",
       "method": "GET",
       "path": "/crews/{id}",
@@ -1830,6 +2388,15 @@
       "method": "GET",
       "path": "/crews/{id}",
       "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "getCrew",
+      "method": "GET",
+      "path": "/crews/{id}",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1855,6 +2422,15 @@
       "method": "GET",
       "path": "/crews/{id}/capabilities",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "getCrewCapabilities",
+      "method": "GET",
+      "path": "/crews/{id}/capabilities",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1887,6 +2463,15 @@
       "collection": false
     },
     {
+      "operationId": "getCrewMembers",
+      "method": "GET",
+      "path": "/campaign/crew/{crewId}/members",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "getCrewSettings",
       "method": "GET",
       "path": "/games/{stem}/crews",
@@ -1898,6 +2483,15 @@
       "method": "GET",
       "path": "/games/{stem}/crews",
       "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "getCrewSettings",
+      "method": "GET",
+      "path": "/games/{stem}/crews",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1930,6 +2524,15 @@
       "collection": false
     },
     {
+      "operationId": "getCrewSnapshot",
+      "method": "GET",
+      "path": "/crews/{id}/history/{snapshotId}",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "getCrewTypeSettings",
       "method": "GET",
       "path": "/games/{stem}/crews/{crewType}",
@@ -1941,6 +2544,15 @@
       "method": "GET",
       "path": "/games/{stem}/crews/{crewType}",
       "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "getCrewTypeSettings",
+      "method": "GET",
+      "path": "/games/{stem}/crews/{crewType}",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1962,6 +2574,15 @@
       "collection": false
     },
     {
+      "operationId": "getGame",
+      "method": "GET",
+      "path": "/games/{stem}",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "getPlaybook",
       "method": "GET",
       "path": "/games/{stem}/playbooks/{playbook}",
@@ -1973,6 +2594,15 @@
       "method": "GET",
       "path": "/games/{stem}/playbooks/{playbook}",
       "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "getPlaybook",
+      "method": "GET",
+      "path": "/games/{stem}/playbooks/{playbook}",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -1987,6 +2617,15 @@
       "collection": false
     },
     {
+      "operationId": "getRoster",
+      "method": "GET",
+      "path": "/campaign/roster",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "getServiceCapabilities",
       "method": "GET",
       "path": "/capabilities",
@@ -1994,6 +2633,15 @@
       "kind": "inline"
     },
     {
+      "operationId": "getServiceCapabilities",
+      "method": "GET",
+      "path": "/capabilities",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "harmAdd",
       "method": "POST",
       "path": "/characters/{id}/ops/harm.add",
@@ -2016,6 +2664,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/harm.add",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "harmAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2048,6 +2705,15 @@
       "collection": false
     },
     {
+      "operationId": "harmHeal",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.heal",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "harmHealingClock",
       "method": "POST",
       "path": "/characters/{id}/ops/harm.healing-clock",
@@ -2075,6 +2741,15 @@
       "collection": false
     },
     {
+      "operationId": "harmHealingClock",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.healing-clock",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "harmRemove",
       "method": "POST",
       "path": "/characters/{id}/ops/harm.remove",
@@ -2097,6 +2772,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/harm.remove",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "harmRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/harm.remove",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2111,6 +2795,15 @@
       "collection": false
     },
     {
+      "operationId": "health",
+      "method": "GET",
+      "path": "/health",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "heatAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/heat.add",
@@ -2138,6 +2831,15 @@
       "collection": false
     },
     {
+      "operationId": "heatAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/heat.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "holdSet",
       "method": "POST",
       "path": "/crews/{id}/ops/hold.set",
@@ -2160,6 +2862,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/hold.set",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "holdSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/hold.set",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2208,6 +2919,15 @@
       "collection": false
     },
     {
+      "operationId": "importCharacter",
+      "method": "POST",
+      "path": "/characters/{id}/import",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "importCrew",
       "method": "POST",
       "path": "/crews/{id}/import",
@@ -2246,6 +2966,15 @@
       "method": "POST",
       "path": "/crews/{id}/import",
       "status": "413",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "importCrew",
+      "method": "POST",
+      "path": "/crews/{id}/import",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2273,6 +3002,15 @@
       "method": "GET",
       "path": "/characters/{id}/history",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "listCharacterHistory",
+      "method": "GET",
+      "path": "/characters/{id}/history",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2287,6 +3025,15 @@
       "collection": true
     },
     {
+      "operationId": "listCharacters",
+      "method": "GET",
+      "path": "/characters",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "listClocks",
       "method": "GET",
       "path": "/clocks",
@@ -2294,6 +3041,15 @@
       "kind": "schema",
       "schemaName": "clockSummary",
       "collection": true
+    },
+    {
+      "operationId": "listClocks",
+      "method": "GET",
+      "path": "/clocks",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
     },
     {
       "operationId": "listCrewHistory",
@@ -2323,6 +3079,15 @@
       "collection": false
     },
     {
+      "operationId": "listCrewHistory",
+      "method": "GET",
+      "path": "/crews/{id}/history",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "listCrews",
       "method": "GET",
       "path": "/crews",
@@ -2332,6 +3097,15 @@
       "collection": true
     },
     {
+      "operationId": "listCrews",
+      "method": "GET",
+      "path": "/crews",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "listGames",
       "method": "GET",
       "path": "/games",
@@ -2339,6 +3113,15 @@
       "kind": "inline"
     },
     {
+      "operationId": "listGames",
+      "method": "GET",
+      "path": "/games",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "listHeritages",
       "method": "GET",
       "path": "/games/{stem}/heritages",
@@ -2350,6 +3133,15 @@
       "method": "GET",
       "path": "/games/{stem}/heritages",
       "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "listHeritages",
+      "method": "GET",
+      "path": "/games/{stem}/heritages",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2371,6 +3163,15 @@
       "collection": false
     },
     {
+      "operationId": "listPlaybooks",
+      "method": "GET",
+      "path": "/games/{stem}/playbooks",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "noteAdd",
       "method": "POST",
       "path": "/characters/{id}/ops/note.add",
@@ -2393,6 +3194,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/note.add",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "noteAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2425,6 +3235,15 @@
       "collection": false
     },
     {
+      "operationId": "notebookSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/notebook.set",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "noteRemove",
       "method": "POST",
       "path": "/characters/{id}/ops/note.remove",
@@ -2447,6 +3266,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/note.remove",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "noteRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.remove",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2479,6 +3307,15 @@
       "collection": false
     },
     {
+      "operationId": "playbookXpAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/playbook-xp.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "playbookXpClear",
       "method": "POST",
       "path": "/characters/{id}/ops/playbook-xp.clear",
@@ -2506,6 +3343,15 @@
       "collection": false
     },
     {
+      "operationId": "playbookXpClear",
+      "method": "POST",
+      "path": "/characters/{id}/ops/playbook-xp.clear",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "repAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/rep.add",
@@ -2528,6 +3374,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/rep.add",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "repAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/rep.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2573,6 +3428,15 @@
       "method": "POST",
       "path": "/characters/{id}/repair",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "repairCharacterApply",
+      "method": "POST",
+      "path": "/characters/{id}/repair",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2623,6 +3487,15 @@
       "collection": false
     },
     {
+      "operationId": "repairCharacterPreview",
+      "method": "POST",
+      "path": "/characters/{id}/repair-preview",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "repairCrewApply",
       "method": "POST",
       "path": "/crews/{id}/repair",
@@ -2663,6 +3536,15 @@
       "method": "POST",
       "path": "/crews/{id}/repair",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "repairCrewApply",
+      "method": "POST",
+      "path": "/crews/{id}/repair",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2713,6 +3595,15 @@
       "collection": false
     },
     {
+      "operationId": "repairCrewPreview",
+      "method": "POST",
+      "path": "/crews/{id}/repair-preview",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "retireCharacter",
       "method": "POST",
       "path": "/characters/{id}/retire",
@@ -2753,6 +3644,15 @@
       "method": "POST",
       "path": "/characters/{id}/retire",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "retireCharacter",
+      "method": "POST",
+      "path": "/characters/{id}/retire",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2785,6 +3685,15 @@
       "collection": false
     },
     {
+      "operationId": "sessionSet",
+      "method": "POST",
+      "path": "/characters/{id}/ops/session.set",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "stashAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/stash.add",
@@ -2807,6 +3716,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/stash.add",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "stashAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/stash.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2857,6 +3775,15 @@
       "collection": false
     },
     {
+      "operationId": "stressAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "stressClear",
       "method": "POST",
       "path": "/characters/{id}/ops/stress.clear",
@@ -2902,6 +3829,15 @@
       "collection": false
     },
     {
+      "operationId": "stressClear",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.clear",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "stressFix",
       "method": "POST",
       "path": "/characters/{id}/ops/stress.fix",
@@ -2942,6 +3878,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/stress.fix",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "stressFix",
+      "method": "POST",
+      "path": "/characters/{id}/ops/stress.fix",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -2974,6 +3919,15 @@
       "collection": false
     },
     {
+      "operationId": "tierAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/tier.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "traumaAdd",
       "method": "POST",
       "path": "/characters/{id}/ops/trauma.add",
@@ -3019,6 +3973,15 @@
       "collection": false
     },
     {
+      "operationId": "traumaAdd",
+      "method": "POST",
+      "path": "/characters/{id}/ops/trauma.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "traumaRemove",
       "method": "POST",
       "path": "/characters/{id}/ops/trauma.remove",
@@ -3059,6 +4022,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/trauma.remove",
       "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "traumaRemove",
+      "method": "POST",
+      "path": "/characters/{id}/ops/trauma.remove",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -3091,6 +4063,15 @@
       "collection": false
     },
     {
+      "operationId": "turfAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/turf.add",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "undoCharacter",
       "method": "POST",
       "path": "/characters/{id}/undo",
@@ -3136,6 +4117,15 @@
       "collection": false
     },
     {
+      "operationId": "undoCharacter",
+      "method": "POST",
+      "path": "/characters/{id}/undo",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "undoCrew",
       "method": "POST",
       "path": "/crews/{id}/undo",
@@ -3181,6 +4171,15 @@
       "collection": false
     },
     {
+      "operationId": "undoCrew",
+      "method": "POST",
+      "path": "/crews/{id}/undo",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "updateClock",
       "method": "POST",
       "path": "/clocks/{id}/update",
@@ -3226,6 +4225,15 @@
       "collection": false
     },
     {
+      "operationId": "updateClock",
+      "method": "POST",
+      "path": "/clocks/{id}/update",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "upgradeMark",
       "method": "POST",
       "path": "/crews/{id}/ops/upgrade.mark",
@@ -3248,6 +4256,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/upgrade.mark",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "upgradeMark",
+      "method": "POST",
+      "path": "/crews/{id}/ops/upgrade.mark",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -3280,6 +4297,15 @@
       "collection": false
     },
     {
+      "operationId": "upgradeUnmark",
+      "method": "POST",
+      "path": "/crews/{id}/ops/upgrade.unmark",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "wantedAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/wanted.add",
@@ -3302,6 +4328,15 @@
       "method": "POST",
       "path": "/crews/{id}/ops/wanted.add",
       "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "wantedAdd",
+      "method": "POST",
+      "path": "/crews/{id}/ops/wanted.add",
+      "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false

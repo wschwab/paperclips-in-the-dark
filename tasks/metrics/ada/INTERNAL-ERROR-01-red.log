@@ -1,0 +1,182 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/contract/internal-error.test.ts
+OK: canonical managed launcher
+[managed-run] runId=2026-10-12T10-35-47-976Z-ae8f5767
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=INTERNAL-ERROR-01-working
+[managed-run] testCommand=--run suites/contract/internal-error.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767/data (dir)
+[managed-run] port=37323
+[managed-run] baseUrl=http://127.0.0.1:37323
+[managed-run] pid=3158048
+[managed-run] ready=http://127.0.0.1:37323
+[managed-run] vitestPid=3158115
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ × suites/contract/internal-error.test.ts > INTERNAL server-defect contract > [INTERNAL-ERROR-SCHEMA-001] strict envelope accepts INTERNAL500 and rejects inconsistent status/retryability 8ms
+   → expected [ '/error must be null', …(99) ] to deeply equal []
+ × suites/contract/internal-error.test.ts > INTERNAL server-defect contract > [INTERNAL-ERROR-FAULT-001] existing crash-mid-write seam returns INTERNAL500 without changing old bytes and remains usable 21ms
+   → expected 400 to be 500 // Object.is equality
+ ✓ suites/contract/internal-error.test.ts > INTERNAL server-defect contract > [INTERNAL-ERROR-CLIENT-001] invalid client input stays VALIDATION400 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/contract/internal-error.test.ts > INTERNAL server-defect contract > [INTERNAL-ERROR-SCHEMA-001] strict envelope accepts INTERNAL500 and rejects inconsistent status/retryability
+AssertionError: expected [ '/error must be null', …(99) ] to deeply equal []
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   "/error must be null",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'issues'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'issues'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'issues'",[39m
+[31m+   "/error must have required property 'preview'",[39m
+[31m+   "/error must have required property 'token'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'warnings'",[39m
+[31m+   "/error/details must have required property 'previewToken'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'currentRevision'",[39m
+[31m+   "/error/details must have required property 'currentContentToken'",[39m
+[31m+   "/error/details must match exactly one schema in oneOf",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'available'",[39m
+[31m+   "/error/details must have required property 'needed'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error/details must have required property 'limit'",[39m
+[31m+   "/error/details must have required property 'current'",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must have required property 'entity'",[39m
+[31m+   "/error/code must be equal to constant",[39m
+[31m+   "/error/status must be equal to constant",[39m
+[31m+   "/error must match exactly one schema in oneOf",[39m
+[31m+   "/error must match exactly one schema in oneOf",[39m
+[31m+ ][39m
+
+ ❯ suites/contract/internal-error.test.ts:16:54
+     14|     const error = { code: "INTERNAL", status: 500, message: "Internal …
+     15|     const body = { ok: false, applied: { op: "request" }, sideEffects:…
+     16|     expect(validate("operationResult", body).errors).toEqual([]);
+       |                                                      ^
+     17|     expect(validate("operationResult", body).valid).toBe(true);
+     18|     await decode(Schemas.OperationResult, body);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  suites/contract/internal-error.test.ts > INTERNAL server-defect contract > [INTERNAL-ERROR-FAULT-001] existing crash-mid-write seam returns INTERNAL500 without changing old bytes and remains usable
+AssertionError: expected 400 to be 500 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 500[39m
+[31m+ 400[39m
+
+ ❯ suites/contract/internal-error.test.ts:36:27
+     34|     expect(armed.status).toBe(204);
+     35|     const failed = await api.post(`characters/${character.id}/ops/stre…
+     36|     expect(failed.status).toBe(500);
+       |                           ^
+     37|     expect(failed.body).toMatchObject({ ok: false, error: { code: "INT…
+     38|     expect(validate("operationResult", failed.body).errors).toEqual([]…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  13:35:48
+   Duration  426ms (transform 52ms, setup 0ms, collect 294ms, tests 32ms, environment 0ms, prepare 30ms)
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767 dataDir=/tmp/pitd-managed/2026-10-12T10-35-47-976Z-ae8f5767/data port=37323
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-12T10-35-47-976Z-ae8f5767-server.log

@@ -83,6 +83,7 @@ const RECOVERY = {
   PAYLOAD_TOO_LARGE: "The request exceeds the payload bound (details.limit): split or reduce it.",
   TRAUMA_REQUIRED: "Resolve the pending trauma first (trauma.add); end-score cannot erase an unresolved trauma.",
   OUT_OF_ACTION: "The character is out of action until end-score: run end-score (or lifecycle cleanup) to release.",
+  INTERNAL: "This is a server defect. Report it; do not change the request.",
 };
 
 const unionCodes = new Set(union.map((entry) => entry.code));

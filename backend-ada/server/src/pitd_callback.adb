@@ -277,7 +277,7 @@ package body Pitd_Callback is
       begin
          return Read (Body_Text);
       exception
-         when others =>
+         when GNATCOLL.JSON.Invalid_JSON_Stream | Constraint_Error =>
             raise Malformed_JSON with "request body is not valid JSON";
       end;
    end Parse_Body;
@@ -548,7 +548,9 @@ package body Pitd_Callback is
                Conflict_Default : Integer := 0;
                Over_Cap_Name   : Unbounded_String := Null_Unbounded_String;
                Over_Cap_Value : Integer := 0;
-               Sum            : Natural := 0;
+               --  Invalid allocations can exceed Integer before the cap/
+               --  budget checks; keep their sum in the JSON integer width.
+               Sum            : Long_Long_Integer := 0;
 
                function Published_Action (Name : String) return Boolean is
                begin
@@ -580,12 +582,27 @@ package body Pitd_Callback is
                      if Length (Bad_Name) = 0 then
                         Bad_Name := To_Unbounded_String (String (Key));
                      end if;
-                  elsif Value.Kind /= JSON_Int_Type
-                    or else Integer'(Get (Value)) < 0
-                  then
-                     if Length (Bad_Value) = 0 then
-                        Bad_Value := To_Unbounded_String (String (Key));
-                     end if;
+                  else
+                     --  Only the inbound integer conversion is caught here.
+                     declare
+                        Rating : Integer;
+                     begin
+                        if Value.Kind /= JSON_Int_Type then
+                           if Length (Bad_Value) = 0 then
+                              Bad_Value := To_Unbounded_String (String (Key));
+                           end if;
+                        else
+                           Rating := Get (Value);
+                           if Rating < 0 and then Length (Bad_Value) = 0 then
+                              Bad_Value := To_Unbounded_String (String (Key));
+                           end if;
+                        end if;
+                     exception
+                        when Constraint_Error =>
+                           if Length (Bad_Value) = 0 then
+                              Bad_Value := To_Unbounded_String (String (Key));
+                           end if;
+                     end;
                   end if;
                end Scan_Rating;
 
@@ -637,7 +654,7 @@ package body Pitd_Callback is
                                                To_Unbounded_String (Nm);
                                              Conflict_Default := Def;
                                           else
-                                             Sum := Sum + V;
+                                             Sum := Sum + Long_Long_Integer (V);
                                              if V > Max
                                                and then Length (Over_Cap_Name) = 0
                                              then
@@ -649,7 +666,7 @@ package body Pitd_Callback is
                                        end;
                                     elsif Def > 0 then
                                        --  Union fill: the default stands in.
-                                       Sum := Sum + Def;
+                                       Sum := Sum + Long_Long_Integer (Def);
                                        if Def > Max
                                          and then Length (Over_Cap_Name) = 0
                                        then
@@ -694,10 +711,12 @@ package body Pitd_Callback is
                        & ": starting ratings must not exceed the cap");
                end if;
                --  V1: sum(actionRatings) = StartingActionDots exactly.
-               if Sum /= Budget then
+               if Sum /= Long_Long_Integer (Budget) then
                   return Fail
                     (AWS.Messages.S400, Op, "VALIDATION",
-                     Message => "sum of actionRatings is " & Trim_Image (Sum)
+                     Message => "sum of actionRatings is "
+                       & Ada.Strings.Fixed.Trim
+                           (Long_Long_Integer'Image (Sum), Ada.Strings.Both)
                        & ", but StartingActionDots is " & Trim_Image (Budget)
                        & ": starting allocation must equal the budget exactly");
                end if;
@@ -958,7 +977,13 @@ package body Pitd_Callback is
             Valid : Boolean;
          begin
             Valid := False;
-            Valid := Validate_Request (Kind, Create_Op, B, Bad);
+            begin
+               Valid := Validate_Request (Kind, Create_Op, B, Bad);
+            exception
+               --  Check_Fields converts inbound JSON integers to Integer.
+               when Constraint_Error =>
+                  Bad := To_Unbounded_String ("request integer is out of range");
+            end;
             if not Valid then
                return Fail (AWS.Messages.S400, Create_Op, "VALIDATION",
                             Message => To_String (Bad));
@@ -1157,6 +1182,11 @@ package body Pitd_Callback is
       --  returned 422 INVALID_ENTITY with pointer-level details and no
       --  write; delete and the import/repair recovery paths are exempt.
       B := Parse_Body (To_String (AWS.Status.Binary_Data (Request)));
+      if B.Kind /= JSON_Object_Type then
+         Release_Locks;
+         return Fail (AWS.Messages.S400, Suffix, "VALIDATION",
+                      Message => "body must be an object");
+      end if;
       declare
          Scope_Key : Unbounded_String := Null_Unbounded_String;
          Body_Hash : Unbounded_String := Null_Unbounded_String;
@@ -2014,7 +2044,13 @@ if Kind = "crew" then
                Bad : Unbounded_String;
                Valid : Boolean := False;
             begin
-               Valid := Validate_Mutation_Request (Kind, Id, Op, B, Bad);
+               begin
+                  Valid := Validate_Mutation_Request (Kind, Id, Op, B, Bad);
+               exception
+                  --  Range errors at admission precede mutation/persistence.
+                  when Constraint_Error =>
+                     Bad := To_Unbounded_String ("request integer is out of range");
+               end;
                if not Valid then
                   Release_Locks;
                   return Fail (AWS.Messages.S400, Op, "VALIDATION", E,
@@ -2032,7 +2068,7 @@ if Kind = "crew" then
                   Schema_Check (Kind, E, Mutated_Ok);
                   if not Mutated_Ok then
                      Release_Locks;
-                     return Fail (AWS.Messages.S400, Op, "VALIDATION",
+                     return Fail (AWS.Messages.S500, Op, "INTERNAL",
                                   Message => "mutation result fails schema validation; nothing was written");
                   end if;
                end;
@@ -2080,12 +2116,9 @@ if Kind = "crew" then
            (Validation_Error (Suffix, Ada.Exceptions.Exception_Message (Ex),
                               Root_Issues (Ada.Exceptions.Exception_Message (Ex))),
             AWS.Messages.S400);
-      when Constraint_Error =>
-         Release_Locks;
-         return Json_Response
-           (Validation_Error (Suffix, "invalid request",
-                              Root_Issues ("invalid request")),
-            AWS.Messages.S400);
+      --  Request types/ranges are checked at their decoding boundaries.
+      --  A Constraint_Error here can instead be a stored-state, arithmetic,
+      --  or persistence defect; do not turn it into a client error.
       when others =>
          Release_Locks;
          raise;
@@ -2127,10 +2160,13 @@ if Kind = "crew" then
                  (Validation_Error ("batch", "unknown batch property",
                                     Root_Issues ("unknown batch property")),
                   AWS.Messages.S400);
-            elsif B.Kind /= JSON_Object_Type or else not Has_Field (B, "ops") then
+            elsif B.Kind /= JSON_Object_Type or else not Has_Field (B, "ops")
+              or else Get (B, "ops").Kind /= JSON_Array_Type
+            then
                Response := Json_Response
                  (Validation_Error ("batch", "ops must be a non-empty array",
-                                    Root_Issues ("ops must be a non-empty array")));
+                                    Root_Issues ("ops must be a non-empty array")),
+                  AWS.Messages.S400);
             else
                Ops := Get (B, "ops");
                if Length (Ops) = 0 or else Length (Ops) > Max_Batch_Operations then
@@ -2287,11 +2323,17 @@ if Kind = "crew" then
                            end if;
                            declare
                               Bad : Unbounded_String;
+                              Valid : Boolean := False;
                            begin
-                              if Validate_Mutation_Request
-                                (To_String (Ents (I).Kind), To_String (Ents (I).Id),
-                                 OpS, Ents (I).Args, Bad)
-                              then
+                              begin
+                                 Valid := Validate_Mutation_Request
+                                   (To_String (Ents (I).Kind), To_String (Ents (I).Id),
+                                    OpS, Ents (I).Args, Bad);
+                              exception
+                                 when Constraint_Error =>
+                                    Bad := To_Unbounded_String ("request integer is out of range");
+                              end;
+                              if Valid then
                                  R := Mutate (To_String (Ents (I).Kind), OpS, Ents (I).E, Ents (I).Args);
                               else
                                  R := Validation_Error
@@ -2305,11 +2347,8 @@ if Kind = "crew" then
                                  Schema_Check (To_String (Ents (I).Kind), Ents (I).E,
                                                        Batch_Mutated_Ok);
                                  if not Batch_Mutated_Ok then
-                                    OK := False;
-                                    Fail_Code := To_Unbounded_String ("VALIDATION");
-                                    Fail_Msg := To_Unbounded_String
-                                      ("mutation result fails schema validation; nothing was written");
-                                    exit;
+                                    raise Program_Error with
+                                      "mutation result fails schema validation";
                                  end if;
                               end;
                               Ents (I).Changed := True;
@@ -3254,13 +3293,22 @@ if Kind = "crew" then
          Ada.Text_IO.Put_Line (Write (Entry_Value));
       end;
       return Response;
-   exception when E:others =>
-      --  SC-A3: the typed union is the only error channel — the raw
-      --  exception stays in the server log, never in the response body.
-      Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Information (E));
-      return Json_Response
-        (Validation_Error ("request", "invalid request",
-                           Root_Issues ("invalid request")),
-         AWS.Messages.S400);
+   exception
+      when Payload_Too_Large =>
+         return Json_Response
+           (Payload_Too_Large_Result
+              ("request", Integer (Ada.Strings.Unbounded.Length (AWS.Status.Binary_Data (Request)))),
+            AWS.Messages.S413);
+      when Malformed_JSON =>
+         return Json_Response
+           (Validation_Error ("request", "request body is not valid JSON",
+                              Root_Issues ("request body is not valid JSON")),
+            AWS.Messages.S400);
+      when E : others =>
+         --  Unexpected faults remain in the server log, not the response.
+         Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Information (E));
+         return Json_Response
+           (Internal_Error ("request", "internal server error"),
+            AWS.Messages.S500);
    end Handle;
 end Pitd_Callback;
