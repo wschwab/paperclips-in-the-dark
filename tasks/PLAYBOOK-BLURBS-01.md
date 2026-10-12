@@ -74,6 +74,8 @@ playbooks in the data, but the picker is only reachable for Blades in the Dark. 
 
 ## Gates
 
+Recorded at commit `69baf006`; the card and metrics record commit follows it.
+
 - `npx vitest run` (frontend): 926/926, 31 files.
 - `npx tsc --noEmit`: exit 0. `npm run build`: exit 0.
 - `npm run test:browser`: 6/6 journeys pass.
@@ -81,4 +83,4 @@ playbooks in the data, but the picker is only reachable for Blades in the Dark. 
   **Also refreshed a stale pin:** `frontend/src/styles/components.css` (the `.action-dot` target) was still on `ccb12ed2…`.
   ERROR-SCREEN-01 appended rules to that file and its pin was not refreshed then. It is now `17ea466d…9e922`. The anchored rule
   the campaign mutates is unchanged.
-- **Mutation campaign: not run.** The human asked to be consulted before any campaign. Awaiting the go-ahead.
+- Mutation campaign `npm run test:mutation` at `69baf006`: **28/28 killed** (P0 19/19, P1 9/9), run on the human's go-ahead.

@@ -23,7 +23,7 @@
     "tokensNote": "tokens recorded as 0: token accounting is not available"
   },
   "passRateAtFirstDoneClaim": "red tests failed before the change: 14 failures in the first run (decoders, picker labels, data guards); the typo guard failed on the data before the fix",
-  "passRateAfterReview": "gates at the commit: vitest 926/926 (31 files); tsc 0; build 0; browser 6/6. Mutation campaign not run (awaiting approval). No review verdict is claimed.",
+  "passRateAfterReview": "gates at 69baf006: vitest 926/926 (31 files); tsc 0; build 0; browser 6/6; mutation 28/28 (P0 19/19, P1 9/9). No review verdict is claimed.",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
@@ -31,5 +31,5 @@
     "live endpoint probe (confirmed the backend already returns Hook)",
     "Chromium probe (option text at 3 sizes x 3 themes)"
   ],
-  "status": "complete pending mutation approval: picker descriptions from game data, Whisper typo fixed, pins refreshed (client.ts, components.css); mutation campaign not yet run"
+  "status": "complete: picker descriptions from game data, Whisper typo fixed, pins refreshed (client.ts, components.css), mutation 28/28"
 }
