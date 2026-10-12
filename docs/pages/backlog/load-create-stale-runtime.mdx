@@ -4,10 +4,10 @@ title: Scoundrel loading and creation — stale development backend
 
 # LOAD-CREATE-01: stale development backend
 
-**Finding: the current binary handles the human's legacy data correctly.**
-The human must restart their live Ada server; this worker does not restart it
-or modify `campaign-data/`. No decoder was loosened and no production patch was
-needed for the reproduced data.
+**Status: closed — restart confirmed as the fix.** The human restarted the live
+Ada server with the current binary and reported that everything worked again,
+including scoundrel loading and creation. No decoder was loosened or production
+patch needed; the worker did not restart the server or modify `campaign-data/`.
 
 ## Live failure and root cause
 
@@ -64,10 +64,10 @@ The existing backend normalization is the correct migration boundary:
 `pitd_normalize.adb:1848–1849`, `:1898–1899` and `:2046–2054` supply silent
 legacy defaults. No manual data rewrite or frontend fallback is needed.
 
-This reproduces the user's data, not just a newly generated test fixture.
-The isolated checks support restarting the live backend with the current binary
-and the same game/data directories as the operational fix. The human's actual
-restart and post-restart browser result remain unobserved.
+The isolated checks reproduced the user's actual legacy data and supported
+restarting the live backend with the current binary and the same directories.
+The human subsequently performed that restart and confirmed everything worked.
+LOAD-CREATE-01 is closed.
 
 ## Why conformance did not catch the live mismatch
 
@@ -77,20 +77,17 @@ by Vite. A passing managed suite cannot establish that the human's listener was
 restarted after a wire-contract change. The missing fields are defaulted by
 current code; the October 6 executable does not contain that code.
 
-## Proposed compatibility check — not implemented
+## Future ideas (not planned)
 
-An early compatibility check would be useful, with actionable copy such as:
-“Your backend is older than this app. Restart the backend, then refresh.”
-However, a comparison of the existing health `version` alone would **not** catch
-this incident: both old and current processes report **0.2.0**.
+**Contract-compatibility check:** the human decided to skip the “server out of
+date, restart it” check for now. It is a future idea, not planned work, a blocker
+or a remaining requirement of LOAD-CREATE-01.
 
-Prefer a generated, compiled-in contract compatibility identifier, accompanied
-by a build identifier for diagnostics, and a frontend expected identifier.
-Check it once before loading sheets or submitting creation; distinguish an
-unsupported backend from network failure. This needs an explicit contract/client
-change, since health responses are strictly decoded. Do not add blind retries,
-automatic server restarts or relaxed entity schemas. The human asked for a
-proposal only; no health/version check has been built.
+If revisited, health `version` alone would not detect this incident: both old
+and current processes reported **0.2.0**. A generated, compiled-in contract
+compatibility identifier with diagnostic build identity could support an early,
+actionable compatibility message. That would require an approved contract/client
+change; no such check has been built or scheduled.
 
 Evidence: `tasks/metrics/ada/LOAD-CREATE-01-live-responses.log` preserves exact
 read-only live responses, and `LOAD-CREATE-01-decoder-probe.log` preserves actual

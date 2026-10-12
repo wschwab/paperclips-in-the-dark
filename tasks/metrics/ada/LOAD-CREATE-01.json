@@ -35,7 +35,7 @@
     "scaffoldingLocNote": "No script/scaffold files created; probe executed in eval.",
     "iterationNote": "Investigation only; no source implementation red-green iteration."
   },
-  "status": "Investigation complete; current-copy checks green; human owns live restart; compatibility check proposal only",
+  "status": "Closed: human restarted the live server and confirmed loading and creation work; compatibility check is a future idea, not planned",
   "observations": {
     "liveCharacterDecodeFailures": 2,
     "liveCrewAndRosterDecodePasses": 2,
@@ -53,8 +53,11 @@
     "mutationRun": false,
     "changedMutationTargets": []
   },
-  "openItems": [
-    "Human restarts live Ada and checks actual app afterwards.",
-    "Human decides whether to authorize a separate compatibility metadata/client feature."
-  ]
+  "openItems": [],
+  "closure": {
+    "confirmedBy": "human",
+    "fix": "Restarted the stale live Ada server with the current binary",
+    "result": "Everything worked, including scoundrel loading and creation",
+    "compatibilityCheck": "Future idea (not planned)"
+  }
 }

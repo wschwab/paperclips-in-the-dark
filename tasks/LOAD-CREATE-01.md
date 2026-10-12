@@ -14,7 +14,11 @@ outputs:
 
 # LOAD-CREATE-01
 
-## Latest human direction
+**Status: closed.** The human restarted the live server with the current binary
+and confirmed that everything worked, including loading and creating scoundrels.
+Restarting the stale backend was the confirmed fix; no production patch needed.
+
+## Investigation direction (historical)
 
 Run the CURRENT binary on a temporary copy of the human's actual campaign data;
 verify legacy scoundrels, crew, roster and creation through the real frontend
@@ -54,22 +58,22 @@ for the human's real legacy data: normalize lines1848–1849,1898–1899,2046–
 No latent migration or decoder defect was found for these documents. No schema
 was loosened and no source patch was made to invent a redundant migration.
 
-The isolated result supports restarting the live server with the current binary
-and the same directories. That restart is reserved for the human; its actual
-post-restart UI outcome is not claimed. The worker's own temporary server is
-stopped after capture. No broad kills or changes to the live service.
+The isolated result supported restarting the live server with the current binary
+and the same directories. The human subsequently restarted it and confirmed
+everything worked. The worker's temporary server was stopped after capture;
+the worker did not restart or alter the human's live service.
 
-## Conformance seam and proposal
+## Conformance seam and future ideas (not planned)
 
 Managed conformance builds/launches a current binary with isolated data/port,
 not the human's old Vite-proxied listener. Its green result cannot validate that
 long-running development process's executable identity.
-A compatibility check before reads/creation is worth proposing, but health.version
-alone is insufficient because both runtimes say0.2.0. Recommend a generated,
-compiled-in contract compatibility identifier plus diagnostic build identity,
-checked against the frontend's expected identifier. Report a restart/refresh
-instruction, not a generic retry. This requires a separate approved contract/client
-change and is deliberately not built. No automatic restart, retry or lax decoder.
+The human decided to skip the contract-compatibility “server out of date,
+restart it” check for now. It is a **future idea (not planned)**, not a blocker
+or open work on this closed card. If revisited, health.version alone is
+insufficient because both runtimes reported0.2.0; generated contract compatibility
+identity with build diagnostics could support an actionable message. No check,
+automatic restart, retry or relaxed decoder has been built or scheduled.
 
 ## Verification scope and records
 
