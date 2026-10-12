@@ -1,0 +1,56 @@
+npm notice run paperclips-frontend@0.1.0 test
+npm notice run vitest --run
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/head.test.ts (7 tests) 7ms
+ ✓ src/styles/game-mode-contrast.test.ts (8 tests) 5ms
+ ✓ src/data/playbook-blurbs.test.ts (7 tests) 6ms
+ ✓ src/data/entanglements.test.ts (5 tests) 3ms
+ ✓ src/lib/chargen.test.ts (25 tests) 5ms
+ ✓ src/pages/game-mode.test.ts (10 tests) 4ms
+ ✓ src/schema/common.test.ts (4 tests) 2ms
+ ✓ src/components/clock.test.ts (4 tests) 12ms
+ ✓ src/schema/campaign-summary.test.ts (3 tests) 4ms
+ ✓ src/styles/sheet-columns.test.ts (1 test) 2ms
+ ✓ src/lib/mutation-continuity.test.ts (19 tests) 24ms
+ ✓ src/components/harm-table.test.ts (5 tests) 12ms
+ ✓ src/components/error-card.test.ts (4 tests) 7ms
+ ✓ src/components/trauma-stamps.test.ts (4 tests) 13ms
+ ✓ src/components/action-dots.test.ts (11 tests) 23ms
+(node:3990222) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/api/game-mode-client.test.ts (5 tests) 14ms
+ ✓ src/schema/decoders.test.ts (73 tests) 38ms
+ ✓ src/lib/completion-cues.test.ts (8 tests) 14ms
+ ✓ src/schema/internal-error.test.ts (6 tests) 4ms
+ ✓ src/api/import-repair.test.ts (10 tests) 16ms
+(node:3990184) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/shell.test.ts (9 tests) 262ms
+(node:3990227) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3990226) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/api/client.test.ts (284 tests) 153ms
+(node:3990181) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/crew-history.test.ts (5 tests) 283ms
+ ✓ src/pages/character-history.test.ts (5 tests) 281ms
+(node:3990183) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/crew-create.test.ts (8 tests) 452ms
+ ✓ src/pages/character-create.test.ts (18 tests) 510ms
+ ✓ src/pages/import.test.ts (7 tests) 630ms
+ ✓ src/main.test.ts (12 tests) 1115ms
+   ✓ app router (F2aa) > redirects "/" to "/roster" and mounts the roster page  523ms
+ ✓ src/pages/roster.test.ts (51 tests) 2109ms
+ ✓ src/pages/game-mode-sheet.test.ts (57 tests) 3371ms
+ ✓ src/pages/crew-detail.test.ts (98 tests) 8826ms
+ ✓ src/pages/character-detail.test.ts (160 tests) 13463ms
+
+ Test Files  32 passed (32)
+      Tests  933 passed (933)
+   Start at  18:38:48
+   Duration  14.52s (transform 2.77s, setup 0ms, collect 11.17s, tests 31.67s, environment 3.78s, prepare 2.08s)
+

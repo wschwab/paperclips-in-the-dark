@@ -1,0 +1,36 @@
+{
+  "results": [
+    {
+      "path": "/favicon-32.png",
+      "status": 200,
+      "bytes": 1904
+    },
+    {
+      "path": "/apple-touch-icon.png",
+      "status": 200,
+      "bytes": 28635
+    },
+    {
+      "path": "/icon-192.png",
+      "status": 200,
+      "bytes": 32319
+    },
+    {
+      "path": "/icon-512.png",
+      "status": 200,
+      "bytes": 187859
+    },
+    {
+      "path": "/og-image.jpg",
+      "status": 200,
+      "bytes": 148631
+    },
+    {
+      "path": "/site.webmanifest",
+      "status": 200,
+      "bytes": 474
+    }
+  ],
+  "title": "Paperclips in the Dark",
+  "favicon": "<link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/favicon-32.png\">"
+}

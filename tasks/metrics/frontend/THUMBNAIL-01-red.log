@@ -1,0 +1,174 @@
+npm notice run paperclips-frontend@0.1.0 test
+npm notice run vitest --run src/head.test.ts
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/head.test.ts (6 tests | 5 failed) 9ms
+   ✓ document head (THUMBNAIL-01) > every local head URL points at an existing file in frontend/public 1ms
+   × document head (THUMBNAIL-01) > links the 32, 180, 192 and 512 icons and the manifest 3ms
+     → expected '<!doctype html>\n<html lang="en">\n  …' to match /…/icon-192\.png"[^>]*|sizes="192x192"[^>]*href="\
+   × document head (THUMBNAIL-01) > drops the flat SVG favicon so the browser tab shows the thumbnail icon 2ms
+     → expected '<!doctype html>\n<html lang="en">\n  …' not to contain 'favicon.svg'
+   × document head (THUMBNAIL-01) > gives Open Graph and Twitter the title and a 1200x630 image 1ms
+     → expected '<!doctype html>\n<html lang="en">\n  …' to contain 'property="og:title" content="Papercli…'
+   × document head (THUMBNAIL-01) > keeps the og image small 0ms
+     → ENOENT: no such file or directory, stat '/home/x/code/paperclips-in-the-dark/frontend/public/og-image.jpg'
+   × document head (THUMBNAIL-01) > the manifest lists only icons that exist, with the square sizes 1ms
+     → expected [ 'any', '32x32', '180x180' ] to deeply equal ArrayContaining ["192x192", "512x512"]
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/head.test.ts > document head (THUMBNAIL-01) > links the 32, 180, 192 and 512 icons and the manifest
+AssertionError: expected '<!doctype html>\n<html lang="en">\n  …' to match /…/icon-192\.png"[^>]*|sizes="192x192"[^>]*href="\
+
+- Expected: 
+/href="\/icon-192\.png"[^>]*|sizes="192x192"[^>]*href="\/icon-192\.png"/
+
++ Received: 
+"<!doctype html>
+<html lang=\"en\">
+  <head>
+    <meta charset=\"UTF-8\" />
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+    <link rel=\"icon\" type=\"image/svg+xml\" href=\"/favicon.svg\" />
+    <link rel=\"icon\" type=\"image/png\" sizes=\"32x32\" href=\"/favicon-32.png\" />
+    <link rel=\"icon\" type=\"image/png\" sizes=\"16x16\" href=\"/favicon-16.png\" />
+    <link rel=\"apple-touch-icon\" sizes=\"180x180\" href=\"/apple-touch-icon.png\" />
+    <link rel=\"manifest\" href=\"/site.webmanifest\" />
+    <meta name=\"theme-color\" content=\"#0d0e13\" />
+    <title>Paperclips in the Dark</title>
+  </head>
+  <body>
+    <div id=\"app\"></div>
+    <script type=\"module\" src=\"/src/main.ts\"></script>
+  </body>
+</html>
+"
+
+ ❯ src/head.test.ts:49:18
+     47|     expect(html).toMatch(/rel="icon"[^>]*sizes="32x32"[^>]*href="\/fav…
+     48|     expect(html).toMatch(/rel="apple-touch-icon"[^>]*href="\/apple-tou…
+     49|     expect(html).toMatch(/href="\/icon-192\.png"[^>]*|sizes="192x192"[…
+       |                  ^
+     50|     expect(html).toMatch(/href="\/icon-512\.png"[^>]*|sizes="512x512"[…
+     51|     expect(html).toContain('rel="manifest" href="/site.webmanifest"');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/head.test.ts > document head (THUMBNAIL-01) > drops the flat SVG favicon so the browser tab shows the thumbnail icon
+AssertionError: expected '<!doctype html>\n<html lang="en">\n  …' not to contain 'favicon.svg'
+
+- Expected
++ Received
+
+- favicon.svg
++ <!doctype html>
++ <html lang="en">
++   <head>
++     <meta charset="UTF-8" />
++     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
++     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
++     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
++     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
++     <link rel="manifest" href="/site.webmanifest" />
++     <meta name="theme-color" content="#0d0e13" />
++     <title>Paperclips in the Dark</title>
++   </head>
++   <body>
++     <div id="app"></div>
++     <script type="module" src="/src/main.ts"></script>
++   </body>
++ </html>
++
+
+ ❯ src/head.test.ts:55:22
+     53| 
+     54|   it("drops the flat SVG favicon so the browser tab shows the thumbnai…
+     55|     expect(html).not.toContain("favicon.svg");
+       |                      ^
+     56|     expect(existsSync(resolve(root, "public/favicon.svg"))).toBe(false…
+     57|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/head.test.ts > document head (THUMBNAIL-01) > gives Open Graph and Twitter the title and a 1200x630 image
+AssertionError: expected '<!doctype html>\n<html lang="en">\n  …' to contain 'property="og:title" content="Papercli…'
+
+- Expected
++ Received
+
+- property="og:title" content="Paperclips in the Dark"
++ <!doctype html>
++ <html lang="en">
++   <head>
++     <meta charset="UTF-8" />
++     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
++     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
++     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
++     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
++     <link rel="manifest" href="/site.webmanifest" />
++     <meta name="theme-color" content="#0d0e13" />
++     <title>Paperclips in the Dark</title>
++   </head>
++   <body>
++     <div id="app"></div>
++     <script type="module" src="/src/main.ts"></script>
++   </body>
++ </html>
++
+
+ ❯ src/head.test.ts:60:18
+     58| 
+     59|   it("gives Open Graph and Twitter the title and a 1200x630 image", ()…
+     60|     expect(html).toContain('property="og:title" content="Paperclips in…
+       |                  ^
+     61|     expect(html).toMatch(/property="og:image" content="\/og-image\.jpg…
+     62|     expect(html).toMatch(/name="twitter:image" content="\/og-image\.jp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/head.test.ts > document head (THUMBNAIL-01) > keeps the og image small
+Error: ENOENT: no such file or directory, stat '/home/x/code/paperclips-in-the-dark/frontend/public/og-image.jpg'
+ ❯ src/head.test.ts:68:12
+     66| 
+     67|   it("keeps the og image small", () => {
+     68|     expect(statSync(publicFile("/og-image.jpg")).size).toBeLessThan(30…
+       |            ^
+     69|   });
+     70| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/head.test.ts > document head (THUMBNAIL-01) > the manifest lists only icons that exist, with the square sizes
+AssertionError: expected [ 'any', '32x32', '180x180' ] to deeply equal ArrayContaining ["192x192", "512x512"]
+
+- Expected
++ Received
+
+- ArrayContaining [
+-   "192x192",
+-   "512x512",
++ [
++   "any",
++   "32x32",
++   "180x180",
+  ]
+
+ ❯ src/head.test.ts:74:19
+     72|     const manifest = JSON.parse(readFileSync(publicFile("/site.webmani…
+     73|     const sizes = manifest.icons.map((i) => i.sizes);
+     74|     expect(sizes).toEqual(expect.arrayContaining(["192x192", "512x512"…
+       |                   ^
+     75|     for (const icon of manifest.icons) {
+     76|       expect(existsSync(publicFile(icon.src)), icon.src).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+   Start at  18:36:45
+   Duration  194ms (transform 19ms, setup 0ms, collect 14ms, tests 9ms, environment 0ms, prepare 49ms)
+

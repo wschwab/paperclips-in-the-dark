@@ -1,0 +1,71 @@
+{
+  "task": "THUMBNAIL-01",
+  "track": "frontend",
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": null,
+  "date": "2026-10-12",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 5.85,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "Vitest933/933; tsc/build pass; Chromium journeys6/6; all five built images and manifest HTTP200.",
+  "passRateAfterReview": "Direct image and Chromium screenshot inspection; no independent review claimed.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "defectCatchingLayer": ["conformance"],
+  "notes": [
+    "Inherited head.test.ts retained and strengthened; initial red5fail/1pass, final7 head cases.",
+    "Square crop390,10,1290,910 exclusive; full clip remains; original untouched.",
+    "SVG removed to prevent browser preference overriding photographic branding.",
+    "Social root-relative URLs lack a canonical deployment origin; external crawler limitation documented.",
+    "No mutation target changed; conditional campaign not needed.",
+    "Chromium screenshot is actual icon/title rendering in a page, not native browser chrome."
+  ],
+  "metricsMethodology": {
+    "method": "Actual command counts, image dimensions/byte sizes and Chromium network/image evidence.",
+    "source": "tasks/THUMBNAIL-01.md and tasks/metrics/frontend/THUMBNAIL-01-*.log",
+    "locNote": "Diff LOC not measured; unknown rather than estimated.",
+    "scaffoldingLocNote": "No temporary script files committed; image processing and browser evidence run through tools.",
+    "tokensNote": "Token accounting unavailable; null supported."
+  },
+  "status": "Acceptance green; scoped commit and dual-mirror delivery authorized",
+  "acceptanceCounts": {
+    "vitest": 933,
+    "vitestFiles": 32,
+    "headTests": 7,
+    "browserJourneys": 6,
+    "tsc": "pass",
+    "build": "pass",
+    "assetHttp200": 6
+  },
+  "cropBox": [
+    390,
+    10,
+    1290,
+    910
+  ],
+  "fileSizesBytes": {
+    "favicon-32.png": 1904,
+    "apple-touch-icon.png": 28635,
+    "icon-192.png": 32319,
+    "icon-512.png": 187859,
+    "og-image.jpg": 148631
+  },
+  "verification": {
+    "vitest": 0,
+    "tsc": 0,
+    "build": 0,
+    "browser": 0
+  },
+  "mutation": {
+    "targetsChanged": false,
+    "pinsChanged": false,
+    "campaignRun": false,
+    "reason": "No changed asset/head/test/docs file is a mutation-catalog target."
+  }
+}

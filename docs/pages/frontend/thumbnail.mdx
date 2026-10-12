@@ -1,0 +1,46 @@
+---
+title: App thumbnail and social previews
+---
+
+# App thumbnail — THUMBNAIL-01
+
+The human-supplied glowing-paperclip image is now the app's favicon, install icon
+and social preview. The original `~/Downloads/pitd-thumbnail.png` remains untouched.
+
+The square crop is **(390, 10) → (1290, 910)** in the original 1672×941 image
+(right/bottom exclusive): 900×900, centered at (840,460). It preserves the entire
+clip with padding. Lanczos downsampling and light unsharp masking retain the
+outline at 32px; optimized 256-color PNGs keep downloads small.
+
+| Asset | Pixels | Bytes |
+|---|---|---:|
+| favicon-32.png | 32×32 | 1,904 |
+| apple-touch-icon.png | 180×180 | 28,635 |
+| icon-192.png | 192×192 | 32,319 |
+| icon-512.png | 512×512 | 187,859 |
+| og-image.jpg | 1200×630 | 148,631 |
+
+The old SVG favicon is removed: browsers can prefer the SVG and otherwise keep
+showing the old line-drawn branding. The manifest and document head now use the
+new PNGs. The social image uses nearly the full scene, cropping original pixels
+(0,0) → (1672,878), then resizing to 1200×630. Its optimized progressive JPEG
+uses quality88 without chroma subsampling.
+
+Open Graph and Twitter use the title **Paperclips in the Dark** and the same
+social image. URLs are root-relative because no canonical public origin exists.
+Some external social crawlers require absolute URLs: a future deployment should
+set its canonical origin and resolve these metadata URLs accordingly. No origin
+or deployment URL has been invented.
+
+The inherited head regression was retained and strengthened to check actual PNG
+dimensions. Initial red was 5 failed/1 passed; final frontend suite is **933/933**,
+TypeScript and production build pass, and managed Chromium journeys are **6/6**.
+Chromium fetched all five built images and the manifest with HTTP200. Evidence
+below renders the actual favicon at 32 CSS pixels plus install/social previews;
+it is an icon/title preview inside Chromium, not a fabricated screenshot of
+native browser chrome.
+
+<img src="/mockups/thumbnail-01/chromium-icons.png" alt="Chromium rendering of the new favicon at 32 pixels and the larger install and social preview images" />
+
+No mutation-catalog target changed, so neither a pin refresh nor a new mutation
+campaign is needed for this asset/head-only card.
