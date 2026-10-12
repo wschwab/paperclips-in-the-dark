@@ -364,12 +364,20 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.5em;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-top: 0.75em;
 }
-.game-mode-popup-footer .left,
+.game-mode-popup-footer .left {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5em;
+}
+/* The right group keeps its place beside Back at every width; only its own buttons wrap. */
 .game-mode-popup-footer .right {
   display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-end;
   gap: 0.5em;
   flex-wrap: wrap;
 }

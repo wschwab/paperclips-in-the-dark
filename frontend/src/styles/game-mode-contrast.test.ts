@@ -60,3 +60,15 @@ describe("mode-switch label fits its track (R4-01)", () => {
     expect(css).toMatch(/\.mode-switch button\s*\{[^}]*padding-left:\s*0\.3em[^}]*padding-right:\s*0\.3em[^}]*font-size:\s*0\.85em/);
   });
 });
+
+// Sol focused F7 check (bdcb1bd6, item 2): at 390px the Resolution right group wrapped onto its own
+// line below Back. The footer stays on one line; only the right group wraps inside itself.
+describe("footer split holds at narrow widths (F7-2)", () => {
+  it("keeps the footer on one line and lets only the right group wrap", () => {
+    expect(css).toMatch(/\.game-mode-popup-footer\s*\{[^}]*flex-wrap:\s*nowrap/);
+    const right = css.match(/\.game-mode-popup-footer \.right\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(right).toMatch(/flex:\s*1 1 0/);
+    expect(right).toMatch(/flex-wrap:\s*wrap/);
+    expect(right).toMatch(/justify-content:\s*flex-end/);
+  });
+});
