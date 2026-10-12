@@ -215,17 +215,30 @@ package body Pitd_Schema_Validators is
       end if;
    end Check_Uuid;
 
-   --  ^[A-Za-z0-9-]+$
+   --  ASCII alphanumerics/hyphen plus U+00C0..U+024F (Latin blocks).
    function Is_Game_Stem (S : String) return Boolean is
+      I : Integer := S'First;
+      Lead, Continuation : Natural;
    begin
       if S'Length = 0 then
          return False;
       end if;
-      for I in S'Range loop
-         case S (I) is
-            when 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '-' => null;
-            when others => return False;
-         end case;
+      while I <= S'Last loop
+         Lead := Character'Pos (S (I));
+         if S (I) in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '-' then
+            I := I + 1;
+         elsif Lead in 195 .. 201 and then I < S'Last then
+            --  Exactly the two-byte UTF-8 encodings of U+00C0..U+024F.
+            Continuation := Character'Pos (S (I + 1));
+            if Continuation not in 128 .. 191
+              or else (Lead = 201 and then Continuation > 143)
+            then
+               return False;
+            end if;
+            I := I + 2;
+         else
+            return False;
+         end if;
       end loop;
       return True;
    end Is_Game_Stem;
@@ -235,7 +248,7 @@ package body Pitd_Schema_Validators is
       if V.Kind /= JSON_String_Type then
          Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
       elsif not Is_Game_Stem (S (V)) then
-         Report (Ptr, "pattern: """ & S (V) & """ is not ^[A-Za-z0-9-]+$");
+         Report (Ptr, "pattern: """ & S (V) & """ is not ^[A-Za-z0-9À-ɏ-]+$");
       end if;
    end Check_Game_Stem;
 

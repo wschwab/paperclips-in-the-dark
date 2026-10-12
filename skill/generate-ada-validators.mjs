@@ -155,7 +155,7 @@ function registerPattern(regex) {
     case "^([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})?$":
       checker = "Check_Crew_Id";
       break;
-    case "^[A-Za-z0-9-]+$":
+    case "^[A-Za-z0-9À-ɏ-]+$":
       checker = "Check_Game_Stem";
       break;
     case "^[a-z0-9]+(?:-[a-z0-9]+)*$":
@@ -738,17 +738,30 @@ const PATTERN_FUNCTIONS = {
   },
   Check_Game_Stem: {
     function: "Is_Game_Stem",
-    doc: "--  ^[A-Za-z0-9-]+$",
+    doc: "--  ASCII alphanumerics/hyphen plus U+00C0..U+024F (Latin blocks).",
     body: `   function Is_Game_Stem (S : String) return Boolean is
+      I : Integer := S'First;
+      Lead, Continuation : Natural;
    begin
       if S'Length = 0 then
          return False;
       end if;
-      for I in S'Range loop
-         case S (I) is
-            when 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '-' => null;
-            when others => return False;
-         end case;
+      while I <= S'Last loop
+         Lead := Character'Pos (S (I));
+         if S (I) in 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '-' then
+            I := I + 1;
+         elsif Lead in 195 .. 201 and then I < S'Last then
+            --  Exactly the two-byte UTF-8 encodings of U+00C0..U+024F.
+            Continuation := Character'Pos (S (I + 1));
+            if Continuation not in 128 .. 191
+              or else (Lead = 201 and then Continuation > 143)
+            then
+               return False;
+            end if;
+            I := I + 2;
+         else
+            return False;
+         end if;
       end loop;
       return True;
    end Is_Game_Stem;`,
@@ -757,7 +770,7 @@ const PATTERN_FUNCTIONS = {
       if V.Kind /= JSON_String_Type then
          Report (Ptr, "type: expected string, found " & Kind_Name (V.Kind));
       elsif not Is_Game_Stem (S (V)) then
-         Report (Ptr, "pattern: """ & S (V) & """ is not ^[A-Za-z0-9-]+$");
+         Report (Ptr, "pattern: """ & S (V) & """ is not ^[A-Za-z0-9À-ɏ-]+$");
       end if;
    end Check_Game_Stem;`,
   },

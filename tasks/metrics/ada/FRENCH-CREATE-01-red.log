@@ -1,0 +1,106 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/contract/registered-game-creation.test.ts
+OK: canonical managed launcher
+[managed-run] runId=2026-10-12T05-35-20-578Z-82439d78
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=FRENCH-CREATE-01-working
+[managed-run] testCommand=--run suites/contract/registered-game-creation.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78/data (dir)
+[managed-run] port=46189
+[managed-run] baseUrl=http://127.0.0.1:46189
+[managed-run] pid=2484153
+[managed-run] ready=http://127.0.0.1:46189
+[managed-run] vitestPid=2484232
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-EDITION-blades-in-the-dark] registered edition creates a schema-valid scoundrel 19ms
+ × suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-EDITION-français-blades-in-the-dark] registered edition creates a schema-valid scoundrel 4ms
+   → expected 500 to be 200 // Object.is equality
+ ✓ suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-EDITION-rus-blades-in-the-dark] registered edition creates a schema-valid scoundrel 43ms
+ ✓ suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-EDITION-scum-and-villainy] registered edition creates a schema-valid scoundrel 2ms
+ × suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-ENVELOPE-001] edition creation errors and invalid-request controls use consistent existing envelopes 46ms
+   → expected 500 to be 400 // Object.is equality
+ × suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-STEM-001] registered stems independently validate on an otherwise valid created DTO 48ms
+   → Only gameStem changed to français-blades-in-the-dark: expected [ Array(1) ] to deeply equal []
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-EDITION-français-blades-in-the-dark] registered edition creates a schema-valid scoundrel
+AssertionError: expected 500 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+ ❯ suites/contract/registered-game-creation.test.ts:15:31
+     13|     testCase(`FRENCH-CREATE-EDITION-${stem}`, "registered edition crea…
+     14|       const response = await api.post("characters", { gameStem: stem, …
+     15|       expect(response.status).toBe(200);
+       |                               ^
+     16|       expect(response.body).toMatchObject({ ok: true, character: { gam…
+     17|       const result = validate("operationResult", response.body);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-ENVELOPE-001] edition creation errors and invalid-request controls use consistent existing envelopes
+AssertionError: expected 500 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+ ❯ suites/contract/registered-game-creation.test.ts:40:33
+     38|       if (!body.ok) {
+     39|         expect(body.error).not.toBeNull();
+     40|         expect(response.status).toBe(body.error!.status);
+       |                                 ^
+     41|         expect(body.error!.retryable).toBe(true);
+     42|       }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  suites/contract/registered-game-creation.test.ts > registered game edition creation > [FRENCH-CREATE-STEM-001] registered stems independently validate on an otherwise valid created DTO
+AssertionError: Only gameStem changed to français-blades-in-the-dark: expected [ Array(1) ] to deeply equal []
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   "/gameStem must match pattern \"^[A-Za-z0-9-]+$\"",[39m
+[31m+ ][39m
+
+ ❯ suites/contract/registered-game-creation.test.ts:53:65
+     51|     for (const stem of editions) {
+     52|       const result = validate("character", { ...baseline.character!, g…
+     53|       expect(result.errors, `Only gameStem changed to ${stem}`).toEqua…
+       |                                                                 ^
+     54|       expect(result.valid).toBe(true);
+     55|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 3 passed (6)
+   Start at  08:35:20
+   Duration  560ms (transform 54ms, setup 0ms, collect 290ms, tests 163ms, environment 0ms, prepare 30ms)
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78 dataDir=/tmp/pitd-managed/2026-10-12T05-35-20-578Z-82439d78/data port=46189
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-12T05-35-20-578Z-82439d78-server.log

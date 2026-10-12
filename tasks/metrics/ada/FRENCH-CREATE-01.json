@@ -1,0 +1,131 @@
+{
+  "task": "FRENCH-CREATE-01",
+  "track": "ada",
+  "finalRecords": {
+    "docs": { "exitCode": 0, "generatedFiles": 145, "log": "tasks/metrics/ada/FRENCH-CREATE-01-docs.log" },
+    "validators": { "exitCode": 0, "metricsFiles": 169, "traceabilityChecks": 231, "reconciliationChecks": 17, "log": "tasks/metrics/ada/FRENCH-CREATE-01-validators.log" }
+  },
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": null,
+  "date": "2026-10-12",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 17.88,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "Reachable acceptance green: focused6/6; Ada583/583; two cycles583 each; tooling233/233; proof246. Mutation explicitly combined/deferred and internal classification human-deferred.",
+  "passRateAfterReview": "No independent review. Human approved stem change and explicitly deferred internal-error classification pending a contract decision.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "conformance",
+    "human"
+  ],
+  "notes": [
+    "Conformance isolated the stem constraint as the creation cause; initial test enumeration corrected from all JSON files to the actual games.json registry.",
+    "Human highlighted correct server-defect classification. No internal/500 contract branch exists; path remains unchanged by explicit instruction, recorded as open.",
+    "No frontend source edits or VCS commands. Human routes frontend GameStem mirror alignment to its owner."
+  ],
+  "metricsMethodology": {
+    "method": "Canonical command outputs; measured elapsed work phase; distinct root-cause counts, no VCS-based estimates.",
+    "source": "tasks/FRENCH-CREATE-01.md and tasks/metrics/ada/FRENCH-CREATE-01-*.log",
+    "wallClockNote": "Measured since the first red command, including investigation and acceptance.",
+    "tokensNote": "Token accounting unavailable; null is the supported unknown value.",
+    "locNote": "No VCS commands authorized; diff LOC unknown.",
+    "scaffoldingLocNote": "No VCS commands authorized; scaffolding LOC unknown."
+  },
+  "status": "Reachable work complete; combined mutation and internal-code approval explicitly deferred by human",
+  "contractChange": {
+    "authorized": true,
+    "beforePattern": "^[A-Za-z0-9-]+$",
+    "afterPattern": "^[A-Za-z0-9\u00c0-\u024f-]+$",
+    "allowedExtension": "Latin code points U+00C0..U+024F, exact allocation-free UTF-8 check",
+    "newStatuses": 0,
+    "newCodes": 0,
+    "dataSource": "data/games/games.json",
+    "registeredEditions": 4
+  },
+  "red": {
+    "failed": 3,
+    "passed": 3,
+    "total": 6,
+    "isolatedDiagnostic": "/gameStem must match pattern \"^[A-Za-z0-9-]+$\"",
+    "log": "tasks/metrics/ada/FRENCH-CREATE-01-red.log"
+  },
+  "acceptanceCounts": {
+    "focused": 6,
+    "ada": 583,
+    "adaFiles": 68,
+    "twoCycle": [
+      583,
+      583
+    ],
+    "tooling": 233,
+    "proof": 246,
+    "validators": {
+      "metricsFiles": 169,
+      "traceability": 231,
+      "reconciliation": 17
+    }
+  },
+  "verification": {
+    "generation": {
+      "exitCode": 0
+    },
+    "build": {
+      "exitCode": 0
+    },
+    "focused": {
+      "exitCode": 0
+    },
+    "ada": {
+      "exitCode": 0,
+      "seconds": 71.62
+    },
+    "ada-two-cycle": {
+      "exitCode": 0,
+      "seconds": 153.21
+    },
+    "tooling": {
+      "exitCode": 0,
+      "seconds": 71.02
+    },
+    "proof": {
+      "exitCode": 0,
+      "seconds": 2.06
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "seconds": 1.83
+    },
+    "docs": {
+      "exitCode": 0
+    }
+  },
+  "openItems": [
+    {
+      "id": "internal-error-contract-gap",
+      "status": "awaiting human approval; path deliberately unchanged",
+      "citations": [
+        "backend-ada/server/src/pitd_callback.adb:352",
+        "backend-ada/server/src/pitd_common.adb:910-911",
+        "backend-ada/server/src/pitd_error.adb:99"
+      ],
+      "description": "No existing internal500 branch. Backend INTERNAL label falls through to VALIDATION400/retryable true. Valid request/server-generated invalid DTO must not be mislabeled as client validation; no new code/status added."
+    }
+  ],
+  "mutation": {
+    "executed": false,
+    "scope": "Combined full28 after both workers finish",
+    "humanInstructedNotToRunNow": true,
+    "ownChangedCatalogTargets": 0,
+    "ownTargetHashRefreshes": 0,
+    "reason": "Frontend review is active; generated validators changed but are not catalog targets. Combined owner aligns review target hashes after freeze.",
+    "commandForCombinedOwner": "PITD_REVISION=<combined-working-label> XDG_RUNTIME_DIR=/tmp npm --prefix conformance run test:mutation",
+    "resultClaimed": false
+  }
+}

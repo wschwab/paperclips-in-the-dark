@@ -10,7 +10,7 @@
       "properties": {
         "kind": { "const": "campaign" },
         "name": { "type": "string" },
-        "gameStem": { "type": "string", "pattern": "^[A-Za-z0-9-]+$" },
+        "gameStem": { "type": "string", "pattern": "^[A-Za-z0-9À-ɏ-]+$" },
         "createdAt": { "$ref": "common.json#/$defs/timestamp" },
         "formatVersion": { "$ref": "common.json#/$defs/formatVersion" }
       }

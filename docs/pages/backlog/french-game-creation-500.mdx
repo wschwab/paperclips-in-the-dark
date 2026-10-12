@@ -4,11 +4,12 @@ title: French game creation returns HTTP 500
 
 # French game creation returns HTTP 500
 
-**Status: queued — pre-existing backend bug, outside GAME-MODE-01.**
-Recorded during the contract card’s red probes on 2026-10-09. Do not implement
-or amend its behavior as part of game mode. The former `GAME-MODE-DEFAULT-4`
-case has been removed from that card’s oracle list; its failure evidence is
-retained separately.
+**Status: registered-edition creation fixed by FRENCH-CREATE-01; internal-error
+classification gap remains open pending human approval.**
+The original exchange below is historical evidence from GAME-MODE-01, not the
+current French creation response. The human approved the stem fix and instructed
+this card to leave the server-defect classification path unchanged until an
+internal contract code/status is approved.
 
 ## Exact observed exchange
 
@@ -69,6 +70,83 @@ needs a separate contract/implementation investigation.
 - Human classified the bug as pre-existing. A specific main-revision provenance
   was not independently checked with agent-run VCS, which remained prohibited.
 
-A separate fix should reconcile the installed game catalogue with accepted
-stems and investigate the HTTP/envelope/retry classification together, rather
-than swallowing the validation error or special-casing this request.
+The recommendation at that time was to reconcile the installed catalogue with
+accepted stems and investigate transport/envelope classification together.
+FRENCH-CREATE-01 below proves the stem cause; the internal branch still awaits
+human approval rather than being relabeled as bad input.
+
+## FRENCH-CREATE-01: proved cause and authorized contract change
+
+The new isolated DTO probe changes **only gameStem** on an otherwise valid
+created scoundrel. Before the fix, AJV reports exactly
+`/gameStem must match pattern "^[A-Za-z0-9-]+$"` for the catalogue’s French
+stem. The live edition test separately returns HTTP 500, and the envelope test
+separately fails on HTTP 500 versus error.status 400. These are observed RED
+failures, not a guess from the spelling of the filename.
+
+The code chain is:
+
+- `backend-ada/server/src/pitd_ops.adb:99` copies the requested stem unchanged
+  into the new DTO.
+- `backend-ada/server/src/pitd_stored.adb:54` runs the generated character
+  validator at the persistence gate.
+- `backend-ada/server/src/generated/pitd_schema_validators.adb:1405` validates
+  gameStem with Check_Game_Stem; its checker starts at line 219.
+- `contract/schemas/character.json:44` was the source ASCII-only pattern;
+  `skill/generate-ada-validators.mjs:158` selects its generated checker.
+
+The human authorized changing game-stem constraints to
+`^[A-Za-z0-9À-ɏ-]+$`: existing ASCII alphanumerics/hyphen plus Latin-block
+code points U+00C0–U+024F. This accepts every currently registered edition,
+not a special case for French or a hardcoded list of stems. The Ada checker
+recognizes exactly those UTF-8 encodings without allocating a decoded copy.
+Character, crew and campaign schemas, corresponding OpenAPI game-stem fields,
+and the conformance Effect mirror move together. UUID/entity/snapshot ID
+constraints are unchanged. Canonical artifacts are regenerated.
+
+The new suite enumerates **data/games/games.json**, not every JSON file in the
+directory (which also contains schemas, crew settings and demo documents).
+It takes each edition’s first playbook from that edition’s data. Observed
+focused GREEN: **6/6**, covering all four registered editions, typed and strict
+contract decoding, isolated stem admission, and existing request/domain-error
+envelope controls. French creation now succeeds without changing New_Character
+defaults, which further isolates the root cause.
+
+## Open: server-generated invalid entity has no internal contract branch
+
+A valid request whose server-generated DTO fails its own schema is a **server
+defect**, not client VALIDATION. No INTERNAL/SERVER_ERROR/500 error variant
+exists in the current contract or typed error constructors:
+
+- `backend-ada/server/src/pitd_callback.adb:352` (Persist_Create) requests
+  HTTP 500 with the backend label INTERNAL.
+- `backend-ada/server/src/pitd_common.adb:910–911` (Error_Result) maps every
+  unrecognized label to Validation_Error.
+- `backend-ada/server/src/pitd_error.adb:99` constructs VALIDATION with status
+  400 and retryable true, causing the observed transport/body disagreement.
+
+The human explicitly instructed FRENCH-CREATE-01 to **leave this path’s
+classification unchanged** while requesting approval for an internal branch.
+No new code/status, client-error relabeling, or suppression is introduced here.
+The remaining open decision is the approved internal-error contract variant
+and its non-client recovery semantics. The catalogue fix prevents the French
+request from reaching this defective path; it does not claim the generic
+invariant-failure envelope has been fixed.
+
+Frontend GameStem mirror alignment is handed to its owner by the human; this
+worker does not edit frontend. Acceptance evidence and final counts are recorded
+in `tasks/FRENCH-CREATE-01.md` and its metrics.
+
+## Reachable acceptance and combined mutation hand-off
+
+Real-settings Ada passes **583/583** tests in 68 files; the controlled restart
+run passes **583/583 in each of two cycles**. Tooling passes **233/233**,
+conformance typechecking passes, and SPARK proves **246/246** checks.
+The records validate with **169 metrics files**, **231/231 traceability**
+checks and **17/17 reconciliation** checks.
+
+The frontend worker is still mid-review. The human instructed this worker
+**not to run a mutation campaign now**: one combined **28/28** run will follow
+after both workers finish. No existing mutation target was changed by the stem
+fix (generated validators are not catalog targets), so there is no own target
+hash refresh to apply. A future combined result is not claimed here.

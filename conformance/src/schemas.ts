@@ -24,8 +24,8 @@ const Timestamp = Schema.String.pipe(
   Schema.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/),
 );
 
-/** OpenAPI path-parameter pattern for id/gameStem/crewId. */
-const GameStem = Schema.String.pipe(Schema.pattern(/^[A-Za-z0-9-]+$/));
+/** Registered game stems: ASCII alphanumerics/hyphen plus Latin U+00C0..U+024F. */
+const GameStem = Schema.String.pipe(Schema.pattern(/^[A-Za-z0-9À-ɏ-]+$/));
 
 /** common.json#/$defs/revision — minimum 1. */
 const Revision = Schema.Int.pipe(Schema.greaterThanOrEqualTo(1));

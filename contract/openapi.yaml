@@ -528,7 +528,7 @@ paths:
     get:
       operationId: getGame
       parameters:
-        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" } }
       responses:
         "200":
           description: full game-settings JSON (authored data, served verbatim from data/games/)
@@ -540,7 +540,7 @@ paths:
     get:
       operationId: listPlaybooks
       parameters:
-        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" } }
       responses:
         "200":
           description: playbook name + hook list
@@ -552,7 +552,7 @@ paths:
     get:
       operationId: getPlaybook
       parameters:
-        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" } }
         - { name: playbook, in: path, required: true, schema: { type: string } }
       responses:
         "200":
@@ -565,7 +565,7 @@ paths:
     get:
       operationId: listHeritages
       parameters:
-        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" } }
       responses:
         "200":
           description: heritage list
@@ -577,7 +577,7 @@ paths:
     get:
       operationId: getCrewSettings
       parameters:
-        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" } }
       responses:
         "200":
           description: crew game settings
@@ -589,7 +589,7 @@ paths:
     get:
       operationId: getCrewTypeSettings
       parameters:
-        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9-]+$" } }
+        - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" } }
         - { name: crewType, in: path, required: true, schema: { type: string } }
       responses:
         "200":
@@ -625,7 +625,7 @@ paths:
               required: [gameStem, playbook]
               additionalProperties: false
               properties:
-                gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+                gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
                 playbook: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
@@ -666,7 +666,7 @@ paths:
               required: [gameStem, playbook, actionRatings]
               additionalProperties: false
               properties:
-                gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+                gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
                 playbook: { type: string, minLength: 1 }
                 actionRatings:
                   type: object
@@ -1891,7 +1891,7 @@ paths:
               required: [gameStem, crewType]
               additionalProperties: false
               properties:
-                gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+                gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
                 crewType: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }

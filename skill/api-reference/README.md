@@ -521,7 +521,7 @@ schema:
   required: [gameStem, playbook]
   additionalProperties: false
   properties:
-    gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+    gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
     playbook: { type: string, minLength: 1 }
 ```
 
@@ -547,7 +547,7 @@ schema:
   required: [gameStem, playbook, actionRatings]
   additionalProperties: false
   properties:
-    gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+    gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
     playbook: { type: string, minLength: 1 }
     actionRatings:
       type: object
@@ -1960,7 +1960,7 @@ schema:
   required: [gameStem, crewType]
   additionalProperties: false
   properties:
-    gameStem: { type: string, pattern: "^[A-Za-z0-9-]+$" }
+    gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
     crewType: { type: string, minLength: 1 }
 ```
 
