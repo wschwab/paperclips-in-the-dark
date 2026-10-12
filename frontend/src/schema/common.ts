@@ -136,6 +136,7 @@ export const ErrorCode = Schema.Literal(
   "NORMALIZATION_REQUIRED",
   "TRAUMA_REQUIRED",
   "OUT_OF_ACTION",
+  "INTERNAL",
 );
 export type ErrorCode = typeof ErrorCode.Type;
 

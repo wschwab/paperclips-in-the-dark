@@ -119,6 +119,9 @@ const OP_ERROR_COPY: Readonly<Record<string, string>> = {
   PAYLOAD_TOO_LARGE: "That request was too large to handle.",
   TRAUMA_REQUIRED: "That requires a trauma before it can happen.",
   OUT_OF_ACTION: "This scoundrel is out of action right now.",
+  // INTERNAL-ERROR-01: a server defect, not a bad request. No retry prompt; the server's recovery
+  // text (report it; do not change the request) follows this line.
+  INTERNAL: "The server hit a problem and couldn't finish that. Please report it.",
 };
 
 /** Concise fallback for a decoded error code with no known user copy. */

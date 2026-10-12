@@ -52,6 +52,8 @@ const ErrorStaleDetails = Schema.Union(
 );
 /** Branches whose details is an empty object (additionalProperties: false). */
 const EmptyDetails = Schema.Struct({});
+// Strict empty object: any key is rejected. Effect's Struct({}) does not enforce excess keys.
+const StrictEmptyDetails = Schema.Record({ key: Schema.String, value: Schema.Never });
 
 const Entity = Schema.Union(Character, Crew, Clock);
 
@@ -113,6 +115,16 @@ const OperationErrorNewShape = Schema.Union(
   opError("PAYLOAD_TOO_LARGE", 413, ErrorLimitDetails),
   opError("TRAUMA_REQUIRED", 200, EmptyDetails, "required"),
   opError("OUT_OF_ACTION", 200, EmptyDetails, "required"),
+  // INTERNAL-ERROR-01: a server defect (HTTP 500). Retryable is literally false and the recovery text
+  // is the fixed instruction; details are a strict empty object; no entity, preview or token.
+  Schema.Struct({
+    code: Schema.Literal("INTERNAL"),
+    status: Schema.Literal(500),
+    message: Schema.String,
+    retryable: Schema.Literal(false),
+    recovery: Schema.Literal("This is a server defect. Report it; do not change the request."),
+    details: StrictEmptyDetails,
+  }),
 );
 
 const OperationError = OperationErrorNewShape;
