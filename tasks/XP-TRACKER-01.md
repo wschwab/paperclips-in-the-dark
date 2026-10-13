@@ -10,14 +10,16 @@ acceptance:
   - "Score-only separate XP Tracker; wide panel and accessible compact footer/bottom sheet"
   - "Real labels, Lurk trigger and game-settings maxima; inherited game-mode theme"
   - "Sheet retains Personal, playbook XP and attribute XP; no mode gating or campaign state"
-  - "Resolution shows six steps, explicit expression conversion and clear-on-completion notice"
-  - "Contract/backend/frozen-test grant and clear semantics cited; no implementation changes"
-  - "Parent captures 1440x1000, 768x1024 and 390x844 in light, dark and high-contrast; reports actual evidence"
+  - "Resolution shows six steps; separate Playbook/Insight/Prowess/Resolve allocation, live available/unallocated XP, locked GM total with Adjust"
+  - "Filled/empty and pending preview boxes show settings maxima and room; completion requires all XP placed without overflow or discard, then clears only three session counters"
+  - "Expression controls faithfully match sheet stressTrack structure/classes with labels below boxes; all three wide rows visible in initial 1440 capture"
+  - "Contract/backend/frozen-test grant and clear semantics cited; atomic completion recommended as proposal only, no implementation changes"
+  - "Parent recaptures 27 baseline plus 18 adjusted/ready PNGs at 1440x1000, 768x1024 and 390x844 in light, dark and high-contrast, and one real-app comparison; reports actual evidence"
 ---
 
 ## Scope and status
 
-**Design/mockups delivered.** All 27 exact-viewport Chromium captures, responsive input checks and the independent correction review are complete; the reviewer returned **SHIP**. No application, backend or contract implementation is part of this card. This proposal supersedes the earlier restriction that expression questions appear only in Resolution, without changing the implemented API.
+**Revision captured and checked for the mockup behaviour (2026-10-13).** This revision changes mockups and their proposal only; no application, backend, contract or game-settings implementation is part of this card. Recaptures, the behaviour probe and the real-app Talents comparison are recorded in `docs/public/mockups/game-mode/xp-tracker-browser-evidence.json`. Compact keyboard, focus, Escape, drag and touch checks were **not** re-run for this revision; their earlier results are history. No independent review was requested for this revision. This proposal supersedes the earlier restriction that expression questions appear only in Resolution, without changing the implemented API.
 
 ## Approved design
 
@@ -27,6 +29,7 @@ acceptance:
 - Reuse the incumbent game-mode `mockup.css` imports, fonts, light/dark/high-contrast theme and 06d Resolution conventions. Retain the Nyelle Vale / Wren Lurk example, not a new visual identity.
 - Real labels are `frontend/src/pages/character-sections/talents.ts:136-171`. Lurk trigger: **You addressed a challenge with stealth or evasion** (`data/games/blades-in-the-dark.json:389`). Session maximum **2** (`:1067`); XP maxima Playbook **8**, Attribute **6**, Crew **10** (`:1036-1040`). These numbers are source facts, not literals to embed in HTML/JS. Extract actual JSON into dedicated `xp-tracker-data.json`, record source path/JSON pointers and consume it dynamically.
 - Other questions come from the [Advancement SRD](https://bladesinthedark.com/advancement): **You expressed your beliefs, drives, heritage, or background.** / **You struggled with issues from your vice or traumas.** Record this content provenance separately from game-settings values; these questions are not fields in the settings JSON.
+- Expression controls must faithfully reproduce the real sheet component: `.stress` wraps a `.stress-track` group of `.stress-box` controls with `data-stress` filled/empty states, followed by `.stress-label.lbl` **below the boxes**. Follow `frontend/src/components/stress-track.ts`, `frontend/src/pages/character-sections/talents.ts:136–197`, and `.stress*` rules in `frontend/styles/components.css`; do not substitute a custom box row headed by an `h3`. Retain current/max numbers and per-track steppers. All three expression rows, including Struggle, must be fully visible in the initial 1440×1000 wide capture, not clipped in an internally scrolling rail.
 
 ## Resolution and timing
 
@@ -34,7 +37,13 @@ Keep the six-step Resolution stepper: **Scoundrel XP → Payoff → Heat → Ent
 
 During play a desperate action earns **1 XP immediately in the rolled action's attribute**, including desperate group actions. Expression counters instead record the session's three triggers, each 0–settings maximum: 1 if it happened, 2 if it happened a lot, no award for an absent trigger. They do not already grant XP.
 
-At **Scoundrel XP**, review the recorded expressions and explicitly distribute that XP to playbook and/or attribute tracks. Example: **2 + 1 + 1 = 4 expression XP**, assigned to one selected track; this is illustrative, not a ban on splitting. Never add already-granted desperate XP again. The approved design clears the **three session expression counters on completing this step**, after conversion, and visibly explains the clear. It does not clear permanent playbook/attribute XP tracks. Merely opening, closing or navigating to the step is not completion. Remove the old sheet **End downtime clears expressions** UI/behavior in the later implementation, not this design task.
+At **Scoundrel XP**, review the recorded expressions and distribute XP through **four separate destination steppers: Playbook, Trait Insight, Trait Prowess, and Trait Resolve**. Example expression total: **2 + 1 + 1 = 4**; splitting between destinations is explicitly supported. Never add already-granted desperate XP again.
+
+Show **live XP available** and **unallocated XP** (`available − sum of the four allocations`). The GM-confirmed total starts locked; an explicit **Adjust** toggle unlocks it for a nonnegative integer correction and locks it again when turned off. Do not invent a hard maximum for the GM total or confuse the session-counter maximum with that total.
+
+Each destination shows the actual **filled and empty boxes**, visually distinct **pending allocation preview boxes**, and numeric current/max, allocation and remaining room. Maxima come dynamically from `xp-tracker-data.json`; room is `max − current`. **Block completion while any XP remains unallocated or allocations exceed available XP or any destination's room.** Full tracks accept no further allocation. No overflow may be silently clamped and no expression XP discarded. If insufficient room remains, preserve counters and pending allocation; any advancement needed to make room is a later implementation concern, not an invented mockup award.
+
+Only **successful explicit completion** converts the allocations and clears the **three session expression counters**; visibly explain the clear. Preserve permanent playbook/attribute XP, including desperate XP. Merely opening, closing, revisiting, or navigating the step is not completion. Remove the old sheet **End downtime clears expressions** UI/behavior in the later implementation, not this design task.
 
 ## Current contract: inspection evidence, not test results
 
@@ -49,24 +58,27 @@ At **Scoundrel XP**, review the recorded expressions and explicitly distribute t
 
 **Does the approved clear timing require a contract change?** Existing explicit XP-add operations followed by `session.set` with all three zeros can express conversion and clearing without a new wire endpoint. They do not define atomic step completion, an allocation record or a replay-safe conversion guarantee, and a flow cursor move must continue to have no gameplay effects. The approved clean cutover that removes the old End Downtime clear responsibility **does require later contract/conformance/backend/client work**: the public `clearSessionExpressions` behavior and its frozen composite oracle cannot simply disappear in a mockup. A later implementation must declare conversion/completion semantics before coding; do not imply today's API already performs them.
 
-## Remaining human decisions
+## Recommended completion and remaining implementation questions
 
-1. Is expression conversion plus clearing one atomic server completion operation, or explicit existing mutations coordinated by the client? Preserve cursor-only flow semantics either way.
-2. When an allocated track is already full or the requested allocation exceeds capacity, how should advancement/remaining XP be handled? Existing XP-add clamps; silently clearing uncredited expression XP is not an approved decision.
+**Recommend one atomic server completion operation** that validates all four allocations against the GM-confirmed total and current destination room, credits every allocated point, and only then clears the three session expression counters. This is a proposal for later contract/backend/client/conformance work, **not an endpoint built by this task**. Keep `mode.flow.set` cursor-only; it never awards or clears.
+
+The capacity decision is resolved: all XP must be placed within settings-derived room; block completion rather than discard or silently clamp. Remaining implementation questions are the exact completion wire schema and replay/concurrency/snapshot semantics, and how later advancement operations make room while retaining unconverted session XP. They do not reopen allocation, Adjust locking, capacity blocking or successful-completion clear timing.
 
 ## Deliverables and parent evidence
 
 Proposal: [XP Tracker](/contract/xp-tracker-proposal).
 Mockups: `/mockups/game-mode/xp-tracker-score.html`, `/mockups/game-mode/xp-tracker-expanded.html`, `/mockups/game-mode/xp-tracker-resolution.html`.
 
-Captured screenshot naming: `xp-tracker-{score|expanded|resolution}-{1440|768|390}-{light|dark|high-contrast}.png` in the game-mode mockup directory: **27 real Chromium images**, exactly 1440×1000, 768×1024 or 390×844, with device scale factor 1. Score frames start at the document top; Resolution frames its Scoundrel XP card, with scroll positions recorded.
-No horizontal overflow was found. Controlled internal vertical scrolling is intentional, not clipped inaccessible content. Native click/Enter/Space/Escape, focus containment/return and pointer-drag checks pass all six compact size/theme cases; touchscreen pull-up/dismiss checks pass at both compact widths. The local Resolution preview awards 4 XP then zeros the three session counters, retaining permanent XP.
+**Revision captures recorded.** The original **27** `xp-tracker-{score|expanded|resolution}-{1440|768|390}-{light|dark|high-contrast}.png` images and the **18** `xp-tracker-resolution-{adjusted|ready}-{1440|768|390}-{light|dark|high-contrast}.png` images (**45 prototype PNGs**) are recaptured at exactly 1440×1000, 768×1024 or 390×844 with device scale factor 1, with 0 px horizontal overflow and 0 page errors. The real-app Talents comparison `docs/public/mockups/game-mode/xp-tracker-real-talents.png` is embedded in the proposal. At 1440 the `score` and `expanded` PNGs are byte-identical: the wide panel is always open, so the expanded state renders the same. Capture harness: `agent-docs/test-audit/browser-evidence/xp-tracker-01/capture.mjs`. Wide initial framing must show all three expression rows; Resolution captures must show allocation, capacity and completion status. Record scroll positions where needed.
 
-Independent review initially found three material issues: compact modal focus containment, an oversized desktop rail, and full-page captures misrepresenting fixed footers. One correction batch and complete viewport-only recapture resolved all three. Final independent disposition: **SHIP**. The single static detector had no findings but ran degraded regex fallback; no computed-contrast result is claimed.
+Measured for this revision (`xp-tracker-browser-evidence.json`, `behaviour`): split allocation across the four destinations; live available and remaining values; GM total locked by default, unlocked and relocked by Adjust; overflow past room blocks completion with an explanation; successful completion credits the allocations and clears only the three session counters. Preserve the incumbent footer, themes, keyboard, touch, modal focus and reduced-motion behaviour: these were **not** re-measured for this revision (see the status note).
 
-Evidence: `xp-tracker-browser-evidence.json`, `xp-tracker-interaction-evidence.json`, `xp-tracker-touch-evidence.json` and `xp-tracker-review.json` beside the mockups. Vocs build and mirror delivery are reported from actual command output.
+Evidence filenames: `xp-tracker-browser-evidence.json` is updated for this revision. `xp-tracker-interaction-evidence.json`, `xp-tracker-touch-evidence.json` and `xp-tracker-review.json` still describe the earlier revision and are kept as history.
 
-Final record gates pass: Vocs **153 files generated**; metrics **176 files / 0 errors**;
-traceability **231/231**, reconciliation **17/17**. Pending main was pushed first:
-origin was already at `b78d77dd`; Radicle advanced `6a168425 → b78d77dd` and
-synced with **3 seeds** before this design card's publication.
+### Historical delivery record — before this revision
+
+The preceding design recorded 27 exact-viewport Chromium images; no horizontal overflow; compact click/Enter/Space/Escape, focus containment/return and pointer-drag checks passing all six compact size/theme cases; touch checks passing at both compact widths. Its local Resolution preview converted illustrative 4 XP and zeroed three counters while retaining permanent XP.
+
+That independent review initially found compact modal focus containment, an oversized desktop rail and full-page captures misrepresenting fixed footers. One correction batch and recapture led to its historical **SHIP** disposition. Its static detector had no findings using degraded regex fallback; no computed-contrast result was claimed. These results do **not** verify the revised allocation and expression-row design.
+
+Historical publication record: Vocs **153 files generated**; metrics **176 files / 0 errors**; traceability **231/231**, reconciliation **17/17**. Origin was already at `b78d77dd`; Radicle advanced `6a168425 → b78d77dd` and synced with **3 seeds** before the preceding card's publication. These are retained history, not current revision gates.

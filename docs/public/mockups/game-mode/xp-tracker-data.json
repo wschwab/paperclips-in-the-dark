@@ -58,7 +58,13 @@
       "Playbook": 2,
       "Insight": 1,
       "Prowess": 2,
-      "Resolve": 1
+      "Resolve": 3
+    },
+    "allocation": {
+      "Playbook": 1,
+      "Insight": 1,
+      "Prowess": 0,
+      "Resolve": 0
     }
   }
 }

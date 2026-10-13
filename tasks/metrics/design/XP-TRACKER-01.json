@@ -1,63 +1,115 @@
 {
   "task": "XP-TRACKER-01",
   "track": "design",
-  "implementationAgent": "mode-mockups",
-  "reviewAgent": "mode-mockups.XpFinishReview",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator; took over from the other worker, whose codex quota ran out mid-revision)",
+  "reviewAgent": "none requested for this revision; the earlier review (xp-tracker-review.json) describes the previous revision",
   "date": "2026-10-13",
-  "iterationsToGreen": 2,
-  "wallClockMinutes": 52.05,
-  "tokens": null,
-  "passRateAtFirstDoneClaim": "27 exact viewport captures, no horizontal overflow;6 compact size/theme native interaction cases;2 touchscreen cases; local4XP conversion/3counter clear; independent SHIP. No implementation claim.",
-  "passRateAfterReview": "Three material review findings resolved in one batch and complete recapture; independent reviewer SHIP.",
-  "implementationLoc": "unknown",
-  "scaffoldingLoc": 0,
+  "iterationsToGreen": 3,
+  "iterationNotes": "Iteration 1: inspected the uncommitted revision (the mockup script already implemented split allocation, Adjust, room and completion). Iteration 2: first capture run had one 404, which was the browser's /favicon.ico request to the static harness; answered with 204 and rerun clean. Iteration 3: the probe read the blocked-completion state after restoring a valid allocation, so the check was moved into the overflow state; and the permanent-XP read was corrected to the #permanent-xp text, then rerun.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
   "defectsCaughtBy": {
     "compiler": 0,
     "conformance": 0,
-    "review": 3,
-    "human": 0
+    "review": 0,
+    "human": 1
   },
-  "defectCatchingLayer": [
-    "review"
-  ],
-  "notes": [
-    "Design only: no frontend/backend/contract/data game source changes.",
-    "Game settings provide Lurk ExperienceCondition and all displayed XP maxima.",
-    "Modal focus containment, bounded wide rail and exact-viewport captures fixed after independent review.",
-    "Footer trigger stays inside the compact dialog so it can close by click/keyboard; actual touchscreen drags work.",
-    "Controlled internal vertical scrolling is intentional; no horizontal overflow in27 captures.",
-    "Static detector ran once with zero findings but degraded regex fallback; no computed-contrast result claimed.",
-    "Pending main b78d77dd pushed to Radicle first, syncing3 seeds; origin already current."
-  ],
+  "notes": "The human requested the revision (split destinations, live totals, Adjust lock, room with pending boxes, expression rows matching the real sheet). The other worker's uncommitted mockup already implemented these; this pass recaptured all 45 states, recorded behaviour numbers for the allocation logic and completion, and updated the proposal and card. Two harness-level issues were caught by reading the evidence, not by trusting the summary.",
   "metricsMethodology": {
-    "method": "Real Chromium viewport/PNG/geometry/native keyboard-pointer-touch evidence and independent review; settings and op inspection.",
-    "source": "tasks/XP-TRACKER-01.md and docs/public/mockups/game-mode/xp-tracker-*-evidence.json / xp-tracker-review.json",
-    "wallClockNote": "Measured parent verification phase; excludes initial skill setup and delegated implementation already in flight.",
-    "tokensNote": "Token accounting unavailable; null supported.",
-    "locNote": "Implementation/diff LOC not measured; unknown rather than estimated.",
-    "scaffoldingLocNote": "No throwaway script files committed; runnable mockups are the requested artifact.",
-    "iterationNote": "Initial capture/review plus one correction batch and final27-image recapture."
+    "method": "not measured: wall-clock and token counts were not recorded for this coordinator run",
+    "source": "docs/public/mockups/game-mode/xp-tracker-browser-evidence.json (45 screenshots, overflow, page errors, behaviour checks); PNG dimensions checked with PIL; real-app Talents evidence file",
+    "locNote": "implementationLoc=unknown: design task, no application code",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens recorded as 0: token accounting is not available"
   },
-  "status": "Design delivered, independent SHIP; future contract decisions documented, no implementation",
-  "verification": {
-    "vocs": { "exitCode": 0, "generatedFiles": 153 },
-    "metrics": { "exitCode": 0, "validatedFiles": 176, "errors": 0 },
-    "traceability": { "passed": 231, "total": 231 },
-    "reconciliation": { "passed": 17, "total": 17 }
-  },
-  "acceptanceCounts": {
-    "captures": 27,
-    "viewportThemeStates": 27,
-    "horizontalOverflowCases": 0,
-    "compactInteractionCases": 6,
-    "touchCases": 2,
-    "conversionClearChecks": 1,
-    "reviewFindingsResolved": 3
-  },
-  "openQuestions": [
-    "Atomic server completion versus coordinated existing ops for conversion/clearing.",
-    "Advancement/full-track capacity handling without discarding uncredited expression XP."
+  "passRateAtFirstDoneClaim": "the first recapture run reported one page error (favicon 404), and the first blocked-state read measured the restored valid state; both were fixed before the evidence was accepted",
+  "passRateAfterReview": "recapture 45/45 at exact viewports with 0 px overflow and 0 page errors; behaviour checks for items 1-4 and completion pass as recorded; keyboard, focus, touch and drag not re-run for this revision; no review requested",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "PNG dimension and count check",
+    "Chromium overflow and page-error probe (45 states)",
+    "Chromium behaviour probe (allocation, Adjust, overflow, completion)",
+    "visual inspection of the wide Score, adjusted Resolution, ready 390 and compact expanded captures"
   ],
-  "implementationChanged": false,
-  "mutationTargetsChanged": false
+  "status": "captured and checked for mockup behaviour; keyboard, focus and touch not re-run for this revision; no review requested",
+  "previousRevisions": [
+    {
+      "task": "XP-TRACKER-01",
+      "track": "design",
+      "implementationAgent": "mode-mockups",
+      "reviewAgent": "mode-mockups.XpFinishReview",
+      "date": "2026-10-13",
+      "iterationsToGreen": 2,
+      "wallClockMinutes": 52.05,
+      "tokens": null,
+      "passRateAtFirstDoneClaim": "27 exact viewport captures, no horizontal overflow;6 compact size/theme native interaction cases;2 touchscreen cases; local4XP conversion/3counter clear; independent SHIP. No implementation claim.",
+      "passRateAfterReview": "Three material review findings resolved in one batch and complete recapture; independent reviewer SHIP.",
+      "implementationLoc": "unknown",
+      "scaffoldingLoc": 0,
+      "defectsCaughtBy": {
+        "compiler": 0,
+        "conformance": 0,
+        "review": 3,
+        "human": 0
+      },
+      "defectCatchingLayer": [
+        "review"
+      ],
+      "notes": [
+        "Design only: no frontend/backend/contract/data game source changes.",
+        "Game settings provide Lurk ExperienceCondition and all displayed XP maxima.",
+        "Modal focus containment, bounded wide rail and exact-viewport captures fixed after independent review.",
+        "Footer trigger stays inside the compact dialog so it can close by click/keyboard; actual touchscreen drags work.",
+        "Controlled internal vertical scrolling is intentional; no horizontal overflow in27 captures.",
+        "Static detector ran once with zero findings but degraded regex fallback; no computed-contrast result claimed.",
+        "Pending main b78d77dd pushed to Radicle first, syncing3 seeds; origin already current."
+      ],
+      "metricsMethodology": {
+        "method": "Real Chromium viewport/PNG/geometry/native keyboard-pointer-touch evidence and independent review; settings and op inspection.",
+        "source": "tasks/XP-TRACKER-01.md and docs/public/mockups/game-mode/xp-tracker-*-evidence.json / xp-tracker-review.json",
+        "wallClockNote": "Measured parent verification phase; excludes initial skill setup and delegated implementation already in flight.",
+        "tokensNote": "Token accounting unavailable; null supported.",
+        "locNote": "Implementation/diff LOC not measured; unknown rather than estimated.",
+        "scaffoldingLocNote": "No throwaway script files committed; runnable mockups are the requested artifact.",
+        "iterationNote": "Initial capture/review plus one correction batch and final27-image recapture."
+      },
+      "status": "Design delivered, independent SHIP; future contract decisions documented, no implementation",
+      "verification": {
+        "vocs": {
+          "exitCode": 0,
+          "generatedFiles": 153
+        },
+        "metrics": {
+          "exitCode": 0,
+          "validatedFiles": 176,
+          "errors": 0
+        },
+        "traceability": {
+          "passed": 231,
+          "total": 231
+        },
+        "reconciliation": {
+          "passed": 17,
+          "total": 17
+        }
+      },
+      "acceptanceCounts": {
+        "captures": 27,
+        "viewportThemeStates": 27,
+        "horizontalOverflowCases": 0,
+        "compactInteractionCases": 6,
+        "touchCases": 2,
+        "conversionClearChecks": 1,
+        "reviewFindingsResolved": 3
+      },
+      "openQuestions": [
+        "Atomic server completion versus coordinated existing ops for conversion/clearing.",
+        "Advancement/full-track capacity handling without discarding uncredited expression XP."
+      ],
+      "implementationChanged": false,
+      "mutationTargetsChanged": false,
+      "revisionNote": "Record of the revision before this one (the earlier SHIP mockup delivery), preserved verbatim from the parent commit. Not a verification of the current revision."
+    }
+  ]
 }

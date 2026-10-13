@@ -1,0 +1,21 @@
+{
+  "origin": "http://127.0.0.1:9657",
+  "source": "Real running app; Talents section screenshot, no mutations",
+  "labels": [
+    "Playbook expressions",
+    "Scoundrel expressions",
+    "Struggle expressions"
+  ],
+  "markup": "<div class=\"session-track\" data-session-track=\"playbook\" style=\"display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;\"><div class=\"stress\" data-session-track=\"playbook\"><div class=\"stress-track\" role=\"group\" aria-label=\"Playbook expressions: 0 of 2\"><button type=\"button\" class=\"stress-box\" data-stress=\"0\" data-index=\"1\" aria-label=\"Stress 1\" aria-pressed=\"false\"></button><button type=\"button\" class=\"stress-box\" data-stress=\"0\" data-index=\"2\" aria-label=\"Stress 2\" aria-pressed=\"false\"></button></div><div class=\"stress-label lbl\">Playbook expressions</div></div><span>0 / 2</span><button type=\"button\" disabled=\"\" title=\"Remove 1 Playbook expressions\">−1</button><button type=\"button\" title=\"Add 1 Playbook expressions\">+1</button></div>",
+  "box": {
+    "width": "38px",
+    "height": "38px",
+    "border": "3px solid rgb(26, 26, 26)",
+    "fontSize": "16px"
+  },
+  "label": {
+    "font": "600 12.48px / 18.72px Oswald, \"Arial Narrow\", system-ui, sans-serif",
+    "textTransform": "uppercase"
+  },
+  "maxFromRenderedBoxes": 2
+}
