@@ -1,0 +1,119 @@
+{
+  "animationSettled": true,
+  "checks": [
+    {
+      "width": 390,
+      "theme": "light",
+      "click": true,
+      "enter": true,
+      "space": true,
+      "escape": true,
+      "focusReturned": true,
+      "modalSemantics": true,
+      "backgroundInertWhileOpen": true,
+      "focusContained": true,
+      "tabCanClose": true,
+      "dragOpen": true,
+      "dragClose": true
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "click": true,
+      "enter": true,
+      "space": true,
+      "escape": true,
+      "focusReturned": true,
+      "modalSemantics": true,
+      "backgroundInertWhileOpen": true,
+      "focusContained": true,
+      "tabCanClose": true,
+      "dragOpen": true,
+      "dragClose": true
+    },
+    {
+      "width": 390,
+      "theme": "high-contrast",
+      "click": true,
+      "enter": true,
+      "space": true,
+      "escape": true,
+      "focusReturned": true,
+      "modalSemantics": true,
+      "backgroundInertWhileOpen": true,
+      "focusContained": true,
+      "tabCanClose": true,
+      "dragOpen": true,
+      "dragClose": true
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "click": true,
+      "enter": true,
+      "space": true,
+      "escape": true,
+      "focusReturned": true,
+      "modalSemantics": true,
+      "backgroundInertWhileOpen": true,
+      "focusContained": true,
+      "tabCanClose": true,
+      "dragOpen": true,
+      "dragClose": true
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "click": true,
+      "enter": true,
+      "space": true,
+      "escape": true,
+      "focusReturned": true,
+      "modalSemantics": true,
+      "backgroundInertWhileOpen": true,
+      "focusContained": true,
+      "tabCanClose": true,
+      "dragOpen": true,
+      "dragClose": true
+    },
+    {
+      "width": 768,
+      "theme": "high-contrast",
+      "click": true,
+      "enter": true,
+      "space": true,
+      "escape": true,
+      "focusReturned": true,
+      "modalSemantics": true,
+      "backgroundInertWhileOpen": true,
+      "focusContained": true,
+      "tabCanClose": true,
+      "dragOpen": true,
+      "dragClose": true
+    },
+    {
+      "desktopRail": {
+        "gameModeTop": 110.5,
+        "gameModeBottom": 384.96875,
+        "viewportHeight": 1000,
+        "trackerClientHeight": 563,
+        "trackerScrollHeight": 677
+      }
+    },
+    {
+      "resolution": true,
+      "before": [
+        "2",
+        "1",
+        "1"
+      ],
+      "after": [
+        "0",
+        "0",
+        "0"
+      ],
+      "awarded": "4 XP awarded to Playbook · preview",
+      "notice": "Scoundrel XP completed in this preview. Playbook, Scoundrel and Struggle session tracks are now cleared. Permanent XP remains; no API request or saved change."
+    }
+  ]
+}

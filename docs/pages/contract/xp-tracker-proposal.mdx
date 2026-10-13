@@ -1,0 +1,185 @@
+---
+title: "XP Tracker — approved Score design and lifecycle proposal"
+---
+
+# XP Tracker — approved Score design and lifecycle proposal
+
+> **Design/mockups only; not an implemented contract change.**
+> XP-TRACKER-01 approves the placement, interaction and clear timing below.
+> All 27 real-Chromium captures and responsive interaction checks are complete;
+> the independent correction review returned **SHIP**.
+> This supersedes the earlier [Game mode proposal](/contract/game-mode-proposal)
+> statement that expression questions appear only in Resolution, not its
+> implemented cursor-only API rules.
+
+<p>
+  <a href="/mockups/game-mode/xp-tracker-score.html">Score · collapsed tracker</a>
+  {' · '}
+  <a href="/mockups/game-mode/xp-tracker-expanded.html">Score · expanded tracker</a>
+  {' · '}
+  <a href="/mockups/game-mode/xp-tracker-resolution.html">Resolution · Scoundrel XP</a>
+</p>
+
+## Approved Score layout
+
+The separate **XP Tracker** appears **only in Score**, with **Desperate action
+XP**, **Playbook expressions**, **Scoundrel expressions**, and **Struggle
+expressions**. It is not a new scoundrel-sheet section or a fourth game mode.
+At widths **1100px and above**, use a distinct panel under/next to Game mode.
+Below **1100px**, the fixed footer has a small **XP Tracker** button opening a
+bottom sheet. Reuse the existing game-mode `mockup.css` imports, fonts, theme
+controls and 06d Resolution styling, with Nyelle Vale / Wren, the Lurk.
+
+The sheet still contains **Personal**, the **playbook XP track**, all
+**attribute XP tracks**, and every other existing section. Moving session
+controls into the tracker does not remove advancement controls or create a
+mode gate. This is per-scoundrel assistance, never campaign-wide state.
+
+### Compact interaction and accessibility
+
+- Use a real button with `aria-expanded` and `aria-controls`, not a draggable
+  label masquerading as a control. Tap/click and Enter/Space toggle the sheet.
+- Provide a named sheet, visible focus, an explicit Close button and Escape
+  dismissal. Return focus to the opener. An expanded modal sheet contains
+  focus and makes the background inert.
+- Dragging the handle adds pointer/touch convenience; every open/close action
+  remains possible without dragging. Content scrolling must not inadvertently
+  become a dismiss gesture.
+- Reserve space for the fixed footer and safe-area inset; keep controls
+  reachable at 390px. Respect reduced motion without disabling interaction.
+
+## Real settings, labels and questions
+
+| Display/data | Authoritative source |
+|---|---|
+| Playbook expressions / Scoundrel expressions / Struggle expressions | `frontend/src/pages/character-sections/talents.ts:136–171`; maps to `playbookExpressions`, `characterExpressions`, `struggleExpressions` |
+| You addressed a challenge with stealth or evasion | Lurk `ExperienceCondition`, `data/games/blades-in-the-dark.json:389` |
+| Session maximum: 2 | `SessionExpressionMax`, same JSON `:1067` |
+| Playbook 8 / Attribute 6 / Crew 10 | `XpTrackMaxima`, same JSON `:1036–1040` |
+| You expressed your beliefs, drives, heritage, or background. | [Advancement SRD](https://bladesinthedark.com/advancement), PC Advancement |
+| You struggled with issues from your vice or traumas | Same SRD; merely indulging vice is not a struggle unless overindulging |
+
+The mockup's dedicated **`xp-tracker-data.json`** must extract values from the
+actual settings JSON, record source path and JSON pointers, and be consumed
+dynamically. Do not hardcode track maxima in HTML/JavaScript. Record SRD
+question provenance separately: the two generic questions are not settings
+JSON fields. A future application uses returned DTO track maxima and the
+character's actual playbook rather than assuming every scoundrel is a Lurk.
+
+## Resolution: explicit conversion, then clear
+
+Keep the existing six steps:
+
+**Scoundrel XP → Payoff → Heat → Entanglements → Crew XP → Crew Rep**.
+
+Retain Back/Next, direct step selection, confirm-with-GM guidance, separate
+crew-targeted editors and optional Crew XP/Crew Rep skips. Resolution remains
+within Score; choosing another mode, closing/resuming the flow or revisiting
+a step must not replay an award.
+
+**Desperate action XP is granted during play.** Mark 1 in the rolled action's
+attribute immediately, including desperate group actions. That XP is already
+on the permanent attribute track and is not included again in conversion.
+
+**Expression counters are session reminders, not XP grants.** For each
+trigger record 1 if it happened, 2 if it happened a lot, zero if it did not.
+Scoundrel XP reviews these reminders and explicitly assigns the expression
+XP to any playbook and/or attribute tracks. For example, **2 + 1 + 1 = 4** may
+all go to one chosen track; players may also split it. This is the SRD's
+end-of-session review offered at score resolution, not an automatic award
+for each score or a mandatory session reset whenever a score ends.
+
+**Completing Scoundrel XP clears the three session expression counters after
+conversion.** Show a clear notice explaining this timing. Permanent playbook
+and attribute XP are retained; their clears are advancement operations, not
+session cleanup. Opening the step or navigating Back/Next alone is not a
+conversion. Remove the old sheet **End downtime clears expressions** control
+and responsibility in the later implementation. Nothing in this mockup
+changes today's End Downtime API.
+
+## Current contract and implemented behavior
+
+These are source-inspection findings, not newly exercised verification.
+
+| Operation | Current behavior | Exact source references |
+|---|---|---|
+| `session.set` | Partial absolute counter update clamped to game-settings maximum; no XP award, no snapshot. Zero clears a counter. | `contract/openapi.yaml:1657–1674`; `backend-ada/server/src/pitd_ops.adb:1482–1513`; zero/clamp oracle `conformance/suites/semantics/session-set.test.ts:7–28` |
+| `playbook-xp.add`, `attribute-xp.add` | Explicit signed delta to permanent XP, clamped by the track maximum. This is when XP is granted, not when a session counter is marked. | `contract/openapi.yaml:1230–1240,1257–1273`; `pitd_ops.adb:972–981,1029–1039` |
+| `playbook-xp.clear`, `attribute-xp.clear` | Clears permanent advancement tracks, not session counters. Attribute level-up spends its track; ability-taking does not automatically clear playbook XP. | `contract/openapi.yaml:1246–1250,1279–1293,1303,1347`; `pitd_ops.adb:982,1029–1030` |
+| `end-score` | Explicitly **no automatic XP**. Opens Resolution at Scoundrel XP; retains committed gear by default, preserves partial stress, resets downtime budget/out-of-action flags. | `contract/openapi.yaml:1700–1723`; `pitd_ops.adb:1737–1786` |
+| `mode.flow.set` | Freely selected assistance cursor; Back/Next/direct selection never grants XP, performs cleanup or resets downtime. | `contract/openapi.yaml:1771–1783`; `pitd_ops.adb:751–755` |
+| `end-downtime` | Optional `clearSessionExpressions` flag; implementation clears all three **only if true**. Optional vice relief is separate. | `contract/openapi.yaml:1917–1932`; `pitd_ops.adb:1799–1814` |
+
+The existing source oracles constrain the cutover:
+
+- `conformance/suites/lifecycle/lifecycle-state-machine.test.ts:237–275`
+  freezes pending-trauma rejection, partial-stress preservation, single
+  snapshot and undo behavior for End Score.
+- `conformance/suites/semantics/game-mode.test.ts:376–411` asserts End Score
+  enters Resolution while preserving playbook/talent state, plus replay/undo.
+- `conformance/suites/semantics/composites.test.ts:135–165` explicitly sends
+  `clearSessionExpressions:true` to End Downtime and asserts all three zeros,
+  stress relief and exactly one snapshot.
+- `frontend/src/pages/character-sections/talents.ts:187–198` currently exposes
+  the old End Downtime clear button and copy.
+
+### Does clearing at Resolution need a contract change?
+
+**The explicit clearing primitive already exists:** XP-add operations followed
+by `session.set` with all three zeros can represent conversion/clear without
+a new endpoint. But those separate operations do not define an atomic,
+replay-safe completion or a persisted allocation record. **Do not add hidden
+awards or clearing to `mode.flow.set`**: its contract explicitly forbids them.
+
+**The approved full clean cutover requires later contract work.** Removing
+End Downtime's public `clearSessionExpressions` responsibility changes an
+existing declared behavior and frozen composite oracle. The implementation
+card must update contract, backend, all callers and affected tests together,
+and define Scoundrel XP completion semantics. This proposal does not
+implement that change or claim it already exists.
+
+## Decisions still open
+
+1. Should conversion plus clearing be one atomic server completion operation,
+   or explicitly coordinated existing mutations? Cursor movement stays
+   assistance-only regardless.
+2. How should a full track or allocation exceeding available capacity interact
+   with advancement and remaining XP? Current XP-add clamps; silently clearing
+   expression XP that was not credited has not been approved.
+
+Placement, breakpoint, labels, retained sheet sections, six steps and clear
+at Scoundrel XP completion are already decided and are not reopened here.
+
+## Captured visual evidence
+
+Real Chromium captured **27 PNGs** at exactly **1440×1000**, **768×1024**, and
+**390×844**, in **light**, **dark**, and **high-contrast**. High contrast uses
+the incumbent dark theme plus its high-contrast override. Score states are
+framed from the document top; Resolution frames the Scoundrel XP card so the
+conversion and clear notice remain visible. Scroll positions are recorded.
+
+| State | Viewport | Light | Dark | High contrast |
+|---|---|---|---|---|
+| Score / compact collapsed | 1440×1000 | <a href="/mockups/game-mode/xp-tracker-score-1440-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-score-1440-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-score-1440-high-contrast.png">PNG</a> |
+| Score / compact collapsed | 768×1024 | <a href="/mockups/game-mode/xp-tracker-score-768-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-score-768-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-score-768-high-contrast.png">PNG</a> |
+| Score / compact collapsed | 390×844 | <a href="/mockups/game-mode/xp-tracker-score-390-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-score-390-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-score-390-high-contrast.png">PNG</a> |
+| Score / compact expanded | 1440×1000 | <a href="/mockups/game-mode/xp-tracker-expanded-1440-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-expanded-1440-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-expanded-1440-high-contrast.png">PNG</a> |
+| Score / compact expanded | 768×1024 | <a href="/mockups/game-mode/xp-tracker-expanded-768-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-expanded-768-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-expanded-768-high-contrast.png">PNG</a> |
+| Score / compact expanded | 390×844 | <a href="/mockups/game-mode/xp-tracker-expanded-390-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-expanded-390-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-expanded-390-high-contrast.png">PNG</a> |
+| Scoundrel XP Resolution | 1440×1000 | <a href="/mockups/game-mode/xp-tracker-resolution-1440-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-resolution-1440-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-resolution-1440-high-contrast.png">PNG</a> |
+| Scoundrel XP Resolution | 768×1024 | <a href="/mockups/game-mode/xp-tracker-resolution-768-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-resolution-768-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-resolution-768-high-contrast.png">PNG</a> |
+| Scoundrel XP Resolution | 390×844 | <a href="/mockups/game-mode/xp-tracker-resolution-390-light.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-resolution-390-dark.png">PNG</a> | <a href="/mockups/game-mode/xp-tracker-resolution-390-high-contrast.png">PNG</a> |
+
+Numeric evidence found **no horizontal overflow** in any capture. Deliberate
+internal vertical scrolling keeps the wide Game mode panel persistent and the
+compact drawer within its viewport. Native click, Enter, Space, Escape, focus
+containment/return and drag checks passed all six compact size/theme cases;
+real Chromium touch-drag checks also passed at 390 and 768px. Completion
+converted the illustrative 4 XP and zeroed only the three session counters.
+
+The independent reviewer inspected every image and exercised the browser paths,
+then scored all three initial material findings resolved and returned **SHIP**.
+The one static detector run had no findings but used a degraded regex fallback;
+it supplies no computed-contrast claim. Full numeric, interaction and review
+evidence is under `/mockups/game-mode/xp-tracker-*-evidence.json` and
+`xp-tracker-review.json`. No application or API implementation changed.

@@ -1,0 +1,64 @@
+{
+  "provenance": {
+    "settings": {
+      "path": "data/games/blades-in-the-dark.json",
+      "fields": [
+        "Playbooks[Name=Lurk].ExperienceCondition",
+        "SessionExpressionMax",
+        "XpTrackMaxima"
+      ],
+      "extractedOn": "2026-10-13"
+    },
+    "labels": {
+      "path": "frontend/src/pages/character-sections/talents.ts",
+      "lines": "136–140"
+    },
+    "expressions": {
+      "url": "https://bladesinthedark.com/advancement",
+      "section": "XP",
+      "verifiedOn": "2026-10-13"
+    }
+  },
+  "playbook": {
+    "name": "Lurk",
+    "experienceCondition": "You addressed a challenge with stealth or evasion"
+  },
+  "sessionExpressionMax": 2,
+  "xpTrackMaxima": {
+    "Playbook": 8,
+    "Attribute": 6,
+    "Crew": 10
+  },
+  "expressions": [
+    {
+      "key": "playbook",
+      "label": "Playbook expressions",
+      "condition": "You addressed a challenge with stealth or evasion"
+    },
+    {
+      "key": "scoundrel",
+      "label": "Scoundrel expressions",
+      "condition": "You expressed your beliefs, drives, heritage, or background."
+    },
+    {
+      "key": "struggle",
+      "label": "Struggle expressions",
+      "condition": "You struggled with issues from your vice or traumas."
+    }
+  ],
+  "illustrative": {
+    "character": "Nyelle Vale",
+    "alias": "Wren",
+    "expressions": {
+      "playbook": 2,
+      "scoundrel": 1,
+      "struggle": 1
+    },
+    "xp": {
+      "Playbook": 2,
+      "Insight": 1,
+      "Prowess": 2,
+      "Resolve": 1
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "task": "XP-TRACKER-01",
+  "track": "design",
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": "mode-mockups.XpFinishReview",
+  "date": "2026-10-13",
+  "iterationsToGreen": 2,
+  "wallClockMinutes": 52.05,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "27 exact viewport captures, no horizontal overflow;6 compact size/theme native interaction cases;2 touchscreen cases; local4XP conversion/3counter clear; independent SHIP. No implementation claim.",
+  "passRateAfterReview": "Three material review findings resolved in one batch and complete recapture; independent reviewer SHIP.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 3,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "review"
+  ],
+  "notes": [
+    "Design only: no frontend/backend/contract/data game source changes.",
+    "Game settings provide Lurk ExperienceCondition and all displayed XP maxima.",
+    "Modal focus containment, bounded wide rail and exact-viewport captures fixed after independent review.",
+    "Footer trigger stays inside the compact dialog so it can close by click/keyboard; actual touchscreen drags work.",
+    "Controlled internal vertical scrolling is intentional; no horizontal overflow in27 captures.",
+    "Static detector ran once with zero findings but degraded regex fallback; no computed-contrast result claimed.",
+    "Pending main b78d77dd pushed to Radicle first, syncing3 seeds; origin already current."
+  ],
+  "metricsMethodology": {
+    "method": "Real Chromium viewport/PNG/geometry/native keyboard-pointer-touch evidence and independent review; settings and op inspection.",
+    "source": "tasks/XP-TRACKER-01.md and docs/public/mockups/game-mode/xp-tracker-*-evidence.json / xp-tracker-review.json",
+    "wallClockNote": "Measured parent verification phase; excludes initial skill setup and delegated implementation already in flight.",
+    "tokensNote": "Token accounting unavailable; null supported.",
+    "locNote": "Implementation/diff LOC not measured; unknown rather than estimated.",
+    "scaffoldingLocNote": "No throwaway script files committed; runnable mockups are the requested artifact.",
+    "iterationNote": "Initial capture/review plus one correction batch and final27-image recapture."
+  },
+  "status": "Design delivered, independent SHIP; future contract decisions documented, no implementation",
+  "verification": {
+    "vocs": { "exitCode": 0, "generatedFiles": 153 },
+    "metrics": { "exitCode": 0, "validatedFiles": 176, "errors": 0 },
+    "traceability": { "passed": 231, "total": 231 },
+    "reconciliation": { "passed": 17, "total": 17 }
+  },
+  "acceptanceCounts": {
+    "captures": 27,
+    "viewportThemeStates": 27,
+    "horizontalOverflowCases": 0,
+    "compactInteractionCases": 6,
+    "touchCases": 2,
+    "conversionClearChecks": 1,
+    "reviewFindingsResolved": 3
+  },
+  "openQuestions": [
+    "Atomic server completion versus coordinated existing ops for conversion/clearing.",
+    "Advancement/full-track capacity handling without discarding uncredited expression XP."
+  ],
+  "implementationChanged": false,
+  "mutationTargetsChanged": false
+}

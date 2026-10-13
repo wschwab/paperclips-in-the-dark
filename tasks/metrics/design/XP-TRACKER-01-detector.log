@@ -1,0 +1,1 @@
+Single scoped design detector: no findings ([]). DEGRADED regex fallback: htmlparser2, css-select, css-tree, domutils unavailable; custom properties/selectors/computed contrast not evaluated.
