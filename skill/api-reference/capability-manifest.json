@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 115,
+  "operationCount": 116,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -513,6 +513,17 @@
         "sheet-management"
       ],
       "humanControl": "Reachable Planning / Loadout / Engagement and Resolution Back/Next navigation; no prerequisite or automatic award."
+    },
+    "characterXpResolve": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "agentReference": "api-reference/README.md#characterxpresolve",
+      "summary": "Atomic Scoundrel XP completion (XP-TRACKER-02). In one revisioned write, add each allocation to its Playbook or attribute XP track, then set the three session expression counters (playbookExpressions, characterExpressions, struggleExpressions) to 0, with one snapshot. Each allocation must fit the track's room (settings maximum minus current points); an allocation beyond room, a negative or non-integer value, or a sum that differs from total is rejected with VALIDATION 400 and changes nothing, including the revision. The op never changes mode, never reads or writes the flow cursor, and never awards desperate-action XP again. If-Match and Idempotency-Key follow the other character operations.",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable Scoundrel XP completion; the GM total and split are explicit, and nothing is awarded or cleared automatically."
     },
     "characterDowntimeSpend": {
       "disposition": "human",

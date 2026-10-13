@@ -23,7 +23,7 @@ describe("endpoint schema map", () => {
     const spec = YAML.parse(fs.readFileSync(openapiPath, "utf8"));
     const routes = Object.keys(spec.paths);
     // GAME-MODE-01 adds five ops using the incumbent per-op paths (107 → 112).
-    expect(routes.length).toBe(112);
+    expect(routes.length).toBe(113);
     // Every declared operation appears in the map under its operationId.
     for (const route of routes) {
       const methods = Object.keys(spec.paths[route]).filter((m) =>

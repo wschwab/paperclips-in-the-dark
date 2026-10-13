@@ -93,6 +93,7 @@ const HUMAN_CONTROL = {
   characterModeSet: "Reachable per-scoundrel Free Play / Score / Downtime switcher; every mode remains selectable.",
   characterModeFlowSet: "Reachable Planning / Loadout / Engagement and Resolution Back/Next navigation; no prerequisite or automatic award.",
   characterDowntimeSpend: "Reachable downtime activity menu; soft budget never disables an activity.",
+  characterXpResolve: "Reachable Scoundrel XP completion; the GM total and split are explicit, and nothing is awarded or cleared automatically.",
   characterDowntimeAdjust: "Reachable +1 (coin), +1 (gift), and correction controls; records already-paid activities without charging funds.",
 };
 
@@ -131,6 +132,7 @@ const TABLE = {
   characterModeSet: { disposition: "human", categories: ["sheet-management"] },
   characterModeFlowSet: { disposition: "human", categories: ["sheet-management"] },
   characterDowntimeSpend: { disposition: "human", categories: ["sheet-management"] },
+  characterXpResolve: { disposition: "human", categories: ["sheet-management"] },
   characterDowntimeAdjust: { disposition: "human", categories: ["sheet-management"] },
   characterDowntimeReset: { disposition: "agent" },
   // CONTRACT-03 (DEC-03 ruling): the FIX_ correction family is a designated

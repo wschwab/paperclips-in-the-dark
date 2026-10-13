@@ -79,6 +79,26 @@ components:
       properties:
         activity: { $ref: "./schemas/character.json#/$defs/downtimeActivity" }
         description: { type: string }
+    CharacterXpResolve:
+      type: object
+      required: [total, allocations]
+      additionalProperties: false
+      description: >
+        GM-confirmed Scoundrel XP completion. total is the free GM amount (not tied to the
+        session counters); allocations place it on Playbook and each attribute track. Every
+        allocation is a non-negative integer and their sum must equal total. A zero total is
+        allowed and awards nothing.
+      properties:
+        total: { type: integer, minimum: 0 }
+        allocations:
+          type: object
+          required: [Playbook, Insight, Prowess, Resolve]
+          additionalProperties: false
+          properties:
+            Playbook: { type: integer, minimum: 0 }
+            Insight: { type: integer, minimum: 0 }
+            Prowess: { type: integer, minimum: 0 }
+            Resolve: { type: integer, minimum: 0 }
     CharacterDowntimeAdjust:
       type: object
       required: [delta, reason]
@@ -1787,6 +1807,34 @@ paths:
         content:
           application/json:
             schema: { $ref: "#/components/schemas/CharacterModeFlowSet" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/xp.resolve:
+    post:
+      operationId: characterXpResolve
+      x-snapshot: true
+      description: >
+        Atomic Scoundrel XP completion (XP-TRACKER-02). In one revisioned write,
+        add each allocation to its Playbook or attribute XP track, then set the
+        three session expression counters (playbookExpressions,
+        characterExpressions, struggleExpressions) to 0, with one snapshot.
+        Each allocation must fit the track's room (settings maximum minus current
+        points); an allocation beyond room, a negative or non-integer value, or a
+        sum that differs from total is rejected with VALIDATION 400 and changes
+        nothing, including the revision. The op never changes mode, never reads or
+        writes the flow cursor, and never awards desperate-action XP again.
+        If-Match and Idempotency-Key follow the other character operations.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CharacterXpResolve" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }

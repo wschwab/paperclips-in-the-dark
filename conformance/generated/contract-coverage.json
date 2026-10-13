@@ -703,6 +703,60 @@
       "collection": false
     },
     {
+      "operationId": "characterXpResolve",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterXpResolve",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterXpResolve",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterXpResolve",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterXpResolve",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterXpResolve",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "clockProgress",
       "method": "POST",
       "path": "/clocks/{id}/ops/clock.progress",

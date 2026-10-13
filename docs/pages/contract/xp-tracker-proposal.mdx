@@ -289,3 +289,38 @@ static detector used degraded regex fallback and supplied no computed-contrast
 claim. Those results remain history and do not establish that this revised
 split-allocation and expression-track design has passed. No application or
 API implementation changes are part of this task.
+
+## Decided: atomic Scoundrel XP completion (`xp.resolve`)
+
+Decided under XP-TRACKER-02 (authorized contract change). The op is
+`POST /characters/{id}/ops/xp.resolve`, operationId `characterXpResolve`,
+disposition `human` (sheet-management), `x-snapshot: true`.
+
+- **Body:** `total` (integer ≥ 0) and `allocations` with all four keys required:
+  `Playbook`, `Insight`, `Prowess`, `Resolve`, each an integer ≥ 0. The attribute
+  names are the Blades settings names. Maxima come from the character's
+  settings-derived tracks, never literals.
+- **Effect, one revisioned write and one snapshot:** add each allocation to its
+  track, then set `playbookExpressions`, `characterExpressions` and
+  `struggleExpressions` to 0. Nothing else changes: not mode, not the flow cursor,
+  not desperate XP.
+- **Sum rule (decision):** the allocations must sum to `total`. The card left this
+  open. Without it the server could not enforce "no discard, no invented XP". The
+  sum is checked against the GM total, not against the session counters, so the
+  total stays free.
+- **Zero total (decision):** allowed. It awards nothing. On success it still clears
+  the three counters, because the GM explicitly chose the total. The Resolution UI
+  must say that the counters are cleared without a matching award.
+- **Overflow and invalid values (decision):** an allocation beyond a track's room, a
+  negative or non-integer value, or a sum that differs from `total` returns
+  **HTTP 400 `VALIDATION`** with issue pointers, and changes nothing, including the
+  revision. The existing codes do not fit a room overflow; no new code is added.
+- **Revision and idempotency:** `If-Match` is required in the same way as the other
+  character ops, and a stale revision is `STALE_REVISION` 409. `Idempotency-Key`
+  follows the existing operation pattern, so a replay does not award XP twice.
+- **Unchanged:** `end-downtime` keeps `clearSessionExpressions` in the API. Only its
+  button leaves the sheet, in XP-TRACKER-04.
+
+The conformance tests are `conformance/suites/semantics/xp-resolve.test.ts`
+(XP-RESOLVE-001 to 006): success, overflow rejection with an unchanged revision,
+zero total, negative and non-integer values, the sum rule, and a stale revision.

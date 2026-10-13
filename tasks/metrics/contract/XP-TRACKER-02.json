@@ -1,0 +1,34 @@
+{
+  "task": "XP-TRACKER-02",
+  "track": "contract",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator; contract and red conformance)",
+  "reviewAgent": "none for the contract change; the backend (XP-TRACKER-03) and the frontend (XP-TRACKER-04) carry the gates",
+  "date": "2026-10-13",
+  "iterationsToGreen": 0,
+  "iterationNotes": "Red first: six conformance tests written before the op existed. Five failed for the stated reason (200 VALIDATION 'unknown operation' where success or 400 was expected); the stale-revision test already passed. Contract added after the red run; the tooling suite (233/233) passed after the generators were rerun.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Decisions recorded in the proposal: sum must equal total (needed for no discard), zero total allowed, overflow is VALIDATION 400 with no new code, end-downtime API unchanged. A pre-existing finding: an unknown operation returns HTTP 200 with a VALIDATION body, not 404; reported, not changed.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded for this coordinator run",
+    "source": "conformance red log (tasks/metrics/contract/XP-TRACKER-02-red.log), tooling log (233/233), validators, vocs build",
+    "locNote": "implementationLoc=unknown: contract edits were not line-counted",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens recorded as 0: token accounting is not available"
+  },
+  "passRateAtFirstDoneClaim": "5 of 6 red conformance tests failed before the contract change, for the stated reason; the stale-revision guard passed (existing behaviour)",
+  "passRateAfterReview": "tooling 233/233 after the contract change; the Ada-side tests are red until XP-TRACKER-03",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "conformance red tests against the live backend (semantics suite)",
+    "tooling suite: endpoint map, coverage, capability manifest"
+  ],
+  "status": "contract and red tests committed; green is the XP-TRACKER-03 gate"
+}

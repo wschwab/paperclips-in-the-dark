@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 115
+Operations: 116
 
 ## Conventions
 
@@ -175,6 +175,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/end-score` | [`endScore`](#endscore) | true |
 | POST | `/characters/{id}/ops/mode.set` | [`characterModeSet`](#charactermodeset) | true |
 | POST | `/characters/{id}/ops/mode.flow.set` | [`characterModeFlowSet`](#charactermodeflowset) | true |
+| POST | `/characters/{id}/ops/xp.resolve` | [`characterXpResolve`](#characterxpresolve) | true |
 | POST | `/characters/{id}/ops/downtime.spend` | [`characterDowntimeSpend`](#characterdowntimespend) | true |
 | POST | `/characters/{id}/ops/downtime.adjust` | [`characterDowntimeAdjust`](#characterdowntimeadjust) | true |
 | POST | `/characters/{id}/ops/downtime.reset` | [`characterDowntimeReset`](#characterdowntimereset) | true |
@@ -1829,6 +1830,31 @@ Request body schema:
 
 ```yaml
 schema: { $ref: "#/components/schemas/CharacterModeFlowSet" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+- `500`: OperationResult
+
+## characterXpResolve
+
+`POST /characters/{id}/ops/xp.resolve`
+
+Atomic Scoundrel XP completion (XP-TRACKER-02). In one revisioned write, add each allocation to its Playbook or attribute XP track, then set the three session expression counters (playbookExpressions, characterExpressions, struggleExpressions) to 0, with one snapshot. Each allocation must fit the track's room (settings maximum minus current points); an allocation beyond room, a negative or non-integer value, or a sum that differs from total is rejected with VALIDATION 400 and changes nothing, including the revision. The op never changes mode, never reads or writes the flow cursor, and never awards desperate-action XP again. If-Match and Idempotency-Key follow the other character operations.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterXpResolve" }
 ```
 
 Responses:
