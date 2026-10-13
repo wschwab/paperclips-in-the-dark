@@ -130,3 +130,9 @@ Verdict: `agent-docs/test-audit/browser-evidence/xp-tracker-04/sol-6.1/round3/ve
 | R2 P2 (round 3): focus lost to the page after a blocked click; Escape missed the modal | Escape is a capture-phase `keydown` listener on the document, active while the compact sheet is modal (it works from any focus). Focus that leaves the open sheet (`focusout` with no related target) returns to its Close button. The sheet-local Escape branch is removed so Escape has one path. |
 
 Red-first: two new unit tests ("Escape still closes… after focus was lost…" and "focus that leaves the open compact sheet returns to its Close button") failed before the fix. Gates after round 3: vitest 947/947 (32 files), tsc 0, build 0, browser 6/6 (`tasks/metrics/frontend/XP-TRACKER-04-browser-round3.log`). Chromium `review-fixes-check.mjs`: R1, R2 (including the pointer-click reproduction: focus returns to Close, theme unchanged, Escape closes and returns focus to the tab, header not inert after close), R3, R4 pass; nine-combination check 9/9; allocation fit 905/905/962.
+
+## Sol 6.1 round 4 on 6cc54859: PASS
+
+Verdict: `agent-docs/test-audit/browser-evidence/xp-tracker-04/sol-6.1/round4/verdict.md`. Sol's own real-Ada probe: 304/304 assertions, 9/9 scenarios, 0 page or console errors. It covers the blocked Dark click with Escape (6/6, zero leftover inert nodes), Escape from Close and from a control, Tab and Shift+Tab containment (288/288), widen and leaving-Score releases, wheel reachability and footer wheel, the `xp.resolve` request and the atomic award, and the separate parity suite (4/4). The new tests were confirmed to fail without the fix.
+
+Status: the review loop (GAME-MODE-03-style Sol 6.1 xhigh) is PASS at `6cc54859`. The full gates for the commit still owed are the mutation campaign (28/28, needs the human's go-ahead) and the push to both mirrors.
