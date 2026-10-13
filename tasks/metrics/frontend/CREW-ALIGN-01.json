@@ -1,0 +1,35 @@
+{
+  "task": "CREW-ALIGN-01",
+  "track": "frontend",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp worker, crew sheet column alignment)",
+  "reviewAgent": "gpt-6.1-sol (openai-codex, xhigh): pending, see agent-docs/test-audit/browser-evidence/crew-align-01/sol-6.1/verdict.md",
+  "date": "2026-10-13",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Red: sheet-columns.test.ts guard for the crew masthead seam reservation failed before the change. Chromium geometry before: Playbook top 271.9px = masthead bottom; left column top 289.9px (-18px). Green: crew masthead margin-bottom calc(torn-depth-lg + 18px) and next-card margin-top 0 in the 900px block; both column tops 307.9px at 1440px in light and dark, 294.9px in high contrast; difference 0px.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "The human reported the misalignment from a screenshot. The cause was not the MODE-PANEL-ALIGN-01 gutter (the crew route root already pads). The two-column crew sheet lacked the masthead seam reservation that the character sheet has (PLAYTEST-UI-01 item 7), so the first card in column 2 began under the torn seam.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded for this worker run",
+    "source": "vitest output (935/935, 32 files), tsc exit 0, production build exit 0, browser-suite log (6/6), Chromium geometry check.json (9 rows), mutation campaign output",
+    "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens recorded as 0: token accounting is not available"
+  },
+  "passRateAtFirstDoneClaim": "the guard test failed before the change (1 failed, 1 passed); the geometry probe failed at 1440px in light, dark and high contrast (Playbook 0px below the masthead, column difference -18px)",
+  "passRateAfterReview": "pending: vitest 935/935; tsc 0; build 0; browser 6/6; mutation campaign pending; Sol 6.1 review pending",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend CSS guard (sheet-columns.test.ts)",
+    "Chromium geometry probe (crew-align-01/check.mjs, 9 rows)",
+    "independent review (Sol 6.1, pending)"
+  ],
+  "status": "implementation complete; gates recorded in the task note; Sol 6.1 review pending"
+}

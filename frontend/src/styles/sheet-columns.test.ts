@@ -14,3 +14,15 @@ describe("two-column sheet: torn-seam clearance", () => {
     );
   });
 });
+
+// CREW-ALIGN-01: the crew sheet is the same two-column layout, but its masthead
+// never got the character sheet's seam reservation. Playbook (the first card in
+// column 2) then began at the masthead's bottom edge, under the torn seam, while
+// column 1 began 18px lower. The crew masthead must reserve the same depth.
+describe("two-column crew sheet: torn-seam clearance (CREW-ALIGN-01)", () => {
+  it("reserves seam depth plus the column gap under the crew masthead and zeroes the card after it", () => {
+    expect(cssSource).toMatch(
+      /@media \(min-width: 900px\) \{[\s\S]*?\.crew-detail > \.crew-header \{\s*margin-bottom: calc\(var\(--torn-depth-lg\) \+ 18px\);\s*\}\s*\.crew-detail > \.crew-header \+ \* \{\s*margin-top: 0;/,
+    );
+  });
+});

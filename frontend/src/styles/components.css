@@ -721,6 +721,12 @@
   /* the seam reserves its depth plus the 18px column gap under the masthead;
    * the card after it takes no extra top margin, so both columns start at the
    * same offset beneath the seam (PLAYTEST-UI-01 item 7). */
+  .crew-detail > .crew-header {
+    margin-bottom: calc(var(--torn-depth-lg) + 18px);
+  }
+  .crew-detail > .crew-header + * {
+    margin-top: 0;
+  }
   .character-detail > .character-header {
     margin-bottom: calc(var(--torn-depth-lg) + 18px);
   }
