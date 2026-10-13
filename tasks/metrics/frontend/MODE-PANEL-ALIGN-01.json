@@ -1,0 +1,35 @@
+{
+  "task": "MODE-PANEL-ALIGN-01",
+  "track": "frontend",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator, mode panel alignment)",
+  "reviewAgent": "gpt-6.1-sol (openai-codex, xhigh): VERDICT PASS on 159c703d (agent-docs/test-audit/browser-evidence/mode-panel-align-01/sol-6.1/verdict.md)",
+  "date": "2026-10-12",
+  "iterationsToGreen": 1,
+  "iterationNotes": "Red: CSS guard for the wide panel margin-top failed before the change; Chromium geometry measured the panel top 24px above the masthead (57.8 vs 81.8px at 1440). Green: margin-top var(--gutter) on the wide mode panel; geometry diff 0px in all wide combinations.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "The human reported the misalignment from a screenshot. The cause was the game-mode wrapper missing the sheet's gutter padding (FV-031 route-root rule). Sol 6.1 round 1 passed with no findings; its probe measured Free Play and Score at all nine combinations.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded for this coordinator run",
+    "source": "vitest output (934/934), tsc, production build, browser-suite log (6/6), Chromium geometry check.json (9 rows), Sol verdict",
+    "locNote": "implementationLoc=unknown: exact diff LOC not computed for this run",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens recorded as 0: token accounting is not available"
+  },
+  "passRateAtFirstDoneClaim": "the CSS guard failed before the change; the geometry probe failed at 1440px in light, dark and high contrast (diff -24px)",
+  "passRateAfterReview": "gates at 159c703d: vitest 934/934; tsc 0; build 0; browser 6/6; Sol 6.1 PASS. Mutation campaign not required (no pinned target changed).",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "frontend CSS guard (game-mode-contrast.test.ts)",
+    "Chromium geometry probe (check.mjs, 9 rows)",
+    "independent review (Sol 6.1 probe, PASS)"
+  ],
+  "status": "complete at 159c703d: Sol 6.1 PASS; Score XP removal is a separate card (SCORE-XP-REMOVAL-01) and is blocked"
+}

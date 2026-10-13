@@ -116,3 +116,8 @@ at 32px and recognizable but soft at 16px.
 - **Edition dropdown on create screens:** the human decided to skip an edition
   picker for scoundrel and crew creation for now. This is a future idea, not
   queued or planned work and not a blocker for the current create screens.
+
+## Current build items (MODE-PANEL-ALIGN-01, SCORE-XP-REMOVAL-01)
+
+- **Game mode panel alignment** (MODE-PANEL-ALIGN-01, done, Sol 6.1 PASS at `159c703d`): the wide "Game mode" panel now starts at the same top as the sheet's masthead. The cause was the game-mode wrapper missing the sheet's gutter padding. Task `tasks/MODE-PANEL-ALIGN-01.md`.
+- **Remove the regular sheet's Score XP section and End downtime button** (SCORE-XP-REMOVAL-01, **blocked**): removing them would drop the session expression tracks and the end-of-downtime clear, which game mode does not yet cover. Also `conformance/suites-browser/lifecycle.journey.mjs` (lines 32, 192–197) clicks the End downtime button, and that journey is frozen. Task `tasks/SCORE-XP-REMOVAL-01.md` lists the decisions needed.
