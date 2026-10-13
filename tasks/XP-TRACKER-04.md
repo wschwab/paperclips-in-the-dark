@@ -120,3 +120,13 @@ Verdict: `agent-docs/test-audit/browser-evidence/xp-tracker-04/sol-6.1/round2/ve
 Gates after round 2: vitest 945/945 (32 files), tsc 0, build 0, browser 6/6 (`tasks/metrics/frontend/XP-TRACKER-04-browser-round2.log`). Chromium `review-fixes-check.mjs`: R1, R2, R3, R4 pass with zero page errors; nine-combination tracker check 9/9; allocation fit 905/905/962.
 
 Still open by design: a pointer click on the header is blocked while the sheet is modal (inert), so the header is not clickable until the sheet closes. Touch scrolling over the pass-through Resolution card was not separately verified.
+
+## Sol 6.1 round 3 on e2dbb60e: FAIL, one finding fixed
+
+Verdict: `agent-docs/test-audit/browser-evidence/xp-tracker-04/sol-6.1/round3/verdict.md`. R3 (completion reachable above the footer) and the outside-inert regression test passed. R2 remained: a real pointer click on the blocked header (Dark) moved focus to the body, and Escape then did nothing, because the Escape handler was on the sheet and only worked while focus stayed inside it.
+
+| Finding | Fix |
+|---|---|
+| R2 P2 (round 3): focus lost to the page after a blocked click; Escape missed the modal | Escape is a capture-phase `keydown` listener on the document, active while the compact sheet is modal (it works from any focus). Focus that leaves the open sheet (`focusout` with no related target) returns to its Close button. The sheet-local Escape branch is removed so Escape has one path. |
+
+Red-first: two new unit tests ("Escape still closes… after focus was lost…" and "focus that leaves the open compact sheet returns to its Close button") failed before the fix. Gates after round 3: vitest 947/947 (32 files), tsc 0, build 0, browser 6/6 (`tasks/metrics/frontend/XP-TRACKER-04-browser-round3.log`). Chromium `review-fixes-check.mjs`: R1, R2 (including the pointer-click reproduction: focus returns to Close, theme unchanged, Escape closes and returns focus to the tab, header not inert after close), R3, R4 pass; nine-combination check 9/9; allocation fit 905/905/962.

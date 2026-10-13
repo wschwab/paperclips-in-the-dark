@@ -1054,4 +1054,22 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
       outside.remove();
     }
   });
+
+  it("Escape still closes the compact sheet after focus was lost to the page (blocked background click, XP-TRACKER-04 round 3 R2)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+    (document.activeElement as HTMLElement).blur();
+    document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).toBeNull());
+  });
+
+  it("focus that leaves the open compact sheet returns to its Close button (XP-TRACKER-04 round 3 R2)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+    const close = root.querySelector<HTMLButtonElement>(".xp-tracker-close")!;
+    (document.activeElement as HTMLElement).blur();
+    await vi.waitFor(() => expect(document.activeElement).toBe(close));
+  });
 });

@@ -116,11 +116,6 @@ export function renderXpTrackerSheet(ctx: SectionCtx, gm: GameModeHandlers, ui: 
     el("div", { className: "xp-tracker-sheet-body" }, ...trackerBody(ctx, gm)));
   // Modal focus containment: Tab wraps inside the dialog; the background is inert while it is open.
   sheet.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      gm.onXpTrackerOpen(false);
-      return;
-    }
     if (e.key !== "Tab") return;
     const items = Array.from(sheet.querySelectorAll<HTMLElement>(XP_TRACKER_FOCUSABLE));
     const first = items[0];

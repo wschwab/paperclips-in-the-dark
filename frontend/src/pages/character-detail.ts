@@ -2371,11 +2371,32 @@ export function mountCharacterDetailPage(
   };
   window.addEventListener("resize", onResize);
   window.addEventListener("wheel", forwardResolutionWheel, { passive: false });
+  // XP-TRACKER-04 (round 3 R2): the compact tracker is modal. Escape closes it from anywhere on the page
+  // (capture phase, so it still works after a blocked background click), and focus that leaves the open
+  // sheet returns to its Close button.
+  const xpTrackerModal = () => gmXpTrackerOpen && window.innerWidth <= 1099 && currentCharacter?.mode === "score";
+  const onXpEscape = (e: KeyboardEvent) => {
+    if (e.key !== "Escape" || !xpTrackerModal()) return;
+    e.preventDefault();
+    gmXpTrackerOpen = false;
+    renderDetailWrapper();
+    queueMicrotask(() => root.querySelector<HTMLElement>(".xp-tracker-tab")?.focus());
+  };
+  const onXpFocusOut = (e: FocusEvent) => {
+    if (e.relatedTarget !== null || !xpTrackerModal()) return;
+    queueMicrotask(() => {
+      if (xpTrackerModal()) root.querySelector<HTMLElement>(".xp-tracker-close")?.focus();
+    });
+  };
+  document.addEventListener("keydown", onXpEscape, true);
+  document.addEventListener("focusout", onXpFocusOut);
 
   return () => {
     cancelled = true;
     window.removeEventListener("resize", onResize);
     window.removeEventListener("wheel", forwardResolutionWheel);
+    document.removeEventListener("keydown", onXpEscape, true);
+    document.removeEventListener("focusout", onXpFocusOut);
     setOutsideInert(false);
     continuity.dispose();
   };
