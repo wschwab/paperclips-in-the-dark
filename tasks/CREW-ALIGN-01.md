@@ -47,8 +47,10 @@ Post-fix results (all 9 rows): no app-bar overlap; `scrollWidth == innerWidth`; 
 
 - `npx vitest run` (frontend): 935/935, 32 files. `npx tsc --noEmit`: exit 0. `npm run build`: exit 0.
 - `npm run test:browser` (conformance): 6/6 journeys pass.
-- Mutation campaign: NOT RUN. `components.css` is pinned by M18 (`conformance/fixtures/mutation-catalog.json`); its sha256 was refreshed to `cf8ffef58fd1b1e53af14ca6c64f5ebdad867b61d217659a736e9d275b3c0ed3`. The pre-flight refused to start because another worker's in-progress edit to `backend-ada/server/src/pitd_ops.adb` does not match M11's pinned hash. The campaign must be rerun once that work lands.
+- Mutation campaign: not run by this card. `components.css` is pinned by M18 (`conformance/fixtures/mutation-catalog.json`); its sha256 was refreshed to `cf8ffef58fd1b1e53af14ca6c64f5ebdad867b61d217659a736e9d275b3c0ed3`. The pre-flight was blocked by another worker's in-progress backend-ada edits at `8a7cd0c1`. Main's later record (XP-TRACKER-04, `00afd99a`) reports a 28/28 campaign at `74843d82`, not at this card's commit. A rerun at a revision containing this card is still needed to pin M18 against the final `components.css`.
 
 ## Review
 
-Sol 6.1 review: NOT RUN (openai-codex `usage_limit_reached`). See `agent-docs/test-audit/browser-evidence/crew-align-01/sol-6.1/verdict.md`. The gate stays open until a PASS verdict is recorded.
+Sol 6.1 review (GPT-6.1 Sol, openai-codex, xhigh): **VERDICT: PASS** on `8a7cd0c1`. The reviewer exercised all nine viewport and theme combinations in Chromium, inspected the screenshots, confirmed that removing only the two CSS rules reproduces the -18px misalignment, and found no overlap, horizontal overflow, or page errors. Evidence: `agent-docs/test-audit/browser-evidence/crew-align-01/sol-6.1/verdict.md` (plus its probe, guard, and screenshot files).
+
+Non-blocking P3 (not fixed here): `sheet-columns.test.ts` checks the CSS as source text, so it would still pass if the rules moved outside the media block. Replacing it with a behavioural browser regression is recommended as a follow-up.

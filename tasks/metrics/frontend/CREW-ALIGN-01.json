@@ -2,7 +2,7 @@
   "task": "CREW-ALIGN-01",
   "track": "frontend",
   "implementationAgent": "anthropic/claude-haiku-5-5 (omp worker, crew sheet column alignment)",
-  "reviewAgent": "gpt-6.1-sol (openai-codex, xhigh): NOT RUN, usage_limit_reached at 8a7cd0c1; see agent-docs/test-audit/browser-evidence/crew-align-01/sol-6.1/verdict.md (VERDICT: NOT-RUN)",
+  "reviewAgent": "gpt-6.1-sol (openai-codex, xhigh): VERDICT PASS on 8a7cd0c1 (agent-docs/test-audit/browser-evidence/crew-align-01/sol-6.1/verdict.md); P3 non-blocking: source-text guard could be replaced by a browser regression",
   "date": "2026-10-13",
   "iterationsToGreen": 1,
   "iterationNotes": "Red: sheet-columns.test.ts guard for the crew masthead seam reservation failed before the change. Chromium geometry before: Playbook top 271.9px = masthead bottom; left column top 289.9px (-18px). Green: crew masthead margin-bottom calc(torn-depth-lg + 18px) and next-card margin-top 0 in the 900px block; both column tops 307.9px at 1440px in light and dark, 294.9px in high contrast; difference 0px.",
@@ -23,12 +23,12 @@
     "tokensNote": "tokens recorded as 0: token accounting is not available"
   },
   "passRateAtFirstDoneClaim": "the guard test failed before the change (1 failed, 1 passed); the geometry probe failed at 1440px in light, dark and high contrast (Playbook 0px below the masthead, column difference -18px)",
-  "passRateAfterReview": "vitest 935/935; tsc 0; build 0; browser 6/6. Mutation campaign NOT RUN: pre-flight refused on a concurrent edit to backend-ada/server/src/pitd_ops.adb (hash 4facde3b3534, expected 21fca1ba8033; another worker's in-progress file). Sol 6.1 review NOT RUN: openai-codex usage_limit_reached.",
+  "passRateAfterReview": "vitest 935/935; tsc 0; build 0; browser 6/6; Sol 6.1 PASS on 8a7cd0c1. Mutation campaign not run by this card (pre-flight blocked by a concurrent backend-ada edit at 8a7cd0c1; main's XP-TRACKER-04 record reports 28/28 at 74843d82, a different revision). Rerun still needed against a revision containing this card.",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
     "frontend CSS guard (sheet-columns.test.ts)",
     "Chromium geometry probe (crew-align-01/check.mjs, 9 rows)"
   ],
-  "status": "implementation committed at 8a7cd0c1; Sol 6.1 review NOT RUN (usage limit); mutation campaign BLOCKED by a concurrent backend-ada edit; the review and mutation gates remain open"
+  "status": "complete at 8a7cd0c1: Sol 6.1 PASS; mutation rerun against this card's revision still open (M18 hash refreshed)"
 }
