@@ -106,4 +106,17 @@ Verdict: `agent-docs/test-audit/browser-evidence/xp-tracker-04/sol-6.1/verdict.m
 
 Red-first: the five unit tests failed on 74843d82's code before the fix. Gates after the fix: vitest 945/945 (32 files), tsc 0, build 0, browser 6/6 (`tasks/metrics/frontend/XP-TRACKER-04-browser-review.log`), Chromium `review-fixes-check.mjs` R1–R4 all pass with zero errors (`review-fixes-check.json`), the nine-combination tracker check 9/9, and the allocation fit (completion bottom 905/905/962).
 
-Limits, stated plainly: wheel forwarding is verified for the mouse wheel only; touch scrolling over the pass-through card was not separately verified. The header sits outside the sheet's inert scope; keyboard focus is contained by the trap, but a pointer click on the header while the sheet is open still reaches it. The mutation campaign for the new code has not been run: it needs your go-ahead.
+
+## Sol 6.1 round 2 on 523483d2: FAIL, three findings fixed
+
+Verdict: `agent-docs/test-audit/browser-evidence/xp-tracker-04/sol-6.1/round2/verdict.md`. Sol confirmed the round 1 fixes for R1 and R4 and the Tab trap, and found these open items:
+
+| Finding | Fix |
+|---|---|
+| R3 P1: compact completion sat behind the footer; the wheel was swallowed by an invisible part of the card and by the footer | The compact card is capped at `calc(60vh - 2em)`, the visible overlay height (`game-mode.css`); wheel is forwarded only above the footer on compact screens. Chromium: card bottom 490 px, footer top 506 px; completion bottom 340 px, hit-testable after wheel-only scrolling; wheel over the footer leaves the card unchanged. |
+| R2 P2: the global header (theme buttons) could take focus while the sheet was modal | While the compact sheet is open, every element outside the character page is inert, and restored on close or unmount (`setOutsideInert` in `character-detail.ts`). Chromium: the Dark header button cannot take focus; Escape still closes. Red test: "…the page outside the character … is inert too". |
+| T1 P3: the DOM-order test pinned implementation structure, not visibility | Removed. The clipping is verified by the Chromium probe (`review-fixes-check.mjs` R4: tab 642–684 px inside 844 px, footer scrollTop 0), not by a unit test that cannot see layout. |
+
+Gates after round 2: vitest 945/945 (32 files), tsc 0, build 0, browser 6/6 (`tasks/metrics/frontend/XP-TRACKER-04-browser-round2.log`). Chromium `review-fixes-check.mjs`: R1, R2, R3, R4 pass with zero page errors; nine-combination tracker check 9/9; allocation fit 905/905/962.
+
+Still open by design: a pointer click on the header is blocked while the sheet is modal (inert), so the header is not clickable until the sheet closes. Touch scrolling over the pass-through Resolution card was not separately verified.

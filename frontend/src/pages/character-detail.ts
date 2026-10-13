@@ -2167,6 +2167,28 @@ export function mountCharacterDetailPage(
   // render) so the post-mutation render fulfils it.
   let pendingFocus: FocusTarget | null = null;
 
+  // XP-TRACKER-04 (round 2 R2): while the compact XP Tracker sheet is modal, everything outside this
+  // character page (global header, skip link, footer) is inert too, so focus and clicks cannot reach it.
+  let outsideInert: HTMLElement[] = [];
+  const setOutsideInert = (on: boolean) => {
+    for (const el of outsideInert) el.removeAttribute("inert");
+    outsideInert = [];
+    if (!on) return;
+    let node: HTMLElement = root;
+    while (node.parentElement) {
+      for (const sibling of Array.from(node.parentElement.children)) {
+        if (sibling !== node && sibling instanceof HTMLElement && !sibling.hasAttribute("inert")) {
+          sibling.setAttribute("inert", "");
+          outsideInert.push(sibling);
+        }
+      }
+      node = node.parentElement;
+    }
+  };
+  const syncOutsideInert = () => setOutsideInert(
+    gmXpTrackerOpen && currentCharacter?.mode === "score" && window.innerWidth <= 1099,
+  );
+
   const renderDetailWrapper = () => {
     if (!currentCharacter) return;
     if (!pendingFocus) pendingFocus = captureFocusTarget(root);
@@ -2241,6 +2263,7 @@ export function mountCharacterDetailPage(
     // off screen; run the guard here where the sheet is attached and layout
     // is measurable. On-screen alerts never move (scroll preserved).
     if (error?.section) ensureSectionAlertVisible(root);
+    syncOutsideInert();
     // CHAR-03/PERF-03: inform the recorder a render cycle completed so
     // render-to-stable windows close naturally (no span open → no-op).
     continuity.noteRender();
@@ -2340,6 +2363,9 @@ export function mountCharacterDetailPage(
     if (!card || card.scrollHeight <= card.clientHeight) return;
     const r = card.getBoundingClientRect();
     if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    // Compact: the mode footer is drawn over the lower part of the overlay; wheel there is the footer's.
+    const footer = root.querySelector(".mode-panel")?.getBoundingClientRect();
+    if (window.innerWidth <= 1099 && footer && e.clientY >= footer.top) return;
     e.preventDefault();
     card.scrollTop += e.deltaY;
   };
@@ -2350,6 +2376,7 @@ export function mountCharacterDetailPage(
     cancelled = true;
     window.removeEventListener("resize", onResize);
     window.removeEventListener("wheel", forwardResolutionWheel);
+    setOutsideInert(false);
     continuity.dispose();
   };
 }

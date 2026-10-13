@@ -1039,10 +1039,19 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
     });
   });
 
-  it("the compact XP Tracker tab comes before the scrolling panel content, so the footer cannot clip it (XP-TRACKER-04 review R4)", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
-    const tab = root.querySelector<HTMLElement>(".xp-tracker-tab")!;
-    const content = root.querySelector<HTMLElement>(".mode-panel .panel-content")!;
-    expect(tab.compareDocumentPosition(content) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  it("while the compact sheet is open, the page outside the character (header, skip link, footer) is inert too (XP-TRACKER-04 review round 2 R2)", async () => {
+    const outside = document.createElement("header");
+    outside.textContent = "Global header";
+    document.body.prepend(outside);
+    try {
+      await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+      root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+      await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+      expect(outside.hasAttribute("inert")).toBe(true);
+      root.querySelector<HTMLButtonElement>(".xp-tracker-close")!.click();
+      await vi.waitFor(() => expect(outside.hasAttribute("inert")).toBe(false));
+    } finally {
+      outside.remove();
+    }
   });
 });

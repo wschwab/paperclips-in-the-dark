@@ -313,6 +313,11 @@
     inset: 0 0 40vh 0;
     align-items: flex-start;
   }
+  /* XP-TRACKER-04 round 2 R3: the card must not be taller than the visible overlay (60vh, minus its padding),
+   * or its lower controls, completion included, sit behind the footer and cannot be scrolled into view. */
+  .game-mode-resolution .game-mode-popup-card {
+    max-height: calc(60vh - 2em);
+  }
 }
 
 /* Pressed planning and load choices (Sol 6.1 R2-01): a filled selected state, not just aria. */
