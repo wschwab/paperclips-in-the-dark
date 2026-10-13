@@ -1,0 +1,25 @@
+---
+title: Unknown operation names answer HTTP 200
+---
+
+# Unknown operation names answer HTTP 200
+
+**Status: queued. Found while implementing XP-TRACKER-02 (`xp.resolve`). Not fixed.**
+
+A `POST /characters/{id}/ops/{name}` with a name that is not a declared operation
+returns **HTTP 200** with a `VALIDATION` error body (`reason: "unknown operation"`),
+not **404**. The contract declares 404 for missing resources, and it does not
+document this case as a 200 domain result.
+
+- Observed: `xp.resolve` before its implementation returned 200 with
+  `error.code: "VALIDATION"` and `details.issues[0].reason: "unknown operation"`
+  (`backend-ada/server/src/pitd_callback.adb`, the generic mutation path).
+- Why it matters: a client that checks only the HTTP status treats an unknown
+  operation as success. Any tooling that calls a retired or misspelled name is
+  misled the same way.
+- Proposed fix (not started): answer unknown operation names with a 404 or a 400
+  and a documented error envelope, with a red conformance test first. This changes
+  a contract-visible status, so it needs a contract decision.
+- Current workaround: check `ok` and `error` in the body, not only the status.
+
+Recorded here at the human's request. No behaviour is changed by this page.

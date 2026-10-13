@@ -2058,6 +2058,16 @@ if Kind = "crew" then
                end if;
             end;
             R := Mutate (Kind, Op, E, B);
+            --  XP-TRACKER-02: a room or sum rejection of the atomic XP completion is
+            --  HTTP 400 VALIDATION with its issue pointers, as the contract declares.
+            --  Other apply-phase domain errors keep their existing 200 delivery.
+            if Op = "xp.resolve" and then not Bool_Field (R, "ok")
+              and then Has_Field (R, "error")
+              and then Str_Field (Get (R, "error"), "code") = "VALIDATION"
+            then
+               Release_Locks;
+               return Json_Response (R, AWS.Messages.S400);
+            end if;
             if Bool_Field (R, "ok") then
                --  SC-A1: every write persists the complete canonical shape —
                --  a mutation that would produce a non-canonical document is

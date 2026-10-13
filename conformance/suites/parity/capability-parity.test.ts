@@ -66,6 +66,9 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   "dossierUpdate", "noteAdd", "noteRemove", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove",
   "stressFix",
   "characterModeSet", "characterModeFlowSet", "characterDowntimeSpend", "characterDowntimeAdjust",
+  // XP-TRACKER-02 (human-approved additive amendment, same precedent as GAME-MODE-02): atomic
+  // Scoundrel XP completion is sheet-management and has a reachable human route in Resolution.
+  "characterXpResolve",
 ];
 
 /** Runtime narrowing for JSON bodies: object and not an array. */

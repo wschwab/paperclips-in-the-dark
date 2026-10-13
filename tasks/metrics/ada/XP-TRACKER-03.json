@@ -1,0 +1,35 @@
+{
+  "task": "XP-TRACKER-03",
+  "track": "ada",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator; Ada backend for xp.resolve)",
+  "reviewAgent": "none requested; the frontend card carries the review loop",
+  "date": "2026-10-13",
+  "iterationsToGreen": 3,
+  "iterationNotes": "Iteration 1: the first build and red-to-green run had two failures (XP-RESOLVE-002 and -005, apply-phase VALIDATION answered 200). Fix: the callback answers 400 for xp.resolve only. Iteration 2: the idempotency test XP-RESOLVE-007 added and green. Iteration 3: the full suite exposed the frozen PARITY-HUMAN-003 set amendment (approved); its reachability half awaits XP-TRACKER-04.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 3,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "Conformance tests caught the apply-phase status (200 vs 400) and the parity set. The idempotency test passed on the existing layer. Only xp.resolve's status is scoped; other domain errors are unchanged. Unknown operation returns 200 (backlogged).",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded for this coordinator run",
+    "source": "managed Ada suite logs (two cycles), gnatprove log, tooling log, build log, mutation pins by sha256sum",
+    "locNote": "implementationLoc=unknown: not line-counted",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown: no scaffolding LOC recorded",
+    "tokensNote": "tokens recorded as 0: token accounting is not available"
+  },
+  "passRateAtFirstDoneClaim": "XP-RESOLVE 5 of 6 red before the backend; after the first implementation 4 of 6 green, then 7 of 7",
+  "passRateAfterReview": "XP-RESOLVE 7/7; full managed suite 593/594 per cycle (open item: PARITY-HUMAN-003 reachability, awaiting XP-TRACKER-04); gnatprove 246 proved; tooling 233/233; mutation 28/28 pending",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "conformance semantics tests against the live backend",
+    "frozen parity set check",
+    "full managed suite in two cycles"
+  ],
+  "status": "backend complete; full-suite and mutation gates wait on XP-TRACKER-04"
+}

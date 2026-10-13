@@ -1,0 +1,270 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:tooling
+npm notice run vitest run --config vitest.tooling.config.ts
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-027] ignores unrelated argv matches but detects a live owned server 68ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-028] worker cleanup ignores an unrelated mutation command excluding the blocker suite 58ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-001] forwards everything after -- to vitest verbatim 1ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-002] port probing yields distinct unused loopback ports 2ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-003] seeding copies exact bytes for files and directories 3ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-004] success path removes evidence and leaves no orphan process 210ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-005] failure path removes evidence and leaves no orphan process 224ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-006] two runs get isolated ports and data dirs 430ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-007] controlled restart re-seeds a fresh data dir and re-runs vitest 575ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-008] -t selectors reach vitest and only matching tests are considered 21641ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-009] a broken stdout pipe (EPIPE) never orphans the server 212ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-010] a port collision between probe and bind retries on a fresh port 437ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-011] a non-collision startup failure is not retried 258ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-016] readiness rejects wrong implementation and removes the owned run 479ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-017] readiness rejects a health response with the wrong data directory 468ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-018] SIGTERM during startup stops the exact child and removes the run 57ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-019] readiness timeout stops a live unhealthy child and removes the run 459ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-020] preserves an unrelated loopback 9657 listener 19ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-021] forwards npm launcher options before the final separator and Vitest args after it exactly 0ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-022] announces revision, URL, owned data, default seed sets, child PID, and exact test command 697ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-023] labels an early fake child exit as SETUP FAILED only 255ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-024] labels a post-readiness no-test failure as TEST FAILED only 222ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-025] canonical no-default seeding fails while npm test:ada default seeding passes 3549ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-026] falls back to the current jj revision when revision environment variables are empty 217ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-012] repeated port collisions give up after a bounded number of attempts 318ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-013] SIGINT during vitest stops the vitest tree and the server, leaving no orphans 365ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-014] SIGINT during startup (before readiness) leaves no orphan server 59ms
+ ✓ src/managed-run.test.ts > SC-O0 managed conformance launcher > [TOOLING-MANAGED-015] SIGINT during the alr build kills the build child, leaving no orphan 78ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-001] parses options before the first -- and the command after it verbatim 1ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-002] a required -- command and option validation are enforced 1ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-003] usage documents the -- command contract and default paths sit inside the temp root 0ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-004] the child env carries the base URL and data dir under the three documented variables 0ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-005] isSubpath treats the separator as a plain string, never matching a sibling prefix 0ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-006] exit helpers translate signals and codes into launcher exit codes 0ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-007] seeding copies exact bytes for files and directories into a temp data dir 4ms
+ ✓ src/managed-browser-smoke.test.ts > Wave-0 managed browser-smoke launcher > [TOOLING-BROWSER-008] port probing yields distinct unused loopback ports 2ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-019] ignores unrelated argv matches but detects a live owned server 60ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-009] success path removes the exact owned run directory 78ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-010] child nonzero/failure removes the exact owned run directory 78ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-011] startup failure removes the exact owned run directory 51ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-012] readiness timeout removes the exact owned run directory 548ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-013] SIGINT during command removes the exact owned run directory 5011ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-014] SIGTERM during command removes the exact owned run directory 5009ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-015] --keep preserves the run dir on success while siblings remain untouched 78ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-016] rejects readiness from an unrelated 200 listener (health identity) 3043ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-017] rejects health with wrong dataDir (identity mismatch) 3041ms
+ ✓ src/managed-browser-smoke.test.ts > SAFE-02 managed-browser-smoke cleanup lifecycle > [TOOLING-BROWSER-018] rejects a server that exits before readiness (child not alive) 52ms
+(node:466615) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-001] test-launch-paths.sh uses owned mktemp data dir + unused port + --data + cleanup on success 172ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-002] test-spa-routes.sh rejects wrong implementation (health identity) 6672ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-003] launch scripts use an unused port, leaving a pre-existing unrelated listener untouched 174ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-004] test-launch-paths.sh passes --data pointing to an owned mktemp dir, not repo campaign-data 169ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-005] launch scripts clean up exact owned temp dir on success (stat fails after exit) 170ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-006] launch scripts detect early server exit, fail, and clean up 127ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-007] test-spa-routes.sh rejects wrong dataDir (health identity mismatch) 6623ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-008] test-launch-paths.sh detects bind failure, fails, and cleans up 127ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-009] test-launch-paths.sh on SIGINT: exit 130, child dead, temp dir gone, unrelated listener survives 125ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-010] test-launch-paths.sh on SIGTERM: exit 143, child dead, temp dir gone, unrelated listener survives 127ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-011] test-launch-paths.sh cleans up TMP_ROOT even when port allocation fails (trap-before-fallible) 10ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-012] test-spa-routes.sh cleans up TMP_ROOT even when port allocation fails (trap-before-fallible) 8ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-013] test-launch-paths.sh cleans up TMP_ROOT even when mkdir fails (trap-before-fallible-mkdir) 6ms
+ ✓ src/managed-launch.test.ts > SAFE-02 backend-ada launch scripts own their lifecycle > [TOOLING-LAUNCH-014] test-spa-routes.sh cleans up TMP_ROOT even when mkdir fails (trap-before-fallible-mkdir) 7ms
+ ✓ src/managed-log-retention.test.ts > managed launcher failure log retention > [TOOLING-LOG-RETENTION-001] retains the complete server log and prints its path after a test failure 415ms
+ ✓ src/managed-log-retention.test.ts > managed launcher failure log retention > [TOOLING-LOG-RETENTION-002] retains the server log after a readiness failure 673ms
+ ✓ src/managed-log-retention.test.ts > managed launcher failure log retention > [TOOLING-LOG-RETENTION-003] SIGTERM retains the log while stopping the owned server 71ms
+ ✓ src/managed-log-retention.test.ts > managed launcher failure log retention > [TOOLING-LOG-RETENTION-004] successful runs still remove logs and data 416ms
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-001] completeness module regenerates byte-identically and idempotently 41ms
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-002] API reference regenerates byte-identically with all SC-C5 sections 57ms
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-003] capability manifest regenerates byte-identically and covers every operationId 90ms
+ ✓ src/generators.test.ts > SC-C5 generators > [TOOLING-GEN-004] Ada validator metadata regenerates byte-identically and idempotently 61ms
+ ✓ src/generators.test.ts > SC-C5 generators > [ORACLE-01] contract coverage is deterministic, current, and complete 659ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-001] the map covers every path in the OpenAPI spec 106ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-002] GET /campaign maps status 200 to 'campaign' 30ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-003] GET /campaign/roster maps status 200 to 'roster' 28ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-004] GET /characters maps status 200 to 'characterSummary' 26ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-005] GET /characters/{id} maps status 200 to 'character' 24ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-006] POST /characters/{id}/ops/stress.add maps status 200 to 'operationResult' 23ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-007] GET /characters/{id}/history maps status 200 to 'historyEntry' 23ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-008] GET /crews maps status 200 to 'crewSummary' 25ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-009] POST /characters/{id}/repair-preview maps status 200 to 'previewResult' 24ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-010] error statuses (404, 409, 422) on op endpoints map to 'operationResult' 25ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-015] unresolved endpoint throws 26ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-016] unresolved status throws 24ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-013] the map is deterministic (two calls return the same object) 52ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-017] derives responses by operationId and distinguishes a schema from explicit no-body 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-018] rejects unsupported inline response schemas clearly 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-019] rejects a response with an empty status from the derived map 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-020] rejects duplicate and missing operationIds 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ENDPOINT-MAP-014] POST /characters/pc maps 200/400/404 to 'operationResult' 24ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-021] includes a newly supplied fake endpoint automatically 0ms
+ ✓ src/endpoint-schema-map.test.ts > endpoint schema map > [ORACLE-CAL-022] assertResponseValid rejects the wrong operationId/status body 49ms
+ ✓ src/operation-validation-concurrency.test.ts > [TOOLING-VALIDATION-CONCURRENCY-001] keeps disjoint valid field sets task-local 3735ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1 — isolation guard wraps all entrypoints > [TOOLING-SOL-001] checkCommand accepts node invoking managed-browser-smoke.mjs 1ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1 — isolation guard wraps all entrypoints > [TOOLING-SOL-002] checkCommand accepts a bare managed-browser-smoke.mjs path 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1 — isolation guard wraps all entrypoints > [TOOLING-SOL-003] checkCommand rejects a lookalike managed-browser-smoke script 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints > [TOOLING-SOL-004a] checkCommand accepts internal harness: browser-suite.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints > [TOOLING-SOL-004b] checkCommand accepts internal harness: mutation-harness.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints > [TOOLING-SOL-004c] checkCommand accepts internal harness: dataset-benchmark.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints > [TOOLING-SOL-004d] checkCommand rejects a lookalike harness script 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints > [TOOLING-SOL-004e] test:browser script path invokes guard around browser-suite.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints > [TOOLING-SOL-004f] test:mutation script path invokes guard around mutation-harness.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1b — guard wraps browser/mutation/benchmark entrypoints > [TOOLING-SOL-004g] test:benchmark script path invokes guard around dataset-benchmark.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008a] checkCommand rejects --child on browser-suite.mjs (bypass via npm run test:browser -- --child) 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008b] checkCommand rejects bare browser-suite.mjs --child 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008c] checkCommand rejects --child on dataset-benchmark.mjs (bypass via npm run test:benchmark -- --child) 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008d] checkCommand rejects bare dataset-benchmark.mjs --child 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008e] checkCommand rejects internal-only env (BASE_URL) on browser-suite.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008f] checkCommand rejects internal-only env (PITD_DATA_DIR) on dataset-benchmark.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008g] checkCommand accepts browser-suite.mjs WITHOUT --child (normal path) 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 1c — guard rejects caller-provided --child bypass > [TOOLING-SOL-008h] checkCommand accepts dataset-benchmark.mjs WITHOUT internal-only env (normal path) 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 2 — mutation provenance identifies clean baseline > [TOOLING-SOL-006a] buildCampaignArtifact uses passed revision, not sourceRevision() 1ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 2 — mutation provenance identifies clean baseline > [TOOLING-SOL-006b] sourceRevision respects PITD_REVISION env override 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 2 — mutation provenance identifies clean baseline > [TOOLING-SOL-006c] sourceRevision uses PITD_REVISION env var when set 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 2 — mutation provenance identifies clean baseline > [TOOLING-SOL-006d] sourceRevision does not return the ephemeral empty successor 86ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 3 — mutation full-results artifact schema > [TOOLING-SOL-004] buildCampaignArtifact includes all required schema fields 1ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 3 — mutation full-results artifact schema > [TOOLING-SOL-005] writeMutationArtifact full mode writes atomically (temp + rename) 1ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 3b — benchmark full-results artifact schema > [TOOLING-SOL-007] performance-results.json revision is not null 14ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 3b — benchmark full-results artifact schema > [TOOLING-SOL-007b] performance-results.json script invokes guard around dataset-benchmark.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009a] test:agent-workflow script is wired through default-data-guard + workflow-isolation-guard + managed-browser-smoke 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009b] checkCommand accepts gen-doc-workflow-managed.mjs as internal harness (no --child) 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009c] checkCommand rejects --child on gen-doc-workflow-managed.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009d] checkCommand rejects caller-provided BASE_URL on gen-doc-workflow-managed.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009e] checkCommand rejects caller-provided PITD_DATA_DIR on gen-doc-workflow-managed.mjs 0ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009f] gen-doc-workflow-managed.mjs requires BASE_URL or CONFORMANCE_BASE_URL env 21ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009g] gen-doc-workflow-managed.mjs requires PITD_DATA_DIR env when BASE_URL is set 24ms
+ ✓ src/sol-finding-1-3.test.ts > SOL finding 4 — gen-doc workflow child-only black-box > [TOOLING-SOL-009h] gen-doc-workflow-managed.mjs does NOT import spawn or startServer (child-only) 0ms
+ ✓ src/browser-suite.test.ts > browser journey enumeration completeness > [TOOLING-BROWSER-009] the loader enumerates exactly the journey modules present on disk 34ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-001] refuses classification when the unmodified baseline is red 1ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-002] rejects an edit whose mutation pattern matches no bytes 1ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-003] rejects a byte-identical replacement before tests run 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-004] a mutant producing only the baseline failure set survives 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-005] a new expected test-ID failure kills the mutant and source restores byte-exactly 1ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-006] targeted diagnostics never alter the immutable full artifact 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-007] preserves the distinct setup-failure state 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-007] preserves the distinct timeout state 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-007] preserves the distinct compile-failure state 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-007] preserves the distinct test-failure state 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-007] preserves the distinct harness-error state 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-009] rebuilds clean backend binary after source restoration on mutant success 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-010] rebuilds clean backend binary after source restoration on mutant failure/interruption 0ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-011] propagates rebuild failure as a cleanup error 1ms
+ ✓ src/mutation-harness.test.ts > mutation harness methodology > [MUT-CAL-012] does not rebuild for non-backend-ada layers 1ms
+ ✓ src/mutation-harness.test.ts > [MUT-CAL-008] refreshed M01/M04/M06/M11/M12/M16/M27/M17 anchors mutate their intended current symbols 26ms
+ ✓ src/stdio-shim.test.ts > HTTP to stdio shim > [TOOLING-SHIM-001] translates one HTTP request and response over JSONL 25ms
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  ~ changed one.json (2 bytes -> 19 bytes, sha 44136fa355b3... -> 0ac250f2203c...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  + added   sub/new.json (1 bytes, 2d711642b726...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] root existence changed: true -> false
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed crews/a.json (2 bytes, 44136fa355b3...)
+  + added   crews/b.json (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: true -> false
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape (2 bytes, 44136fa355b3...)
+  + added   shape
+  + added   shape/child (1 bytes, 2d711642b726...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape
+  - removed shape/child (1 bytes, 2d711642b726...)
+  + added   shape (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-001] repoRootOf is exactly two levels above the script dir (synthetic URL) 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-002] repoRoot and defaultManifestRoot resolve the real script location 0ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-003] snapshotRoot of a missing root is an empty manifest 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-004] snapshotRoot walks recursively with sorted dir/file rows; file rows carry only size+sha256 2ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-005] compareManifests of identical manifests is empty 0ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-006] compareManifests reports sorted added/removed/changed rows 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-006a] compareManifests reports file-directory replacements as removed plus added 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-007] parseArgs requires -- child and honors --help 0ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-008] usage() documents the CLI 0ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-009] runGuard propagates the child code when bytes are unchanged 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-010] runGuard compares after a child failure (unchanged propagates the failed code) 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-011] runGuard returns 1 when the child changed a byte (write-guard violation) 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-012] runGuard returns 1 when the child adds or removes a row 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-013] snapshotRoot records existence, totals, and collection counts 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-014] runGuard returns 1 when the child renames a file 0ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-015] runGuard returns 1 when the guard root transitions absent to present 0ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-015a] runGuard detects empty absent-present and present-absent root transitions 0ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-015b] runGuard detects file-directory and directory-file replacements 1ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-016] buildCampaignManifest records exact sorted rows, totals, counts, timestamp, and human-review pollution wording 2ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-016a] defaultManifestRoot is stable across a read-only no-op child 4ms
+ ✓ src/default-data-guard.test.ts > RV-00 default-data guard > [TOOLING-DG-017] buildCampaignManifest records a present root becoming absent 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-001] rejects a summary missing a required property (crewSummary without canUndo) 1ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-002] rejects an excess property (characterSummary with extra 'foo') 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-003] rejects a wrong nested primitive type (stress as string) 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-004] rejects a wrong enum (hold as 'medium') 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-005] rejects an out-of-bound number (stress -1) 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-006] rejects a full character DTO where a summary is declared 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-007] rejects an unknown error branch (operationError with code UNKNOWN_CODE) 5ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-008] accepts a valid characterSummary (positive control) 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-009] accepts a valid crewSummary with canUndo:true, historyCount:1 (positive control) 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-010] rejects a campaign missing formatVersion 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-011] rejects a malformed UUID 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-012] rejects a malformed timestamp (space separator instead of T) 0ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-013] fails closed when initialization cannot resolve a required schema reference 6ms
+ ✓ src/contract-validator.test.ts > contract-validator oracle calibration > [ORACLE-CAL-014] never uses a permissive empty-schema fallback 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 layer derivation > [TA00-LAYER-001] derives the contract layer from conformance suite path 1ms
+ ✓ src/test-audit-inventory.test.ts > TA00 layer derivation > [TA00-LAYER-002] derives semantics/persistence/lifecycle/parity from suite paths 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 layer derivation > [TA00-LAYER-003] derives the tooling layer for all conformance tooling files 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 layer derivation > [TA00-LAYER-004] derives frontend layers from src subdirectories 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 layer derivation > [TA00-LAYER-005] maps a frontend src-root test to the main layer 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 layer derivation > [TA00-LAYER-006] maps Ada core paths to ada-runtime and spark-proof 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 layer derivation > [TA00-LAYER-007] maps frontend lib/styles dirs when present 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 ids and slugs > [TA00-ID-001] slugify collapses to a stable lower-case hyphen token 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 ids and slugs > [TA00-ID-002] extracts a bracketed conformance id from a vitest name 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 ids and slugs > [TA00-ID-003] uses the bracket id when present, else a path+name slug 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 Ada pragma Assert parsing > [TA00-ADA-001] parses single-line pragma Assert with balanced parens 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 Ada pragma Assert parsing > [TA00-ADA-002] parses a multiline pragma Assert as ONE row 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 Ada pragma Assert parsing > [TA00-ADA-003] collapseAssertLabel flattens whitespace 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 Ada pragma Assert parsing > [TA00-ADA-004] handles nested parens in the assert body without truncating 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 SPARK proof-family parsing > [TA00-PROOF-001] finds only subprograms carrying a with Pre/Post aspect 1ms
+ ✓ src/test-audit-inventory.test.ts > TA00 SPARK proof-family parsing > [TA00-PROOF-002] excludes null-body, expression functions, and private helpers 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 SPARK proof-family parsing > [TA00-PROOF-003] does not cross a `;` / `is` / next-decl to reach a later aspect 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 SPARK proof-family parsing > [TA00-PROOF-004] packageOfSpec reads the spec package name 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 row assembly > [TA00-ROW-001] vitest rows carry blank decisions and null line 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 row assembly > [TA00-ROW-002] ada rows pin the core_tests:<line> id and ada-runtime framework 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 row assembly > [TA00-ROW-003] proof rows pin the package.subprogram id and spark-proof framework 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 row assembly > [TA00-ROW-004] blankRow keeps every audit decision field empty 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 sort order > [TA00-SORT-001] orders by layer using the canonical enum, not alphabetically 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 sort order > [TA00-SORT-002] orders by file within a layer 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 sort order > [TA00-SORT-003] orders by name within a file 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 sort order > [TA00-SORT-004] orders by line with null (vitest) rows last within a group 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 sort order > [TA00-SORT-005] breaks a repeated (layer,file,name) by line then id 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 sort order > [TA00-SORT-006] sortRows is a total, deterministic order across mixed layers 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 assemble > [TA00-ASM-001] marks generated:false and keeps groups empty until the orchestrator runs 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 assemble > [TA00-ASM-002] assembles all sources into one sorted, flat row list 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 assemble > [TA00-ASM-003] rows carry no skipped placeholders and no guessed classifications 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 ledger-overwrite guard > [TA00-GUARD-001] looksLedgerAssigned detects every ledger marker, accepts raw output 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 ledger-overwrite guard > [TA00-GUARD-002] parseArgs defaults force:false and accepts --force 0ms
+ ✓ src/test-audit-inventory.test.ts > TA00 ledger-overwrite guard > [TA00-GUARD-003] generate() refuses a ledger-assigned file and leaves it byte-identical 2ms
+ ✓ src/test-audit-inventory.test.ts > TA00 ledger-overwrite guard > [TA00-GUARD-004] assertSafeToOverwrite allows raw-over-raw and missing files, force overrides 1ms
+ ✓ src/report.test.ts > stable conformance report > [TOOLING-REPORT-001] normalizes Vitest results into sorted stable IDs 5ms
+ ✓ src/mutation-read-retarget.test.ts > read-performance mutation anchors > [MUT-READ-001] M04 truncates the live unknown-removal collector, not dictionary keys 3ms
+ ✓ src/mutation-read-retarget.test.ts > read-performance mutation anchors > [MUT-READ-002] M06 still inserts a forbidden write after the single stored parse 1ms
+ ✓ src/read-classification-allocation.test.ts > stored-read allocation regressions > [TOOLING-READ-PERF-001] does not allocate/sort known keys during removal discovery 1ms
+ ✓ src/read-classification-allocation.test.ts > stored-read allocation regressions > [TOOLING-READ-PERF-002] reuses the parsed entity for normalization 0ms
+ ✓ src/read-classification-allocation.test.ts > stored-read allocation regressions > [TOOLING-READ-PERF-003] optimizes production server code without disabling checks 0ms
+ ✓ src/read-classification-allocation.test.ts > stored-read allocation regressions > [TOOLING-READ-PERF-004] checks allowed names without allocating wrapped strings 0ms
+ ✓ src/read-classification-allocation.test.ts > stored-read allocation regressions > [TOOLING-READ-PERF-005] reuses immutable canonical strings after a single field lookup 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when a direct server command points to a temp directory 1ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when --data is not present 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > passes for the canonical managed-run launcher without caller-provided --data 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > passes for node invoking the canonical managed-run launcher 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails for a lookalike managed-run script without caller-provided --data 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when --data points to data/games 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when --data points to campaign-data 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when --data=<path> form points to forbidden path 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > passes in manual mode even with forbidden path 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when a direct server command points to a subdirectory of /tmp 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when a direct server command points to an arbitrary repository path 0ms
+ ✓ src/workflow-isolation-guard.test.ts > workflow-isolation-guard > fails when a direct server command points to /var/tmp 0ms
+
+ Test Files  18 passed (18)
+      Tests  233 passed (233)
+   Start at  18:41:53
+   Duration  72.19s (transform 185ms, setup 0ms, collect 584ms, tests 69.97s, environment 1ms, prepare 464ms)
+

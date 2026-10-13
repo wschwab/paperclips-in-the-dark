@@ -110,6 +110,18 @@ describe("XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve)", () => {
     expect((await api.character(before.id)).revision).toBe(before.revision);
   });
 
+  testCase("XP-RESOLVE-007", "an Idempotency-Key replay returns the stored result and does not award the XP twice", async () => {
+    const before = await prepared({ playbook: 1, character: 0, struggle: 0 });
+    const body = { total: 1, allocations: allocations({ Playbook: 1 }) };
+    const key = `xp-resolve-replay-${before.id}`;
+    const first = await api.post(`characters/${before.id}/ops/xp.resolve`, body, { "If-Match": String(before.revision), "Idempotency-Key": key });
+    expect(first.status).toBe(200);
+    const second = await api.post(`characters/${before.id}/ops/xp.resolve`, body, { "If-Match": String(before.revision), "Idempotency-Key": key });
+    expect(second.status).toBe(200);
+    const after = await api.character(before.id);
+    expect(xpOf(after, "Playbook").points).toBe(xpOf(before, "Playbook").points + 1);
+  });
+
   testCase("XP-RESOLVE-006", "a stale If-Match is rejected before any write, with the existing STALE_REVISION code", async () => {
     const before = await prepared({ playbook: 1, character: 0, struggle: 0 });
     const res = await api.post(

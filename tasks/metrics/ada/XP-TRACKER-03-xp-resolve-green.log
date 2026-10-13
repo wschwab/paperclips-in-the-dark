@@ -1,0 +1,40 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/semantics/xp-resolve.test.ts
+OK: canonical managed launcher
+[managed-run] runId=2026-10-13T15-34-01-750Z-6e5db476
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=7d9ef58cd3f7
+[managed-run] testCommand=--run suites/semantics/xp-resolve.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-13T15-34-01-750Z-6e5db476/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-13T15-34-01-750Z-6e5db476/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-13T15-34-01-750Z-6e5db476
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-13T15-34-01-750Z-6e5db476/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-13T15-34-01-750Z-6e5db476/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-13T15-34-01-750Z-6e5db476/data (dir)
+[managed-run] port=32985
+[managed-run] baseUrl=http://127.0.0.1:32985
+[managed-run] pid=446076
+[managed-run] ready=http://127.0.0.1:32985
+[managed-run] vitestPid=446143
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ suites/semantics/xp-resolve.test.ts > XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve) > [XP-RESOLVE-001] a valid split adds each allocation to its track and clears the three session counters in one revisioned write 108ms
+ ✓ suites/semantics/xp-resolve.test.ts > XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve) > [XP-RESOLVE-002] an allocation beyond a track's room is rejected with VALIDATION 400, and nothing changes, including the revision 92ms
+ ✓ suites/semantics/xp-resolve.test.ts > XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve) > [XP-RESOLVE-003] a zero total is allowed: the explicit GM decision awards nothing and still completes the counters 129ms
+ ✓ suites/semantics/xp-resolve.test.ts > XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve) > [XP-RESOLVE-004] negative and non-integer allocations are rejected with VALIDATION 400 and no revision change 129ms
+ ✓ suites/semantics/xp-resolve.test.ts > XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve) > [XP-RESOLVE-005] the sum of allocations must equal the GM total (nothing discarded or invented) 129ms
+ ✓ suites/semantics/xp-resolve.test.ts > XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve) > [XP-RESOLVE-007] an Idempotency-Key replay returns the stored result and does not award the XP twice 131ms
+ ✓ suites/semantics/xp-resolve.test.ts > XP-TRACKER-02 atomic Scoundrel XP completion (xp.resolve) > [XP-RESOLVE-006] a stale If-Match is rejected before any write, with the existing STALE_REVISION code 88ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  18:34:01
+   Duration  1.17s (transform 50ms, setup 0ms, collect 265ms, tests 807ms, environment 0ms, prepare 29ms)
+
+[managed-run] success; evidence removed (/tmp/pitd-managed/2026-10-13T15-34-01-750Z-6e5db476)

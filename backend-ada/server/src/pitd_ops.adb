@@ -60,7 +60,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "retire"
         or else Op = "mode.set" or else Op = "mode.flow.set"
         or else Op = "downtime.spend" or else Op = "downtime.adjust"
-        or else Op = "downtime.reset"
+        or else Op = "downtime.reset" or else Op = "xp.resolve"
         or else Op = "claim.set" or else Op = "claim.customize"
         or else Op = "claim.reset"
       then
@@ -592,6 +592,17 @@ elsif Op = "clock.create" then
             Bad := To_Unbounded_String ("invalid mode flow kind/step pairing");
             return False;
          end;
+      elsif Op = "xp.resolve" then
+         --  XP-TRACKER-02: total and allocations are required and typed here. Each
+         --  allocation's room and the allocation sum are checked against the stored
+         --  character before any write, in the apply branch.
+         return Check_Fields (B, (Spec ("total", JSON_Int_Type, MnI => 0),
+                                  Spec ("allocations", JSON_Object_Type)), Bad)
+           and then Check_Fields (Get (B, "allocations"),
+                                  (Spec ("Playbook", JSON_Int_Type, MnI => 0),
+                                   Spec ("Insight", JSON_Int_Type, MnI => 0),
+                                   Spec ("Prowess", JSON_Int_Type, MnI => 0),
+                                   Spec ("Resolve", JSON_Int_Type, MnI => 0)), Bad);
       elsif Op = "downtime.spend" then
          return Check_Fields
            (B, (Spec ("activity", JSON_String_Type,
@@ -729,7 +740,7 @@ begin
 
       if Op = "mode.set" or else Op = "mode.flow.set"
         or else Op = "downtime.spend" or else Op = "downtime.adjust"
-        or else Op = "downtime.reset"
+        or else Op = "downtime.reset" or else Op = "xp.resolve"
       then
          if Kind /= "character" then
             return Validation_Error (Op, "character-only operation",
@@ -769,6 +780,87 @@ begin
                Requested := Int_Field (B, "delta");
                Set_Field (D, "paid", Int_Field (D, "paid") + Requested);
                Effective := Requested;
+            end;
+         elsif Op = "xp.resolve" then
+            declare
+               Total  : constant Integer := Int_Field (B, "total");
+               Alloc  : constant JSON_Value := Get (B, "allocations");
+               Sum    : Integer := 0;
+               Issues : JSON_Array := Empty_Array;
+
+               --  The XP track of a destination: the playbook track or the
+               --  attribute track with that name. JSON_Null when absent.
+               function Track (Name : String) return JSON_Value is
+               begin
+                  if Name = "Playbook" then
+                     return Get (Get (E, "playbook"), "experience");
+                  end if;
+                  declare
+                     Attrs : constant JSON_Array := Get (Get (E, "talent"), "attributes");
+                  begin
+                     for I in 1 .. Length (Attrs) loop
+                        declare
+                           A : constant JSON_Value := Get (Attrs, I);
+                        begin
+                           if Str_Field (A, "name") = Name then
+                              return Get (A, "experience");
+                           end if;
+                        end;
+                     end loop;
+                  end;
+                  return JSON_Null;
+               end Track;
+
+               procedure Check_One (Name : String) is
+                  T      : constant JSON_Value := Track (Name);
+                  Amount : constant Integer := Int_Field (Alloc, Name);
+               begin
+                  Sum := Sum + Amount;
+                  if T.Kind /= JSON_Object_Type then
+                     Append (Issues, Issue_At ("/allocations/" & Name,
+                                               "destination track is missing",
+                                               "an existing XP track"));
+                  elsif Amount > Int_Field (T, "max") - Int_Field (T, "points") then
+                     Append (Issues, Issue_At ("/allocations/" & Name,
+                                               "allocation exceeds the track room",
+                                               "an allocation within the track room"));
+                  end if;
+               end Check_One;
+
+               procedure Apply_One (Name : String) is
+                  T : constant JSON_Value := Track (Name);
+               begin
+                  Set_Field (T, "points", Int_Field (T, "points") + Int_Field (Alloc, Name));
+               end Apply_One;
+            begin
+               Check_One ("Playbook");
+               Check_One ("Insight");
+               Check_One ("Prowess");
+               Check_One ("Resolve");
+               if Sum /= Total then
+                  Append (Issues, Issue_At ("/total",
+                                            "total must equal the sum of allocations",
+                                            "a total equal to the allocation sum"));
+               end if;
+               if Length (Issues) > 0 then
+                  return Validation_Error (Op, "invalid Scoundrel XP completion", Issues, E);
+               end if;
+
+               --  All checks passed: credit every allocation, then clear the three
+               --  session counters. One write, one snapshot.
+               Apply_One ("Playbook");
+               Apply_One ("Insight");
+               Apply_One ("Prowess");
+               Apply_One ("Resolve");
+               declare
+                  S : constant JSON_Value := Get (E, "session");
+               begin
+                  Set_Field (S, "playbookExpressions", Integer'(0));
+                  Set_Field (S, "characterExpressions", Integer'(0));
+                  Set_Field (S, "struggleExpressions", Integer'(0));
+               end;
+               Requested := Total;
+               Effective := Total;
             end;
          else
             Set_Field (E, "downtime", Default_Downtime (E));
