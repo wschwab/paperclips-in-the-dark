@@ -92,3 +92,18 @@ The equivalent mutant is recorded, not hidden. The stronger mutant (both guards 
 ## Before / after for the journey (summary)
 
 Before: step 6 clicked the sheet's End downtime button and waited for `/end-downtime` 200 (checkpoint `end-downtime-ok`). After: step 6 completes Scoundrel XP with a zero total through `/ops/xp.resolve` 200 (checkpoint `scoundrel-xp-completed`). Undo (step 7) still restores the state, because `xp.resolve` writes one snapshot.
+
+## Sol 6.1 xhigh review of 74843d82: FAIL, four findings fixed
+
+Verdict: `agent-docs/test-audit/browser-evidence/xp-tracker-04/sol-6.1/verdict.md` (Sol's own probe: 204/227 assertions; the layout, request body, zero-total and journey-selector checks passed). Findings, each confirmed in code, then fixed:
+
+| Finding | Fix | Red test (`game-mode-sheet.test.ts`, XP-TRACKER-04 review) |
+|---|---|---|
+| R1 P1: the compact sheet left `.character-detail` inert after a widen or leaving Score | Inert is set only where the sheet renders; widening (`innerWidth > 1099`) and leaving Score (`onMode`) close the sheet | "widening…" and "leaving Score…" |
+| R2 P2: focus escaped the modal (Shift+Tab reached the tab behind it) | Tab and Shift+Tab wrap inside the dialog; the mode panel and sheet behind it are inert while open | "traps Tab…" and "…inert" |
+| R3 P1: wheel over the pass-through Resolution card scrolled the page underneath | A window wheel listener forwards wheel over the card's rectangle to the card's own scroll | Chromium only (jsdom has no layout) |
+| R4 P2: the 390 footer clipped the XP Tracker opener | The tab sits before the scrolling panel content | "the compact XP Tracker tab comes before…" |
+
+Red-first: the five unit tests failed on 74843d82's code before the fix. Gates after the fix: vitest 945/945 (32 files), tsc 0, build 0, browser 6/6 (`tasks/metrics/frontend/XP-TRACKER-04-browser-review.log`), Chromium `review-fixes-check.mjs` R1–R4 all pass with zero errors (`review-fixes-check.json`), the nine-combination tracker check 9/9, and the allocation fit (completion bottom 905/905/962).
+
+Limits, stated plainly: wheel forwarding is verified for the mouse wheel only; touch scrolling over the pass-through card was not separately verified. The header sits outside the sheet's inert scope; keyboard focus is contained by the trap, but a pointer click on the header while the sheet is open still reaches it. The mutation campaign for the new code has not been run: it needs your go-ahead.

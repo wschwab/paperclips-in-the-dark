@@ -323,17 +323,23 @@ function renderDetail(state: RenderState): HTMLElement {
     );
   }
   // Score popups are overlay dialogs (aria-modal) outside the sheet; they gate nothing.
-  // The XP Tracker bottom sheet is modal on compact screens: the sheet behind it is inert.
-  if (state.gameMode.xpTrackerOpen) sheet.setAttribute("inert", "");
+  // The XP Tracker bottom sheet is modal wherever it is rendered (compact only; it is closed on wide
+  // screens): the character sheet and the mode panel behind it are inert while it is open.
+  const panel = renderGameModePanel(ctx, state.handlers.gm, state.gameMode);
+  const xpTrackerSheet = renderXpTrackerSheet(ctx, state.handlers.gm, state.gameMode);
+  if (xpTrackerSheet) {
+    sheet.setAttribute("inert", "");
+    panel.setAttribute("inert", "");
+  }
   return el("div", { className: "game-mode-layout" },
-    renderGameModePanel(ctx, state.handlers.gm, state.gameMode),
+    panel,
     sheet,
-    renderXpTrackerSheet(ctx, state.handlers.gm, state.gameMode),
+    xpTrackerSheet,
     renderScorePopup(ctx, state.handlers.gm, state.gameMode),
     renderLoadoutConfirm(ctx, state.handlers.gm, state.gameMode),
     renderResolution(ctx, state.handlers.gm, state.gameMode),
   );
- }
+}
 
 function renderLoading(): HTMLElement {
   return el(
@@ -669,6 +675,8 @@ export function mountCharacterDetailPage(
   const gmHandlers: GameModeHandlers = {
     onMode: (mode) => {
       if (!currentCharacter || isGameModeLoading) return;
+      // The tracker belongs to Score only: leaving Score closes it so it cannot reopen later.
+      gmXpTrackerOpen = false;
       isGameModeLoading = true;
       clearNotices();
       renderDetailWrapper();
@@ -2317,8 +2325,31 @@ export function mountCharacterDetailPage(
 
   startLoad();
 
+  // The compact tracker is a modal sheet only at or below the 1099px breakpoint (CSS in game-mode.css).
+  // Widening while it is open closes it, so no inert state survives a layout change.
+  const onResize = () => {
+    if (gmXpTrackerOpen && window.innerWidth > 1099) {
+      gmXpTrackerOpen = false;
+      renderDetailWrapper();
+    }
+  };
+  // The Resolution card is non-blocking (pointer-events: none), so a wheel over its area reaches the page
+  // underneath. Forward it to the card's own scroll position so its text and controls stay reachable.
+  const forwardResolutionWheel = (e: WheelEvent) => {
+    const card = root.querySelector<HTMLElement>(".game-mode-resolution .game-mode-popup-card");
+    if (!card || card.scrollHeight <= card.clientHeight) return;
+    const r = card.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    e.preventDefault();
+    card.scrollTop += e.deltaY;
+  };
+  window.addEventListener("resize", onResize);
+  window.addEventListener("wheel", forwardResolutionWheel, { passive: false });
+
   return () => {
     cancelled = true;
+    window.removeEventListener("resize", onResize);
+    window.removeEventListener("wheel", forwardResolutionWheel);
     continuity.dispose();
   };
 }

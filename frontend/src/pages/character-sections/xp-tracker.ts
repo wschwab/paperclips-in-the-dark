@@ -18,6 +18,8 @@ const EXPRESSIONS = [
   { key: "struggleExpressions", label: "Struggle expressions", short: "struggle" },
 ] as const;
 
+const XP_TRACKER_FOCUSABLE = "a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled])";
+
 /** Desperate action XP and the expression rows: the content shared by the panel and the sheet. */
 function trackerBody(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement[] {
   const { c, handlers } = ctx;
@@ -112,10 +114,26 @@ export function renderXpTrackerSheet(ctx: SectionCtx, gm: GameModeHandlers, ui: 
     handle,
     el("header", { className: "xp-tracker-sheet-head" }, el("h2", {}, "XP Tracker"), close),
     el("div", { className: "xp-tracker-sheet-body" }, ...trackerBody(ctx, gm)));
+  // Modal focus containment: Tab wraps inside the dialog; the background is inert while it is open.
   sheet.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       e.preventDefault();
       gm.onXpTrackerOpen(false);
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const items = Array.from(sheet.querySelectorAll<HTMLElement>(XP_TRACKER_FOCUSABLE));
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (!first || !last) return;
+    const active = document.activeElement;
+    const outside = !(active instanceof Node) || !sheet.contains(active);
+    if (e.shiftKey && (outside || active === first || active === sheet)) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && (outside || active === last)) {
+      e.preventDefault();
+      first.focus();
     }
   });
   queueMicrotask(() => close.focus());

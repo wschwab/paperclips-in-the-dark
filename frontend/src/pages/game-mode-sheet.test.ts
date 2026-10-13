@@ -985,4 +985,64 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
       expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe(String(dto.revision));
     });
   });
+
+  it("the compact sheet traps Tab and Shift+Tab inside the dialog (XP-TRACKER-04 review R2)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+    const sheet = root.querySelector<HTMLElement>('[data-section="xp-tracker-sheet"]')!;
+    const close = sheet.querySelector<HTMLButtonElement>(".xp-tracker-close")!;
+    const focusables = Array.from(sheet.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), select:not([disabled]), input:not([disabled])"));
+    const last = focusables[focusables.length - 1]!;
+    last.focus();
+    sheet.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+    expect(document.activeElement).toBe(close);
+    close.focus();
+    sheet.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true }));
+    expect(document.activeElement).toBe(last);
+  });
+
+  it("while the compact sheet is open, the sheet and the mode panel behind it are inert (XP-TRACKER-04 review R2)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+    expect(root.querySelector(".character-detail")!.hasAttribute("inert")).toBe(true);
+    expect(root.querySelector(".mode-panel")!.hasAttribute("inert")).toBe(true);
+  });
+
+  it("widening to the wide layout closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+    const original = window.innerWidth;
+    try {
+      Object.defineProperty(window, "innerWidth", { value: 1440, configurable: true, writable: true });
+      window.dispatchEvent(new Event("resize"));
+      await vi.waitFor(() => {
+        expect(root.querySelector('[data-section="xp-tracker-sheet"]')).toBeNull();
+        expect(root.querySelector(".character-detail")!.hasAttribute("inert")).toBe(false);
+        expect(root.querySelector(".mode-panel")!.hasAttribute("inert")).toBe(false);
+      });
+    } finally {
+      Object.defineProperty(window, "innerWidth", { value: original, configurable: true, writable: true });
+    }
+  });
+
+  it("leaving Score closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+    Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-switch button")).find((b) => b.textContent === "Free Play")!.click();
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-section="xp-tracker-sheet"]')).toBeNull();
+      expect(root.querySelector(".character-detail")!.hasAttribute("inert")).toBe(false);
+    });
+  });
+
+  it("the compact XP Tracker tab comes before the scrolling panel content, so the footer cannot clip it (XP-TRACKER-04 review R4)", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    const tab = root.querySelector<HTMLElement>(".xp-tracker-tab")!;
+    const content = root.querySelector<HTMLElement>(".mode-panel .panel-content")!;
+    expect(tab.compareDocumentPosition(content) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

@@ -210,9 +210,9 @@ export function renderGameModePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: G
     h("h2", {}, "Game mode"),
     h("p", { className: "small scope" }, `For ${c.dossier.name || "this scoundrel"} only`),
     renderModeSwitch(ctx, gm),
+    c.mode === "score" ? renderXpTrackerTab(ctx, gm, ui) : null,
     h("div", { className: "panel-content" }, body),
     c.mode === "score" ? renderXpTrackerPanel(ctx, gm) : null,
-    c.mode === "score" ? renderXpTrackerTab(ctx, gm, ui) : null,
     h("p", { className: "small", style: "margin-top: 0.5em;" }, "A table aid, not a rules engine. Nothing here blocks your sheet."),
   );
 }
