@@ -72,3 +72,15 @@ describe("footer split holds at narrow widths (F7-2)", () => {
     expect(right).toMatch(/justify-content:\s*flex-end/);
   });
 });
+
+// MODE-PANEL-ALIGN-01: the sheet (.character-detail) pads its content by --gutter so the masthead clears
+// the torn seam under the app bar. The game-mode wrapper has no such padding, so the wide mode panel
+// started under the seam, above the identity card. On the wide grid the panel takes the same top offset.
+describe("mode panel aligns with the sheet content top (MODE-PANEL-ALIGN-01)", () => {
+  it("offsets the wide-layout mode panel by the sheet gutter", () => {
+    const wide = css.match(/@media \(min-width: 1100px\)\s*\{([\s\S]*?)\n\}/);
+    expect(wide, "wide media block").not.toBeNull();
+    const panel = wide![1]!.match(/\.game-mode-layout > \.mode-panel\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(panel).toMatch(/margin-top:\s*var\(--gutter\)/);
+  });
+});

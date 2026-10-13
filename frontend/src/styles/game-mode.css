@@ -27,6 +27,9 @@
     top: 1em;
     max-height: calc(100vh - 2em);
     overflow: auto;
+    /* MODE-PANEL-ALIGN-01: the sheet pads its content by --gutter so the masthead clears the
+     * torn seam; the panel takes the same offset so its top aligns with the sheet content. */
+    margin-top: var(--gutter);
   }
 }
 
