@@ -229,7 +229,7 @@ describe("character-detail page", () => {
 
     await vi.waitFor(() => {
       expect(root.querySelector("h1")?.textContent).toContain("Brenda Hilton");
-      expect(root.querySelector('[data-session-track="character"]')?.textContent).toContain("Scoundrel expressions");
+      // Session expression tracks live in the XP Tracker (Score mode only), not on the regular sheet.
       expect(root.querySelector('[data-section="high-impact"]')?.textContent).toContain("Retire ends this scoundrel's career");
       expect(root.querySelector('[data-section="high-impact"] button')?.getAttribute("title")).toBe("Retire this scoundrel (confirmation required)");
     });
@@ -2465,56 +2465,6 @@ describe("character-detail page", () => {
       error: null,
     });
 
-    it("renders attribute groups, dot rows, XP trackers, session tracks, and playbook XP text from game data", async () => {
-      global.fetch = vi
-        .fn()
-        .mockResolvedValueOnce(ok(talentDTO()))
-        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
-        .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA))
-        .mockResolvedValueOnce(ok({}));
-
-      mountCharacterDetailPage(root, CHARACTER_ID);
-
-      await vi.waitFor(() => {
-        expect(root.textContent).toContain("Brenda Hilton");
-      });
-
-      // Attribute groups come from the DTO
-      const groups = root.querySelectorAll(".talent-attribute");
-      expect(groups.length).toBe(3);
-      expect(root.querySelector('.talent-attribute[data-attribute="Insight"]')).not.toBeNull();
-      expect(root.querySelector('.talent-attribute[data-attribute="Prowess"]')).not.toBeNull();
-      expect(root.querySelector('.talent-attribute[data-attribute="Resolve"]')).not.toBeNull();
-
-      // Action dot rows: max from DTO maxRating (4 dots for Hunt)
-      const huntRow = root.querySelector('.talent-action-row[data-action="Hunt"]');
-      expect(huntRow).not.toBeNull();
-      expect(huntRow!.querySelectorAll(".action-dot").length).toBe(4);
-
-      // XP trackers show points/max from the DTO
-      expect(root.querySelector('.talent-xp[data-attribute="Insight"]')?.textContent).toContain("2 / 6");
-      expect(root.querySelector('.talent-xp[data-attribute="Prowess"]')?.textContent).toContain("6 / 6");
-
-      // Score XP: three session tracks + playbook ExperienceCondition text
-      expect(root.querySelectorAll(".session-track").length).toBe(3);
-      expect(root.querySelector('[data-session-track="playbook"]')).not.toBeNull();
-      expect(root.querySelector('[data-session-track="character"]')).not.toBeNull();
-      expect(root.querySelector('[data-session-track="struggle"]')).not.toBeNull();
-      expect(root.textContent).toContain("You addressed a challenge with calculation or conspiracy");
-      expect(root.textContent).toContain("Desperate action XP is marked on the attribute XP tracks");
-
-      // F2aa: one clean name per action — the underlined .action-name from
-      // the dots component. The duplicate dot-row label is gone.
-      const nameEls = huntRow!.querySelectorAll(".action-name");
-      expect(nameEls.length).toBe(1);
-      expect(nameEls[0]?.textContent).toBe("Hunt");
-      expect(huntRow!.querySelectorAll(".lbl").length).toBe(0);
-      // Tooltips come from game data Attributes, on the action-name
-      expect(nameEls[0]?.getAttribute("title")).toContain("When you Hunt");
-    });
-
     // CHAR-06: XP trackers get the same heavy-box furniture as the stress
     // track — boxes derive from the DTO max, clicks send computed deltas
     // over the same attribute-xp.add op, and accessible names stay on the
@@ -3097,85 +3047,6 @@ describe("character-detail page", () => {
       expect(prowessBtn.disabled).toBe(false);
     });
 
-    it("session track boxes and +/− send only the changed field via sessionSet", async () => {
-      const pbUpdated = talentDTO({
-        revision: 13,
-        session: { playbookExpressions: 2, characterExpressions: 0, struggleExpressions: 0, max: 3 },
-      });
-      const stUpdated = talentDTO({
-        revision: 14,
-        session: { playbookExpressions: 2, characterExpressions: 0, struggleExpressions: 1, max: 3 },
-      });
-
-      global.fetch = vi
-        .fn()
-        .mockResolvedValueOnce(ok(talentDTO()))
-        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
-        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
-        .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA))
-        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
-        .mockResolvedValueOnce(ok(charOpOk(pbUpdated, "session.set")))
-        .mockResolvedValueOnce(ok(charOpOk(stUpdated, "session.set")));
-
-      mountCharacterDetailPage(root, CHARACTER_ID);
-
-      await vi.waitFor(() => {
-        expect(root.querySelector('[data-session-track="playbook"]')).not.toBeNull();
-      });
-
-      // Click box 2 on the playbook track
-      const playbookTrack = root.querySelector('[data-session-track="playbook"]')!;
-      const box2 = playbookTrack.querySelectorAll<HTMLButtonElement>(".stress-box")[1]!;
-      box2.click();
-
-      await vi.waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          `/api/characters/${CHARACTER_ID}/ops/session.set`,
-          expect.objectContaining({
-            body: JSON.stringify({ playbookExpressions: 2 }),
-          }),
-        );
-      });
-      // wait for the mutation to land and re-render before the next click
-      await vi.waitFor(() => {
-        expect(root.querySelector('[data-session-track="playbook"]')?.textContent).toContain("2 / 3");
-      });
-
-      // + button on the struggle track
-      (root.querySelector('button[title="Add 1 Struggle expressions"]') as HTMLButtonElement).click();
-      await vi.waitFor(() => {
-        expect(global.fetch).toHaveBeenLastCalledWith(
-          `/api/characters/${CHARACTER_ID}/ops/session.set`,
-          expect.objectContaining({
-            body: JSON.stringify({ struggleExpressions: 1 }),
-          }),
-        );
-      });
-    });
-
-    it("falls back to the game-data playbook ExperienceCondition when the playbook fetch fails", async () => {
-      const gameWithPlaybooks = {
-        ...TALENT_GAME_DATA,
-        Playbooks: [{ Name: "Spider", ExperienceCondition: "You wove a conspiracy from the shadows" }],
-      };
-
-      global.fetch = vi
-        .fn()
-        .mockResolvedValueOnce(ok(talentDTO()))
-        .mockResolvedValueOnce(ok(gameWithPlaybooks))
-        .mockResolvedValueOnce(ok([]))
-        .mockResolvedValueOnce(ok(CREWS_DATA))
-        .mockResolvedValueOnce(ok({}))  // 6th load fetch: capabilities (decode-fail => fallback to game data)
-        // no playbook mock: the /playbooks/{name} fetch fails and degrades gracefully
-        .mockResolvedValueOnce(ok(charOpOk(talentDTO(), "action.set-rating")));
-
-      mountCharacterDetailPage(root, CHARACTER_ID);
-
-      await vi.waitFor(() => {
-        expect(root.textContent).toContain("You wove a conspiracy from the shadows");
-      });
-    });
   });
 
   describe("F2p Playbook", () => {

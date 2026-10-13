@@ -42,12 +42,12 @@ After this amendment the set check passes. The **reachability** half of `PARITY-
 |---|---|---|
 | `alr build` (server) | success | build log: `pitd_ops.adb` recompiled |
 | `XP-RESOLVE-001..007` | 7/7 green | `tasks/metrics/ada/XP-TRACKER-03-xp-resolve-green.log` |
-| full managed suite, 2 cycles | 593/594 each; only the reachability half of PARITY-HUMAN-003 open | `tasks/metrics/ada/XP-TRACKER-03-full-suite-two-cycles.log` |
+| full managed suite, 2 cycles | 593/594 at the B commit (the open item was the reachability half of PARITY-HUMAN-003); **594/594 in both cycles after XP-TRACKER-04** (`tasks/metrics/ada/XP-TRACKER-04-full-suite-two-cycles.log`) | `tasks/metrics/ada/XP-TRACKER-03-full-suite-two-cycles.log` |
 | gnatprove, core project (`--level=2 --checks-as-errors=on`) | all 246 checks proved | `tasks/metrics/ada/XP-TRACKER-03-gnatprove.log` (core sources unchanged) |
 | `npm run test:tooling` | 233/233 | `tasks/metrics/ada/XP-TRACKER-03-tooling.log` |
 | validators (metrics, traceability, reconciliation) | pass | run output |
 | mutation pins | refreshed: `pitd_callback.adb` (6 entries) to `b569a79e…2a89`, `pitd_ops.adb` (4 entries) to `4facde3b…e1a3` | `sha256sum` |
-| mutation campaign 28/28 | **pending**: runs after XP-TRACKER-04 gives the suite a green baseline | — |
+| mutation campaign 28/28 | run after the XP-TRACKER-04 commit; result in `tasks/metrics/frontend/XP-TRACKER-04.json` | — |
 
 ## Backlog
 

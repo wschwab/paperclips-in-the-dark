@@ -650,7 +650,8 @@ describe("GAME-MODE-03 Sol 6.1 round 2 finding (R2-03)", () => {
   it("R2-03: Scoundrel XP shows each track's current total beside its mark", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" } }));
     const text = root.querySelector(".game-mode-resolution")?.textContent ?? "";
-    expect(text).toContain("Playbook 4 of 8 XP");
+    expect(text).toContain("Playbook XP");
+    expect(text).toContain("4 / 8 current");
   });
 });
 
@@ -863,3 +864,125 @@ describe("GAME-MODE-03 Luna round 2 findings", () => {
 function cleanupRoot() {
   root.innerHTML = "";
 }
+
+// XP-TRACKER-04: the Score-only XP Tracker and the Scoundrel XP completion (xp.resolve).
+const XP_ATTRS = [
+  { name: "Insight", experience: { points: 1, max: 6 }, actions: [] },
+  { name: "Prowess", experience: { points: 2, max: 6 }, actions: [] },
+  { name: "Resolve", experience: { points: 3, max: 6 }, actions: [] },
+];
+const SESSION_TWO = { playbookExpressions: 2, characterExpressions: 1, struggleExpressions: 1, max: 2 };
+
+describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
+  it("the XP Tracker exists only in Score mode", async () => {
+    await mountWith(characterDTO());
+    expect(root.querySelector('[data-section="xp-tracker"]')).toBeNull();
+    expect(root.querySelector(".xp-tracker-tab")).toBeNull();
+  });
+
+  it("the tracker holds Desperate action XP and the three expression tracks in the sheet's stress structure", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    const panel = root.querySelector('[data-section="xp-tracker"]')!;
+    expect(panel).not.toBeNull();
+    expect(panel.textContent).toContain("+ Desperate action XP");
+    for (const [short, label] of [["playbook", "Playbook expressions"], ["character", "Scoundrel expressions"], ["struggle", "Struggle expressions"]]) {
+      const row = panel.querySelector(`.session-track[data-session-track="${short}"]`)!;
+      expect(row.querySelector(".stress .stress-track"), short).not.toBeNull();
+      expect(row.querySelector(".stress-label")?.textContent, short).toBe(label);
+      expect(row.querySelectorAll(".stress-box").length, short).toBe(2);
+    }
+  });
+
+  it("the compact tab opens the bottom sheet (aria-expanded), Escape closes it and returns focus to the tab", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    const tab = root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!;
+    expect(tab.getAttribute("aria-expanded")).toBe("false");
+    tab.click();
+    await vi.waitFor(() => {
+      const sheet = root.querySelector('[data-section="xp-tracker-sheet"]');
+      expect(sheet).not.toBeNull();
+      expect(sheet?.getAttribute("role")).toBe("dialog");
+      expect(sheet?.getAttribute("aria-modal")).toBe("true");
+      expect(root.querySelector(".xp-tracker-tab")?.getAttribute("aria-expanded")).toBe("true");
+    });
+    root.querySelector('[data-section="xp-tracker-sheet"]')!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    await vi.waitFor(() => {
+      expect(root.querySelector('[data-section="xp-tracker-sheet"]')).toBeNull();
+      expect(document.activeElement?.classList.contains("xp-tracker-tab")).toBe(true);
+    });
+  });
+
+  it("the allocation screen shows the counters as the GM total, and remaining XP updates live", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    expect(root.querySelector(".xp-alloc-live")?.textContent).toBe("Available 4 XP · Remaining 4 XP");
+    (root.querySelector('button[aria-label="Add 1 Insight allocation"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector(".xp-alloc-live")?.textContent).toBe("Available 4 XP · Remaining 3 XP");
+    });
+  });
+
+  it("completion is disabled until every XP is placed, then enabled", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    const complete = () => Array.from(root.querySelectorAll<HTMLButtonElement>(".xp-alloc button")).find((b) => b.textContent === "Complete Scoundrel XP")!;
+    expect(complete().disabled).toBe(true);
+    for (const name of ["Playbook", "Insight", "Prowess", "Resolve"]) {
+      (root.querySelector(`button[aria-label="Add 1 ${name} allocation"]`) as HTMLButtonElement).click();
+      await vi.waitFor(() => expect(root.querySelector(`button[aria-label="Add 1 ${name} allocation"]`)).not.toBeNull());
+    }
+    await vi.waitFor(() => {
+      expect(root.querySelector(".xp-alloc-live")?.textContent).toBe("Available 4 XP · Remaining 0 XP");
+      expect(complete().disabled).toBe(false);
+    });
+  });
+
+  it("a track beyond its room blocks completion and says by how much", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    // Insight has 1 of 6: room 5. Six allocations overflow by one.
+    for (let i = 0; i < 6; i++) {
+      (root.querySelector('button[aria-label="Add 1 Insight allocation"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => expect(root.querySelector('button[aria-label="Add 1 Insight allocation"]')).not.toBeNull());
+    }
+    await vi.waitFor(() => {
+      expect(root.querySelector(".xp-alloc [role=alert]")?.textContent).toContain("Insight exceeds its room by 1.");
+      const complete = Array.from(root.querySelectorAll<HTMLButtonElement>(".xp-alloc button")).find((b) => b.textContent === "Complete Scoundrel XP")!;
+      expect(complete.disabled).toBe(true);
+    });
+  });
+
+  it("Adjust unlocks the GM total, and a zero total is allowed with the counters warning", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    const total = root.querySelector<HTMLInputElement>('input[aria-label="GM total XP"]')!;
+    expect(total.disabled).toBe(true);
+    root.querySelector<HTMLInputElement>('.xp-alloc-total input[type="checkbox"]')!.click();
+    await vi.waitFor(() => expect(root.querySelector<HTMLInputElement>('input[aria-label="GM total XP"]')!.disabled).toBe(false));
+    const field = root.querySelector<HTMLInputElement>('input[aria-label="GM total XP"]')!;
+    field.value = "0";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.waitFor(() => {
+      expect(root.querySelector(".xp-alloc-live")?.textContent).toBe("Available 0 XP · Remaining 0 XP");
+      expect(root.querySelector(".xp-alloc")?.textContent).toContain("A zero total awards nothing, but completion still clears the counters.");
+      const complete = Array.from(root.querySelectorAll<HTMLButtonElement>(".xp-alloc button")).find((b) => b.textContent === "Complete Scoundrel XP")!;
+      expect(complete.disabled).toBe(false);
+    });
+  });
+
+  it("Complete posts xp.resolve with the total and the allocations, under the current revision", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } });
+    const { calls } = await mountWith(dto);
+    for (const name of ["Playbook", "Insight", "Prowess", "Resolve"]) {
+      (root.querySelector(`button[aria-label="Add 1 ${name} allocation"]`) as HTMLButtonElement).click();
+      await vi.waitFor(() => expect(root.querySelector(`button[aria-label="Add 1 ${name} allocation"]`)).not.toBeNull());
+    }
+    await vi.waitFor(() => {
+      const complete = Array.from(root.querySelectorAll<HTMLButtonElement>(".xp-alloc button")).find((b) => b.textContent === "Complete Scoundrel XP")!;
+      expect(complete.disabled).toBe(false);
+      complete.click();
+    });
+    await vi.waitFor(() => {
+      const call = calls.find((c) => c.url.endsWith("/ops/xp.resolve"));
+      expect(call).toBeTruthy();
+      expect(call!.init.body).toBe(JSON.stringify({ total: 4, allocations: { Playbook: 1, Insight: 1, Prowess: 1, Resolve: 1 } }));
+      expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe(String(dto.revision));
+    });
+  });
+});

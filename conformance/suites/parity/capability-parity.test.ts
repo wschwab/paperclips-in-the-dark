@@ -60,7 +60,7 @@ interface Manifest {
  */
 const REQUIRED_HUMAN_OPS: readonly string[] = [
   "deleteCharacter", "deleteCrew", "deleteClock",
-  "undoCharacter", "undoCrew", "endScore", "endDowntime", "retireCharacter", "traumaAdd", "traumaRemove",
+  "undoCharacter", "undoCrew", "endScore", "retireCharacter", "traumaAdd", "traumaRemove",
   "importCharacter", "importCrew",
   "repairCharacterPreview", "repairCharacterApply", "repairCrewPreview", "repairCrewApply",
   "dossierUpdate", "noteAdd", "noteRemove", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove",

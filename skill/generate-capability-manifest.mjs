@@ -60,7 +60,6 @@ const HUMAN_CONTROL = {
   undoCrew: "Reachable undo control; surfaces NO_HISTORY when no snapshot exists.",
   endScore:
     "Reachable end-of-score control; explains out-of-action release and performs the selected cleanup flags.",
-  endDowntime: "Reachable end-of-downtime control.",
   retireCharacter:
     "Reachable confirmation-guarded retire control (confirm:true + If-Match); explains retirement cleanup and undo as the recovery path.",
   traumaAdd:
@@ -108,7 +107,7 @@ const TABLE = {
   undoCharacter: { disposition: "human", categories: ["lifecycle"] },
   undoCrew: { disposition: "human", categories: ["lifecycle"] },
   endScore: { disposition: "human", categories: ["lifecycle"] },
-  endDowntime: { disposition: "human", categories: ["lifecycle"] },
+  endDowntime: { disposition: "agent" },
   retireCharacter: { disposition: "human", categories: ["lifecycle"] },
   traumaAdd: { disposition: "human", categories: ["lifecycle"] },
   traumaRemove: { disposition: "human", categories: ["lifecycle"] },

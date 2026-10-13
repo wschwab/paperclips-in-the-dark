@@ -23,7 +23,7 @@
     "tokensNote": "tokens recorded as 0: token accounting is not available"
   },
   "passRateAtFirstDoneClaim": "XP-RESOLVE 5 of 6 red before the backend; after the first implementation 4 of 6 green, then 7 of 7",
-  "passRateAfterReview": "XP-RESOLVE 7/7; full managed suite 593/594 per cycle (open item: PARITY-HUMAN-003 reachability, awaiting XP-TRACKER-04); gnatprove 246 proved; tooling 233/233; mutation 28/28 pending",
+  "passRateAfterReview": "XP-RESOLVE 7/7; full managed suite 593/594 at the B commit, 594/594 in both cycles after XP-TRACKER-04; gnatprove 246 proved; tooling 233/233; mutation 28/28 recorded in the XP-TRACKER-04 metrics",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
@@ -31,5 +31,5 @@
     "frozen parity set check",
     "full managed suite in two cycles"
   ],
-  "status": "backend complete; full-suite and mutation gates wait on XP-TRACKER-04"
+  "status": "backend complete; full suite green after XP-TRACKER-04; mutation run recorded with XP-TRACKER-04"
 }

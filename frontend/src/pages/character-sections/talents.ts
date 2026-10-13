@@ -3,15 +3,13 @@
  * character-detail page's render pass. DOM output is unchanged.
  */
 import { el } from "../../lib/dom.js";
-import { stressTrack } from "../../components/stress-track.js";
 import { actionDots } from "../../components/action-dots.js";
 import { xpBoxes } from "./shared.js";
-import type { SessionFields } from "../../api/client.js";
 import type { SectionCtx } from "./context.js";
 
 export function renderTalentsSection(ctx: SectionCtx): HTMLElement {
   const { state, c, handlers, gameData, gameplayDisabled, effCapByName } = ctx;
-  // -- Talents + XP + Score XP (F2o) --------------------------------------
+  // -- Talents + XP. Score XP (session tracks, End downtime) moved to the XP Tracker (XP-TRACKER-04). --
 
 return   (() => {
     const actionDescription = (attribute: string, action: string): string | null => {
@@ -133,71 +131,9 @@ return   (() => {
       ),
     );
 
-    // Score XP sub-section: three session expression tracks
-    const sessionTracks: Array<{ key: keyof SessionFields; label: string; short: string }> = [
-      { key: "playbookExpressions", label: "Playbook expressions", short: "playbook" },
-      { key: "characterExpressions", label: "Scoundrel expressions", short: "character" },
-      { key: "struggleExpressions", label: "Struggle expressions", short: "struggle" },
-    ];
-    const sessionEls = sessionTracks.map((t) => {
-      const track = stressTrack({
-        value: c.session[t.key],
-        max: c.session.max,
-        label: t.label,
-        onChange: (next) => handlers.onSessionTrack(t.key, next),
-      });
-      track.setAttribute("data-session-track", t.short);
-      const minusBtn = el("button", {
-        type: "button",
-        disabled: gameplayDisabled || c.session[t.key] <= 0,
-        title: `Remove 1 ${t.label}`,
-      }, "−1");
-      minusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, -1));
-      const plusBtn = el("button", {
-        type: "button",
-        disabled: gameplayDisabled || c.session[t.key] >= c.session.max,
-        title: `Add 1 ${t.label}`,
-      }, "+1");
-      plusBtn.addEventListener("click", () => handlers.onSessionDelta(t.key, 1));
-      return el("div", {
-        className: "session-track",
-        "data-session-track": t.short,
-        style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.35em 0;",
-      },
-        track,
-        el("span", {}, `${c.session[t.key]} / ${c.session.max}`),
-        minusBtn,
-        plusBtn,
-      );
-    });
-
     return el("div", { className: "character-talents", "data-section": "talents" },
       el("h2", {}, "Talents"),
       ...attributeGroups,
-      el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Score XP"),
-      el("p", { className: "serif", style: "font-size: 0.95em; margin: 0.25em 0;" },
-        "Desperate action XP is marked on the attribute XP tracks above."),
-      state.experienceCondition
-        ? el("p", { className: "serif", style: "font-size: 0.95em; margin: 0.25em 0;" },
-            el("strong", {}, `${c.playbook.name}: `),
-            state.experienceCondition,
-          )
-        : null,
-      ...sessionEls,
-      // End of downtime: clears the session expression tracks (contract
-      // end-downtime). The vice-relief stress amount stays GM-side.
-      (() => {
-        const endDowntimeBtn = el("button", {
-          type: "button",
-          disabled: gameplayDisabled,
-          title: "End downtime — clears the session expression tracks",
-        }, state.isDowntimeLoading ? "…" : "End downtime");
-        endDowntimeBtn.addEventListener("click", handlers.onEndDowntime);
-        return el("div", { className: "downtime-row", style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin-top: 0.75em;" },
-          endDowntimeBtn,
-          el("span", { className: "lbl", style: "font-size: 0.9em;" }, "Clears playbook, scoundrel, and struggle expressions."),
-        );
-      })(),
       state.clampNotice
         ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.clampNotice)
         : null,

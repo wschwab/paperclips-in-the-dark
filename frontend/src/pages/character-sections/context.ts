@@ -59,7 +59,7 @@ export function sectionCtx(state: RenderState): SectionCtx {
     state.isCoinLoading || state.isClocksLoading ||
     state.isCrewsLoading || state.isNotesLoading || state.isNotebookLoading ||
     state.isContactsLoading ||
-    state.isTraumaPickerLoading || state.isEndScoreLoading || state.isDowntimeLoading ||
+    state.isTraumaPickerLoading || state.isEndScoreLoading || state.isXpLoading ||
     state.isRetireLoading || state.isDeleteLoading || state.isStressFixLoading;
 
   // Retired: every gameplay mutation is on the deny-list (→ RETIRED); the

@@ -4,7 +4,7 @@
 // settings-derived maximum (trauma-pending checkpoint), resolution through
 // the pending-trauma picker (clears stress, marks out-of-action), the
 // sanctioned end-score release, amount-based stress relief with the approved
-// overindulgence path, end-downtime, undo, and — via the kept sub-flow —
+// overindulgence path, Scoundrel XP completion, undo, and — via the kept sub-flow —
 // the section-local routed alert with scroll continuity evidence.
 //
 // Sub-checkpoint modules:
@@ -29,7 +29,7 @@ export const checkpoints = unionCheckpoints(char03.checkpoints, [
   { id: "end-score-releases", description: "End score clears the out-of-action gate" },
   { id: "downtime-numeric-relief", description: "amount-based stress relief applied the chosen amount" },
   { id: "overindulged-notice-dismissable", description: "relief beyond remaining stress raises + dismisses OVERINDULGED" },
-  { id: "end-downtime-ok", description: "End downtime committed (ops/end.downtime 200)" },
+  { id: "scoundrel-xp-completed", description: "Scoundrel XP completed through ops/xp.resolve 200 (zero total; session counters cleared)" },
   { id: "undo-restores", description: "Undo last change restored the prior state" },
   { id: "matrix-entries", description: "character-detail matrix entries exercised (9 expected)" },
 ]);
@@ -55,7 +55,7 @@ async function createCharacter(page, baseUrl) {
 /** Current/max stress from the track's group label ("Stress: X of Y"). */
 async function readStress(page) {
   const label = await page
-    .locator('.stress-track[role="group"]')
+    .locator('.character-detail .stress-track[role="group"]')
     .first()
     .getAttribute("aria-label");
   const m = label?.match(/(\d+)\s*of\s*(\d+)/);
@@ -71,7 +71,7 @@ async function addStressUntil(page, target) {
     await plus.click();
     await page.waitForFunction(
       (prev) => {
-        const el = document.querySelector('.stress-track[role="group"]');
+        const el = document.querySelector('.character-detail .stress-track[role="group"]');
         const m = el?.getAttribute("aria-label")?.match(/(\d+)\s*of\s*(\d+)/);
         return m && Number(m[1]) >= prev;
       },
@@ -101,7 +101,7 @@ export async function run(page, ctx) {
     throw new Error(`stress never reached max (${atMax.current}/${atMax.max})`);
   }
   await page.locator(".stress-trauma-picker").waitFor({ state: "visible", timeout: 10_000 });
-  // End score / End downtime are window.confirm-guarded, which Playwright
+  // End score is window.confirm-guarded, which Playwright
   // would silently dismiss; record each message and accept it.
   const dialogMessages = [];
   page.on("dialog", async (dialog) => {
@@ -162,7 +162,7 @@ export async function run(page, ctx) {
   await page.locator('button[title^="Clear Stress"]').click();
   await page.waitForFunction(
     (prev) => {
-      const el = document.querySelector('.stress-track[role="group"]');
+      const el = document.querySelector('.character-detail .stress-track[role="group"]');
       const m = el?.getAttribute("aria-label")?.match(/(\d+)\s*of\s*(\d+)/);
       return m && Number(m[1]) === prev - 1;
     },
@@ -189,14 +189,18 @@ export async function run(page, ctx) {
   ctx.checkpoint("overindulged-notice-dismissable", 1);
   await ctx.screenshot("lifecycle-overindulged-dismissed");
 
-  // -- 6. End downtime ----------------------------------------------------------
-  const downtimeResponse = page.waitForResponse(
-    (r) => r.url().includes("/end-downtime") && r.status() === 200,
+  // -- 6. Scoundrel XP completion (XP-TRACKER-04 replaced the End downtime button) --
+  // End score opens Resolution at Scoundrel XP. The GM total is adjusted to zero, which
+  // is allowed and clears the three session counters through the atomic xp.resolve op.
+  const xpResponse = page.waitForResponse(
+    (r) => r.url().includes("/ops/xp.resolve") && r.status() === 200,
     { timeout: 15_000 },
   );
-  await page.locator('button[title^="End downtime"]').click();
-  await downtimeResponse;
-  ctx.checkpoint("end-downtime-ok", 1);
+  await page.locator('.xp-alloc-total input[type="checkbox"]').check();
+  await page.locator('input[aria-label="GM total XP"]').fill("0");
+  await page.locator(".xp-alloc button", { hasText: "Complete Scoundrel XP" }).click();
+  await xpResponse;
+  ctx.checkpoint("scoundrel-xp-completed", 1);
 
   // -- 7. Undo restores ----------------------------------------------------------
   await page.locator('button[title="Undo last change"]').click();

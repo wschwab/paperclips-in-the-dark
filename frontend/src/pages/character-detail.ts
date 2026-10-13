@@ -41,7 +41,6 @@ import {
   dossierUpdate,
   undoCharacter,
   endScore,
-  endDowntime,
   retireCharacter,
   deleteCharacter,
   StaleRevisionError,
@@ -94,6 +93,7 @@ import {
   crewCoinAdd,
   crewHeatAdd,
   crewXpAdd,
+  characterXpResolve,
 } from "../api/client.js";
 import type { CharacterCapabilities } from "../api/client.js";
 import type { Crew } from "../schema/crew.js";
@@ -107,6 +107,8 @@ import {
   type GameModeHandlers,
   type GameModeUi,
 } from "./character-sections/gameMode.js";
+import { EMPTY_XP_DRAFT, type XpDraft } from "./character-sections/xp-allocation.js";
+import { renderXpTrackerSheet } from "./character-sections/xp-tracker.js";
 import { commitmentFor, type LoadoutProposal } from "./game-mode.js";
 import { el, setChildren } from "../lib/dom.js";
 import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
@@ -321,9 +323,12 @@ function renderDetail(state: RenderState): HTMLElement {
     );
   }
   // Score popups are overlay dialogs (aria-modal) outside the sheet; they gate nothing.
+  // The XP Tracker bottom sheet is modal on compact screens: the sheet behind it is inert.
+  if (state.gameMode.xpTrackerOpen) sheet.setAttribute("inert", "");
   return el("div", { className: "game-mode-layout" },
     renderGameModePanel(ctx, state.handlers.gm, state.gameMode),
     sheet,
+    renderXpTrackerSheet(ctx, state.handlers.gm, state.gameMode),
     renderScorePopup(ctx, state.handlers.gm, state.gameMode),
     renderLoadoutConfirm(ctx, state.handlers.gm, state.gameMode),
     renderResolution(ctx, state.handlers.gm, state.gameMode),
@@ -397,7 +402,6 @@ export function mountCharacterDetailPage(
 
   // F4 lifecycle state
   let isEndScoreLoading = false;
-  let isDowntimeLoading = false;
   let isRetireLoading = false;
   let isDeleteLoading = false;
   let canUndoState: boolean | null = null;
@@ -437,6 +441,9 @@ export function mountCharacterDetailPage(
   let gmLoadoutChange: LoadoutProposal | null = null;
   let gmPlanApproach: string | null = null;
   let gmCrewNotice: string | null = null;
+  let gmXpDraft: XpDraft = EMPTY_XP_DRAFT;
+  let gmXpTrackerOpen = false;
+  let isXpLoading = false;
   let coinNotice: string | null = null;
   let clocksNotice: string | null = null;
 
@@ -694,6 +701,35 @@ export function mountCharacterDetailPage(
           renderDetailWrapper();
         },
         () => { isGameModeLoading = false; },
+      );
+    },
+    onXpDraft: (draft) => {
+      gmXpDraft = draft;
+      renderDetailWrapper();
+    },
+    onXpTrackerOpen: (open) => {
+      gmXpTrackerOpen = open;
+      renderDetailWrapper();
+      // Closing returns focus to the footer tab that opened the sheet.
+      if (!open) queueMicrotask(() => root.querySelector<HTMLElement>(".xp-tracker-tab")?.focus());
+    },
+    onXpResolve: (total, allocations) => {
+      if (!currentCharacter || isXpLoading) return;
+      isXpLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = characterXpResolve(characterId, currentCharacter.revision, total, allocations);
+      runCharacterMutate(
+        "talents",
+        program,
+        (character) => {
+          currentCharacter = character;
+          gmXpDraft = EMPTY_XP_DRAFT;
+          gmXpTrackerOpen = false;
+          noticeMsg = `Scoundrel XP completed: ${total} XP placed; session expression counters cleared.`;
+          renderDetailWrapper();
+        },
+        () => { isXpLoading = false; },
       );
     },
     onPlanApproach: (approach) => {
@@ -1406,30 +1442,6 @@ export function mountCharacterDetailPage(
           renderDetailWrapper();
         },
         () => { isEndScoreLoading = false; },
-      );
-    },
-
-    onEndDowntime: () => {
-      if (!currentCharacter || isDowntimeLoading) return;
-      const confirmed = window.confirm(
-        "End downtime? This clears the playbook, scoundrel, and struggle " +
-        "expression tracks. Undo can restore them.",
-      );
-      if (!confirmed) return;
-      isDowntimeLoading = true;
-      clearNotices();
-      renderDetailWrapper();
-
-      const program = endDowntime(characterId, currentCharacter.revision, { clearSessionExpressions: true });
-      runCharacterMutate(
-        "lifecycle",
-        program,
-        (character) => {
-          currentCharacter = character;
-          noticeMsg = "Downtime ended — session expressions cleared.";
-          renderDetailWrapper();
-        },
-        () => { isDowntimeLoading = false; },
       );
     },
 
@@ -2157,6 +2169,8 @@ export function mountCharacterDetailPage(
         loadoutChange: gmLoadoutChange,
         planApproach: gmPlanApproach,
         crewNotice: gmCrewNotice,
+        xpDraft: gmXpDraft,
+        xpTrackerOpen: gmXpTrackerOpen,
       } satisfies GameModeUi,
       gameData,
       playbookData,
@@ -2173,7 +2187,7 @@ export function mountCharacterDetailPage(
       isTraumaPickerLoading,
       healNotice,
       isEndScoreLoading,
-      isDowntimeLoading,
+      isXpLoading,
       isRetireLoading,
       isDeleteLoading,
       canUndo: canUndoState,

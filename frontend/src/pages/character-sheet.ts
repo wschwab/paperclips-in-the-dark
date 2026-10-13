@@ -159,7 +159,7 @@ export interface RenderState {
   healNotice: string | null;
   // F4 lifecycle state
   isEndScoreLoading: boolean;
-  isDowntimeLoading: boolean;
+  isXpLoading: boolean;
   isRetireLoading: boolean;
   isDeleteLoading: boolean;
   /** Derived undo state from the last operation result (null = unknown before any op). */
@@ -218,7 +218,6 @@ export interface RenderState {
     onDismissCue: (key: string) => void;
     onUndo: () => void;
     onEndScore: () => void;
-    onEndDowntime: () => void;
     onRetire: () => void;
     onDeleteCharacter: () => void;
     onHarmAdd: () => void;

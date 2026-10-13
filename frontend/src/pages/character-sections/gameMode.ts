@@ -1,3 +1,5 @@
+import { renderXpAllocation, type XpDraft } from "./xp-allocation.js";
+import { renderXpTrackerPanel, renderXpTrackerTab } from "./xp-tracker.js";
 /**
  * Per-scoundrel game mode UI (GAME-MODE-03). Assistance only: nothing here
  * disables an operation because of mode. Score popups and the Resolution step
@@ -19,7 +21,6 @@ import {
   SRD,
   choiceForCommitment,
   commitmentFor,
-  desperateAttributes,
   downtimeRemaining,
   entanglementCurrent,
   loadLimitFor,
@@ -39,6 +40,10 @@ export interface GameModeUi {
   /** Planning approach picked in the popup (assistance only; not persisted). */
   planApproach: string | null;
   crewNotice: string | null;
+  /** Scoundrel XP draft (split, GM total, Adjust). Assistance only; completion goes through xp.resolve. */
+  xpDraft: XpDraft;
+  /** The compact XP Tracker bottom sheet is open. */
+  xpTrackerOpen: boolean;
 }
 
 export interface GameModeHandlers {
@@ -53,6 +58,9 @@ export interface GameModeHandlers {
   onLoadoutCommitment: (choice: LoadChoice) => void;
   onLoadoutToggle: (name: string, commit: boolean) => void;
   onDesperate: (attribute: string) => void;
+  onXpDraft: (draft: XpDraft) => void;
+  onXpTrackerOpen: (open: boolean) => void;
+  onXpResolve: (total: number, allocations: Record<string, number>) => void;
   onDowntimeAdjust: (delta: number, reason: "coin" | "gift" | "correction") => void;
   onDowntimeSpend: (activity: string, description: string) => void;
   onCrewDelta: (track: "rep" | "coin" | "heat" | "xp", delta: number) => void;
@@ -173,11 +181,6 @@ export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers, 
 }
 
 function renderScorePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
-  const attrs = desperateAttributes(ctx.gameData);
-  const select = h("select", { "aria-label": "Desperate action attribute", disabled: ctx.anyLoading },
-    ...attrs.map((a) => h("option", { value: a }, a))) as HTMLSelectElement;
-  const xp = h("button", { type: "button", className: "btn-secondary", disabled: ctx.anyLoading || attrs.length === 0 }, "+ Desperate action XP");
-  xp.addEventListener("click", () => gm.onDesperate(select.value));
   const endScore = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading || ctx.retired || ctx.pendingTrauma, title: ctx.endScoreTitle }, "End Score");
   endScore.addEventListener("click", ctx.handlers.onEndScore);
   const steps = SCORE_START_STEPS.map((s) => {
@@ -187,11 +190,6 @@ function renderScorePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi)
   });
   return section("Score in progress",
     h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap;" }, ...steps),
-    h("p", { className: "small", style: "margin: 0.5em 0 0.25em;" },
-      "Desperate action: pick the attribute you used. It marks 1 XP there now, the same as any attribute XP."),
-    select,
-    xp,
-    h("p", { className: "small" }, srdLink(SRD.advancement)),
     h("hr", {}),
     endScore,
     h("p", { className: "small" }, "End Score opens Resolution. Undo can restore the score."),
@@ -213,6 +211,8 @@ export function renderGameModePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: G
     h("p", { className: "small scope" }, `For ${c.dossier.name || "this scoundrel"} only`),
     renderModeSwitch(ctx, gm),
     h("div", { className: "panel-content" }, body),
+    c.mode === "score" ? renderXpTrackerPanel(ctx, gm) : null,
+    c.mode === "score" ? renderXpTrackerTab(ctx, gm, ui) : null,
     h("p", { className: "small", style: "margin-top: 0.5em;" }, "A table aid, not a rules engine. Nothing here blocks your sheet."),
   );
 }
@@ -465,7 +465,6 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
   const idx = RESOLUTION_STEPS.indexOf(step as (typeof RESOLUTION_STEPS)[number]);
   const crew = ui.linkedCrew;
   const linked = crew !== null;
-  const attrs = desperateAttributes(ctx.gameData);
   // Direct selection: each step is a control that sets the stored step (no completion prerequisite).
   const stepper = h("ol", { className: "resolution-stepper", "aria-label": "Resolution steps" },
     ...RESOLUTION_STEPS.map((s, i) => {
@@ -478,19 +477,11 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
     case "scoundrel-xp":
       content = h("div", {},
         h("p", { className: "serif" }, "End-of-session review. For each trigger that occurred, mark at least 1 XP; 2 if it occurred a lot. Success isn’t required. No trigger means no automatic XP."),
-        h("p", {}, "Mark this XP on any attribute or your playbook track. Desperate-action XP is already marked during play."),
-        h("ul", { className: "small" },
-          h("li", {}, ctx.state.experienceCondition
-            ? `Playbook-specific challenge: ${ctx.state.experienceCondition}.`
-            : "Playbook-specific challenge."),
-          h("li", {}, "Expressed beliefs, drives, heritage, or background."),
-          h("li", {}, "Struggled with vice or traumas.")),
-        h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap;" },
-          playbookMark(ctx),
-          ...attrs.map((a) => {
-            const xp = ctx.c.talent.attributes.find((attr) => attr.name === a)?.experience ?? null;
-            return trackMark(ctx, a, xp, `+1 ${a}`, () => ctx.handlers.onAttributeXpDelta(a, 1));
-          })),
+        h("p", { className: "small" }, "Mark this XP on any attribute or your playbook track. Desperate-action XP is already marked during play."),
+        h("p", { className: "small" }, ctx.state.experienceCondition
+          ? `Playbook-specific challenge: ${ctx.state.experienceCondition}.`
+          : "Playbook-specific challenge."),
+        renderXpAllocation(ctx, gm, ui),
         h("p", { className: "small" }, srdLink(SRD.advancement)));
       break;
     case "payoff":
@@ -594,19 +585,6 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
     ],
     { left: [backBtn], right: [skip, skipAll, leave, nextBtn].filter((b): b is HTMLButtonElement => b !== null) },
   );
-}
-
-/** A track's current total beside its +1 control (Sol 6.1 R2-03): the award shows the progress it changes. */
-function trackMark(ctx: SectionCtx, label: string, xp: { points: number; max: number } | null, button: string, onClick: () => void): HTMLElement {
-  const total = xp ? `${label} ${xp.points} of ${xp.max} XP` : label;
-  const b = h("button", { type: "button", disabled: ctx.anyLoading }, button);
-  b.addEventListener("click", onClick);
-  return h("span", { style: "display: inline-flex; align-items: center; gap: 0.35em;" }, h("span", { className: "small" }, total), b);
-}
-
-function playbookMark(ctx: SectionCtx): HTMLElement {
-  const xp = ctx.c.playbook.experience;
-  return trackMark(ctx, "Playbook", xp, "+1 Playbook XP", () => ctx.handlers.onPlaybookXpDelta(1));
 }
 
 function myShareEditor(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {

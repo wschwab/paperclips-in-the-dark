@@ -1,0 +1,36 @@
+{
+  "task": "XP-TRACKER-04",
+  "track": "frontend",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator; XP Tracker, allocation screen, Talents cutover)",
+  "reviewAgent": "Sol 6.1 xhigh loop: not started in this record; see the card for status",
+  "date": "2026-10-13",
+  "iterationsToGreen": 6,
+  "iterationNotes": "UI and tests were written in the wrong order (tests after the UI, disclosed). Iteration 1: the first Chromium probe found the tracker's CSS was never written (tab visible at 1440, rows below the fold). Iteration 2: the wide rows sat below 1000 px; copy and stress padding were tightened, rows kept on one line after an inline style that beat the stylesheet was moved to a class. Iteration 3: the completion control fell below 1000 px at 1440; the allocation rows moved into two columns. Iteration 4: the browser journeys exposed a pointer-intercept by the non-blocking Resolution card (fixed with pass-through) and three unscoped stress selectors in the frozen journey (scoped, authorized). Iteration 5: the parity amendment and endDowntime disposition. Iteration 6: the full suite and browser 6/6.",
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "conformance": 3,
+    "review": 0,
+    "human": 1
+  },
+  "notes": "Caught by the browser journeys: non-blocking card intercepts clicks; three unscoped stress selectors reading the tracker's track. Caught by the Chromium probe: missing tracker CSS, wide rows below the fold, completion below the fold, inline style beating the stylesheet, wrapped counts. Caught by the parity suite: endDowntime reachability after the UI removal (resolved by the approved amendment). Caught by the mutation check: 6 of 7 breakages fail the intended test; one equivalent mutant recorded.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded",
+    "source": "vitest 940/940, tsc, build, browser 6/6 log, full Ada two-cycle log (594/594), Chromium check.json and resolution-fit.json, bite results",
+    "locNote": "implementationLoc=unknown",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown",
+    "tokensNote": "tokens recorded as 0"
+  },
+  "passRateAtFirstDoneClaim": "Tests written after the UI; the mutation check then showed 6 of 7 breakages failing the intended test (1 equivalent mutant)",
+  "passRateAfterReview": "vitest 940/940; browser 6/6; Chromium 9/9 with keyboard and touch; full Ada 594/594 in both cycles; mutation 28/28 recorded in the status field once the campaign has run",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectCatchingLayer": [
+    "browser journeys",
+    "Chromium probe (geometry, keyboard, touch)",
+    "frozen parity suite",
+    "mutation check of the new tests"
+  ],
+  "status": "committed as the XP-TRACKER-04 commit; the mutation campaign result is appended below when run"
+}

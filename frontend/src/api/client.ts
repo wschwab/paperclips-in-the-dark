@@ -697,39 +697,6 @@ export function endScore(
   });
 }
 
-/** Optional endDowntime body: clearSessionExpressions + a GM-judged vice-relief stress amount. */
-export interface EndDowntimeOptions {
-  clearSessionExpressions?: boolean;
-  viceReliefStress?: number;
-}
-
-/**
- * End downtime (composite helper): clears the session expression tracks; an
- * optional vice-relief stress clear amount is caller-supplied (GM judgment).
- * Same If-Match + OperationResult shape as endScore.
- */
-export function endDowntime(
-  id: string,
-  revision: number,
-  opts: EndDowntimeOptions = {},
-): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
-  return Effect.gen(function* () {
-    const opResult = yield* fetchOperation(`/api/characters/${id}/end-downtime`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "If-Match": String(revision),
-      },
-      body: JSON.stringify(opts),
-    });
-    if (!opResult.character) {
-      return yield* Effect.fail(new DecodeError(new Error("Missing character in OperationResult")));
-    }
-    return opResult.character;
-  });
-}
-
 /**
  * Delete a character (lifecycle-matrix §6.1 — retired characters remain
  * deletable). Requires {confirm:true} (else CONFIRM_REQUIRED); If-Match is
@@ -2143,6 +2110,19 @@ export function characterModeFlowSet(
 }
 
 /** Record one explicit downtime activity (spends one budget unit). */
+/**
+ * Atomic Scoundrel XP completion (XP-TRACKER-02, operationId characterXpResolve): allocations on the
+ * Playbook and attribute tracks, then the three session counters cleared, in one revisioned write.
+ */
+export function characterXpResolve(
+  id: string,
+  revision: number,
+  total: number,
+  allocations: Record<string, number>,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "xp.resolve", revision, { total, allocations });
+}
+
 export function characterDowntimeSpend(
   id: string,
   activity: string,

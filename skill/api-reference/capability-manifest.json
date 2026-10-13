@@ -577,15 +577,11 @@
       "humanControl": "Reachable note-removal control (allowed after retirement)."
     },
     "endDowntime": {
-      "disposition": "human",
+      "disposition": "agent",
       "method": "POST",
       "path": "/characters/{id}/end-downtime",
       "agentReference": "api-reference/README.md#enddowntime",
-      "summary": "Composite helper: clears session expressions; optional caller-supplied vice-relief stress clear amount (GM judgment stays outside).",
-      "categories": [
-        "lifecycle"
-      ],
-      "humanControl": "Reachable end-of-downtime control."
+      "summary": "Composite helper: clears session expressions; optional caller-supplied vice-relief stress clear amount (GM judgment stays outside)."
     },
     "listCrews": {
       "disposition": "agent",

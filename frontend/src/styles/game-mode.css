@@ -292,7 +292,9 @@
 }
 
 .game-mode-resolution .game-mode-popup-card {
-  pointer-events: auto;
+  /* Resolution is non-blocking (human decision): the card's text and empty areas pass clicks through
+   * to the sheet beneath; only its own controls take pointer events (see the rule below). */
+  pointer-events: none;
 }
 
 /* High-contrast hover (Sol 6.1 F5): the shared secondary link ink on the sunk hover fill fell
@@ -397,3 +399,185 @@
   }
 }
 
+/* The Resolution card's controls stay interactive while the card itself passes clicks through. */
+.game-mode-resolution .game-mode-popup-card :is(button, input, select, textarea, a, summary, label) {
+  pointer-events: auto;
+}
+
+/* ── XP Tracker (XP-TRACKER-04) ─────────────────────────────────────
+ * Wide: the panel sits under the Game mode panel in the gutter; the footer tab and the bottom sheet
+ * are hidden. Compact: the footer tab opens a bottom sheet (fixed, above the footer, safe-area aware);
+ * the panel in the footer is hidden. */
+.xp-tracker-panel {
+  margin-top: 0.75em;
+  padding-top: 0.5em;
+  border-top: 1px solid var(--rule);
+}
+.xp-tracker-desperate {
+  display: flex;
+  gap: 0.35em;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0.25em 0 0.5em;
+}
+.xp-tracker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  flex-wrap: wrap;
+  margin: 0.35em 0;
+}
+.xp-tracker-tab {
+  display: none;
+}
+.xp-tracker-sheet {
+  display: none;
+}
+
+@media (max-width: 1099px) {
+  .xp-tracker-panel {
+    display: none;
+  }
+  .xp-tracker-tab {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5em;
+    margin-top: 0.5em;
+    padding: 0.5em 0.75em;
+  }
+  .xp-tracker-sheet {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    max-height: 80vh;
+    overflow: auto;
+    padding: 0.75em 1em calc(0.75em + env(safe-area-inset-bottom, 0px));
+    background: var(--surface-raised);
+    border-top: var(--border-medium) solid var(--rule-heavy);
+  }
+  .xp-tracker-handle {
+    width: 40px;
+    height: 5px;
+    margin: 0 auto 0.5em;
+    cursor: grab;
+  }
+  .xp-tracker-handle span {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--rule-heavy);
+  }
+  .xp-tracker-sheet-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5em;
+  }
+}
+
+/* Scoundrel XP allocation (Resolution step 1): tight rows so the screen fits at 1440x1000. */
+.xp-alloc {
+  display: grid;
+  gap: 0.4em;
+}
+.xp-alloc-equation,
+.xp-alloc-live {
+  margin: 0;
+}
+.xp-alloc-total {
+  display: flex;
+  gap: 0.6em;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.xp-alloc-input {
+  width: 5em;
+}
+.xp-alloc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5em;
+  align-items: center;
+  padding: 0.35em 0;
+  border-top: 1px solid var(--rule);
+}
+.xp-alloc-copy p {
+  margin: 0;
+}
+.xp-alloc-track {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 0.25em;
+}
+.xp-alloc-box {
+  width: 18px;
+  height: 18px;
+}
+.xp-alloc-stepper {
+  display: flex;
+  gap: 0.3em;
+  align-items: center;
+}
+.xp-alloc-stepper .xp-alloc-input {
+  width: 4em;
+}
+.xp-alloc-actions {
+  margin-top: 0.25em;
+}
+.game-mode-resolution .stress-box[data-stress="p"] {
+  border-style: dashed;
+}
+
+/* Wide XP Tracker spacing: the three expression rows must sit inside the first 1440x1000 viewport. */
+@media (min-width: 1100px) {
+  .xp-tracker-panel {
+    margin-top: 0.5em;
+    padding-top: 0.25em;
+  }
+  .xp-tracker-panel p {
+    margin: 0.2em 0;
+  }
+  .xp-tracker-desperate select {
+    width: 8.5em;
+  }
+  .xp-tracker-panel .xp-tracker-row {
+    margin: 0.15em 0;
+  }
+  .xp-tracker-panel .xp-tracker-row {
+    flex-wrap: nowrap;
+    gap: 0.3em;
+  }
+  .xp-tracker-panel .xp-tracker-row > span {
+    white-space: nowrap;
+  }
+  .xp-tracker-panel .xp-tracker-row button {
+    padding-left: 0.4em;
+    padding-right: 0.4em;
+  }
+  .xp-tracker-panel .session-track .stress-track {
+    padding: 3px;
+    gap: 4px;
+  }
+  .xp-tracker-panel .session-track .stress-label {
+    margin-top: 2px;
+    line-height: 1.2;
+  }
+}
+
+/* Scoundrel XP allocation rows: two columns on wide screens so the completion control fits at 1440x1000. */
+.xp-alloc-rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 1.25em;
+}
+@media (min-width: 1100px) {
+  .xp-alloc-rows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
