@@ -23,7 +23,7 @@
     "tokensNote": "tokens recorded as 0"
   },
   "passRateAtFirstDoneClaim": "Tests written after the UI; the mutation check then showed 6 of 7 breakages failing the intended test (1 equivalent mutant)",
-  "passRateAfterReview": "vitest 940/940; browser 6/6; Chromium 9/9 with keyboard and touch; full Ada 594/594 in both cycles; mutation 28/28 recorded in the status field once the campaign has run",
+  "passRateAfterReview": "vitest 940/940; tsc 0; build 0; browser 6/6 on the committed code; Chromium 9/9 with keyboard and touch; full Ada 594/594 in both cycles; mutation 28/28 (P0 19/19, P1 9/9) at 74843d82",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectCatchingLayer": [
@@ -32,5 +32,5 @@
     "frozen parity suite",
     "mutation check of the new tests"
   ],
-  "status": "committed as the XP-TRACKER-04 commit; the mutation campaign result is appended below when run"
+  "status": "complete at 74843d82 (mutation 28/28 recorded); Sol 6.1 review loop pending"
 }

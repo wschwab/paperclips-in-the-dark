@@ -84,10 +84,10 @@ The equivalent mutant is recorded, not hidden. The stronger mutant (both guards 
 | vitest | 940/940 (32 files) |
 | tsc | exit 0 |
 | build | exit 0 |
-| browser journeys (`npm run test:browser`) | 6/6 PASS (after the three selector scopes and the step-6 change) |
+| browser journeys (`npm run test:browser`) | 6/6 PASS on the committed code (`tasks/metrics/frontend/XP-TRACKER-04-browser.log`) |
 | Chromium 3×3 with keyboard and touch | 9/9 rows pass (see above) |
-| full managed Ada suite, two cycles | see the metrics record (run recorded at the end of this card's commit) |
-| mutation campaign 28/28 | see the metrics record (run after the commit) |
+| full managed Ada suite, two cycles | 594/594 in both cycles (`tasks/metrics/ada/XP-TRACKER-04-full-suite-two-cycles.log`) |
+| mutation campaign 28/28 | **28/28** (P0 19/19, P1 9/9) at `74843d82`; log in the campaign output, summarised in `tasks/metrics/frontend/XP-TRACKER-04.json` |
 
 ## Before / after for the journey (summary)
 
