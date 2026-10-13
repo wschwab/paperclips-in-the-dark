@@ -31,7 +31,7 @@ Mirror the character sheet's two rules for `.crew-detail > .crew-header` inside 
 
 - Red: `sheet-columns.test.ts` guard "reserves seam depth plus the column gap under the crew masthead" failed before the change (1 failed, 1 passed).
 - Red geometry (Chromium, before, 1440px light): masthead bottom 271.9px; Playbook top 271.9px (0px below the masthead); left column top 289.9px; column difference −18px.
-- Green (after, 1440px): both column tops 307.9px in light, dark and high contrast; masthead bottom 271.9px (light/dark) and 276.9px (high contrast); difference 0px in every wide combination.
+- Green (after, 1440px): both column tops 307.9px in light and dark, 294.9px in high contrast; masthead bottom 271.9px (light/dark) and 276.9px (high contrast); difference 0px in every wide combination.
 - At 768px and 390px the sheet is a single column (`columnCount: auto`); those column tops are unchanged (289.9px and 333.5px light).
 
 ## Evidence
@@ -43,13 +43,12 @@ Mirror the character sheet's two rules for `.crew-detail > .crew-header` inside 
 
 Post-fix results (all 9 rows): no app-bar overlap; `scrollWidth == innerWidth`; no page errors. Wide rows: difference 0px.
 
-## Gates
+## Gates (at 8a7cd0c1)
 
-- `npx vitest run` (frontend): see the commit message and metrics record.
-- `npx tsc --noEmit`: exit 0. `npm run build`: exit 0.
+- `npx vitest run` (frontend): 935/935, 32 files. `npx tsc --noEmit`: exit 0. `npm run build`: exit 0.
 - `npm run test:browser` (conformance): 6/6 journeys pass.
-- Mutation campaign: `components.css` is pinned by M18 (`conformance/fixtures/mutation-catalog.json`). Its sha256 was refreshed to `cf8ffef58fd1b1e53af14ca6c64f5ebdad867b61d217659a736e9d275b3c0ed3`.
+- Mutation campaign: NOT RUN. `components.css` is pinned by M18 (`conformance/fixtures/mutation-catalog.json`); its sha256 was refreshed to `cf8ffef58fd1b1e53af14ca6c64f5ebdad867b61d217659a736e9d275b3c0ed3`. The pre-flight refused to start because another worker's in-progress edit to `backend-ada/server/src/pitd_ops.adb` does not match M11's pinned hash. The campaign must be rerun once that work lands.
 
 ## Review
 
-Sol 6.1 review: `agent-docs/test-audit/browser-evidence/crew-align-01/sol-6.1/verdict.md`.
+Sol 6.1 review: NOT RUN (openai-codex `usage_limit_reached`). See `agent-docs/test-audit/browser-evidence/crew-align-01/sol-6.1/verdict.md`. The gate stays open until a PASS verdict is recorded.
