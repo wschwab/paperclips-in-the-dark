@@ -1,0 +1,63 @@
+OK: canonical managed launcher
+[managed-run] runId=2026-10-14T12-10-53-478Z-c83b685a
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=UNKNOWN-OP-01-working
+[managed-run] testCommand=--run suites/contract/unknown-operation.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a/data (dir)
+[managed-run] port=35183
+[managed-run] baseUrl=http://127.0.0.1:35183
+[managed-run] pid=1945236
+[managed-run] ready=http://127.0.0.1:35183
+[managed-run] vitestPid=1945303
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ × suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-SINGLE-CHARACTER-001] character unknown operation returns VALIDATION400 without a write 71ms
+   → expected 200 to be 400 // Object.is equality
+ × suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-SINGLE-CREW-001] crew unknown operation returns VALIDATION400 without a write 4ms
+   → expected 200 to be 400 // Object.is equality
+ ✓ suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-BATCH-001] unknown and schema-invalid members use identical failed-outcome reporting and roll back all writes 195ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  15:10:53
+   Duration  671ms (transform 56ms, setup 0ms, collect 293ms, tests 271ms, environment 0ms, prepare 30ms)
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/contract/unknown-operation.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-SINGLE-CHARACTER-001] character unknown operation returns VALIDATION400 without a write
+ FAIL  suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-SINGLE-CREW-001] crew unknown operation returns VALIDATION400 without a write
+AssertionError: expected 200 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 200[39m
+
+ ❯ suites/contract/unknown-operation.test.ts:18:31
+     16|         "Idempotency-Key": `unknown-${entity.id}`,
+     17|       });
+     18|       expect(response.status).toBe(400);
+       |                               ^
+     19|       expect(validate("operationResult", response.body).errors).toEqua…
+     20|       const result = await api.operation(response);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a dataDir=/tmp/pitd-managed/2026-10-14T12-10-53-478Z-c83b685a/data port=35183
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-14T12-10-53-478Z-c83b685a-server.log

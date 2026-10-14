@@ -1,0 +1,284 @@
+=== Metrics Schema Validation ===
+Directory: /home/x/code/paperclips-in-the-dark/tasks/metrics
+Files found: 181
+
+Files validated: 181
+Errors: 0
+
+Overall: ALL CHECKS PASSED
+=== Finding Traceability Validation ===
+File: /home/x/code/paperclips-in-the-dark/agent-docs/test-audit/finding-traceability.md
+
+Check Results:
+  [PASS] ar-table-has-8-columns: Expected 8 columns, got 8: ID, Pri, Finding (owner cards), Red, Green / tests, Browser, Decision / review, Status
+  [PASS] ar-table-has-17-rows: Expected 17 rows, got 17
+  [PASS] ar-row-AR-001-exists: AR row AR-001 missing
+  [PASS] ar-row-AR-002-exists: AR row AR-002 missing
+  [PASS] ar-row-AR-003-exists: AR row AR-003 missing
+  [PASS] ar-row-AR-004-exists: AR row AR-004 missing
+  [PASS] ar-row-AR-005-exists: AR row AR-005 missing
+  [PASS] ar-row-AR-006-exists: AR row AR-006 missing
+  [PASS] ar-row-AR-007-exists: AR row AR-007 missing
+  [PASS] ar-row-AR-008-exists: AR row AR-008 missing
+  [PASS] ar-row-AR-009-exists: AR row AR-009 missing
+  [PASS] ar-row-AR-010-exists: AR row AR-010 missing
+  [PASS] ar-row-AR-011-exists: AR row AR-011 missing
+  [PASS] ar-row-AR-012-exists: AR row AR-012 missing
+  [PASS] ar-row-AR-013-exists: AR row AR-013 missing
+  [PASS] ar-row-AR-014-exists: AR row AR-014 missing
+  [PASS] ar-row-AR-015-exists: AR row AR-015 missing
+  [PASS] ar-row-AR-016-exists: AR row AR-016 missing
+  [PASS] ar-row-AR-017-exists: AR row AR-017 missing
+  [PASS] ar-row-AR-001-8-columns: AR-001 has 8 columns (expected 8)
+  [PASS] ar-row-AR-001-has-status: AR-001 missing Status
+  [PASS] ar-row-AR-002-8-columns: AR-002 has 8 columns (expected 8)
+  [PASS] ar-row-AR-002-has-status: AR-002 missing Status
+  [PASS] ar-row-AR-003-8-columns: AR-003 has 8 columns (expected 8)
+  [PASS] ar-row-AR-003-has-status: AR-003 missing Status
+  [PASS] ar-row-AR-004-8-columns: AR-004 has 8 columns (expected 8)
+  [PASS] ar-row-AR-004-has-status: AR-004 missing Status
+  [PASS] ar-row-AR-005-8-columns: AR-005 has 8 columns (expected 8)
+  [PASS] ar-row-AR-005-has-status: AR-005 missing Status
+  [PASS] ar-row-AR-006-8-columns: AR-006 has 8 columns (expected 8)
+  [PASS] ar-row-AR-006-has-status: AR-006 missing Status
+  [PASS] ar-row-AR-007-8-columns: AR-007 has 8 columns (expected 8)
+  [PASS] ar-row-AR-007-has-status: AR-007 missing Status
+  [PASS] ar-row-AR-008-8-columns: AR-008 has 8 columns (expected 8)
+  [PASS] ar-row-AR-008-has-status: AR-008 missing Status
+  [PASS] ar-row-AR-009-8-columns: AR-009 has 8 columns (expected 8)
+  [PASS] ar-row-AR-009-has-status: AR-009 missing Status
+  [PASS] ar-row-AR-010-8-columns: AR-010 has 8 columns (expected 8)
+  [PASS] ar-row-AR-010-has-status: AR-010 missing Status
+  [PASS] ar-row-AR-011-8-columns: AR-011 has 8 columns (expected 8)
+  [PASS] ar-row-AR-011-has-status: AR-011 missing Status
+  [PASS] ar-row-AR-012-8-columns: AR-012 has 8 columns (expected 8)
+  [PASS] ar-row-AR-012-has-status: AR-012 missing Status
+  [PASS] ar-row-AR-013-8-columns: AR-013 has 8 columns (expected 8)
+  [PASS] ar-row-AR-013-has-status: AR-013 missing Status
+  [PASS] ar-row-AR-014-8-columns: AR-014 has 8 columns (expected 8)
+  [PASS] ar-row-AR-014-has-status: AR-014 missing Status
+  [PASS] ar-row-AR-015-8-columns: AR-015 has 8 columns (expected 8)
+  [PASS] ar-row-AR-015-has-status: AR-015 missing Status
+  [PASS] ar-row-AR-016-8-columns: AR-016 has 8 columns (expected 8)
+  [PASS] ar-row-AR-016-has-status: AR-016 missing Status
+  [PASS] ar-row-AR-017-8-columns: AR-017 has 8 columns (expected 8)
+  [PASS] ar-row-AR-017-has-status: AR-017 missing Status
+  [PASS] ux-table-has-10-columns: Expected 10 columns, got 10: ID, Finding, Owner, Red, Green / revision, Tests, Browser evidence, Decision, Review, Status
+  [PASS] ux-table-has-17-rows: Expected 17 rows, got 17
+  [PASS] ux-row-UX-001-exists: UX row UX-001 missing
+  [PASS] ux-row-UX-002-exists: UX row UX-002 missing
+  [PASS] ux-row-UX-003-exists: UX row UX-003 missing
+  [PASS] ux-row-UX-004-exists: UX row UX-004 missing
+  [PASS] ux-row-UX-005-exists: UX row UX-005 missing
+  [PASS] ux-row-UX-006-exists: UX row UX-006 missing
+  [PASS] ux-row-UX-007-exists: UX row UX-007 missing
+  [PASS] ux-row-UX-008-exists: UX row UX-008 missing
+  [PASS] ux-row-UX-009-exists: UX row UX-009 missing
+  [PASS] ux-row-UX-010-exists: UX row UX-010 missing
+  [PASS] ux-row-UX-011-exists: UX row UX-011 missing
+  [PASS] ux-row-UX-012-exists: UX row UX-012 missing
+  [PASS] ux-row-UX-013-exists: UX row UX-013 missing
+  [PASS] ux-row-UX-014-exists: UX row UX-014 missing
+  [PASS] ux-row-UX-015-exists: UX row UX-015 missing
+  [PASS] ux-row-UX-016-exists: UX row UX-016 missing
+  [PASS] ux-row-UX-017-exists: UX row UX-017 missing
+  [PASS] ux-row-UX-001-10-columns: UX-001 has 10 columns (expected 10)
+  [PASS] ux-row-UX-001-has-status: UX-001 missing Status
+  [PASS] ux-row-UX-001-Red: UX-001 missing Red
+  [PASS] ux-row-UX-001-Green / revision: UX-001 missing Green / revision
+  [PASS] ux-row-UX-001-Tests: UX-001 missing Tests
+  [PASS] ux-row-UX-001-Browser evidence: UX-001 missing Browser evidence
+  [PASS] ux-row-UX-001-Decision: UX-001 missing Decision
+  [PASS] ux-row-UX-001-Review: UX-001 missing Review
+  [PASS] ux-row-UX-001-no-stale-d819482b: UX-001 references stale run ID d819482b
+  [PASS] ux-row-UX-002-10-columns: UX-002 has 10 columns (expected 10)
+  [PASS] ux-row-UX-002-has-status: UX-002 missing Status
+  [PASS] ux-row-UX-002-Red: UX-002 missing Red
+  [PASS] ux-row-UX-002-Green / revision: UX-002 missing Green / revision
+  [PASS] ux-row-UX-002-Tests: UX-002 missing Tests
+  [PASS] ux-row-UX-002-Browser evidence: UX-002 missing Browser evidence
+  [PASS] ux-row-UX-002-Decision: UX-002 missing Decision
+  [PASS] ux-row-UX-002-Review: UX-002 missing Review
+  [PASS] ux-row-UX-002-no-stale-d819482b: UX-002 references stale run ID d819482b
+  [PASS] ux-row-UX-003-10-columns: UX-003 has 10 columns (expected 10)
+  [PASS] ux-row-UX-003-has-status: UX-003 missing Status
+  [PASS] ux-row-UX-003-Red: UX-003 missing Red
+  [PASS] ux-row-UX-003-Green / revision: UX-003 missing Green / revision
+  [PASS] ux-row-UX-003-Tests: UX-003 missing Tests
+  [PASS] ux-row-UX-003-Browser evidence: UX-003 missing Browser evidence
+  [PASS] ux-row-UX-003-Decision: UX-003 missing Decision
+  [PASS] ux-row-UX-003-Review: UX-003 missing Review
+  [PASS] ux-row-UX-003-no-stale-d819482b: UX-003 references stale run ID d819482b
+  [PASS] ux-row-UX-004-10-columns: UX-004 has 10 columns (expected 10)
+  [PASS] ux-row-UX-004-has-status: UX-004 missing Status
+  [PASS] ux-row-UX-004-Red: UX-004 missing Red
+  [PASS] ux-row-UX-004-Green / revision: UX-004 missing Green / revision
+  [PASS] ux-row-UX-004-Tests: UX-004 missing Tests
+  [PASS] ux-row-UX-004-Browser evidence: UX-004 missing Browser evidence
+  [PASS] ux-row-UX-004-Decision: UX-004 missing Decision
+  [PASS] ux-row-UX-004-Review: UX-004 missing Review
+  [PASS] ux-row-UX-004-no-stale-d819482b: UX-004 references stale run ID d819482b
+  [PASS] ux-row-UX-005-10-columns: UX-005 has 10 columns (expected 10)
+  [PASS] ux-row-UX-005-has-status: UX-005 missing Status
+  [PASS] ux-row-UX-005-Red: UX-005 missing Red
+  [PASS] ux-row-UX-005-Green / revision: UX-005 missing Green / revision
+  [PASS] ux-row-UX-005-Tests: UX-005 missing Tests
+  [PASS] ux-row-UX-005-Browser evidence: UX-005 missing Browser evidence
+  [PASS] ux-row-UX-005-Decision: UX-005 missing Decision
+  [PASS] ux-row-UX-005-Review: UX-005 missing Review
+  [PASS] ux-row-UX-005-no-stale-d819482b: UX-005 references stale run ID d819482b
+  [PASS] ux-row-UX-006-10-columns: UX-006 has 10 columns (expected 10)
+  [PASS] ux-row-UX-006-has-status: UX-006 missing Status
+  [PASS] ux-row-UX-006-Red: UX-006 missing Red
+  [PASS] ux-row-UX-006-Green / revision: UX-006 missing Green / revision
+  [PASS] ux-row-UX-006-Tests: UX-006 missing Tests
+  [PASS] ux-row-UX-006-Browser evidence: UX-006 missing Browser evidence
+  [PASS] ux-row-UX-006-Decision: UX-006 missing Decision
+  [PASS] ux-row-UX-006-Review: UX-006 missing Review
+  [PASS] ux-row-UX-006-no-stale-d819482b: UX-006 references stale run ID d819482b
+  [PASS] ux-row-UX-007-10-columns: UX-007 has 10 columns (expected 10)
+  [PASS] ux-row-UX-007-has-status: UX-007 missing Status
+  [PASS] ux-row-UX-007-Red: UX-007 missing Red
+  [PASS] ux-row-UX-007-Green / revision: UX-007 missing Green / revision
+  [PASS] ux-row-UX-007-Tests: UX-007 missing Tests
+  [PASS] ux-row-UX-007-Browser evidence: UX-007 missing Browser evidence
+  [PASS] ux-row-UX-007-Decision: UX-007 missing Decision
+  [PASS] ux-row-UX-007-Review: UX-007 missing Review
+  [PASS] ux-row-UX-007-no-stale-d819482b: UX-007 references stale run ID d819482b
+  [PASS] ux-row-UX-008-10-columns: UX-008 has 10 columns (expected 10)
+  [PASS] ux-row-UX-008-has-status: UX-008 missing Status
+  [PASS] ux-row-UX-008-Red: UX-008 missing Red
+  [PASS] ux-row-UX-008-Green / revision: UX-008 missing Green / revision
+  [PASS] ux-row-UX-008-Tests: UX-008 missing Tests
+  [PASS] ux-row-UX-008-Browser evidence: UX-008 missing Browser evidence
+  [PASS] ux-row-UX-008-Decision: UX-008 missing Decision
+  [PASS] ux-row-UX-008-Review: UX-008 missing Review
+  [PASS] ux-row-UX-008-no-stale-d819482b: UX-008 references stale run ID d819482b
+  [PASS] ux-row-UX-009-10-columns: UX-009 has 10 columns (expected 10)
+  [PASS] ux-row-UX-009-has-status: UX-009 missing Status
+  [PASS] ux-row-UX-009-Red: UX-009 missing Red
+  [PASS] ux-row-UX-009-Green / revision: UX-009 missing Green / revision
+  [PASS] ux-row-UX-009-Tests: UX-009 missing Tests
+  [PASS] ux-row-UX-009-Browser evidence: UX-009 missing Browser evidence
+  [PASS] ux-row-UX-009-Decision: UX-009 missing Decision
+  [PASS] ux-row-UX-009-Review: UX-009 missing Review
+  [PASS] ux-009-tests-na: UX-009 Tests should be "not applicable" (DEC-05 closure, no implementation)
+  [PASS] ux-009-browser-na: UX-009 Browser evidence should be "not applicable" (DEC-05 closure, no implementation)
+  [PASS] ux-row-UX-009-no-stale-d819482b: UX-009 references stale run ID d819482b
+  [PASS] ux-row-UX-010-10-columns: UX-010 has 10 columns (expected 10)
+  [PASS] ux-row-UX-010-has-status: UX-010 missing Status
+  [PASS] ux-row-UX-010-Red: UX-010 missing Red
+  [PASS] ux-row-UX-010-Green / revision: UX-010 missing Green / revision
+  [PASS] ux-row-UX-010-Tests: UX-010 missing Tests
+  [PASS] ux-row-UX-010-Browser evidence: UX-010 missing Browser evidence
+  [PASS] ux-row-UX-010-Decision: UX-010 missing Decision
+  [PASS] ux-row-UX-010-Review: UX-010 missing Review
+  [PASS] ux-row-UX-010-no-stale-d819482b: UX-010 references stale run ID d819482b
+  [PASS] ux-row-UX-011-10-columns: UX-011 has 10 columns (expected 10)
+  [PASS] ux-row-UX-011-has-status: UX-011 missing Status
+  [PASS] ux-row-UX-011-Red: UX-011 missing Red
+  [PASS] ux-row-UX-011-Green / revision: UX-011 missing Green / revision
+  [PASS] ux-row-UX-011-Tests: UX-011 missing Tests
+  [PASS] ux-row-UX-011-Browser evidence: UX-011 missing Browser evidence
+  [PASS] ux-row-UX-011-Decision: UX-011 missing Decision
+  [PASS] ux-row-UX-011-Review: UX-011 missing Review
+  [PASS] ux-row-UX-011-no-stale-d819482b: UX-011 references stale run ID d819482b
+  [PASS] ux-row-UX-012-10-columns: UX-012 has 10 columns (expected 10)
+  [PASS] ux-row-UX-012-has-status: UX-012 missing Status
+  [PASS] ux-row-UX-012-Red: UX-012 missing Red
+  [PASS] ux-row-UX-012-Green / revision: UX-012 missing Green / revision
+  [PASS] ux-row-UX-012-Tests: UX-012 missing Tests
+  [PASS] ux-row-UX-012-Browser evidence: UX-012 missing Browser evidence
+  [PASS] ux-row-UX-012-Decision: UX-012 missing Decision
+  [PASS] ux-row-UX-012-Review: UX-012 missing Review
+  [PASS] ux-row-UX-012-no-stale-d819482b: UX-012 references stale run ID d819482b
+  [PASS] ux-row-UX-013-10-columns: UX-013 has 10 columns (expected 10)
+  [PASS] ux-row-UX-013-has-status: UX-013 missing Status
+  [PASS] ux-row-UX-013-Red: UX-013 missing Red
+  [PASS] ux-row-UX-013-Green / revision: UX-013 missing Green / revision
+  [PASS] ux-row-UX-013-Tests: UX-013 missing Tests
+  [PASS] ux-row-UX-013-Browser evidence: UX-013 missing Browser evidence
+  [PASS] ux-row-UX-013-Decision: UX-013 missing Decision
+  [PASS] ux-row-UX-013-Review: UX-013 missing Review
+  [PASS] ux-013-browser-na: UX-013 Browser evidence should state "not applicable" (data-pollution guard, no browser journey)
+  [PASS] ux-row-UX-013-no-stale-d819482b: UX-013 references stale run ID d819482b
+  [PASS] ux-row-UX-014-10-columns: UX-014 has 10 columns (expected 10)
+  [PASS] ux-row-UX-014-has-status: UX-014 missing Status
+  [PASS] ux-row-UX-014-Red: UX-014 missing Red
+  [PASS] ux-row-UX-014-Green / revision: UX-014 missing Green / revision
+  [PASS] ux-row-UX-014-Tests: UX-014 missing Tests
+  [PASS] ux-row-UX-014-Browser evidence: UX-014 missing Browser evidence
+  [PASS] ux-row-UX-014-Decision: UX-014 missing Decision
+  [PASS] ux-row-UX-014-Review: UX-014 missing Review
+  [PASS] ux-row-UX-014-no-stale-d819482b: UX-014 references stale run ID d819482b
+  [PASS] ux-row-UX-015-10-columns: UX-015 has 10 columns (expected 10)
+  [PASS] ux-row-UX-015-has-status: UX-015 missing Status
+  [PASS] ux-row-UX-015-Red: UX-015 missing Red
+  [PASS] ux-row-UX-015-Green / revision: UX-015 missing Green / revision
+  [PASS] ux-row-UX-015-Tests: UX-015 missing Tests
+  [PASS] ux-row-UX-015-Browser evidence: UX-015 missing Browser evidence
+  [PASS] ux-row-UX-015-Decision: UX-015 missing Decision
+  [PASS] ux-row-UX-015-Review: UX-015 missing Review
+  [PASS] ux-row-UX-015-no-stale-d819482b: UX-015 references stale run ID d819482b
+  [PASS] ux-row-UX-016-10-columns: UX-016 has 10 columns (expected 10)
+  [PASS] ux-row-UX-016-has-status: UX-016 missing Status
+  [PASS] ux-row-UX-016-Red: UX-016 missing Red
+  [PASS] ux-row-UX-016-Green / revision: UX-016 missing Green / revision
+  [PASS] ux-row-UX-016-Tests: UX-016 missing Tests
+  [PASS] ux-row-UX-016-Browser evidence: UX-016 missing Browser evidence
+  [PASS] ux-row-UX-016-Decision: UX-016 missing Decision
+  [PASS] ux-row-UX-016-Review: UX-016 missing Review
+  [PASS] ux-row-UX-016-no-stale-d819482b: UX-016 references stale run ID d819482b
+  [PASS] ux-row-UX-017-10-columns: UX-017 has 10 columns (expected 10)
+  [PASS] ux-row-UX-017-has-status: UX-017 missing Status
+  [PASS] ux-row-UX-017-Red: UX-017 missing Red
+  [PASS] ux-row-UX-017-Green / revision: UX-017 missing Green / revision
+  [PASS] ux-row-UX-017-Tests: UX-017 missing Tests
+  [PASS] ux-row-UX-017-Browser evidence: UX-017 missing Browser evidence
+  [PASS] ux-row-UX-017-Decision: UX-017 missing Decision
+  [PASS] ux-row-UX-017-Review: UX-017 missing Review
+  [PASS] ux-017-tests-na: UX-017 Tests should be "not applicable" (DEC-06 doc-only)
+  [PASS] ux-017-browser-na: UX-017 Browser evidence should be "not applicable" (DEC-06 doc-only)
+  [PASS] ux-row-UX-017-no-stale-d819482b: UX-017 references stale run ID d819482b
+  [PASS] volatile-evidence-mentions-luna-archive: Volatile evidence note must mention durable 9c837bde-luna archive
+
+Total checks: 231
+Passed: 231
+Failed: 0
+
+Overall: ALL CHECKS PASSED
+=== Audit Reconciliation Validation (Strict v2) ===
+Run at: 2026-10-14T12:23:39.485Z
+Audit file: /home/x/code/paperclips-in-the-dark/agent-docs/test-audit/inventory.json
+
+Check Results:
+  [PASS] current-row-count-equals-1624: expected=1624, actual=1624
+  [PASS] no-duplicate-current-ids: expected=0, actual=0
+  [PASS] no-blank-required-fields-in-inventory: expected=0, actual=0
+  [PASS] every-row-has-valid-decision: expected=0, actual=0
+  [PASS] final-disposition-matches-decision: expected=0, actual=0
+  [PASS] valid-environment-values: expected=0, actual=0
+  [PASS] all-p0-p1-rows-marked-pending-or-reviewed: expected=0, actual=0
+  [PASS] all-new-rows-marked-pending-or-reviewed: expected=0, actual=0
+  [PASS] all-preserved-rows-marked-sampled-or-not-required: expected=0, actual=0
+  [PASS] stale-rows-preserved: expected=136, actual=136
+  [PASS] no-stale-in-current: expected=0, actual=0
+  [PASS] merge-rows-have-dupeOf: expected=0, actual=0
+  [PASS] valid-review-status-values: expected=0, actual=0
+  [PASS] valid-determinism-values: expected=0, actual=0
+  [PASS] p0-p1-row-count: expected=195, actual=195
+  [PASS] new-unique-id-count: expected=101, actual=101
+  [PASS] new-registration-count: expected=100, actual=100
+
+Errors: 0
+Warnings: 0
+
+Overall: ALL CHECKS PASSED
+
+Coverage Summary:
+  Current rows: 1624
+  Stale rows (preserved): 136
+  P0/P1 rows (pending/reviewed): 195 (P0=149, P1=46)
+  New rows (pending/reviewed): 101 (2 pending, 99 reviewed)
+  Preserved rows (sampled): 1328
+  By decision: {"keep":1614,"upgrade":8,"merge":2}

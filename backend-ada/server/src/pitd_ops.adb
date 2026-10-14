@@ -673,8 +673,21 @@ elsif Op = "clock.progress" then
       elsif Op = "fields.update" then
          if not Has_Any_Field (B) then Bad := To_Unbounded_String ("fields.update requires at least one field"); return False; end if;
          return True;
+      elsif Op = "ability.take" or else Op = "ability.remove"
+        or else Op = "action.set-rating" or else Op = "attribute.levelup"
+        or else Op = "attribute-xp.add" or else Op = "attribute-xp.clear"
+        or else Op = "playbook-xp.add" or else Op = "playbook-xp.clear"
+        or else Op = "gear.clear-commitments" or else Op = "gear.lock"
+        or else Op = "gear.unlock" or else Op = "harm.heal"
+        or else Op = "harm.healing-clock" or else Op = "notebook.set"
+        or else Op = "xp.clear"
+      then
+         --  These declared operations retain their existing apply-phase
+         --  validation. An unrecognized name must not reach the dispatcher.
+         return True;
       end if;
-      return True;
+      Bad := To_Unbounded_String ("unknown operation");
+      return False;
    end Validate_Request;
 
    function Validate_Mutation_Request

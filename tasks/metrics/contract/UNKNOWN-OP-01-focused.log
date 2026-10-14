@@ -1,0 +1,40 @@
+OK: canonical managed launcher
+[managed-run] runId=2026-10-14T12-15-28-728Z-fdf98d0b
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=UNKNOWN-OP-01-working
+[managed-run] testCommand=--run suites/contract/unknown-operation.test.ts suites/semantics/composites.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-14T12-15-28-728Z-fdf98d0b/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-14T12-15-28-728Z-fdf98d0b/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-14T12-15-28-728Z-fdf98d0b
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-14T12-15-28-728Z-fdf98d0b/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-14T12-15-28-728Z-fdf98d0b/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-14T12-15-28-728Z-fdf98d0b/data (dir)
+[managed-run] port=43411
+[managed-run] baseUrl=http://127.0.0.1:43411
+[managed-run] pid=1960152
+[managed-run] ready=http://127.0.0.1:43411
+[managed-run] vitestPid=1960219
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-SINGLE-CHARACTER-001] character unknown operation returns VALIDATION400 without a write 85ms
+ ✓ suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-SINGLE-CREW-001] crew unknown operation returns VALIDATION400 without a write 6ms
+ ✓ suites/contract/unknown-operation.test.ts > UNKNOWN-OP-01 rejects unknown single operations, preserves batch reporting > [UNKNOWN-OP-BATCH-001] unknown and schema-invalid members use identical failed-outcome reporting and roll back all writes 182ms
+ ✓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-001] campaign.batch applies ops sequentially, reports per-op outcomes, and writes one history entry 73ms
+ ✓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-002] a batch with an invalid middle op rolls back atomically leaving revisions and state unchanged 178ms
+ ✓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-003] end-score clears armor used and resets loadout commitment 178ms
+ ✓ suites/semantics/composites.test.ts > §5.1 composites: campaign.batch / end-score / end-downtime (AUDIT-0 BUG-005) > [SEMANTICS-COMPOSITES-004] end-downtime clears session expressions and applies the caller-supplied vice relief 134ms
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Start at  15:15:28
+   Duration  1.59s (transform 58ms, setup 0ms, collect 548ms, tests 838ms, environment 0ms, prepare 56ms)
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/contract/unknown-operation.test.ts suites/semantics/composites.test.ts
+[managed-run] success; evidence removed (/tmp/pitd-managed/2026-10-14T12-15-28-728Z-fdf98d0b)

@@ -15,6 +15,10 @@ info:
     No character, crew, clock or batch operation is rejected because of mode,
     workflow step, or a zero/negative downtime budget. Existing structural
     and lifecycle rules and HTTP/error envelopes remain unchanged.
+    UNKNOWN-OP-01: a single-entity operation name not recognized by the
+    dispatcher is invalid request input: HTTP 400 VALIDATION with issue
+    pointers, ok:false, and no write. NOT_FOUND remains for absent resources.
+    Batch aggregation retains its separate per-member reporting convention.
 servers:
   - url: http://localhost:9657/api
 
@@ -482,6 +486,13 @@ paths:
         budget are advisory for every member. Sequential changes are atomic;
         failed batches leave assistance and bookkeeping unchanged. Existing
         batch revision/idempotency/undo and all-or-nothing conventions apply.
+        UNKNOWN-OP-01: a structurally admitted batch returns HTTP 200 with
+        ok:true/error:null to report evaluated member outcomes, not to claim
+        all members succeeded or writes committed. Unknown and schema-invalid
+        members both report ok:false with VALIDATION/status:400 and issues.
+        If any member fails, no entity, revision or history is written.
+        Clients must inspect every batch member; do not infer success from
+        the aggregate HTTP status or ok field alone.
       parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true

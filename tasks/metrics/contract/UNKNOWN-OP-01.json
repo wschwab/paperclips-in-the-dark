@@ -1,0 +1,67 @@
+{
+  "task": "UNKNOWN-OP-01",
+  "track": "contract",
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": null,
+  "date": "2026-10-14",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 12.77,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "New3/3; focused7/7; Ada597/597; two cycles597 each; tooling233/233; proof246; conformance typecheck pass.",
+  "passRateAfterReview": "No independent review claimed. Human clarified batch reporting should remain when unknown and invalid members agree; comparison test proves agreement and rollback.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "conformance",
+    "human"
+  ],
+  "notes": [
+    "Unknown single-operation admission changes fromHTTP200/VALIDATION400 body toconsistentHTTP400/ok:false/VALIDATION400.",
+    "Batch unknown and wrong-type known members agree; frozen SEMANTICS-COMPOSITES-002 unchanged.",
+    "No new status/code/path/error variant; existing apply-validated declared operations remain admitted.",
+    "No frontend or campaign-data changes. Full mutation campaign awaits coordination forLOADOUT-ATOMIC-01; backend pins refreshed only."
+  ],
+  "metricsMethodology": {
+    "method": "Canonical managed red/green outputs; measured elapsed since first red; no estimated LOC or token counts.",
+    "source": "tasks/UNKNOWN-OP-01.md and tasks/metrics/contract/UNKNOWN-OP-01-*.log",
+    "locNote": "Diff LOC not measured; unknown.",
+    "scaffoldingLocNote": "No throwaway scripts committed.",
+    "tokensNote": "Unavailable accounting; supportednull."
+  },
+  "status": "Single-op fix and backend gates green; batch unchanged per human clarification",
+  "red": {
+    "failed": 2,
+    "passed": 1,
+    "runId": "2026-10-14T12-10-53-478Z-c83b685a"
+  },
+  "acceptanceCounts": {
+    "newTests": 3,
+    "focused": 7,
+    "ada": 597,
+    "twoCyclePerCycle": 597,
+    "tooling": 233,
+    "proof": 246
+  },
+  "frozenAmendments": [],
+  "verification": {
+    "build": 0,
+    "focused": 0,
+    "generate": 0,
+    "ada": 0,
+    "ada-two-cycle": 0,
+    "tooling": 0,
+    "proof": 0,
+    "typecheck": 0
+  },
+  "mutation": {
+    "run": false,
+    "reason": "Human coordination required; full campaign planned in next card after frontend freeze.",
+    "refreshedBackendHash": "fc0d914efe00871bed11bcbe623424dc6a78f4dea4565db920f323c2ea21320c"
+  }
+}

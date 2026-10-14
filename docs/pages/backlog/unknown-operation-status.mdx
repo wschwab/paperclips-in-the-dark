@@ -4,12 +4,12 @@ title: Unknown operation names answer HTTP 200
 
 # Unknown operation names answer HTTP 200
 
-**Status: queued. Found while implementing XP-TRACKER-02 (`xp.resolve`). Not fixed.**
+**Status: closed by UNKNOWN-OP-01.** The human authorized the contract change;
+unknown single-operation names now return **HTTP 400 VALIDATION**, not 200.
 
-A `POST /characters/{id}/ops/{name}` with a name that is not a declared operation
-returns **HTTP 200** with a `VALIDATION` error body (`reason: "unknown operation"`),
-not **404**. The contract declares 404 for missing resources, and it does not
-document this case as a 200 domain result.
+The original defect was a `POST /characters/{id}/ops/{name}` with an undeclared
+name returning **HTTP 200** with a `VALIDATION` error body. This historical
+transport/body disagreement is fixed for single-entity operation admission.
 
 - Observed: `xp.resolve` before its implementation returned 200 with
   `error.code: "VALIDATION"` and `details.issues[0].reason: "unknown operation"`
@@ -17,9 +17,35 @@ document this case as a 200 domain result.
 - Why it matters: a client that checks only the HTTP status treats an unknown
   operation as success. Any tooling that calls a retired or misspelled name is
   misled the same way.
-- Proposed fix (not started): answer unknown operation names with a 404 or a 400
-  and a documented error envelope, with a red conformance test first. This changes
-  a contract-visible status, so it needs a contract decision.
-- Current workaround: check `ok` and `error` in the body, not only the status.
 
-Recorded here at the human's request. No behaviour is changed by this page.
+## Decision and fix
+
+Use existing **400 / VALIDATION**: a misspelled or unsupported operation name is
+invalid request input, not an absent entity. Existing **404 / NOT_FOUND** remains
+for missing resources. The request admission fallback now rejects unrecognized
+names before mutation, history or persistence. Declared operations that already
+perform their validation during apply retain that behavior. No new code, status,
+path or error-envelope variant is introduced.
+
+## Batch reporting is deliberately unchanged
+
+The human clarified that a failed member's VALIDATION/status400 is legitimate
+inside a batch report. New `UNKNOWN-OP-BATCH-001` compares an unknown middle
+member with a known `stress.add` member whose delta has the wrong type. Both
+produce the same **HTTP200 aggregate, ok:true/error:null**, with member outcomes
+`[true,false,true]` and a failed member carrying **VALIDATION400**. Both leave
+the entire entity, revision and history unchanged.
+
+Aggregate success means the requested outcomes were evaluated, **not** that
+every operation succeeded or any write committed. Agents must inspect all
+member outcomes. Atomicity concerns writes: one failed member rolls back the
+whole batch. Frozen `SEMANTICS-COMPOSITES-002` remains unchanged.
+
+## Red-green evidence
+
+New character and crew single-op cases first failed with **actual200,
+expected400**; the batch comparison already passed. After the fix, all three
+pass, and the focused suite plus four unchanged composite cases passes **7/7**.
+Full real-settings Ada passes **597/597**, with **597/597 in each restart
+cycle**; tooling **233/233**, SPARK **246/246**, and conformance typechecking
+passes. Card and command evidence: `tasks/UNKNOWN-OP-01.md` and its metrics.
