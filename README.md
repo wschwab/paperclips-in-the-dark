@@ -77,7 +77,9 @@ Domain semantics, test cases, and game data lean on
 [blades-in-the-sheets](https://github.com/arazni/blades-in-the-sheets) by
 **arazni**, used with permission. SRD content is
 CC-BY per the Blades in the Dark license; Blades in the Dark is by John
-Harper / One Seven Design. This project reproduces no rulebook text.
+Harper / One Seven Design. This project includes some SRD text under CC-BY 4.0, with attribution:
+the Entanglements tables and descriptions, and the crew advancement guidance. It reproduces no other
+rulebook text.
 
 ## Mirrors
 
