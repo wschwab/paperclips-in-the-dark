@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 117,
+  "operationCount": 118,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -508,7 +508,7 @@
       "method": "POST",
       "path": "/characters/{id}/ops/mode.set",
       "agentReference": "api-reference/README.md#charactermodeset",
-      "summary": "Any mode from any current mode. Changing to score sets modeFlow={kind:score-start,step:planning}; changing to free-play or downtime clears the cursor to {kind:none,step:empty string}. Selecting the current mode preserves the cursor and bookkeeping. Pure assistance changes do not alter stress, lifecycle flags, gear, funds, XP, crew, or downtime budget. No gameplay/lifecycle gate applies to this assistance-only operation. Existing revision, idempotency, atomic write, history and undo conventions apply.",
+      "summary": "Any mode from any current mode. Changing to score sets modeFlow={kind:score-start,step:planning}; changing to free-play or downtime clears the cursor to {kind:none,step:empty string}. Changing into score from another mode also clears session.desperateMarks (DESPERATE-LOG-01); selecting the current mode preserves the cursor and bookkeeping. Pure assistance changes do not alter stress, lifecycle flags, gear, funds, XP, crew, or downtime budget. No gameplay/lifecycle gate applies to this assistance-only operation. Existing revision, idempotency, atomic write, history and undo conventions apply.",
       "categories": [
         "sheet-management"
       ],
@@ -535,6 +535,17 @@
         "sheet-management"
       ],
       "humanControl": "Reachable Scoundrel XP completion; the GM total and split are explicit, and nothing is awarded or cleared automatically."
+    },
+    "characterDesperateMark": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/desperate.mark",
+      "agentReference": "api-reference/README.md#characterdesperatemark",
+      "summary": "Desperate-action XP (DESPERATE-LOG-01). In one revisioned write, add +1 XP to the named attribute track and append that attribute name to session.desperateMarks, with one snapshot and one history entry. An attribute that is not one of the character's attribute tracks, or a track already at its maximum, is rejected with VALIDATION 400 pointing at /attribute and changes nothing, including the revision. The op never changes mode or the flow cursor. Only mode.set into Score clears the tally. If-Match and Idempotency-Key follow the other character operations.",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable Desperate action control in the XP Tracker (Score); +1 XP on the chosen attribute track and a list of this Score's marks, cleared when Score starts."
     },
     "characterDowntimeSpend": {
       "disposition": "human",

@@ -94,6 +94,7 @@ const HUMAN_CONTROL = {
   characterDowntimeSpend: "Reachable downtime activity menu; soft budget never disables an activity.",
   characterXpResolve: "Reachable Scoundrel XP completion; the GM total and split are explicit, and nothing is awarded or cleared automatically.",
   characterGearSetLoadout: "Reachable Change loadout confirmation (Confirm change) through frontend API characterGearSetLoadout; submits the explicit commitment and complete owned-item selection atomically, without mode gating.",
+  characterDesperateMark: "Reachable Desperate action control in the XP Tracker (Score); +1 XP on the chosen attribute track and a list of this Score's marks, cleared when Score starts.",
   characterDowntimeAdjust: "Reachable +1 (coin), +1 (gift), and correction controls; records already-paid activities without charging funds.",
 };
 
@@ -134,6 +135,7 @@ const TABLE = {
   characterDowntimeSpend: { disposition: "human", categories: ["sheet-management"] },
   characterXpResolve: { disposition: "human", categories: ["sheet-management"] },
   characterGearSetLoadout: { disposition: "human", categories: ["sheet-management"] },
+  characterDesperateMark: { disposition: "human", categories: ["sheet-management"] },
   characterDowntimeAdjust: { disposition: "human", categories: ["sheet-management"] },
   characterDowntimeReset: { disposition: "agent" },
   // CONTRACT-03 (DEC-03 ruling): the FIX_ correction family is a designated

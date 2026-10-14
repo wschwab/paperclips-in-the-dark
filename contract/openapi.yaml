@@ -103,6 +103,15 @@ components:
             Insight: { type: integer, minimum: 0 }
             Prowess: { type: integer, minimum: 0 }
             Resolve: { type: integer, minimum: 0 }
+    CharacterDesperateMark:
+      type: object
+      required: [attribute]
+      additionalProperties: false
+      description: >
+        Desperate-action XP mark (DESPERATE-LOG-01). attribute names one of the character's
+        attribute tracks, which receives +1 XP.
+      properties:
+        attribute: { type: string, minLength: 1 }
     CharacterGearSetLoadout:
       type: object
       required: [commitment, items]
@@ -1843,8 +1852,9 @@ paths:
       description: >
         Any mode from any current mode. Changing to score sets
         modeFlow={kind:score-start,step:planning}; changing to free-play or
-        downtime clears the cursor to {kind:none,step:empty string}. Selecting
-        the current mode preserves the cursor and bookkeeping. Pure assistance
+        downtime clears the cursor to {kind:none,step:empty string}. Changing into
+        score from another mode also clears session.desperateMarks (DESPERATE-LOG-01);
+        selecting the current mode preserves the cursor and bookkeeping. Pure assistance
         changes do not alter stress, lifecycle flags, gear, funds, XP, crew,
         or downtime budget. No gameplay/lifecycle gate applies to this
         assistance-only operation. Existing revision, idempotency, atomic write,
@@ -1909,6 +1919,31 @@ paths:
         content:
           application/json:
             schema: { $ref: "#/components/schemas/CharacterXpResolve" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/desperate.mark:
+    post:
+      operationId: characterDesperateMark
+      x-snapshot: true
+      description: >
+        Desperate-action XP (DESPERATE-LOG-01). In one revisioned write, add +1 XP to the
+        named attribute track and append that attribute name to session.desperateMarks, with
+        one snapshot and one history entry. An attribute that is not one of the character's
+        attribute tracks, or a track already at its maximum, is rejected with VALIDATION 400
+        pointing at /attribute and changes nothing, including the revision. The op never
+        changes mode or the flow cursor. Only mode.set into Score clears the tally.
+        If-Match and Idempotency-Key follow the other character operations.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CharacterDesperateMark" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }

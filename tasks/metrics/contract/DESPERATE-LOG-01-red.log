@@ -1,0 +1,19 @@
+# red run: conformance/suites/semantics/desperate-mark.test.ts against the pre-change backend; full log trimmed (over 1 MiB)
+ × suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-001] a mark adds +1 to the named track and appends the attribute to session.desperateMarks in one revisioned write 64ms
+ × suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-002] an attribute that is not one of the character's tracks is rejected with VALIDATION 400 at /attribute, and nothing changes 83ms
+ × suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-003] a track already at its maximum is rejected with VALIDATION 400 and nothing changes 17ms
+ × suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-004] an Idempotency-Key replay returns the stored result and does not mark twice 17ms
+ × suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-005] a stale If-Match is rejected before any write, with the existing STALE_REVISION code 182ms
+ × suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-006] entering Score from another mode clears the tally; selecting Score again preserves it 19ms
+ × suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-007] xp.resolve does not clear the desperate marks tally 17ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-001] a mark adds +1 to the named track and appends the attribute to session.desperateMarks in one revisioned write
+ FAIL  suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-002] an attribute that is not one of the character's tracks is rejected with VALIDATION 400 at /attribute, and nothing changes
+ FAIL  suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-003] a track already at its maximum is rejected with VALIDATION 400 and nothing changes
+ FAIL  suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-004] an Idempotency-Key replay returns the stored result and does not mark twice
+ FAIL  suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-005] a stale If-Match is rejected before any write, with the existing STALE_REVISION code
+ FAIL  suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-006] entering Score from another mode clears the tally; selecting Score again preserves it
+ FAIL  suites/semantics/desperate-mark.test.ts > DESPERATE-LOG-01 desperate-action XP mark (desperate.mark) > [DESPERATE-007] xp.resolve does not clear the desperate marks tally
+ Test Files  1 failed (1)
+      Tests  7 failed (7)
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)

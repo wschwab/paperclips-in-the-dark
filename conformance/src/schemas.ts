@@ -177,6 +177,7 @@ const Character = Schema.Struct({
     characterExpressions: NonNegativeInt,
     struggleExpressions: NonNegativeInt,
     max: NonNegativeInt,
+    desperateMarks: Schema.Array(NonEmptyString),
   }),
   notebook: Schema.String,
 });

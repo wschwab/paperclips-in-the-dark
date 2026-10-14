@@ -485,7 +485,8 @@
         "playbookExpressions",
         "characterExpressions",
         "struggleExpressions",
-        "max"
+        "max",
+        "desperateMarks"
       ],
       "additionalProperties": false,
       "properties": {
@@ -504,6 +505,11 @@
         "max": {
           "type": "integer",
           "minimum": 0
+        },
+        "desperateMarks": {
+          "type": "array",
+          "description": "Desperate-action XP marks this Score, one attribute name per +1 mark (DESPERATE-LOG-01). Cleared when the mode changes into Score; not cleared by xp.resolve.",
+          "items": { "type": "string", "minLength": 1 }
         }
       }
     },

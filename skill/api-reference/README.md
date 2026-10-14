@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 117
+Operations: 118
 
 ## Conventions
 
@@ -177,6 +177,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/mode.set` | [`characterModeSet`](#charactermodeset) | true |
 | POST | `/characters/{id}/ops/mode.flow.set` | [`characterModeFlowSet`](#charactermodeflowset) | true |
 | POST | `/characters/{id}/ops/xp.resolve` | [`characterXpResolve`](#characterxpresolve) | true |
+| POST | `/characters/{id}/ops/desperate.mark` | [`characterDesperateMark`](#characterdesperatemark) | true |
 | POST | `/characters/{id}/ops/downtime.spend` | [`characterDowntimeSpend`](#characterdowntimespend) | true |
 | POST | `/characters/{id}/ops/downtime.adjust` | [`characterDowntimeAdjust`](#characterdowntimeadjust) | true |
 | POST | `/characters/{id}/ops/downtime.reset` | [`characterDowntimeReset`](#characterdowntimereset) | true |
@@ -1821,7 +1822,7 @@ Responses:
 
 `POST /characters/{id}/ops/mode.set`
 
-Any mode from any current mode. Changing to score sets modeFlow={kind:score-start,step:planning}; changing to free-play or downtime clears the cursor to {kind:none,step:empty string}. Selecting the current mode preserves the cursor and bookkeeping. Pure assistance changes do not alter stress, lifecycle flags, gear, funds, XP, crew, or downtime budget. No gameplay/lifecycle gate applies to this assistance-only operation. Existing revision, idempotency, atomic write, history and undo conventions apply.
+Any mode from any current mode. Changing to score sets modeFlow={kind:score-start,step:planning}; changing to free-play or downtime clears the cursor to {kind:none,step:empty string}. Changing into score from another mode also clears session.desperateMarks (DESPERATE-LOG-01); selecting the current mode preserves the cursor and bookkeeping. Pure assistance changes do not alter stress, lifecycle flags, gear, funds, XP, crew, or downtime budget. No gameplay/lifecycle gate applies to this assistance-only operation. Existing revision, idempotency, atomic write, history and undo conventions apply.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -1881,6 +1882,31 @@ Request body schema:
 
 ```yaml
 schema: { $ref: "#/components/schemas/CharacterXpResolve" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+- `500`: OperationResult
+
+## characterDesperateMark
+
+`POST /characters/{id}/ops/desperate.mark`
+
+Desperate-action XP (DESPERATE-LOG-01). In one revisioned write, add +1 XP to the named attribute track and append that attribute name to session.desperateMarks, with one snapshot and one history entry. An attribute that is not one of the character's attribute tracks, or a track already at its maximum, is rejected with VALIDATION 400 pointing at /attribute and changes nothing, including the revision. The op never changes mode or the flow cursor. Only mode.set into Score clears the tally. If-Match and Idempotency-Key follow the other character operations.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterDesperateMark" }
 ```
 
 Responses:

@@ -2060,7 +2060,7 @@ if Kind = "crew" then
             R := Mutate (Kind, Op, E, B);
             --  Atomic XP/loadout validation failures carry their issue pointers
             --  with HTTP 400. Other domain errors retain their existing delivery.
-            if (Op = "xp.resolve" or else Op = "gear.set-loadout")
+            if (Op = "xp.resolve" or else Op = "gear.set-loadout" or else Op = "desperate.mark")
               and then not Bool_Field (R, "ok")
               and then Has_Field (R, "error")
               and then Str_Field (Get (R, "error"), "code") = "VALIDATION"

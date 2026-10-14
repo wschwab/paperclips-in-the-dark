@@ -242,7 +242,8 @@
     "playbookExpressions": 1,
     "characterExpressions": 2,
     "struggleExpressions": 1,
-    "max": 2
+    "max": 2,
+    "desperateMarks": []
   },
   "notebook": ""
 }

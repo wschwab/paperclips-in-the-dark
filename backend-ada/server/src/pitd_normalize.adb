@@ -195,7 +195,7 @@ package body Pitd_Normalize is
    Allowed_Satchel : constant String := "|coins|max|";
    Allowed_Char_Contact : constant String := "|id|name|closeness|";
    Allowed_Session : constant String :=
-     "|playbookExpressions|characterExpressions|struggleExpressions|max|";
+     "|playbookExpressions|characterExpressions|struggleExpressions|max|desperateMarks|";
    Allowed_Mode_Flow : constant String := "|kind|step|";
    Allowed_Downtime : constant String := "|free|paid|spent|activities|";
    Allowed_Downtime_Activity : constant String := "|activity|description|";
@@ -1812,6 +1812,47 @@ package body Pitd_Normalize is
                       Char_Contact_Item'Access);
    end N_Char_Contacts;
 
+   --  DESPERATE-LOG-01: session.desperateMarks is an array of attribute names, one per +1 mark.
+   --  Duplicates are real marks and are kept. A missing array is filled with [] (recorded when the
+   --  session object itself exists); non-string or empty entries are reported, not dropped.
+   function N_Desperate_Marks (O : JSON_Value; Record_Fill : Boolean; C : in out N_Ctx)
+     return JSON_Value is
+   begin
+      if not Has_Field (O, "desperateMarks")
+        or else Get (O, "desperateMarks").Kind = JSON_Null_Type
+      then
+         if Record_Fill then
+            Add_Change (C, "/session/desperateMarks", "missing/null fill", JSON_Null,
+                        Create (Empty_Array),
+                        "Missing required property /session/desperateMarks: filled with canonical default []");
+         end if;
+         return Create (Empty_Array);
+      end if;
+      if Get (O, "desperateMarks").Kind /= JSON_Array_Type then
+         Add_Needs (C, "/session/desperateMarks", "wrong type: expected an array",
+                    "an array of attribute names");
+         return Create (Empty_Array);
+      end if;
+      declare
+         A : constant JSON_Array := Get (O, "desperateMarks");
+         X : JSON_Array := Empty_Array;
+      begin
+         for I in 1 .. Length (A) loop
+            declare
+               Item : constant JSON_Value := Get (A, I);
+               P    : constant String := "/session/desperateMarks/" & Trim_Image (I - 1);
+            begin
+               if Item.Kind /= JSON_String_Type or else String'(Get (Item)) = "" then
+                  Add_Needs (C, P, "wrong value: expected a non-empty attribute name",
+                             "an attribute name");
+               end if;
+               Append (X, Clone (Item));
+            end;
+         end loop;
+         return Create (X);
+      end;
+   end N_Desperate_Marks;
+
    function N_Session (O : JSON_Value; S : Settings_Ref; C : in out N_Ctx) return JSON_Value is
       X : JSON_Value := Create_Object;
       Src : JSON_Value;
@@ -1834,6 +1875,7 @@ package body Pitd_Normalize is
                  N_Int (Src, "struggleExpressions", "/session/struggleExpressions", 0, C, Min => 0));
       Set_Field (X, "max", N_Int_Derived (Src, "max", "/session/max", S,
                                           "SessionExpressionMax", 2, C));
+      Set_Field (X, "desperateMarks", N_Desperate_Marks (Src, not Missing, C));
       if Missing then
          Add_Change (C, "/session", "missing/null fill", JSON_Null, Clone (X),
                      "Missing required property /session: filled with canonical empty session");

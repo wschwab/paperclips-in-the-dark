@@ -72,6 +72,9 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   // LOADOUT-ATOMIC-01 (human-approved additive amendment): the full-loadout Save
   // control uses one atomic sheet-management operation without mode gating.
   "characterGearSetLoadout",
+  // DESPERATE-LOG-01 (human-approved additive amendment, option C): the desperate-action XP mark is
+  // sheet-management with a reachable XP Tracker control that lists this Score's marks.
+  "characterDesperateMark",
 ];
 
 /** Runtime narrowing for JSON bodies: object and not an array. */

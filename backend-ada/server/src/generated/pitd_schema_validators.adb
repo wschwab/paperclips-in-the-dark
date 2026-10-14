@@ -597,7 +597,7 @@ package body Pitd_Schema_Validators is
    Allowed_Contact : constant String := Required_Contact;
 
    Required_Session : constant String :=
-     "|playbookExpressions|characterExpressions|struggleExpressions|max|";
+     "|playbookExpressions|characterExpressions|struggleExpressions|max|desperateMarks|";
 
    Allowed_Session : constant String := Required_Session;
 
@@ -1024,6 +1024,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "characterExpressions", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "struggleExpressions", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "max", Check_Int_Min_0'Access);
+      Check_Prop (V, Ptr, "desperateMarks", Check_String_Array'Access);
    end Check_Session;
 
    procedure Check_Character (V : JSON_Value; Ptr : String) is

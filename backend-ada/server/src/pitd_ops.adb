@@ -62,6 +62,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "mode.set" or else Op = "mode.flow.set"
         or else Op = "downtime.spend" or else Op = "downtime.adjust"
         or else Op = "downtime.reset" or else Op = "xp.resolve"
+        or else Op = "desperate.mark"
         or else Op = "claim.set" or else Op = "claim.customize"
         or else Op = "claim.reset"
       then
@@ -189,6 +190,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
       Set_Field (Session, "characterExpressions", Integer'(0));
       Set_Field (Session, "struggleExpressions", Integer'(0));
       Set_Field (Session, "max", Settings_Int (S, "SessionExpressionMax", 0));
+      Set_Field (Session, "desperateMarks", Create (Empty_Array));
       Set_Field (C, "session", Session);
       Set_Field (C, "notebook", "");
       --  Build attributes/actions and playbook defaults from game-settings JSON.
@@ -641,6 +643,9 @@ elsif Op = "clock.create" then
                                    Spec ("Insight", JSON_Int_Type, MnI => 0),
                                    Spec ("Prowess", JSON_Int_Type, MnI => 0),
                                    Spec ("Resolve", JSON_Int_Type, MnI => 0)), Bad);
+      elsif Op = "desperate.mark" then
+         --  DESPERATE-LOG-01: the attribute is checked against the character's tracks in the apply branch.
+         return Check_Fields (B, Spec_List'(1 => Spec ("attribute", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "downtime.spend" then
          return Check_Fields
            (B, (Spec ("activity", JSON_String_Type,
@@ -792,6 +797,7 @@ begin
       if Op = "mode.set" or else Op = "mode.flow.set"
         or else Op = "downtime.spend" or else Op = "downtime.adjust"
         or else Op = "downtime.reset" or else Op = "xp.resolve"
+        or else Op = "desperate.mark"
       then
          if Kind /= "character" then
             return Validation_Error (Op, "character-only operation",
@@ -800,6 +806,10 @@ begin
          if Op = "mode.set" then
             if Str_Field (B, "mode") /= Str_Field (E, "mode") then
                Set_Field (E, "mode", Str_Field (B, "mode"));
+               if Str_Field (B, "mode") = "score" then
+                  --  DESPERATE-LOG-01: changing into Score from another mode starts a fresh tally.
+                  Set_Field (Get (E, "session"), "desperateMarks", Create (Empty_Array));
+               end if;
                declare
                   Flow : JSON_Value := Default_Mode_Flow;
                begin
@@ -912,6 +922,52 @@ begin
                end;
                Requested := Total;
                Effective := Total;
+            end;
+         elsif Op = "desperate.mark" then
+            --  DESPERATE-LOG-01: +1 XP on the named attribute track and one tally entry, one write.
+            --  An unknown attribute or a track at its maximum is a VALIDATION error with no write.
+            declare
+               Name   : constant String := Str_Field (B, "attribute");
+               Attrs  : constant JSON_Array := Get (Get (E, "talent"), "attributes");
+               Found  : Boolean := False;
+               Issues : JSON_Array := Empty_Array;
+            begin
+               for I in 1 .. Length (Attrs) loop
+                  declare
+                     A : constant JSON_Value := Get (Attrs, I);
+                  begin
+                     if not Found and then Str_Field (A, "name") = Name then
+                        Found := True;
+                        declare
+                           T : constant JSON_Value := Get (A, "experience");
+                        begin
+                           if Int_Field (T, "points") >= Int_Field (T, "max") then
+                              Append (Issues, Issue_At ("/attribute",
+                                                        "attribute track is at its maximum",
+                                                        "an attribute track below its maximum"));
+                           else
+                              Set_Field (T, "points", Int_Field (T, "points") + 1);
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end loop;
+               if not Found then
+                  Append (Issues, Issue_At ("/attribute",
+                                            "unknown attribute track",
+                                            "one of the character's attribute tracks"));
+               end if;
+               if Length (Issues) > 0 then
+                  return Validation_Error (Op, "invalid desperate action mark", Issues, E);
+               end if;
+               declare
+                  Marks : JSON_Array := Get (Get (E, "session"), "desperateMarks");
+               begin
+                  Append (Marks, Create (Name));
+                  Set_Field (Get (E, "session"), "desperateMarks", Marks);
+               end;
+               Requested := 1;
+               Effective := 1;
             end;
          else
             Set_Field (E, "downtime", Default_Downtime (E));

@@ -433,6 +433,60 @@
       "collection": false
     },
     {
+      "operationId": "characterDesperateMark",
+      "method": "POST",
+      "path": "/characters/{id}/ops/desperate.mark",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDesperateMark",
+      "method": "POST",
+      "path": "/characters/{id}/ops/desperate.mark",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDesperateMark",
+      "method": "POST",
+      "path": "/characters/{id}/ops/desperate.mark",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDesperateMark",
+      "method": "POST",
+      "path": "/characters/{id}/ops/desperate.mark",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDesperateMark",
+      "method": "POST",
+      "path": "/characters/{id}/ops/desperate.mark",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterDesperateMark",
+      "method": "POST",
+      "path": "/characters/{id}/ops/desperate.mark",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "characterDowntimeAdjust",
       "method": "POST",
       "path": "/characters/{id}/ops/downtime.adjust",
