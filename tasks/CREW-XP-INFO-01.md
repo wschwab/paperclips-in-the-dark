@@ -110,3 +110,7 @@ were not committed here. The campaign is waiting on the human's decision about t
 - The README line "This project reproduces no rulebook text" is now out of date. Entanglements and
   this card both carry SRD text. It was not changed here; it needs a decision.
 - The advancement text is shown in the Resolution step only, not in the crew page.
+
+## Sol 6.1 round 2 (pinned 99c7c2b8): PASS
+
+Verdict: `agent-docs/test-audit/browser-evidence/crew-xp-info-01/sol-6.1/round2/verdict.md`. 0 implementation findings. Live SRD transcription 13/13 strings verbatim; frontend commands pass (vitest, tsc, build); both regression faults detected; Chromium 18/18 (nine linked and nine unlinked cases). The initial probe read 0/18 only because the review probe joined two separate paragraphs into one substring, so the probe was corrected and rerun, and both results are kept. The campaign and repository-wide browser suite were not requested in this review.
