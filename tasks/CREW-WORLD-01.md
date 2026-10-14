@@ -117,8 +117,12 @@ zero page errors; zero horizontal overflow.
 | tsc / build | exit 0 / exit 0 |
 | browser journeys (`npm run test:browser`) | 6/6 |
 | Chromium 3×3 factions editor | 9/9 |
-| mutation campaign 28/28 | see the commit record |
-| Sol 6.1 xhigh review | see the commit record |
+| mutation campaign 28/28 (`npm run test:mutation`, run once, log `tasks/metrics/contract/CREW-WORLD-01-mutation-combined.log`) | 28/28: P0 19/19, P1 9/9, on the pinned tree `a8bf6b39` after the pin refresh; five stale pins refreshed first (pitd_callback.adb, pitd_normalize.adb, pitd_ops.adb, client.ts, components.css) |
+| Sol 6.1 xhigh review | **NOT-RUN**: the Codex CLI returned `usage_limit_reached` at once (`agent-docs/test-audit/browser-evidence/crew-world-01/sol-6.1/stderr.txt`). No other reviewer was substituted. |
+
+## Publication: held
+
+Not pushed. The research commit `8b40e51f` (local, unpushed) holds the research draft with the official names, and it sits below every commit of this card. Pushing `main` would publish those names in history. Removing them needs a rewrite of that unpushed local commit, which needs the human's approval. Once that is decided, the push is origin then radicle, as usual.
 
 ## Limits
 

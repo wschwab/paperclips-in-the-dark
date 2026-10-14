@@ -3,7 +3,7 @@
   "track": "contract + backend + frontend + docs",
   "date": "2026-10-14",
   "implementationAgent": "anthropic/claude-haiku-5-5 (omp worker; takeover of a worker that hit its codex limit mid-flight)",
-  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): see the card",
+  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): NOT-RUN, Codex usage limit at the time of the run",
   "iterationsToGreen": 1,
   "iterationNotes": "The previous worker left the contract, backend, frontend and tests in a partly green state, with its logs. The takeover verified each piece by running it (Ada 11/11, frontend 106/106, tsc 0) and then ran the full gate set. It did not re-author the implementation. The takeover's own changes: the research draft moved out of the repository, the sources page updated for the frozen licence boundary, the Chromium 3×3 factions probe written and run (9/9), and the card and metrics.",
   "defectsCaughtBy": {
@@ -25,11 +25,11 @@
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "passRateAtFirstDoneClaim": "Ada 11/11 and frontend 106/106 on the takeover's first run",
-  "passRateAfterReview": "gates green on this tree before the campaign; campaign and review recorded in the commit record",
+  "passRateAfterReview": "gates green; mutation campaign 28/28 (P0 19/19, P1 9/9); Sol review NOT-RUN",
   "defectCatchingLayer": [
     "Ada conformance",
     "frontend tests",
     "Chromium probe"
   ],
-  "status": "implemented; push held pending the decision on the research commit 8b40e51f"
+  "status": "implemented; mutation 28/28 recorded; Sol review NOT-RUN; push held pending the decision on the research commit 8b40e51f"
 }
