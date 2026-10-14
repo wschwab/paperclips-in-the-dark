@@ -1,0 +1,35 @@
+{
+  "task": "CREW-WORLD-01",
+  "track": "contract + backend + frontend + docs",
+  "date": "2026-10-14",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp worker; takeover of a worker that hit its codex limit mid-flight)",
+  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): see the card",
+  "iterationsToGreen": 1,
+  "iterationNotes": "The previous worker left the contract, backend, frontend and tests in a partly green state, with its logs. The takeover verified each piece by running it (Ada 11/11, frontend 106/106, tsc 0) and then ran the full gate set. It did not re-author the implementation. The takeover's own changes: the research draft moved out of the repository, the sources page updated for the frozen licence boundary, the Chromium 3×3 factions probe written and run (9/9), and the card and metrics.",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0
+  },
+  "notes": "Scope was corrected by the frozen decisions: no official faction or district names ship. The research commit 8b40e51f is local and unpushed and still contains the names, so the push is held pending a decision. A pre-existing playbook Rolodex entry in data/games names districts and NPCs; flagged, not changed.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded",
+    "source": "Ada two-cycle 627/627, tooling 233/233, vitest 972/972, tsc 0, build 0, browser 6/6, gnatprove 246, Chromium 9/9",
+    "locNote": "implementationLoc=unknown",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown",
+    "tokensNote": "tokens recorded as 0"
+  },
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "passRateAtFirstDoneClaim": "Ada 11/11 and frontend 106/106 on the takeover's first run",
+  "passRateAfterReview": "gates green on this tree before the campaign; campaign and review recorded in the commit record",
+  "defectCatchingLayer": [
+    "Ada conformance",
+    "frontend tests",
+    "Chromium probe"
+  ],
+  "status": "implemented; push held pending the decision on the research commit 8b40e51f"
+}

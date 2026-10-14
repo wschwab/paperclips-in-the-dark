@@ -75,11 +75,20 @@ The landing page is `docs/pages/index.mdx`.
 
 Domain semantics, test cases, and game data lean on
 [blades-in-the-sheets](https://github.com/arazni/blades-in-the-sheets) by
-**arazni**, used with permission. SRD content is
-CC-BY per the Blades in the Dark license; Blades in the Dark is by John
-Harper / One Seven Design. This project includes some SRD text under CC-BY 4.0, with attribution:
-the Entanglements tables and descriptions, and the crew advancement guidance. It reproduces no other
-rulebook text.
+**arazni**, used with permission. SRD material is used under
+[Creative Commons Attribution 3.0 Unported](https://creativecommons.org/licenses/by/3.0/),
+as specified by the official [licensing page](https://bladesinthedark.com/licensing).
+This includes the Entanglements tables and descriptions and the crew advancement guidance.
+
+This work is based on Blades in the Dark (found at http://www.bladesinthedark.com/),
+product of One Seven Design, developed and authored by John Harper, and licensed
+for our use under the Creative Commons Attribution 3.0 Unported license
+(http://creativecommons.org/licenses/by/3.0/).
+
+The SRD licence does not grant use of the excluded Duskwall/Shattered Isles setting.
+Official faction/district catalogues are not bundled as application game data.
+See the [crew world sources and options](docs/pages/contract/crew-world-sources.mdx)
+for the verified scope, research-only draft boundary and private-data alternatives.
 
 ## Mirrors
 
