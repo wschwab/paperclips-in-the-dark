@@ -216,5 +216,7 @@ Honest note on red-first: the first red run failed on the test's own recorder, n
 assertion was then made red by the reason text (the old message lacked the reason) and fails before the fix; it passes
 after.
 
-Re-review of the fixed revision: see the DESPERATE-LOG-01 record for the final commit; the LOADOUT re-review is
-pending a new pinned run.
+Round 2 (pinned `f0fb9c1b6070`): **PASS**. `agent-docs/test-audit/browser-evidence/loadout-atomic-01/sol-6.1/round2/verdict.md`.
+Atomic replacements 9/9; guard cases 9/9; cancellation and stale-revision paths verified; no horizontal overflow in 27/27
+measured states; the rejection now shows inside the dialog with the reason and the proposal is kept. The reviewer did not rerun
+the broad parent gates or the mutation campaign.

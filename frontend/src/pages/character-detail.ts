@@ -359,10 +359,10 @@ function renderLoading(): HTMLElement {
 // ---------------------------------------------------------------------------
 
 /**
- * A rejected loadout confirmation keeps the server's reason for each issue, so the GM sees what to change
- * in the open dialog (LOADOUT-ATOMIC-01, Sol P2). Falls back to the generic operation text.
+ * A refused atomic operation keeps the server's reason for each issue, so the GM sees what to change where they
+ * acted (LOADOUT-ATOMIC-01 and DESPERATE-LOG-01, Sol P2). `lead` opens the sentence; falls back to the generic text.
  */
-function loadoutRejectionText(err: OpError): string {
+function issueRejectionText(err: OpError, lead: string): string {
   const details: unknown = err.error.details;
   const reasons: string[] = [];
   if (typeof details === "object" && details !== null && "issues" in details && Array.isArray(details.issues)) {
@@ -372,7 +372,7 @@ function loadoutRejectionText(err: OpError): string {
       }
     }
   }
-  return reasons.length > 0 ? `The loadout was not saved: ${reasons.join("; ")}` : opErrorFriendlyText(err);
+  return reasons.length > 0 ? `${lead}: ${reasons.join("; ")}` : opErrorFriendlyText(err);
 }
 
 /**
@@ -472,6 +472,8 @@ export function mountCharacterDetailPage(
   let gmCrewNotice: string | null = null;
   let gmXpDraft: XpDraft = EMPTY_XP_DRAFT;
   let gmXpTrackerOpen = false;
+  // The last refused Desperate action XP mark, shown inside the XP Tracker (DESPERATE-LOG-01, Sol P2).
+  let gmDesperateError: string | null = null;
   let isXpLoading = false;
   let coinNotice: string | null = null;
   let clocksNotice: string | null = null;
@@ -822,7 +824,7 @@ export function mountCharacterDetailPage(
           renderDetailWrapper();
         },
         () => { isGameModeLoading = false; },
-        loadoutRejectionText,
+        (err) => issueRejectionText(err, "The loadout was not saved"),
       );
     },
     onLoadoutCommitment: (choice) => {
@@ -864,6 +866,7 @@ export function mountCharacterDetailPage(
       if (!currentCharacter || isXpLoading) return;
       isXpLoading = true;
       clearNotices();
+      gmDesperateError = null;
       renderDetailWrapper();
       const program = characterDesperateMark(characterId, attribute, currentCharacter.revision);
       runCharacterMutate(
@@ -874,6 +877,12 @@ export function mountCharacterDetailPage(
           renderDetailWrapper();
         },
         () => { isXpLoading = false; },
+        // A refusal is shown inside the open XP Tracker (Sol P2), as well as in the section error.
+        (err) => {
+          const text = issueRejectionText(err, "Desperate action XP was not marked");
+          gmDesperateError = text;
+          return text;
+        },
       );
     },
     onDowntimeAdjust: (delta, reason) => {
@@ -2247,6 +2256,7 @@ export function mountCharacterDetailPage(
         crewXpTrigger: linkedCrew ? extractExperienceTrigger(null, crewGameTypes, linkedCrew.crewTypeName) : null,
         loadoutChange: gmLoadoutChange,
         loadoutError: gmLoadoutChange !== null && error?.section === "gear" ? formatErrorSummary(error) : null,
+        desperateError: gmDesperateError,
         planApproach: gmPlanApproach,
         crewNotice: gmCrewNotice,
         xpDraft: gmXpDraft,

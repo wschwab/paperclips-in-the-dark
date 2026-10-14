@@ -342,8 +342,9 @@ and the additive parity amendment. Desperate-action XP is one atomic op, `desper
 
 - **Storage.** `session.desperateMarks` is an array of attribute names, one entry per +1 mark. Ada's
   generated validators support arrays of strings but not maps, so an array is the representable
-  form; the UI counts entries per attribute ("+2 Insight XP"). New characters start with `[]`; a
-  missing array is filled with `[]` on read.
+  form; the UI counts entries per attribute ("+2 Insight XP"). New characters start with `[]`. A stored
+  document without the array is `INVALID_ENTITY` on read (nothing is filled silently); the normalization
+  repair (preview, then confirmed) fills `[]` and records the change, as for other missing fields.
 - **Validation.** An attribute that is not one of the character's attribute tracks, or a track already
   at its maximum, is VALIDATION 400 at `/attribute`; nothing changes, including the revision. Stale
   `If-Match` is the existing `STALE_REVISION` 409; `Idempotency-Key` replays return the stored result.

@@ -55,7 +55,8 @@ earlier version, including the contract change and the additive parity amendment
 - **Backend (Ada).** Body check (`attribute`, non-empty), a `desperate.mark` apply branch (one write:
   +1 on the named track and one tally entry; an unknown attribute or a track at its maximum is
   VALIDATION 400 at `/attribute` with no write), `mode.set` into Score clears the tally, the new-character
-  template starts with `[]`, the normaliser fills a missing array with `[]` and reports bad entries,
+  template starts with `[]`, a stored document without the array is `INVALID_ENTITY` on read and only the confirmed
+  normalization repair fills `[]` (Sol P3, verified in the live probe), the normaliser reports bad entries,
   and the callback maps apply-phase VALIDATION to HTTP 400 for this op as it does for `xp.resolve`.
 - **Parity and manifest.** `characterDesperateMark` in `REQUIRED_HUMAN_OPS` (additive, human-approved);
   human sheet-management disposition; route count 114 → 115.
@@ -95,3 +96,32 @@ and desperate.mark control`) pass, and were not seen failing first.
   Score from another mode. A GM who wants a fresh Score tally must leave Score and re-enter it.
 - Desperate marks made during Score are still ordinary attribute XP; `xp.resolve` does not change
   the tally, by design (the human asked for "since the Score started").
+
+## Sol 6.1 review (pinned f0fb9c1b6070): FAIL, fixed
+
+Verdict: `agent-docs/test-audit/browser-evidence/desperate-log-01/sol-6.1/verdict.md`. Its contract and generated
+artefacts, backend semantics (independent live probe 11/11), targeted Ada conformance, and frontend commands passed.
+It blocked on the following, each confirmed, then fixed:
+
+- **P2 (blocking, Chromium 9/9 matrix):** a server refusal of a full track (VALIDATION 400 at `/attribute`) showed only in
+  Talents, behind the inert compact tracker, so the GM saw nothing where they pressed the button. **Fix:** the refusal
+  is also kept in the page state (`gmDesperateError`, set from the mutation's `onApiError`) and rendered as a
+  `role="alert"` inside the XP Tracker (`xp-tracker.ts`, `desperateError` on the game mode UI). The shared
+  `issueRejectionText(err, lead)` gives the server's reason for each issue, the same helper LOADOUT uses. Red first:
+  "a refused mark is shown inside the open XP Tracker" failed on the old code (the sheet did not contain the reason).
+- **P3 (tests):** the clean-cutover check looked for `/ops/xp.`, but the old call is `/ops/attribute-xp.add`. **Fix:** it
+  now checks `/ops/attribute-xp.`. A new test renders the marks list from the server's response (not the request).
+  The conformance cases gained the `/attribute` pointer and the Downtime-to-Score clearing (DESPERATE-008).
+- **P3 (docs):** the card and the proposal page said a missing array is filled on read. The live probe shows a stored
+  document without the array is `INVALID_ENTITY` on read; only the confirmed normalization repair fills `[]`. Both
+  documents are corrected.
+
+Gates after the fix (this tree): Ada two-cycle 615/615 each; tooling 233/233; vitest 964/964; conformance typecheck 0;
+tsc 0; build 0; browser 6/6; the extended desperate conformance file 8/8; Chromium tracker probe with a full-track
+refusal 9/9 (`agent-docs/.../desperate-log-01/check.mjs`: two marks, the track filled to its maximum, one refused press
+with the reason visible inside the open tracker in view, tally and revision unchanged, no attribute-XP request).
+gnatprove was last run on this backend code (246 proved); the backend has not changed since.
+
+Honest note on the frontend ordering: the UI and its tests were still written after the UI (see the ordering note above).
+The Sol review also noted that the earlier backend cases checked fewer invariants than their titles; the cases were
+extended where the review named a gap.

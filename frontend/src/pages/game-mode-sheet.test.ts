@@ -1185,7 +1185,23 @@ describe("DESPERATE-LOG-01 XP Tracker tally and desperate.mark control", () => {
       expect(call!.init.body).toBe(JSON.stringify({ attribute: "Prowess" }));
       expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe(String(dto.revision));
     });
-    expect(calls.filter((c) => c.url.includes("/ops/xp.")).length).toBe(0);
+    expect(calls.filter((c) => c.url.includes("/ops/attribute-xp.")).length).toBe(0);
+  });
+
+  it("the marks list is rendered from the server's response, not from the request", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } });
+    const updated = { ...dto, revision: dto.revision + 1, session: { ...dto.session, desperateMarks: ["Prowess", "Prowess"] } };
+    await mountWith(dto);
+    const original = global.fetch;
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/ops/desperate.mark")) return { ok: true, status: 200, text: async () => JSON.stringify({ ...ORDER_OK, character: updated }) };
+      return original(url, init);
+    }) as unknown as typeof fetch;
+    (Array.from(root.querySelectorAll<HTMLButtonElement>('[data-section="xp-tracker"] button')).find((b) => b.textContent === "+ Desperate action XP") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      const items = Array.from(root.querySelectorAll('[data-section="xp-tracker"] [data-desperate-marks] li')).map((li) => li.textContent);
+      expect(items).toEqual(["+2 Prowess XP"]);
+    });
   });
 });
 
@@ -1225,5 +1241,35 @@ describe("LOADOUT-ATOMIC-01 Sol P2: a rejected confirmation is shown inside the 
       expect(dialog!.textContent).toContain("loadout exceeds the commitment bulk limit");
     });
     expect(box.checked).toBe(true);
+  });
+});
+
+describe("DESPERATE-LOG-01 Sol P2: a refused mark is shown inside the open XP Tracker", () => {
+  it("keeps the tracker open and says why the mark was refused, with no write", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
+    await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
+    const failure = {
+      ok: false, applied: { op: "desperate.mark" }, sideEffects: [],
+      error: { code: "VALIDATION", status: 400, message: "invalid desperate action mark", retryable: false,
+        recovery: "Fix the request per the listed issues and retry.",
+        details: { issues: [{ pointer: "/attribute", reason: "attribute track is at its maximum", expected: "an attribute track below its maximum" }] } },
+    };
+    const original = global.fetch;
+    const posted: string[] = [];
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/ops/desperate.mark")) {
+        posted.push(url);
+        return { ok: false, status: 400, text: async () => JSON.stringify(failure) };
+      }
+      return original(url, init);
+    }) as unknown as typeof fetch;
+    const sheet = () => root.querySelector<HTMLElement>('[data-section="xp-tracker-sheet"]')!;
+    (Array.from(sheet().querySelectorAll<HTMLButtonElement>("button")).find((b) => b.textContent === "+ Desperate action XP") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(posted).toHaveLength(1));
+    await vi.waitFor(() => {
+      expect(sheet()).not.toBeNull();
+      expect(sheet().textContent).toContain("attribute track is at its maximum");
+    });
   });
 });

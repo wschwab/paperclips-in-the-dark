@@ -52,6 +52,8 @@ export interface GameModeUi {
   loadoutChange: LoadoutProposal | null;
   /** The last gear rejection while the confirmation is open (the reason and recovery); null otherwise. */
   loadoutError: string | null;
+  /** The last refused Desperate action XP mark, shown inside the XP Tracker; null otherwise. */
+  desperateError: string | null;
   /** Planning approach picked in the popup (assistance only; not persisted). */
   planApproach: string | null;
   crewNotice: string | null;
@@ -227,7 +229,7 @@ export function renderGameModePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: G
     renderModeSwitch(ctx, gm),
     c.mode === "score" ? renderXpTrackerTab(ctx, gm, ui) : null,
     h("div", { className: "panel-content" }, body),
-    c.mode === "score" ? renderXpTrackerPanel(ctx, gm) : null,
+    c.mode === "score" ? renderXpTrackerPanel(ctx, gm, ui) : null,
     h("p", { className: "small", style: "margin-top: 0.5em;" }, "A table aid, not a rules engine. Nothing here blocks your sheet."),
   );
 }

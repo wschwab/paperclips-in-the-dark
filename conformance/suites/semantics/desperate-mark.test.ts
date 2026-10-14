@@ -48,9 +48,11 @@ describe("DESPERATE-LOG-01 desperate-action XP mark (desperate.mark)", () => {
     );
     expect(res.status).toBe(400);
     expect(res.body).toMatchObject({ ok: false, error: { code: "VALIDATION" } });
+    expect(JSON.stringify(res.body)).toContain('"pointer":"/attribute"');
     const after = await api.character(before.id);
     expect(after.revision).toBe(before.revision);
-    expect(after.session.desperateMarks).toEqual(before.session.desperateMarks);
+    expect(after.session).toEqual(before.session);
+    expect(attributeTrack(after, "Insight")).toEqual(attributeTrack(before, "Insight"));
   });
 
   testCase("DESPERATE-003", "a track already at its maximum is rejected with VALIDATION 400 and nothing changes", async () => {
@@ -125,5 +127,19 @@ describe("DESPERATE-LOG-01 desperate-action XP mark (desperate.mark)", () => {
     );
     expect(res.status).toBe(200);
     expect((await api.character(before.id)).session.desperateMarks).toEqual(withMark.session.desperateMarks);
+  });
+
+  testCase("DESPERATE-008", "entering Score from Downtime also clears the tally", async () => {
+    const before = await scoreCharacter();
+    const marked = await api.post(`characters/${before.id}/ops/desperate.mark`, { attribute: "Prowess" }, { "If-Match": String(before.revision) });
+    expect(marked.status).toBe(200);
+    const inScore = await api.character(before.id);
+    expect(inScore.session.desperateMarks.length).toBeGreaterThan(0);
+    const downtime = await api.characterOp(before.id, "mode.set", { mode: "downtime" }, inScore.revision);
+    expect(downtime.ok).toBe(true);
+    const inDowntime = await api.character(before.id);
+    const back = await api.characterOp(before.id, "mode.set", { mode: "score" }, inDowntime.revision);
+    expect(back.ok).toBe(true);
+    expect((await api.character(before.id)).session.desperateMarks).toEqual([]);
   });
 });

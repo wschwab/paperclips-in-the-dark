@@ -32,7 +32,7 @@ function desperateMarkList(marks: readonly string[]): HTMLElement {
 }
 
 /** Desperate action XP and the expression rows: the content shared by the panel and the sheet. */
-function trackerBody(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement[] {
+function trackerBody(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement[] {
   const { c, handlers } = ctx;
   const attrs = desperateAttributes(ctx.gameData);
   const select = el("select", { "aria-label": "Desperate action attribute", disabled: ctx.anyLoading },
@@ -72,6 +72,7 @@ function trackerBody(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement[] {
     el("p", { className: "small" }, "Pick the attribute you used. It marks 1 XP there now."),
     el("div", { className: "xp-tracker-desperate" }, select, mark),
     desperateMarkList(c.session.desperateMarks),
+    ui.desperateError ? el("p", { className: "small", role: "alert" }, ui.desperateError) : null,
     el("p", { className: "small", style: "margin-top: 0.5em;" }, "1 per trigger, 2 if it happened a lot. Resolution clears them."),
     ...rows,
     el("p", { className: "small" }, el("a", { className: "srd-link", href: SRD.advancement, target: "_blank", rel: "noopener noreferrer" }, "SRD ↗")),
@@ -80,11 +81,11 @@ function trackerBody(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement[] {
 }
 
 /** Wide layout: the panel under the Game mode panel. Hidden on compact screens by CSS. */
-export function renderXpTrackerPanel(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
+export function renderXpTrackerPanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
   return el("section", { className: "xp-tracker-panel", "data-section": "xp-tracker", "aria-label": "XP Tracker" },
     el("h3", { className: "lbl" }, "XP Tracker"),
     el("p", { className: "small scope" }, `${sessionXpTotal(ctx.c)} expression XP this session`),
-    ...trackerBody(ctx, gm));
+    ...trackerBody(ctx, gm, ui));
 }
 
 /** Compact layout: the footer tab that opens the bottom sheet. Hidden on wide screens by CSS. */
@@ -125,7 +126,7 @@ export function renderXpTrackerSheet(ctx: SectionCtx, gm: GameModeHandlers, ui: 
   },
     handle,
     el("header", { className: "xp-tracker-sheet-head" }, el("h2", {}, "XP Tracker"), close),
-    el("div", { className: "xp-tracker-sheet-body" }, ...trackerBody(ctx, gm)));
+    el("div", { className: "xp-tracker-sheet-body" }, ...trackerBody(ctx, gm, ui)));
   // Modal focus containment: Tab wraps inside the dialog; the background is inert while it is open.
   sheet.addEventListener("keydown", (e) => {
     if (e.key !== "Tab") return;
