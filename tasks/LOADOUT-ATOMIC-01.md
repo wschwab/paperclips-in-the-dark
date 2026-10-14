@@ -220,3 +220,9 @@ Round 2 (pinned `f0fb9c1b6070`): **PASS**. `agent-docs/test-audit/browser-eviden
 Atomic replacements 9/9; guard cases 9/9; cancellation and stale-revision paths verified; no horizontal overflow in 27/27
 measured states; the rejection now shows inside the dialog with the reason and the proposal is kept. The reviewer did not rerun
 the broad parent gates or the mutation campaign.
+
+Round 3 (pinned `6afcfb4ec8be`, after the shared rejection helper was generalised for DESPERATE-LOG-01): **PASS**.
+`agent-docs/test-audit/browser-evidence/loadout-atomic-01/sol-6.1/round3/verdict.md`. The loadout confirmation path is
+unchanged in behaviour: 9/9 atomic replacements, the real 400 with the reason inside the open dialog and the proposal
+kept, recovery, cancellation, the none guard, the real 409 handling, keyboard activation, and 27/27 dialog states with no
+horizontal overflow.

@@ -125,3 +125,12 @@ gnatprove was last run on this backend code (246 proved); the backend has not ch
 Honest note on the frontend ordering: the UI and its tests were still written after the UI (see the ordering note above).
 The Sol review also noted that the earlier backend cases checked fewer invariants than their titles; the cases were
 extended where the review named a gap.
+
+## Sol 6.1 round 2 (pinned 6afcfb4ec8be): PASS
+
+Verdict: `agent-docs/test-audit/browser-evidence/desperate-log-01/sol-6.1/round2/verdict.md`. All three round-1 findings are
+resolved. The independent probe passes 13/13 backend checks, 9/9 Chromium (with the full-track refusal visible inside the
+tracker), and the frontend 964/964; typecheck and build exit 0; targeted conformance 8/8. The review records residual test
+limits, not product failures: the permanent conformance file does not inspect snapshot or history contents directly; the
+frontend refusal test does not check pixels, alert semantics, or disk no-write (the Chromium probe does); and the historical
+frontend work preceded its tests (documented above). It did not rerun the full suite, the mutation campaign, or the SPARK proof.
