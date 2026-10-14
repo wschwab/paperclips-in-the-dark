@@ -9,6 +9,8 @@ import {
   crewContactAdd,
   crewContactRemove,
   factionSetStatus,
+  factionSetStarting,
+  getGame,
   factionRemove,
   crewFieldsUpdate,
   crewRepAdd,
@@ -71,6 +73,13 @@ interface ProfileEditingState {
   value: string;
 }
 
+
+export interface FactionDrafts {
+  add: { name: string; tier: string; status: string };
+  rows: Map<string, { tier: string; status: string }>;
+  starting: { ally: string; rival: string } | null;
+  error: string | null;
+}
 export interface RenderState {
   c: Crew;
   anyLoading: boolean;
@@ -87,6 +96,8 @@ export interface RenderState {
   isXpLoading: boolean;
   isContactLoading: boolean;
   isFactionLoading: boolean;
+  factionBounds: { min: number; max: number } | null;
+  factionDrafts: FactionDrafts;
   isProfileLoading: boolean;
   isRepLoading: boolean;
   isHeatLoading: boolean;
@@ -119,7 +130,8 @@ export interface RenderState {
     onDeleteCrew: () => void;
     onContactAdd: () => void;
     onContactRemove: (name: string) => void;
-    onFactionSetStatus: (name: string, status: number) => void;
+    onFactionSetStatus: (name: string, status: number, tier?: number | null, adding?: boolean) => void;
+    onFactionSetStarting: (ally: string, rival: string) => void;
     onFactionRemove: (name: string) => void;
     onProfileEdit: (field: CrewField) => void;
     onProfileSave: () => void;
@@ -267,6 +279,13 @@ export function mountCrewDetailPage(
   let crewTypesData: readonly Record<string, unknown>[] | null = null;
   let crewGameData: Record<string, unknown> | null = null;
   let crewCaps: CrewCapabilities | null = null;
+  let factionBounds: { min: number; max: number } | null = null;
+  const factionDrafts: FactionDrafts = {
+    add: { name: "", tier: "", status: "0" },
+    rows: new Map(),
+    starting: null,
+    error: null,
+  };
   let editingProfile: ProfileEditingState | null = null;
   let editingCohortId: string | null = null;
   // CREW-04: advancement-edit mode gates ability removal / upgrade unmarking;
@@ -427,6 +446,8 @@ export function mountCrewDetailPage(
       isDeleteLoading,
       isContactLoading,
       isFactionLoading,
+      factionBounds,
+      factionDrafts,
       isProfileLoading,
       isRepLoading,
       isHeatLoading,
@@ -579,13 +600,13 @@ export function mountCrewDetailPage(
       );
     },
 
-    onFactionSetStatus: (name: string, status: number) => {
+    onFactionSetStatus: (name: string, status: number, tier?: number | null, adding = false) => {
       if (!currentCrew || isFactionLoading) return;
       isFactionLoading = true;
       clearNotices();
       renderDetail();
 
-      const program = factionSetStatus(crewId, name, status, currentCrew.revision);
+      const program = factionSetStatus(crewId, name, status, currentCrew.revision, tier);
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => onOpFailure(err, () => { isFactionLoading = false; }),
@@ -593,6 +614,9 @@ export function mountCrewDetailPage(
             if (cancelled) return;
             isFactionLoading = false;
             currentCrew = result.crew;
+            factionDrafts.rows.delete(name);
+            if (adding) factionDrafts.add = { name: "", tier: "", status: "0" };
+            factionDrafts.error = null;
             if (result.effective !== result.requested) {
               noticeMsg = `Faction status clamped to ${result.effective} (requested ${result.requested})`;
               setTimeout(() => {
@@ -602,6 +626,25 @@ export function mountCrewDetailPage(
                 }
               }, 5000);
             }
+            renderDetail();
+          },
+        }),
+      );
+    },
+
+    onFactionSetStarting: (ally: string, rival: string) => {
+      if (!currentCrew || isFactionLoading) return;
+      isFactionLoading = true;
+      clearNotices();
+      renderDetail();
+      void Effect.runPromise(
+        Effect.match(factionSetStarting(crewId, ally, rival, currentCrew.revision), {
+          onFailure: (err) => onOpFailure(err, () => { isFactionLoading = false; }),
+          onSuccess: (crew) => {
+            if (cancelled) return;
+            isFactionLoading = false;
+            currentCrew = crew;
+            factionDrafts.starting = null;
             renderDetail();
           },
         }),
@@ -622,6 +665,7 @@ export function mountCrewDetailPage(
             if (cancelled) return;
             isFactionLoading = false;
             currentCrew = crew;
+            factionDrafts.rows.delete(name);
             renderDetail();
           },
         }),
@@ -1059,7 +1103,8 @@ export function mountCrewDetailPage(
       // catalogs, effective turf, develop threshold). Advisory — degrade
       // gracefully when it's unavailable.
       const caps = yield* Effect.either(getCrewCapabilities(crewId));
-      return { crew, crewType, gameData, caps };
+      const coreGame = yield* Effect.either(getGame(crew.gameStem));
+      return { crew, crewType, gameData, caps, coreGame };
     });
 
     void Effect.runPromise(
@@ -1082,10 +1127,20 @@ export function mountCrewDetailPage(
             }),
           );
         },
-        onSuccess: ({ crew, crewType, gameData, caps }) => {
+        onSuccess: ({ crew, crewType, gameData, caps, coreGame }) => {
           if (cancelled) return;
           root.setAttribute("aria-busy", "false");
           currentCrew = crew;
+          if (coreGame._tag === "Right") {
+            const range = coreGame.right.FactionStatus;
+            if (typeof range === "object" && range !== null && !Array.isArray(range)) {
+              const { Min, Max } = range as Record<string, unknown>;
+              if (typeof Min === "number" && typeof Max === "number" &&
+                  Number.isSafeInteger(Min) && Number.isSafeInteger(Max) && Min <= Max) {
+                factionBounds = { min: Min, max: Max };
+              }
+            }
+          }
           if (caps._tag === "Right") {
             crewCaps = caps.right;
           }

@@ -41,6 +41,7 @@ const Contact = Schema.Struct({
 const Faction = Schema.Struct({
   name: Schema.String.pipe(Schema.minLength(1)),
   status: Schema.Number.pipe(Schema.int()),
+  tier: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0))),
 });
 
 const Cohort = Schema.Struct({
@@ -94,6 +95,7 @@ export const Crew = Schema.Struct({
   cohorts: Schema.Array(Cohort),
   contacts: Schema.Array(Contact),
   factions: Schema.Array(Faction),
+  startingFactions: Schema.optional(Schema.Struct({ ally: Schema.String, rival: Schema.String })),
   coin: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   stash: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   // CONTRACT-04 (2026-08-25): write-time derived from the crew's own Vault

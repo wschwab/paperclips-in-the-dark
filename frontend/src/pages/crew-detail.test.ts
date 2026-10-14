@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock, type MockInstance } from "vitest";
-import { mountCrewDetailPage } from "./crew-detail.js";
+import { mountCrewDetailPage as mountCrewDetailPageImpl } from "./crew-detail.js";
 import { loadStylesheets } from "./seam.js";
 
 // ---------------------------------------------------------------------------
@@ -65,6 +65,19 @@ function deferred<T>(): [Promise<T>, (value: T) => void] {
   return [promise, resolve];
 }
 
+
+/** Keep legacy queued operation responses independent of the new core-game
+ * advisory GET. The dedicated crew-world suite owns bounds responses. */
+function mountCrewDetailPage(root: HTMLElement, crewId: string): () => void {
+  const queuedFetch = global.fetch;
+  global.fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+    if (String(input) === "/api/games/blades-in-the-dark") {
+      return Promise.resolve(ok({}) as Response);
+    }
+    return queuedFetch(input, init);
+  });
+  return mountCrewDetailPageImpl(root, crewId);
+}
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -2609,8 +2622,9 @@ describe("crew-detail page", () => {
         const err = root.querySelector(".notice");
         expect(err?.textContent).toContain("INSUFFICIENT_FUNDS");
       });
-      // tier 2 → cost (2+1)*8 = 24 > coin 5; nothing was posted (4 load fetches: crew, crewType, gameData, capabilities)
-      expect((global.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(4);
+      // No operations were posted: crew, crewType, gameData, capabilities,
+      // and the independently mocked core-game bounds advisory GET.
+      expect((global.fetch as Mock).mock.calls.length).toBe(5);
     });
   });
 

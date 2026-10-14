@@ -871,17 +871,93 @@
   flex: 1 1 10em;
 }
 
-/* Faction rows share the contact rows' constraint: the status <input> keeps a
- * large intrinsic min-content width (browser default min-width: auto), so it
- * must shrink around the Set/remove buttons on a narrow sheet instead of
- * bleeding past the card (FV-014). Only the status input gets shrink rules;
- * the name/status spans and buttons keep their natural sizing. */
+/* Tracked faction controls retain the established narrow-input sizing
+ * contract; labels and wrapping below own the expanded row layout. */
 .faction-entry {
   min-width: 0;
 }
 .faction-entry input {
   min-width: 0;
   flex: 1 1 10em;
+}
+
+/* Manual faction records remain one compact row when space permits and
+ * reflow into labelled fields on a narrow sheet. */
+.faction-entry,
+.faction-add-row,
+.starting-factions-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.5em;
+  min-width: 0;
+  margin-top: 0.75em;
+}
+.faction-entry {
+  padding-top: 0.75em;
+  border-top: 1px solid var(--rule);
+}
+.faction-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 7em;
+  min-width: 0;
+  gap: 0.25em;
+  color: var(--text);
+}
+.faction-field input,
+.faction-field select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.faction-entry .faction-field input {
+  /* The input's historic flex sizing contract remains intact; the label
+   * owns the row's flex sizing, not the vertical input height. */
+  flex: 1 1 10em;
+  max-height: 2.75em;
+}
+.faction-name-field {
+  flex-basis: 14em;
+}
+.faction-name {
+  flex: 1 1 12em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  align-self: center;
+}
+.faction-status {
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+}
+.starting-factions-current {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 2em;
+  margin-bottom: 0.5em;
+}
+.starting-factions-current p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.faction-bounds {
+  margin-top: 1em;
+}
+.faction-validation[hidden] {
+  display: none;
+}
+@media (max-width: 480px) {
+  .faction-name,
+  .faction-name-field {
+    flex-basis: 100%;
+  }
+  .starting-factions-edit .faction-field {
+    flex-basis: 100%;
+  }
+  .starting-factions-edit button {
+    width: 100%;
+  }
 }
 
 /* Harm add controls (FV-015): the native intensity select keeps an

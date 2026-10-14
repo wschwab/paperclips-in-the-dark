@@ -1202,6 +1202,7 @@ export function factionSetStatus(
   name: string,
   status: number,
   revision: number,
+  tier?: number | null,
 ): Effect.Effect<FactionSetStatusResult, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
     const opResult = yield* fetchOperation(`/api/crews/${id}/ops/faction.set-status`, {
@@ -1211,7 +1212,7 @@ export function factionSetStatus(
         "Content-Type": "application/json",
         "If-Match": String(revision),
       },
-      body: JSON.stringify({ name, status }),
+      body: JSON.stringify({ name, status, ...(tier === undefined ? {} : { tier }) }),
     });
     if (!opResult.crew) {
       return yield* Effect.fail(new DecodeError(new Error("Missing crew in OperationResult")));
@@ -1220,6 +1221,16 @@ export function factionSetStatus(
     const effective = opResult.applied.effective ?? requested;
     return { crew: opResult.crew, requested, effective };
   });
+}
+
+/** Record explicit starting relationships, independently of current status. */
+export function factionSetStarting(
+  id: string,
+  ally: string,
+  rival: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "faction.set-starting", revision, { ally, rival });
 }
 
 export function factionRemove(
