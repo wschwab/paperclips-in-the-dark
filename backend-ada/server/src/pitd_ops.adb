@@ -57,6 +57,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "contact.add" or else Op = "contact.remove"
         or else Op = "contact.closeness"
         or else Op = "faction.set-status" or else Op = "faction.remove"
+        or else Op = "faction.set-starting"
         or else Op = "end-score" or else Op = "end-downtime"
         or else Op = "retire"
         or else Op = "mode.set" or else Op = "mode.flow.set"
@@ -595,9 +596,23 @@ elsif Op = "clock.create" then
                                   Spec ("closeness", JSON_String_Type, En => "enemy|rival|contact|friend|confidante")), Bad);
       elsif Op = "contact.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
+      elsif Op = "faction.set-starting" then
+         if Kind /= "crew" then
+            Bad := To_Unbounded_String ("crew-only operation");
+            return False;
+         end if;
+         return Check_Fields (B, (Spec ("ally", JSON_String_Type),
+                                  Spec ("rival", JSON_String_Type)), Bad);
       elsif Op = "faction.set-status" then
-         return Check_Fields (B, (Spec ("name", JSON_String_Type, MnL => 1),
-                                  Spec ("status", JSON_Int_Type)), Bad);
+         return Check_Fields
+           (B, (Spec ("name", JSON_String_Type, MnL => 1),
+                Spec ("status", JSON_Int_Type),
+                Spec ("tier",
+                      (if B.Kind = JSON_Object_Type
+                          and then Has_Field (B, "tier")
+                          and then Get (B, "tier").Kind = JSON_Null_Type
+                       then JSON_Null_Type else JSON_Int_Type),
+                      MnI => 0, Rq => False)), Bad);
       elsif Op = "faction.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "upgrade.mark" or else Op = "upgrade.unmark" then
@@ -1375,8 +1390,123 @@ elsif Op = "harm.add" then
          end;
       elsif Op="contact.add" then declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);Name:constant String:=Str_Field(B,"name");begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then return Duplicate_Error(Op,"contact already exists",E);end if;end loop;declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin Set_Field(X,"name",Name);Set_Field(X,"profession",Str_Field(B,"profession"));Append(O,X);Set_Field(E,"contacts",O);end;end;
       elsif Op="contact.remove" then declare A:constant JSON_Array:=(if Has_Field(E,"contacts") then Get(E,"contacts") else Empty_Array);O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Not_Found_Error(Op,"contact not found",E);end if;Set_Field(E,"contacts",O);end;
-      elsif Op="faction.set-status" then declare G:constant JSON_Value:=Game(Str_Field(E,"gameStem"));Lo:Integer:=Integer'First;Hi:Integer:=Integer'Last;begin if G.Kind=JSON_Object_Type and then Has_Field(G,"FactionStatus") then declare FS:constant JSON_Value:=Get(G,"FactionStatus");begin Lo:=Int_Field(FS,"Min",Integer'First);Hi:=Int_Field(FS,"Max",Integer'Last);end;end if;declare A:constant JSON_Array:=(if Has_Field(E,"factions") then Get(E,"factions") else Empty_Array);Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin Requested:=Int_Field(B,"status");Effective:=Integer'Min(Integer'Max(Requested,Lo),Hi);for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Set_Field(Get(A,I),"status",Effective);Found:=True;end if;end loop;if not Found then declare X:JSON_Value:=Create_Object;O:JSON_Array:=A;begin Set_Field(X,"name",Name);Set_Field(X,"status",Effective);Append(O,X);Set_Field(E,"factions",O);end;end if;end;return Success_Result(Op,E,Requested,Effective);end;
-      elsif Op="faction.remove" then declare A:constant JSON_Array:=(if Has_Field(E,"factions") then Get(E,"factions") else Empty_Array);O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop if Str_Field(Get(A,I),"name")=Name then Found:=True;else Append(O,Get(A,I));end if;end loop;if not Found then return Not_Found_Error(Op,"faction not found",E);end if;Set_Field(E,"factions",O);end;
+      elsif Op = "faction.set-starting" then
+         declare
+            A : constant JSON_Array :=
+              (if Has_Field (E, "factions") then Get (E, "factions") else Empty_Array);
+            Issues : JSON_Array := Empty_Array;
+            procedure Check_Choice (Role : String) is
+               Name : constant String := Str_Field (B, Role);
+            begin
+               if Name = "" then return; end if;
+               for I in 1 .. Length (A) loop
+                  if Str_Field (Get (A, I), "name") = Name then return; end if;
+               end loop;
+               Append (Issues, Issue_At ("/" & Role, "unknown faction",
+                                         "one of the crew's tracked faction names"));
+            end Check_Choice;
+         begin
+            if Kind /= "crew" then
+               return Validation_Error (Op, "crew-only operation",
+                                        Root_Issues ("crew-only operation"), E);
+            end if;
+            Check_Choice ("ally");
+            Check_Choice ("rival");
+            if Length (Issues) > 0 then
+               return Validation_Error (Op, "invalid starting factions", Issues, E);
+            end if;
+            declare Starting : constant JSON_Value := Create_Object; begin
+               Set_Field (Starting, "ally", Str_Field (B, "ally"));
+               Set_Field (Starting, "rival", Str_Field (B, "rival"));
+               Set_Field (E, "startingFactions", Starting);
+            end;
+         end;
+      elsif Op = "faction.set-status" then
+         declare
+            G : constant JSON_Value := Game (Str_Field (E, "gameStem"));
+            Lo : Integer := Integer'First;
+            Hi : Integer := Integer'Last;
+            A : constant JSON_Array :=
+              (if Has_Field (E, "factions") then Get (E, "factions") else Empty_Array);
+            O : JSON_Array := Empty_Array;
+            Name : constant String := Str_Field (B, "name");
+            Has_Tier : constant Boolean := Has_Field (B, "tier");
+            Clear_Tier : constant Boolean :=
+              Has_Tier and then Get (B, "tier").Kind = JSON_Null_Type;
+            Found : Boolean := False;
+         begin
+            if G.Kind = JSON_Object_Type and then Has_Field (G, "FactionStatus") then
+               declare FS : constant JSON_Value := Get (G, "FactionStatus"); begin
+                  Lo := Int_Field (FS, "Min", Integer'First);
+                  Hi := Int_Field (FS, "Max", Integer'Last);
+               end;
+            end if;
+            Requested := Int_Field (B, "status");
+            Effective := Integer'Min (Integer'Max (Requested, Lo), Hi);
+            for I in 1 .. Length (A) loop
+               declare
+                  X : JSON_Value := Get (A, I);
+               begin
+                  if Str_Field (X, "name") = Name then
+                     if Clear_Tier then
+                        --  Only the optional tier is removed; no deep copy is needed.
+                        X := Create_Object;
+                        Set_Field (X, "name", Name);
+                     elsif Has_Tier then
+                        Set_Field (X, "tier", Int_Field (B, "tier"));
+                     end if;
+                     Set_Field (X, "status", Effective);
+                     Found := True;
+                  end if;
+                  if Clear_Tier then Append (O, X); end if;
+               end;
+            end loop;
+            if not Found then
+               declare
+                  X : JSON_Value := Create_Object;
+                  Entries : JSON_Array := (if Clear_Tier then O else A);
+               begin
+                  Set_Field (X, "name", Name);
+                  Set_Field (X, "status", Effective);
+                  if Has_Tier and then not Clear_Tier then
+                     Set_Field (X, "tier", Int_Field (B, "tier"));
+                  end if;
+                  Append (Entries, X);
+                  Set_Field (E, "factions", Entries);
+               end;
+            elsif Clear_Tier then
+               Set_Field (E, "factions", O);
+            end if;
+            return Success_Result (Op, E, Requested, Effective);
+         end;
+      elsif Op = "faction.remove" then
+         declare
+            A : constant JSON_Array :=
+              (if Has_Field (E, "factions") then Get (E, "factions") else Empty_Array);
+            O : JSON_Array := Empty_Array;
+            Name : constant String := Str_Field (B, "name");
+            Found : Boolean := False;
+         begin
+            for I in 1 .. Length (A) loop
+               if Str_Field (Get (A, I), "name") = Name then
+                  Found := True;
+               else
+                  Append (O, Get (A, I));
+               end if;
+            end loop;
+            if not Found then return Not_Found_Error (Op, "faction not found", E); end if;
+            Set_Field (E, "factions", O);
+            if Has_Field (E, "startingFactions") then
+               declare Starting : constant JSON_Value := Get (E, "startingFactions"); begin
+                  if Str_Field (Starting, "ally") = Name then
+                     Set_Field (Starting, "ally", "");
+                  end if;
+                  if Str_Field (Starting, "rival") = Name then
+                     Set_Field (Starting, "rival", "");
+                  end if;
+               end;
+            end if;
+         end;
       elsif Op="dossier.update" then declare D:constant JSON_Value:=Get(E,"dossier");procedure Copy(Name:UTF8_String;Value:JSON_Value)is begin if Has_Field(D,Name) then Set_Field(D,Name,Clone(Value));end if;end;begin if Str_Field(B,"crewId")/="" and then Read_Entity("crew",Str_Field(B,"crewId")).Kind/=JSON_Object_Type then return Validation_Error(Op,"unknown crew",Root_Issues("unknown crew"),E);end if;Map_JSON_Object(B,Copy'Access);end;
       elsif Op = "note.add" or else Op = "note.remove" then
          declare

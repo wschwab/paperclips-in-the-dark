@@ -1,0 +1,104 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/pages/crew-world.test.ts (5 tests | 5 failed) 3025ms
+   × crew world records > strictly decodes optional starting records and nonnegative unbounded tier 13ms
+     → Crew
+└─ ["startingFactions"]
+   └─ is unexpected, expected: "kind" | "id" | "gameStem" | "gameName" | "language" | "revision" | "formatVersion" | "createdAt" | "updatedAt" | "crewTypeName" | "name" | "lair" | "reputation" | "huntingGrounds" | "tier" | "hold" | "heat" | "wanted" | "rep" | "turf" | "experience" | "specialAbilities" | "upgrades" | "cohorts" | "contacts" | "factions" | "coin" | "stash" | "stashCapacity" | "notes" | "claimedClaimIds" | "claimOverrides"
+   × crew world records > sends one exact starting pair and preserves the legacy status helper signature 1ms
+     → (0 , factionSetStarting) is not a function
+   × crew world records > loads core bounds, offers only tracked names, and retains failed drafts 1005ms
+     → expected undefined to be '7' // Object.is equality
+   × crew world records > keeps manual entry usable without bounds and rejects fractional tiers 1003ms
+     → expected 'Blades in the DarkThe Red SashesAssas…' to contain 'Status bounds unavailable'
+   × crew world records > saves both starting choices together without changing faction status 1001ms
+     → expected null not to be null
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  01:11:50
+   Duration  3.57s (transform 126ms, setup 0ms, collect 284ms, tests 3.02s, environment 99ms, prepare 57ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-world.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > strictly decodes optional starting records and nonnegative unbounded tier
+ParseError: Crew
+└─ ["startingFactions"]
+   └─ is unexpected, expected: "kind" | "id" | "gameStem" | "gameName" | "language" | "revision" | "formatVersion" | "createdAt" | "updatedAt" | "crewTypeName" | "name" | "lair" | "reputation" | "huntingGrounds" | "tier" | "hold" | "heat" | "wanted" | "rep" | "turf" | "experience" | "specialAbilities" | "upgrades" | "cohorts" | "contacts" | "factions" | "coin" | "stash" | "stashCapacity" | "notes" | "claimedClaimIds" | "claimOverrides"
+ ❯ onLeft node_modules/effect/src/ParseResult.ts:266:62
+ ❯ body node_modules/effect/src/Either.ts:1023:9
+ ❯ Module.getOrThrowWith node_modules/effect/src/Function.ts:245:18
+ ❯ node_modules/effect/src/ParseResult.ts:481:12
+ ❯ src/pages/crew-world.test.ts:19:12
+     17|     const base = fixture();
+     18|     expect(decodeCrew(base).startingFactions).toBeUndefined();
+     19|     expect(decodeCrew({ ...base, startingFactions: { ally: "", rival: …
+       |            ^
+     20|     for (const startingFactions of [{ ally: "" }, { ally: "", rival: "…
+     21|       expect(() => decodeCrew({ ...base, startingFactions })).toThrow(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > sends one exact starting pair and preserves the legacy status helper signature
+TypeError: (0 , factionSetStarting) is not a function
+ ❯ src/pages/crew-world.test.ts:33:31
+     31|     vi.stubGlobal("fetch", fetch);
+     32|     try {
+     33|       await Effect.runPromise(factionSetStarting(crew.id, "", "", crew…
+       |                               ^
+     34|       expect(fetch.mock.calls[0]?.[0]).toBe(`/api/crews/${crew.id}/ops…
+     35|       expect(JSON.parse(fetch.mock.calls[0]?.[1].body)).toEqual({ ally…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > loads core bounds, offers only tracked names, and retains failed drafts
+AssertionError: expected undefined to be '7' // Object.is equality
+
+[32m- Expected:[39m 
+"7"
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ src/pages/crew-world.test.ts:56:116
+     54|     const dispose = mountCrewDetailPage(root, crew.id);
+     55|     try {
+     56|       await vi.waitFor(() => expect(root.querySelector('input[aria-lab…
+       |                                                                                                                    ^
+     57|       expect(root.querySelector(".starting-factions-current")?.textCon…
+     58|       expect(Array.from(root.querySelectorAll('select[aria-label="Star…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > keeps manual entry usable without bounds and rejects fractional tiers
+AssertionError: expected 'Blades in the DarkThe Red SashesAssas…' to contain 'Status bounds unavailable'
+
+Expected: [32m"Status bounds unavailable"[39m
+Received: [31m"Blades in the DarkThe Red SashesAssassinsTier 0HistoryProfileName: The Red Sashes✎Lair: A hidden cellar in Silk Shore✎Hunting grounds: Charterhall✎Reputation: BrutalSetNotes(no notes)Add noteTrackersRep & Turf3 / 12−1+12 / 6−1+1Turf is measured from the right: each turf lowers the rep develop threshold by one.develop at 10 rep (12 − 2 turf)DevelopHeat4 / 9−1+1Wanted1 / 4−1+1Tier0−1+1HoldWeakStrongFundCoin:4 / 4−1+1Stash:0 / 4−1+1ClaimsNo claims map available for this crew type.PlaybookEdit advancementsSpecial AbilitiesPredatorsNo description available.Ability+No description available.UpgradesQuality: Weapons1 / 1No description available for Quality: Weapons.+Cohort (Gang or Expert)1 / 1No description available for Cohort (Gang or Expert).+Upgrade+Lair ChartThe lair chart is a rendering of the crew type's Upgrades data (mark/unmark one box per click).Quality: Weapons1 / 1Cohort (Gang or Expert)1 / 1CohortsGangThugsQuality 0Scale 1No armorEdges: FearsomeFlaws: SavageHarm: healthyA gang of street thugs✎✕Add CohortKind*gangexpertTypeGang typeAdeptsRooksRoversSkullsThugsTypeExpert typeDoctorInvestigatorOccultistAssassinSpyCustomCustom typeQualityScaleArmorEdgesFlawsDescription+Crew XP2 / 10−1+1clearContacts & FactionsContactsRolan Wottmagistrate✕+Factions(no factions)ActionsUndo last changeDelete crew"[39m
+
+ ❯ src/pages/crew-world.test.ts:80:55
+     78|     const dispose = mountCrewDetailPage(root, crew.id);
+     79|     try {
+     80|       await vi.waitFor(() => expect(root.textContent).toContain("Statu…
+       |                                                       ^
+     81|       const status = root.querySelector<HTMLInputElement>('input[aria-…
+     82|       expect(status.hasAttribute("min")).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > saves both starting choices together without changing faction status
+AssertionError: expected null not to be null
+ ❯ src/pages/crew-world.test.ts:109:99
+    107|     const dispose = mountCrewDetailPage(root, crew.id);
+    108|     try {
+    109|       await vi.waitFor(() => expect(root.querySelector('select[aria-la…
+       |                                                                                                   ^
+    110|       for (const [label, value] of [["Starting ally", "Home ally"], ["…
+    111|         const select = root.querySelector<HTMLSelectElement>(`select[a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

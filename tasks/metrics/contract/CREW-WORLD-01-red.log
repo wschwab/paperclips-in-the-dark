@@ -1,0 +1,194 @@
+OK: canonical managed launcher
+[managed-run] runId=2026-10-14T22-07-04-129Z-199b20cd
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=CREW-WORLD-01-working
+[managed-run] testCommand=--run suites/semantics/crew-starting-factions.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd/data (dir)
+[managed-run] port=33163
+[managed-run] baseUrl=http://127.0.0.1:33163
+[managed-run] pid=3045952
+[managed-run] ready=http://127.0.0.1:33163
+[managed-run] vitestPid=3046019
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ × suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-001] saves both names in one crew revision and snapshot without touching other crew state 28ms
+   → expected 400 to be 200 // Object.is equality
+ × suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-002] survives canonical reload and later status changes without deriving roles from status 5ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-003] replaces or clears the pair atomically and undo restores the previous names 5ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-004] idempotent replay under the old revision returns the same result with one write 4ms
+   → expected 400 to be 200 // Object.is equality
+ ✓ suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-005] stale If-Match cannot overwrite the pair 4ms
+ ✓ suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-006] missing, mistyped or extra body fields return existing VALIDATION400 without mutation 7ms
+ × suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-007] batch rollback does not persist a starting pair when another member fails 4ms
+   → expected undefined to deeply equal [ true, false ]
+ × suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-008] crew schema admits the optional typed pair while old crews remain valid and nested extras do not 4ms
+   → expected [ Array(1) ] to deeply equal []
+ × suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-TIER-009] existing status upsert records optional tier, preserves it when omitted and clears it explicitly 3ms
+   → expected 400 to be 200 // Object.is equality
+ ✓ suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-TIER-010] negative, fractional or nonnumeric tiers cannot partially change faction status 7ms
+ ✓ suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-011] a nonempty starting choice must come from this crew's own faction list 4ms
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 4 passed (11)
+   Start at  01:07:04
+   Duration  456ms (transform 52ms, setup 0ms, collect 278ms, tests 75ms, environment 0ms, prepare 28ms)
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/semantics/crew-starting-factions.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-001] saves both names in one crew revision and snapshot without touching other crew state
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ suites/semantics/crew-starting-factions.test.ts:29:29
+     27|     const oldHistory = await history(before.id);
+     28|     const response = await api.post(operationPath(before.id), names, {…
+     29|     expect(response.status).toBe(200);
+       |                             ^
+     30|     const result = await api.operation(response);
+     31|     expect(result.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-002] survives canonical reload and later status changes without deriving roles from status
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ suites/semantics/crew-starting-factions.test.ts:41:22
+     39|     const before = await preparedCrew();
+     40|     const saved = await api.operation(await api.post(operationPath(bef…
+     41|     expect(saved.ok).toBe(true);
+       |                      ^
+     42|     const range = factionStatusRange(BLADES)!;
+     43|     const status = await api.crewOp(before.id, "faction.set-status", {…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-003] replaces or clears the pair atomically and undo restores the previous names
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ suites/semantics/crew-starting-factions.test.ts:56:22
+     54|     const before = await preparedCrew();
+     55|     const first = await api.operation(await api.post(operationPath(bef…
+     56|     expect(first.ok).toBe(true);
+       |                      ^
+     57|     const previous = first.crew!;
+     58|     const cleared = await api.operation(await api.post(operationPath(b…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-004] idempotent replay under the old revision returns the same result with one write
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ suites/semantics/crew-starting-factions.test.ts:71:26
+     69|     const headers = { "If-Match": String(before.revision), "Idempotenc…
+     70|     const first = await api.post(operationPath(before.id), names, head…
+     71|     expect(first.status).toBe(200);
+       |                          ^
+     72|     const repeated = await api.post(operationPath(before.id), names, h…
+     73|     expect(repeated.status).toBe(200);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-007] batch rollback does not persist a starting pair when another member fails
+AssertionError: expected undefined to deeply equal [ true, false ]
+
+[32m- Expected:[39m 
+[
+  true,
+  false,
+]
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ suites/semantics/crew-starting-factions.test.ts:103:73
+    101|       { op: "not-a-registered-operation", body: {} },
+    102|     ] }, { "If-Match": String(before.revision) });
+    103|     expect((await api.operation(response)).batch?.map(item => item.ok)…
+       |                                                                         ^
+    104|     expect(await api.crew(before.id)).toEqual(before);
+    105|     expect(await history(before.id)).toEqual(oldHistory);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-STARTING-008] crew schema admits the optional typed pair while old crews remain valid and nested extras do not
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   "/ must NOT have additional properties",[39m
+[31m+ ][39m
+
+ ❯ suites/semantics/crew-starting-factions.test.ts:111:77
+    109|     const before = await preparedCrew();
+    110|     expect(validate("crew", before).errors).toEqual([]);
+    111|     expect(validate("crew", { ...before, startingFactions: names }).er…
+       |                                                                             ^
+    112|     expect(validate("crew", { ...before, startingFactions: { ally: "",…
+    113|     for (const startingFactions of [{ ally: names.ally }, { ...names, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  suites/semantics/crew-starting-factions.test.ts > CREW-WORLD-01 starting faction names are historical records, not current status > [CREW-WORLD-TIER-009] existing status upsert records optional tier, preserves it when omitted and clears it explicitly
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ suites/semantics/crew-starting-factions.test.ts:122:29
+    120|     const range = factionStatusRange(BLADES)!;
+    121|     const response = await api.post(`crews/${before.id}/ops/faction.se…
+    122|     expect(response.status).toBe(200);
+       |                             ^
+    123|     const set = await api.operation(response);
+    124|     expect(set.ok).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd dataDir=/tmp/pitd-managed/2026-10-14T22-07-04-129Z-199b20cd/data port=33163
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-14T22-07-04-129Z-199b20cd-server.log

@@ -204,14 +204,15 @@ package body Pitd_Normalize is
      "updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|" &
     "heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|" &
     "stash|stashCapacity|notes|turf|contacts|factions|claimedClaimIds|" &
-    "claimOverrides|";
+    "claimOverrides|startingFactions|";
    Allowed_Spec_Ability : constant String := "|name|timesTaken|";
    Allowed_Upgrade : constant String := "|name|boxesMarked|";
    Allowed_Cohort : constant String :=
      "|id|cohortKind|gangType|expertType|quality|scale|hasArmor|edges|flaws|" &
      "harm|description|";
    Allowed_Contact : constant String := "|name|profession|";
-   Allowed_Faction : constant String := "|name|status|";
+   Allowed_Faction : constant String := "|name|status|tier|";
+   Allowed_Starting_Factions : constant String := "|ally|rival|";
    Allowed_Override : constant String := "|claimId|name|description|effects|";
    Allowed_Clock : constant String :=
      "|kind|id|revision|formatVersion|createdAt|updatedAt|name|ownerKind|" &
@@ -1390,6 +1391,15 @@ package body Pitd_Normalize is
       List_Removals (V, Ptr, Allowed_Faction, C);
       Set_Field (X, "name", N_Str_Required (V, "name", Ptr & "/name", C));
       Set_Field (X, "status", N_Faction_Status (V, Ptr & "/status", S, C));
+      if Has_Field (V, "tier") then
+         if Get (V, "tier").Kind = JSON_Null_Type then
+            Add_Needs (C, Ptr & "/tier", "wrong type: expected an integer",
+                       "a nonnegative integer or an absent tier");
+            Set_Field (X, "tier", JSON_Null);
+         else
+            Set_Field (X, "tier", N_Int (V, "tier", Ptr & "/tier", 0, C, Min => 0));
+         end if;
+      end if;
       return X;
    end Faction_Item;
 
@@ -2273,6 +2283,28 @@ package body Pitd_Normalize is
                                          Contact_Item'Access, L6 => True));
       Set_Field (O, "factions", N_Items (V, "factions", "", "/factions", S, C,
                                          Faction_Item'Access, L6 => True));
+      --  Absence is a legacy unrecorded choice, not an empty starting record.
+      if Has_Field (V, "startingFactions") then
+         declare
+            Src : constant JSON_Value := Get (V, "startingFactions");
+            Starting : JSON_Value := Create_Object;
+         begin
+            if Src.Kind = JSON_Object_Type then
+               List_Removals (Src, "/startingFactions", Allowed_Starting_Factions, C);
+               Set_Field (Starting, "ally",
+                          N_Str_Required (Src, "ally", "/startingFactions/ally", C,
+                                          Min_Len => 0));
+               Set_Field (Starting, "rival",
+                          N_Str_Required (Src, "rival", "/startingFactions/rival", C,
+                                          Min_Len => 0));
+               Set_Field (O, "startingFactions", Starting);
+            else
+               Add_Needs (C, "/startingFactions", "wrong type: expected an object",
+                          "an object with ally and rival strings");
+               Set_Field (O, "startingFactions", Clone (Src));
+            end if;
+         end;
+      end if;
       Set_Field (O, "claimedClaimIds", N_Claimed_Ids (V, "/claimedClaimIds", C));
       Set_Field (O, "claimOverrides",
                  N_Items (V, "claimOverrides", "", "/claimOverrides", S, C,

@@ -25,7 +25,8 @@ describe("endpoint schema map", () => {
     // GAME-MODE-01 added five ops (107 → 112); XP-TRACKER-02 added one (112 → 113).
     // LOADOUT-ATOMIC-01 adds only the atomic full-loadout endpoint (113 → 114).
     // DESPERATE-LOG-01 adds the desperate.mark operation (114 → 115).
-    expect(routes.length).toBe(115);
+    // CREW-WORLD-01 adds only faction.set-starting (115 → 116).
+    expect(routes.length).toBe(116);
     // Every declared operation appears in the map under its operationId.
     for (const route of routes) {
       const methods = Object.keys(spec.paths[route]).filter((m) =>

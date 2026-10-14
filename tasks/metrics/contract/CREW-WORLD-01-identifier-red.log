@@ -1,0 +1,40 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/pages/crew-world.test.ts (8 tests | 1 failed | 7 skipped) 67ms
+   ↓ crew world records > strictly decodes optional starting records and nonnegative unbounded tier
+   ↓ crew world records > sends one exact starting pair and preserves the legacy status helper signature
+   ↓ crew world records > loads core bounds, offers only tracked names, and retains failed drafts
+   ↓ crew world records > keeps manual entry usable without bounds and rejects fractional tiers
+   ↓ crew world records > saves both starting choices together without changing faction status
+   ↓ crew world records > preserves starting drafts through stale recovery and uses the refreshed revision
+   ↓ crew world records > sends null to clear a tracked tier while retaining its status
+   × crew world records > preserves the exact stored faction name when updating an existing row 66ms
+     → expected '{"name":"Custom faction","status":2,"…' to be '{"name":" Custom faction ","status":2…' // Object.is equality
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 skipped (8)
+   Start at  01:18:21
+   Duration  616ms (transform 140ms, setup 0ms, collect 294ms, tests 67ms, environment 95ms, prepare 59ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-world.test.ts -t preserves the exact stored faction name
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > preserves the exact stored faction name when updating an existing row
+AssertionError: expected '{"name":"Custom faction","status":2,"…' to be '{"name":" Custom faction ","status":2…' // Object.is equality
+
+Expected: [32m"{"name":"[7m [27mCustom faction[7m [27m","status":2,"tier":9}"[39m
+Received: [31m"{"name":"Custom faction","status":2,"tier":9}"[39m
+
+ ❯ src/pages/crew-world.test.ts:198:10
+    196|       await vi.waitFor(() => expect(fetch.mock.calls.some(([, init]) =…
+    197|       expect(fetch.mock.calls.find(([, init]) => init?.method === "POS…
+    198|         .toBe(JSON.stringify({ name, status: 2, tier: 9 }));
+       |          ^
+    199|     } finally { dispose(); vi.unstubAllGlobals(); }
+    200|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

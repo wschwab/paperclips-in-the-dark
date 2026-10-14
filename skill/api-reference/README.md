@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 118
+Operations: 119
 
 ## Conventions
 
@@ -218,6 +218,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/crews/{id}/ops/contact.add` | [`crewContactAdd`](#crewcontactadd) | true |
 | POST | `/crews/{id}/ops/contact.remove` | [`crewContactRemove`](#crewcontactremove) | true |
 | POST | `/crews/{id}/ops/faction.set-status` | [`factionSetStatus`](#factionsetstatus) | true |
+| POST | `/crews/{id}/ops/faction.set-starting` | [`factionSetStarting`](#factionsetstarting) | true |
 | POST | `/crews/{id}/ops/faction.remove` | [`factionRemove`](#factionremove) | true |
 | POST | `/crews/{id}/ops/coin.add` | [`coinAdd`](#coinadd) | true |
 | POST | `/crews/{id}/ops/stash.add` | [`stashAdd`](#stashadd) | true |
@@ -2902,7 +2903,7 @@ Responses:
 
 `POST /crews/{id}/ops/faction.set-status`
 
-C3 contract change. Total op mirroring contact.closeness: creates the faction on first set, updates status otherwise. Status is clamped to the game-settings faction-status range (BoundedInteger semantics; applied.effective reports the clamp) — the range is NOT hardcoded in this contract. Absolute-setter family: requested = the requested target status; effective = the stored target status; a clamp (requested ≠ effective) is reported in the result.
+Total op: creates the faction on first set, updates status otherwise. Status is clamped to game-settings FactionStatus.Min/Max (BoundedInteger semantics; applied.effective reports the clamp), never a hardcoded range. Absolute-setter family: requested is the requested target status; effective is the stored target status. Optional tier is a nonnegative integer with no upper bound and is not bounded by CrewTierMax. A null tier removes the stored tier; omission preserves an existing tier and leaves a new entry without tier. Ordinary status or tier changes preserve explicit startingFactions records and do not spend coin.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 
@@ -2918,6 +2919,7 @@ schema:
   properties:
     name: { type: string, minLength: 1 }
     status: { type: integer }
+    tier: { type: [integer, "null"], minimum: 0 }
 ```
 
 Responses:
@@ -2927,11 +2929,41 @@ Responses:
 - `409`: OperationResult
 - `500`: OperationResult
 
+## factionSetStarting
+
+`POST /crews/{id}/ops/faction.set-starting`
+
+Atomically stores explicit starting ally/rival records. Both strings are required; an empty string clears that choice. Each nonempty name must exactly match a name in this crew's own tracked factions list, with no stock catalogue or forced distinctness. Validate both choices before any mutation; an unknown name returns HTTP 400 VALIDATION with an issue pointer /ally or /rival and no write. Absence of the stored startingFactions object means an unrecorded legacy crew; choices are never inferred from current status. This operation spends no coin and changes no faction status or tier. Uses the existing revision, If-Match, Idempotency-Key, undo snapshot, and campaign batch conventions.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [ally, rival]
+  additionalProperties: false
+  properties:
+    ally: { type: string }
+    rival: { type: string }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `500`: OperationResult
+
 ## factionRemove
 
 `POST /crews/{id}/ops/faction.remove`
 
-C3 contract change. Unknown name → NOT_FOUND.
+Unknown name → NOT_FOUND. Removing a tracked faction clears only matching ally/rival references when startingFactions already exists; it never creates startingFactions on a legacy crew or changes the other choice.
 
 Parameters: `id`, `ifMatch`, `idempotencyKey`
 

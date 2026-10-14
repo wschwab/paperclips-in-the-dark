@@ -75,6 +75,9 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   // DESPERATE-LOG-01 (human-approved additive amendment, option C): the desperate-action XP mark is
   // sheet-management with a reachable XP Tracker control that lists this Score's marks.
   "characterDesperateMark",
+  // CREW-WORLD-01 (human-approved additive amendment): explicit starting
+  // faction records are saved atomically through the crew sheet control.
+  "factionSetStarting",
 ];
 
 /** Runtime narrowing for JSON bodies: object and not an array. */

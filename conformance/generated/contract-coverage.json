@@ -1945,6 +1945,51 @@
       "collection": false
     },
     {
+      "operationId": "factionSetStarting",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.set-starting",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "factionSetStarting",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.set-starting",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "factionSetStarting",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.set-starting",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "factionSetStarting",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.set-starting",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "factionSetStarting",
+      "method": "POST",
+      "path": "/crews/{id}/ops/faction.set-starting",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "factionSetStatus",
       "method": "POST",
       "path": "/crews/{id}/ops/faction.set-status",

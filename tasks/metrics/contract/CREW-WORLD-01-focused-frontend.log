@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/pages/crew-world.test.ts (7 tests) 449ms
+ ✓ src/pages/crew-detail.test.ts (98 tests) 8808ms
+
+ Test Files  2 passed (2)
+      Tests  105 passed (105)
+   Start at  01:16:31
+   Duration  9.38s (transform 181ms, setup 0ms, collect 592ms, tests 9.26s, environment 180ms, prepare 124ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-world.test.ts src/pages/crew-detail.test.ts

@@ -1,0 +1,90 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/pages/crew-world.test.ts (5 tests | 5 failed) 5ms
+   × crew world records > strictly decodes optional starting records and nonnegative unbounded tier 3ms
+     → The URL must be of scheme file
+   × crew world records > sends one exact starting pair and preserves the legacy status helper signature 1ms
+     → The URL must be of scheme file
+   × crew world records > loads core bounds, offers only tracked names, and retains failed drafts 0ms
+     → The URL must be of scheme file
+   × crew world records > keeps manual entry usable without bounds and rejects fractional tiers 0ms
+     → The URL must be of scheme file
+   × crew world records > saves both starting choices together without changing faction status 0ms
+     → The URL must be of scheme file
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  01:10:20
+   Duration  550ms (transform 136ms, setup 0ms, collect 293ms, tests 5ms, environment 102ms, prepare 51ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-world.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > strictly decodes optional starting records and nonnegative unbounded tier
+TypeError: The URL must be of scheme file
+ ❯ fixture src/pages/crew-world.test.ts:9:34
+      7| import { mountCrewDetailPage } from "./crew-detail.js";
+      8| 
+      9| const fixture = () => JSON.parse(readFileSync(new URL("../../../confor…
+       |                                  ^
+     10| const response = (data: unknown, status = 200) => ({ ok: status < 400,…
+     11| 
+ ❯ src/pages/crew-world.test.ts:14:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > sends one exact starting pair and preserves the legacy status helper signature
+TypeError: The URL must be of scheme file
+ ❯ fixture src/pages/crew-world.test.ts:9:34
+      7| import { mountCrewDetailPage } from "./crew-detail.js";
+      8| 
+      9| const fixture = () => JSON.parse(readFileSync(new URL("../../../confor…
+       |                                  ^
+     10| const response = (data: unknown, status = 200) => ({ ok: status < 400,…
+     11| 
+ ❯ src/pages/crew-world.test.ts:26:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > loads core bounds, offers only tracked names, and retains failed drafts
+TypeError: The URL must be of scheme file
+ ❯ fixture src/pages/crew-world.test.ts:9:34
+      7| import { mountCrewDetailPage } from "./crew-detail.js";
+      8| 
+      9| const fixture = () => JSON.parse(readFileSync(new URL("../../../confor…
+       |                                  ^
+     10| const response = (data: unknown, status = 200) => ({ ok: status < 400,…
+     11| 
+ ❯ src/pages/crew-world.test.ts:42:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > keeps manual entry usable without bounds and rejects fractional tiers
+TypeError: The URL must be of scheme file
+ ❯ fixture src/pages/crew-world.test.ts:9:34
+      7| import { mountCrewDetailPage } from "./crew-detail.js";
+      8| 
+      9| const fixture = () => JSON.parse(readFileSync(new URL("../../../confor…
+       |                                  ^
+     10| const response = (data: unknown, status = 200) => ({ ok: status < 400,…
+     11| 
+ ❯ src/pages/crew-world.test.ts:71:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/pages/crew-world.test.ts > crew world records > saves both starting choices together without changing faction status
+TypeError: The URL must be of scheme file
+ ❯ fixture src/pages/crew-world.test.ts:9:34
+      7| import { mountCrewDetailPage } from "./crew-detail.js";
+      8| 
+      9| const fixture = () => JSON.parse(readFileSync(new URL("../../../confor…
+       |                                  ^
+     10| const response = (data: unknown, status = 200) => ({ ok: status < 400,…
+     11| 
+ ❯ src/pages/crew-world.test.ts:95:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

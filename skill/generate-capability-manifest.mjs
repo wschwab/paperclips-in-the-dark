@@ -89,6 +89,7 @@ const HUMAN_CONTROL = {
     "Reachable crew free-text editing control (name, lair, reputation, huntingGrounds, crewTypeName).",
   crewNoteAdd: "Reachable crew note-append control (allowed after retirement).",
   crewNoteRemove: "Reachable crew note-removal control (allowed after retirement).",
+  factionSetStarting: "Reachable Save starting factions control through frontend API factionSetStarting; explicitly records both ally and rival from the crew's own tracked factions or clears choices, without spending coin or changing status.",
   characterModeSet: "Reachable per-scoundrel Free Play / Score / Downtime switcher; every mode remains selectable.",
   characterModeFlowSet: "Reachable Planning / Loadout / Engagement and Resolution Back/Next navigation; no prerequisite or automatic award.",
   characterDowntimeSpend: "Reachable downtime activity menu; soft budget never disables an activity.",
@@ -129,6 +130,7 @@ const TABLE = {
   crewFieldsUpdate: { disposition: "human", categories: ["sheet-management"] },
   crewNoteAdd: { disposition: "human", categories: ["sheet-management"] },
   crewNoteRemove: { disposition: "human", categories: ["sheet-management"] },
+  factionSetStarting: { disposition: "human", categories: ["sheet-management"] },
   // GAME-MODE-01: approved sheet assistance controls, available regardless of mode.
   characterModeSet: { disposition: "human", categories: ["sheet-management"] },
   characterModeFlowSet: { disposition: "human", categories: ["sheet-management"] },

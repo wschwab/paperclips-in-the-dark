@@ -604,7 +604,8 @@ package body Pitd_Schema_Validators is
    Required_Crew : constant String :=
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|stash|stashCapacity|notes|turf|contacts|factions|claimedClaimIds|claimOverrides|";
 
-   Allowed_Crew : constant String := Required_Crew;
+   Allowed_Crew : constant String :=
+     Required_Crew & "|startingFactions|";
 
    Required_Special_Ability : constant String :=
      "|name|timesTaken|";
@@ -629,7 +630,13 @@ package body Pitd_Schema_Validators is
    Required_Faction : constant String :=
      "|name|status|";
 
-   Allowed_Faction : constant String := Required_Faction;
+   Allowed_Faction : constant String :=
+     Required_Faction & "|tier|";
+
+   Required_Starting_Factions : constant String :=
+     "|ally|rival|";
+
+   Allowed_Starting_Factions : constant String := Required_Starting_Factions;
 
    Required_Claim_Override : constant String :=
      "|claimId|";
@@ -1120,12 +1127,20 @@ package body Pitd_Schema_Validators is
       Check_Object (V, Ptr, Required_Faction, Allowed_Faction);
       Check_Prop (V, Ptr, "name", Check_Min_Length_1'Access);
       Check_Prop (V, Ptr, "status", Check_Any_Int'Access);
+      Check_Prop (V, Ptr, "tier", Check_Int_Min_0'Access);
    end Check_Faction;
 
    procedure Check_Factions (V : JSON_Value; Ptr : String) is
    begin
       Check_Array (V, Ptr, Check_Faction'Access);
    end Check_Factions;
+
+   procedure Check_Starting_Factions (V : JSON_Value; Ptr : String) is
+   begin
+      Check_Object (V, Ptr, Required_Starting_Factions, Allowed_Starting_Factions);
+      Check_Prop (V, Ptr, "ally", Check_Str'Access);
+      Check_Prop (V, Ptr, "rival", Check_Str'Access);
+   end Check_Starting_Factions;
 
    procedure Check_Claimed_Claim_Ids (V : JSON_Value; Ptr : String) is
       A : JSON_Array;
@@ -1189,6 +1204,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "notes", Check_String_Array'Access);
       Check_Prop (V, Ptr, "contacts", Check_Crew_Contacts'Access);
       Check_Prop (V, Ptr, "factions", Check_Factions'Access);
+      Check_Prop (V, Ptr, "startingFactions", Check_Starting_Factions'Access);
       Check_Prop (V, Ptr, "turf", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "claimedClaimIds", Check_Claimed_Claim_Ids'Access);
       Check_Prop (V, Ptr, "claimOverrides", Check_Claim_Overrides'Access);
@@ -1527,6 +1543,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "notes", Check_String_Array'Access);
       Check_Prop (V, "", "contacts", Check_Crew_Contacts'Access);
       Check_Prop (V, "", "factions", Check_Factions'Access);
+      Check_Prop (V, "", "startingFactions", Check_Starting_Factions'Access);
       Check_Prop (V, "", "turf", Check_Int_Min_0'Access);
       Check_Prop (V, "", "claimedClaimIds", Check_Claimed_Claim_Ids'Access);
       Check_Prop (V, "", "claimOverrides", Check_Claim_Overrides'Access);

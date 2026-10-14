@@ -129,6 +129,7 @@ const crewOpCases: Array<[string, unknown]> = [
   ["ops/contact.add", { name: "Test", profession: "Test" }],
   ["ops/contact.remove", { name: "Test" }],
   ["ops/faction.set-status", { name: "Test", status: 0 }],
+  ["ops/faction.set-starting", { ally: "", rival: "" }],
   ["ops/faction.remove", { name: "Test" }],
   ["ops/coin.add", operationBody],
   ["ops/stash.add", operationBody],

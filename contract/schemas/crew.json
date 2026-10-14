@@ -262,7 +262,29 @@
           },
           "status": {
             "type": "integer"
+          },
+          "tier": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Optional tracked faction tier; no upper bound and not bounded by CrewTierMax. Omitted tier is unrecorded."
           }
+        }
+      }
+    },
+    "startingFactions": {
+      "description": "Optional explicit starting ally/rival records; absence means unrecorded legacy crew. Each nonempty name must match this crew's own tracked factions; empty string clears a choice. Both choices are validated before mutation, may be the same, and are never inferred from status. Setting them spends no coin and changes no status. Removing a tracked faction clears only matching references when this object already exists; ordinary status changes preserve these records.",
+      "type": "object",
+      "required": [
+        "ally",
+        "rival"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ally": {
+          "type": "string"
+        },
+        "rival": {
+          "type": "string"
         }
       }
     },

@@ -231,7 +231,10 @@ const Crew = Schema.Struct({
   // canonical arrays (Q4); empty means no entries. C3-era crews lacking them
   // normalize to [] (legacy rule L6), so every stored crew carries them.
   contacts: Schema.Array(Schema.Struct({ name: NonEmptyString, profession: Schema.String })),
-  factions: Schema.Array(Schema.Struct({ name: NonEmptyString, status: Schema.Int })),
+  factions: Schema.Array(
+    Schema.Struct({ name: NonEmptyString, status: Schema.Int, tier: Schema.optional(NonNegativeInt) }),
+  ),
+  startingFactions: Schema.optional(Schema.Struct({ ally: Schema.String, rival: Schema.String })),
   // Crew Claims (2026-08-10): claim ownership + per-crew overrides.
   claimedClaimIds: Schema.Array(Schema.String.pipe(Schema.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/))),
   claimOverrides: Schema.Array(
