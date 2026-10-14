@@ -183,7 +183,7 @@ describe("getCharacter", () => {
       mode: "free-play",
       modeFlow: { kind: "none", step: "" },
       downtime: { free: 2, paid: 0, spent: 0, activities: [] },
-      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3, desperateMarks: [] },
       notebook: "",
     };
 
@@ -582,7 +582,7 @@ describe("createCharacter", () => {
       mode: "free-play",
       modeFlow: { kind: "none", step: "" },
       downtime: { free: 2, paid: 0, spent: 0, activities: [] },
-      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5 },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5, desperateMarks: [] },
       notebook: "",
     };
 
@@ -879,7 +879,7 @@ describe("stressAdd", () => {
       mode: "free-play",
       modeFlow: { kind: "none", step: "" },
       downtime: { free: 2, paid: 0, spent: 0, activities: [] },
-      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3, desperateMarks: [] },
       notebook: "",
     };
 
@@ -1255,7 +1255,7 @@ function makeChar(overrides: Record<string, unknown> = {}) {
     mode: "free-play",
     modeFlow: { kind: "none", step: "" },
     downtime: { free: 2, paid: 0, spent: 0, activities: [] },
-    session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+    session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3, desperateMarks: [] },
     notebook: "",
     ...overrides,
   };
@@ -1750,7 +1750,7 @@ describe("undoCharacter", () => {
       mode: "free-play",
       modeFlow: { kind: "none", step: "" },
       downtime: { free: 2, paid: 0, spent: 0, activities: [] },
-      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3, desperateMarks: [] },
       notebook: "",
     };
 
@@ -4259,7 +4259,7 @@ describe("sessionSet", () => {
   it("posts only the changed field to /api/characters/{id}/ops/session.set with If-Match", async () => {
     const updated = makeChar({
       revision: 13,
-      session: { playbookExpressions: 2, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+      session: { playbookExpressions: 2, characterExpressions: 0, struggleExpressions: 0, max: 3, desperateMarks: [] },
     });
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -4288,7 +4288,7 @@ describe("sessionSet", () => {
   it("posts multiple changed fields when provided", async () => {
     const updated = makeChar({
       revision: 13,
-      session: { playbookExpressions: 1, characterExpressions: 1, struggleExpressions: 0, max: 3 },
+      session: { playbookExpressions: 1, characterExpressions: 1, struggleExpressions: 0, max: 3, desperateMarks: [] },
     });
 
     global.fetch = vi.fn().mockResolvedValue({

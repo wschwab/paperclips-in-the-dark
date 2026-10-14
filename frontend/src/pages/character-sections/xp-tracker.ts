@@ -20,6 +20,17 @@ const EXPRESSIONS = [
 
 const XP_TRACKER_FOCUSABLE = "a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled])";
 
+/** This Score's Desperate action XP marks, one line per attribute in the order first marked: "+2 Insight XP". */
+function desperateMarkList(marks: readonly string[]): HTMLElement {
+  if (marks.length === 0) {
+    return el("p", { className: "small", "data-desperate-marks": "" }, "No Desperate action XP marked this Score yet.");
+  }
+  const counts = new Map<string, number>();
+  for (const attribute of marks) counts.set(attribute, (counts.get(attribute) ?? 0) + 1);
+  return el("ul", { className: "xp-tracker-marks", "data-desperate-marks": "", "aria-label": "Desperate action XP marked this Score" },
+    ...[...counts].map(([attribute, n]) => el("li", {}, `+${n} ${attribute} XP`)));
+}
+
 /** Desperate action XP and the expression rows: the content shared by the panel and the sheet. */
 function trackerBody(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement[] {
   const { c, handlers } = ctx;
@@ -60,6 +71,7 @@ function trackerBody(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement[] {
   const nodes: Array<HTMLElement | null> = [
     el("p", { className: "small" }, "Pick the attribute you used. It marks 1 XP there now."),
     el("div", { className: "xp-tracker-desperate" }, select, mark),
+    desperateMarkList(c.session.desperateMarks),
     el("p", { className: "small", style: "margin-top: 0.5em;" }, "1 per trigger, 2 if it happened a lot. Resolution clears them."),
     ...rows,
     el("p", { className: "small" }, el("a", { className: "srd-link", href: SRD.advancement, target: "_blank", rel: "noopener noreferrer" }, "SRD ↗")),

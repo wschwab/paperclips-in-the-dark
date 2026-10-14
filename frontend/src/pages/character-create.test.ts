@@ -115,7 +115,7 @@ function characterDTO(overrides: Record<string, unknown> = {}): Record<string, u
     mode: "free-play",
     modeFlow: { kind: "none", step: "" },
     downtime: { free: 2, paid: 0, spent: 0, activities: [] },
-    session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5 },
+    session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 5, desperateMarks: [] },
     notebook: "",
     ...overrides,
   };

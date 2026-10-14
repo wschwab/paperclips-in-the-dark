@@ -1,79 +1,97 @@
 ---
 id: DESPERATE-LOG-01
-title: Show the Desperate action XP marked this Score (XP Tracker) — DECISION POINT
-track: frontend (contract change needed)
-status: blocked-on-decision
+title: Show the Desperate action XP marked this Score (XP Tracker)
+track: contract + backend + frontend
+status: implemented; mutation campaign and Sol 6.1 review recorded below
 deps:
   - XP-TRACKER-04
-outputs: []
+outputs:
+  - contract/openapi.yaml
+  - contract/schemas/character.json
+  - conformance/suites/semantics/desperate-mark.test.ts
+  - conformance/src/schemas.ts
+  - conformance/src/endpoint-schema-map.test.ts
+  - conformance/suites/parity/capability-parity.test.ts
+  - conformance/generated/contract-coverage.json
+  - skill/generate-capability-manifest.mjs
+  - skill/api-reference/README.md
+  - skill/api-reference/capability-manifest.json
+  - backend-ada/server/src/pitd_ops.adb
+  - backend-ada/server/src/pitd_normalize.adb
+  - backend-ada/server/src/pitd_callback.adb
+  - backend-ada/server/src/generated/pitd_schema_validators.adb
+  - frontend/src/api/client.ts
+  - frontend/src/schema/character.ts
+  - frontend/src/pages/character-detail.ts
+  - frontend/src/pages/character-sections/xp-tracker.ts
+  - frontend/src/pages/game-mode-sheet.test.ts
+  - docs/pages/contract/xp-tracker-proposal.mdx
+  - tasks/metrics/contract/DESPERATE-LOG-01-red.log
 ---
 
 # DESPERATE-LOG-01 — Desperate action XP marked this Score
 
 ## Goal
 
-The XP Tracker should list which Desperate action XP marks were already added this Score, for
-example "+1 Insight XP", and the list should survive a reload.
+The XP Tracker lists which Desperate action XP marks were added this Score ("+1 Insight XP"), and
+the list survives a reload.
 
-## What is stored today (investigated, not changed)
+## Decision (human, option C)
 
-- A Desperate action is `onAttributeXpDelta(attribute, 1)`
-  (`frontend/src/pages/character-detail.ts`, `gmHandlers.onDesperate`). It writes an ordinary
-  attribute XP change. Nothing records that the mark came from a Desperate action.
-- **History / undo** (`GET /characters/{id}/history`, `historyEntry` in
-  `contract/schemas/campaign.json`): each entry is `{snapshotId, takenAt, op}`, where `op` is the
-  operation name only. It has no arguments. A Desperate mark and any other attribute XP change are
-  the same `op`. Entries are capped (50 per the contract's history note) and removed by undo. Reading
-  a snapshot (`GET /history/{snapshotId}`) returns the whole character, so a per-Score tally would
-  mean diffing whole snapshots. That breaks as soon as history is capped or undone. **Not usable.**
-- **`modeFlow`** (`score-start` / `resolution` plus a step): the cursor only. `mode.set` to Score
-  sets `modeFlow={kind:score-start,step:planning}`. It has no bookkeeping fields. **Not usable as
-  a store.**
-- **Session counters** (`session.set`): the three expression tracks only. **Not usable.**
-- **Operation results** (`OpResult`): returned to the caller and not persisted. **Not usable.**
+The earlier investigation found nothing persisted that could answer "Desperate XP marked since the
+Score started": history carries only op names, `modeFlow` is only a cursor, and the session counters
+hold only the expression tracks. The human approved option C in `tasks/DESPERATE-LOG-01.md`'s
+earlier version, including the contract change and the additive parity amendment. Options A
+(session-only) and D (a source field on the attribute op) were not chosen.
 
-Conclusion: nothing persisted can answer "Desperate XP marked since the Score started". A new
-persisted field is needed, so this is a contract change, and per the brief I stopped before
-building it.
+## What was built
 
-## Options (decision requested)
+- **Contract.** `desperate.mark` (`characterDesperateMark`, `CharacterDesperateMark` body with
+  `attribute`). `session.desperateMarks` is an array of attribute names, one per +1 mark. The
+  array form is the representable one: Ada's generated validators support arrays of strings, not
+  maps. `mode.set` documents the clearing rule.
+- **Red first.** `conformance/suites/semantics/desperate-mark.test.ts` (7 cases) failed 7 of 7 on the
+  pre-change backend (`tasks/metrics/contract/DESPERATE-LOG-01-red.log`).
+- **Backend (Ada).** Body check (`attribute`, non-empty), a `desperate.mark` apply branch (one write:
+  +1 on the named track and one tally entry; an unknown attribute or a track at its maximum is
+  VALIDATION 400 at `/attribute` with no write), `mode.set` into Score clears the tally, the new-character
+  template starts with `[]`, the normaliser fills a missing array with `[]` and reports bad entries,
+  and the callback maps apply-phase VALIDATION to HTTP 400 for this op as it does for `xp.resolve`.
+- **Parity and manifest.** `characterDesperateMark` in `REQUIRED_HUMAN_OPS` (additive, human-approved);
+  human sheet-management disposition; route count 114 → 115.
+- **Regenerated artefacts.** Ada validators, API reference, capability manifest, contract coverage.
+- **Fixtures.** `desperateMarks: []` added to the golden character and 12 readable seed documents.
+  Deliberately malformed seed documents (TOTAL-collection tests) and session-less seeds were left
+  as they are.
+- **Frontend.** The XP Tracker's Desperate control calls `characterDesperateMark` (the old attribute
+  XP call is removed from this path). The tracker lists this Score's marks per attribute
+  (`+2 Insight XP`), or says none are marked yet.
 
-**A. Frontend-session-only list (no contract change).** Keep the marks in the character page's
-state, reset on Score start. Trade-offs: no backend or contract work, and it can ship in a card of
-its own. The list is **lost on reload, on navigation away, and on another device**. A GM could read
-it as the Score's record and be wrong. If chosen, the UI must say it is session-only.
+## Honest ordering note
 
-**B. Derive from history.** Rejected for the reasons above (no arguments in history, capped,
-undo-erased, and ordinary attribute XP looks identical).
+The backend and contract were written red first. The frontend UI was written before its tests, as
+happened with XP-TRACKER-04. The UI tests (three in a new describe, `DESPERATE-LOG-01 XP Tracker tally
+and desperate.mark control`) pass, and were not seen failing first.
 
-**C. Dedicated op and persisted tally (recommended).**
-- New op `desperate.mark` (`attribute` in the settings' attribute list). It adds +1 attribute XP,
-  as today, and increments `session.desperateMarks[attribute]` in one snapshot and one history
-  entry.
-- New schema field `session.desperateMarks` (map attribute → integer ≥ 0), cleared by `mode.set`
-  to Score, and not by `xp.resolve`, because the human wants "since the Score started".
-- The ordinary attribute XP op stays unchanged.
-- Work: OpenAPI path and schema; capability disposition in
-  `skill/generate-capability-manifest.mjs`; regenerated manifest, API reference and coverage;
-  parity list (`REQUIRED_HUMAN_OPS`, needs authorisation as before); Ada implementation in
-  `pitd_ops.adb` / `pitd_callback.adb` with a semantics test; frontend client, UI and tests;
-  mutation pins for the Ada file. Roughly the size of XP-TRACKER-02 plus 03.
-- Trade-off: an extra op and an extra persisted field. Reload-safe, auditable, and it cannot
-  disagree with the attribute XP it mirrors, because both change in one op.
+## Gates (this tree)
 
-**D. Optional field on the existing attribute XP op.** Add `source: "desperate"` to the existing
-attribute XP op and store the same tally as in C.
-- Trade-off: no new op, but the generic XP op gains a Desperate-specific meaning and the request
-  schema gets an optional field. Any caller can then mark a Desperate XP without the desperate
-  action, so the tally is only as trustworthy as the caller.
+| Gate | Result |
+|---|---|
+| Ada two-cycle (`npm run test:ada -- --cycles 2 -- --run`) | 614/614 in each cycle (includes the 7 new cases) |
+| tooling (`npm run test:tooling`) | 233/233 (TOOLING-MANAGED-025 passes with the full suite green) |
+| conformance typecheck | exit 0 |
+| gnatprove (`paperclips_core.gpr --level=2`) | 246 checks proved |
+| vitest (frontend) | 961/961, 34 files |
+| tsc / build | exit 0 / exit 0 |
+| browser journeys (`npm run test:browser`) | 6/6 PASS |
+| Chromium 3×3 of the tracker (`agent-docs/.../desperate-log-01/check.mjs`) | 9/9: two `desperate.mark` 200s per case, body `{"attribute":…}`, If-Match present, 0 attribute-XP requests, list `+1 Insight XP`, `+1 Prowess XP`, track points +1 each, tally `[Insight, Prowess]`, 0 overflow, 0 page errors |
+| validators (metrics, traceability, reconciliation) and vocs | see the commit record |
+| mutation campaign 28/28 with refreshed pins | see the commit record |
+| Sol 6.1 xhigh review | see the commit record |
 
-## Recommendation
+## Limits
 
-Option C, and it needs your go-ahead for the contract change and the parity amendment. If you want
-the feature without a contract change now, option A is buildable, but only with the session-only
-label and an explicit note in this card that the list is lost on reload.
-
-## Not done
-
-No code, contract, test or pin was changed for this card. The desperate action still writes
-attribute XP exactly as before.
+- The tally is per character and survives reload (it is stored). It is cleared only by entering
+  Score from another mode. A GM who wants a fresh Score tally must leave Score and re-enter it.
+- Desperate marks made during Score are still ordinary attribute XP; `xp.resolve` does not change
+  the tally, by design (the human asked for "since the Score started").

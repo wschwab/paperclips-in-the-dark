@@ -95,6 +95,7 @@ import {
   crewHeatAdd,
   crewXpAdd,
   characterXpResolve,
+  characterDesperateMark,
   characterGearSetLoadout,
 } from "../api/client.js";
 import type { CharacterCapabilities } from "../api/client.js";
@@ -840,8 +841,23 @@ export function mountCharacterDetailPage(
         () => { isGameModeLoading = false; },
       );
     },
-    // A desperate action is ordinary attribute XP, marked now (not deferred to Resolution).
-    onDesperate: (attribute) => handlers.onAttributeXpDelta(attribute, 1),
+    // DESPERATE-LOG-01: a desperate action is one atomic op: +1 attribute XP and one tally entry.
+    onDesperate: (attribute) => {
+      if (!currentCharacter || isXpLoading) return;
+      isXpLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = characterDesperateMark(characterId, attribute, currentCharacter.revision);
+      runCharacterMutate(
+        "talents",
+        program,
+        (character) => {
+          currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isXpLoading = false; },
+      );
+    },
     onDowntimeAdjust: (delta, reason) => {
       if (!currentCharacter || isGameModeLoading) return;
       isGameModeLoading = true;

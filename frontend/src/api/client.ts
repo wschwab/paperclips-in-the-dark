@@ -2133,6 +2133,15 @@ export function characterXpResolve(
   return characterMutate(id, "xp.resolve", revision, { total, allocations });
 }
 
+/** Desperate-action XP mark (DESPERATE-LOG-01): +1 on the attribute track and one entry in the Score's tally. */
+export function characterDesperateMark(
+  id: string,
+  attribute: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "desperate.mark", revision, { attribute });
+}
+
 export function characterDowntimeSpend(
   id: string,
   activity: string,

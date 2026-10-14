@@ -58,7 +58,7 @@ function characterDTO(overrides: Record<string, unknown> = {}) {
     },
     fund: { satchel: { coins: 3, max: 2 }, stash: { coins: 0, max: 8 } },
     contacts: [],
-    session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3 },
+    session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 3, desperateMarks: [] },
     notebook: "",
     ...overrides,
   };
@@ -933,7 +933,7 @@ const XP_ATTRS = [
   { name: "Prowess", experience: { points: 2, max: 6 }, actions: [] },
   { name: "Resolve", experience: { points: 3, max: 6 }, actions: [] },
 ];
-const SESSION_TWO = { playbookExpressions: 2, characterExpressions: 1, struggleExpressions: 1, max: 2 };
+const SESSION_TWO = { playbookExpressions: 2, characterExpressions: 1, struggleExpressions: 1, max: 2, desperateMarks: [] };
 
 describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   it("the XP Tracker exists only in Score mode", async () => {
@@ -1152,5 +1152,39 @@ describe("LOADOUT-ATOMIC-01 frontend gap: Confirm with level none and items chec
     expect(confirm.disabled).toBe(true);
     expect(root.querySelector(".game-mode-confirm")!.textContent).toContain("Choose Light, Normal or Heavy");
     expect(calls.filter((c) => c.url.includes("/ops/gear."))).toHaveLength(0);
+  });
+});
+
+describe("DESPERATE-LOG-01 XP Tracker tally and desperate.mark control", () => {
+  it("lists this Score's marks per attribute, in the order first marked", async () => {
+    await mountWith(characterDTO({
+      mode: "score",
+      modeFlow: { kind: "none", step: "" },
+      session: { playbookExpressions: 0, characterExpressions: 0, struggleExpressions: 0, max: 2, desperateMarks: ["Insight", "Prowess", "Insight"] },
+    }));
+    const list = root.querySelector('[data-section="xp-tracker"] [data-desperate-marks]')!;
+    expect(list.tagName).toBe("UL");
+    expect(Array.from(list.querySelectorAll("li")).map((li) => li.textContent)).toEqual(["+2 Insight XP", "+1 Prowess XP"]);
+  });
+
+  it("says so when no desperate action XP has been marked this Score", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } }));
+    expect(root.querySelector('[data-section="xp-tracker"] [data-desperate-marks]')?.textContent)
+      .toBe("No Desperate action XP marked this Score yet.");
+  });
+
+  it("the + Desperate action XP control posts desperate.mark with the chosen attribute and the revision", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } });
+    const { calls } = await mountWith(dto);
+    const select = root.querySelector<HTMLSelectElement>('[data-section="xp-tracker"] select[aria-label="Desperate action attribute"]')!;
+    select.value = "Prowess";
+    (Array.from(root.querySelectorAll<HTMLButtonElement>('[data-section="xp-tracker"] button')).find((b) => b.textContent === "+ Desperate action XP") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      const call = calls.find((c) => c.url.endsWith("/ops/desperate.mark"));
+      expect(call).toBeTruthy();
+      expect(call!.init.body).toBe(JSON.stringify({ attribute: "Prowess" }));
+      expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe(String(dto.revision));
+    });
+    expect(calls.filter((c) => c.url.includes("/ops/xp.")).length).toBe(0);
   });
 });

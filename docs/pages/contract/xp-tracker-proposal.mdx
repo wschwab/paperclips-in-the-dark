@@ -332,3 +332,27 @@ the three expression tracks, using the sheet's stress track), the compact footer
 sheet, and the Resolution step 1 split-allocation screen that completes through `xp.resolve`.
 The End downtime button and the Talents Score XP block are removed. The browser journey
 completes Scoundrel XP instead. Card: `tasks/XP-TRACKER-04.md`.
+
+## Persisted desperate marks: `desperate.mark` (DESPERATE-LOG-01)
+
+Decision: option C in `tasks/DESPERATE-LOG-01.md`, approved by the human with the contract change
+and the additive parity amendment. Desperate-action XP is one atomic op, `desperate.mark`
+(`characterDesperateMark`). In one revisioned write with one snapshot and one history entry it adds
++1 XP to the named attribute track and appends that attribute name to `session.desperateMarks`.
+
+- **Storage.** `session.desperateMarks` is an array of attribute names, one entry per +1 mark. Ada's
+  generated validators support arrays of strings but not maps, so an array is the representable
+  form; the UI counts entries per attribute ("+2 Insight XP"). New characters start with `[]`; a
+  missing array is filled with `[]` on read.
+- **Validation.** An attribute that is not one of the character's attribute tracks, or a track already
+  at its maximum, is VALIDATION 400 at `/attribute`; nothing changes, including the revision. Stale
+  `If-Match` is the existing `STALE_REVISION` 409; `Idempotency-Key` replays return the stored result.
+- **Clearing.** Changing into Score from another mode (`mode.set`) clears the tally; selecting Score
+  again keeps it. `xp.resolve` does not clear it.
+- **Clean cutover.** The XP Tracker's Desperate control calls `desperate.mark`. It no longer calls the
+  ordinary attribute XP op. Ordinary attribute XP elsewhere is unchanged.
+- **Parity.** `characterDesperateMark` is in `REQUIRED_HUMAN_OPS` (sheet-management, human route in the
+  XP Tracker). The route count is 115.
+
+Card: `tasks/DESPERATE-LOG-01.md`. Contract: `contract/openapi.yaml` (`CharacterDesperateMark`,
+`/characters/{id}/ops/desperate.mark`), `contract/schemas/character.json` (`session.desperateMarks`).

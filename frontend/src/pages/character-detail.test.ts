@@ -78,6 +78,7 @@ function characterDTO(overrides: Record<string, unknown> = {}) {
       characterExpressions: 0,
       struggleExpressions: 0,
       max: 3,
+      desperateMarks: [],
     },
     notebook: "",
     ...overrides,

@@ -69,6 +69,7 @@ const characterDTO = {
     characterExpressions: 0,
     struggleExpressions: 0,
     max: 3,
+    desperateMarks: [],
   },
   notebook: "",
 };

@@ -202,6 +202,8 @@ const Session = Schema.Struct({
     Schema.greaterThanOrEqualTo(0),
   ),
   max: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
+  /** Desperate-action XP marks this Score, one attribute name per +1 mark (DESPERATE-LOG-01). */
+  desperateMarks: Schema.Array(Schema.String.pipe(Schema.minLength(1))),
 });
 
 /** Full character DTO — mirrors contract/schemas/character.json */
