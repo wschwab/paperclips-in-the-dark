@@ -4,121 +4,146 @@ title: Playtest 2026-10 — Scoundrel sheet feedback
 
 # Playtest 2026-10: Scoundrel sheet feedback
 
-Human playtest feedback recorded verbatim-faithfully as a backlog. Items 1, 5, 7
-and 9 are **done, pending independent review** (task `PLAYTEST-UI-01`). All other
-items below remain **status: queued**; none of them has been triaged into a task
-card yet.
+Current disposition of the human's feedback. Completed approved work and its
+independent reviews are cited below. Open evidence/content limitations and
+future ideas are separate; incarceration is not claimed as implemented.
+Historical pending-review statements do not override final recorded verdicts.
 
-Feedback from the Scoundrel sheet. Screenshot supplied with the feedback:
+Screenshot supplied with the original feedback:
 
 ![Bits special-ability picker showing each option's name and description inside the dropdown](/playtest/2026-10-bits-special-ability-picker.png)
 
-## Backlog
+## Feedback disposition
 
-1. **Vice is hard to find** — *status: done, pending independent review* (task
-   `PLAYTEST-UI-01`). The Edit Vice button now sits inline beside the vice name
-   instead of on its own line.
+1. **Vice is hard to find — done, reviewed.** Edit Vice is inline beside the vice
+   name. `tasks/PLAYTEST-UI-01.md`: fixes `12e62ff2`, final independent Luna PASS
+   at `d5847ce1`.
 
-2. **Too many clocks on a newly created scoundrel** — *status: queued*. Many
-   clocks exist that shouldn't. Suspected default clocks seeded on every new
-   character.
+2. **Too many clocks on a newly created scoundrel — done, reviewed.** Projects
+   shows only this scoundrel's clocks, not campaign clocks. This was a visibility
+   issue, not a confirmed default-clock seeding defect. `tasks/PLAYTEST-UI-02.md`
+   (Projects ownership checks), independent Luna PASS at `41945594`.
 
-3. **GAME MODE** — *status: queued*. Highest priority, wide-reaching, includes
-   API/backend. This is an explicit exception to frontend-only work: it is not a
-   frontend task.
-   - A prominent, always-visible indicator of whether the game is in
-     **Free Play**, **Score**, or **Downtime**, with toggling between them.
-   - Mode gates available actions (e.g. indulge vice only in downtime).
-   - Tracks the downtime actions taken.
-   - Ending a Score runs a process (XP grants, complications, etc.).
-   - The existing "end downtime" / "end score" buttons move into it.
-   - Layout: sticky/anchored so it stays visible while scrolling; use the side
-     gutters on wide screens; becomes a footer when there is no side space; must
-     stay responsive.
-   - Purpose: PitD also helps an AI agent play BitD with a user, so the API must
-     expose the current mode and enforce availability.
-   - Proposed model (orchestrator, pending human sign-off): three modes (Free
-     Play, Score, Downtime), with ordered sub-phases. Score: planning →
-     engagement → action → end. Downtime: payoff → heat → entanglements →
-     activities. Incarceration is a per-scoundrel status, not a mode. Requires
-    a contract-change card.
-   - Resolution → Entanglements (GAME-MODE-03, *status: done, pending
-     independent review*): the table is the SRD's (`frontend/src/data/entanglements.ts`,
-     attributed CC-BY with an SRD link); a reminder asks the crew to check that
-     nobody else is already rolling entanglements for this score; each of the five
-     entanglements in the crew's heat column is a disclosure with its SRD text.
+3. **GAME MODE — done, reviewed.** Per-scoundrel Free Play, Score and Downtime,
+   workflow navigation and tracked downtime activities are implemented. The
+   responsive mode panel stays available on wide and compact layouts. End Score
+   opens Resolution; XP completion is explicit, not an automatic mode-switch
+   award. Assistance does **not** gate operation availability or enforce a
+   table-wide phase. Incarceration is not a fourth mode.
+   - Contract: `tasks/GAME-MODE-01.md`; backend: `tasks/GAME-MODE-02.md`
+     (roster follow-up `654c3cff`).
+   - Frontend: `tasks/GAME-MODE-03.md`, final Sol 6.1 round-5 PASS `a49bccbd`;
+     residual layout items closed by the focused F7 PASS at `7fdd78ca`.
+   - XP Tracker and Scoundrel XP completion: `tasks/XP-TRACKER-02.md`
+     (`0ebfc69b`), `tasks/XP-TRACKER-03.md` (`9557cc94`),
+     `tasks/XP-TRACKER-04.md`; final Sol 6.1 PASS `6cc54859`. The tracker is
+     Score-only; Resolution allocates XP explicitly
+     and atomically clears the three session expression counters on success.
 
-4. **Missing: incarceration**, and the start-of-downtime complications (payoff /
-   heat / entanglements) — *status: queued*.
+4. **Incarceration and start-of-downtime complications — resolved scope.**
+   Payoff, Heat and Entanglements are done through Resolution
+   (`tasks/GAME-MODE-03.md`, `a49bccbd`, focused F7 `7fdd78ca`). Entanglements
+   uses the attributed SRD table, with the highest-die rule, reminder to check
+   nobody else is rolling for this score, and expandable outcome text. Nothing
+   further is planned for entanglements. Incarceration remains a future idea,
+   not queued or planned implementation.
 
-5. **Visible flicker/rerender when deleting each clock** — *status: done, pending
-   independent review* (task `PLAYTEST-UI-01`). Cause: the delete handler
-   re-rendered the whole sheet with every clock control disabled and showing "…"
-   before the request, then again on success. The sheet now stays mounted while
-   the delete is in flight and re-renders once when the clock is removed.
+5. **Visible flicker/rerender when deleting each clock — done, reviewed.** The
+   sheet stays mounted while deletion is in flight, then updates on success.
+   `tasks/PLAYTEST-UI-01.md`, fixes `12e62ff2`, Luna PASS `d5847ce1`.
 
-6. **Contacts** — *status: queued*. Preload every playbook's contacts by default
-   as "contact". Closeness should have more levels (add **confidante** and
-   **enemy**, bolder colours) and look clearly clickable. Keep the remove-contact
-   option, and keep add-contact as it is so custom contacts can still be added.
+6. **Contacts — done, reviewed.** Playbook contacts preload as contact; closeness
+   offers confidante, friend, contact, rival and enemy, with clickable, stronger
+   badges. Removing contacts and adding custom contacts remain available.
+   `tasks/PLAYTEST-UI-02.md`: contract `588ecc1c`, backend `1108884f`, final
+   independent Luna PASS `41945594`.
 
-7. **Layout** — *status: done, pending independent review* (task
-   `PLAYTEST-UI-01`). The masthead now reserves the torn-seam depth plus the
-   sheet gap, so the seam stays out of both columns and both columns start at
-   the same offset beneath it. Checked numerically at 1440, 768 and 390 in light
-   and dark.
+7. **Layout — done, reviewed.** The masthead reserves the torn seam so both
+   columns begin below it at the same offset. `tasks/PLAYTEST-UI-01.md`, fixes
+   `12e62ff2`, Luna PASS `d5847ce1`.
 
-8. **Option descriptions, like Blades in the Sheets** — *status: queued*. The
-   playbook special-ability dropdown shows each option's name + description
-   inside the dropdown (see the screenshot above), with a hint that the first is
-   a good default. Apply the same to **Heritage**, **Background**, and **Vice**.
-   - The human's own reminder note asked for this screenshot; it was supplied
-     and is embedded on this page.
-   - **Playbook and crew type pickers (PLAYBOOK-BLURBS-01, done, pending the mutation campaign):** each
-     scoundrel playbook option reads `Name - Description`, with the description taken from the game
-     data's `Playbooks[].Hook`. Each crew type option reads the same way from `CrewTypes[].Hook`. The
-     Hook lines already existed in `data/games` (no text was copied from the reference or invented).
-     The Whisper hook typo ("Play whisper a Whisper") is fixed in `data/games/blades-in-the-dark.json`.
-     Task record `tasks/PLAYBOOK-BLURBS-01.md`.
-   - Reference implementation (read-only, do not edit):
-     `blades-in-the-sheets/UI/Components/NewCharacter/NewCharacterSpecialAbilityCard.razor`
-     — line 13 carries the "the first is considered a good default choice" hint
-     and line 14 builds the option text as
-     `@(i => $"{DisplayText(i)} - {i.Description}")`.
-   - The same `"{Name} - {Description}"` option-text idiom appears in the
-     sibling option cards of the reference implementation:
-     `NewCharacterHeritageCard.razor`
-     (`OptionText="@(i => $"{i.Name} - {i.Description}")"`),
-     `NewCharacterBackgroundCard.razor`
-     (`OptionText="@(i => $"{i.Name} - {i.Example}")"`),
-     and `NewCharacterViceCard.razor`
-     (`OptionText="@(i => $"{i.Name} - {i.Description}")"`).
+8. **Option descriptions, like Blades in the Sheets — done, reviewed.** Special
+   ability, Heritage, Background and Vice options include their descriptions;
+   the first-special-ability guidance is present. `tasks/PLAYTEST-UI-02.md`,
+   final Luna PASS `41945594`. Playbook and crew type options also show
+   `Name - Description`, using existing game-data `Hook` text, not invented
+   copy (`tasks/PLAYBOOK-BLURBS-01.md`, implementation `69baf006`, completed
+   acceptance and mutation campaign recorded there).
 
-9. **Permanent Actions looks great; move it to the bottom of the sheet** —
-   *status: done, pending independent review* (task `PLAYTEST-UI-01`). The
-   Permanent actions section now renders as the last section of the scoundrel
-   sheet, after Notebook. Its content and behaviour are unchanged.
+9. **Permanent Actions looks great; move it to the bottom — done, reviewed.**
+   Permanent actions renders last, after Notebook, with unchanged behavior.
+   `tasks/PLAYTEST-UI-01.md`, fixes `12e62ff2`, Luna PASS `d5847ce1`.
 
-## Tab icon
+## Tab icon and social imagery
 
-Not a playtest item; added alongside the sheet work. The app now ships a favicon
-(`frontend/public/favicon.svg`, PNG fallbacks `favicon-32.png`, `favicon-16.png`,
-`apple-touch-icon.png`) and a `site.webmanifest`, linked from
-`frontend/index.html`. Design by GPT-6 Astra; the paperclip is a simplified
-silhouette in the bladesinthedark.com ink/bone/red palette. Status: built into
-`dist/`; all icon links return 200 in headless Chromium; the paperclip is legible
-at 32px and recognizable but soft at 16px.
+**Done; original favicon replaced by THUMBNAIL-01.** The original illustrated
+SVG icon from `PLAYTEST-UI-01` (`aab6fa2a`, manifest MIME fix `d5847ce1`) is
+historical, not the current asset. The human-supplied thumbnail now supplies PNG
+favicon/manifest icons and social imagery; the SVG was removed so it cannot
+override the replacement. Record: `tasks/THUMBNAIL-01.md`, commit `970f67a9`, and
+[thumbnail documentation](/frontend/thumbnail). Hosted social URL work remains
+open below.
 
 ## Crew page feedback: pending
 
+## Current build items — done
+
+- **Game mode panel alignment — done, reviewed.** The wide panel starts at the
+  masthead top. `tasks/MODE-PANEL-ALIGN-01.md`, Sol 6.1 PASS `159c703d`.
+- **Crew sheet column alignment — done, reviewed.** Both columns clear the torn
+  seam and start at the same offset. `tasks/CREW-ALIGN-01.md`, Sol 6.1 PASS
+  `8a7cd0c1`. The source-text-only regression guard remains open below.
+- **Regular-sheet Score XP and End downtime removal — done via superseding
+  cards.** `SCORE-XP-REMOVAL-01` is superseded by `XP-TRACKER-02..04`, not still
+  blocked. Expression controls moved to the Score XP Tracker; successful
+  Scoundrel XP completion awards allocations and clears session counters. The
+  old sheet section, button and obsolete client/handler path were removed, and
+  the human-approved frozen journey now completes `xp.resolve`. The API's
+  `end-downtime` operation remains. Records: `tasks/SCORE-XP-REMOVAL-01.md`,
+  `tasks/XP-TRACKER-02.md`, `tasks/XP-TRACKER-03.md`,
+  `tasks/XP-TRACKER-04.md`; final review PASS `6cc54859`.
+
+## Open limitations
+
+- **Stale-crew reconciliation test missing.** The reconcile path is implemented
+  but lacks a test (`tasks/GAME-MODE-03.md`, Known gaps).
+- **Engagement and Loadout content provenance.** The factor table and Loadout
+  copy are approved mockup wording, not game-data fields
+  (`tasks/GAME-MODE-03.md`, Known gaps). Approval does not make them data-driven.
+- **CREW-ALIGN regression guard is source-text-only.** It can pass if the CSS
+  rules move outside their media block. A behavioral browser regression remains
+  open (`tasks/CREW-ALIGN-01.md`, non-blocking P3); the visual fix and review
+  are complete.
+- **Hosted social URLs.** `og:image` (and corresponding social imagery URLs)
+  must use an absolute URL when a canonical deployment origin is chosen.
+  Root-relative URLs are intentional locally (`tasks/THUMBNAIL-01.md`).
+
+## Atomic loadout replacement
+
+`LOADOUT-ATOMIC-01` replaces the Change-loadout multi-request chain documented in
+`tasks/GAME-MODE-03.md` with one revisioned operation. Implementation `794303bc`
+validates the complete proposed level/item set before writing; a rejected item
+or capacity leaves the old loadout, revision and history intact. Its independent
+review and combined mutation acceptance are recorded in `tasks/LOADOUT-ATOMIC-01.md`,
+not inferred from this backlog cleanup.
+
 ## Future ideas (not planned)
 
-- **Edition dropdown on create screens:** the human decided to skip an edition
-  picker for scoundrel and crew creation for now. This is a future idea, not
-  queued or planned work and not a blocker for the current create screens.
+- **Edition dropdown on create screens:** explicitly deferred for scoundrel and
+  crew creation; not queued and not a blocker.
+- **Incarceration:** future assistance only; no implementation planned.
+- **Restart-server message / contract-compatibility check:** explicitly deferred,
+  not a remaining requirement of closed `LOAD-CREATE-01`. See
+  [the stale development backend investigation](/backlog/load-create-stale-runtime).
 
-## Current build items (MODE-PANEL-ALIGN-01, CREW-ALIGN-01, SCORE-XP-REMOVAL-01)
+## Related closed backlog
 
-- **Game mode panel alignment** (MODE-PANEL-ALIGN-01, done, Sol 6.1 PASS at `159c703d`): the wide "Game mode" panel now starts at the same top as the sheet's masthead. The cause was the game-mode wrapper missing the sheet's gutter padding. Task `tasks/MODE-PANEL-ALIGN-01.md`.
-- **Crew sheet column alignment** (CREW-ALIGN-01, done): on the wide crew sheet the Playbook card (right column) started at the masthead's bottom edge, under the torn seam, while the left column started 18px lower. The cause was the crew masthead lacking the seam reservation the character sheet has (PLAYTEST-UI-01 item 7), not the route gutter. Both columns now start at the same offset (0px difference at 1440px). Task `tasks/CREW-ALIGN-01.md`.
-- **Remove the regular sheet's Score XP section and End downtime button** (SCORE-XP-REMOVAL-01, **blocked**): removing them would drop the session expression tracks and the end-of-downtime clear, which game mode does not yet cover. Also `conformance/suites-browser/lifecycle.journey.mjs` (lines 32, 192–197) clicks the End downtime button, and that journey is frozen. Task `tasks/SCORE-XP-REMOVAL-01.md` lists the decisions needed.
+- [Unknown operation status](/backlog/unknown-operation-status):
+  `UNKNOWN-OP-01`, closed at `6fd4c199`; unknown single-operation names now
+  return HTTP 400 VALIDATION, while batch aggregate reporting stays unchanged.
+- [French game creation](/backlog/french-game-creation-500):
+  `FRENCH-CREATE-01` (`c57ba179`) and `INTERNAL-ERROR-01` (`8d24d530`,
+  frontend `94d9cd86`); frontend GameStem parity `e3f24d20`.
+- [Scoundrel load/create stale runtime](/backlog/load-create-stale-runtime):
+  `LOAD-CREATE-01`, closed by the human-confirmed restart; closure `6a168425`.
+  No production patch was required.

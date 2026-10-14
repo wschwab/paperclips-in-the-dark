@@ -1,11 +1,12 @@
 ---
-title: Unknown operation names answer HTTP 200
+title: Unknown operation status — closed
 ---
 
-# Unknown operation names answer HTTP 200
+# Unknown operation status — closed
 
-**Status: closed by UNKNOWN-OP-01.** The human authorized the contract change;
-unknown single-operation names now return **HTTP 400 VALIDATION**, not 200.
+**Status: closed by UNKNOWN-OP-01, commit `6fd4c199`.** The human authorized the
+contract change; unknown single-operation names now return **HTTP 400 VALIDATION**,
+not 200. Task record: `tasks/UNKNOWN-OP-01.md`.
 
 The original defect was a `POST /characters/{id}/ops/{name}` with an undeclared
 name returning **HTTP 200** with a `VALIDATION` error body. This historical

@@ -9,17 +9,23 @@ Ada server with the current binary and reported that everything worked again,
 including scoundrel loading and creation. No decoder was loosened or production
 patch needed; the worker did not restart the server or modify `campaign-data/`.
 
+Record: `tasks/LOAD-CREATE-01.md`; investigation `a4bfbe77`, confirmed closure
+`6a168425`. This was a runtime restart, not a production code fix. The
+restart-server message remains a future idea, not planned.
+
 ## Live failure and root cause
 
 Vite's `/api` proxy points to localhost:9657 (`frontend/vite.config.ts:9`).
-That listener is the existing Ada PID 1054006, whose executable inode 140904474
-was built on October 6. The current `backend-ada/server/bin/pitd` has a different
-inode, 362380975, and was built on October 12. Rebuilding a file does not replace
-an already-running process's loaded executable.
+The investigation identified the existing Ada listener as PID 1054006, whose
+executable inode 140904474 was built on October 6. At that time,
+`backend-ada/server/bin/pitd` had a different inode, 362380975, and was built on
+October 12. These are historical observations, not claims about today's process.
+Rebuilding a file does not replace an already-running process's loaded executable.
 
-Read-only live requests show both the original Spider and the recently created
-Lurk omit the required `mode`, `modeFlow` and `downtime` fields. The actual
-frontend `getCharacter` fails at `frontend/src/api/client.ts:322`:
+Read-only requests captured during the investigation showed both the original
+Spider and the recently created Lurk omitted required `mode`, `modeFlow` and
+`downtime` fields. The then-current frontend `getCharacter` failed at
+`frontend/src/api/client.ts:322`:
 
 ```text
 Character

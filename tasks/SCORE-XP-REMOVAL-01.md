@@ -1,61 +1,58 @@
 ---
 id: SCORE-XP-REMOVAL-01
-title: Remove the regular sheet's Score XP section and End downtime button (BLOCKED)
+title: Remove the regular sheet's Score XP section and End downtime button (superseded)
 deps:
   - GAME-MODE-03
 track: frontend
-status: blocked
+status: superseded
 ---
 
-# SCORE-XP-REMOVAL-01 — status: blocked, not implemented
+# SCORE-XP-REMOVAL-01 — superseded by XP-TRACKER-02..04
 
-Nothing was removed. The removal is blocked on two items that need a human decision, and one of them touches a frozen journey.
+**Disposition: closed as superseded.** This card did not implement the removal.
+Its capability and frozen-journey blockers were resolved by the human-approved
+XP Tracker contract/backend/frontend sequence, not by dropping the session
+expression capability. It is no longer blocked or awaiting decisions.
 
-## What the Score XP section is
+## Delivered replacement
 
-`frontend/src/pages/character-sections/talents.ts` lines 136–197 render, under the Talents card:
+- `tasks/XP-TRACKER-02.md` declares `characterXpResolve` / `xp.resolve`: explicit
+  GM-confirmed XP split across Playbook, Insight, Prowess and Resolve, with the
+  three session expression counters cleared only on successful completion.
+- `tasks/XP-TRACKER-03.md` implements validation and atomic award/clear with one
+  revisioned write and snapshot. Track room and allocation totals are checked
+  before mutation. Full frontend reachability lands with XP-TRACKER-04.
+- `tasks/XP-TRACKER-04.md` removes the old Talents Score XP subsection, its End
+  downtime button, the obsolete client helper/options and detail-page handler
+  wiring. The Score-only XP Tracker retains the three expression controls and
+  desperate-action XP assistance; Resolution provides allocation/completion.
+  Permanent playbook and attribute XP tracks stay in Talents.
 
-1. The heading **Score XP** and the note "Desperate action XP is marked on the attribute XP tracks above." (text only).
-2. The playbook's ExperienceCondition line. Game mode already shows it (GAME-MODE-03 R2-02).
-3. **Three session expression tracks** (Playbook expressions, Scoundrel expressions, Struggle expressions). Each has a track, a −1 and a +1. They call `handlers.onSessionTrack` and `onSessionDelta`, which post `session.set` (`character-detail.ts` ~1706–1730; `api/client.ts` `sessionFieldsUpdate` ~1696).
-4. The **End downtime** button and its text (lines 186–197). It calls `handlers.onEndDowntime` (`character-detail.ts` ~1412–1423), which posts `end-downtime` with `clearSessionExpressions: true`.
+The API operations `end-downtime` and `session.set` remain. In particular, the
+contract's optional `clearSessionExpressions` is retained for API callers;
+removing the UI button is not removal of that backend capability.
 
-## Capability coverage in game mode (the gap)
+## Human-approved frozen amendments
 
-| Regular-sheet capability | Game-mode equivalent | Status |
-|---|---|---|
-| ExperienceCondition text | Resolution → Scoundrel XP (R2-02) | covered |
-| Increment playbook XP (+1) | Resolution → Scoundrel XP "+1 Playbook XP" (`gameMode.ts` ~609) | covered |
-| Increment attribute XP (+1, desperate action) | Resolution → Scoundrel XP track marks; Score panel "+ Desperate action XP" | covered |
-| Decrement or clear playbook / attribute XP | none in game mode | **gap** (the Playbook XP box and attribute trackers keep it; they are not Score XP) |
-| **Increment or decrement the three session expression tracks** | **none** | **gap** |
-| **Clear session expression tracks at end of downtime** | **none**: `end-score` does not clear them (`pitd_ops.adb` end-score apply, ~1737–1795); `end-downtime` is only reachable from the regular sheet | **gap** |
-| End downtime (stress relief amount is GM-side) | Downtime mode activities; no `end-downtime` call | **gap** for the session clear; the stress part is not sent by the UI |
+XP-TRACKER-04 records the exact before/after changes: the lifecycle journey's
+End downtime click and `end-downtime-ok` checkpoint were replaced by zero-total
+Scoundrel XP completion through `/ops/xp.resolve` and
+`scoundrel-xp-completed`. Stress selectors were scoped to the character sheet
+so the new tracker is not mistaken for the stress meter. Human parity no longer
+requires an End downtime UI control; `characterXpResolve` remains reachable.
 
-Removing the block as asked would remove the only UI for session expression tracks and for clearing them.
+## Acceptance citation
 
-## Frozen dependency (stop, per instruction)
+`tasks/XP-TRACKER-04.md` records the final Sol 6.1 round-4 **PASS at `6cc54859`**,
+with real-Ada award, request, focus and parity evidence and final integration
+gates. Earlier review failures in that card were fixed and superseded. This
+cleanup adds no independent implementation or verification claim.
 
-`conformance/suites-browser/lifecycle.journey.mjs` depends on the End downtime button:
+## Historical reason for the stop
 
-- line 32: checkpoint `end-downtime-ok` ("End downtime committed (ops/end.downtime 200)")
-- lines 192–197: `waitForResponse` on `/end-downtime` returning 200, then `page.locator('button[title^="End downtime"]').click()`
-
-This is one of the six browser gates. Removing the button needs an explicit change to that journey, which is frozen.
-
-## Tests that cover the block (not frozen; would go with the removal)
-
-- `frontend/src/pages/character-detail.test.ts`: 2379–2504 (F2o Talents + Score XP), 232, 3118–3149 (session.set on tracks), 3344 (CHAR-06 heavy-box Score XP, which is the Playbook XP box).
-- `frontend/src/api/client.test.ts`: 4259–4322 (`session.set`).
-
-## Backend contract (stays)
-
-`end-downtime`, `session.set` and the session fields are contract. Frozen conformance covers them: `conformance/suites/contract/endpoints.test.ts:106,163`; `request-validation.test.ts:59-64`; `numeric-families.test.ts:146-152`; `conformance/suites/semantics/session-set.test.ts`; `composites.test.ts:10`. Removing the frontend does not change these.
-
-## Decisions needed from the human
-
-1. **Session expression tracks.** Move them into game mode (for example Resolution → Scoundrel XP, or Downtime), or drop them deliberately? The tracks are a capability, so dropping them needs an explicit decision.
-2. **Clear at end of downtime.** Where should "clear session expressions" happen in game mode (the Downtime flow, or the Downtime → Score transition)? `end-score` does not clear them today.
-3. **Frozen journey.** Authorize a change to `conformance/suites-browser/lifecycle.journey.mjs` steps 6 (lines 192–197) and the checkpoint at line 32, so the journey no longer clicks the removed button, or keep the End downtime button until game mode covers the clear.
-
-Until these are answered, the regular sheet keeps the Score XP section.
+At this card's original investigation, the regular-sheet Score XP block was the
+only UI for the three session expression tracks and the End downtime clear.
+Game mode showed the XP condition but did not cover those controls; the frozen
+lifecycle journey clicked the old button. Removing the block then would have
+lost capability and invalidated the journey. Those observations explain the
+historical blocked status, but are not current gaps after XP-TRACKER-02..04.

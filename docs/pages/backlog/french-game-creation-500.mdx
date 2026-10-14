@@ -11,6 +11,13 @@ evidence, not the current French creation response. FRENCH-CREATE-01 correctly
 left the internal branch unchanged until the human approved a new 500 contract
 response; [the approved INTERNAL contract](/contract/internal-errors) now exists.
 
+Completion citations: `tasks/FRENCH-CREATE-01.md` (backend `c57ba179`, cited in
+`tasks/GAME-MODE-03.md`); `tasks/INTERNAL-ERROR-01.md` (contract/backend
+`8d24d530`, frontend `94d9cd86`). The frontend GameStem mirror was subsequently
+aligned at `e3f24d20` (`tasks/GAME-MODE-03.md`); it is not a pending hand-off.
+The exchange and intermediate counts below are historical evidence, not current
+failures or current global acceptance totals.
+
 ## Exact observed exchange
 
 Request:
@@ -51,8 +58,8 @@ Response: **HTTP 500**, with the existing JSON envelope:
 The response is internally inconsistent: the transport is **HTTP 500**, while
 `error.status` is **400** and `error.retryable` is **true**. The recovery text
 asks the caller to fix a request built from registered game/playbook data.
-Neither a new status nor a special-case fallback is proposed here; the bug
-needs a separate contract/implementation investigation.
+At the time of this capture, a separate contract/implementation investigation
+was needed. The approved fixes below now close both causes without a fallback.
 
 ## Evidence and suspected cause
 
@@ -72,8 +79,8 @@ needs a separate contract/implementation investigation.
 
 The recommendation at that time was to reconcile the installed catalogue with
 accepted stems and investigate transport/envelope classification together.
-FRENCH-CREATE-01 below proves the stem cause; the internal branch still awaits
-human approval rather than being relabeled as bad input.
+FRENCH-CREATE-01 below proves the stem cause; INTERNAL-ERROR-01 subsequently
+received human approval and fixed the independent server-defect classification.
 
 ## FRENCH-CREATE-01: proved cause and authorized contract change
 
@@ -138,9 +145,9 @@ faulting request preserves the old document and revision, exposes no exception
 diagnostics, and leaves the service usable. This closes the classification gap;
 the separate stem-pattern fix and historical evidence remain intact.
 
-Frontend GameStem mirror alignment is handed to its owner by the human; this
-worker does not edit frontend. Acceptance evidence and final counts are recorded
-in `tasks/FRENCH-CREATE-01.md` and its metrics.
+Frontend GameStem mirror alignment is complete at `e3f24d20`, as recorded in
+`tasks/GAME-MODE-03.md`. Acceptance evidence for the stem fix is recorded in
+`tasks/FRENCH-CREATE-01.md` and its metrics.
 
 ## FRENCH-CREATE-01 historical acceptance and mutation hand-off
 

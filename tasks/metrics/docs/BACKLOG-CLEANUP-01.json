@@ -1,0 +1,50 @@
+{
+  "task": "BACKLOG-CLEANUP-01",
+  "track": "docs",
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": null,
+  "date": "2026-10-14",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 49.53,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "Requested docs gates pass: metrics184/0errors,traceability231/231,reconciliation17/17,Vocs155files.",
+  "passRateAfterReview": "No independent review claimed; user-prescribed dispositions checked against task records and revision history.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": 0,
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "human"
+  ],
+  "notes": [
+    "Completed feedback and reviews cite real task records and publication revisions; original ScoreXP card superseded.",
+    "Incarceration, edition dropdown and restart-message are Future ideas(not planned); Crew page feedback remains pending.",
+    "Open stale-crew test, mockup copy provenance, source-only CrewAlign guard and hosted absolute socialURL limits retained.",
+    "Atomic implementation794303bc is cited without inferring its independent review or combined campaign acceptance."
+  ],
+  "metricsMethodology": {
+    "method": "Shared elapsed wall-clock interval since first parent loadout red while the independent docs slice ran; includes concurrent backend work, not exclusive docs effort.",
+    "source": "tasks/BACKLOG-CLEANUP-01.md; current task records and read-only jj revision history.",
+    "locNote": "Documentation LOC not measured; unknown.",
+    "scaffoldingLocNote": "No throwaway scripts committed.",
+    "tokensNote": "Unavailable accounting; supportednull."
+  },
+  "status": "Documentation gates green; separate explicit-path publication follows atomic-loadout review in requested card order.",
+  "verification": {
+    "metrics": 0,
+    "traceability": 0,
+    "reconciliation": 0,
+    "vocs": 0
+  },
+  "acceptanceCounts": {
+    "metricsFiles": 184,
+    "metricsErrors": 0,
+    "traceability": 231,
+    "reconciliation": 17,
+    "vocsFiles": 155
+  }
+}
