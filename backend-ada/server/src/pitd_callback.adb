@@ -2058,10 +2058,10 @@ if Kind = "crew" then
                end if;
             end;
             R := Mutate (Kind, Op, E, B);
-            --  XP-TRACKER-02: a room or sum rejection of the atomic XP completion is
-            --  HTTP 400 VALIDATION with its issue pointers, as the contract declares.
-            --  Other apply-phase domain errors keep their existing 200 delivery.
-            if Op = "xp.resolve" and then not Bool_Field (R, "ok")
+            --  Atomic XP/loadout validation failures carry their issue pointers
+            --  with HTTP 400. Other domain errors retain their existing delivery.
+            if (Op = "xp.resolve" or else Op = "gear.set-loadout")
+              and then not Bool_Field (R, "ok")
               and then Has_Field (R, "error")
               and then Str_Field (Get (R, "error"), "code") = "VALIDATION"
             then

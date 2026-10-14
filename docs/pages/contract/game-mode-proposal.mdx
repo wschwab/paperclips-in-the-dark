@@ -65,7 +65,10 @@ The switcher remains available throughout.
 
 The Score sheet then shows the **committed loadout**. A small **Change loadout**
 control opens a confirmation step before replacing it. Back/Close cancels the
-proposed replacement; confirmation commits it. This is not a mode restriction.
+proposed replacement. Confirmation uses one atomic `gear.set-loadout` operation
+with the observed revision, rather than a level/removal/addition write chain.
+A rejected item or load limit leaves the old level, item set, revision, and
+history intact. This is not a mode restriction.
 
 <p>
   <a href="/mockups/game-mode/02-planning.png">Planning</a>{' · '}
@@ -268,6 +271,7 @@ All new character routes use the existing op-style POST pattern under
 | `downtime.spend` — `POST /api/characters/{id}/ops/downtime.spend` | `{activity, description}`; activity is one of the six menu names or Other. Append the explicit activity record and increment stored `spent` by one. Available in every mode and even when `free + paid - spent` is zero/negative; no automatic mode change or activity outcome. |
 | `downtime.adjust` — `POST /api/characters/{id}/ops/downtime.adjust` | `{delta, reason}` with reasons coin, gift, correction. +1 (coin) records an **already-paid** extra activity in stored `paid`; +1 (gift) likewise adds an available activity. Neither charges coin or rep. −1 is an explicit correction. Available in every mode. |
 | `downtime.reset` — `POST /api/characters/{id}/ops/downtime.reset` | Snapshots free activities from settings and clears stored paid/spent/activity records. Successful End Score resets this budget after the completed score in the same character mutation. Mode changes, popup resume, and completing Resolution never reset it again. |
+| `gear.set-loadout` — `POST /api/characters/{id}/ops/gear.set-loadout` | LOADOUT-ATOMIC-01: `{commitment, items}` replaces the committed level and full selected set in one write. Names resolve against stored owned/current gear, never client-supplied bulk. Settings-derived load limits, existing lock rules, `If-Match`, idempotent replay, snapshots, undo, and batch rollback apply. `none` requires an empty set. No mode gate or inventory removal. |
 
 Completing Resolution selects Downtime for this scoundrel using `mode.set`;
 leaving early can do the same without any forced awards. Step navigation and
@@ -275,9 +279,13 @@ mode selection are not aliases for `end-downtime` or other lifecycle cleanup.
 Do not add a new mandatory End Downtime wizard to the approved design.
 
 Planning choice is UI assistance, committed gear uses the existing gear model,
-and Engagement has no roll/result requirement. Use existing gear mutations
-and their revision/confirmation semantics for the loadout popup and confirmed
-replacement; do not create another inventory or dice service.
+and Engagement has no roll/result requirement. Ordinary item declarations retain
+their existing gear operations. **Confirmed Change loadout uses
+`gear.set-loadout` (`characterGearSetLoadout`) once**, not a revision-linked chain
+of level, removal, and addition writes. Duplicate/unknown selections, malformed
+bodies, and capacity failures use existing `VALIDATION` / HTTP 400; lock failures
+retain the existing `COMMITMENT_LOCKED` convention. No new inventory, HTTP status,
+error code, or dice service is introduced.
 
 ### Crew and personal edits
 

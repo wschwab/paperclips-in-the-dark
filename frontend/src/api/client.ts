@@ -1775,6 +1775,16 @@ export function gearSetCommitment(
   return characterMutate(id, "gear.set-commitment", revision, { commitment });
 }
 
+/** Replace the committed level and full item set in one revisioned operation. */
+export function characterGearSetLoadout(
+  id: string,
+  commitment: Character["gear"]["commitment"],
+  items: readonly string[],
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "gear.set-loadout", revision, { commitment, items });
+}
+
 /** Clears the loadout and resets the commitment to "none". */
 export function gearClearCommitments(
   id: string,

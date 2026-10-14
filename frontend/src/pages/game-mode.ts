@@ -171,6 +171,10 @@ export function payoffRepSuggestion(targetTier: number, crewTier: number): numbe
 }
 
 /** Settings commitment key for a loadout choice (lowercase contract enum value). */
-export function commitmentFor(choice: (typeof LOAD_CHOICES)[number]): string {
-  return choice.toLowerCase();
+export function commitmentFor(choice: LoadChoice): Lowercase<LoadChoice> {
+  switch (choice) {
+    case "Light": return "light";
+    case "Normal": return "normal";
+    case "Heavy": return "heavy";
+  }
 }

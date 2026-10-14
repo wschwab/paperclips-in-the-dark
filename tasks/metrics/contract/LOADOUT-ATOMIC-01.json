@@ -1,0 +1,83 @@
+{
+  "task": "LOADOUT-ATOMIC-01",
+  "track": "contract",
+  "implementationAgent": "mode-mockups",
+  "reviewAgent": null,
+  "date": "2026-10-14",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 40.8,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "Runtime gates: Ada607/607each of2cycles, Vitest957/957, browser6/6, Chromium9/9zerooverflow; independent Sol pending before final acceptance.",
+  "passRateAfterReview": "Independent Sol6.1/openai-codex/xhigh verdict not yet claimed.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": 0,
+  "defectsCaughtBy": {
+    "compiler": 2,
+    "conformance": 1,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "compiler",
+    "conformance",
+    "human"
+  ],
+  "notes": [
+    "Atomic gear.set-loadout replaces commitment/items in one revision; stored ownership/bulk and settings capacity authoritative.",
+    "Observed backend unique reds9/control1 across two red runs; frontend reds4 before helper/caller cutover.",
+    "ENDPOINT-MAP-001113\u2192114 and REQUIRED_HUMAN_OPS gains characterGearSetLoadout; strict equalities retained.",
+    "Released frontend hold respected; old Confirm chain removed. Public commitment enum retained; mapping returns typed literals.",
+    "Full combined mutation campaign is explicitly sequenced after cards committed and empty working copy; then refresh ALL stale pins includingM26, run28once, commit results and push both mirrors including0421dc56."
+  ],
+  "metricsMethodology": {
+    "method": "Measured monotonic elapsed since first atomic-loadout red; canonical managed output and build/proof logs.",
+    "source": "tasks/LOADOUT-ATOMIC-01.md and tasks/metrics/contract/LOADOUT-ATOMIC-01-*.log",
+    "locNote": "Diff LOC not measured; unknown.",
+    "scaffoldingLocNote": "No throwaway scripts committed.",
+    "tokensNote": "Unavailable accounting; supportednull."
+  },
+  "status": "Atomic frontend cutover and runtime gates green; immutable review and post-card combined mutation campaign remain.",
+  "red": {
+    "initialFailed": 7,
+    "initialPassed": 1,
+    "boundaryFailed": 2,
+    "boundarySkipped": 8
+  },
+  "acceptanceCounts": {
+    "focusedBackend": 10,
+    "focusedFrontend": 77,
+    "adaPerCycle": 607,
+    "adaCycleExecutions": 1214,
+    "vitest": 957,
+    "tooling": 233,
+    "proof": 246,
+    "browser": 6,
+    "chromiumMatrix": 9,
+    "horizontalOverflow": 0,
+    "pageErrors": 0,
+    "consoleErrors": 0
+  },
+  "frozenAmendments": [
+    "ENDPOINT-MAP-001113\u2192114",
+    "PARITY-HUMAN-003addcharacterGearSetLoadout"
+  ],
+  "verification": {
+    "build": 0,
+    "focused": 0,
+    "generate": 0,
+    "proof": 0,
+    "tooling": 0,
+    "typecheck": 0,
+    "adaTwoCycle": 0,
+    "vitest": 0,
+    "frontendTypecheck": 0,
+    "frontendBuild": 0,
+    "browser": 0,
+    "chromium": 0
+  },
+  "mutation": {
+    "run": false,
+    "reason": "Human-ordered combined campaign after all cards committed and empty working copy; all stale pins then refreshed, includingM26.",
+    "refreshedBackendHash": "c58045834d8082a1e918fcdb82c1abaa0b5ee81b3394f68333af5eb7e55ea510"
+  }
+}

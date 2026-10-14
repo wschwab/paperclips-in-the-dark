@@ -414,9 +414,52 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     await vi.waitFor(() => expect(box("Climbing gear").checked).toBe(true));
     (Array.from(root.querySelectorAll(".game-mode-confirm button")).find((b) => b.textContent === "Confirm change") as HTMLButtonElement).click();
     await vi.waitFor(() => {
-      expect(calls.some((c) => c.url.endsWith("/ops/gear.uncommit"))).toBe(true);
-      expect(calls.some((c) => c.url.endsWith("/ops/gear.commit"))).toBe(true);
+      const writes = calls.filter((c) => c.url.includes("/ops/gear."));
+      expect(writes).toHaveLength(1);
+      expect(writes[0]).toMatchObject({
+        url: `/api/characters/${CHARACTER_ID}/ops/gear.set-loadout`,
+        init: {
+          method: "POST",
+          headers: expect.objectContaining({ "If-Match": "12" }),
+          body: JSON.stringify({ commitment: "normal", items: ["Climbing gear"] }),
+        },
+      });
     });
+  });
+
+  it("Change loadout rejection keeps the proposal and old committed items with no partial-write fallback", async () => {
+    const { calls, fetchMock } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } }));
+    const base = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url, init) => {
+      if (!url.endsWith("/ops/gear.set-loadout")) return base(url, init);
+      calls.push({ url, init: init ?? {} });
+      return { ok: false, status: 400, text: async () => JSON.stringify({
+        ok: false, applied: { op: "gear.set-loadout" }, sideEffects: [],
+        error: { code: "VALIDATION", status: 400, message: "Invalid loadout", retryable: false,
+          recovery: "Adjust the loadout and retry.", details: { issues: [{ pointer: "/items", message: "Too bulky" }] } },
+      }) };
+    });
+    (Array.from(root.querySelectorAll('[data-section="committed-loadout"] button'))
+      .find((button) => button.textContent === "Change loadout") as HTMLButtonElement).click();
+    const proposalBox = () => Array.from(root.querySelectorAll<HTMLInputElement>(".game-mode-confirm input[type='checkbox']"))
+      .find((box) => box.closest("label")?.textContent?.includes("Climbing gear"))!;
+    await vi.waitFor(() => expect(proposalBox()).toBeDefined());
+    proposalBox().click();
+    await vi.waitFor(() => expect(proposalBox().checked).toBe(true));
+    (Array.from(root.querySelectorAll(".game-mode-confirm button"))
+      .find((button) => button.textContent === "Confirm change") as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(calls.filter((call) => call.url.includes("/ops/gear."))).toHaveLength(1);
+      expect(root.querySelector(".game-mode-confirm")).not.toBeNull();
+      const confirm = Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-confirm button"))
+        .find((button) => button.textContent === "Confirm change")!;
+      expect(confirm.disabled).toBe(false);
+    });
+    expect(proposalBox().checked).toBe(true);
+    expect(Array.from(root.querySelectorAll('[data-section="committed-loadout"] ul li')).map((item) => item.textContent))
+      .toEqual(["Fine lockpicks · 0 load"]);
+    expect(calls.find((call) => call.url.endsWith("/ops/gear.set-loadout"))?.init.body)
+      .toBe(JSON.stringify({ commitment: "normal", items: ["Fine lockpicks", "Climbing gear"] }));
   });
 
   it("End Score with partial stress does not claim stress was cleared", async () => {

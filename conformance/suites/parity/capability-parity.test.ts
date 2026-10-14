@@ -69,6 +69,9 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   // XP-TRACKER-02 (human-approved additive amendment, same precedent as GAME-MODE-02): atomic
   // Scoundrel XP completion is sheet-management and has a reachable human route in Resolution.
   "characterXpResolve",
+  // LOADOUT-ATOMIC-01 (human-approved additive amendment): the full-loadout Save
+  // control uses one atomic sheet-management operation without mode gating.
+  "characterGearSetLoadout",
 ];
 
 /** Runtime narrowing for JSON bodies: object and not an array. */

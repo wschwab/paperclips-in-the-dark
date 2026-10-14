@@ -1,0 +1,5 @@
+suites/semantics/loadout-atomic.test.ts(60,46): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+suites/semantics/loadout-atomic.test.ts(75,46): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+suites/semantics/loadout-atomic.test.ts(162,71): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+npm notice run paperclips-in-the-dark-conformance@1.0.0 typecheck
+npm notice run tsc --noEmit

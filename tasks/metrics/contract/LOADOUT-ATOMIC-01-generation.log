@@ -1,0 +1,8 @@
+node skill/generate-ada-validators.mjs
+
+node skill/generate-api-reference.mjs
+
+node skill/generate-capability-manifest.mjs
+note: 78 operationId(s) use the default agent disposition: health, getServiceCapabilities, getCampaign, getRoster, getCrewMembers, listGames, getGame, listPlaybooks, getPlaybook, listHeritages, getCrewSettings, getCrewTypeSettings, listCharacters, getCharacter, getCharacterCapabilities, listCharacterHistory, getCharacterSnapshot, stressClear, harmHeal, harmHealingClock, armorSet, playbookXpAdd, playbookXpClear, attributeXpAdd, attributeXpClear, attributeLevelup, actionSetRating, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearSetCommitment, gearClearCommitments, gearLock, gearUnlock, fundGain, fundSpend, fundLiquidate, characterContactAdd, characterContactCloseness, characterContactRemove, sessionSet, listCrews, getCrew, getCrewCapabilities, listCrewHistory, getCrewSnapshot, heatAdd, wantedAdd, repAdd, tierAdd, holdSet, crewXpAdd, turfAdd, crewXpClear, crewAbilityTake, crewAbilityRemove, crewClaimSet, crewClaimCustomize, crewClaimReset, upgradeMark, upgradeUnmark, cohortAdd, cohortUpdate, cohortRemove, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, coinAdd, stashAdd, listClocks, getClock, updateClock, clockProgress, clockReset
+
+conformance/node_modules/.bin/tsx conformance/scripts/generate-contract-coverage.mts --out conformance/generated/contract-coverage.json

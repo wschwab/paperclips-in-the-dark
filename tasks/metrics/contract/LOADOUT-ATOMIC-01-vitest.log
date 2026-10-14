@@ -1,0 +1,58 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/styles/game-mode-contrast.test.ts (9 tests) 4ms
+ ✓ src/data/playbook-blurbs.test.ts (7 tests) 6ms
+ ✓ src/head.test.ts (7 tests) 6ms
+ ✓ src/data/crew-advancement.test.ts (5 tests) 3ms
+ ✓ src/data/entanglements.test.ts (5 tests) 4ms
+ ✓ src/lib/chargen.test.ts (25 tests) 5ms
+ ✓ src/pages/game-mode.test.ts (10 tests) 4ms
+ ✓ src/components/clock.test.ts (4 tests) 11ms
+ ✓ src/lib/mutation-continuity.test.ts (19 tests) 27ms
+ ✓ src/components/error-card.test.ts (4 tests) 9ms
+ ✓ src/components/trauma-stamps.test.ts (4 tests) 19ms
+ ✓ src/components/harm-table.test.ts (5 tests) 24ms
+ ✓ src/components/action-dots.test.ts (11 tests) 30ms
+ ✓ src/lib/completion-cues.test.ts (8 tests) 16ms
+ ✓ src/styles/sheet-columns.test.ts (2 tests) 2ms
+ ✓ src/api/loadout-atomic.test.ts (3 tests) 8ms
+ ✓ src/api/game-mode-client.test.ts (5 tests) 16ms
+ ✓ src/schema/internal-error.test.ts (6 tests) 5ms
+ ✓ src/schema/decoders.test.ts (73 tests) 39ms
+ ✓ src/api/import-repair.test.ts (10 tests) 18ms
+ ✓ src/schema/campaign-summary.test.ts (3 tests) 3ms
+ ✓ src/schema/common.test.ts (4 tests) 2ms
+ ✓ src/pages/shell.test.ts (9 tests) 301ms
+ ✓ src/api/client.test.ts (284 tests) 190ms
+ ✓ src/pages/crew-history.test.ts (5 tests) 284ms
+ ✓ src/pages/character-history.test.ts (5 tests) 284ms
+ ✓ src/pages/crew-create.test.ts (8 tests) 458ms
+ ✓ src/pages/character-create.test.ts (18 tests) 529ms
+ ✓ src/pages/import.test.ts (7 tests) 633ms
+ ✓ src/main.test.ts (12 tests) 1250ms
+   ✓ app router (F2aa) > redirects "/" to "/roster" and mounts the roster page  648ms
+ ✓ src/pages/roster.test.ts (51 tests) 2100ms
+ ✓ src/pages/game-mode-sheet.test.ts (74 tests) 4628ms
+ ✓ src/pages/crew-detail.test.ts (98 tests) 8845ms
+ ✓ src/pages/character-detail.test.ts (157 tests) 13300ms
+
+ Test Files  34 passed (34)
+      Tests  957 passed (957)
+   Start at  16:00:31
+   Duration  14.45s (transform 2.75s, setup 0ms, collect 13.08s, tests 33.06s, environment 3.79s, prepare 2.59s)
+
+npm notice run paperclips-frontend@0.1.0 test
+npm notice run vitest --run
+(node:2047001) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2047004) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2046963) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2047003) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2046955) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2046957) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)

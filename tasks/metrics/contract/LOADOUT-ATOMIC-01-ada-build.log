@@ -1,0 +1,30 @@
+Note: Building paperclips_server=0.1.0/paperclips_server.gpr...
+Compile
+   [Ada]          pitd_callback.adb
+   [Ada]          pitd_ops.adb
+   [Ada]          pitd_stored.adb
+   [Ada]          pitd_schema_validators.adb
+Bind
+   [gprbind]      pitd.bexch
+   [Ada]          pitd.ali
+Link
+   [link]         pitd.adb
+Success: Build finished successfully in 10.32 seconds.
+pitd_schema_validators.adb:188:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:13: warning: suggested replacement: "S'First + 8" [-gnatww]
+pitd_schema_validators.adb:188:34: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:34: warning: suggested replacement: "S'First + 13" [-gnatww]
+pitd_schema_validators.adb:188:56: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:56: warning: suggested replacement: "S'First + 18" [-gnatww]
+pitd_schema_validators.adb:189:20: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:189:20: warning: suggested replacement: "S'First + 23" [-gnatww]
+pitd_schema_validators.adb:192:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:192:13: warning: suggested replacement: "S'First + 14" [-gnatww]
+pitd_schema_validators.adb:195:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:13: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:195:36: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:36: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:195:59: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:59: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:196:21: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:196:21: warning: suggested replacement: "S'First + 19" [-gnatww]

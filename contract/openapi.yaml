@@ -103,6 +103,30 @@ components:
             Insight: { type: integer, minimum: 0 }
             Prowess: { type: integer, minimum: 0 }
             Resolve: { type: integer, minimum: 0 }
+    CharacterGearSetLoadout:
+      type: object
+      required: [commitment, items]
+      additionalProperties: false
+      description: >
+        The complete committed loadout, not a delta. Item names must be unique,
+        nonempty strings naming owned gear in the stored availableGear or current
+        loadout. Stored item records and bulk are authoritative; client bulk and
+        other fields are not accepted. Commitment none requires an empty items list.
+      properties:
+        commitment:
+          type: string
+          $ref: "./schemas/common.json#/$defs/commitment"
+        items:
+          type: array
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+      if:
+        properties:
+          commitment: { const: none }
+        required: [commitment]
+      then:
+        properties:
+          items: { maxItems: 0 }
     CharacterDowntimeAdjust:
       type: object
       required: [delta, reason]
@@ -1492,6 +1516,45 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/gear.set-loadout:
+    post:
+      operationId: characterGearSetLoadout
+      x-snapshot: true
+      description: >
+        Atomic full-loadout replacement (LOADOUT-ATOMIC-01). Validate the exact
+        {commitment,items} body and every selection before editing stored gear.
+        Resolve each unique, nonempty string name from the character's stored
+        availableGear or current loadout, preserving its stored item record and
+        authoritative bulk. Never accept client bulk or invent an unowned item.
+        Preserve availableGear unchanged and replace commitment and the entire
+        committed loadout together. The sum of stored bulk must fit the selected
+        commitment's current settings-derived Commitment_Max_Bulk limit; no
+        new literal game maxima. Commitment none
+        permits only an empty items list. Body, selection and capacity failures
+        return VALIDATION 400 with issues; unknown names point to /items/{index}
+        and overflow points to /items. A locked commitment follows the existing
+        COMMITMENT_LOCKED domain convention. No mode or workflow-step gating;
+        mode and flow cursor remain unchanged. Success is one revisioned write
+        with exactly one snapshot and history entry; undo restores the previous
+        commitment and full loadout together. If-Match, Idempotency-Key and batch
+        use the existing character-operation conventions, including exact keyed
+        replay without another write, revision or history entry. Any failure
+        leaves gear, revision and history unchanged; a failed batch rolls back
+        the whole transaction. Returns the existing full Character DTO through
+        OperationResult, with no additional state or projection.
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CharacterGearSetLoadout" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/ops/gear.clear-commitments:
     post:

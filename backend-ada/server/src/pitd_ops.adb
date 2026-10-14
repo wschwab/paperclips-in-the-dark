@@ -47,6 +47,7 @@ package body Pitd_Ops is
         or else Op = "turf.add" or else Op = "xp.add" or else Op = "xp.clear"
         or else Op = "gear.add" or else Op = "gear.remove"
         or else Op = "gear.clear-commitments"
+        or else Op = "gear.set-loadout"
         or else Op = "hold.set"
         or else Op = "cohort.add" or else Op = "cohort.remove"
         or else Op = "cohort.update"
@@ -471,6 +472,43 @@ elsif Op = "clock.create" then
          return Check_Fields (B, Spec_List'(1 => Spec ("name", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "gear.set-commitment" then
          return Check_Fields (B, Spec_List'(1 => Spec ("commitment", JSON_String_Type, En => "none|light|normal|heavy|encumbered")), Bad);
+      elsif Op = "gear.set-loadout" then
+         if not Check_Fields
+           (B, (Spec ("commitment", JSON_String_Type,
+                      En => "none|light|normal|heavy|encumbered"),
+                Spec ("items", JSON_Array_Type)), Bad)
+         then
+            return False;
+         end if;
+         declare
+            Items : constant JSON_Array := Get (B, "items");
+         begin
+            for I in 1 .. Length (Items) loop
+               declare
+                  Item : constant JSON_Value := Get (Items, I);
+               begin
+                  if Item.Kind /= JSON_String_Type then
+                     Bad := To_Unbounded_String ("items must contain strings");
+                     return False;
+                  end if;
+                  declare
+                     Name : constant String := Get (Item);
+                  begin
+                     if Name'Length = 0 then
+                        Bad := To_Unbounded_String ("item names must be nonempty");
+                        return False;
+                     end if;
+                     for J in 1 .. I - 1 loop
+                        if String'(Get (Get (Items, J))) = Name then
+                           Bad := To_Unbounded_String ("item names must be unique");
+                           return False;
+                        end if;
+                     end loop;
+                  end;
+               end;
+            end loop;
+         end;
+         return True;
       elsif Op = "fund.gain" or else Op = "fund.spend" or else Op = "fund.liquidate" then
          return Check_Fields (B, Spec_List'(1 => Spec ("coins", JSON_Int_Type, MnI => 1)), Bad);
       elsif Op = "note.add" then
@@ -1461,6 +1499,84 @@ elsif Op = "harm.add" then
       elsif Op = "gear.set-commitment" then
          if Bool_Field(Get(E,"gear"),"isCommitmentLocked") then return Error_Result(Op,"COMMITMENT_LOCKED","commitment is locked",E); end if;
          declare X : constant JSON_Value := Get(E,"gear"); begin Set_Field(X,"commitment",Str_Field(B,"commitment")); end;
+      elsif Op = "gear.set-loadout" then
+         if Kind /= "character" then
+            return Validation_Error (Op, "character-only operation",
+                                     Root_Issues ("character-only operation"), E);
+         end if;
+         declare
+            G : constant JSON_Value := Get (E, "gear");
+            Available : constant JSON_Array := Get (G, "availableGear");
+            Current : constant JSON_Array := Get (G, "loadout");
+            Items : constant JSON_Array := Get (B, "items");
+            Commitment : constant String := Str_Field (B, "commitment");
+            Capacity : constant Integer :=
+              Commitment_Max_Bulk
+                ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                  Game (Str_Field (E, "gameStem"))), Commitment);
+            Remaining : Integer := Capacity;
+            Exceeds_Capacity : Boolean := False;
+            Loadout : JSON_Array := Empty_Array;
+            Issues : JSON_Array := Empty_Array;
+         begin
+            if Bool_Field (G, "isCommitmentLocked") then
+               return Commitment_Locked_Error (Op, "commitment is locked", E);
+            end if;
+            for I in 1 .. Length (Items) loop
+               declare
+                  Name : constant String := Get (Get (Items, I));
+                  Item : JSON_Value := JSON_Null;
+               begin
+                  --  Available gear is authoritative; retain current-only items
+                  --  as selectable when they are absent from that catalogue.
+                  for J in 1 .. Length (Available) loop
+                     if Str_Field (Get (Available, J), "name") = Name then
+                        Item := Get (Available, J);
+                        exit;
+                     end if;
+                  end loop;
+                  if Item.Kind = JSON_Null_Type then
+                     for J in 1 .. Length (Current) loop
+                        if Str_Field (Get (Current, J), "name") = Name then
+                           Item := Get (Current, J);
+                           exit;
+                        end if;
+                     end loop;
+                  end if;
+                  if Item.Kind = JSON_Null_Type then
+                     Append (Issues, Issue_At
+                       ("/items/" & Trim_Image (I - 1),
+                        "item is not available or currently committed",
+                        "an existing gear item name"));
+                  else
+                     Append (Loadout, Item);
+                     --  Subtract only bulk that fits: even many maximum-sized
+                     --  stored items cannot overflow an accumulated bulk sum.
+                     if Int_Field (Item, "bulk") > Remaining then
+                        Exceeds_Capacity := True;
+                     else
+                        Remaining := Remaining - Int_Field (Item, "bulk");
+                     end if;
+                  end if;
+               end;
+            end loop;
+            if Commitment = "none" and then Length (Items) > 0 then
+               Append (Issues, Issue_At
+                 ("/items", "none commitment requires an empty loadout",
+                  "an empty item list"));
+            elsif Exceeds_Capacity then
+               Append (Issues, Issue_At
+                 ("/items", "loadout exceeds the commitment bulk limit",
+                  "items within the commitment capacity"));
+            end if;
+            if Length (Issues) > 0 then
+               return Validation_Error (Op, "invalid loadout", Issues, E);
+            end if;
+            --  Every check has passed; update the existing gear object without
+            --  copying the unchanged catalogue or lock.
+            Set_Field (G, "commitment", Commitment);
+            Set_Field (G, "loadout", Loadout);
+         end;
       elsif Op = "gear.add" then
          declare G : constant JSON_Value := Get(E,"gear"); A : constant JSON_Array := Get(G,"availableGear"); Name : constant String := Str_Field(B,"name"); begin
             for I in 1..Length(A) loop
@@ -1942,6 +2058,7 @@ elsif Op = "harm.add" then
       if Kind = "character" and then
         (Op = "gear.add" or else Op = "gear.remove" or else Op = "gear.commit"
          or else Op = "gear.uncommit" or else Op = "gear.clear-commitments"
+         or else Op = "gear.set-loadout"
          or else Op = "ability.take" or else Op = "ability.remove")
       then
          declare A : constant JSON_Value := Get (Get (E, "monitor"), "armor"); begin

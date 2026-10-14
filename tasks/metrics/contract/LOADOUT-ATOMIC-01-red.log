@@ -1,0 +1,186 @@
+OK: canonical managed launcher
+[managed-run] runId=2026-10-14T12-29-01-647Z-1a32e6c6
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=LOADOUT-ATOMIC-01-working
+[managed-run] testCommand=--run suites/semantics/loadout-atomic.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6/data (dir)
+[managed-run] port=41623
+[managed-run] baseUrl=http://127.0.0.1:41623
+[managed-run] pid=1994790
+[managed-run] ready=http://127.0.0.1:41623
+[managed-run] vitestPid=1994857
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-001] sets level and complete selected item set in exactly one revision and snapshot, preserving owned gear 113ms
+   → expected 400 to be 200 // Object.is equality
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-002] a bad late item cannot leave a changed level, earlier item, revision or history 133ms
+   → expected false to be true // Object.is equality
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-003] capacity is loaded from settings, not trusted client bulk or a hardcoded limit 134ms
+   → expected false to be true // Object.is equality
+ ✓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-004] duplicate, malformed, unsupported-level and extra-field requests do not mutate 219ms
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-005] idempotent replay with the old revision returns the same result and only one write 132ms
+   → expected 400 to be 200 // Object.is equality
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-006] stale If-Match and locked commitment reject without partial writes 134ms
+   → expected 'VALIDATION' to be 'COMMITMENT_LOCKED' // Object.is equality
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-007] batch uses the same atomic replacement and rolls back when another member fails 133ms
+   → expected [ false, false ] to deeply equal [ true, false ]
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-008] none plus an empty item set clears the committed loadout, not owned gear 88ms
+   → expected 400 to be 200 // Object.is equality
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 1 passed (8)
+   Start at  15:29:01
+   Duration  1.46s (transform 52ms, setup 0ms, collect 267ms, tests 1.09s, environment 0ms, prepare 29ms)
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/semantics/loadout-atomic.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-001] sets level and complete selected item set in exactly one revision and snapshot, preserving owned gear
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:33:29
+     31|     const h = await history(before.id);
+     32|     const response = await api.post(path(before.id), { commitment: "no…
+     33|     expect(response.status).toBe(200);
+       |                             ^
+     34|     expect(validate("operationResult", response.body).errors).toEqual(…
+     35|     const result = await api.operation(response);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-002] a bad late item cannot leave a changed level, earlier item, revision or history
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:57:86
+     55|     expect(result.ok).toBe(false);
+     56|     expect(result.error?.code).toBe("VALIDATION");
+     57|     expect(result.error?.details.issues.some(issue => issue.pointer ==…
+       |                                                                                      ^
+     58|     expect(await api.character(before.id)).toEqual(before);
+     59|     expect(await history(before.id)).toEqual(h);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-003] capacity is loaded from settings, not trusted client bulk or a hardcoded limit
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:72:84
+     70|     expect(response.status).toBe(400);
+     71|     const result = await api.operation(response);
+     72|     expect(result.error?.details.issues.some(issue => issue.pointer ==…
+       |                                                                                    ^
+     73|     expect(await api.character(current.id)).toEqual(current);
+     74|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-005] idempotent replay with the old revision returns the same result and only one write
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:97:26
+     95|     const h = await history(before.id);
+     96|     const first = await api.post(path(before.id), body, headers);
+     97|     expect(first.status).toBe(200);
+       |                          ^
+     98|     const second = await api.post(path(before.id), body, headers);
+     99|     expect(second.status).toBe(200);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-006] stale If-Match and locked commitment reject without partial writes
+AssertionError: expected 'VALIDATION' to be 'COMMITMENT_LOCKED' // Object.is equality
+
+Expected: [32m"COMMITMENT_LOCKED"[39m
+Received: [31m"VALIDATION"[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:113:57
+    111|     const current = locked.character!;
+    112|     const rejected = await api.post(path(before.id), { commitment: "no…
+    113|     expect((await api.operation(rejected)).error?.code).toBe("COMMITME…
+       |                                                         ^
+    114|     expect(await api.character(before.id)).toEqual(current);
+    115|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-007] batch uses the same atomic replacement and rolls back when another member fails
+AssertionError: expected [ false, false ] to deeply equal [ true, false ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   true,[39m
+[31m+   false,[39m
+[2m    false,[22m
+[2m  ][22m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:125:48
+    123|     ] });
+    124|     const result = await api.operation(r);
+    125|     expect(result.batch?.map(item => item.ok)).toEqual([true, false]);
+       |                                                ^
+    126|     expect(await api.character(before.id)).toEqual(before);
+    127|     expect(await history(before.id)).toEqual(h);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-008] none plus an empty item set clears the committed loadout, not owned gear
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:133:29
+    131|     const before = await prepared();
+    132|     const response = await api.post(path(before.id), { commitment: "no…
+    133|     expect(response.status).toBe(200);
+       |                             ^
+    134|     const after = (await api.operation(response)).character!;
+    135|     expect(after.gear.commitment).toBe("none");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6 dataDir=/tmp/pitd-managed/2026-10-14T12-29-01-647Z-1a32e6c6/data port=41623
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-14T12-29-01-647Z-1a32e6c6-server.log

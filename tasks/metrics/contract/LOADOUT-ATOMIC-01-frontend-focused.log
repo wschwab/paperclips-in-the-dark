@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/api/loadout-atomic.test.ts (3 tests) 6ms
+ ✓ src/pages/game-mode-sheet.test.ts (74 tests) 4597ms
+
+ Test Files  2 passed (2)
+      Tests  77 passed (77)
+   Start at  15:54:30
+   Duration  5.28s (transform 275ms, setup 0ms, collect 637ms, tests 4.60s, environment 99ms, prepare 120ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/api/loadout-atomic.test.ts src/pages/game-mode-sheet.test.ts

@@ -595,6 +595,60 @@
       "collection": false
     },
     {
+      "operationId": "characterGearSetLoadout",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-loadout",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterGearSetLoadout",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-loadout",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterGearSetLoadout",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-loadout",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterGearSetLoadout",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-loadout",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterGearSetLoadout",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-loadout",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "characterGearSetLoadout",
+      "method": "POST",
+      "path": "/characters/{id}/ops/gear.set-loadout",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "characterModeFlowSet",
       "method": "POST",
       "path": "/characters/{id}/ops/mode.flow.set",

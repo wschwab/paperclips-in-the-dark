@@ -1,0 +1,3 @@
+src/pages/character-detail.ts(797,60): error TS2345: Argument of type 'string' is not assignable to parameter of type '"light" | "normal" | "none" | "heavy" | "encumbered"'.
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'tsc' --noEmit

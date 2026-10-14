@@ -150,14 +150,15 @@ Raw outputs: `luna/raw-output-<pin>.txt` for each round, and `luna/stderr-<pin>.
   `OperationResult` gains `mode` and `suggestedOps`.
 - Client ops are named by their OpenAPI operationIds (`characterModeSet`, `characterModeFlowSet`,
   `characterDowntimeSpend`, `characterDowntimeAdjust`, `characterDowntimeReset`), as PARITY-HUMAN-003 requires.
-- The Change-loadout proposal commits only on Confirm change, as explicit gear writes (level first, then
-  removals, then additions), each using the revision from the previous write.
+- GAME-MODE-03 originally committed Change-loadout Confirm as a level/removal/addition
+  revision-linked chain. LOADOUT-ATOMIC-01 supersedes it with one `gear.set-loadout`
+  request carrying the proposed level and full item set; the chain code is removed.
 - Confirmations: Skip on optional steps and Skip Resolution each ask first.
 - End Score notice says partial stress was kept unless stress was full (the contract rule).
 
 ## Known gaps
 
-- A partial-failure in the Change-loadout chain (for example, a write fails midway) leaves earlier writes applied. The sheet shows the gear error, but no rollback exists.
+- **Closed by LOADOUT-ATOMIC-01:** the old Change-loadout chain could leave earlier writes applied after a midway failure. The atomic replacement validates all selections and settings capacity before writing; failure preserves gear, revision and history, with no rollback/fallback write chain.
 - The stale-crew reconcile path is implemented, not covered by a test.
 - The Engagement factor table and the Loadout copy are the approved mockup wording; they are not from game data.
 - Fixed after `9f18cdcf` (superseded review, `luna/verdict-9f18cdcf-superseded.md`):

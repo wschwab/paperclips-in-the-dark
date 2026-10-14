@@ -1,0 +1,151 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/api/loadout-atomic.test.ts (3 tests | 3 failed) 3ms
+   × LOADOUT-ATOMIC-01 client > sends the complete selection and If-Match to one atomic operation 2ms
+     → (0 , characterGearSetLoadout) is not a function
+   × LOADOUT-ATOMIC-01 client > keeps a typed validation failure and never falls back to partial gear writes 1ms
+     → (0 , characterGearSetLoadout) is not a function
+   × LOADOUT-ATOMIC-01 client > preserves the existing stale-revision path rather than retrying an item chain 0ms
+     → (0 , characterGearSetLoadout) is not a function
+ ❯ src/pages/game-mode-sheet.test.ts (73 tests | 1 failed | 72 skipped) 1114ms
+   ↓ GAME-MODE-03 sheet > shows the mode switch with Free Play selected and Personal always visible
+   ↓ GAME-MODE-03 sheet > switching to Score posts mode.set with the chosen mode and If-Match
+   ↓ GAME-MODE-03 sheet > Score collapses Projects and Contacts and shows the committed loadout with a confirmed change
+   ↓ GAME-MODE-03 sheet > opens the Score Planning popup from the stored cursor and reads load limits from settings
+   ↓ GAME-MODE-03 sheet > Score Loadout popup shows the load choices with the gear checklist and the approved footer
+   ↓ GAME-MODE-03 sheet > Resolution Payoff shows the approved coin table, the tithe rule and the Leave flow footer
+   ↓ GAME-MODE-03 sheet > walks the Resolution stepper with stored steps and shows the one-player warning on crew editors
+   ↓ GAME-MODE-03 sheet > crew writes send the observed crew revision as If-Match
+   ↓ GAME-MODE-03 sheet > Skip on an optional Resolution step asks for confirmation before advancing
+   ↓ GAME-MODE-03 sheet > skipping the whole Resolution asks for confirmation and clears the workflow cursor
+   ↓ GAME-MODE-03 sheet > shows the downtime budget as remaining of free plus paid, and never blocks a spend when over
+   ↓ GAME-MODE-03 sheet > requires the stored mode, flow and downtime fields in the Character decoder (contract required list)
+   ↓ GAME-MODE-03 sheet > explicit adjust posts coin/gift/correction to downtime.adjust without a mode change
+   ↓ GAME-MODE-03 approved surfaces (Luna review findings) > Planning is an overlay dialog (aria-modal) outside the sheet, with the six approach descriptions
+   ↓ GAME-MODE-03 approved surfaces (Luna review findings) > Engagement footer ends with Enter Score and shows the approved starting-position reminder
+   ↓ GAME-MODE-03 approved surfaces (Luna review findings) > Change loadout opens a confirmation with Light/Normal/Heavy, gear checkboxes and Back/Leave flow/Confirm change
+   × GAME-MODE-03 approved surfaces (Luna review findings) > Change loadout Back cancels the proposal and sends no gear write; Confirm change applies the proposed items 1113ms
+     → expected [ { …(2) }, { …(2) } ] to have a length of 1 but got 2
+   ↓ GAME-MODE-03 approved surfaces (Luna review findings) > End Score with partial stress does not claim stress was cleared
+   ↓ GAME-MODE-03 approved surfaces (Luna review findings) > direct crew editors use the approved update labels per step
+   ↓ GAME-MODE-03 approved surfaces (Luna review findings) > Crew XP and Crew Rep use the approved update labels, and Crew Rep offers a confirmed Skip and Next: Downtime
+   ↓ GAME-MODE-03 approved surfaces (Luna review findings) > the Downtime activity menu lives in the sheet (above the fixed footer on narrow), not only in the panel
+   ↓ GAME-MODE-03 Sol round-3 Planning cards (R3-03) > R3-03: each Planning approach is one selectable card holding its title and description
+   ↓ GAME-MODE-03 Sol round-3 Planning cards (R3-03) > R3-03: clicking the description itself selects the approach
+   ↓ GAME-MODE-03 Sol round-3 narrow Downtime card (R3-02) > R3-02: the sheet activities card carries the budget readout and adjustments, not only the panel
+   ↓ GAME-MODE-03 Sol round-3 narrow Downtime card (R3-02) > R3-02: the activity menu is one two-column grid in the sheet card, with Other last and spanning the row
+   ↓ GAME-MODE-03 Sol round-3 first-step Back (R3-01) > R3-01: the first Resolution step's Back is enabled and returns to the Score sheet
+   ↓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-1: the Score popup header carries the title, the 'Start a Score · N of 3' subtitle and a Close control
+   ↓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-1: Loadout and Engagement carry 2 of 3 and 3 of 3
+   ↓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-1: the header Close returns to the Score sheet (flow cleared, mode kept)
+   ↓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-2: the footer splits Back on the left and Leave flow with Next on the right
+   ↓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-2: the Resolution footer keeps Back left and Skip, Skip Resolution, Leave flow, Next right
+   ↓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-4: Payoff shows the approved Coin / Score table beside the rep and tithe reference
+   ↓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-4: Heat shows the approved Heat / Exposure table beside the modifiers
+   ↓ GAME-MODE-03 Sol round-3 approved reminders (R3-04) > R3-04a: Scoundrel XP carries the success and track-assignment reminders
+   ↓ GAME-MODE-03 Sol round-3 approved reminders (R3-04) > R3-04b: Heat carries the reminder with the crew's own heat maximum (never a literal 9)
+   ↓ GAME-MODE-03 Sol round-3 approved reminders (R3-04) > R3-04c: Entanglements says the GM generates the entanglement
+   ↓ Entanglements: SRD text, roll reminder and per-entanglement disclosures > shows the roll reminder near the top and lists the heat-4 column's five entanglements as disclosures
+   ↓ Entanglements: SRD text, roll reminder and per-entanglement disclosures > lists the heat-6 column's entanglements for a crew at heat 6
+   ↓ Entanglements: SRD text, roll reminder and per-entanglement disclosures > attributes the SRD text with a CC-BY note and an SRD ↗ link
+   ↓ GAME-MODE-03 Sol 6.1 round 2 finding (R2-03) > R2-03: Scoundrel XP shows each track's current total beside its mark
+   ↓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-02: Scoundrel XP shows this playbook's condition, not the generic Lurk example
+   ↓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-04: Entanglements carries the highest-die rule and the bring-into-play reminder
+   ↓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-05: Crew XP states that each category can yield up to 2 XP, with the SRD text, CC-BY attribution and SRD link
+   ↓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-05: Crew XP shows the crew type's own XP trigger from the crew data
+   ↓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-05: Crew Rep links to the Payoff SRD page
+   ↓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-06) > R2-06: the End Score tooltip does not promise an out-of-action transition
+   ↓ GAME-MODE-03 Sol 6.1 findings (F8, F4, F2) > F8: the End Score confirmation does not claim the scoundrel goes out of action
+   ↓ GAME-MODE-03 Sol 6.1 findings (F8, F4, F2) > F4: the crew editor copy describes the amount added (a delta), not a displayed total
+   ↓ GAME-MODE-03 Sol 6.1 findings (F8, F4, F2) > F2: load totals use the selected commitment allowance (Normal 5, Heavy 6), not the absolute maximum
+   ↓ GAME-MODE-03 Luna round 5 findings (F10, F1) > entanglements show the matching heat band table, and Show all reveals the full result-by-heat table
+   ↓ GAME-MODE-03 Luna round 5 findings (F10, F1) > the Resolution surface is an aria-modal overlay outside the sheet, with the six-step title and subtitle
+   ↓ GAME-MODE-03 Luna round 4 findings > Planning Back is enabled and returns to the score sheet (clears the popup cursor)
+   ↓ GAME-MODE-03 Luna round 4 findings > Engagement shows the approved factor table: Operation, Plan's detail, People, Other elements
+   ↓ GAME-MODE-03 Luna round 4 findings > the Resolution stepper offers six direct-selection controls that set the stored step
+   ↓ GAME-MODE-03 Luna round 3 finding: committed gear is listed once > the Score Loadout checklist lists each owned item once, checked only when committed
+   ↓ GAME-MODE-03 Luna round 3 finding: committed gear is listed once > the Change-loadout checklist lists each owned item once, with the proposal checked
+   ↓ GAME-MODE-03 Luna round 2 findings > the Resolution stepper shows the approved step names, not enum ids
+   ↓ GAME-MODE-03 Luna round 2 findings > the Downtime activity menu is in the Game Mode panel on wide screens and duplicated in the sheet for narrow screens
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the XP Tracker exists only in Score mode
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the tracker holds Desperate action XP and the three expression tracks in the sheet's stress structure
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the compact tab opens the bottom sheet (aria-expanded), Escape closes it and returns focus to the tab
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the allocation screen shows the counters as the GM total, and remaining XP updates live
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > completion is disabled until every XP is placed, then enabled
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > a track beyond its room blocks completion and says by how much
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > Adjust unlocks the GM total, and a zero total is allowed with the counters warning
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > Complete posts xp.resolve with the total and the allocations, under the current revision
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the compact sheet traps Tab and Shift+Tab inside the dialog (XP-TRACKER-04 review R2)
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > while the compact sheet is open, the sheet and the mode panel behind it are inert (XP-TRACKER-04 review R2)
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > widening to the wide layout closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1)
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > leaving Score closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1)
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > while the compact sheet is open, the page outside the character (header, skip link, footer) is inert too (XP-TRACKER-04 review round 2 R2)
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > Escape still closes the compact sheet after focus was lost to the page (blocked background click, XP-TRACKER-04 round 3 R2)
+   ↓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > focus that leaves the open compact sheet returns to its Close button (XP-TRACKER-04 round 3 R2)
+
+ Test Files  2 failed (2)
+      Tests  4 failed | 72 skipped (76)
+   Start at  15:52:56
+   Duration  1.75s (transform 240ms, setup 0ms, collect 582ms, tests 1.12s, environment 99ms, prepare 127ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/api/loadout-atomic.test.ts src/pages/game-mode-sheet.test.ts -t LOADOUT-ATOMIC-01 client|Change loadout Back cancels
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/api/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 client > sends the complete selection and If-Match to one atomic operation
+TypeError: (0 , characterGearSetLoadout) is not a function
+ ❯ src/api/loadout-atomic.test.ts:25:44
+     23|   it("sends the complete selection and If-Match to one atomic operatio…
+     24|     global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, …
+     25|     const result = await Effect.runPromise(characterGearSetLoadout(bef…
+       |                                            ^
+     26|     expect(result.revision).toBe(before.revision + 1);
+     27|     expect(result.gear.loadout).toEqual(selected);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/api/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 client > keeps a typed validation failure and never falls back to partial gear writes
+TypeError: (0 , characterGearSetLoadout) is not a function
+ ❯ src/api/loadout-atomic.test.ts:42:58
+     40|     };
+     41|     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 400,…
+     42|     const result = await Effect.runPromise(Effect.either(characterGear…
+       |                                                          ^
+     43|     expect(result._tag).toBe("Left");
+     44|     if (result._tag === "Left") {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/api/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 client > preserves the existing stale-revision path rather than retrying an item chain
+TypeError: (0 , characterGearSetLoadout) is not a function
+ ❯ src/api/loadout-atomic.test.ts:58:58
+     56|     };
+     57|     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 409,…
+     58|     const result = await Effect.runPromise(Effect.either(characterGear…
+       |                                                          ^
+     59|     expect(result._tag).toBe("Left");
+     60|     if (result._tag === "Left") expect(result.left).toBeInstanceOf(Sta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/pages/game-mode-sheet.test.ts > GAME-MODE-03 approved surfaces (Luna review findings) > Change loadout Back cancels the proposal and sends no gear write; Confirm change applies the proposed items
+AssertionError: expected [ { …(2) }, { …(2) } ] to have a length of 1 but got 2
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 1[39m
+[31m+ 2[39m
+
+ ❯ src/pages/game-mode-sheet.test.ts:418:22
+    416|     await vi.waitFor(() => {
+    417|       const writes = calls.filter((c) => c.url.includes("/ops/gear."));
+    418|       expect(writes).toHaveLength(1);
+       |                      ^
+    419|       expect(writes[0]).toMatchObject({
+    420|         url: `/api/characters/${CHARACTER_ID}/ops/gear.set-loadout`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

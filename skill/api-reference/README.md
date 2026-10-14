@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 116
+Operations: 117
 
 ## Conventions
 
@@ -160,6 +160,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/gear.commit` | [`gearCommit`](#gearcommit) | false |
 | POST | `/characters/{id}/ops/gear.uncommit` | [`gearUncommit`](#gearuncommit) | false |
 | POST | `/characters/{id}/ops/gear.set-commitment` | [`gearSetCommitment`](#gearsetcommitment) | false |
+| POST | `/characters/{id}/ops/gear.set-loadout` | [`characterGearSetLoadout`](#charactergearsetloadout) | true |
 | POST | `/characters/{id}/ops/gear.clear-commitments` | [`gearClearCommitments`](#gearclearcommitments) | true |
 | POST | `/characters/{id}/ops/gear.lock` | [`gearLock`](#gearlock) | false |
 | POST | `/characters/{id}/ops/gear.unlock` | [`gearUnlock`](#gearunlock) | false |
@@ -1431,6 +1432,31 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
+
+## characterGearSetLoadout
+
+`POST /characters/{id}/ops/gear.set-loadout`
+
+Atomic full-loadout replacement (LOADOUT-ATOMIC-01). Validate the exact {commitment,items} body and every selection before editing stored gear. Resolve each unique, nonempty string name from the character's stored availableGear or current loadout, preserving its stored item record and authoritative bulk. Never accept client bulk or invent an unowned item. Preserve availableGear unchanged and replace commitment and the entire committed loadout together. The sum of stored bulk must fit the selected commitment's current settings-derived Commitment_Max_Bulk limit; no new literal game maxima. Commitment none permits only an empty items list. Body, selection and capacity failures return VALIDATION 400 with issues; unknown names point to /items/{index} and overflow points to /items. A locked commitment follows the existing COMMITMENT_LOCKED domain convention. No mode or workflow-step gating; mode and flow cursor remain unchanged. Success is one revisioned write with exactly one snapshot and history entry; undo restores the previous commitment and full loadout together. If-Match, Idempotency-Key and batch use the existing character-operation conventions, including exact keyed replay without another write, revision or history entry. Any failure leaves gear, revision and history unchanged; a failed batch rolls back the whole transaction. Returns the existing full Character DTO through OperationResult, with no additional state or projection.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "#/components/schemas/CharacterGearSetLoadout" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
 - `500`: OperationResult
 
 ## gearClearCommitments

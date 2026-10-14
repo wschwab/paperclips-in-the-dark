@@ -1,0 +1,88 @@
+OK: canonical managed launcher
+[managed-run] runId=2026-10-14T12-32-06-280Z-cdc1a84b
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=LOADOUT-ATOMIC-01-working
+[managed-run] testCommand=--run suites/semantics/loadout-atomic.test.ts -t LOADOUT-ATOMIC-009|LOADOUT-ATOMIC-010
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b/data
+[managed-run] logFile=/tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b/data (dir)
+[managed-run] port=43959
+[managed-run] baseUrl=http://127.0.0.1:43959
+[managed-run] pid=1998926
+[managed-run] ready=http://127.0.0.1:43959
+[managed-run] vitestPid=1998993
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-001] sets level and complete selected item set in exactly one revision and snapshot, preserving owned gear
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-002] a bad late item cannot leave a changed level, earlier item, revision or history
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-003] capacity is loaded from settings, not trusted client bulk or a hardcoded limit
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-004] duplicate, malformed, unsupported-level and extra-field requests do not mutate
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-005] idempotent replay with the old revision returns the same result and only one write
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-006] stale If-Match and locked commitment reject without partial writes
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-007] batch uses the same atomic replacement and rolls back when another member fails
+ ↓ suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-008] none plus an empty item set clears the committed loadout, not owned gear
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-009] the exact normal load boundary succeeds and a lower level is checked against its own settings 156ms
+   → expected 400 to be 200 // Object.is equality
+ × suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-010] none rejects even zero-bulk selected gear without a commitment 91ms
+   → expected false to be true // Object.is equality
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 skipped (10)
+   Start at  15:32:06
+   Duration  636ms (transform 55ms, setup 0ms, collect 280ms, tests 247ms, environment 0ms, prepare 32ms)
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/semantics/loadout-atomic.test.ts -t LOADOUT-ATOMIC-009|LOADOUT-ATOMIC-010
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-009] the exact normal load boundary succeeds and a lower level is checked against its own settings
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:150:29
+    148|     const current = owned.character!;
+    149|     const accepted = await api.post(path(current.id), { commitment: "n…
+    150|     expect(accepted.status).toBe(200);
+       |                             ^
+    151|     const full = (await api.operation(accepted)).character!;
+    152|     expect(full.gear.loadout.reduce((sum, item) => sum + item.bulk, 0)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  suites/semantics/loadout-atomic.test.ts > LOADOUT-ATOMIC-01 gear.set-loadout > [LOADOUT-ATOMIC-010] none rejects even zero-bulk selected gear without a commitment
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ suites/semantics/loadout-atomic.test.ts:162:109
+    160|     const response = await api.post(path(before.id), { commitment: "no…
+    161|     expect(response.status).toBe(400);
+    162|     expect((await api.operation(response)).error?.details.issues.some(…
+       |                                                                                                             ^
+    163|     expect(await api.character(before.id)).toEqual(before);
+    164|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b dataDir=/tmp/pitd-managed/2026-10-14T12-32-06-280Z-cdc1a84b/data port=43959
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-10-14T12-32-06-280Z-cdc1a84b-server.log

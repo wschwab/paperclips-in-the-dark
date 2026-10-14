@@ -95,6 +95,7 @@ import {
   crewHeatAdd,
   crewXpAdd,
   characterXpResolve,
+  characterGearSetLoadout,
 } from "../api/client.js";
 import type { CharacterCapabilities } from "../api/client.js";
 import { extractExperienceTrigger } from "./crew-domain.js";
@@ -784,28 +785,16 @@ export function mountCharacterDetailPage(
       gmLoadoutChange = { ...gmLoadoutChange, items: committed ? [...rest, name] : rest };
       renderDetailWrapper();
     },
-    // Confirm applies the proposal as explicit gear writes: level first, then removals, then additions.
-    // Each write uses the revision returned by the previous one. Nothing commits before this point.
+    // Confirmation replaces the complete proposal in one atomic revisioned write.
     onLoadoutConfirm: () => {
       const change = gmLoadoutChange;
       if (!currentCharacter || isGameModeLoading || change === null) return;
       const current = currentCharacter;
-      const have = new Set(current.gear.loadout.map((i) => i.name));
-      const want = new Set(change.items);
-      const removed = [...have].filter((n) => !want.has(n));
-      const added = [...want].filter((n) => !have.has(n));
-      const levelKey = change.commitment === null ? null : commitmentFor(change.commitment);
-      const needsLevel = levelKey !== null && levelKey !== current.gear.commitment;
+      const commitment = change.commitment === null ? current.gear.commitment : commitmentFor(change.commitment);
       isGameModeLoading = true;
       clearNotices();
       renderDetailWrapper();
-      const program = Effect.gen(function* () {
-        let c: Character = current;
-        if (needsLevel && levelKey !== null) c = yield* gearSetCommitment(characterId, levelKey, c.revision);
-        for (const name of removed) c = yield* gearUncommit(characterId, name, c.revision);
-        for (const name of added) c = yield* gearCommit(characterId, name, c.revision);
-        return c;
-      });
+      const program = characterGearSetLoadout(characterId, commitment, change.items, current.revision);
       runCharacterMutate(
         "gear",
         program,
