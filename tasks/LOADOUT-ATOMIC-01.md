@@ -152,3 +152,32 @@ already refreshed to `c58045834d8082a1e918fcdb82c1abaa0b5ee81b3394f68333af5eb7e5
 No jj abandon, jj restore, force push or campaign-data modification.
 
 Evidence: `tasks/metrics/contract/LOADOUT-ATOMIC-01-*.log`.
+
+## Gap found in Chromium and fixed (takeover verification)
+
+The takeover checked the cutover and the Chromium matrix. The matrix first showed a real gap: with
+the level still at the character's current `none`, checking an item and pressing Confirm sent
+`commitment: none` with items, and the server refused it (400 VALIDATION). The UI gave only the
+generic notice. The fix (`renderLoadoutConfirm`, `frontend/src/pages/character-sections/gameMode.ts`):
+Confirm is disabled while the effective level is `none` and items are checked, and a status line says
+"Choose Light, Normal or Heavy to carry these items. None carries nothing." Red first:
+`game-mode-sheet.test.ts` "LOADOUT-ATOMIC-01 frontend gap" failed (1 failed, 74 skipped) before the change.
+
+## Final gates on the takeover tree
+
+| Gate | Result |
+|---|---|
+| Ada two-cycle (`npm run test:ada -- --cycles 2 -- --run`) | 607/607 in each cycle (`tasks/metrics/contract/LOADOUT-ATOMIC-01-ada-two-cycle-rerun.log`) |
+| tooling (`npm run test:tooling`) | 233/233 |
+| conformance typecheck | exit 0 |
+| gnatprove (`paperclips_core.gpr --level=2`) | 246 checks proved |
+| vitest (frontend) | 958/958, 34 files |
+| tsc / build | exit 0 / exit 0 |
+| browser journeys (`npm run test:browser`) | 6/6 on the gap-fix build (`tasks/metrics/contract/LOADOUT-ATOMIC-01-browser-final.log`) |
+| Chromium 3×3 of the loadout popup (`agent-docs/.../loadout-atomic-01/chromium-3x3-check.mjs`) | 9/9: one `gear.set-loadout` per case, body keys exactly `commitment,items`, If-Match present, 0 chain writes, 200, popup closed, Confirm inside the viewport, 0 page errors |
+
+The probe's first run (before the gap fix) recorded the 400 described above in all nine cases, as the
+evidence for the gap.
+
+Sol 6.1 xhigh review: the takeover tried the prompt at `/tmp/pitd-loadout-sol-review.txt`; see the
+commit record for the outcome.

@@ -1,0 +1,18 @@
+[managed-browser-smoke] runId=2026-10-14T13-32-50-642Z-2ee41da2
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node agent-docs/test-audit/browser-evidence/loadout-atomic-01/chromium-3x3-check.mjs
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-14T13-32-50-642Z-2ee41da2/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-14T13-32-50-642Z-2ee41da2/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-14T13-32-50-642Z-2ee41da2
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-14T13-32-50-642Z-2ee41da2/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-14T13-32-50-642Z-2ee41da2/data (dir)
+[managed-browser-smoke] port=42235
+[managed-browser-smoke] baseUrl=http://127.0.0.1:42235
+[managed-browser-smoke] pid=2107358
+[managed-browser-smoke] ready=http://127.0.0.1:42235
+[managed-browser-smoke] commandPid=2107426
+{"pass":true,"rows":9,"failing":[]}
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-10-14T13-32-50-642Z-2ee41da2)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-10-14T13-32-50-642Z-2ee41da2)

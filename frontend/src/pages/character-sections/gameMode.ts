@@ -457,12 +457,16 @@ export function renderLoadoutConfirm(ctx: SectionCtx, gm: GameModeHandlers, ui: 
   back.addEventListener("click", () => gm.onLoadoutChange(null));
   const leave = h("button", { type: "button", disabled: ctx.anyLoading }, "Leave flow");
   leave.addEventListener("click", () => gm.onLoadoutChange(null));
-  const confirm = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, "Confirm change");
+  // A level none carries nothing: checked items with level none would be refused, so Confirm waits for a level.
+  const effectiveLevel = proposal.commitment ?? ctx.c.gear.commitment;
+  const needsLevel = effectiveLevel === "none" && proposal.items.length > 0;
+  const confirm = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading || needsLevel }, "Confirm change");
   confirm.addEventListener("click", gm.onLoadoutConfirm);
   return overlay("Confirm loadout change", "game-mode-popup", "game-mode-confirm", "Change loadout?",
     [
       h("p", {}, "Your scoundrel is already on a score. Confirm this loadout change with the table before replacing the committed items."),
       h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap;" }, ...choices),
+      h("p", { className: "small", role: "status" }, needsLevel ? "Choose Light, Normal or Heavy to carry these items. None carries nothing." : ""),
       renderProposalChecklist(ctx, gm, proposal),
       h("p", { className: "small" }, "Choose items now or declare more during the score. This suggests a load limit; it never blocks play."),
       h("p", { className: "small" }, srdLink(SRD.planning)),

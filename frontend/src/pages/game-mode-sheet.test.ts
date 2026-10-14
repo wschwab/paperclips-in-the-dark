@@ -1135,3 +1135,22 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
     await vi.waitFor(() => expect(document.activeElement).toBe(close));
   });
 });
+
+describe("LOADOUT-ATOMIC-01 frontend gap: Confirm with level none and items checked", () => {
+  it("disables Confirm change and says a level is needed, rather than sending none with items", async () => {
+    const { calls } = await mountWith(characterDTO({
+      mode: "score",
+      modeFlow: { kind: "none", step: "" },
+      gear: { loadout: [], availableGear: [{ name: "Climbing gear", bulk: 2 }], commitment: "none", isCommitmentLocked: false, maxBulk: 5 },
+    }));
+    (Array.from(root.querySelectorAll<HTMLButtonElement>('[data-section="committed-loadout"] button')).find((b) => b.textContent === "Change loadout") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-confirm")).not.toBeNull());
+    const box = Array.from(root.querySelectorAll<HTMLInputElement>(".game-mode-confirm input[type='checkbox']")).find((i) => i.closest("label")?.textContent?.includes("Climbing gear"))!;
+    box.click();
+    await vi.waitFor(() => expect(box.checked).toBe(true));
+    const confirm = Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-confirm button")).find((b) => b.textContent === "Confirm change")!;
+    expect(confirm.disabled).toBe(true);
+    expect(root.querySelector(".game-mode-confirm")!.textContent).toContain("Choose Light, Normal or Heavy");
+    expect(calls.filter((c) => c.url.includes("/ops/gear."))).toHaveLength(0);
+  });
+});
