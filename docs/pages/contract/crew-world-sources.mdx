@@ -1,0 +1,131 @@
+---
+title: Crew world data — licensed scope and options
+---
+
+# Crew world data: verified scope and options
+
+**CREW-WORLD-01 decision: use licensed mechanics, not the excluded setting.**
+The human confirmed this boundary after reading the official licensing page.
+No official faction catalogue, district list, district description or noteworthy
+location is being added to application game data by this card.
+
+## What the licence actually grants
+
+The [official licensing page](https://bladesinthedark.com/licensing) licenses the
+**SRD content under Creative Commons Attribution 3.0 Unported**, not 4.0. It
+expressly excludes setting material outside that SRD and states: “The entire
+Duskwall/Shattered Isles intellectual property is off limits.” The
+[SRD overview](https://bladesinthedark.com/basics) describes its scope as the
+core mechanics. A public download is not, by itself, an additional licence.
+
+The [official Downloads page](https://bladesinthedark.com/downloads) lists the
+[Factions of Doskvol PDF](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Factions.pdf)
+as a **Campaign Tracking** sheet, not as a separately licensed SRD gazetteer.
+The sheet was read as text and rendered for visual inspection: it supplies
+names, tiers and holds, but no separate redistribution grant, descriptions or
+noteworthy locations. Its availability does not override the explicit setting
+exclusion on the licensing page.
+
+Accordingly, **the faction and district names from that sheet are not treated
+as reusable stock application data**, even without descriptions. Nor will we
+invent descriptions, silently borrow them from the book or present guessed
+locations as official material. This is a conservative product permission
+boundary, not a claim that every individual name has a particular copyright
+status in every jurisdiction.
+
+### Content that can be reused
+
+- The [Crew SRD](https://bladesinthedark.com/crew) explains positive and negative
+  starting faction relationships arising from upgrades and contacts. It does
+  **not** provide fixed official faction names to seed into a new crew.
+- The [Faction Game SRD](https://bladesinthedark.com/faction-game) supplies faction
+  status, Tier and hold mechanics. It explicitly defines W as weak and S as
+  strong; those meanings need not be guessed from the PDF.
+- These licensed rule passages may be quoted or adapted with the required
+  attribution. They are not a licence to reproduce the setting catalogue.
+- The README now uses **CC-BY 3.0 Unported** and includes the official attribution
+  paragraph, in ordinary copyright-section text rather than small print.
+
+## What this card builds
+
+The crew sheet supports **your table's own factions**:
+
+- Quick manual entry: **name + optional tier + status** in one row, with edits
+  to tracked entries. Status limits come from the loaded game's `FactionStatus`
+  settings, not a hardcoded range. An unknown tier stays blank; no Tier maximum
+  is invented or borrowed from the crew's advancement cap.
+- **Starting ally** and **Starting rival** pickers use that crew's own faction
+  list, with an empty choice for unrecorded/cleared values. The selected names
+  remain visible; they are not inferred from present-day status ratings.
+- `faction.set-status` remains the status/upsert operation. Its optional `tier`
+  records a nonnegative integer; omission preserves an existing tier, and
+  explicit `null` clears it.
+- New `faction.set-starting` records `{ally, rival}` together in one revisioned
+  write. Nonempty names must belong to this crew's tracked factions. Empty
+  strings clear choices. It neither awards status nor spends coin. Removing a
+  faction clears matching starting references, while status changes do not.
+- The crew DTO's optional `startingFactions` object and optional faction `tier`
+  preserve valid older crew documents without fabricating starting choices.
+
+The licensed [Crew](https://bladesinthedark.com/crew) and
+[Faction Game](https://bladesinthedark.com/faction-game) rules remain linked from
+the editor. There is **no bundled stock-setting picker or district gazetteer**.
+The publisher's [downloadable references](https://bladesinthedark.com/downloads)
+can still be consulted externally by someone entitled to use them.
+
+## Research draft boundary
+
+The earlier research transcription of the factions sheet (names, tiers and holds) was **moved out of the
+repository** and is not part of the application, its game data, or the public mirrors. It is research-only and
+not approved game data: it was not imported into the application, copied into `data/games/`, used as seed
+campaign data or packaged as a stock catalogue. Its transcription is evidence of the research, not a new licence
+grant. Commit history before this change still contains it (see the card's publication note); it must not be
+published.
+
+Its original “49 factions / 11 districts” split is provisional, not an
+authoritative product taxonomy. Visual inspection shows **12 Citizenry rows**
+(including Whitecrown) alongside 48 rows in the other four groups. The initial
+split singled out the first Citizenry row; that layout judgement must not be
+promoted as official setting structure. No descriptions or locations were
+verified, and none are supplied.
+
+## Options for the human
+
+These are **options, not pending requirements of this card**:
+
+1. **Ask One Seven Design for permission.** Obtain an explicit grant covering
+   the desired names, statistics, district descriptions and locations, plus
+   public redistribution and attribution terms. The
+   [licensing page](https://bladesinthedark.com/licensing) supplies the publisher's
+   contact route. A future grant must be recorded before bundling that data.
+2. **Use users' own campaign data, never shipped by the app.** The manual
+   faction editor already records user-entered names, tiers, statuses and
+   starting choices in the user's crew data. Users can keep their own city and
+   district notes in private campaign material; nothing is supplied as official
+   setting text. This card does not modify anyone's live `campaign-data/`.
+3. **Offer an empty “Your city” template.** An empty faction/district structure
+   can be offered without official setting names or prose, for the user to
+   populate. A dedicated city-data schema/importer would be a separate feature;
+   this card does not pretend that an arbitrary world JSON file is already
+   supported by the runtime.
+4. **A book owner's private, unpublished runtime data file is another possible
+   design.** It must remain local/private and **must not be committed to either
+   public mirror or distributed with application assets**. Owning the book is
+   not a public redistribution permission. Such a world-file loader is an
+   option, not implemented or silently enabled by this card; persisted private
+   crew records continue to load through the existing API.
+
+## Verified sources
+
+- [Licensing and required attribution](https://bladesinthedark.com/licensing)
+- [SRD overview](https://bladesinthedark.com/basics)
+- [Crew creation mechanics](https://bladesinthedark.com/crew)
+- [Faction status, Tier and hold mechanics](https://bladesinthedark.com/faction-game)
+- [Official downloads](https://bladesinthedark.com/downloads)
+- [Factions of Doskvol play sheet — no separate grant verified](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Factions.pdf)
+
+Discovery used native web search after Parallel Search reported insufficient
+credit; no funds were added. The decisive licensing and SRD pages were read
+directly, and the PDF was also visually inspected rather than relying solely
+on its incomplete text extraction. Implementation and acceptance evidence:
+`tasks/CREW-WORLD-01.md`.
