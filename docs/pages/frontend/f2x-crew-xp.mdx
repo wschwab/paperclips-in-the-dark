@@ -55,6 +55,16 @@ A `crew-xp` section sits between Cohorts and Contacts & Factions with an
 - beneath, the `ExperienceTrigger` criteria text ("Criteria: …") from the
   crew game data, or nothing when the crew-type lookup fails.
 
+## Resolution Crew XP guidance (CREW-XP-INFO-01)
+
+The Resolution "Crew XP" step shows the SRD crew advancement rules from
+`frontend/src/data/crew-advancement.ts`, transcribed from
+https://bladesinthedark.com/advancement#crew-advancement (CC-BY, with an SRD link and the
+attribution line). It states that each category can yield up to 2 XP. The linked crew's own trigger
+comes from the crew game data (`ExperienceTrigger` of its crew type, read through
+`getCrewGameData` and `extractExperienceTrigger`). A failed load shows generic wording instead.
+Card: `tasks/CREW-XP-INFO-01.md`.
+
 ## Error notices
 
 - `VALIDATION` (bad delta) is passed through as returned by the server.

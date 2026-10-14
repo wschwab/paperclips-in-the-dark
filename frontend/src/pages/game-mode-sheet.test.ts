@@ -118,6 +118,12 @@ const GAME_DATA = {
 
 const PLAYBOOK_DATA = { Name: "Spider", SpecialAbilities: [], Items: [], Rolodex: { Name: "Friends", Friends: [] }, DefaultActionPoints: [] };
 
+/** Crew game data: the Assassins crew type carries its own ExperienceTrigger (CREW-XP-INFO-01). */
+const CREW_GAME_DATA = {
+  Name: "Blades in the Dark",
+  CrewTypes: [{ Name: "Assassins", ExperienceTrigger: "Execute a successful murder, ransom, or assassination operation." }],
+};
+
 /** Routes every API call by URL; ops answer with the (possibly updated) character. */
 function mockApi(dto: Record<string, unknown>, crew: Record<string, unknown> | null = crewDTO()) {
   const calls: Array<{ url: string; init: RequestInit }> = [];
@@ -132,6 +138,7 @@ function mockApi(dto: Record<string, unknown>, crew: Record<string, unknown> | n
     if (url === "/api/crews") return respond(crew ? [{ kind: "crew", id: CREW_ID, name: "The Drowned Bells", tier: 1 }] : []);
     if (url === `/api/crews/${CREW_ID}`) return crew ? respond(crew) : { ok: false, status: 404, text: async () => "{}" };
     if (url === "/api/games/blades-in-the-dark") return respond(GAME_DATA);
+    if (url === "/api/games/blades-in-the-dark/crews") return respond(CREW_GAME_DATA);
     if (url.includes("/playbooks/")) return respond(PLAYBOOK_DATA);
     if (url.includes("/ops/") || url.endsWith("/ops/mode.set")) return respond({ ...ORDER_OK, character: dto });
     if (url.includes("/crews/") && url.includes("/ops/")) return respond({ ...ORDER_OK, crew });
@@ -671,11 +678,21 @@ describe("GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05)", () => {
     expect(text).toContain("manifest fully before the PCs have a chance to avoid them");
   });
 
-  it("R2-05: Crew XP gives the 1 XP / 2 XP guidance and the Advancement SRD link", async () => {
+  it("R2-05: Crew XP states that each category can yield up to 2 XP, with the SRD text, CC-BY attribution and SRD link", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
     const dialog = root.querySelector(".game-mode-resolution")!;
-    expect(dialog.textContent).toContain("1 XP if a trigger occurred, 2 if it happened multiple times or in a major way");
-    expect(dialog.querySelector('a[href="https://bladesinthedark.com/advancement"]')).not.toBeNull();
+    expect(dialog.textContent).toContain("Each category can yield up to 2 XP");
+    expect(dialog.textContent).toContain("mark 2 crew XP for it");
+    expect(dialog.textContent).toContain("Express the goals, drives, inner conflict, or essential nature of the crew.");
+    expect(dialog.textContent).toContain("Blades in the Dark SRD (CC-BY)");
+    expect(dialog.querySelector('a[href="https://bladesinthedark.com/advancement#crew-advancement"]')).not.toBeNull();
+  });
+
+  it("R2-05: Crew XP shows the crew type's own XP trigger from the crew data", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
+    await vi.waitFor(() => {
+      expect(root.querySelector(".game-mode-resolution")!.textContent).toContain("Execute a successful murder, ransom, or assassination operation.");
+    });
   });
 
   it("R2-05: Crew Rep links to the Payoff SRD page", async () => {

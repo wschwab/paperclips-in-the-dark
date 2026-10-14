@@ -30,10 +30,22 @@ import {
   type LoadoutProposal,
 } from "../game-mode.js";
 import { ENTANGLEMENT_ROWS, entanglementsInBand, ENTANGLEMENT_DESCRIPTIONS, ENTANGLEMENTS_SRD_URL } from "../../data/entanglements.js";
+import {
+  CREW_ADVANCE_ORIGIN_TEXT,
+  CREW_ADVANCE_TEXT,
+  CREW_ADVANCEMENT_ATTRIBUTION,
+  CREW_ADVANCEMENT_SRD_URL,
+  CREW_PROFITS_TEXT,
+  CREW_XP_CATEGORIES,
+  CREW_XP_INTRO,
+  CREW_XP_MAX_NOTE,
+} from "../../data/crew-advancement.js";
 
 export interface GameModeUi {
   /** The linked crew, loaded for the Resolution editors; null when unlinked or not loaded. */
   linkedCrew: Crew | null;
+  /** The linked crew type's own XP trigger from the crew game data; null when unknown. */
+  crewXpTrigger: string | null;
   /** Show the full entanglement table (Show all disclosure). */
   /** A proposed loadout replacement awaiting Confirm change (Back / Leave flow cancels). */
   loadoutChange: LoadoutProposal | null;
@@ -535,10 +547,24 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
     }
     case "crew-xp":
       content = h("div", {},
-        h("p", { className: "serif" }, "Add the agreed crew XP directly here. Review crew triggers at the end of the session: 1 XP if a trigger occurred, 2 if it happened multiple times or in a major way."),
+        h("p", { className: "serif" }, "Add the agreed crew XP directly here, then review the crew XP triggers at the end of the session."),
         crewEditor("XP", crew?.experience.points ?? null, "xp", "Update crew XP", ctx, gm, linked),
         h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
-        h("p", { className: "small" }, srdLink(SRD.advancement)));
+        h("h3", {}, "Crew XP triggers"),
+        h("p", { className: "serif" }, CREW_XP_INTRO),
+        h("p", { className: "small" }, CREW_XP_MAX_NOTE),
+        h("ul", {}, ...CREW_XP_CATEGORIES.map((cat, i) => h("li", {},
+          h("strong", {}, cat.title),
+          " ",
+          cat.text,
+          i === 0 ? h("p", { className: "small" }, ui.crewXpTrigger
+            ? `This crew’s trigger: ${ui.crewXpTrigger}`
+            : "This crew’s trigger is on its crew type; check the crew sheet.") : null))),
+        h("h3", {}, "Advancement"),
+        h("p", { className: "serif" }, CREW_ADVANCE_TEXT),
+        h("p", { className: "small" }, CREW_ADVANCE_ORIGIN_TEXT),
+        h("p", { className: "serif" }, CREW_PROFITS_TEXT),
+        h("p", { className: "small" }, CREW_ADVANCEMENT_ATTRIBUTION, " ", srdLink(CREW_ADVANCEMENT_SRD_URL)));
       break;
     default:
       content = h("div", {},

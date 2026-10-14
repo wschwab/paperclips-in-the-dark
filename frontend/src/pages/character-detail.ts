@@ -89,6 +89,7 @@ import {
   characterDowntimeAdjust,
   characterDowntimeSpend,
   getCrew,
+  getCrewGameData,
   crewRepAdd,
   crewCoinAdd,
   crewHeatAdd,
@@ -96,6 +97,7 @@ import {
   characterXpResolve,
 } from "../api/client.js";
 import type { CharacterCapabilities } from "../api/client.js";
+import { extractExperienceTrigger } from "./crew-domain.js";
 import type { Crew } from "../schema/crew.js";
 import {
   renderGameModePanel,
@@ -444,6 +446,8 @@ export function mountCharacterDetailPage(
   // character; only presentation state and the linked crew are kept here.
   let isGameModeLoading = false;
   let linkedCrew: Crew | null = null;
+  // CREW-XP-INFO-01: the crew game data's crew types, for the linked crew's own XP trigger.
+  let crewGameTypes: readonly Record<string, unknown>[] | null = null;
   let gmLoadoutChange: LoadoutProposal | null = null;
   let gmPlanApproach: string | null = null;
   let gmCrewNotice: string | null = null;
@@ -665,6 +669,27 @@ export function mountCharacterDetailPage(
         onSuccess: (crew) => {
           if (cancelled) return;
           linkedCrew = crew;
+          renderDetailWrapper();
+          loadCrewGameTypes(crew.gameStem);
+        },
+      }),
+    );
+  };
+  /** Crew types from the crew game data (CREW-XP-INFO-01); a failure leaves the generic trigger wording. */
+  const loadCrewGameTypes = (gameStem: string) => {
+    void Effect.runPromise(
+      Effect.match(getCrewGameData(gameStem), {
+        onFailure: () => {
+          if (cancelled) return;
+          crewGameTypes = null;
+          renderDetailWrapper();
+        },
+        onSuccess: (data) => {
+          if (cancelled) return;
+          const types = data.CrewTypes;
+          crewGameTypes = Array.isArray(types)
+            ? types.filter((ct): ct is Record<string, unknown> => typeof ct === "object" && ct !== null)
+            : null;
           renderDetailWrapper();
         },
       }),
@@ -2196,6 +2221,7 @@ export function mountCharacterDetailPage(
       c: currentCharacter,
       gameMode: {
         linkedCrew,
+        crewXpTrigger: linkedCrew ? extractExperienceTrigger(null, crewGameTypes, linkedCrew.crewTypeName) : null,
         loadoutChange: gmLoadoutChange,
         planApproach: gmPlanApproach,
         crewNotice: gmCrewNotice,
