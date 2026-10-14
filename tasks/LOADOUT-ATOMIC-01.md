@@ -179,5 +179,7 @@ Confirm is disabled while the effective level is `none` and items are checked, a
 The probe's first run (before the gap fix) recorded the 400 described above in all nine cases, as the
 evidence for the gap.
 
-Sol 6.1 xhigh review: the takeover tried the prompt at `/tmp/pitd-loadout-sol-review.txt`; see the
-commit record for the outcome.
+Sol 6.1 xhigh review: **NOT-RUN**. The takeover ran the review prompt pinned to `844520f5c470`
+(`agent-docs/test-audit/browser-evidence/loadout-atomic-01/sol-6.1/takeover/`). The Codex CLI
+returned `usage_limit_reached` at once (`stderr.txt`), so no verdict exists. No other reviewer was
+substituted. The frontend acceptance review therefore remains open until Codex is available.
