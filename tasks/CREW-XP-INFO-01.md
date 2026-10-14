@@ -93,17 +93,11 @@ links a Cutter through `dossier.update`, sets Score and the Crew XP step, and ch
 | browser journeys (`npm run test:browser`) | 6/6 PASS (`tasks/metrics/frontend/CREW-XP-INFO-01-browser.log`) |
 | Chromium 3×3 (`check.mjs`) | 9/9 |
 | Sol 6.1 xhigh review | round 1 FAIL (fixed); round 2: see the record below |
-| mutation campaign 28/28 | NOT RUN: blocked on the working copy, see below |
+| mutation campaign 28/28 | 28/28 (P0 19/19, P1 9/9) in the combined campaign at `2b36dd64` (`tasks/metrics/contract/LOADOUT-ATOMIC-01-mutation-combined.log`) |
 
-Pins: `frontend/src/pages/character-detail.ts` (M26) refreshed to `3c1ad11bad21…`.
-`gameMode.ts` and `crew-advancement.ts` have no pin.
-
-## Mutation campaign: blocked
-
-`npm run test:mutation` needs an empty working copy. At the time of the run, the working copy held
-`conformance/suites/contract/unknown-operation.test.ts` and
-`tasks/metrics/contract/UNKNOWN-OP-01-red.log`. These belong to another worker (UNKNOWN-OP-01) and
-were not committed here. The campaign is waiting on the human's decision about those files.
+Pins: M26 (`frontend/src/pages/character-detail.ts`) refreshed to `e8f7f30e9b12…` by the takeover. The
+combined campaign ran after the other worker's commits and the pin refresh (`2b36dd64`); it did not
+cover this card's text separately. `gameMode.ts` and `crew-advancement.ts` have no pin.
 
 ## Limits
 

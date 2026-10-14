@@ -183,3 +183,11 @@ Sol 6.1 xhigh review: **NOT-RUN**. The takeover ran the review prompt pinned to 
 (`agent-docs/test-audit/browser-evidence/loadout-atomic-01/sol-6.1/takeover/`). The Codex CLI
 returned `usage_limit_reached` at once (`stderr.txt`), so no verdict exists. No other reviewer was
 substituted. The frontend acceptance review therefore remains open until Codex is available.
+
+## Combined mutation campaign (takeover)
+
+Run once, after the other worker's commits and the pin refresh, from an empty working copy at
+`2b36dd64`: `npm run test:mutation` **28/28** (P0 19/19, P1 9/9). Stale pins refreshed first: M26
+`frontend/src/pages/character-detail.ts` (`e8f7f30e9b12…`), `frontend/src/api/client.ts`
+(`9b0986bcf31c…`), and `backend-ada/server/src/pitd_callback.adb` (`d05ed43da951…`). Log:
+`tasks/metrics/contract/LOADOUT-ATOMIC-01-mutation-combined.log`.
