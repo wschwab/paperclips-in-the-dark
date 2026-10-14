@@ -1,6 +1,7 @@
 {
   "task": "CREW-XP-INFO-01",
   "track": "frontend",
+  "date": "2026-10-14",
   "implementationAgent": "anthropic/claude-haiku-5-5 (omp worker; crew advancement guidance in the Resolution Crew XP step)",
   "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): round 1 FAIL on transcription fidelity at 1fb39421; round 2 pending",
   "iterationsToGreen": 2,
