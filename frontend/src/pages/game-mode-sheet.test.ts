@@ -436,7 +436,7 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
       return { ok: false, status: 400, text: async () => JSON.stringify({
         ok: false, applied: { op: "gear.set-loadout" }, sideEffects: [],
         error: { code: "VALIDATION", status: 400, message: "Invalid loadout", retryable: false,
-          recovery: "Adjust the loadout and retry.", details: { issues: [{ pointer: "/items", message: "Too bulky" }] } },
+          recovery: "Adjust the loadout and retry.", details: { issues: [{ pointer: "/items", reason: "Too bulky", expected: "a loadout within the commitment bulk limit" }] } },
       }) };
     });
     (Array.from(root.querySelectorAll('[data-section="committed-loadout"] button'))
@@ -1186,5 +1186,44 @@ describe("DESPERATE-LOG-01 XP Tracker tally and desperate.mark control", () => {
       expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe(String(dto.revision));
     });
     expect(calls.filter((c) => c.url.includes("/ops/xp.")).length).toBe(0);
+  });
+});
+
+describe("LOADOUT-ATOMIC-01 Sol P2: a rejected confirmation is shown inside the open dialog", () => {
+  it("keeps the proposal and shows the server's reason and recovery in the confirmation dialog", async () => {
+    await mountWith(characterDTO({
+      mode: "score",
+      modeFlow: { kind: "none", step: "" },
+      gear: { loadout: [{ name: "Fine lockpicks", bulk: 0 }], availableGear: [{ name: "Climbing gear", bulk: 2 }, { name: "Rope", bulk: 4 }], commitment: "normal", isCommitmentLocked: false, maxBulk: 5 },
+    }));
+    const failure = {
+      ok: false, applied: { op: "gear.set-loadout" }, sideEffects: [],
+      error: { code: "VALIDATION", status: 400, message: "Invalid loadout", retryable: false,
+        recovery: "Adjust the loadout and retry.",
+        details: { issues: [{ pointer: "/items", reason: "loadout exceeds the commitment bulk limit", expected: "a loadout within the commitment bulk limit" }] } },
+    };
+    const posted: string[] = [];
+    const original = global.fetch;
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/ops/gear.set-loadout")) {
+        posted.push(url);
+        return { ok: false, status: 400, text: async () => JSON.stringify(failure) };
+      }
+      return original(url, init);
+    }) as unknown as typeof fetch;
+    (Array.from(root.querySelectorAll<HTMLButtonElement>('[data-section="committed-loadout"] button')).find((b) => b.textContent === "Change loadout") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-confirm")).not.toBeNull());
+    (Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-confirm button")).find((b) => b.textContent === "Normal · 5") as HTMLButtonElement).click();
+    const box = Array.from(root.querySelectorAll<HTMLInputElement>(".game-mode-confirm input[type='checkbox']")).find((i) => i.closest("label")?.textContent?.includes("Climbing gear"))!;
+    box.click();
+    await vi.waitFor(() => expect(box.checked).toBe(true));
+    (Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-confirm button")).find((b) => b.textContent === "Confirm change") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(posted).toHaveLength(1));
+    await vi.waitFor(() => {
+      const dialog = root.querySelector(".game-mode-confirm");
+      expect(dialog).not.toBeNull();
+      expect(dialog!.textContent).toContain("loadout exceeds the commitment bulk limit");
+    });
+    expect(box.checked).toBe(true);
   });
 });

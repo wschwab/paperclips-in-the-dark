@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ApiError, StaleRevisionError, characterGearSetLoadout } from "./client.js";
+import { OpError, StaleRevisionError, characterGearSetLoadout } from "./client.js";
 import { decodeCharacterEither } from "../schema/character.js";
 
 const decoded = decodeCharacterEither(JSON.parse(readFileSync(
@@ -36,14 +36,18 @@ describe("LOADOUT-ATOMIC-01 client", () => {
     const failure = {
       ok: false, applied: { op: "gear.set-loadout" }, sideEffects: [],
       error: { code: "VALIDATION", status: 400, message: "Invalid loadout", retryable: false,
-        recovery: "Adjust the loadout and retry.", details: { issues: [{ pointer: "/items", message: "Too bulky" }] } },
+        recovery: "Adjust the loadout and retry.",
+        details: { issues: [{ pointer: "/items", reason: "loadout exceeds the commitment bulk limit", expected: "a loadout within the commitment bulk limit" }] } },
     };
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 400, text: async () => JSON.stringify(failure) });
     const result = await Effect.runPromise(Effect.either(characterGearSetLoadout(before.id, "normal", ["Rope"], before.revision)));
     expect(result._tag).toBe("Left");
     if (result._tag === "Left") {
-      expect(result.left).toBeInstanceOf(ApiError);
-      if (result.left instanceof ApiError) expect(result.left.status).toBe(400);
+      expect(result.left).toBeInstanceOf(OpError);
+      if (result.left instanceof OpError) {
+        expect(result.left.status).toBe(400);
+        expect(result.left.error.code).toBe("VALIDATION");
+      }
     }
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });

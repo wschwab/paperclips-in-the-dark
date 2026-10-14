@@ -191,3 +191,30 @@ Run once, after the other worker's commits and the pin refresh, from an empty wo
 `frontend/src/pages/character-detail.ts` (`e8f7f30e9b12…`), `frontend/src/api/client.ts`
 (`9b0986bcf31c…`), and `backend-ada/server/src/pitd_callback.adb` (`d05ed43da951…`). Log:
 `tasks/metrics/contract/LOADOUT-ATOMIC-01-mutation-combined.log`.
+
+## Sol 6.1 takeover review (844520f5): FAIL, fixed
+
+Codex was available on this run and returned a verdict: `agent-docs/test-audit/browser-evidence/loadout-atomic-01/sol-6.1/verdict.md`.
+Its data-safety and layout checks passed (9/9 atomic replacements, 9/9 guard scenarios, Back and Leave flow
+cancellation, real 409 stale revision, keyboard confirm, 18/18 responsive states). It blocked on two findings:
+
+- **P2 (blocking):** a real 400 rejection showed nothing inside the open Change loadout dialog. The message was
+  on the sheet behind the inert dialog. **Fix:** the confirmation's failure text now carries the server's reason
+  for each issue (`loadoutRejectionText` in `character-detail.ts`: "The loadout was not saved: loadout exceeds the
+  commitment bulk limit"), shown in the dialog's status line (`renderLoadoutConfirm`). The proposal is kept.
+  Red: the unit test expected the reason inside the dialog and failed on the old text before the change.
+- **P3:** the rejection fixtures used issues without `reason` and `expected`, so the typed VALIDATION branch was
+  not exercised. **Fix:** schema-valid issues in `loadout-atomic.test.ts` and `game-mode-sheet.test.ts`; the client
+  test asserts `OpError` with `error.code` VALIDATION.
+
+Gates after the fix: vitest 962/962 (34 files), tsc 0, build 0. Chromium rejection probe
+(`agent-docs/.../loadout-atomic-01/chromium-rejection-check.mjs`): 9/9. Each case: Light (limit 3) with Anvil (bulk 4)
+and Rope rejected with 400, the dialog shows the reason, the proposal keeps Anvil and Rope, then Anvil is unchecked and
+the confirm returns 200; the loadout is Rope only, one revision per write, zero page errors.
+
+Honest note on red-first: the first red run failed on the test's own recorder, not on the dialog text. The dialog
+assertion was then made red by the reason text (the old message lacked the reason) and fails before the fix; it passes
+after.
+
+Re-review of the fixed revision: see the DESPERATE-LOG-01 record for the final commit; the LOADOUT re-review is
+pending a new pinned run.

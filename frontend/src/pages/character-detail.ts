@@ -359,6 +359,23 @@ function renderLoading(): HTMLElement {
 // ---------------------------------------------------------------------------
 
 /**
+ * A rejected loadout confirmation keeps the server's reason for each issue, so the GM sees what to change
+ * in the open dialog (LOADOUT-ATOMIC-01, Sol P2). Falls back to the generic operation text.
+ */
+function loadoutRejectionText(err: OpError): string {
+  const details: unknown = err.error.details;
+  const reasons: string[] = [];
+  if (typeof details === "object" && details !== null && "issues" in details && Array.isArray(details.issues)) {
+    for (const issue of details.issues) {
+      if (typeof issue === "object" && issue !== null && "reason" in issue && typeof issue.reason === "string" && issue.reason.length > 0) {
+        reasons.push(issue.reason);
+      }
+    }
+  }
+  return reasons.length > 0 ? `The loadout was not saved: ${reasons.join("; ")}` : opErrorFriendlyText(err);
+}
+
+/**
  * Mount the character detail page into `root` for the given ID.
  * Returns a disposer.
  */
@@ -805,6 +822,7 @@ export function mountCharacterDetailPage(
           renderDetailWrapper();
         },
         () => { isGameModeLoading = false; },
+        loadoutRejectionText,
       );
     },
     onLoadoutCommitment: (choice) => {
@@ -2228,6 +2246,7 @@ export function mountCharacterDetailPage(
         linkedCrew,
         crewXpTrigger: linkedCrew ? extractExperienceTrigger(null, crewGameTypes, linkedCrew.crewTypeName) : null,
         loadoutChange: gmLoadoutChange,
+        loadoutError: gmLoadoutChange !== null && error?.section === "gear" ? formatErrorSummary(error) : null,
         planApproach: gmPlanApproach,
         crewNotice: gmCrewNotice,
         xpDraft: gmXpDraft,

@@ -50,6 +50,8 @@ export interface GameModeUi {
   /** Show the full entanglement table (Show all disclosure). */
   /** A proposed loadout replacement awaiting Confirm change (Back / Leave flow cancels). */
   loadoutChange: LoadoutProposal | null;
+  /** The last gear rejection while the confirmation is open (the reason and recovery); null otherwise. */
+  loadoutError: string | null;
   /** Planning approach picked in the popup (assistance only; not persisted). */
   planApproach: string | null;
   crewNotice: string | null;
@@ -466,7 +468,8 @@ export function renderLoadoutConfirm(ctx: SectionCtx, gm: GameModeHandlers, ui: 
     [
       h("p", {}, "Your scoundrel is already on a score. Confirm this loadout change with the table before replacing the committed items."),
       h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap;" }, ...choices),
-      h("p", { className: "small", role: "status" }, needsLevel ? "Choose Light, Normal or Heavy to carry these items. None carries nothing." : ""),
+      h("p", { className: "small", role: "status" },
+        needsLevel ? "Choose Light, Normal or Heavy to carry these items. None carries nothing." : (ui.loadoutError ?? "")),
       renderProposalChecklist(ctx, gm, proposal),
       h("p", { className: "small" }, "Choose items now or declare more during the score. This suggests a load limit; it never blocks play."),
       h("p", { className: "small" }, srdLink(SRD.planning)),
