@@ -1,8 +1,9 @@
 /**
  * Crew advancement guidance, transcribed from the Blades in the Dark SRD
- * (https://bladesinthedark.com/advancement#crew-advancement, CC-BY). Wording is the SRD's; only
- * markdown emphasis is removed. The SRD's Assassins example quote is omitted: the crew's own
- * ExperienceTrigger comes from the crew type data instead.
+ * (https://bladesinthedark.com/advancement#crew-advancement, CC-BY). Wording, case and punctuation
+ * are the SRD's; only markdown emphasis is removed. The one omission is the SRD's Assassins example
+ * in the advancement paragraph; the crew's own trigger comes from the crew type data instead.
+ * CREW_XP_MAX_NOTE is the one app-written line (an explicit statement of the per-category maximum).
  */
 
 export const CREW_ADVANCEMENT_SRD_URL = "https://bladesinthedark.com/advancement#crew-advancement";
@@ -11,17 +12,20 @@ export const CREW_ADVANCEMENT_ATTRIBUTION = "Source: Blades in the Dark SRD (CC-
 
 /** SRD crew XP rule (the Crew Advancement section's first paragraph). */
 export const CREW_XP_INTRO =
-  "At the end of the session, review the crew XP triggers and mark 1 crew XP for each item that occurred during the session. If an item occurred multiple times or in a major way, mark 2 crew XP for it.";
+  "At the end of the session, review the crew xp triggers and mark 1 crew xp for each item that occurred during the session. If an item occurred multiple times or in a major way, mark 2 crew xp for it.";
 
-/** App summary of the rule above, stated so each category's maximum is explicit. */
+/** SRD lead-in to the trigger list. */
+export const CREW_XP_LEADIN = "The crew xp triggers are:";
+
+/** App-written summary of the rule above (not SRD text), stating each category's maximum explicitly. */
 export const CREW_XP_MAX_NOTE =
   "Each category can yield up to 2 XP: 1 if it occurred, 2 if it occurred multiple times or in a major way.";
 
 /** The crew XP trigger categories, in SRD order. The first title is the crew type's own trigger. */
 export const CREW_XP_CATEGORIES: ReadonlyArray<{ title: string; text: string }> = [
   {
-    title: "Your crew-specific xp trigger",
-    text: "If the crew successfully completed an operation from this trigger, mark xp.",
+    title: "Your crew-specific xp trigger.",
+    text: "For example, the Smugglers’ is “Execute a smuggling operation or acquire new clients or contraband sources.” If the crew successfully completed an operation from this trigger, mark xp.",
   },
   {
     title: "Contend with challenges above your current station.",

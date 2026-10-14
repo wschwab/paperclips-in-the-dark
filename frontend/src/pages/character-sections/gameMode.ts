@@ -38,6 +38,7 @@ import {
   CREW_PROFITS_TEXT,
   CREW_XP_CATEGORIES,
   CREW_XP_INTRO,
+  CREW_XP_LEADIN,
   CREW_XP_MAX_NOTE,
 } from "../../data/crew-advancement.js";
 
@@ -552,6 +553,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
         h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
         h("h3", {}, "Crew XP triggers"),
         h("p", { className: "serif" }, CREW_XP_INTRO),
+        h("p", { className: "serif" }, CREW_XP_LEADIN),
         h("p", { className: "small" }, CREW_XP_MAX_NOTE),
         h("ul", {}, ...CREW_XP_CATEGORIES.map((cat, i) => h("li", {},
           h("strong", {}, cat.title),

@@ -682,7 +682,9 @@ describe("GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05)", () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
     const dialog = root.querySelector(".game-mode-resolution")!;
     expect(dialog.textContent).toContain("Each category can yield up to 2 XP");
-    expect(dialog.textContent).toContain("mark 2 crew XP for it");
+    expect(dialog.textContent).toContain("mark 2 crew xp for it");
+    expect(dialog.textContent).toContain("The crew xp triggers are:");
+    expect(dialog.textContent).toContain("For example, the Smugglers’ is “Execute a smuggling operation or acquire new clients or contraband sources.”");
     expect(dialog.textContent).toContain("Express the goals, drives, inner conflict, or essential nature of the crew.");
     expect(dialog.textContent).toContain("Blades in the Dark SRD (CC-BY)");
     expect(dialog.querySelector('a[href="https://bladesinthedark.com/advancement#crew-advancement"]')).not.toBeNull();

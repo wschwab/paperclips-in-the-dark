@@ -9,8 +9,10 @@ outputs:
   - frontend/src/pages/character-sections/gameMode.ts
   - frontend/src/pages/character-detail.ts
   - frontend/src/pages/game-mode-sheet.test.ts
-  - agent-docs/test-audit/browser-evidence/crew-xp-info-01/ (evidence, gitignored)
+  - conformance/fixtures/mutation-catalog.json
+  - docs/pages/frontend/f2x-crew-xp.mdx
   - tasks/metrics/frontend/CREW-XP-INFO-01-browser.log
+  - agent-docs/test-audit/browser-evidence/crew-xp-info-01/ (evidence, gitignored)
 ---
 
 # CREW-XP-INFO-01 — Crew advancement guidance in the Resolution Crew XP step
@@ -18,64 +20,70 @@ outputs:
 ## Goal
 
 The Resolution "Crew XP" step shows the crew advancement guidance from
-https://bladesinthedark.com/advancement#crew-advancement as helpful information. It must
-make clear that each crew XP category can yield up to 2 XP, not just 1. It carries a CC-BY
-attribution and an SRD link, as Entanglements does. The crew's own XP trigger comes from the
-crew type game data.
+https://bladesinthedark.com/advancement#crew-advancement as helpful information. It makes clear
+that each crew XP category can yield up to 2 XP. It carries a CC-BY attribution and an SRD link, as
+Entanglements does. The crew's own XP trigger comes from the crew type game data.
 
-## Source and transcription
+## Transcription rules (what the module now holds)
 
-The SRD page was fetched and the Crew Advancement section transcribed into
-`frontend/src/data/crew-advancement.ts`, following the Entanglements module
-(`frontend/src/data/entanglements.ts`): the module holds the SRD wording with markdown emphasis
-removed, plus the attribution and the URL.
+`frontend/src/data/crew-advancement.ts` holds the SRD wording exactly: case and punctuation as the
+SRD prints them, with markdown emphasis removed. Entanglements keeps its text in a frontend module,
+so the crew text follows that pattern rather than `data/games/*.json`.
 
-- Transcribed: the crew XP rule ("mark 1 crew XP for each item…; mark 2 crew XP for it"), the four
-  trigger categories in SRD order with their SRD text, the advance rule, the "say how you've
-  obtained" prompt, and the Profits rule.
-- Omitted: the SRD's Assassins example quote in the "Your crew-specific xp trigger" item. The
-  crew's own trigger is shown instead, from the crew type data (`ExperienceTrigger`).
-- Added by the app: one summary line, "Each category can yield up to 2 XP: 1 if it occurred, 2
-  if it occurred multiple times or in a major way." It is labelled in the module as an app
-  summary, not SRD text. It states the per-category maximum the human asked for.
+- **Verbatim:** the crew XP rule, its lead-in "The crew xp triggers are:", the four trigger
+  categories in SRD order (including the Smugglers' example in the first category), the advance
+  rule, the origin prompt, and the Profits rule.
+- **Omitted (the one permitted omission):** the SRD's Assassins example in the advancement
+  paragraph. The crew's own trigger is shown from the crew type data (`ExperienceTrigger`).
+- **App-written (one line, labelled in the module):** `CREW_XP_MAX_NOTE`, "Each category can yield
+  up to 2 XP: 1 if it occurred, 2 if it occurred multiple times or in a major way." It states the
+  per-category maximum that the human asked for.
 
-The text is not in `data/games/*.json`. Entanglements keeps its text in a frontend module, so
-the crew text follows that pattern. The crew-specific trigger is data-driven: the character page
-loads the crew game data (`getCrewGameData`), and `extractExperienceTrigger` reads the linked
-crew type's `ExperienceTrigger`.
+## Sol 6.1 round 1 (pinned 1fb39421): FAIL, fixed
+
+The first version was not verbatim. Sol checked it against the live page and found: `xp` changed
+to `XP` in three places; the lead-in "The crew xp triggers are:" dropped; the period after
+"Your crew-specific xp trigger." dropped; and the Smugglers' example dropped. The example is part of
+the SRD category text, not the Assassins advancement example, so dropping it was an unauthorised
+omission. The module comment also claimed that only emphasis was removed, which was wrong.
+
+Fix: the module, its tests and R2-05 now pin the verbatim wording. The data tests failed on the
+old module (2 failed, 3 passed) before the fix. The lead-in is rendered in the step, and R2-05
+asserts it and the Smugglers' example.
 
 ## Red-green
 
-1. `frontend/src/data/crew-advancement.test.ts` was written first. It failed with "Cannot find
-   module './crew-advancement.js'".
-2. R2-05 in `game-mode-sheet.test.ts` was updated to the new wording, attribution and anchored
-   link, and a second test asserts the crew-type trigger from the mocked crew data. Both failed on
-   the old copy (2 failed, 3 passed).
-3. The implementation followed. The full frontend suite is 953/953 (33 files). The earlier count
-   was 947, which is +5 data tests and +1 new R2-05 test.
+1. `frontend/src/data/crew-advancement.test.ts` was written first against the SRD strings. Its
+   first version failed with "Cannot find module". The verbatim version failed on the old module
+   (2 failed, 3 passed).
+2. R2-05 in `game-mode-sheet.test.ts` asserts the new wording, the lead-in, the Smugglers' example,
+   the attribution and the anchored link. A second test asserts the crew type's trigger from the
+   mocked crew data.
+3. Each red step is shown above. The final tree passes the full frontend suite at 953/953
+   (33 files), which is +5 data tests and +1 new R2-05 test over 947.
 
 ## Wiring
 
 - `GameModeUi` gains `crewXpTrigger: string | null`. `character-detail.ts` sets it from the linked
-  crew's `crewTypeName` and the loaded crew game data.
-- `loadCrewGameTypes` is called when the linked crew loads. A failed load leaves the generic
-  wording "This crew's trigger is on its crew type; check the crew sheet."
-- The Crew XP step keeps the existing crew XP editor and the GM confirmation line, then shows the
-  guidance, the advancement rules, the profits rule, the attribution and the SRD link.
+  crew's `crewTypeName` and the loaded crew game data (`getCrewGameData`, then
+  `extractExperienceTrigger`).
+- `loadCrewGameTypes` is called when the linked crew loads. A failed load shows the generic wording
+  "This crew’s trigger is on its crew type; check the crew sheet."
+- The Crew XP step keeps the crew XP editor and the GM confirmation line, then the guidance, the
+  advancement rules, the profits rule, the attribution and the SRD link.
 
 ## Chromium evidence (3 sizes × light, dark, high contrast)
 
 `agent-docs/test-audit/browser-evidence/crew-xp-info-01/check.mjs` creates a real Assassins crew,
-links a Cutter to it through `dossier.update`, sets Score and the Crew XP step, and checks each
-combination.
+links a Cutter through `dossier.update`, sets Score and the Crew XP step, and checks each case.
 
-Result: 9/9 pass (`check.json`). Each row confirms the crew type's trigger text ("Execute a
-successful murder, ransom, or assassination operation."), the "up to 2 XP" line, the four
-category titles, the CC-BY attribution, the SRD anchor link, a scrollable card, zero horizontal
-overflow, and that after wheel-only scrolling the SRD link is hit-testable with the page not
-scrolled. Zero page errors. Screenshots: `crew-xp-<width>-<theme>.png`.
+- Before the transcription fix: 9/9 (`check.json` from that run was overwritten).
+- After the transcription fix: 9/9 (final run). Each row confirms the crew type's trigger text, the
+  "up to 2 XP" line, the four category titles, the CC-BY attribution, the SRD anchor link, a
+  scrollable card, zero horizontal overflow, zero page errors, and that after wheel-only scrolling
+  the SRD link is hit-testable with the page unscrolled.
 
-## Gates
+## Gates (final tree)
 
 | Gate | Result |
 |---|---|
@@ -84,13 +92,21 @@ scrolled. Zero page errors. Screenshots: `crew-xp-<width>-<theme>.png`.
 | build | exit 0 |
 | browser journeys (`npm run test:browser`) | 6/6 PASS (`tasks/metrics/frontend/CREW-XP-INFO-01-browser.log`) |
 | Chromium 3×3 (`check.mjs`) | 9/9 |
-| mutation campaign 28/28 | see `tasks/metrics/frontend/CREW-XP-INFO-01.json` |
+| Sol 6.1 xhigh review | round 1 FAIL (fixed); round 2: see the record below |
+| mutation campaign 28/28 | NOT RUN: blocked on the working copy, see below |
 
-Pins: `frontend/src/pages/character-detail.ts` (M26) refreshed to
-`3c1ad11bad21…`. No other catalog target changed; `gameMode.ts` has no pin.
+Pins: `frontend/src/pages/character-detail.ts` (M26) refreshed to `3c1ad11bad21…`.
+`gameMode.ts` and `crew-advancement.ts` have no pin.
+
+## Mutation campaign: blocked
+
+`npm run test:mutation` needs an empty working copy. At the time of the run, the working copy held
+`conformance/suites/contract/unknown-operation.test.ts` and
+`tasks/metrics/contract/UNKNOWN-OP-01-red.log`. These belong to another worker (UNKNOWN-OP-01) and
+were not committed here. The campaign is waiting on the human's decision about those files.
 
 ## Limits
 
-- The README line "This project reproduces no rulebook text" is now out of date. Entanglements
-  and this card both carry SRD text. It was not changed here; it needs a decision.
+- The README line "This project reproduces no rulebook text" is now out of date. Entanglements and
+  this card both carry SRD text. It was not changed here; it needs a decision.
 - The advancement text is shown in the Resolution step only, not in the crew page.
