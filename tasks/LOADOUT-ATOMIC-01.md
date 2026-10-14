@@ -226,3 +226,9 @@ Round 3 (pinned `6afcfb4ec8be`, after the shared rejection helper was generalise
 unchanged in behaviour: 9/9 atomic replacements, the real 400 with the reason inside the open dialog and the proposal
 kept, recovery, cancellation, the none guard, the real 409 handling, keyboard activation, and 27/27 dialog states with no
 horizontal overflow.
+
+## Final combined mutation campaign (after the review fixes)
+
+`npm run test:mutation` **28/28** (P0 19/19, P1 9/9) at `e6e5a1ea`, run once from an empty working copy, after the
+round 2 and round 3 reviews. The pin refresh for `frontend/src/pages/character-detail.ts` (`732e1f910ab7…`) was
+committed first. Log: `tasks/metrics/contract/DESPERATE-LOG-01-mutation-combined.log`.

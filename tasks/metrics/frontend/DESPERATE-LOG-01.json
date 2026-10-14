@@ -3,14 +3,14 @@
   "track": "contract + backend + frontend",
   "date": "2026-10-14",
   "implementationAgent": "anthropic/claude-haiku-5-5 (omp worker; option C after the human decision)",
-  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): see the card",
-  "iterationsToGreen": 3,
-  "iterationNotes": "Iteration 1: contract, Ada validators and the 7-case red suite (7 failed, 7 passed later after the Ada apply branch). Iteration 2: new-character template and the normaliser; first full run found 9 failures in fixtures and the strict frontend decoder, fixed by adding desperateMarks to golden and readable seed documents and to test DTO literals. Iteration 3: frontend tally list, desperate.mark control, Chromium probe fixed for compact sheets and fresh characters per case.",
-  "defectsCaughtBy": {"compiler": 1, "conformance": 9, "review": 0, "human": 0},
-  "notes": "Caught by the conformance suite: the new-character template lacked the field (creation failed); golden and seed fixtures lacked the required field; the contract tooling does not support maps, so the representation changed to an array of names. Caught by Chromium: the probe reused one character (tally accumulated) and read the list from the hidden panel as well as the sheet, both probe defects.",
+  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): round 1 FAIL (pinned f0fb9c1b6070: P2 hidden full-track refusal, P3 cutover route and response test, P3 docs); round 2 PASS (pinned 6afcfb4ec8be)",
+  "iterationsToGreen": 5,
+  "iterationNotes": "Iteration 1: contract, Ada validators, 7-case red suite (7 of 7 failing on the pre-change backend). Iteration 2: new-character template and normaliser; the full managed suite found 9 failures in fixtures and the strict frontend decoder; fixed by adding desperateMarks to golden and readable seed documents and to test DTO literals. Iteration 3: frontend tally list and the desperate.mark control; Chromium probe fixed (fresh character per case; reads scoped to the open surface). Iteration 4: Sol round 1 FAIL fixed (refusal shown inside the open tracker; cutover check on the real route; response-driven test; docs corrected). Iteration 5: Sol round 2 PASS; one combined mutation campaign at the final tree.",
+  "defectsCaughtBy": {"compiler": 1, "conformance": 9, "review": 3, "human": 0},
+  "notes": "Caught by the conformance suite: the new-character template lacked the field (creation failed); fixtures lacked the required field; the contract tooling does not support maps, so the representation changed to an array of names. Caught by Chromium: a probe that reused one character and read the list from the hidden panel (probe defects). Caught by Sol round 1: a full-track refusal hidden behind the inert tracker (P2); the cutover test checked a route prefix that never matches the old call (P3); the docs promised fill-on-read, which the live probe contradicts (P3).",
   "metricsMethodology": {
     "method": "not measured: wall-clock and token counts were not recorded",
-    "source": "Ada two-cycle 614/614, tooling 233/233, vitest 961/961, browser 6/6, Chromium 9/9, gnatprove 246",
+    "source": "Ada two-cycle 615/615, tooling 233/233, vitest 964/964, browser 6/6, Chromium 9/9 tracker probe with full-track refusal, mutation 28/28 (P0 19/19, P1 9/9), gnatprove 246 (last run on this backend code), Sol round 2 PASS",
     "locNote": "implementationLoc=unknown",
     "scaffoldingLocNote": "scaffoldingLoc=unknown",
     "tokensNote": "tokens recorded as 0"
@@ -20,7 +20,7 @@
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "passRateAtFirstDoneClaim": "red suite 7 of 7 failing before the backend change",
-  "passRateAfterReview": "Ada 614/614 twice, tooling 233/233, vitest 961/961, tsc 0, build 0, browser 6/6, Chromium 9/9, gnatprove 246; mutation campaign and Sol review recorded in the commit record",
-  "defectCatchingLayer": ["red conformance suite", "full managed Ada suite", "Chromium probe"],
-  "status": "implemented; mutation campaign and Sol review pending the record commit"
+  "passRateAfterReview": "Ada 615/615 twice, tooling 233/233, vitest 964/964, tsc 0, build 0, browser 6/6, Chromium 9/9, mutation 28/28, Sol round 2 PASS",
+  "defectCatchingLayer": ["red conformance suite", "full managed Ada suite", "Chromium probe", "Sol 6.1 review"],
+  "status": "complete at the final tree: Sol round 2 PASS at 6afcfb4ec8be; mutation campaign 28/28 at e6e5a1ea (pin refresh) and the records commit"
 }

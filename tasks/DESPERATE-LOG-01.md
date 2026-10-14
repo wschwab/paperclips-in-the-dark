@@ -134,3 +134,10 @@ tracker), and the frontend 964/964; typecheck and build exit 0; targeted conform
 limits, not product failures: the permanent conformance file does not inspect snapshot or history contents directly; the
 frontend refusal test does not check pixels, alert semantics, or disk no-write (the Chromium probe does); and the historical
 frontend work preceded its tests (documented above). It did not rerun the full suite, the mutation campaign, or the SPARK proof.
+
+## Combined mutation campaign (final tree)
+
+`npm run test:mutation` **28/28** (P0 19/19, P1 9/9) at `e6e5a1ea` (the catalog pin refresh on top of the reviewed code),
+from an empty working copy, run once. Pins refreshed first: `frontend/src/pages/character-detail.ts` to `732e1f910ab7…`
+(stale after the review fixes); the other pins were current. Log: `tasks/metrics/contract/DESPERATE-LOG-01-mutation-combined.log`.
+This campaign also covers the LOADOUT-ATOMIC-01 takeover tree, because both cards land on this commit (see its card).
