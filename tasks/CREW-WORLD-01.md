@@ -77,10 +77,7 @@ outputs:
 the repository**, not deleted, to `/home/x/code/private-crew-world/doskvol-draft.json`. The working tree no longer
 contains it, and the move is committed as a deletion.
 
-**Still open, needs the human's decision.** The research commit `8b40e51f` (local, not pushed) contains the draft.
-It sits between `main` (`ec078eb2`, already pushed) and this card's commits, so pushing `main` would publish the
-names in that commit's history. Removing it needs a history rewrite of an unpushed local commit, which this card does
-not perform. The push of this card is therefore **held**. See the commit record.
+**Resolved.** The research commit `8b40e51f` contained the draft. With the human's approval, the draft deletion and the final sources page were squashed into that commit, and the six commits above it were rebased. The draft is absent from every commit in `ec078eb2..ecfb9881`. The earlier copy existed only in unpushed local history, which is no longer reachable from `main`. `main` was pushed to origin and radicle at `ecfb9881`.
 
 ## Pre-existing data finding (not changed by this card)
 
@@ -118,11 +115,11 @@ zero page errors; zero horizontal overflow.
 | browser journeys (`npm run test:browser`) | 6/6 |
 | Chromium 3×3 factions editor | 9/9 |
 | mutation campaign 28/28 (`npm run test:mutation`, run once, log `tasks/metrics/contract/CREW-WORLD-01-mutation-combined.log`) | 28/28: P0 19/19, P1 9/9, on the pinned tree `a8bf6b39` after the pin refresh; five stale pins refreshed first (pitd_callback.adb, pitd_normalize.adb, pitd_ops.adb, client.ts, components.css) |
-| Sol 6.1 xhigh review | **NOT-RUN**: the Codex CLI returned `usage_limit_reached` at once (`agent-docs/test-audit/browser-evidence/crew-world-01/sol-6.1/stderr.txt`). No other reviewer was substituted. |
+| Sol 6.1 xhigh review (`openai-codex/gpt-6.1-sol`, xhigh) on `ec078eb2..ecfb9881` | **PASS**. Verdict in `tasks/metrics/contract/CREW-WORLD-01-sol-6.1-verdict.txt`: licence and content, wiring, contract semantics, attribution, Chromium at 390/768/1440 (light, dark, high contrast), scope. Earlier NOT-RUN attempts hit `usage_limit_reached`; the second prompt cited the pre-rewrite ids and was replaced by `review-prompt-ecfb9881.md`. |
 
-## Publication: held
+## Publication: done
 
-Not pushed. The research commit `8b40e51f` (local, unpushed) holds the research draft with the official names, and it sits below every commit of this card. Pushing `main` would publish those names in history. Removing them needs a rewrite of that unpushed local commit, which needs the human's approval. Once that is decided, the push is origin then radicle, as usual.
+Pushed. `main` is at `ecfb9881` on origin and radicle. The research draft is absent from every commit in the pushed range (checked by file list per commit). A grep of the added range found only card and log notes, the sources note's one district mention, and the captured frontend-red log; see the commit record.
 
 ## Limits
 

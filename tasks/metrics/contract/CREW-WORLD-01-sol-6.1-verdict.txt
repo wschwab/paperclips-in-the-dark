@@ -1,0 +1,19 @@
+VERDICT: PASS
+
+1. **Content check: six matching added lines; none adds application/game-data catalogues.**
+   - `docs/pages/contract/crew-world-sources.mdx:87`: Whitecrown appears in a **sources/research note**, not stock data.
+   - `tasks/CREW-WORLD-01.md:87`: Brightstone, Charterhall and Whitecrown appear in a **card note about pre-existing data**.
+   - `tasks/CREW-WORLD-01.md:134`: Ironhook appears in a **card note about unchanged fixtures**.
+   - `tasks/metrics/contract/CREW-WORLD-01-frontend-red.log:14,78,81`: **historical failing-test output**, including a DOM transcript populated from the existing crew fixture.
+   
+   The net diff adds no faction/district list or district text to application code or game data. No game-data files change.
+
+2. **End-to-end wiring and stale-choice preservation pass.** Picker submission reaches `factionSetStarting` through `frontend/src/pages/crew-sections/contacts.ts:130-139`, `frontend/src/pages/crew-detail.ts:635-648`, and `frontend/src/api/client.ts:1227-1233`; backend application is at `backend-ada/server/src/pitd_ops.adb:1393-1422`. Stale choices remain selected with “(no longer tracked)” and cannot be silently saved as blank (`contacts.ts:112-136`). Independently reproduced: external faction removal → HTTP 409 refresh → labelled stale selection → blocked save without another request; explicit None resolves it.
+
+3. **Contract semantics pass.** Tier omission preserves the existing value; explicit null removes only the targeted tier (`pitd_ops.adb:1433-1478`). Both starting names are checked before assigning the pair (`1398-1421`); invalid names return HTTP 400 VALIDATION (`pitd_callback.adb:2063-2070`). Live probes confirmed `/ally` and `/rival` errors leave entity and history bytes unchanged, while successful saves preserve coin, statuses and tiers. `factionSetStarting` is an additive parity entry with no existing entries removed (`conformance/suites/parity/capability-parity.test.ts:78-80`).
+
+4. **Attribution passes.** `README.md:78-86` names CC-BY 3.0 Unported, links the publisher, and reproduces the required attribution paragraph. It matches the [official licensing page](https://bladesinthedark.com/licensing). Reference links point to publisher-hosted material, not a bundled content copy.
+
+5. **Independent verification passed:** focused Ada conformance **11/11**, frontend tests **106/106**, Ada build and frontend typecheck/build. Inspected supplied evidence and independently exercised Chromium at **390, 768 and 1440 pixels**, each in light, dark and high contrast. All nine surfaces had zero document/container horizontal overflow; screenshots showed usable controls. Invalid manual entry sent no request.
+
+6. **Scope caveat:** this is approval of the reviewed delta, not blanket licensing clearance. Pre-existing setting/NPC strings remain in `data/games/blades-in-the-dark.json:727-799`, unchanged from the base. The separate publication hold documented at `tasks/CREW-WORLD-01.md:74-90,123-125` is not cleared by this review.
