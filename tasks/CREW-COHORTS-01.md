@@ -59,5 +59,6 @@ Verified 2026-10-19 against `https://bladesinthedark.com/crew`, "Cohorts" sectio
 ## Hand-off
 
 - Browser gate blocked by the stale `crew-create-trackers` journey (mode-mockups' Rep/Turf scope). Needs a journey update there before `npm run test:browser` can go 6/6.
-- Uncommitted change in `frontend/src/pages/character-sections/gameMode.ts` (not this card): the Crew XP intro moves below the triggers list. Excluded from this commit; owner to confirm.
-- Full vitest failures in `crew-claims-map.test.ts` belong to CREW-CLAIMS-MAP-01 (`mode-mockups`).
+- Sol 6.1 xhigh review of 01b60395: NOT-RUN. The Codex usage limit was reached (`usage_limit_reached`); no verdict exists. Needs a rerun before close.
+- gameMode.ts: the uncommitted Crew XP intro reorder was adopted as the CREW-XP-TRIGGERS-01 follow-up (commit `5274eb1e`), not this card.
+- Full vitest failures in `crew-claims-map.test.ts` were resolved by `mode-mockups`' commit `9a8a3812`; the full run is 998/998 on the current tree.
