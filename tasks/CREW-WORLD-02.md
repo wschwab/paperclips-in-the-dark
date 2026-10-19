@@ -47,7 +47,7 @@ CC-BY. See `docs/pages/contract/crew-world-sources.mdx`.
 - Browser journeys 6/6 PASS (`conformance` `npm run test:browser`).
 - Chromium 9/9: 390/768/1440 × light/dark/high contrast, for the crew sheet and the
   launch screen. Zero horizontal overflow, zero page errors. Record:
-  `agent-docs/test-audit/browser-evidence/crew-world-02/check.json` (gitignored).
+  `tasks/metrics/frontend/CREW-WORLD-02-chromium.log` (check output, 9/9 pass).
 
 ## Defect caught in this card
 
