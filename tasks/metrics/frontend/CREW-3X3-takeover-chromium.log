@@ -1,0 +1,19 @@
+OK: canonical managed launcher
+[managed-browser-smoke] runId=2026-10-19T17-44-32-869Z-7f872d6e
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node /home/x/code/paperclips-in-the-dark/agent-docs/test-audit/browser-evidence/crew-3x3-takeover/probe.mjs
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-19T17-44-32-869Z-7f872d6e/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-19T17-44-32-869Z-7f872d6e/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-19T17-44-32-869Z-7f872d6e
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-19T17-44-32-869Z-7f872d6e/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-19T17-44-32-869Z-7f872d6e/data (dir)
+[managed-browser-smoke] port=33103
+[managed-browser-smoke] baseUrl=http://127.0.0.1:33103
+[managed-browser-smoke] pid=2184437
+[managed-browser-smoke] ready=http://127.0.0.1:33103
+[managed-browser-smoke] commandPid=2184504
+[{"w":1440,"t":"light","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":0,"owned":[1,2],"active":true},{"w":1440,"t":"dark","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":0,"owned":[1,2],"active":true},{"w":1440,"t":"high","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":0,"owned":[1,2],"active":true},{"w":768,"t":"light","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":0,"owned":[1,2],"active":true},{"w":768,"t":"dark","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":0,"owned":[1,2],"active":true},{"w":768,"t":"high","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":0,"owned":[1,2],"active":true},{"w":390,"t":"light","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":252,"owned":[1,2],"active":true},{"w":390,"t":"dark","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":252,"owned":[1,2],"active":true},{"w":390,"t":"high","docX":0,"repX":0,"turf":"Turf: 1","manual":"Other turf: 1","claimsMapX":254,"owned":[1,2],"active":true}]
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-10-19T17-44-32-869Z-7f872d6e)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-10-19T17-44-32-869Z-7f872d6e)

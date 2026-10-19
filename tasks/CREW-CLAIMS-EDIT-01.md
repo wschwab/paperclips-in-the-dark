@@ -62,3 +62,5 @@ NOT-RUN. The codex quota returned `usage_limit_reached`. The user will run Sol 6
 
 - Vitest 1006/1006; `tsc` clean; `vite build` green; browser 6/6 PASS; validators PASS; Vocs build 163 files; mutation 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`). Ada two-cycle not re-run (no backend change in this takeover).
 - Sol 6.1 xhigh: **NOT-RUN** (already recorded above).
+- Chromium 3×3 (`agent-docs/test-audit/browser-evidence/crew-3x3-takeover/probe.mjs`, log `tasks/metrics/frontend/CREW-3X3-takeover-chromium.log`): 9/9 rows pass in light, dark and high contrast at 1440, 768 and 390. Dismissing the confirm on an unconnected claim leaves ownership unchanged; accepting acquires it and the dialog text contains "NOT connected". Edit claim: the chooser, the inline form, and Save all work, and the saved name appears in Active claim benefits. Document overflow 0 in all nine rows.
+- The probe found no product failure, so no red-first fix was needed.

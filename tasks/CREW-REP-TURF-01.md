@@ -45,6 +45,8 @@ Full Vitest/TypeScript/build/browser, Chromium 3×3, validators/Vocs, the pinned
 
 - Vitest 1006/1006 (42 files); `tsc --noEmit` clean; `vite build` green. Browser suite 6/6 PASS (log in the takeover session; the `crew-create-trackers` rep/turf step now uses `Add 1 turf` and `.stress-box[data-turf="1"]`).
 - Validators PASS (metrics, finding traceability, reconcile); Vocs build 163 files.
-- Chromium 3×3 for Rep/Turf was **not re-run** in this takeover. The claims-map probe (1440/768/390) ran, see CREW-CLAIMS-EDIT-01.
+- Chromium 3×3 (`agent-docs/test-audit/browser-evidence/crew-3x3-takeover/probe.mjs`, log `tasks/metrics/frontend/CREW-3X3-takeover-chromium.log`, `probe.json`, 18 screenshots): 1440/768/390 × light/dark/high-contrast, 9/9 rows pass. Document overflow 0 in all nine. `.crew-rep` and `.crew-turf` overflow 0 in all nine. Rep text reads `Rep n/12`-style with the boxes, `Turf: n` and `Other turf: n` update. Manual "Add 1 turf" moves `Other turf` 0 → 1; a Turf claim moves `Turf` 1 → 2 with `Other turf` unchanged. The effective `Turf:` count updates from a separate caps refresh (~100 ms after the manual add, measured in a one-off run, not committed); it settles and is not a defect.
+- 390px: `.claims-map` scrolls horizontally inside its bounded container (252–254 px), as designed. Nothing overflows the page.
+- No product failure was found, so no red-first fix was needed.
 - Mutation campaign 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`). Five stale pins refreshed in `e360683e`.
 - Sol 6.1 xhigh: **NOT-RUN** (Codex `usage_limit_reached`). The user will run it when quota resets.
