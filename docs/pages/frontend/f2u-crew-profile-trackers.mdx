@@ -124,11 +124,15 @@ Full suite green (`npm test -- --run`, 313 tests) and `npm run build`
 - **Acquiring a claim is a confirm-first action**: the acquire control asks
   for confirmation before posting, so an accidental click cannot spend the
   crew's claim slot.
-- **Removing a claim is intentional, edit-mode removal**: a session-local
-  **"Edit claims" / "Done editing"** toggle (`aria-pressed`) gates claim
-  removal and customization; while editing, each claim exposes remove and
-  customize/reset controls. A warning is shown when removing a claim would
-  disconnect it from the connected claim map.
+- **Relinquishing a claim is a direct click**: clicking an owned claim asks
+  for confirmation, then removes it. A warning is shown when removing a claim
+  would disconnect it from the connected claim map. The old "Edit claims" mode
+  was removed (CREW-CLAIMS-EDIT-01). Active benefits are plain text, with no
+  per-claim buttons.
+- **Editing a claim is separate**: "Edit claim" lets the player choose a claim
+  by clicking it, then rewrites its name and text in an inline form. Save posts
+  `claim.customize`; "Reset to default" posts `claim.reset`. Ownership is not
+  changed by editing.
 - Regression-pinned by the `crew02-claims` journey (acquire → reload →
   remove) in the six-journey browser suite; the journey also caught a
   backend `claim.set` accumulation bug, fixed in the same card.

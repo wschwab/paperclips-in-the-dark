@@ -1900,6 +1900,11 @@ describe("crew-detail page", () => {
       edgeSelect.value = "Tenacious";
       edgeSelect.dispatchEvent(new Event("change", { bubbles: true }));
       (root.querySelector('button[title="Add edge"]') as HTMLButtonElement).click();
+      // SRD: an equal number of flaws must accompany the edge before Add is allowed.
+      const flawSelect = root.querySelector('select[aria-label="Cohort flaw"]') as HTMLSelectElement;
+      flawSelect.value = "Savage";
+      flawSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      (root.querySelector('button[title="Add flaw"]') as HTMLButtonElement).click();
       const descInput = root.querySelector('textarea[aria-label="Cohort description"]') as HTMLTextAreaElement;
       descInput.value = "Street toughs who love a fight";
 
@@ -1919,6 +1924,7 @@ describe("crew-detail page", () => {
             scale: 1,
             hasArmor: true,
             edges: ["Tenacious"],
+            flaws: ["Savage"],
             description: "Street toughs who love a fight",
           }),
         }),
@@ -3625,20 +3631,16 @@ describe("CREW-02 claim acquisition and removal gating", () => {
       (b) => b.textContent?.includes(name),
     )!;
 
-  it("renders the claims map and keeps removal behind an Edit claims toggle that starts off", async () => {
+  it("renders the claims map; active benefits are text with no Edit claims toggle or per-claim buttons", async () => {
     await mountWithClaims({ claimedClaimIds: ["north-markets"] });
 
     expect(cell("North Markets")).toBeTruthy();
     expect(cell("Forgery Office")).toBeTruthy();
+    expect(root.querySelector(".claims-edit-toggle")).toBeNull();
 
-    const toggle = root.querySelector<HTMLButtonElement>(".claims-edit-toggle");
-    expect(toggle).not.toBeNull();
-    expect(toggle!.textContent).toBe("Edit claims");
-
-    // Active list has no Relinquish control outside edit mode.
     const list = root.querySelector(".active-claim-list");
     expect(list?.textContent).toContain("North Markets");
-    expect(list?.textContent).not.toContain("Relinquish");
+    expect(list?.querySelectorAll("button")).toHaveLength(0);
   });
 
   it("asks confirmation before acquiring; cancel writes nothing, accept posts ops/claim.set", async () => {
@@ -3686,42 +3688,20 @@ describe("CREW-02 claim acquisition and removal gating", () => {
     expect(cell("North Markets").textContent.toLowerCase()).not.toContain("not connected");
   });
 
-  it("keeps owned cells inert outside edit mode with an explanatory hint", async () => {
+  it("relinquishes an owned claim by clicking it: confirm first, cancel writes nothing, accept posts claimed:false", async () => {
     await mountWithClaims({ claimedClaimIds: ["north-markets"] });
 
     const owned = cell("North Markets");
-    expect(owned.disabled).toBe(true);
-    expect(owned.getAttribute("title")).toMatch(/Edit claims/i);
+    expect(owned.disabled).toBe(false);
 
     owned.click();
-    expect(confirmSpy).not.toHaveBeenCalled();
-    expect((global.fetch as Mock).mock.calls.some((c: unknown[]) => String(c[0]).includes("/ops/"))).toBe(false);
-  });
-
-  it("in edit mode, relinquishing confirms with strong wording then posts claimed:false", async () => {
-    await mountWithClaims({ claimedClaimIds: ["north-markets"] });
-
-    root.querySelector<HTMLButtonElement>(".claims-edit-toggle")!.click();
-    const toggle = root.querySelector<HTMLButtonElement>(".claims-edit-toggle")!;
-    expect(toggle.textContent).toBe("Done editing");
-
-    // Active list exposes Relinquish only inside edit mode.
-    const relBtn = Array.from(root.querySelectorAll(".active-claim-list button")).find(
-      (b) => b.textContent === "Relinquish",
-    ) as HTMLButtonElement;
-    expect(relBtn).toBeTruthy();
-
-    // Cancel first.
-    relBtn.click();
-    const ownedMsg = confirmSpy.mock.calls.at(-1)?.[0] ?? "";
-    expect(ownedMsg).toContain("North Markets");
-    expect(ownedMsg.toLowerCase()).toContain("relinquish");
-    expect(ownedMsg.toLowerCase()).toContain("remove");
+    const msg = confirmSpy.mock.calls.at(-1)?.[0] ?? "";
+    expect(msg).toContain("North Markets");
+    expect(msg.toLowerCase()).toContain("relinquish");
     expect((global.fetch as Mock).mock.calls.some((c: unknown[]) => String(c[0]).includes("/ops/"))).toBe(false);
 
-    // Accept via the active-list path.
     confirmSpy.mockReturnValueOnce(true);
-    relBtn.click();
+    cell("North Markets").click();
     await vi.waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/claim.set`,
@@ -3730,6 +3710,30 @@ describe("CREW-02 claim acquisition and removal gating", () => {
           body: JSON.stringify({ claimId: "north-markets", claimed: false }),
         }),
       );
+    });
+  });
+
+  it("edits an owned claim's name through Edit claim without a relinquish or acquisition prompt", async () => {
+    await mountWithClaims({ claimedClaimIds: ["north-markets"] });
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>("button")).find((b) => b.textContent === "Edit claim")!.click();
+    // Choose mode: the next claim click selects it and never prompts.
+    cell("North Markets").click();
+    expect(confirmSpy).not.toHaveBeenCalled();
+
+    const nameInput = root.querySelector<HTMLInputElement>('.claim-editor input[aria-label="Claim name"]')!;
+    expect(nameInput.value).toBe("North Markets");
+    nameInput.value = "North Markets (renamed)";
+    nameInput.dispatchEvent(new Event("input"));
+    root.querySelector<HTMLFormElement>(".claim-editor")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+
+    await vi.waitFor(() => {
+      const call = (global.fetch as Mock).mock.calls.find((c: unknown[]) => String(c[0]).endsWith("/ops/claim.customize"));
+      expect(call).toBeDefined();
+      expect(JSON.parse((call![1] as RequestInit).body as string)).toMatchObject({
+        claimId: "north-markets",
+        name: "North Markets (renamed)",
+      });
     });
   });
 });

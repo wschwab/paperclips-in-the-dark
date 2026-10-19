@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { readFileSync } from "node:fs";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { renderCrewClaimsSection } from "./crew-sections/claims.js";
 import type { RenderState } from "./crew-detail.js";
 
@@ -28,8 +28,6 @@ describe("CREW-CLAIMS-MAP-01", () => {
         { Id: "right", Name: "Another claim", Description: "Another benefit", Kind: "claim", Column: 3, Row: 1 },
       ], Edges: [] } },
       crewTypesData: null,
-      claimsEditMode: false,
-      handlers: { onClaimsEditToggle: vi.fn() },
     } as unknown as RenderState;
     const root = renderCrewClaimsSection(state);
     expect(root.querySelector<HTMLElement>(".claims-grid")?.style.gridTemplateColumns).toMatch(/repeat\(3,\s*minmax\(0,\s*1fr\)\)/);

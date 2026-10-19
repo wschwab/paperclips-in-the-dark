@@ -51,6 +51,7 @@ import {
   opErrorText,
 } from "./crew-domain.js";
 import type { CrewField } from "./crew-domain.js";
+import { claimsGraph, effectiveClaim, extractCrewClaims } from "./crew-domain.js";
 import { renderCrewProfileSection } from "./crew-sections/profile.js";
 import { renderCrewNotesSection } from "./crew-sections/notes.js";
 import { crewRepTurf, renderCrewTrackersSection } from "./crew-sections/trackers.js";
@@ -116,9 +117,8 @@ export interface RenderState {
   advancementEdit: boolean;
   editingProfile: ProfileEditingState | null;
   editingCohortId: string | null;
-  /** CREW-02: removal (relinquish) lives behind this explicit session-local
-   *  toggle; acquisition stays available in normal mode. */
-  claimsEditMode: boolean;
+  /** CREW-CLAIMS-EDIT-01: session-local claim editor; closed on every fresh mount. */
+  claimEditor: ClaimEditor | null;
   errorMsg: string | null;
   noticeMsg: string | null;
   undoNotice: string | null;
@@ -166,13 +166,20 @@ export interface RenderState {
     onXpDelta: (delta: number) => void;
     onXpTrack: (next: number) => void;
     onXpClear: () => void;
-    onClaimsEditToggle: () => void;
+    onClaimEditStart: () => void;
+    onClaimEditSelect: (claimId: string) => void;
+    onClaimEditCancel: () => void;
+    onClaimSave: () => void;
     onAdvancementEditToggle: () => void;
     onClaimToggle: (claimId: string, claimed: boolean) => void;
-    onClaimCustomize: (claimId: string) => void;
     onClaimReset: (claimId: string) => void;
   };
 }
+
+/** CREW-CLAIMS-EDIT-01: session-local claim editor. `choose` waits for a claim click; `edit` holds the draft for one claim. */
+export type ClaimEditor =
+  | { kind: "choose" }
+  | { kind: "edit"; claimId: string; name: string; description: string };
 
 // ---------------------------------------------------------------------------
 // Render helpers
@@ -291,11 +298,10 @@ export function mountCrewDetailPage(
   let editingProfile: ProfileEditingState | null = null;
   let editingCohortId: string | null = null;
   // CREW-04: advancement-edit mode gates ability removal / upgrade unmarking;
-  // session-local like claimsEditMode, starts off on every fresh mount.
+  // session-local, starts off on every fresh mount.
   let advancementEditMode = false;
-  // CREW-02: claim-edit mode gates relinquish; session-local, resets on reload
-  // (a fresh mount intentionally starts in the safe normal mode).
-  let claimsEditMode = false;
+  // CREW-CLAIMS-EDIT-01: the claim editor is session-local and starts closed.
+  let claimEditor: ClaimEditor | null = null;
   let errorMsg: string | null = null;
   let noticeMsg: string | null = null;
   let undoNotice: string | null = null;
@@ -384,6 +390,7 @@ export function mountCrewDetailPage(
     program: Effect.Effect<Crew | CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError>,
     successNotice?: string,
     clampLabel?: string,
+    afterSuccess?: () => void,
   ) => {
     setLoading(true);
     clearNotices();
@@ -406,6 +413,7 @@ export function mountCrewDetailPage(
             }, 5000);
           }
           if (successNotice) noticeMsg = successNotice;
+          afterSuccess?.();
           refreshCaps();
           renderDetail();
         },
@@ -471,7 +479,7 @@ export function mountCrewDetailPage(
       manualTurfMax,
       crewCaps,
       editingProfile,
-      claimsEditMode,
+      claimEditor,
       advancementEdit: advancementEditMode,
       editingCohortId,
       errorMsg,
@@ -910,28 +918,46 @@ export function mountCrewDetailPage(
       if (!currentCrew || isUpgradeLoading) return;
       runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimSet(crewId, claimId, claimed, currentCrew.revision));
     },
-    onClaimCustomize: (claimId: string) => {
+    onClaimEditStart: () => {
+      if (isUpgradeLoading) return;
+      claimEditor = { kind: "choose" };
+      renderDetail();
+    },
+    onClaimEditSelect: (claimId: string) => {
       if (!currentCrew || isUpgradeLoading) return;
-      const overrides = currentCrew.claimOverrides;
-      const existing = overrides.find((o) => o.claimId === claimId);
-      const name = window.prompt("Claim name (blank keeps the default):", existing?.name ?? "");
-      if (name === null) return;
-      const desc = window.prompt("Benefit text (blank keeps the default):", existing?.description ?? "");
-      if (desc === null) return;
+      const claims = extractCrewClaims(crewTypeData, crewTypesData, currentCrew.crewTypeName);
+      const node = claims ? claimsGraph(claims).nodes.find((n) => n.id === claimId) : undefined;
+      if (!node) return;
+      const shown = effectiveClaim(node, currentCrew.claimOverrides);
+      claimEditor = { kind: "edit", claimId, name: shown.name, description: shown.description };
+      renderDetail();
+    },
+    onClaimEditCancel: () => {
+      claimEditor = null;
+      renderDetail();
+    },
+    onClaimSave: () => {
+      if (!currentCrew || isUpgradeLoading || claimEditor?.kind !== "edit") return;
+      const { claimId, name, description } = claimEditor;
       const fields: { name?: string; description?: string } = {};
       if (name.trim() !== "") fields.name = name.trim();
-      if (desc.trim() !== "") fields.description = desc.trim();
-      if (Object.keys(fields).length === 0) return;
-      runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimCustomize(crewId, claimId, fields, currentCrew.revision));
+      if (description.trim() !== "") fields.description = description.trim();
+      if (Object.keys(fields).length === 0) {
+        errorMsg = "Enter a name or benefit text, or use Reset to default.";
+        renderDetail();
+        return;
+      }
+      runCrewOp(
+        (v) => { isUpgradeLoading = v; },
+        crewClaimCustomize(crewId, claimId, fields, currentCrew.revision),
+        "Claim updated",
+        undefined,
+        () => { claimEditor = null; },
+      );
     },
     onClaimReset: (claimId: string) => {
       if (!currentCrew || isUpgradeLoading) return;
-      runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimReset(crewId, claimId, currentCrew.revision));
-    },
-
-    onClaimsEditToggle: () => {
-      claimsEditMode = !claimsEditMode;
-      renderDetail();
+      runCrewOp((v) => { isUpgradeLoading = v; }, crewClaimReset(crewId, claimId, currentCrew.revision), undefined, undefined, () => { claimEditor = null; });
     },
 
     onAdvancementEditToggle: () => {
