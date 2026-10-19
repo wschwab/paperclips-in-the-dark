@@ -68,30 +68,32 @@ text, and the description. Cards get a ✎ edit button and a ✕ remove
 button → `cohortRemove`.
 
 Edit mode replaces the card with a form (same pattern as the Profile
-section's per-field edit): type text input, quality/scale number inputs,
-an armor checkbox (the "armor toggle"), edges/flaws text inputs that are
-comma-split into arrays, a harm `<select>` from the contract enum, and a
-description input. ✓ Save diffs every field against the DTO and posts
+section's per-field edit): type text input, armor checkbox (gangs only),
+edges/flaws SRD pickers, a harm `<select>` from the contract enum, a name
+input, and a description textarea. Quality/scale are shown as derived values,
+not inputs. ✓ Save diffs every field against the DTO and posts
 `cohortUpdate` with `cohortId` + only the changed fields; ✕ Cancel exits
 without saving.
 
 ### Add form
 
-Kind `<select>` (contract enum, defaults to `gang`), gang-type / expert-type
-text inputs, quality/scale number inputs, armor checkbox, edges/flaws
-comma-separated text inputs, description input, and an "+ Add cohort"
-button → `cohortAdd`. Only filled fields are sent: the kind-relevant type,
-parsed quality/scale when non-empty, `hasArmor` (always, explicit
-true/false), edges/flaws when non-empty, description when non-empty.
+Kind `<select>` (contract enum, defaults to `gang`), then a gang-type select
+(SRD gang types, spelled Skulks) or an expert-type select (SRD expert types plus
+Custom, which reveals a free-text input). Armor is a gang-only checkbox. Edges
+and flaws are SRD pickers (plus Custom) with at most two each; description is a
+textarea. Quality and scale are read-only and derived from the crew Tier:
+gang quality = scale = Tier; expert quality = Tier + 1, scale = 0. Only filled
+fields are sent, but the derived quality/scale, `hasArmor` (explicit true/false)
+are always included. Name (optional) is sent when non-empty. An "+ Add cohort"
+button → `cohortAdd`.
 
 CREW-05 (2026-08-27): the add form marks `cohortKind` — the only field
 openapi requires on `cohort.add` (`required: [cohortKind]`) — with
 `aria-required` and a visible marker, and Add is gated **only** on
 contract requirements: a blank gang/expert type is contract-legal (the
-backend stores canonical empties), so it never disables Add. Quality/Scale
-inputs carry no min/max because no bounds are published anywhere
-capability/settings — tracked as
-[open contract issue](/contract/open-issue-cohort-bounds). The live
+backend stores canonical empties), so it never disables Add. Quality and
+scale are not typed (CREW-COHORTS-01): they are derived from the crew Tier per
+the SRD and shown read-only, so the bounds question no longer applies here. The live
 conditional-field behavior is locked by
 `crew01-cohort-add.journey.mjs`.
 
@@ -124,9 +126,9 @@ a function`) and then implemented to green via `crewMutate`.
   quality/scale, armor state, edges/flaws lists, harm values, description)
 - add via the form posts `cohort.add` with only the filled fields (empty
   scale/flaws/expertType omitted)
-- edit-form update changes quality + harm + armor and posts
-  `cohort.update` with exactly `{ cohortId, quality, hasArmor, harm }`
-  (unchanged fields omitted)
+- edit-form update changes harm and armor and posts
+  `cohort.update` with exactly `{ cohortId, hasArmor, harm }`; quality is
+  derived from Tier and never posted (unchanged fields omitted)
 - remove posts `cohort.remove` and renders "(no cohorts)"
 - `NOT_FOUND` notice on remove of an unknown cohort
 - `STALE_REVISION` refetch on a cohort op

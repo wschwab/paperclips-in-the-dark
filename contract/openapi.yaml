@@ -2661,6 +2661,7 @@ paths:
                 cohortKind: { $ref: "./schemas/common.json#/$defs/cohortType" }
                 gangType: { type: string }
                 expertType: { type: string }
+                name: { type: string }
                 quality: { type: integer, minimum: 0 }
                 scale: { type: integer, minimum: 0 }
                 hasArmor: { type: boolean }
@@ -2691,6 +2692,7 @@ paths:
                 cohortId: { type: string }
                 gangType: { type: string }
                 expertType: { type: string }
+                name: { type: string }
                 quality: { type: integer, minimum: 0 }
                 scale: { type: integer, minimum: 0 }
                 hasArmor: { type: boolean }

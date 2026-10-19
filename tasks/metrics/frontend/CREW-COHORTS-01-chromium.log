@@ -1,0 +1,53 @@
+OK: canonical managed launcher
+[managed-browser-smoke] runId=2026-10-19T16-50-44-841Z-0d41f498
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node /home/x/code/paperclips-in-the-dark/agent-docs/test-audit/browser-evidence/crew-cohorts-01/probe.mjs
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-19T16-50-44-841Z-0d41f498/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-19T16-50-44-841Z-0d41f498/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-19T16-50-44-841Z-0d41f498
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-19T16-50-44-841Z-0d41f498/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-19T16-50-44-841Z-0d41f498/data (dir)
+[managed-browser-smoke] port=43543
+[managed-browser-smoke] baseUrl=http://127.0.0.1:43543
+[managed-browser-smoke] pid=1963480
+[managed-browser-smoke] ready=http://127.0.0.1:43543
+[managed-browser-smoke] commandPid=1963547
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "sectionHeight": 481,
+    "sectionOverflowX": false,
+    "headingVisibleInitially": false,
+    "firstControlTopInSection": 139,
+    "derivedQuality": "0",
+    "derivedScale": "0",
+    "hasQualityInput": false
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "sectionHeight": 401,
+    "sectionOverflowX": false,
+    "headingVisibleInitially": false,
+    "firstControlTopInSection": 139,
+    "derivedQuality": "0",
+    "derivedScale": "0",
+    "hasQualityInput": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "sectionHeight": 684,
+    "sectionOverflowX": false,
+    "headingVisibleInitially": false,
+    "firstControlTopInSection": 139,
+    "derivedQuality": "0",
+    "derivedScale": "0",
+    "hasQualityInput": false
+  }
+]
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-10-19T16-50-44-841Z-0d41f498)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-10-19T16-50-44-841Z-0d41f498)

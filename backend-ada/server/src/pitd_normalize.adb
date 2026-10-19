@@ -208,7 +208,7 @@ package body Pitd_Normalize is
    Allowed_Spec_Ability : constant String := "|name|timesTaken|";
    Allowed_Upgrade : constant String := "|name|boxesMarked|";
    Allowed_Cohort : constant String :=
-     "|id|cohortKind|gangType|expertType|quality|scale|hasArmor|edges|flaws|" &
+    "|id|name|cohortKind|gangType|expertType|quality|scale|hasArmor|edges|flaws|" &
      "harm|description|";
    Allowed_Contact : constant String := "|name|profession|";
    Allowed_Faction : constant String := "|name|status|tier|";
@@ -1343,6 +1343,9 @@ package body Pitd_Normalize is
                                           "|gang|expert|", Cohort_Type_Legacy));
       Set_Field (X, "gangType", N_Str (V, "gangType", Ptr & "/gangType", "", C));
       Set_Field (X, "expertType", N_Str (V, "expertType", Ptr & "/expertType", "", C));
+      if Has_Field (V, "name") then
+         Set_Field (X, "name", N_Str (V, "name", Ptr & "/name", "", C));
+      end if;
       Set_Field (X, "quality", N_Int (V, "quality", Ptr & "/quality", 0, C, Min => 0));
       Set_Field (X, "scale", N_Int (V, "scale", Ptr & "/scale", 0, C, Min => 0));
       Set_Field (X, "hasArmor", N_Bool (V, "hasArmor", Ptr & "/hasArmor", C));

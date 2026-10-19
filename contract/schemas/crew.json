@@ -166,6 +166,10 @@
           "id": {
             "$ref": "common.json#/$defs/uuid"
           },
+          "name": {
+            "type": "string",
+            "description": "CREW-COHORTS-01: optional display name for a gang or expert. Empty string when unnamed."
+          },
           "cohortKind": {
             "$ref": "common.json#/$defs/cohortType"
           },

@@ -544,6 +544,7 @@ elsif Op = "clock.create" then
          return Check_Fields (B, (Spec ("cohortKind", JSON_String_Type, En => "gang|expert"),
                                   Spec ("gangType", JSON_String_Type, Rq => False),
                                   Spec ("expertType", JSON_String_Type, Rq => False),
+                                 Spec ("name", JSON_String_Type, Rq => False),
                                   Spec ("quality", JSON_Int_Type, MnI => 0, Rq => False),
                                   Spec ("scale", JSON_Int_Type, MnI => 0, Rq => False),
                                   Spec ("hasArmor", JSON_Boolean_Type, Rq => False),
@@ -556,6 +557,7 @@ elsif Op = "clock.create" then
          if not Check_Fields (B, (Spec ("cohortId", JSON_String_Type, MnL => 1),
                                   Spec ("gangType", JSON_String_Type, Rq => False),
                                   Spec ("expertType", JSON_String_Type, Rq => False),
+                                 Spec ("name", JSON_String_Type, Rq => False),
                                   Spec ("quality", JSON_Int_Type, MnI => 0, Rq => False),
                                   Spec ("scale", JSON_Int_Type, MnI => 0, Rq => False),
                                   Spec ("hasArmor", JSON_Boolean_Type, Rq => False),
@@ -1849,6 +1851,7 @@ elsif Op = "harm.add" then
             end if;
             declare A : constant JSON_Array := Get(E,"cohorts"); O : JSON_Array := A; X : JSON_Value := Create_Object; begin
                Set_Field(X,"id",New_Id);Set_Field(X,"cohortKind",Kind_Of);
+               if Has_Field(B,"name") then Set_Field(X,"name",Str_Field(B,"name")); end if;
                Set_Field(X,"gangType",Str_Field(B,"gangType"));Set_Field(X,"expertType",Str_Field(B,"expertType"));
                Set_Field(X,"quality",Int_Field(B,"quality"));Set_Field(X,"scale",Int_Field(B,"scale"));
                Set_Field(X,"hasArmor",Bool_Field(B,"hasArmor"));

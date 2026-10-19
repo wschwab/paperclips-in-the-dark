@@ -2895,7 +2895,9 @@ if Kind = "crew" then
       if V.Kind /= JSON_Object_Type then
          Settings_Error (Where, "crew settings root must be an object");
       end if;
-      S_No_Extra (V, "|Name|Language|CrewTypes|", Where);
+      --  CREW-COHORTS-01: SRD cohort lists are served raw to the frontend.
+      S_No_Extra (V, "|Name|Language|CrewTypes|CohortSource|CohortGangTypes|" &
+                     "CohortExpertTypes|CohortEdges|CohortFlaws|", Where);
       S_Require_Str (V, "Name", Where);
       S_Require_Str (V, "Language", Where);
       declare

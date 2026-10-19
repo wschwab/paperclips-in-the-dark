@@ -2340,5 +2340,20 @@
 				]
 			}
 		}
+	],
+	"CohortSource": "Blades in the Dark SRD, Cohorts section (CC-BY). https://bladesinthedark.com/crew",
+	"CohortGangTypes": ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"],
+	"CohortExpertTypes": ["Doctor", "Investigator", "Occultist", "Assassin", "Spy"],
+	"CohortEdges": [
+		{ "Name": "Fearsome", "Description": "The cohort is terrifying in aspect and reputation." },
+		{ "Name": "Independent", "Description": "The cohort can be trusted to make good decisions and act on their own initiative in the absence of direct orders." },
+		{ "Name": "Loyal", "Description": "The cohort can\u2019t be bribed or turned against you." },
+		{ "Name": "Tenacious", "Description": "The cohort won\u2019t be deterred from a task." }
+	],
+	"CohortFlaws": [
+		{ "Name": "Principled", "Description": "The cohort has an ethic or values that it won\u2019t betray." },
+		{ "Name": "Savage", "Description": "The cohort is excessively violent and cruel." },
+		{ "Name": "Unreliable", "Description": "The cohort isn\u2019t always available, due to other obligations, stupefaction from their vices, etc." },
+		{ "Name": "Wild", "Description": "The cohort is drunken, debauched, and loud-mouthed." }
 	]
 }

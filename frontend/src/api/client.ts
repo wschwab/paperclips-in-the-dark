@@ -1457,6 +1457,7 @@ export interface CohortAddBody {
   cohortKind: "gang" | "expert";
   gangType?: string;
   expertType?: string;
+  name?: string;
   quality?: number;
   scale?: number;
   hasArmor?: boolean;
@@ -1471,6 +1472,7 @@ export interface CohortUpdateBody {
   cohortId: string;
   gangType?: string;
   expertType?: string;
+  name?: string;
   quality?: number;
   scale?: number;
   hasArmor?: boolean;

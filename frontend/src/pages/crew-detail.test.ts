@@ -1327,7 +1327,7 @@ describe("crew-detail page", () => {
       Name: "Blades in the Dark",
       Language: "en",
       CrewTypes: [CREW_TYPE_DATA],
-      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"],
       CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
     };
 
@@ -1886,19 +1886,21 @@ describe("crew-detail page", () => {
       expect(gangSelect).not.toBeNull();
       expect((gangSelect.closest(".cohort-field") as HTMLElement | null)?.hidden ?? gangSelect.hidden).toBe(false);
       expect([...gangSelect.options].map((o) => o.value)).toEqual([
-        "", "Adepts", "Rooks", "Rovers", "Skulls", "Thugs",
+        "", "Adepts", "Rooks", "Rovers", "Skulks", "Thugs",
       ]);
       const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement;
       expect(expertSelect).not.toBeNull();
       expect((expertSelect.closest(".cohort-field") as HTMLElement | null)?.hidden ?? expertSelect.hidden).toBe(true);
       gangSelect.value = "Rooks";
-      const qualityInput = root.querySelector('input[aria-label="Cohort quality"]') as HTMLInputElement;
-      qualityInput.value = "2";
+      expect(root.querySelector('input[aria-label="Cohort quality"]')).toBeNull();
+      expect(root.querySelector(".cohort-add .cohort-quality-derived")?.textContent).toBe("1");
       const armorInput = root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement;
       armorInput.checked = true;
-      const edgesInput = root.querySelector('input[aria-label="Cohort edges"]') as HTMLInputElement;
-      edgesInput.value = "Tough, Savage";
-      const descInput = root.querySelector('input[aria-label="Cohort description"]') as HTMLInputElement;
+      const edgeSelect = root.querySelector('select[aria-label="Cohort edge"]') as HTMLSelectElement;
+      edgeSelect.value = "Tenacious";
+      edgeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      (root.querySelector('button[title="Add edge"]') as HTMLButtonElement).click();
+      const descInput = root.querySelector('textarea[aria-label="Cohort description"]') as HTMLTextAreaElement;
       descInput.value = "Street toughs who love a fight";
 
       (root.querySelector('button[title="Add cohort"]') as HTMLButtonElement).click();
@@ -1906,26 +1908,27 @@ describe("crew-detail page", () => {
       await vi.waitFor(() => {
         expect(root.querySelector(`.cohort-entry[data-cohort-id="${COHORT_ID}"]`)).not.toBeNull();
       });
-      // Only filled fields are sent: scale/flaws/expertType omitted
+      // CREW-COHORTS-01: quality and scale are derived from Tier 1 (gang = Tier); flaws/expertType omitted.
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/cohort.add`,
         expect.objectContaining({
           body: JSON.stringify({
             cohortKind: "gang",
             gangType: "Rooks",
-            quality: 2,
+            quality: 1,
+            scale: 1,
             hasArmor: true,
-            edges: ["Tough", "Savage"],
+            edges: ["Tenacious"],
             description: "Street toughs who love a fight",
           }),
         }),
       );
     });
 
-    it("updates quality, harm, and armor through the edit form, posting only the changed fields", async () => {
+    it("updates harm and armor through the edit form; derived quality is shown, not posted", async () => {
       const updated = crewDTO({
         revision: 6,
-        cohorts: [cohortDTO({ quality: 3, hasArmor: false, harm: "weakened" })],
+        cohorts: [cohortDTO({ hasArmor: false, harm: "weakened" })],
       });
 
       global.fetch = vi
@@ -1944,9 +1947,8 @@ describe("crew-detail page", () => {
 
       (root.querySelector('button[title="Edit cohort: Bravos"]') as HTMLButtonElement).click();
 
-      const qualityInput = root.querySelector('input[aria-label="Edit quality"]') as HTMLInputElement;
-      expect(qualityInput.value).toBe("2");
-      qualityInput.value = "3";
+      expect(root.querySelector('input[aria-label="Edit quality"]')).toBeNull();
+      expect(root.textContent).toContain("Quality 1 (from Tier)");
       const armorInput = root.querySelector('input[aria-label="Edit armor"]') as HTMLInputElement;
       expect(armorInput.checked).toBe(true);
       armorInput.checked = false;
@@ -1967,13 +1969,13 @@ describe("crew-detail page", () => {
       await vi.waitFor(() => {
         expect(root.textContent).toContain("Harm: weakened");
         expect(root.textContent).toContain("No armor");
-        expect(root.textContent).toContain("Quality 3");
+        expect(root.textContent).toContain("Quality 2");
       });
       // cohort.update sends only the changed fields (type/scale/edges/flaws/description untouched)
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/cohort.update`,
         expect.objectContaining({
-          body: JSON.stringify({ cohortId: COHORT_ID, quality: 3, hasArmor: false, harm: "weakened" }),
+          body: JSON.stringify({ cohortId: COHORT_ID, hasArmor: false, harm: "weakened" }),
         }),
       );
     });
@@ -2105,7 +2107,7 @@ describe("crew-detail page", () => {
       Name: "Blades in the Dark",
       Language: "en",
       CrewTypes: [CREW_TYPE_DATA],
-      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"],
       CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
     };
 
@@ -2323,7 +2325,7 @@ describe("crew-detail page", () => {
       Name: "Blades in the Dark",
       Language: "en",
       CrewTypes: [{ Name: "Assassins", Reputations: REPUTATIONS }],
-      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"],
       CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
     };
 
@@ -2569,7 +2571,7 @@ describe("crew-detail page", () => {
           return ok(crewOpOk(crew, "rep.add"));
         }
         return ok(path === `/api/crews/${CREW_ID}` ? crew : {});
-      });
+      }) as unknown as typeof fetch;
       const dispose = mountCrewDetailPage(root, CREW_ID);
       try {
         await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('button[title^="Develop"]')?.disabled).toBe(false));
@@ -2753,7 +2755,7 @@ describe("crew-detail page", () => {
       Name: "Blades in the Dark",
       Language: "en",
       CrewTypes: [{ Name: "Assassins" }],
-      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"],
+      CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"],
       CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy", "Custom"],
     };
     const crewOpOk = (crew: unknown, opName: string) => ({
@@ -2804,7 +2806,7 @@ describe("crew-detail page", () => {
       expect(field(expertSelect).hidden).toBe(true);
       // options come from game-data CohortGangTypes
       expect([...gangSelect.options].map((o) => o.value)).toEqual([
-        "", "Adepts", "Rooks", "Rovers", "Skulls", "Thugs",
+        "", "Adepts", "Rooks", "Rovers", "Skulks", "Thugs",
       ]);
 
       // switch to expert: gang hidden, expert visible
@@ -2886,7 +2888,7 @@ describe("crew-detail page", () => {
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/cohort.add`,
         expect.objectContaining({
-          body: JSON.stringify({ cohortKind: "expert", expertType: "Sage", hasArmor: false }),
+          body: JSON.stringify({ cohortKind: "expert", expertType: "Sage", quality: 2, scale: 0, hasArmor: false }),
         }),
       );
     });
@@ -2909,7 +2911,7 @@ describe("crew-detail page", () => {
       expect(gangSelect).not.toBeNull();
       // current "Bravos" appended so it stays selectable
       expect([...gangSelect.options].map((o) => o.value)).toEqual([
-        "Adepts", "Rooks", "Rovers", "Skulls", "Thugs", "Bravos",
+        "Adepts", "Rooks", "Rovers", "Skulks", "Thugs", "Bravos",
       ]);
       expect(gangSelect.value).toBe("Bravos");
       // expert controls are not rendered for a gang cohort
@@ -3432,10 +3434,10 @@ describe("FV-012 focus restoration", () => {
       harm: "healthy",
       description: "",
     });
-    const without = crewDTO({ revision: 6, cohorts: [cohort("b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "Skulls")] });
+    const without = crewDTO({ revision: 6, cohorts: [cohort("b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "Skulks")] });
     mountWith(
       crewDTO({
-        cohorts: [cohort("a0a1a2a3-a4a5-4a6a-8a7a-9a0a1a2a3a4a", "Adepts"), cohort("b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "Skulls")],
+        cohorts: [cohort("a0a1a2a3-a4a5-4a6a-8a7a-9a0a1a2a3a4a", "Adepts"), cohort("b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", "Skulks")],
       }),
       [ok(crewOpOk(without, "cohort.remove"))],
     );
@@ -3450,7 +3452,7 @@ describe("FV-012 focus restoration", () => {
     await vi.waitFor(() => {
       expect(root.querySelector('button[title="Remove cohort: Adepts"]')).toBeNull();
     });
-    expect(document.activeElement).toBe(root.querySelector('button[title="Remove cohort: Skulls"]'));
+    expect(document.activeElement).toBe(root.querySelector('button[title="Remove cohort: Skulks"]'));
   });
 
   it("returns focus to the add-contact button after a stale (409) refresh", async () => {

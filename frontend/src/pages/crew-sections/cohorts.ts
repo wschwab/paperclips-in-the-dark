@@ -1,23 +1,119 @@
 /**
- * renderCrewCohortsSection (ARCH-02): Cohorts section controller, extracted verbatim from
- * the crew-detail page's render pass. DOM output is unchanged.
+ * renderCrewCohortsSection (ARCH-02): Cohorts section controller.
+ *
+ * CREW-COHORTS-01 (SRD cohorts rules): a gang has quality and scale equal to the
+ * crew Tier; an expert has quality Tier+1 and scale 0. Quality and scale are
+ * therefore shown read-only (derived), never as free inputs. Armor applies to
+ * gangs only. Edges and flaws are pickers over the SRD lists (plus Custom),
+ * capped at two of each per cohort. Kind (gang|expert) and harm values come from
+ * the contract enums (schema literals CohortType / CohortHarm).
  */
 import { el } from "../../lib/dom.js";
-import { extractCohortGangTypes } from "../crew-domain.js";
-import { extractCohortExpertTypes } from "../crew-domain.js";
-import { splitList } from "../crew-domain.js";
-import { arraysEqual } from "../crew-domain.js";
-import { CohortHarm } from "../../schema/common.js";
-import { CohortType } from "../../schema/common.js";
+import type { CohortAddBody } from "../../api/client.js";
+import {
+  extractCohortEdges,
+  extractCohortExpertTypes,
+  extractCohortFlaws,
+  extractCohortGangTypes,
+  arraysEqual,
+  type CohortTrait,
+} from "../crew-domain.js";
+import { CohortHarm, CohortType } from "../../schema/common.js";
 import type { RenderState } from "../crew-detail.js";
+
+/** SRD: a cohort has one or two edges and an equal number of flaws. */
+const MAX_TRAITS = 2;
+
+/** SRD-derived quality and scale for a cohort of the given kind at a crew Tier. */
+export function derivedCohortStats(kind: "gang" | "expert", tier: number): { quality: number; scale: number } {
+  return kind === "gang" ? { quality: tier, scale: tier } : { quality: tier + 1, scale: 0 };
+}
+
+/** Expert type options always end with Custom (free-text entry), exactly once. */
+function expertOptions(values: readonly string[]): string[] {
+  return values.includes("Custom") ? [...values] : [...values, "Custom"];
+}
+
+/** Edge/flaw picker: a select over the SRD list (+ Custom), an Add button, and removable chips.
+ * Chips carry the picked value in `data-value`; `read()` returns them in order. */
+function traitPicker(
+  prefix: string,
+  singular: "edge" | "flaw",
+  options: CohortTrait[],
+  initial: readonly string[],
+  disabled: boolean,
+): { element: HTMLElement; read: () => string[] } {
+  const chips = el("span", { className: "cohort-trait-list", "data-list": `${singular}s`, style: "display: inline-flex; gap: 0.35em; flex-wrap: wrap;" });
+  const select = el("select", { "aria-label": `${prefix} ${singular}`, disabled }) as HTMLSelectElement;
+  select.append(el("option", { value: "" }, `Choose ${singular}`) as HTMLOptionElement);
+  for (const trait of options) {
+    select.append(el("option", { value: trait.name, title: trait.description }, trait.name) as HTMLOptionElement);
+  }
+  select.append(el("option", { value: "Custom" }, "Custom") as HTMLOptionElement);
+  const hint = el("span", { className: "small", "aria-live": "polite" });
+  const customInput = el("input", {
+    type: "text",
+    "aria-label": `${prefix} custom ${singular}`,
+    disabled,
+    placeholder: `custom ${singular}`,
+  }) as HTMLInputElement;
+  customInput.hidden = true;
+  const addBtn = el("button", { type: "button", disabled, title: `Add ${singular}` }, "+") as HTMLButtonElement;
+
+  const count = () => chips.querySelectorAll("[data-value]").length;
+  const syncAddEnabled = () => {
+    addBtn.disabled = disabled || count() >= MAX_TRAITS;
+  };
+  const addChip = (value: string) => {
+    if ([...chips.querySelectorAll("[data-value]")].some((c) => c.getAttribute("data-value") === value)) return;
+    const remove = el("button", { type: "button", disabled, title: `Remove ${singular} ${value}` }, "✕") as HTMLButtonElement;
+    remove.addEventListener("click", () => {
+      chip.remove();
+      syncAddEnabled();
+    });
+    const chip = el("span", { className: "cohort-trait-chip", "data-value": value }, value, " ", remove);
+    chips.append(chip);
+    syncAddEnabled();
+  };
+
+  const syncSelect = () => {
+    const picked = select.value;
+    customInput.hidden = picked !== "Custom";
+    const trait = options.find((t) => t.name === picked);
+    hint.textContent = trait?.description ?? "";
+  };
+  select.addEventListener("change", syncSelect);
+  addBtn.addEventListener("click", () => {
+    const picked = select.value;
+    if (!picked || count() >= MAX_TRAITS) return;
+    const value = picked === "Custom" ? customInput.value.trim() : picked;
+    if (!value) return;
+    addChip(value);
+    select.value = "";
+    customInput.value = "";
+    syncSelect();
+  });
+  for (const value of initial) addChip(value);
+  syncSelect();
+
+  const element = el(
+    "span",
+    { className: "cohort-trait-picker", style: "display: inline-flex; flex-direction: column; gap: 0.25em;" },
+    el("span", { style: "display: inline-flex; gap: 0.35em; flex-wrap: wrap; align-items: center;" }, select, customInput, addBtn),
+    hint,
+    chips,
+  );
+  return {
+    element,
+    read: () => [...chips.querySelectorAll("[data-value]")].map((c) => c.getAttribute("data-value") ?? ""),
+  };
+}
 
 export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   const { c, handlers } = state;
-  // -- Cohorts (F2w) ---------------------------------------------------------
-  // Vehicles are cohorts (sheet plan decision 3): a vehicle is a cohort whose
-  // description carries the edges/flaws text. Kind (gang|expert) and harm
-  // values come from the contract enums (schema literals CohortType /
-  // CohortHarm mirror contract/schemas/common.json $defs — never hardcoded).
+  const tier = c.tier;
+  const edgeOptions = extractCohortEdges(state.crewGameData);
+  const flawOptions = extractCohortFlaws(state.crewGameData);
 
   const cohortEntries = c.cohorts.map((cohort) => {
     const isEditing = state.editingCohortId === cohort.id;
@@ -29,11 +125,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       values.length === 0 ? "(none)" : values.join(", ");
 
     if (isEditing) {
-      // F2ac: kind-specific type dropdown from game data (canonical
-      // fallback). The current type is preserved even when it is not in the
-      // data lists (older snapshots / homebrew): gangs get the extra value
-      // appended as an option; experts map onto the Custom path (Custom
-      // reveals a free-text input).
+      // Type: kind-specific dropdown from game data (canonical fallback). The
+      // current type is kept even when absent from the lists (older snapshots).
       const gangTypes = extractCohortGangTypes(state.crewGameData);
       const expertTypes = extractCohortExpertTypes(state.crewGameData);
       let typeControl: HTMLElement;
@@ -61,7 +154,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
           "aria-label": "Edit expert type",
           disabled: state.anyLoading,
         }) as HTMLSelectElement;
-        for (const value of expertTypes) {
+        for (const value of expertOptions(expertTypes)) {
           expertSelect.append(el("option", { value }, value) as HTMLOptionElement);
         }
         expertSelect.value = isCustom ? "Custom" : cohort.expertType;
@@ -89,36 +182,15 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
             ? customInput.value.trim() || "Custom"
             : expertSelect.value;
       }
-      const qualityInput = el("input", {
-        type: "number",
-        value: String(cohort.quality),
-        "aria-label": "Edit quality",
-        disabled: state.anyLoading,
-      });
-      const scaleInput = el("input", {
-        type: "number",
-        value: String(cohort.scale),
-        "aria-label": "Edit scale",
-        disabled: state.anyLoading,
-      });
+      const derived = derivedCohortStats(cohort.cohortKind, tier);
       const armorInput = el("input", {
         type: "checkbox",
         "aria-label": "Edit armor",
         checked: cohort.hasArmor,
         disabled: state.anyLoading,
       });
-      const edgesInput = el("input", {
-        type: "text",
-        value: cohort.edges.join(", "),
-        "aria-label": "Edit edges",
-        disabled: state.anyLoading,
-      });
-      const flawsInput = el("input", {
-        type: "text",
-        value: cohort.flaws.join(", "),
-        "aria-label": "Edit flaws",
-        disabled: state.anyLoading,
-      });
+      const edgesPicker = traitPicker("Edit", "edge", edgeOptions, cohort.edges, state.anyLoading);
+      const flawsPicker = traitPicker("Edit", "flaw", flawOptions, cohort.flaws, state.anyLoading);
       const harmSelect = el("select", {
         "aria-label": "Edit harm",
         disabled: state.anyLoading,
@@ -128,12 +200,18 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         if (value === cohort.harm) option.selected = true;
         harmSelect.append(option);
       }
-      const descInput = el("input", {
+      const nameInput = el("input", {
         type: "text",
-        value: cohort.description,
+        "aria-label": "Edit name",
+        disabled: state.anyLoading,
+      }) as HTMLInputElement;
+      nameInput.value = cohort.name ?? "";
+      const descInput = el("textarea", {
         "aria-label": "Edit description",
         disabled: state.anyLoading,
-      });
+        rows: "4",
+      }) as HTMLTextAreaElement;
+      descInput.value = cohort.description;
 
       const saveBtn = el("button", {
         type: "button",
@@ -145,17 +223,16 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         const fields: Record<string, unknown> = {};
         const typeValue = readType();
         if (typeValue !== cohort[typeField]) fields[typeField] = typeValue;
-        const quality = Number.parseInt(qualityInput.value, 10);
-        if (!Number.isNaN(quality) && quality !== cohort.quality) fields.quality = quality;
-        const scale = Number.parseInt(scaleInput.value, 10);
-        if (!Number.isNaN(scale) && scale !== cohort.scale) fields.scale = scale;
-        if (armorInput.checked !== cohort.hasArmor) fields.hasArmor = armorInput.checked;
-        const edges = splitList(edgesInput.value);
+        if (cohort.cohortKind === "gang" && armorInput.checked !== cohort.hasArmor) {
+          fields.hasArmor = armorInput.checked;
+        }
+        const edges = edgesPicker.read();
         if (!arraysEqual(edges, cohort.edges)) fields.edges = edges;
-        const flaws = splitList(flawsInput.value);
+        const flaws = flawsPicker.read();
         if (!arraysEqual(flaws, cohort.flaws)) fields.flaws = flaws;
         if (harmSelect.value !== cohort.harm) fields.harm = harmSelect.value;
         if (descInput.value !== cohort.description) fields.description = descInput.value;
+        if (nameInput.value.trim() !== (cohort.name ?? "")) fields.name = nameInput.value.trim();
         if (Object.keys(fields).length > 0) {
           handlers.onCohortUpdate(cohort.id, fields);
         } else {
@@ -169,17 +246,19 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       }, "✕");
       cancelBtn.addEventListener("click", handlers.onCohortCancel);
 
+      const isGang = cohort.cohortKind === "gang";
       return el(
         "div",
         { className: "cohort-entry editing", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind, "data-focus-key": `cohort-${cohort.id}` },
         el("span", { className: "cohort-kind-badge" }, kindLabel),
         el("div", { className: "cohort-edit-fields", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
           el("label", { className: "lbl" }, `${kindLabel} type:`, typeControl),
-          el("label", { className: "lbl" }, "Quality:", qualityInput),
-          el("label", { className: "lbl" }, "Scale:", scaleInput),
-          el("label", { className: "lbl" }, "Armor:", armorInput),
-          el("label", { className: "lbl" }, "Edges:", edgesInput),
-          el("label", { className: "lbl" }, "Flaws:", flawsInput),
+          el("label", { className: "lbl" }, "Name:", nameInput),
+          el("span", { className: "lbl cohort-quality-derived" }, `Quality ${derived.quality} (from Tier)`),
+          isGang ? el("span", { className: "lbl cohort-scale-derived" }, `Scale ${derived.scale} (from Tier)`) : null,
+          isGang ? el("label", { className: "lbl" }, "Armor:", armorInput) : null,
+          el("label", { className: "lbl" }, "Edges:", edgesPicker.element),
+          el("label", { className: "lbl" }, "Flaws:", flawsPicker.element),
           el("label", { className: "lbl" }, "Harm:", harmSelect),
           el("label", { className: "lbl" }, "Description:", descInput),
         ),
@@ -204,6 +283,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       "div",
       { className: "cohort-entry", "data-cohort-id": cohort.id, "data-cohort-kind": cohort.cohortKind, "data-focus-key": `cohort-${cohort.id}` },
       el("span", { className: "cohort-kind-badge" }, kindLabel),
+      cohort.name ? el("span", { className: "cohort-name" }, cohort.name) : null,
       el("span", { className: "cohort-type" }, typeValue),
       el("span", { className: "cohort-quality" }, `Quality ${cohort.quality}`),
       el("span", { className: "cohort-scale" }, `Scale ${cohort.scale}`),
@@ -217,13 +297,10 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     );
   });
 
-  // Add form: cohort kind from the contract enum (CohortType literal mirrors
-  // cohortType $defs). Optional fields are sent only when filled.
+  // Add form. Kind-specific fields are toggled locally so typed values survive a kind switch.
   const cohortKindSelect = el("select", {
     "aria-label": "Cohort kind",
-    // CREW-05: cohortKind is the only field openapi requires on cohort.add;
-    // mark it, and gate Add only on contract requirements (never on invented
-    // ones — the backend is authoritative).
+    // CREW-05: cohortKind is the only field openapi requires on cohort.add.
     "aria-required": "true",
     disabled: state.anyLoading,
   }) as HTMLSelectElement;
@@ -232,10 +309,6 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     if (value === "gang") option.selected = true;
     cohortKindSelect.append(option);
   }
-  // F2ac: kind-conditional type dropdowns from game data (canonical
-  // fallback). The gang select shows only when cohortKind=gang, the expert
-  // select only when cohortKind=expert — toggled locally so the rest of the
-  // form keeps its typed values. "Custom" (expert) reveals a free-text input.
   const gangTypeSelect = el("select", {
     "aria-label": "Cohort gang type",
     disabled: state.anyLoading,
@@ -248,7 +321,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     "aria-label": "Cohort expert type",
     disabled: state.anyLoading,
   }, el("option", { value: "" }, "Expert type")) as HTMLSelectElement;
-  for (const value of extractCohortExpertTypes(state.crewGameData)) {
+  for (const value of expertOptions(extractCohortExpertTypes(state.crewGameData))) {
     expertTypeSelect.append(el("option", { value }, value) as HTMLOptionElement);
   }
   expertTypeSelect.value = "";
@@ -257,40 +330,26 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     "aria-label": "Cohort expert custom type",
     disabled: state.anyLoading,
   });
-  const qualityInput = el("input", {
-    type: "number",
-    "aria-label": "Cohort quality",
-    disabled: state.anyLoading,
-  });
-  const scaleInput = el("input", {
-    type: "number",
-    "aria-label": "Cohort scale",
-    disabled: state.anyLoading,
-  });
+  const qualityDerived = el("span", { className: "cohort-quality-derived" });
+  const scaleDerived = el("span", { className: "cohort-scale-derived" });
   const armorInput = el("input", {
     type: "checkbox",
     "aria-label": "Cohort armor",
     disabled: state.anyLoading,
   });
-  const edgesInput = el("input", {
-    type: "text",
-    "aria-label": "Cohort edges",
-    disabled: state.anyLoading,
-    placeholder: "e.g. Fearsome, Independent",
-  });
-  const flawsInput = el("input", {
-    type: "text",
-    "aria-label": "Cohort flaws",
-    disabled: state.anyLoading,
-    placeholder: "e.g. Wild, Overconfident",
-  });
-  const descInput = el("input", {
-    type: "text",
+  const edgesPicker = traitPicker("Cohort", "edge", edgeOptions, [], state.anyLoading);
+  const flawsPicker = traitPicker("Cohort", "flaw", flawOptions, [], state.anyLoading);
+  const descInput = el("textarea", {
     "aria-label": "Cohort description",
     disabled: state.anyLoading,
-  });
-  // F-10: persistent labels over ruled blanks; placeholders kept only as
-  // genuine format examples. A label + control pair reads as sheet furniture.
+    rows: "4",
+  }) as HTMLTextAreaElement;
+  const nameInput = el("input", {
+    type: "text",
+    "aria-label": "Cohort name",
+    disabled: state.anyLoading,
+  }) as HTMLInputElement;
+  // F-10: persistent labels over ruled blanks.
   const cohortField = (label: string, control: HTMLElement) =>
     el(
       "label",
@@ -298,17 +357,22 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       el("span", { className: "lbl" }, label),
       control,
     );
-  // Kind-conditional fields: wrap each control with its label so the
-  // toggle hides label+control together (not a stray empty label).
   const gangTypeField = cohortField("Type", gangTypeSelect);
   const expertTypeField = cohortField("Type", expertTypeSelect);
   const expertCustomField = cohortField("Custom type", expertCustomInput);
+  const qualityField = cohortField("Quality (from Tier)", qualityDerived);
+  const scaleField = cohortField("Scale (from Tier)", scaleDerived);
+  const armorField = cohortField("Armor", armorInput);
   const toggleCohortKindFields = () => {
-    const kind = cohortKindSelect.value;
+    const kind = cohortKindSelect.value === "expert" ? "expert" : "gang";
+    const stats = derivedCohortStats(kind, tier);
     gangTypeField.hidden = kind !== "gang";
     expertTypeField.hidden = kind !== "expert";
-    expertCustomField.hidden =
-      kind !== "expert" || expertTypeSelect.value !== "Custom";
+    expertCustomField.hidden = kind !== "expert" || expertTypeSelect.value !== "Custom";
+    qualityDerived.textContent = String(stats.quality);
+    scaleDerived.textContent = String(stats.scale);
+    scaleField.hidden = kind !== "gang";
+    armorField.hidden = kind !== "gang";
   };
   cohortKindSelect.addEventListener("change", toggleCohortKindFields);
   expertTypeSelect.addEventListener("change", () => {
@@ -347,22 +411,61 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         ),
         cohortKindSelect,
       ),
+      cohortField("Name", nameInput),
       gangTypeField,
       expertTypeField,
       expertCustomField,
-      cohortField("Quality", qualityInput),
-      cohortField("Scale", scaleInput),
-      cohortField("Armor", armorInput),
-      cohortField("Edges", edgesInput),
-      cohortField("Flaws", flawsInput),
+      qualityField,
+      scaleField,
+      armorField,
+      cohortField("Edges", edgesPicker.element),
+      cohortField("Flaws", flawsPicker.element),
       cohortField("Description", descInput),
       addCohortBtn,
     ),
   );
-  // Initial field visibility: run after the form is assembled so every
-  // label+control pair hides together.
   toggleCohortKindFields();
 
-
   return cohortsSection;
+}
+
+/** Read the Add Cohort form into a cohort.add body. Returns null when no kind is chosen.
+ * Quality and scale are derived from the crew Tier (SRD), not typed. */
+export function readCohortAddBody(root: HTMLElement, tier: number): CohortAddBody | null {
+  const kind = (root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement | null)?.value ?? "";
+  if (kind !== "gang" && kind !== "expert") return null;
+  const cohortKind = kind;
+  const body: CohortAddBody = { cohortKind };
+  if (cohortKind === "gang") {
+    const gangType = (root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement | null)?.value?.trim() ?? "";
+    if (gangType) body.gangType = gangType;
+  } else {
+    const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement | null;
+    const expertCustom = root.querySelector('input[aria-label="Cohort expert custom type"]') as HTMLInputElement | null;
+    const expertType = expertSelect?.value ?? "";
+    if (expertType) {
+      body.expertType = expertType === "Custom" ? expertCustom?.value?.trim() || "Custom" : expertType;
+    }
+  }
+  const stats = derivedCohortStats(cohortKind, tier);
+  body.quality = stats.quality;
+  body.scale = stats.scale;
+  body.hasArmor = cohortKind === "gang"
+    ? (root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement | null)?.checked ?? false
+    : false;
+  const edges = traitValues(root, "edges");
+  if (edges.length > 0) body.edges = edges;
+  const flaws = traitValues(root, "flaws");
+  if (flaws.length > 0) body.flaws = flaws;
+  const description = (root.querySelector('textarea[aria-label="Cohort description"]') as HTMLTextAreaElement | null)?.value?.trim() ?? "";
+  if (description) body.description = description;
+  const name = (root.querySelector('input[aria-label="Cohort name"]') as HTMLInputElement | null)?.value?.trim() ?? "";
+  if (name) body.name = name;
+  return body;
+}
+
+function traitValues(root: HTMLElement, list: "edges" | "flaws"): string[] {
+  return [...root.querySelectorAll(`.cohort-add .cohort-trait-list[data-list="${list}"] [data-value]`)].map(
+    (c) => c.getAttribute("data-value") ?? "",
+  );
 }

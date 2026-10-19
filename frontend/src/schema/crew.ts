@@ -49,6 +49,7 @@ const Cohort = Schema.Struct({
   cohortKind: CohortType,
   gangType: Schema.String,
   expertType: Schema.String,
+  name: Schema.optional(Schema.String),
   quality: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   scale: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   hasArmor: Schema.Boolean,

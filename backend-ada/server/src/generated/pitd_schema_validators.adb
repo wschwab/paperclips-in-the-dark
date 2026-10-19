@@ -620,7 +620,8 @@ package body Pitd_Schema_Validators is
    Required_Cohort : constant String :=
      "|id|cohortKind|gangType|expertType|quality|scale|hasArmor|edges|flaws|harm|description|";
 
-   Allowed_Cohort : constant String := Required_Cohort;
+   Allowed_Cohort : constant String :=
+     Required_Cohort & "|name|";
 
    Required_Crew_Contact : constant String :=
      "|name|profession|";
@@ -1093,6 +1094,7 @@ package body Pitd_Schema_Validators is
    begin
       Check_Object (V, Ptr, Required_Cohort, Allowed_Cohort);
       Check_Prop (V, Ptr, "id", Check_Uuid'Access);
+      Check_Prop (V, Ptr, "name", Check_Str'Access);
       Check_Prop (V, Ptr, "cohortKind", Check_Enum_Cohort_Type'Access);
       Check_Prop (V, Ptr, "gangType", Check_Str'Access);
       Check_Prop (V, Ptr, "expertType", Check_Str'Access);

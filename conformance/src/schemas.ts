@@ -208,6 +208,7 @@ const Crew = Schema.Struct({
   cohorts: Schema.Array(
     Schema.Struct({
       id: Uuid,
+      name: Schema.optional(Schema.String),
       cohortKind: CohortType,
       gangType: Schema.String,
       expertType: Schema.String,

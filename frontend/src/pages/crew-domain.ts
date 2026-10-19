@@ -106,7 +106,7 @@ export function extractReputations(
  * stay usable live). When a game provides CohortGangTypes / CohortExpertTypes
  * the game-data arrays win.
  */
-const COHORT_GANG_TYPES = ["Adepts", "Rooks", "Rovers", "Skulls", "Thugs"];
+const COHORT_GANG_TYPES = ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"];
 const COHORT_EXPERT_TYPES = [
   "Doctor",
   "Investigator",
@@ -142,6 +142,48 @@ export function extractCohortExpertTypes(
     if (values.length > 0) return values;
   }
   return [...COHORT_EXPERT_TYPES];
+}
+
+/** A named cohort edge or flaw with its SRD description. */
+export interface CohortTrait {
+  name: string;
+  description: string;
+}
+
+const COHORT_EDGES: CohortTrait[] = [
+  { name: "Fearsome", description: "The cohort is terrifying in aspect and reputation." },
+  { name: "Independent", description: "The cohort can be trusted to make good decisions and act on their own initiative in the absence of direct orders." },
+  { name: "Loyal", description: "The cohort can’t be bribed or turned against you." },
+  { name: "Tenacious", description: "The cohort won’t be deterred from a task." },
+];
+const COHORT_FLAWS: CohortTrait[] = [
+  { name: "Principled", description: "The cohort has an ethic or values that it won’t betray." },
+  { name: "Savage", description: "The cohort is excessively violent and cruel." },
+  { name: "Unreliable", description: "The cohort isn’t always available, due to other obligations, stupefaction from their vices, etc." },
+  { name: "Wild", description: "The cohort is drunken, debauched, and loud-mouthed." },
+];
+
+function extractTraits(value: unknown, fallback: CohortTrait[]): CohortTrait[] {
+  if (Array.isArray(value)) {
+    const traits = value.flatMap((v): CohortTrait[] => {
+      if (typeof v !== "object" || v === null) return [];
+      const rec = v as Record<string, unknown>;
+      if (typeof rec.Name !== "string") return [];
+      return [{ name: rec.Name, description: typeof rec.Description === "string" ? rec.Description : "" }];
+    });
+    if (traits.length > 0) return traits;
+  }
+  return fallback.map((t) => ({ ...t }));
+}
+
+/** Cohort edge options: game-data CohortEdges (name + SRD description), else the SRD list. */
+export function extractCohortEdges(crewGameData: Record<string, unknown> | null): CohortTrait[] {
+  return extractTraits(crewGameData?.CohortEdges, COHORT_EDGES);
+}
+
+/** Cohort flaw options: game-data CohortFlaws (name + SRD description), else the SRD list. */
+export function extractCohortFlaws(crewGameData: Record<string, unknown> | null): CohortTrait[] {
+  return extractTraits(crewGameData?.CohortFlaws, COHORT_FLAWS);
 }
 
 /** Split a comma-separated input into trimmed non-empty items (edges/flaws). */

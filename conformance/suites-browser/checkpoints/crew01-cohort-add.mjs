@@ -47,8 +47,8 @@ export const checkpoints = [
 const KIND = 'select[aria-label="Cohort kind"]';
 const GANG_TYPE = 'select[aria-label="Cohort gang type"]';
 const EXPERT_TYPE = 'select[aria-label="Cohort expert type"]';
-const QUALITY = 'input[aria-label="Cohort quality"]';
-const SCALE = 'input[aria-label="Cohort scale"]';
+const QUALITY_DERIVED = '.cohort-add .cohort-quality-derived';
+const SCALE_DERIVED = '.cohort-add .cohort-scale-derived';
 const ADD_BTN = 'button[title="Add cohort"]';
 
 async function createCrew(page, baseUrl) {
@@ -132,9 +132,13 @@ export async function run(page, ctx) {
 
   // Full round trip: add a gang cohort and see its card render.
   await page.selectOption(KIND, "gang");
-  await page.selectOption(GANG_TYPE, "Skulls");
-  await page.fill(QUALITY, "3");
-  await page.fill(SCALE, "2");
+  await page.selectOption(GANG_TYPE, "Skulks");
+  // CREW-COHORTS-01: quality and scale are derived from crew Tier (SRD), not typed.
+  const derivedQuality = Number((await page.locator(QUALITY_DERIVED).textContent()).trim());
+  const derivedScale = Number((await page.locator(SCALE_DERIVED).textContent()).trim());
+  if (Number.isNaN(derivedQuality) || Number.isNaN(derivedScale)) {
+    throw new Error(`derived quality/scale not shown for gang: q=${derivedQuality} s=${derivedScale}`);
+  }
   const addResponse = page.waitForResponse(
     (r) => r.url().includes("/ops/cohort.add") && r.status() === 200,
   );
@@ -148,6 +152,12 @@ export async function run(page, ctx) {
   if (cardCount < 1) {
     throw new Error(`expected >=1 cohort card after add, found ${cardCount}`);
   }
+  const storedQuality = (await page.locator('.cohort-entry[data-cohort-kind="gang"] .cohort-quality').first().textContent()).trim();
+  const storedScale = (await page.locator('.cohort-entry[data-cohort-kind="gang"] .cohort-scale').first().textContent()).trim();
+  if (storedQuality !== `Quality ${derivedQuality}` || storedScale !== `Scale ${derivedScale}`) {
+    throw new Error(`card stores ${storedQuality}/${storedScale}, form derived Quality ${derivedQuality}/Scale ${derivedScale}`);
+  }
+  ctx.checkpoint("cohort-derived-stats-stored", 1);
   ctx.checkpoint("cohort-added-cards", cardCount);
   await ctx.screenshot("crew01-cohort-added");
 }

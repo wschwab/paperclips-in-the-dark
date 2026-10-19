@@ -49,7 +49,6 @@ import {
   describeCrewRestore,
   formatTier,
   opErrorText,
-  splitList,
 } from "./crew-domain.js";
 import type { CrewField } from "./crew-domain.js";
 import { renderCrewProfileSection } from "./crew-sections/profile.js";
@@ -58,7 +57,7 @@ import { crewRepTurf, renderCrewTrackersSection } from "./crew-sections/trackers
 import { renderCrewFundSection } from "./crew-sections/fund.js";
 import { renderCrewClaimsSection } from "./crew-sections/claims.js";
 import { renderCrewPlaybookSection } from "./crew-sections/playbook.js";
-import { renderCrewCohortsSection } from "./crew-sections/cohorts.js";
+import { renderCrewCohortsSection, readCohortAddBody } from "./crew-sections/cohorts.js";
 import { renderCrewXpSection } from "./crew-sections/xp.js";
 import { renderCrewContactsSection } from "./crew-sections/contacts.js";
 import { renderCrewActionsSection } from "./crew-sections/actions.js";
@@ -955,44 +954,8 @@ export function mountCrewDetailPage(
 
     onCohortAdd: () => {
       if (!currentCrew || isCohortLoading) return;
-      const kindSelect = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement | null;
-      const cohortKind = kindSelect?.value ?? "";
-      if (cohortKind !== "gang" && cohortKind !== "expert") return;
-      // F2ac: kind-conditional selects (game data + canonical fallback).
-      const gangSelect = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement | null;
-      const expertSelect = root.querySelector('select[aria-label="Cohort expert type"]') as HTMLSelectElement | null;
-      const expertCustom = root.querySelector('input[aria-label="Cohort expert custom type"]') as HTMLInputElement | null;
-      const qualityInput = root.querySelector('input[aria-label="Cohort quality"]') as HTMLInputElement | null;
-      const scaleInput = root.querySelector('input[aria-label="Cohort scale"]') as HTMLInputElement | null;
-      const armorInput = root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement | null;
-      const edgesInput = root.querySelector('input[aria-label="Cohort edges"]') as HTMLInputElement | null;
-      const flawsInput = root.querySelector('input[aria-label="Cohort flaws"]') as HTMLInputElement | null;
-      const descInput = root.querySelector('input[aria-label="Cohort description"]') as HTMLInputElement | null;
-
-      const body: Parameters<typeof cohortAdd>[1] = { cohortKind };
-      if (cohortKind === "gang") {
-        const gangType = gangSelect?.value?.trim() ?? "";
-        if (gangType) body.gangType = gangType;
-      } else {
-        const expertType = expertSelect?.value ?? "";
-        if (expertType) {
-          body.expertType =
-            expertType === "Custom"
-              ? expertCustom?.value?.trim() || "Custom"
-              : expertType;
-        }
-      }
-      const quality = qualityInput ? Number.parseInt(qualityInput.value, 10) : Number.NaN;
-      if (!Number.isNaN(quality)) body.quality = quality;
-      const scale = scaleInput ? Number.parseInt(scaleInput.value, 10) : Number.NaN;
-      if (!Number.isNaN(scale)) body.scale = scale;
-      body.hasArmor = armorInput?.checked ?? false;
-      const edges = splitList(edgesInput?.value ?? "");
-      if (edges.length > 0) body.edges = edges;
-      const flaws = splitList(flawsInput?.value ?? "");
-      if (flaws.length > 0) body.flaws = flaws;
-      const description = descInput?.value?.trim() ?? "";
-      if (description) body.description = description;
+      const body = readCohortAddBody(root, currentCrew.tier ?? 0);
+      if (!body) return;
 
       isCohortLoading = true;
       clearNotices();
