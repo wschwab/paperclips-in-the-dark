@@ -4,21 +4,28 @@ title: Setting content open items
 
 # Setting content open items
 
-Open after CREW-WORLD-02. Each item needs a human decision or a sourced fact.
+## Completed by CREW-WORLD-03
 
-1. **Faction split is provisional.** `data/world/doskvol.json` has 49 faction rows
-   and 11 district rows. The official sheet prints twelve Citizenry rows, and the
-   transcription placed eleven with the districts. Verify against the sheet.
-2. **No noteworthy locations.** No district location is sourced, so every
-   district lists none. The disclosure says so. Add locations only with a source.
-3. **District summaries are structural.** They are generated from tier and hold
-   only. Any richer prose needs its own review.
-4. **Playbook Rolodex names.** `data/games/blades-in-the-dark.json` still contains
+- **District classification verified.** The official sheet's twelve Citizenry
+  rows are the twelve districts. Whitecrown moved out of the stock faction list;
+  the shipped data now contains 48 factions and 12 districts.
+- **Noteworthy locations added.** All districts have two or three confirmed
+  canonical places, with original short descriptions and publication references:
+  27 locations in total.
+- **Descriptive summaries added.** All twelve tier/hold templates were replaced
+  with original prose about the districts' canonical character. The
+  [setting content register](/contract/setting-content-register) records sources.
+
+Evidence: `tasks/CREW-WORLD-03.md`.
+
+## Open
+
+1. **Playbook Rolodex names.** `data/games/blades-in-the-dark.json` still contains
    district and NPC names from the playbook. They were not changed. Decide whether
    they stay.
-5. **Test data and captured logs.** Conformance fixtures, frontend tests and
+2. **Test data and captured logs.** Conformance fixtures, frontend tests and
    `tasks/metrics/contract/CREW-WORLD-01-frontend-red.log` contain setting names.
    The red log is a redaction candidate.
-6. **Licence confirmation.** The licensing page excludes setting material from
+3. **Licence confirmation.** The licensing page excludes setting material from
    CC-BY. The project owner approved this for a free fan project. Consider asking
    One Seven Design before any wider release.

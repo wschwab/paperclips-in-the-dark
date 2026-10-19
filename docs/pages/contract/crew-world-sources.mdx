@@ -4,10 +4,11 @@ title: Crew world data — licence, scope and sources
 
 # Crew world data: licence, scope and sources
 
-Two decisions shape the crew world:
+Three decisions shape the crew world:
 
 1. **CREW-WORLD-01** made the core mechanics licensed and the faction list user-entered. No official name shipped.
 2. **CREW-WORLD-02** (human-approved) adds a modest Doskvol world data set for the crew sheet. It is included as a free fan project, not as an SRD licence grant. See [Setting content register](./setting-content-register.mdx).
+3. **CREW-WORLD-03** verifies all twelve districts, corrects Whitecrown's classification, and adds original descriptions and confirmed place names. Attribution and the licence decision are unchanged.
 
 ## What the licence actually grants
 
@@ -29,20 +30,26 @@ community view that a free app with modest setting content and no copied book
 text is acceptable, and that the licence and the SRD are linked. Ask
 One Seven Design if in doubt.
 
-## What the app ships (CREW-WORLD-02)
+## What the app ships (CREW-WORLD-02 and CREW-WORLD-03)
 
-- `data/world/doskvol.json`: **49 faction rows** (name, sheet group, tier and
-  hold) and **11 district rows** (name, tier and hold). Names, tiers and W/S
-  holds were transcribed from the official sheet. Holds are read with the
-  [Faction Game SRD](https://bladesinthedark.com/faction-game) definitions
-  (W = weak, S = strong).
-- **District summaries are written for this app** (one line, from tier and hold
-  only). They contain no book prose.
-- **Noteworthy locations are not recorded.** The sheet transcription supplied
-  none, and none were sourced, so every district has an empty list.
-- The **49/11 split is provisional.** The sheet prints twelve Citizenry rows; the
-  transcription placed eleven of them with the districts. Verify before any
-  further use.
+- `data/world/doskvol.json`: **48 faction rows** (name, sheet group, tier and
+  hold) and **12 district rows** (name, tier, hold, summary and locations).
+  Names, tiers and W/S holds were transcribed from the official sheet.
+  Holds follow the [Faction Game SRD](https://bladesinthedark.com/faction-game)
+  definitions (W = weak, S = strong).
+- **Whitecrown is a district**, not a stock faction. A visual check of the
+  official sheet confirms twelve Citizenry rows, including Whitecrown at
+  Tier V with strong hold. The other four sheet groups contain 48 factions.
+- **All district summaries and location descriptions are written for this
+  app.** They describe the districts' canonical character in short original
+  wording, not tier/hold templates or copied book passages.
+- **27 noteworthy locations** are included, two or three per district.
+  Canonical names and facts were checked against the core-book gazetteer
+  (printed pp. 256–279) and the official Player's Kit vice list and city map.
+  Uncertain or fan-created place names were omitted. Each location records
+  `descriptionAuthor: "app"` and publication source links.
+- The [setting content register](./setting-content-register.mdx) lists the
+  included names and their printed-page or official-kit references.
 - The crew sheet has a **stock faction picker** that fills the manual entry, and
   a **Doskvol districts disclosure**. Choosing a stock row does not save it; the
   crew keeps only what the user adds.
@@ -66,7 +73,12 @@ One Seven Design if in doubt.
 - [Faction status, Tier and hold mechanics](https://bladesinthedark.com/faction-game)
 - [Official downloads](https://bladesinthedark.com/downloads)
 - [Factions of Doskvol campaign sheet](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Factions.pdf)
+- [Official Player's Kit v8.2: vice-purveyor list and city map](https://bladesinthedark.com/sites/default/files/blades_playerkit_v8_2.pdf)
+- [Published core book](https://evilhat.com/product/blades-in-the-dark/), district gazetteer, printed pp. 256–279. Publication links identify the source work; they are not claims that a product page reproduces its text.
 - Publisher: [Blades in the Dark, an Evil Hat Productions publication, in association with One Seven Design](https://www.evilhat.com/home/blades-in-the-dark)
 
-Implementation and acceptance evidence: `tasks/CREW-WORLD-01.md` and
-`tasks/CREW-WORLD-02.md`. Open items: [Setting content open items](/backlog/setting-content-open-items).
+Implementation and acceptance evidence: `tasks/CREW-WORLD-01.md`,
+`tasks/CREW-WORLD-02.md` and `tasks/CREW-WORLD-03.md`.
+[Chromium screenshots](./setting-content-register.mdx#chromium-evidence) cover
+three sizes and three themes. Open items:
+[Setting content open items](/backlog/setting-content-open-items).

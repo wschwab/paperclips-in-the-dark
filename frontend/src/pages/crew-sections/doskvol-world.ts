@@ -7,7 +7,8 @@ import { el } from "../../lib/dom.js";
 import worldData from "../../../../data/world/doskvol.json";
 
 export interface StockFaction { name: string; group: string; tier: number; hold: string }
-export interface StockDistrict { name: string; tier: number; hold: string; summary: string; summaryAuthor: string; locations: string[] }
+export interface StockLocation { name: string; description: string; descriptionAuthor: string; sources: readonly string[] }
+export interface StockDistrict { name: string; tier: number; hold: string; summary: string; summaryAuthor: string; locations: StockLocation[] }
 
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI"];
 export const DOSKVOL_FACTIONS: readonly StockFaction[] = worldData.factions;
@@ -40,7 +41,7 @@ export function doskvolDistrictsDisclosure(): HTMLElement {
     "details",
     { className: "doskvol-districts" },
     el("summary", {}, `Doskvol districts (${DOSKVOL_DISTRICTS.length})`),
-    el("p", { className: "rules-note" }, "Summaries are written for this app. Names and holds come from the campaign sheet. Noteworthy locations are not recorded yet."),
+    el("p", { className: "rules-note" }, "Descriptions are written for this app. Canonical district and place names are sourced in the setting-content register."),
     ...DOSKVOL_DISTRICTS.map((d) =>
       el(
         "div",
@@ -49,8 +50,9 @@ export function doskvolDistrictsDisclosure(): HTMLElement {
         el("p", { className: "doskvol-meta" }, `Tier ${ROMAN[d.tier] ?? d.tier} · ${d.hold} hold`),
         el("p", { className: "doskvol-summary" }, d.summary),
         d.locations.length === 0
-          ? el("p", { className: "doskvol-locations" }, "No noteworthy locations recorded.")
-          : el("ul", { className: "doskvol-locations" }, ...d.locations.map((loc) => el("li", {}, loc))),
+          ? el("p", { className: "doskvol-locations" }, "No confirmed locations available.")
+          : el("ul", { className: "doskvol-locations" }, ...d.locations.map((loc) =>
+            el("li", {}, el("strong", {}, loc.name), " — ", el("span", { className: "doskvol-location-description" }, loc.description)))),
       ),
     ),
   );

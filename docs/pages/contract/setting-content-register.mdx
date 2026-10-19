@@ -12,15 +12,19 @@ and what remains open. The licence reasoning is in
 
 | Location | Contents | Status |
 | --- | --- | --- |
-| `data/world/doskvol.json` | 49 faction rows (name, sheet group, tier, hold) and 11 district rows (name, tier, hold, app-written one-line summary, empty locations) | Shipped by CREW-WORLD-02, human-approved for a free fan project. Split is provisional. |
-| `frontend/src/pages/crew-sections/doskvol-world.ts` | Imports the data; renders the stock faction picker and the districts disclosure | Shipped by CREW-WORLD-02 |
+| `data/world/doskvol.json` | 48 faction rows and all 12 districts, with original summaries and 27 sourced noteworthy locations with original short descriptions | CREW-WORLD-03 corrects the CREW-WORLD-02 transcription; human-approved free fan project. |
+| `frontend/src/pages/crew-sections/doskvol-world.ts` | Imports the data; renders the stock faction picker and named, described district locations | CREW-WORLD-02, extended by CREW-WORLD-03 |
 | `frontend/src/pages/about-licence.ts` | Launch-screen About & licence aside with attribution and links | Shipped by CREW-WORLD-02 |
 
 Rules for shipped data:
 
-- Summaries are written for this app from tier and hold only. No book prose is
-  copied.
-- Noteworthy locations stay empty unless they can be sourced. None have been.
+- District summaries and location descriptions are **written for this app** from
+  verified setting facts, not generated from tier/hold or copied from the book.
+- Only confirmed canonical place names are included. Each district has two or
+  three; uncertain names and fan-created additions were omitted.
+- The official Factions sheet's **entire twelve-row Citizenry block** identifies
+  the districts. Whitecrown (Tier V, strong) belongs here, not in the stock
+  faction picker. The remaining four sheet groups contain 48 faction rows.
 - Choosing a stock faction fills the manual entry only. Saved crew records are
   the user's own.
 
@@ -31,14 +35,64 @@ Rules for shipped data:
 | `data/games/blades-in-the-dark.json` | Playbook Rolodex entries (district and NPC names), served by the app at `/api/games/blades-in-the-dark` | Pre-existing shipped game data. Not changed by CREW-WORLD-02. Flagged in [Setting content open items](/backlog/setting-content-open-items). |
 | Conformance fixtures and frontend tests | Setting names in test data (for example Ironhook Prison, Bluecoats) | Test data only. Not user-facing. |
 | `tasks/metrics/contract/CREW-WORLD-01-frontend-red.log` | Captured test output containing setting names | Historical record. Redaction is a candidate. |
-| `docs/pages/contract/crew-world-sources.mdx` | Setting names are no longer named there | Updated by CREW-WORLD-02 |
+| `docs/pages/contract/crew-world-sources.mdx` | Provenance, printed-page references, shipping scope and licence decision | Updated by CREW-WORLD-03 |
 
 ## Private research draft
 
-The research draft used to build `data/world/doskvol.json` remains outside the
-repository (`/home/x/code/private-crew-world/doskvol-draft.json`). It is not
-committed. Its meta says the sheet prints twelve Citizenry rows, which is why the
-49/11 split is recorded as provisional.
+The original research draft remains outside the repository
+(`/home/x/code/private-crew-world/doskvol-draft.json`). Its provisional 49/11
+split is historical and is **not** the shipping taxonomy.
+
+## Canonical place-name checks
+
+The official [Factions sheet v8.2](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Factions.pdf)
+was rendered and checked visually: its Citizenry column includes Whitecrown and
+the other eleven districts. The core book's district gazetteer and the official
+[Player's Kit v8.2](https://bladesinthedark.com/sites/default/files/blades_playerkit_v8_2.pdf)
+provide the place names and setting facts below. Descriptions are original
+paraphrases; no source PDF, map or book passage is shipped.
+
+| District | Included locations | Name reference |
+| --- | --- | --- |
+| Whitecrown | Doskvol Academy; Dusk Manor Club; Spiregarden Theater | Player's Kit city map and vice list |
+| Brightstone | Centuralia Club; Silver Swan | Player's Kit vice list |
+| Charterhall | Charterhall University; Charter Wall | Core book, printed p. 262 |
+| Six Towers | House of the Weeping Lady; Golden Plum | Player's Kit vice list |
+| Silkshore | Red Lamp; Silver Stag | Player's Kit vice list |
+| Nightmarket | Harping Monkey; The Veil | Player's Kit vice list |
+| Crow's Foot | Crow's Nest; Red Sash Sword Academy; Leaky Bucket | Core book p. 266; Player's Kit vice list |
+| The Docks | The North Hook Company; Catcrawl Alley | Core book p. 268; Player's Kit vice list |
+| Barrowcleft | Barrow Bridge; Barrowcleft Market | Core book p. 256 |
+| Coalridge | Coalridge Mine; The Old Rail Yard; Traven's Smoke Shop | Core book p. 264; Player's Kit vice list |
+| Charhollow | Charhollow Market; Strangford House | Core book p. 260 |
+| Dunslough | Ironhook Prison; Dunvil Labor Camp | Core book p. 270 |
+
+Location `sources` identify the official kit or the
+[published core book](https://evilhat.com/product/blades-in-the-dark/);
+the publisher link is a bibliographic reference, not a claim that its product
+page contains the gazetteer. The core-book spellings **Dunvil Labor Camp** and
+**Red Sash Sword Academy** take precedence over variant fan-map labels.
+
+An additional fan district reference was consulted for cross-checking but mixes
+in alterations. It is not the authority for shipped names or descriptions.
+The attribution and the excluded-setting licence decision remain unchanged.
+
+## Chromium evidence
+
+CREW-WORLD-03 checked 1440×1000, 768×1024 and 390×844 in light, dark and
+high-contrast light themes: **9/9 passed**, with zero horizontal overflow,
+clipped district content or browser errors. All twelve districts and 27 named
+locations render in every state; Enter, Space and click toggle the disclosure.
+All nine viewport screenshots were also inspected visually. Long content uses
+normal page scrolling; the complete-disclosure captures include every district.
+
+| Viewport | Light | Dark | High contrast |
+| --- | --- | --- | --- |
+| 1440×1000 | <a href="/evidence/crew-world-03/1440-light.png">Viewport</a> · <a href="/evidence/crew-world-03/1440-light-disclosure.png">Complete disclosure</a> | <a href="/evidence/crew-world-03/1440-dark.png">Viewport</a> · <a href="/evidence/crew-world-03/1440-dark-disclosure.png">Complete disclosure</a> | <a href="/evidence/crew-world-03/1440-high.png">Viewport</a> · <a href="/evidence/crew-world-03/1440-high-disclosure.png">Complete disclosure</a> |
+| 768×1024 | <a href="/evidence/crew-world-03/768-light.png">Viewport</a> · <a href="/evidence/crew-world-03/768-light-disclosure.png">Complete disclosure</a> | <a href="/evidence/crew-world-03/768-dark.png">Viewport</a> · <a href="/evidence/crew-world-03/768-dark-disclosure.png">Complete disclosure</a> | <a href="/evidence/crew-world-03/768-high.png">Viewport</a> · <a href="/evidence/crew-world-03/768-high-disclosure.png">Complete disclosure</a> |
+| 390×844 | <a href="/evidence/crew-world-03/390-light.png">Viewport</a> · <a href="/evidence/crew-world-03/390-light-disclosure.png">Complete disclosure</a> | <a href="/evidence/crew-world-03/390-dark.png">Viewport</a> · <a href="/evidence/crew-world-03/390-dark-disclosure.png">Complete disclosure</a> | <a href="/evidence/crew-world-03/390-high.png">Viewport</a> · <a href="/evidence/crew-world-03/390-high-disclosure.png">Complete disclosure</a> |
+
+Numeric record: `tasks/metrics/frontend/CREW-WORLD-03-chromium.log`.
 
 ## Open items
 

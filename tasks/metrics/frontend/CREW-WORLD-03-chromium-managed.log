@@ -1,0 +1,825 @@
+[managed-browser-smoke] runId=2026-10-19T16-06-37-418Z-2e97233d
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node /tmp/pitd-crew-world-03-chromium.mjs
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-19T16-06-37-418Z-2e97233d/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-19T16-06-37-418Z-2e97233d/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-19T16-06-37-418Z-2e97233d
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-19T16-06-37-418Z-2e97233d/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-19T16-06-37-418Z-2e97233d/data (dir)
+[managed-browser-smoke] port=45769
+[managed-browser-smoke] baseUrl=http://127.0.0.1:45769
+[managed-browser-smoke] pid=1814306
+[managed-browser-smoke] ready=http://127.0.0.1:45769
+[managed-browser-smoke] commandPid=1814374
+{
+  "pass": true,
+  "chromium": "/home/x/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome",
+  "managedTemporaryData": true,
+  "rows": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "requestedTheme": "light",
+      "theme": "light",
+      "contrast": "normal",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 3207,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "1440-light.png",
+      "disclosureFile": "1440-light-disclosure.png",
+      "viewportBytes": 428960,
+      "disclosureBytes": 422591,
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "requestedTheme": "dark",
+      "theme": "dark",
+      "contrast": "normal",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 3207,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "1440-dark.png",
+      "disclosureFile": "1440-dark-disclosure.png",
+      "viewportBytes": 396087,
+      "disclosureBytes": 447373,
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "requestedTheme": "high",
+      "theme": "light",
+      "contrast": "high",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 3219,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "1440-high.png",
+      "disclosureFile": "1440-high-disclosure.png",
+      "viewportBytes": 167440,
+      "disclosureBytes": 422534,
+      "pass": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "requestedTheme": "light",
+      "theme": "light",
+      "contrast": "normal",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 2850,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "768-light.png",
+      "disclosureFile": "768-light-disclosure.png",
+      "viewportBytes": 223641,
+      "disclosureBytes": 397691,
+      "pass": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "requestedTheme": "dark",
+      "theme": "dark",
+      "contrast": "normal",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 2850,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "768-dark.png",
+      "disclosureFile": "768-dark-disclosure.png",
+      "viewportBytes": 220494,
+      "disclosureBytes": 420944,
+      "pass": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "requestedTheme": "high",
+      "theme": "light",
+      "contrast": "high",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 2886,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "768-high.png",
+      "disclosureFile": "768-high-disclosure.png",
+      "viewportBytes": 152395,
+      "disclosureBytes": 398728,
+      "pass": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "requestedTheme": "light",
+      "theme": "light",
+      "contrast": "normal",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 4308,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "390-light.png",
+      "disclosureFile": "390-light-disclosure.png",
+      "viewportBytes": 140225,
+      "disclosureBytes": 397888,
+      "pass": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "requestedTheme": "dark",
+      "theme": "dark",
+      "contrast": "normal",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 4308,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "390-dark.png",
+      "disclosureFile": "390-dark-disclosure.png",
+      "viewportBytes": 135362,
+      "disclosureBytes": 418521,
+      "pass": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "requestedTheme": "high",
+      "theme": "light",
+      "contrast": "high",
+      "districtNames": [
+        "Whitecrown",
+        "Brightstone",
+        "Charterhall",
+        "Six Towers",
+        "Silkshore",
+        "Nightmarket",
+        "Crow's Foot",
+        "The Docks",
+        "Barrowcleft",
+        "Coalridge",
+        "Charhollow",
+        "Dunslough"
+      ],
+      "locationCounts": [
+        {
+          "district": "Whitecrown",
+          "count": 3
+        },
+        {
+          "district": "Brightstone",
+          "count": 2
+        },
+        {
+          "district": "Charterhall",
+          "count": 2
+        },
+        {
+          "district": "Six Towers",
+          "count": 2
+        },
+        {
+          "district": "Silkshore",
+          "count": 2
+        },
+        {
+          "district": "Nightmarket",
+          "count": 2
+        },
+        {
+          "district": "Crow's Foot",
+          "count": 3
+        },
+        {
+          "district": "The Docks",
+          "count": 2
+        },
+        {
+          "district": "Barrowcleft",
+          "count": 2
+        },
+        {
+          "district": "Coalridge",
+          "count": 3
+        },
+        {
+          "district": "Charhollow",
+          "count": 2
+        },
+        {
+          "district": "Dunslough",
+          "count": 2
+        }
+      ],
+      "locationCount": 27,
+      "pickerOptions": 49,
+      "whitecrownInPicker": false,
+      "documentOverflow": 0,
+      "disclosureOverflow": 0,
+      "districtOverflow": 0,
+      "locationOverflow": 0,
+      "textOutside": [],
+      "verticallyClippedDistricts": [],
+      "authorshipVisible": true,
+      "disclosureHeight": 4368,
+      "keyboardAndClickToggle": true,
+      "errors": [],
+      "viewportFile": "390-high.png",
+      "disclosureFile": "390-high-disclosure.png",
+      "viewportBytes": 85509,
+      "disclosureBytes": 398702,
+      "pass": true
+    }
+  ]
+}
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-10-19T16-06-37-418Z-2e97233d)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-10-19T16-06-37-418Z-2e97233d)

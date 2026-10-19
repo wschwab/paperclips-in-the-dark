@@ -1,0 +1,95 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/pages/crew-world-03.test.ts (4 tests | 4 failed) 10ms
+   × CREW-WORLD-03 canonical district reference > contains exactly the twelve districts, with Whitecrown classified once as a district 5ms
+     → expected [ 'Barrowcleft', 'Brightstone', …(9) ] to deeply equal [ 'Barrowcleft', 'Brightstone', …(10) ]
+   × CREW-WORLD-03 canonical district reference > uses distinct app-written district descriptions instead of tier/hold templates 1ms
+     → expected 6 to be 12 // Object.is equality
+   × CREW-WORLD-03 canonical district reference > records two to four sourced canonical location names with short app-written descriptions 0ms
+     → expected 0 to be greater than or equal to 2
+   × CREW-WORLD-03 canonical district reference > renders district prose and named location descriptions without old empty-state claims 3ms
+     → expected 'Doskvol districts (11)' to be 'Doskvol districts (12)' // Object.is equality
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  18:45:38
+   Duration  288ms (transform 29ms, setup 0ms, collect 25ms, tests 10ms, environment 89ms, prepare 66ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-world-03.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/crew-world-03.test.ts > CREW-WORLD-03 canonical district reference > contains exactly the twelve districts, with Whitecrown classified once as a district
+AssertionError: expected [ 'Barrowcleft', 'Brightstone', …(9) ] to deeply equal [ 'Barrowcleft', 'Brightstone', …(10) ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -8,7 +8,6 @@[39m
+[2m    "Dunslough",[22m
+[2m    "Nightmarket",[22m
+[2m    "Silkshore",[22m
+[2m    "Six Towers",[22m
+[2m    "The Docks",[22m
+[32m-   "Whitecrown",[39m
+[2m  ][22m
+
+ ❯ src/pages/crew-world-03.test.ts:13:67
+     11| describe("CREW-WORLD-03 canonical district reference", () => {
+     12|   it("contains exactly the twelve districts, with Whitecrown classifie…
+     13|     expect(world.districts.map(district => district.name).sort()).toEq…
+       |                                                                   ^
+     14|     expect(world.factions.some(faction => faction.name === "Whitecrown…
+     15|     expect(world.districts.find(district => district.name === "Whitecr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/pages/crew-world-03.test.ts > CREW-WORLD-03 canonical district reference > uses distinct app-written district descriptions instead of tier/hold templates
+AssertionError: expected 6 to be 12 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 12[39m
+[31m+ 6[39m
+
+ ❯ src/pages/crew-world-03.test.ts:19:77
+     17| 
+     18|   it("uses distinct app-written district descriptions instead of tier/…
+     19|     expect(new Set(world.districts.map(district => district.summary)).…
+       |                                                                             ^
+     20|     for (const district of world.districts) {
+     21|       expect(district.summaryAuthor).toBe("app");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/pages/crew-world-03.test.ts > CREW-WORLD-03 canonical district reference > records two to four sourced canonical location names with short app-written descriptions
+AssertionError: expected 0 to be greater than or equal to 2
+ ❯ src/pages/crew-world-03.test.ts:31:41
+     29|   it("records two to four sourced canonical location names with short …
+     30|     for (const district of world.districts) {
+     31|       expect(district.locations.length).toBeGreaterThanOrEqual(2);
+       |                                         ^
+     32|       expect(district.locations.length).toBeLessThanOrEqual(4);
+     33|       for (const location of district.locations) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/pages/crew-world-03.test.ts > CREW-WORLD-03 canonical district reference > renders district prose and named location descriptions without old empty-state claims
+AssertionError: expected 'Doskvol districts (11)' to be 'Doskvol districts (12)' // Object.is equality
+
+Expected: [32m"Doskvol districts (1[7m2[27m)"[39m
+Received: [31m"Doskvol districts (1[7m1[27m)"[39m
+
+ ❯ src/pages/crew-world-03.test.ts:42:62
+     40|   it("renders district prose and named location descriptions without o…
+     41|     const disclosure = doskvolDistrictsDisclosure();
+     42|     expect(disclosure.querySelector("summary")?.textContent).toBe("Dos…
+       |                                                              ^
+     43|     expect(disclosure.querySelectorAll(".doskvol-district")).toHaveLen…
+     44|     expect(disclosure.querySelectorAll(".doskvol-locations li").length…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

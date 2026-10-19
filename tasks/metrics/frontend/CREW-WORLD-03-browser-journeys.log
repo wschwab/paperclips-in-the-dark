@@ -1,0 +1,31 @@
+OK: internal harness delegating to managed launcher
+[browser-suite] frontend/dist is newer than src; skipping vite build
+[browser-suite] artifacts dir: /tmp/pitd-browser/2026-10-19T16-02-11-499Z-98c16e7f
+[managed-browser-smoke] runId=2026-10-19T16-02-11-529Z-3e474ffe
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node /home/x/code/paperclips-in-the-dark/conformance/scripts/browser-suite.mjs --child
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-19T16-02-11-529Z-3e474ffe/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-19T16-02-11-529Z-3e474ffe/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-19T16-02-11-529Z-3e474ffe
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-19T16-02-11-529Z-3e474ffe/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-19T16-02-11-529Z-3e474ffe/data (dir)
+[managed-browser-smoke] port=34523
+[managed-browser-smoke] baseUrl=http://127.0.0.1:34523
+[managed-browser-smoke] pid=1809227
+[managed-browser-smoke] ready=http://127.0.0.1:34523
+[managed-browser-smoke] commandPid=1809294
+[browser-suite] chromium: /home/x/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome (headless: true)
+[browser-suite] journey character-create-edit: PASS
+[browser-suite] journey clock: PASS
+[browser-suite] journey crew-create-trackers: PASS
+[browser-suite] journey import-repair: PASS
+[browser-suite] journey lifecycle: PASS
+[browser-suite] journey roster-recovery: PASS
+[browser-suite] PASS — launcher cleaned up ("success; evidence removed"), all journeys green
+[browser-suite] artifacts: /tmp/pitd-browser/2026-10-19T16-02-11-499Z-98c16e7f
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:browser
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/browser-suite.mjs
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-10-19T16-02-11-529Z-3e474ffe)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-10-19T16-02-11-529Z-3e474ffe)
