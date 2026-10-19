@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/styles/sheet-columns.test.ts (2 tests) 2ms
+ ✓ src/pages/crew-claims-map.test.ts (3 tests) 7ms
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+   Start at  19:48:57
+   Duration  516ms (transform 101ms, setup 0ms, collect 245ms, tests 8ms, environment 107ms, prepare 134ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-claims-map.test.ts src/styles/sheet-columns.test.ts

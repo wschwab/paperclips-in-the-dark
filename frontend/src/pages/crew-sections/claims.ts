@@ -163,7 +163,7 @@ export function renderCrewClaimsSection(state: RenderState): HTMLElement {
       el("div", { className: "claims-map", style: "position: relative;" },
         el("div", {
           className: "claims-grid",
-          style: `display: grid; grid-template-columns: repeat(${graph.columns}, 1fr); grid-template-rows: repeat(${graph.rows}, 1fr); gap: 18px;`,
+          style: `display: grid; grid-template-columns: repeat(${graph.columns}, minmax(0, 1fr)); grid-template-rows: repeat(${graph.rows}, 1fr); gap: 18px;`,
         }, edgeSvg, ...cells),
       ),
       el("div", { className: "active-claims" },

@@ -205,7 +205,7 @@
 }
 .claims-grid {
   min-width: 560px;
-  width: fit-content;
+  width: 100%;
   position: relative;
   z-index: 1;
   /* wide gap so the connector segment between boxes is actually legible */
@@ -224,6 +224,8 @@
   align-items: center;
   text-align: center;
   gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
   min-height: 64px;
   padding: 8px 6px;
   border: var(--border-thick) solid var(--fill-border);
@@ -686,9 +688,9 @@
  * the same DOM sequence with no interior holes — the sheet still reads down
  * column 1 then column 2, like print columns, so visual order equals DOM
  * reading order and focus order never jumps. Cards keep their integrity via
- * break-inside: avoid; only the masthead and alert strips span both columns
- * (every span edge forces a rebalance below it and would re-plant a ragged
- * band seam, so mid-sheet furniture rides inside its column instead).
+ * break-inside: avoid. Mastheads and alerts span both columns; the crew's
+ * claims graph is a deliberate full-width exception so its connected map
+ * remains readable without horizontal panning on wide screens.
  * Below 900px the single-column stack needs no special treatment. */
 @media (min-width: 900px) {
   .character-detail,
@@ -729,6 +731,9 @@
   .crew-detail > .crew-header,
   .crew-detail > .error,
   .crew-detail > .notice {
+    column-span: all;
+  }
+  .crew-detail > .crew-claims {
     column-span: all;
   }
 }

@@ -53,3 +53,22 @@ It never writes a compensating Turf ledger.
   regular page returned HTTP 403).
 
 Implementation and acceptance record: `tasks/CREW-REP-TURF-01.md`.
+
+## Full-width claims map
+
+**CREW-CLAIMS-MAP-01** makes the claims section span both crew columns at the
+existing wide-sheet breakpoint. The graph uses the available width rather than
+its text's preferred width; settings-defined columns can shrink and long names
+or benefit text wrap within their cells.
+
+The canonical graph topology and the sheet's DOM reading order stay unchanged.
+On narrow screens, bounded horizontal panning preserves the connected map
+without widening the document. The map's existing minimum readable width is a
+layout dimension, not a game maximum.
+
+Acceptance includes a real Chromium assertion at **1440×1000** that the map's
+`scrollWidth` equals its `clientWidth`, plus document containment and map
+interaction at **768** and **390** in all three themes. Stylesheet guards are
+not a substitute for that measured browser check.
+
+Implementation and acceptance record: `tasks/CREW-CLAIMS-MAP-01.md`.

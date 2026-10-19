@@ -1,0 +1,34 @@
+{
+  "task": "CREW-CLAIMS-MAP-01",
+  "track": "frontend",
+  "date": "2026-10-19",
+  "implementationAgent": "openai-codex/gpt-6.1-sol (mode-mockups)",
+  "reviewAgent": "Sol 6.1 xhigh required at frozen-tree acceptance; not yet run",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 3.49,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "No completion claimed; focused map and existing sheet-column guards 5/5; real Chromium geometry and full gates still required",
+  "passRateAfterReview": "Independent review not yet run",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1
+  },
+  "defectCatchingLayer": [
+    "human feedback",
+    "red stylesheet/DOM guards",
+    "real Chromium geometry required before completion"
+  ],
+  "notes": "Three red tests observed, then 5/5 focused green. Full-width wide-sheet column span, available grid width, shrinkable settings-defined tracks, wrapping cell copy; narrow map remains bounded and pannable. No backend or contract changes. All mutation campaigns await the frozen combined tree.",
+  "metricsMethodology": {
+    "method": "Observed focused test and detector output; elapsed since this card red run. Geometry is explicitly not inferred from source guards.",
+    "source": "CREW-CLAIMS-MAP-01-red/focused/layout-before logs under tasks/metrics/frontend/",
+    "locNote": "Line totals not measured.",
+    "scaffoldingLocNote": "No permanent probe scaffold is intended; line totals not measured.",
+    "tokensNote": "Token accounting unavailable; null rather than an invented count."
+  },
+  "status": "in progress: scoped implementation focused-green; numeric Chromium/full acceptance/review/publication remain"
+}
