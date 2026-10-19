@@ -97,8 +97,9 @@ export async function run(page, ctx) {
     .first()
     .waitFor({ state: "visible", timeout: 10_000 });
   await page.locator('button[title="Add 1 turf"]').click();
+  await page.locator(".turf-count", { hasText: "Turf: 1" }).waitFor({ state: "visible", timeout: 10_000 });
   await page
-    .locator('.turf-track .turf-slot[data-stress="1"]')
+    .locator('.crew-rep .stress-box[data-turf="1"]')
     .first()
     .waitFor({ state: "visible", timeout: 10_000 });
   ctx.checkpoint("rep-turf-bumped", 1);

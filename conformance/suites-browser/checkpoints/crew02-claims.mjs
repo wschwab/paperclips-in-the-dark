@@ -127,22 +127,13 @@ export async function run(page, ctx) {
   }
   await ctx.screenshot("crew02-claims-reloaded");
 
-  // -- Deliberately remove one inside claim-edit mode -------------------------
+  // -- Relinquish one by clicking it directly (confirmation still required) --
   const EDIT_REMOVED = "Vice Den";
-  const toggle = page.locator(".claims-edit-toggle");
-  if ((await toggle.textContent())?.trim() !== "Edit claims") {
-    throw new Error("claim-edit mode should start off after a fresh mount");
+  if ((await page.locator(".claims-edit-toggle").count()) !== 0) {
+    throw new Error("the old claim-edit toggle must not exist");
   }
-  await toggle.click();
-  await page
-    .locator(".claims-edit-toggle", { hasText: "Done editing" })
-    .waitFor({ state: "visible", timeout: 10_000 });
-
   const markBeforeRemove = dialogMessages.length;
-  await page
-    .locator(".active-claim-list li", { hasText: EDIT_REMOVED })
-    .locator("button", { hasText: "Relinquish" })
-    .click();
+  await ownedCell(page, EDIT_REMOVED).click();
   await page
     .locator(".claims-grid button.claim-node:not(.claim-owned)", { hasText: EDIT_REMOVED })
     .first()
