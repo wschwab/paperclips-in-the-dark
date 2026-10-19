@@ -3,20 +3,21 @@
   "track": "frontend + data + docs",
   "date": "2026-10-19",
   "implementationAgent": "anthropic/claude-haiku-5-5 (omp, single session)",
-  "reviewAgent": "pending: Sol 6.1 xhigh review pinned to the revision range",
-  "iterationsToGreen": 2,
-  "iterationNotes": "First Chromium run failed 6 of 9 rows. The aside's explicit grid-row 3 overlapped the crews block below 840px. The second run still failed because the base rule was cascaded after the media rule. The third run passed 9/9.",
+  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): PASS on d4a2ac4f7a82..c2f6116c (verdict tasks/metrics/contract/CREW-WORLD-02-sol-6.1-verdict.txt)",
+  "iterationsToGreen": 3,
+  "iterationNotes": "First Chromium run failed 6 of 9 rows: the aside's explicit grid-row 3 overlapped the crews block below 840px. The second run still failed because the base rule came after the media rule. The third run passed 9/9. Sol's non-blocking findings (a register heading and a stale comment) were fixed after review; the comment-only change was re-checked with tsc and the crew tests.",
   "defectsCaughtBy": {
     "compiler": 0,
     "conformance": 0,
     "review": 0,
     "human": 0,
-    "chromiumProbe": 1
+    "chromiumProbe": 1,
+    "sol": 1
   },
-  "notes": "Scope is the human-approved fan-project decision, not an SRD grant. The 49/11 split is provisional. District summaries are app-written. No locations are sourced.",
+  "notes": "Scope is the human-approved fan-project decision, not an SRD grant. The 49/11 split is provisional. District summaries are app-written. No locations are sourced. Pre-existing playbook Rolodex names in data/games/blades-in-the-dark.json are unchanged and flagged.",
   "metricsMethodology": {
     "method": "not measured: wall-clock and token counts were not recorded",
-    "source": "vitest 979/979 (37 files), tsc 0, build 0, browser 6/6, Chromium 9/9",
+    "source": "vitest 979/979 (37 files), tsc 0, build 0, browser 6/6, Chromium 9/9, mutation 28/28, Sol PASS",
     "locNote": "implementationLoc=unknown",
     "scaffoldingLocNote": "scaffoldingLoc=unknown",
     "tokensNote": "tokens recorded as 0"
@@ -26,9 +27,10 @@
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "passRateAtFirstDoneClaim": "crew-world-02 and about-licence tests 7/7 after implementation",
-  "passRateAfterReview": "pending mutation 28/28 and Sol review",
+  "passRateAfterReview": "vitest 979/979; mutation 28/28 (P0 19/19, P1 9/9); Chromium 9/9; browser 6/6; Sol PASS",
   "defectCatchingLayer": [
-    "Chromium probe"
+    "Chromium probe",
+    "Sol review"
   ],
-  "status": "in progress: code and docs written; gates green; mutation and Sol pending"
+  "status": "done: committed and pushed to origin and radicle at bd36452b; Sol PASS on d4a2ac4f..c2f6116c; comment and register fixes after review re-checked"
 }

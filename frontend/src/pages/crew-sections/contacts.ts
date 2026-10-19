@@ -1,4 +1,4 @@
-/** Contacts and user-entered faction records; no setting catalogue is bundled. */
+/** Contacts and faction records; the stock picker draws on the approved Doskvol data. */
 import { el } from "../../lib/dom.js";
 import type { RenderState } from "../crew-detail.js";
 import { doskvolDistrictsDisclosure, stockFactionPicker } from "./doskvol-world.js";
