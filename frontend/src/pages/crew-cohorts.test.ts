@@ -145,4 +145,26 @@ describe("CREW-COHORTS-01 cohort editor", () => {
     edge.dispatchEvent(new Event("change"));
     expect(customEdge.hidden).toBe(false);
   });
+
+  it("blocks Add while edges and flaws differ, says why, and unblocks once they match", async () => {
+    const root = await openAddForm(crewDTO());
+    const addBtn = root.querySelector('button[title="Add cohort"]') as HTMLButtonElement;
+    const pick = (aria: string, value: string, addTitle: string) => {
+      const select = root.querySelector(`select[aria-label="${aria}"]`) as HTMLSelectElement;
+      select.value = value;
+      select.dispatchEvent(new Event("change"));
+      (root.querySelector(`button[title="${addTitle}"]`) as HTMLButtonElement).click();
+    };
+    expect(addBtn.disabled).toBe(false);
+
+    pick("Cohort edge", "Loyal", "Add edge");
+    expect(addBtn.disabled).toBe(true);
+    const warning = root.querySelector(".cohort-count-mismatch") as HTMLElement;
+    expect(warning.hidden).toBe(false);
+    expect(warning.textContent).toMatch(/equal number of edges and flaws/);
+
+    pick("Cohort flaw", "Savage", "Add flaw");
+    expect(addBtn.disabled).toBe(false);
+    expect(warning.hidden).toBe(true);
+  });
 });

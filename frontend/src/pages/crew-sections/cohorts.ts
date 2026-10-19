@@ -42,6 +42,7 @@ function traitPicker(
   options: CohortTrait[],
   initial: readonly string[],
   disabled: boolean,
+  onChange?: () => void,
 ): { element: HTMLElement; read: () => string[] } {
   const chips = el("span", { className: "cohort-trait-list", "data-list": `${singular}s`, style: "display: inline-flex; gap: 0.35em; flex-wrap: wrap;" });
   const select = el("select", { "aria-label": `${prefix} ${singular}`, disabled }) as HTMLSelectElement;
@@ -63,6 +64,7 @@ function traitPicker(
   const count = () => chips.querySelectorAll("[data-value]").length;
   const syncAddEnabled = () => {
     addBtn.disabled = disabled || count() >= MAX_TRAITS;
+    onChange?.();
   };
   const addChip = (value: string) => {
     if ([...chips.querySelectorAll("[data-value]")].some((c) => c.getAttribute("data-value") === value)) return;
@@ -337,8 +339,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     "aria-label": "Cohort armor",
     disabled: state.anyLoading,
   });
-  const edgesPicker = traitPicker("Cohort", "edge", edgeOptions, [], state.anyLoading);
-  const flawsPicker = traitPicker("Cohort", "flaw", flawOptions, [], state.anyLoading);
+  const edgesPicker = traitPicker("Cohort", "edge", edgeOptions, [], state.anyLoading, () => syncAddGate());
+  const flawsPicker = traitPicker("Cohort", "flaw", flawOptions, [], state.anyLoading, () => syncAddGate());
   const descInput = el("textarea", {
     "aria-label": "Cohort description",
     disabled: state.anyLoading,
@@ -386,6 +388,20 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     title: "Add cohort",
   }, state.isCohortLoading ? "…" : "+");
   addCohortBtn.addEventListener("click", handlers.onCohortAdd);
+  // SRD: an equal number of edges and flaws. Add stays disabled, and says why, while they differ.
+  const countMismatch = el("p", { className: "cohort-count-mismatch lbl", role: "alert" }) as HTMLElement;
+  countMismatch.hidden = true;
+  const syncAddGate = () => {
+    const edges = edgesPicker.read().length;
+    const flaws = flawsPicker.read().length;
+    const mismatch = edges !== flaws;
+    countMismatch.hidden = !mismatch;
+    countMismatch.textContent = mismatch
+      ? `A cohort needs an equal number of edges and flaws (now ${edges} edge${edges === 1 ? "" : "s"} and ${flaws} flaw${flaws === 1 ? "" : "s"}). Add or remove to match.`
+      : "";
+    addCohortBtn.disabled = state.anyLoading || mismatch;
+  };
+  syncAddGate();
 
   const cohortsSection = el(
     "div",
@@ -423,14 +439,15 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       cohortField("Description", descInput),
       addCohortBtn,
     ),
+    countMismatch,
   );
   toggleCohortKindFields();
 
   return cohortsSection;
 }
 
-/** Read the Add Cohort form into a cohort.add body. Returns null when no kind is chosen.
- * Quality and scale are derived from the crew Tier (SRD), not typed. */
+/** Read the Add Cohort form into a cohort.add body. Returns null when no kind is chosen, or
+ * when the edge and flaw counts differ (SRD). Quality and scale are derived from the crew Tier, not typed. */
 export function readCohortAddBody(root: HTMLElement, tier: number): CohortAddBody | null {
   const kind = (root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement | null)?.value ?? "";
   if (kind !== "gang" && kind !== "expert") return null;
@@ -457,6 +474,7 @@ export function readCohortAddBody(root: HTMLElement, tier: number): CohortAddBod
   if (edges.length > 0) body.edges = edges;
   const flaws = traitValues(root, "flaws");
   if (flaws.length > 0) body.flaws = flaws;
+  if (edges.length !== flaws.length) return null;
   const description = (root.querySelector('textarea[aria-label="Cohort description"]') as HTMLTextAreaElement | null)?.value?.trim() ?? "";
   if (description) body.description = description;
   const name = (root.querySelector('input[aria-label="Cohort name"]') as HTMLInputElement | null)?.value?.trim() ?? "";

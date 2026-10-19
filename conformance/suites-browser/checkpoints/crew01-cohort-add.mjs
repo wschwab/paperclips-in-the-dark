@@ -42,6 +42,10 @@ export const checkpoints = [
     id: "cohort-added-cards",
     description: "cohort card count after one successful gang add (1 expected)",
   },
+  {
+    id: "cohort-derived-stats-stored",
+    description: "1 when the gang add stored quality and scale derived from crew Tier",
+  },
 ];
 
 const KIND = 'select[aria-label="Cohort kind"]';

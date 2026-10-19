@@ -50,15 +50,16 @@ Verified 2026-10-19 against `https://bladesinthedark.com/crew`, "Cohorts" sectio
 
 ## Gaps (recorded, not in scope of this card)
 
-- SRD equal-count rule ("an equal number of flaws") is not enforced. The picker caps edges and flaws at two each.
-- SRD "A given cohort can have up to two types" is not modelled; one type per cohort.
+- Equal edge/flaw count is enforced in the Add form only: Add is disabled with a visible message while the counts differ, and `readCohortAddBody` returns null on mismatch. The edit form does not enforce it yet (residual).
+- SRD "A given cohort can have up to two types" is not modelled. The contract stores a single `gangType` or `expertType` string each (`contract/schemas/crew.json`). Two types need a contract change, so this is recorded and not built.
 - Armor is shown for gangs only. The SRD cohort section does not mention armor for experts; the expert card keeps "No armor". Judgement call.
 - Expert Custom appends a single "Custom" option in the UI (`expertOptions()`); the game-data fallback still lists it.
 - The Chromium probe ran on a Tier 0 crew, so derived values show `0`. The Tier-dependent values are covered by the vitest suites, not the probe.
 
 ## Hand-off
 
-- Browser gate blocked by the stale `crew-create-trackers` journey (mode-mockups' Rep/Turf scope). Needs a journey update there before `npm run test:browser` can go 6/6.
-- Sol 6.1 xhigh review of 01b60395: NOT-RUN. The Codex usage limit was reached (`usage_limit_reached`); no verdict exists. Needs a rerun before close.
+- Browser gate: six journeys 6/6 after the `crew-create-trackers` adaptation (see CREW-CLAIMS-EDIT-01).
+- Equal-count follow-up: red test `blocks Add while edges and flaws differ…` failed before implementation; green after. `crew-detail.test.ts` gang-add test now adds a matching flaw. Full vitest 1006/1006.
+- Sol 6.1 xhigh review of the follow-up: NOT-RUN (Codex usage limit). Needs a rerun before close.
 - gameMode.ts: the uncommitted Crew XP intro reorder was adopted as the CREW-XP-TRIGGERS-01 follow-up (commit `5274eb1e`), not this card.
 - Full vitest failures in `crew-claims-map.test.ts` were resolved by `mode-mockups`' commit `9a8a3812`; the full run is 998/998 on the current tree.
