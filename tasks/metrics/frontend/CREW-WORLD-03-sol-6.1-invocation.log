@@ -1,0 +1,19 @@
+{
+  "revision": "52c532e51ee853cc3cea38b660eeadf6286025d2",
+  "started": "2026-10-19T16:14:46Z",
+  "command": [
+    "omp",
+    "-p",
+    "--model=openai-codex/gpt-6.1-sol",
+    "--thinking=xhigh",
+    "--no-session",
+    "--no-lsp",
+    "--mode=json",
+    "--max-time=15m",
+    "--approval-mode=yolo",
+    "@/tmp/pitd-crew-world-03-sol-review.txt",
+    "Perform the pinned read-only CREW-WORLD-03 review and return the final verdict."
+  ],
+  "stdin": "DEVNULL",
+  "exit": 0
+}

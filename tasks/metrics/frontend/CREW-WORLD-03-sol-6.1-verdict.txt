@@ -1,0 +1,12 @@
+PASS — no blocking findings.
+
+**Immutable revision reviewed:** `52c532e51ee853cc3cea38b660eeadf6286025d2`, against base `62e31b07115c`. Inspected files and PNGs were verified byte-identical to that revision.
+
+- **Data:** Exactly twelve canonical districts, 48 stock factions, and 27 places—two or three per district. Whitecrown is classified only as a district, Tier V/strong. Summaries are distinct, non-template prose; district summaries and location descriptions carry app-authorship metadata (`data/world/doskvol.json:310–447`).
+- **Rendering and saved crews:** Native `<details>/<summary>` behavior is retained; locations render as named, described list entries with visible app-written disclosure (`frontend/src/pages/crew-sections/doskvol-world.ts:38–59`). Removing Whitecrown from the stock picker does not alter saved manual faction records.
+- **Documentation:** The register supplies official-kit and printed-page references and explicitly identifies publisher links as bibliographic. Existing attribution/licensing text remains unchanged; no new SRD/CC-BY claim is introduced.
+- **Visual evidence:** Inspected all 18 committed PNGs across nine viewport/theme combinations. Text wraps legibly; complete disclosures retain all districts and places. Numeric evidence records zero overflow, text escape, vertical clipping, or browser errors, plus successful keyboard/click disclosure operation.
+- **Recorded verification:** Logs support four initial failures, focused **10/10**, full Vitest **983/983**, successful TypeScript/build output, browser **6/6**, Chromium **9/9**, validators **188 / 231 / 17**, and Vocs **161 generated files**.
+- **Mutation scope:** None of the eighteen pinned source paths changed; no new mutation result is claimed or required.
+
+Read-only review completed. No files modified; no builds, tests, or browser checks rerun.

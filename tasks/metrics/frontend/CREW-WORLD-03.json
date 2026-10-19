@@ -3,12 +3,12 @@
   "track": "frontend + data + docs",
   "date": "2026-10-19",
   "implementationAgent": "openai-codex/gpt-6.1-sol (mode-mockups)",
-  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): requested after the implementation revision is pushed; not yet run",
+  "reviewAgent": "Sol 6.1 xhigh (openai-codex/gpt-6.1-sol): PASS on immutable 52c532e51ee853cc3cea38b660eeadf6286025d2; actual provider proof and verdict recorded",
   "iterationsToGreen": 1,
-  "wallClockMinutes": 25.36,
+  "wallClockMinutes": 33.74,
   "tokens": null,
   "passRateAtFirstDoneClaim": "Focused 10/10; full Vitest 983/983 (38 files); tsc/build exit 0; browser 6/6; Chromium 9/9; detector no findings; metrics 188 files/0 errors; traceability 231/231; audit 17/17; Vocs exit 0/161 generated files",
-  "passRateAfterReview": "Review follows the first push, as requested; no review result claimed yet",
+  "passRateAfterReview": "Sol PASS, no blocking findings or corrections; reviewed implementation retains Vitest 983/983, browser 6/6, Chromium 9/9, tsc/build exit 0, validators 188/231/17, Vocs exit 0",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectsCaughtBy": {
@@ -24,11 +24,11 @@
   ],
   "notes": "Whitecrown moved from stock factions into the twelve canonical districts (49/11 -> 48/12). Twelve original district summaries; 27 confirmed canonical locations with original app-written descriptions. Attribution unchanged. No pinned mutation target changes, so no campaign is required by the user condition and no new 28/28 is claimed.",
   "metricsMethodology": {
-    "method": "Observed command exits/counts and real Chromium DOM geometry; elapsed time measured since the red-test phase began, excluding earlier scoping.",
+    "method": "Observed command exits/counts and real Chromium DOM geometry; measured elapsed time from the red-test phase through independent-review completion, excluding earlier scoping and final publishing.",
     "source": "CREW-WORLD-03-red/focused/vitest/tsc/build/browser-journeys/chromium/detector/metrics/traceability/reconcile/vocs logs under tasks/metrics/frontend/",
     "locNote": "Changed-line totals were not measured; implementationLoc is unknown.",
     "scaffoldingLocNote": "No permanent probe or source-document copy is delivered; line totals were not measured.",
     "tokensNote": "Token accounting is unavailable; null is intentionally not a fabricated count."
   },
-  "status": "implemented; all requested pre-push gates passed; independent Sol 6.1 xhigh review follows the first push, as requested"
+  "status": "done; all requested gates passed, implementation pushed to origin and Radicle, post-push Sol PASS; final records contain the immutable revision and observed provider proof"
 }

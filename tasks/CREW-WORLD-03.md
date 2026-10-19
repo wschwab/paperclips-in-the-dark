@@ -76,6 +76,23 @@ The canonical `conformance/fixtures/mutation-catalog.json` names eighteen unique
 
 ## Review and remaining scope
 
-The requested Sol 6.1 xhigh review follows the first explicit-path commit and push, pinned to that immutable implementation revision. Its result is recorded separately with the final delivery evidence.
+**Sol 6.1 xhigh: PASS — no blocking findings.** The independent review ran after the implementation was pushed, pinned to immutable revision `52c532e51ee853cc3cea38b660eeadf6286025d2` against `62e31b07115c`. The provider response confirms `openai-codex/gpt-6.1-sol`; the invocation explicitly selects `xhigh`. The reviewer inspected all eighteen PNGs and committed evidence, requested no corrections, changed no files and reran no checks.
+
+- Verdict: `tasks/metrics/frontend/CREW-WORLD-03-sol-6.1-verdict.txt`.
+- Exact invocation: `tasks/metrics/frontend/CREW-WORLD-03-sol-6.1-invocation.log`.
+- Compact observed provider/session/final-verdict proof: `tasks/metrics/frontend/CREW-WORLD-03-sol-6.1-proof.jsonl`.
+- The oversized raw transport (duplicated tool payloads, image data and opaque reasoning signatures) is not shipped. Temporary research, rendering and probe files were removed.
+
+## Delivery
+
+The explicit-path implementation commit is `52c532e51ee853cc3cea38b660eeadf6286025d2`. Before review, `main` was moved forward from `62e31b07115c` and pushed to both mirrors:
+
+- `jj git push --remote origin`: reported `main` moving `62e31b07115c → 52c532e51ee8`, exit 0.
+- Radicle push: `62e31b07..52c532e5 main -> main`, canonical reference updated to `52c532e51ee853cc3cea38b660eeadf6286025d2`, synced with one seed, exit 0.
+- `jj git fetch --remote rad`: nothing changed; its ignored tag-refspec warning is non-blocking.
+
+The subsequent records-only commit closes this card with the actual PASS and provider proof; application/data bytes remain exactly those reviewed.
 
 There is no unresolved canonical-name question for the included 27 places. Additional locations are deliberately not guessed. The separate existing licence-confirmation, playbook-Rolodex and historical test/log questions remain in `docs/pages/backlog/setting-content-open-items.mdx`.
+
+Final review-record metrics were revalidated: **188 files, 0 errors** (`tasks/metrics/frontend/CREW-WORLD-03-metrics-final.log`). No application or data bytes changed after the reviewed implementation.
