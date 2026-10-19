@@ -1,0 +1,96 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/pages/crew-rep-turf.test.ts (4 tests | 4 failed) 18ms
+   × CREW-REP-TURF-01 > uses one tracker, reserving its rightmost boxes for total claimed plus manual turf 8ms
+     → expected '4 / 12−1+1' to contain 'Rep 4/10'
+   × CREW-REP-TURF-01 > derives box counts and manual turf bounds from supplied settings rather than six or twelve 4ms
+     → expected  to have a length of 3 but got +0
+   × CREW-REP-TURF-01 > does not invent a manual turf ceiling when game settings are unavailable 2ms
+     → expected false to be true // Object.is equality
+   × CREW-REP-TURF-01 > keeps rep destinations clickable and manual turf adjustments separate from claimed turf 3ms
+     → expected undefined to be 'SPAN' // Object.is equality
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  19:29:33
+   Duration  507ms (transform 85ms, setup 0ms, collect 226ms, tests 18ms, environment 98ms, prepare 60ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-rep-turf.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/crew-rep-turf.test.ts > CREW-REP-TURF-01 > uses one tracker, reserving its rightmost boxes for total claimed plus manual turf
+AssertionError: expected '4 / 12−1+1' to contain 'Rep 4/10'
+
+Expected: [32m"Rep 4/10"[39m
+Received: [31m"4 / 12−1+1"[39m
+
+ ❯ src/pages/crew-rep-turf.test.ts:18:58
+     16|   it("uses one tracker, reserving its rightmost boxes for total claime…
+     17|     const root = renderCrewTrackersSection(trackerState());
+     18|     expect(root.querySelector(".crew-rep")?.textContent).toContain("Re…
+       |                                                          ^
+     19|     expect(root.textContent).toContain("Turf: 2");
+     20|     expect(root.querySelector(".turf-track")).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/pages/crew-rep-turf.test.ts > CREW-REP-TURF-01 > derives box counts and manual turf bounds from supplied settings rather than six or twelve
+AssertionError: expected  to have a length of 3 but got +0
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ 0[39m
+
+ ❯ src/pages/crew-rep-turf.test.ts:35:64
+     33|     const root = renderCrewTrackersSection(state);
+     34|     expect(root.querySelectorAll(".crew-rep .stress-box")).toHaveLengt…
+     35|     expect(root.querySelectorAll('.crew-rep [data-turf="1"]')).toHaveL…
+       |                                                                ^
+     36|     expect(root.querySelector(".crew-rep")?.textContent).toContain("Re…
+     37|     expect(root.querySelector<HTMLButtonElement>('button[title="Add 1 …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/pages/crew-rep-turf.test.ts > CREW-REP-TURF-01 > does not invent a manual turf ceiling when game settings are unavailable
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/pages/crew-rep-turf.test.ts:44:91
+     42|     state.crewGameData = null;
+     43|     const root = renderCrewTrackersSection(state);
+     44|     expect(root.querySelector<HTMLButtonElement>('button[title="Add 1 …
+       |                                                                                           ^
+     45|     expect(root.querySelector<HTMLButtonElement>('button[title="Remove…
+     46|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/pages/crew-rep-turf.test.ts > CREW-REP-TURF-01 > keeps rep destinations clickable and manual turf adjustments separate from claimed turf
+AssertionError: expected undefined to be 'SPAN' // Object.is equality
+
+[32m- Expected:[39m 
+"SPAN"
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ src/pages/crew-rep-turf.test.ts:56:70
+     54|     expect(state.handlers.onRepTrack).toHaveBeenCalledWith(5);
+     55|     expect(vi.mocked(state.handlers.onTurfDelta).mock.calls).toEqual([…
+     56|     expect(root.querySelector('.crew-rep [data-turf="1"]')?.tagName).t…
+       |                                                                      ^
+     57|   });
+     58| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

@@ -1,0 +1,55 @@
+---
+title: Crew trackers and claims
+---
+
+# Crew trackers and claims
+
+## One Rep and Turf tracker
+
+**CREW-REP-TURF-01** puts Rep and Turf on the same tracker. Rep fills from the
+left; Turf reserves the rightmost boxes in red. For example, four Rep and two
+Turf on a twelve-box track read **Rep 4/10** and **Turf: 2**. The box count comes
+from the crew's `rep.max`, never a hardcoded game maximum.
+
+The **Develop** threshold uses the same effective Turf as the display. Claim
+benefits therefore count both when presenting the button and when its handler
+checks the threshold. Reserved boxes cannot be used to add Rep; they remain
+stable disabled controls so adding or removing Turf does not shift keyboard
+focus to another tracker.
+
+The separate Turf box row is removed. Manual **−1/+1 Turf** controls remain for
+territory obtained elsewhere. **Other turf** names that manual/base portion;
+**Turf** includes both it and the benefits of owned claims. The manual bound is
+loaded from the core game's `TurfMax` setting, not from the crew-type catalog or
+a guessed limit. If core settings cannot load, the app does not invent a
+ceiling; increasing manual Turf remains unavailable until the bound is known.
+
+### Existing atomic API, no additional write
+
+No new operation or contract change is needed:
+
+- `claim.set` acquires or relinquishes a claim in one revisioned, snapshot-backed
+  write. It changes `claimedClaimIds` and already supports the existing
+  `If-Match`, idempotency and undo conventions.
+- `CrewCapabilities.effectiveTurf` is the existing projection of base `crew.turf`
+  plus the owned claims' typed `derivedDelta` effects targeting `crew.turf`.
+  `developThreshold` is the corresponding Rep requirement.
+- Taking a Turf claim activates its effect; losing it removes the effect. The
+  frontend refreshes capabilities after the one claim write. It must **not**
+  send a second `turf.add`, which would double-count the benefit and introduce a
+  partial-write seam.
+- `turf.add` is only the existing manual/base counter. Claim labels do not
+  determine whether a claim supplies Turf; the settings effect does.
+
+When the capability projection is unavailable, the read-only display fallback
+uses the same claim effect structure, including sparse override inheritance.
+It never writes a compensating Turf ledger.
+
+### Rule references
+
+- [SRD: Turf, development, seizing and losing claims](https://bladesinthedark.com/faction-game)
+- [Manual territory outside the printed advancement path](https://rpg.stackexchange.com/a/165950)
+  (the cited answer was verified through Stack Exchange's public API when the
+  regular page returned HTTP 403).
+
+Implementation and acceptance record: `tasks/CREW-REP-TURF-01.md`.

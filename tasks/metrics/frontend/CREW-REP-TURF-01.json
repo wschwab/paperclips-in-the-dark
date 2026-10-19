@@ -1,0 +1,35 @@
+{
+  "task": "CREW-REP-TURF-01",
+  "track": "frontend",
+  "date": "2026-10-19",
+  "implementationAgent": "openai-codex/gpt-6.1-sol (mode-mockups)",
+  "reviewAgent": "Sol 6.1 xhigh required after frozen-tree acceptance; not yet run",
+  "iterationsToGreen": 3,
+  "wallClockMinutes": 14.5,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "No completion claimed; affected focused selection 38 passed / 65 skipped; full acceptance remains at the combined-tree boundary",
+  "passRateAfterReview": "Independent review not yet run",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 1,
+    "vitest": 3
+  },
+  "defectCatchingLayer": [
+    "human feedback",
+    "red Vitest component/handler tests",
+    "existing focus-restoration regressions"
+  ],
+  "notes": "Four initial reds plus a separately observed claimed-Turf Develop red. Existing atomic claim.set and read-only effectiveTurf projection reused; no backend/contract/op/parity change. Full gates and all mutation campaigns await a frozen combined tree. Early integration also exposed the core-settings/catalog distinction and a focus ordinal shift; both fixed.",
+  "metricsMethodology": {
+    "method": "Observed focused command results; elapsed since the first rep/turf red run. No full result claimed yet.",
+    "source": "CREW-REP-TURF-01-red/develop-red/focused/focused-green/focused-green-2 logs under tasks/metrics/frontend/",
+    "locNote": "Line totals not measured.",
+    "scaffoldingLocNote": "No permanent probe scaffold is intended; line totals not measured.",
+    "tokensNote": "Token accounting unavailable; null rather than an invented count."
+  },
+  "status": "in progress: scoped implementation focused-green; combined-tree full acceptance, independent review and mirror publication remain"
+}

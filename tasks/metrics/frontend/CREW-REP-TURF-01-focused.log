@@ -1,0 +1,222 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/pages/crew-rep-turf.test.ts (4 tests) 15ms
+ ❯ src/pages/crew-detail.test.ts (99 tests | 6 failed) 11862ms
+   ✓ crew-detail page > renders the crew name after initial load 57ms
+   ✓ crew-detail page > names linked scoundrels in the permanent-delete confirmation (UI-CREATE-01) 53ms
+   ✓ crew-detail page > shows loading state before the crew resolves 0ms
+   ✓ crew-detail page > renders a recoverable error card while keeping technical details collapsed 51ms
+   ✓ crew-detail page > onUndo > re-renders the crew on successful undo 107ms
+   ✓ crew-detail page > onUndo > shows NO_HISTORY notice when undo returns NO_HISTORY error 108ms
+   ✓ crew-detail page > onUndo > re-renders synchronously before recovery fetch when undo hits StaleRevisionError 157ms
+   ✓ crew-detail page > F2y Contacts & Factions > renders contacts with name and profession 51ms
+   ✓ crew-detail page > F2y Contacts & Factions > marks the contact add row for narrow-sheet flex sizing 51ms
+   ✓ crew-detail page > F2y Contacts & Factions > adds a contact via the add form 106ms
+   ✓ crew-detail page > F2y Contacts & Factions > removes a contact 106ms
+   ✓ crew-detail page > F2y Contacts & Factions > shows a DUPLICATE error notice when adding a duplicate contact 109ms
+   ✓ crew-detail page > F2y Contacts & Factions > renders factions with name and status 51ms
+   ✓ crew-detail page > F2y Contacts & Factions > keeps faction-entry rows shrinkable on narrow sheets (FV-014) 64ms
+   ✓ crew-detail page > F2y Contacts & Factions > keeps the contact add row shrinkable (FV-014: contact row unchanged) 54ms
+   ✓ crew-detail page > F2y Contacts & Factions > shows the applied.effective when set-status clamps 107ms
+   ✓ crew-detail page > F2y Contacts & Factions > removes a faction 108ms
+   ✓ crew-detail page > F2y Contacts & Factions > shows a NOT_FOUND error notice when removing an unknown faction 107ms
+   ✓ crew-detail page > F2y Contacts & Factions > refetches the sheet after a STALE_REVISION on contact add 109ms
+   ✓ crew-detail page > F2u Profile & Trackers > renders profile fields and trackers (rep/heat/wanted boxes, tier, hold select, coin, stash) 54ms
+   ✓ crew-detail page > F2u Profile & Trackers > edits and saves a profile field via crewFieldsUpdate 110ms
+   ✓ crew-detail page > F2u Profile & Trackers > cancels a profile edit without saving 60ms
+   ✓ crew-detail page > F2u Profile & Trackers > ENTER in a profile input saves the typed value via crewFieldsUpdate — F2aa 64ms
+   ✓ crew-detail page > F2u Profile & Trackers > TAB order in a profile edit is input → save → cancel (natural document order) — F2aa 55ms
+   ✓ crew-detail page > F2u Profile & Trackers > rep +/− and box click issue rep.add with the right delta 219ms
+   ✓ crew-detail page > F2u Profile & Trackers > heat +/− and box click issue heat.add with the right delta 163ms
+   ✓ crew-detail page > F2u Profile & Trackers > wanted +/− and box click issue wanted.add with the right delta 161ms
+   ✓ crew-detail page > F2u Profile & Trackers > tier +/− issues tier.add with the right delta 163ms
+   ✓ crew-detail page > F2u Profile & Trackers > sets hold via the contract-enum select and hold.set 106ms
+   ✓ crew-detail page > F2u Profile & Trackers > coin and stash +/− issue coin.add and stash.add 162ms
+   ✓ crew-detail page > F2u Profile & Trackers > CONTRACT-04: renders Tier in Roman numerals (0 stays 0, over-scale falls back to decimal) 205ms
+   ✓ crew-detail page > F2u Profile & Trackers > shows an op-level error notice when a tracker op fails 106ms
+   ✓ crew-detail page > F2u Profile & Trackers > refetches the sheet after a STALE_REVISION on a tracker op 107ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > renders taken abilities from DTO and the take select from game-data SpecialAbilities 52ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > gates ability removal / upgrade unmarking behind an advancement-edit mode (CREW-04) 65ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > take posts crewAbilityTake with the selected ability and renders the new entry 109ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > remove posts crewAbilityRemove with the ability name 65ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > shows an ABILITY_MAXED notice when take hits the server limit 108ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > renders upgrades from DTO with boxes/total from game data and mark/unmark buttons 56ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > mark menu lists eligible upgrades from game data and posts upgradeMark 108ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > row mark and unmark buttons post upgradeMark / upgradeUnmark 111ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > shows an UPGRADE_MAXED notice when mark hits the server limit 107ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > renders the lair chart as a compact chart view of the same upgrades data 64ms
+   ✓ crew-detail page > F2v Playbook & Upgrades > refetches the sheet after a STALE_REVISION on an ability op 107ms
+   ✓ crew-detail page > F2w Cohorts > renders cohort cards from the DTO (kind badge, type, quality/scale, armor, edges/flaws, harm, description) 52ms
+   × crew-detail page > F2w Cohorts > adds a gang cohort via the add form and posts cohort.add with only the filled fields 57ms
+     → expected [ '', 'Adepts', 'Rooks', …(3) ] to deeply equal [ '', 'Adepts', 'Rooks', …(3) ]
+   × crew-detail page > F2w Cohorts > updates quality, harm, and armor through the edit form, posting only the changed fields 59ms
+     → Cannot read properties of null (reading 'value')
+   ✓ crew-detail page > F2w Cohorts > removes a cohort via cohort.remove 109ms
+   ✓ crew-detail page > F2w Cohorts > shows a NOT_FOUND error notice when removing an unknown cohort 106ms
+   ✓ crew-detail page > F2w Cohorts > refetches the sheet after a STALE_REVISION on cohort add 109ms
+   ✓ crew-detail page > F2x Crew XP > renders the XP tracker (points/max from the DTO) and the ExperienceTrigger criteria text from crew game data 51ms
+   ✓ crew-detail page > F2x Crew XP > +/− post crewXpAdd with the right delta and clear posts crewXpClear (no body) 220ms
+   ✓ crew-detail page > F2x Crew XP > shows an op-level error notice when an XP op fails 106ms
+   ✓ crew-detail page > F2x Crew XP > refetches the sheet after a STALE_REVISION on an XP op 109ms
+   ✓ crew-detail page > F2x Crew XP > degrades gracefully when crew-type game data is unavailable (no criteria text, tracker still renders) 51ms
+   ✓ crew-detail page > F2ac Reputation dropdown > renders the reputation dropdown from game-data Reputations (the 8 values) with the current value selected 51ms
+   ✓ crew-detail page > F2ac Reputation dropdown > prefers the per-crew-type endpoint Reputations when it is available 51ms
+   ✓ crew-detail page > F2ac Reputation dropdown > saves a reputation change via crewFieldsUpdate { reputation } 106ms
+   ✓ crew-detail page > F2ac Reputation dropdown > degrades to a read-only value row when game data has no Reputations 51ms
+   × crew-detail page > F2ac Rep & Turf tracker and Develop > reserves the rightmost Rep boxes for turf and keeps manual +/− controls 52ms
+     → expected true to be false // Object.is equality
+   ✓ crew-detail page > F2ac Rep & Turf tracker and Develop > disables manual turf +/− at the settings-derived bounds 102ms
+   × crew-detail page > F2ac Rep & Turf tracker and Develop > manual turf +/− post turf.add and re-render the combined track 1108ms
+     → expected 'Turf: 1' to be 'Turf: 3' // Object.is equality
+   ✓ crew-detail page > F2ac Rep & Turf tracker and Develop > Develop with weak hold: hold.set strong + rep reset to 0 (rep.add −current) 105ms
+   ✓ crew-detail page > F2ac Rep & Turf tracker and Develop > uses claimed Turf in the Develop handler, not just in the displayed threshold 106ms
+   ✓ crew-detail page > F2ac Rep & Turf tracker and Develop > Develop with strong hold + funds: coin.add −(tier+1)*8, tier.add +1, rep reset, hold.set weak 106ms
+   ✓ crew-detail page > F2ac Rep & Turf tracker and Develop > Develop with strong hold + insufficient funds surfaces INSUFFICIENT_FUNDS and sends no ops 55ms
+   ✓ crew-detail page > F2ac Notes > renders the multi-note list and the new-note textarea 50ms
+   ✓ crew-detail page > F2ac Notes > adds a note via note.add and renders it 107ms
+   ✓ crew-detail page > F2ac Notes > removes a note by index via note.remove 108ms
+   ✓ crew-detail page > F2ac Cohort conditional dropdowns > shows the gang select only when kind=gang and the expert select only when kind=expert, with Custom revealing a text input 51ms
+   ✓ crew-detail page > F2ac Cohort conditional dropdowns > marks cohortKind as the one contract-required add-form field and does not over-gate Add 53ms
+   ✓ crew-detail page > F2ac Cohort conditional dropdowns > adds an expert cohort with a custom type (Custom → text input → expertType) 108ms
+   ✓ crew-detail page > F2ac Cohort conditional dropdowns > edit form uses the gang select and preserves a gang type that is not in the game data 110ms
+   ✓ crew-detail page > F2ac Cohort conditional dropdowns > edit form maps a custom expert type onto the Custom input and saves it 113ms
+   ✓ SC-F3 tracker clamps > disables the rep + bound control when the track is full 52ms
+   ✓ SC-F3 tracker clamps > disables the stash + bound control when stash has reached the vault capacity 51ms
+   ✓ SC-F3 tracker clamps > keeps the stash + control enabled when below vault capacity 51ms
+   ✓ SC-F3 tracker clamps > keeps the coin + control enabled even when display-advised against capacity 50ms
+   ✓ SC-F3 tracker clamps > shows a clamp notice when the server applies less than the requested rep delta 106ms
+   × FV-012 focus restoration > keeps focus on the turf add button after a successful turf add 1054ms
+     → expected 'Blades in the DarkThe Red SashesAssas…' to contain '1 / 6'
+   × FV-012 focus restoration > returns focus to the turf add button after a failed (422) turf add 1053ms
+     → expected null not to be null
+   ✓ FV-012 focus restoration > moves focus to the new contact's remove button after adding a contact 107ms
+   ✓ FV-012 focus restoration > moves focus to the next contact's remove button after deleting a contact 107ms
+   ✓ FV-012 focus restoration > moves focus to the new note's remove button after adding a note 108ms
+   ✓ FV-012 focus restoration > moves focus to the next note's remove button after deleting a middle note 108ms
+   ✓ FV-012 focus restoration > moves focus to the saved field's Edit button after a profile save 111ms
+   ✓ FV-012 focus restoration > keeps focus on the Set reputation button after saving a reputation 107ms
+   ✓ FV-012 focus restoration > keeps focus on the undo button after a successful undo 108ms
+   ✓ FV-012 focus restoration > moves focus to the next faction's remove button after deleting a faction 107ms
+   ✓ FV-012 focus restoration > moves focus to the newly taken ability's remove button 112ms
+   ✓ FV-012 focus restoration > moves focus to the next cohort's remove button after deleting a cohort 108ms
+   ✓ FV-012 focus restoration > returns focus to the add-contact button after a stale (409) refresh 106ms
+   ✓ CHAR-06 crew tracker affordances > labels every ±1 stepper with the +1/−1 convention 52ms
+   ✓ CHAR-06 crew tracker affordances > uses semantic default option text instead of -- in pickers 51ms
+   ✓ CREW-02 claim acquisition and removal gating > renders the claims map and keeps removal behind an Edit claims toggle that starts off 52ms
+   ✓ CREW-02 claim acquisition and removal gating > asks confirmation before acquiring; cancel writes nothing, accept posts ops/claim.set 64ms
+   ✓ CREW-02 claim acquisition and removal gating > strengthens the acquisition warning for a claim disconnected from the network 52ms
+   ✓ CREW-02 claim acquisition and removal gating > keeps owned cells inert outside edit mode with an explanatory hint 52ms
+   ✓ CREW-02 claim acquisition and removal gating > in edit mode, relinquishing confirms with strong wording then posts claimed:false 68ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  6 failed | 97 passed (103)
+   Start at  19:37:08
+   Duration  12.45s (transform 216ms, setup 0ms, collect 551ms, tests 11.88s, environment 186ms, prepare 120ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-rep-turf.test.ts src/pages/crew-detail.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/crew-detail.test.ts > crew-detail page > F2w Cohorts > adds a gang cohort via the add form and posts cohort.add with only the filled fields
+AssertionError: expected [ '', 'Adepts', 'Rooks', …(3) ] to deeply equal [ '', 'Adepts', 'Rooks', …(3) ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    "",[22m
+[2m    "Adepts",[22m
+[2m    "Rooks",[22m
+[2m    "Rovers",[22m
+[32m-   "Skulls",[39m
+[31m+   "Skulks",[39m
+[2m    "Thugs",[22m
+[2m  ][22m
+
+ ❯ src/pages/crew-detail.test.ts:1888:59
+    1886|       expect(gangSelect).not.toBeNull();
+    1887|       expect((gangSelect.closest(".cohort-field") as HTMLElement | nul…
+    1888|       expect([...gangSelect.options].map((o) => o.value)).toEqual([
+       |                                                           ^
+    1889|         "", "Adepts", "Rooks", "Rovers", "Skulls", "Thugs",
+    1890|       ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/pages/crew-detail.test.ts > crew-detail page > F2w Cohorts > updates quality, harm, and armor through the edit form, posting only the changed fields
+TypeError: Cannot read properties of null (reading 'value')
+ ❯ src/pages/crew-detail.test.ts:1948:27
+    1946| 
+    1947|       const qualityInput = root.querySelector('input[aria-label="Edit …
+    1948|       expect(qualityInput.value).toBe("2");
+       |                           ^
+    1949|       qualityInput.value = "3";
+    1950|       const armorInput = root.querySelector('input[aria-label="Edit ar…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/pages/crew-detail.test.ts > crew-detail page > F2ac Rep & Turf tracker and Develop > reserves the rightmost Rep boxes for turf and keeps manual +/− controls
+AssertionError: expected true to be false // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- false[39m
+[31m+ true[39m
+
+ ❯ src/pages/crew-detail.test.ts:2459:96
+    2457|       // +/− present; − enabled at turf 2
+    2458|       expect((root.querySelector('button[title="Remove 1 turf"]') as H…
+    2459|       expect((root.querySelector('button[title="Add 1 turf"]') as HTML…
+       |                                                                                                ^
+    2460|     });
+    2461| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/pages/crew-detail.test.ts > crew-detail page > F2ac Rep & Turf tracker and Develop > manual turf +/− post turf.add and re-render the combined track
+AssertionError: expected 'Turf: 1' to be 'Turf: 3' // Object.is equality
+
+Expected: [32m"Turf: [7m3[27m"[39m
+Received: [31m"Turf: [7m1[27m"[39m
+
+ ❯ src/pages/crew-detail.test.ts:2510:75
+    2508|       (root.querySelector('button[title="Add 1 turf"]') as HTMLButtonE…
+    2509|       await vi.waitFor(() => {
+    2510|         expect(root.querySelector(".crew-turf .turf-count")?.textConte…
+       |                                                                           ^
+    2511|       });
+    2512|       // caps refresh follows each successful op, so the op POST is no…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/pages/crew-detail.test.ts > FV-012 focus restoration > keeps focus on the turf add button after a successful turf add
+AssertionError: expected 'Blades in the DarkThe Red SashesAssas…' to contain '1 / 6'
+
+Expected: [32m"1 / 6"[39m
+Received: [31m"Blades in the DarkThe Red SashesAssassinsTier IHistoryProfileName: The Red Sashes✎Lair: Northside safehouse✎Hunting grounds: The Docks✎Reputation: ruthlessSetNotesUp-and-coming crew✕Add noteTrackersRep & TurfRep 3/12−1+1Turf: 0Other turf: 0−1+1Turf reserves Rep boxes from the right. Claim turf follows the map; use −/+ for turf gained elsewhere.develop at 12 rep (12 − 0 turf)DevelopHeat4 / 9−1+1Wanted1 / 4−1+1TierI−1+1HoldWeakStrongFundCoin:0 / 4−1+1Stash:2 / 4−1+1ClaimsNo claims map available for this crew type.PlaybookEdit advancementsSpecial Abilities(none)Ability+No description available.Upgrades(none)Upgrade+Lair ChartThe lair chart is a rendering of the crew type's Upgrades data (mark/unmark one box per click).Cohorts(no cohorts)Add CohortKind*gangexpertTypeGang typeAdeptsRooksRoversSkulksThugsTypeExpert typeDoctorInvestigatorOccultistAssassinSpyCustomCustom typeQuality (from Tier)1Scale (from Tier)1ArmorEdgesChoose edgeFearsomeIndependentLoyalTenaciousCustom+FlawsChoose flawPrincipledSavageUnreliableWildCustom+Description+Crew XP2 / 8−1+1clearContacts & FactionsContacts(no contacts)+FactionsStarting ally: UnrecordedStarting rival: UnrecordedStarting relationships are explicit records, independent of current status. Saving them does not spend coin or change status.Starting allyNoneStarting rivalNoneSave starting factionsStatus bounds unavailable. You can still enter an integer; the server applies the game’s bounds.StockStock faction…The Unseen (tier IV)The Hive (tier IV)The Circle of Flame (tier III)The Silver Nails (tier III)Lord Scurlock (tier III)The Crows (tier II)The Lampblacks (tier II)The Red Sashes (tier II)The Dimmer Sisters (tier II)The Grinders (tier II)The Billhooks (tier II)The Wraiths (tier II)The Gray Cloaks (tier II)Ulf Ironborn (tier I)The Fog Hounds (tier I)The Lost (tier I)Imperial Military (tier VI)City Council (tier V)Ministry of Preservation (tier V)Leviathan Hunters (tier V)Ironhook Prison (tier IV)Sparkwrights (tier IV)Spirit Wardens (tier IV)Bluecoats (tier III)Inspectors (tier III)Iruvian Consulate (tier III)Skovlan Consulate (tier III)The Brigade (tier II)Severosi Consulate (tier I)Dagger Isles Consulate (tier I)The Foundation (tier IV)Dockers (tier III)Gondoliers (tier III)Sailors (tier III)Laborers (tier III)Cabbies (tier II)Cyphers (tier II)Ink Rakes (tier II)Rail Jacks (tier II)Servants (tier II)The Church of Ecstasy (tier IV)The Horde (tier III)The Path of Echoes (tier III)The Forgotten Gods (tier III)The Reconciled (tier III)Skovlander Refugees (tier III)The Weeping Lady (tier II)Deathlands Scavengers (tier II)NameTier (optional)StatusAddNo tracked factions. Add a faction by name, then choose starting relationships from your list.Doskvol districts (12)Descriptions are written for this app. Canonical district and place names are sourced in the setting-content register.WhitecrownTier V · strong holdImperial estates and elite institutions stand behind guarded approaches, separating the city's powerful residents from ordinary street life.Doskvol Academy — An elite academy where the city's privileged students receive their education.Dusk Manor Club — Lady Dusk's club offers gambling among Whitecrown's other exclusive diversions.Spiregarden Theater — Maestro Helleren's theater brings performances and artistic patrons to Whitecrown.BrightstoneTier IV · strong holdGrand townhouses and exclusive shops shelter the city's wealthiest families, with private security keeping poverty outside their polished streets.Centuralia Club — A private club where affluent patrons gather for conversation and companionship.Silver Swan — A pleasure barge offering wealthy guests an escape from the streets.CharterhallTier IV · strong holdCourts, civic offices, banks, and a university crowd this administrative center, where official connections can matter as much as money.Charterhall University — Converted buildings house students and classrooms beneath the imposing Sparkwright Tower.Charter Wall — Artist colonies occupy the remains of the city's ancient defensive wall.Six TowersTier III · weak holdDecaying mansions mark a once-fashionable quarter, now shared by stubborn old residents, squatters, and dangers hidden in abandoned properties.House of the Weeping Lady — A religious refuge where devotees seek comfort in the service of faith.Golden Plum — Chef Roselle's restaurant offers fine food amid the district's faded grandeur.SilkshoreTier II · strong holdArtists, pleasure-seekers, and vice purveyors mingle in canal-side streets, where entertainment and illicit indulgence keep business moving.Red Lamp — Madame Tesslyn's brothel caters to visitors seeking the district's carnal pleasures.Silver Stag — Helene's casino welcomes gamblers looking to risk their coin on a fortunate evening.NightmarketTier II · strong holdNew money and foreign commerce meet around the rail station, where traders can find rare goods and discreet deals.Harping Monkey — Pux Bolin's tavern serves drinks and company in the busy trading district.The Veil — Rolan Volaris's social club gives its patrons a place to mingle away from market business.Crow's FootTier II · strong holdRival street gangs contest a dense district of tenements and canals, turning blocks and bridges into disputed territory.Crow's Nest — An ancient tower serves as headquarters for the Crows and overlooks their contested territory.Red Sash Sword Academy — An Iruvian sword school doubles as the Red Sashes' headquarters and a cover for criminal business.Leaky Bucket — Mardin Gull's public house offers drinks under the eye of a retired gang leader.The DocksTier II · strong holdLeviathan-hunter ships and ocean trade pack the waterfront, bringing sailors, cargo, and dangerous business into the same crowded streets.The North Hook Company — A long-established shipping and naval-exploration company operates a large fleet of trading vessels.Catcrawl Alley — Jewel, Bird, and Shine offer companionship among the waterfront's other diversions.BarrowcleftTier II · strong holdFarmworkers and agricultural markets support the city's food supply, with radiant energy keeping crops alive beneath the eternal night.Barrow Bridge — Homes, shops, and market stalls crowd the broad bridge connecting Barrowcleft with the city.Barrowcleft Market — Farm produce draws buyers to a market known for fair dealing and community oversight.CoalridgeTier II · weak holdSmoke and furnace glare fill this industrial quarter, where crowded factories and hard-pressed workers keep the city's machinery running.Coalridge Mine — The ancient mine still produces coal as the city increasingly turns to electroplasmic power.The Old Rail Yard — A former freight hub now handles a few heavy cargo trains among abandoned rail cars.Traven's Smoke Shop — Traven supplies intoxicating smoke to customers seeking relief from the industrial district.CharhollowTier I · strong holdWorkers and their families share crowded tenements and lively markets, where close neighborhood ties contrast with a shortage of money.Charhollow Market — A public square hosts traders selling everyday goods at prices local residents can afford.Strangford House — The powerful family's fenced hilltop estate overlooks the homes of many of its workers.DunsloughTier I · weak holdPrison labor and grinding poverty shape this neglected district, home to people the rest of the city prefers to ignore.Ironhook Prison — A looming metal fortress confines many of the city's most dangerous prisoners.Dunvil Labor Camp — Prisoners break quarried rock and load ore onto barges under harsh compulsory labor.ActionsUndo last changeDelete crew"[39m
+
+ ❯ src/pages/crew-detail.test.ts:3164:53
+    3162|     turfPlus().click();
+    3163| 
+    3164|     await vi.waitFor(() => expect(root.textContent).toContain("1 / 6")…
+       |                                                     ^
+    3165|     expect(document.activeElement).toBe(turfPlus());
+    3166|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/pages/crew-detail.test.ts > FV-012 focus restoration > returns focus to the turf add button after a failed (422) turf add
+AssertionError: expected null not to be null
+ ❯ src/pages/crew-detail.test.ts:3178:48
+    3176| 
+    3177|     await vi.waitFor(() => {
+    3178|       expect(root.querySelector(".error")).not.toBeNull();
+       |                                                ^
+    3179|     });
+    3180|     expect(document.activeElement).toBe(turfPlus());
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

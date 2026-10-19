@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/pages/crew-rep-turf.test.ts (4 tests) 17ms
+ ✓ src/pages/crew-detail.test.ts (99 tests | 65 skipped) 3897ms
+
+ Test Files  2 passed (2)
+      Tests  38 passed | 65 skipped (103)
+   Start at  19:41:21
+   Duration  4.51s (transform 219ms, setup 0ms, collect 582ms, tests 3.91s, environment 200ms, prepare 136ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-rep-turf.test.ts src/pages/crew-detail.test.ts -t CREW-REP-TURF-01|F2ac Rep & Turf|F2u Profile & Trackers|FV-012 focus

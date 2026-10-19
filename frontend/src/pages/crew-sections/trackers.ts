@@ -1,90 +1,46 @@
-/**
- * renderCrewTrackersSection (ARCH-02): Trackers (rep/turf, heat, wanted, tier, hold) section controller, extracted verbatim from
- * the crew-detail page's render pass. DOM output is unchanged.
- */
+/** Crew trackers: Rep and Turf share one settings-sized track; other counters keep their standard controls. */
 import { el } from "../../lib/dom.js";
 import { renderTracker } from "./shared.js";
 import { extractCrewClaims } from "../crew-domain.js";
-import { claimsGraph } from "../crew-domain.js";
 import { Hold } from "../../schema/common.js";
 import { formatTier } from "../crew-domain.js";
 import type { RenderState } from "../crew-detail.js";
 
+/** Prefer the server projection; the read-only fallback also honors sparse claim-effect overrides. */
+export function crewRepTurf(state: Pick<RenderState, "c" | "crewCaps" | "crewTypeData" | "crewTypesData">): { effectiveTurf: number; repThreshold: number } {
+  if (state.crewCaps) return { effectiveTurf: state.crewCaps.effectiveTurf, repThreshold: state.crewCaps.developThreshold };
+  const { c } = state;
+  const claims = extractCrewClaims(state.crewTypeData, state.crewTypesData, c.crewTypeName);
+  const nodes = claims && Array.isArray(claims.Nodes) ? claims.Nodes as Array<Record<string, unknown>> : [];
+  const owned = new Set(c.claimedClaimIds);
+  let delta = 0;
+  for (const node of nodes) {
+    if (typeof node.Id !== "string" || !owned.has(node.Id)) continue;
+    const override = c.claimOverrides.find((entry) => entry.claimId === node.Id);
+    const effects = override?.effects ?? (Array.isArray(node.Effects) ? node.Effects as Array<Record<string, unknown>> : []);
+    for (const effect of effects) {
+      if (effect.Kind === "derivedDelta" && effect.Target === "crew.turf" && typeof effect.Delta === "number" && Number.isInteger(effect.Delta)) delta += effect.Delta;
+    }
+  }
+  const effectiveTurf = c.turf + delta;
+  return { effectiveTurf, repThreshold: Math.max(0, c.rep.max - effectiveTurf) };
+}
+
 export function renderCrewTrackersSection(state: RenderState): HTMLElement {
   const { c, handlers } = state;
-  // -- Trackers (F2u / F2ac) -------------------------------------------------
-
-  // Rep & Turf (F2ac): rep fills 12 boxes left→right; turf is measured on
-  // the right of the same tracker (max 6 slots, grayed from the right) and
-  // each turf lowers the develop threshold by one (threshold = rep.max −
-  // turf, i.e. 12 − turf in the SRD). Turf slots are NOT clickable — turf
-  // changes only through crewTurfAdd (+/−). Develop applies the SRD flow:
-  // rep >= threshold → weak hold: hold.set strong + rep reset; strong hold:
-  // pay (tier+1)×8 coin, tier.add +1, rep reset, hold.set weak.
-  const repThreshold = state.crewCaps?.developThreshold ?? Math.max(0, c.rep.max - c.turf);
+  const { effectiveTurf, repThreshold } = crewRepTurf(state);
   const canDevelop = c.rep.current >= repThreshold;
-
   const repTracker = renderTracker(state, {
     className: "crew-rep",
     label: "Rep",
     current: c.rep.current,
     max: c.rep.max,
+    turf: effectiveTurf,
     isLoading: state.isRepLoading,
     onDelta: handlers.onRepDelta,
     onTrack: handlers.onRepTrack,
   });
-
-  // Effective turf is a server-computed projection (SC-F3): base turf + the
-  // claimed turf-delta effects from the claims map. The client never joins
-  // claims/settings to derive it; the local claims derivation is a graceful
-  // fallback only when the capability projection is unavailable.
-  let effectiveTurf: number;
-  if (state.crewCaps) {
-    effectiveTurf = state.crewCaps.effectiveTurf;
-  } else {
-    const claimsForEffects = extractCrewClaims(state.crewTypeData, state.crewTypesData, c.crewTypeName);
-    let delta = 0;
-    if (claimsForEffects) {
-      const g = claimsGraph(claimsForEffects);
-      const ownedSet = new Set(c.claimedClaimIds);
-      for (const n of g.nodes) {
-        if (!ownedSet.has(n.id)) continue;
-        // effects live on the PascalCase game data node
-        const raw = Array.isArray((claimsForEffects as Record<string, unknown>).Nodes)
-          ? ((claimsForEffects as Record<string, unknown>).Nodes as Array<Record<string, unknown>>).find((x) => x.Id === n.id)
-          : undefined;
-        const effects = raw && Array.isArray(raw.Effects) ? (raw.Effects as Array<Record<string, unknown>>) : [];
-        for (const fx of effects) {
-          if (fx.Kind === "derivedDelta" && fx.Target === "crew.turf" && typeof fx.Delta === "number") {
-            delta += fx.Delta;
-          }
-        }
-      }
-    }
-    effectiveTurf = c.turf + delta;
-  }
-
-  // Turf row: 6 slots, filled from the left per turf count, grayed from the
-  // right — a rendering, not a button track.
-  const turfRow = el(
-    "div",
-    {
-      className: "turf-track",
-      role: "group",
-      "aria-label": `Turf: ${c.turf} of 6`,
-      style: "display: inline-flex; gap: 6px; padding: 6px;",
-    },
-    ...Array.from({ length: 6 }, (_, i) => {
-      const filled = i + 1 <= c.turf;
-      return el("span", {
-        className: "turf-slot",
-        "data-stress": filled ? "1" : "0",
-        "data-index": String(i + 1),
-        "aria-label": `Turf slot ${i + 1}`,
-        title: filled ? "Turf held" : "No turf",
-      });
-    }),
-  );
+  const turfMax = state.manualTurfMax;
   const turfMinusBtn = el("button", {
     type: "button",
     disabled: state.anyLoading || c.turf <= 0,
@@ -93,7 +49,7 @@ export function renderCrewTrackersSection(state: RenderState): HTMLElement {
   turfMinusBtn.addEventListener("click", () => handlers.onTurfDelta(-1));
   const turfPlusBtn = el("button", {
     type: "button",
-    disabled: state.anyLoading || c.turf >= 6,
+    disabled: state.anyLoading || turfMax === null || c.turf >= turfMax,
     title: "Add 1 turf",
   }, state.isTurfLoading ? "…" : "+1");
   turfPlusBtn.addEventListener("click", () => handlers.onTurfDelta(1));
@@ -175,23 +131,18 @@ return el(
       el("h3", { className: "lbl" }, "Rep & Turf"),
       repTracker,
       el("div", { className: "crew-turf", style: "margin: 0.6em 0;" },
-        el("div", { style: "display: flex; gap: 1em; align-items: center; flex-wrap: wrap;" },
-          turfRow,
-          el("span", { className: "turf-count" }, `${c.turf} / 6`),
-          effectiveTurf > c.turf
-            ? el("span", { className: "lbl", style: "font-size: 0.85em;" },
-                `effective ${effectiveTurf} / 6 (claims add ${effectiveTurf - c.turf})`,
-              )
-            : null,
+        el("div", { style: "display: flex; gap: 0.75em; align-items: center; flex-wrap: wrap;" },
+          el("span", { className: "turf-count" }, `Turf: ${effectiveTurf}`),
+          el("span", { className: "manual-turf-count lbl" }, `Other turf: ${c.turf}`),
           turfMinusBtn,
           turfPlusBtn,
         ),
         el("p", { className: "rules-note", style: "margin-top: 0.35em;" },
-          "Turf is measured from the right: each turf lowers the rep develop threshold by one.",
+          "Turf reserves Rep boxes from the right. Claim turf follows the map; use −/+ for turf gained elsewhere.",
         ),
       ),
       el("div", { className: "crew-develop", style: "display: flex; gap: 0.75em; align-items: center; margin: 0.6em 0;" },
-        el("span", { className: "develop-threshold" }, `develop at ${repThreshold} rep (${c.rep.max} − ${c.turf} turf)`),
+        el("span", { className: "develop-threshold" }, `develop at ${repThreshold} rep (${c.rep.max} − ${effectiveTurf} turf)`),
         developBtn,
       ),
       el("h3", { className: "lbl", style: "margin-top: 0.75em;" }, "Heat"),

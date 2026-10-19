@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock, type MockInstance } from "vitest";
 import { mountCrewDetailPage as mountCrewDetailPageImpl } from "./crew-detail.js";
 import { loadStylesheets } from "./seam.js";
+import gameSettings from "../../../data/games/blades-in-the-dark.json";
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -72,7 +73,7 @@ function mountCrewDetailPage(root: HTMLElement, crewId: string): () => void {
   const queuedFetch = global.fetch;
   global.fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     if (String(input) === "/api/games/blades-in-the-dark") {
-      return Promise.resolve(ok({}) as Response);
+      return Promise.resolve(ok({ TurfMax: gameSettings.TurfMax }) as Response);
     }
     return queuedFetch(input, init);
   });
@@ -749,9 +750,9 @@ describe("crew-detail page", () => {
         expect(root.querySelectorAll(".crew-wanted .stress-box").length).toBe(4);
         // Rep boxes filled per current
         expect(root.querySelectorAll('.crew-rep [data-stress="1"]').length).toBe(3);
-        // Turf row: 6 slots, filled from the left per turf count (0 here)
-        expect(root.querySelectorAll(".crew-turf .turf-slot").length).toBe(6);
-        expect(root.querySelectorAll('.crew-turf .turf-slot[data-stress="1"]').length).toBe(0);
+        // Turf reserves boxes in the same Rep tracker; there is no separate track.
+        expect(root.querySelector(".turf-track")).toBeNull();
+        expect(root.querySelectorAll('.crew-rep [data-turf="1"]').length).toBe(0);
         // Threshold readout: develop at rep.max − turf = 12 − 0
         expect(root.textContent).toContain("develop at 12 rep (12 − 0 turf)");
         // Develop disabled below threshold (rep 3 < 12)
@@ -2431,24 +2432,24 @@ describe("crew-detail page", () => {
       error: null,
     });
 
-    it("renders the 6-slot turf row filled from the left (grayed from the right) with +/− controls", async () => {
+    it("reserves the rightmost Rep boxes for turf and keeps manual +/− controls", async () => {
       global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ turf: 2 })));
 
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelectorAll(".crew-turf .turf-slot").length).toBe(6);
+        expect(root.querySelectorAll('.crew-rep [data-turf="1"]').length).toBe(2);
       });
 
-      const slots = root.querySelectorAll<HTMLElement>(".crew-turf .turf-slot");
-      expect(slots.length).toBe(6);
+      const slots = root.querySelectorAll<HTMLElement>(".crew-rep .stress-box");
+      expect(slots.length).toBe(12);
       expect(slots[0]?.getAttribute("data-stress")).toBe("1");
-      expect(slots[1]?.getAttribute("data-stress")).toBe("1");
-      expect(slots[2]?.getAttribute("data-stress")).toBe("0");
-      expect(slots[5]?.getAttribute("data-stress")).toBe("0");
-      expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 2 of 6");
-      // turf slots are NOT buttons (no box-click rep path)
-      expect(root.querySelectorAll(".crew-turf button.turf-slot").length).toBe(0);
+      expect(slots[9]?.getAttribute("data-stress")).toBe("0");
+      expect(slots[10]?.getAttribute("data-turf")).toBe("1");
+      expect(slots[11]?.getAttribute("data-turf")).toBe("1");
+      expect(root.querySelector(".crew-turf .turf-count")?.textContent).toBe("Turf: 2");
+      expect(root.querySelectorAll('.crew-rep button[data-turf="1"]:not(:disabled)').length).toBe(0);
+      expect(root.querySelector(".turf-track")).toBeNull();
       // threshold readout: 12 − 2 turf = 10
       expect(root.querySelector(".develop-threshold")?.textContent).toContain("develop at 10 rep (12 − 2 turf)");
       // Develop enabled at rep 3 >= ... no: rep 3 < 10 → disabled
@@ -2458,7 +2459,7 @@ describe("crew-detail page", () => {
       expect((root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement).disabled).toBe(false);
     });
 
-    it("disables turf +/− at the 0..6 bounds", async () => {
+    it("disables manual turf +/− at the settings-derived bounds", async () => {
       global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ turf: 0 })));
       mountCrewDetailPage(root, CREW_ID);
       await vi.waitFor(() => {
@@ -2466,16 +2467,16 @@ describe("crew-detail page", () => {
       });
       expect((root.querySelector('button[title="Remove 1 turf"]') as HTMLButtonElement).disabled).toBe(true);
 
-      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ turf: 6 })));
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ turf: gameSettings.TurfMax })));
       mountCrewDetailPage(root, CREW_ID);
       await vi.waitFor(() => {
         expect(root.querySelector('button[title="Add 1 turf"]')).not.toBeNull();
       });
       expect((root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement).disabled).toBe(true);
-      expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 6 of 6");
+      expect(root.querySelector(".crew-turf .turf-count")?.textContent).toBe(`Turf: ${gameSettings.TurfMax}`);
     });
 
-    it("turf +/− post turf.add with the right delta and re-render the turf row", async () => {
+    it("manual turf +/− post turf.add and re-render the combined track", async () => {
       const lower = crewDTO({ revision: 6, turf: 1 });
       const raised = crewDTO({ revision: 7, turf: 3 });
 
@@ -2492,12 +2493,12 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 2 of 6");
+        expect(root.querySelector(".crew-turf .turf-count")?.textContent).toBe("Turf: 2");
       });
 
       (root.querySelector('button[title="Remove 1 turf"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 1 of 6");
+        expect(root.querySelector(".crew-turf .turf-count")?.textContent).toBe("Turf: 1");
       });
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/turf.add`,
@@ -2506,7 +2507,7 @@ describe("crew-detail page", () => {
 
       (root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
-        expect(root.querySelector(".crew-turf .turf-track")?.getAttribute("aria-label")).toContain("Turf: 3 of 6");
+        expect(root.querySelector(".crew-turf .turf-count")?.textContent).toBe("Turf: 3");
       });
       // caps refresh follows each successful op, so the op POST is no longer the last call
       expect(global.fetch).toHaveBeenCalledWith(
@@ -2552,6 +2553,32 @@ describe("crew-detail page", () => {
         `/api/crews/${CREW_ID}/ops/rep.add`,
         expect.objectContaining({ body: JSON.stringify({ delta: -12 }) }),
       );
+    });
+
+    it("uses claimed Turf in the Develop handler, not just in the displayed threshold", async () => {
+      let crew = crewDTO({ hold: "weak", turf: 0, claimedClaimIds: ["turf-a", "turf-b"], rep: { current: 10, max: 12 } });
+      global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        if (path.endsWith("/capabilities")) return ok({ crewId: CREW_ID, upgrades: [], abilities: [], effectiveTurf: 2, developThreshold: 10, tierMax: 4 });
+        if (path.endsWith("/ops/hold.set") && init?.method === "POST") {
+          crew = { ...crew, hold: "strong", revision: 6 };
+          return ok(crewOpOk(crew, "hold.set"));
+        }
+        if (path.endsWith("/ops/rep.add") && init?.method === "POST") {
+          crew = { ...crew, rep: { current: 0, max: 12 }, revision: 7 };
+          return ok(crewOpOk(crew, "rep.add"));
+        }
+        return ok(path === `/api/crews/${CREW_ID}` ? crew : {});
+      });
+      const dispose = mountCrewDetailPage(root, CREW_ID);
+      try {
+        await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>('button[title^="Develop"]')?.disabled).toBe(false));
+        root.querySelector<HTMLButtonElement>('button[title^="Develop"]')!.click();
+        await vi.waitFor(() => expect(global.fetch).toHaveBeenCalledWith(
+          `/api/crews/${CREW_ID}/ops/hold.set`, expect.objectContaining({ body: JSON.stringify({ hold: "strong" }) }),
+        ));
+        await vi.waitFor(() => expect(root.querySelector(".crew-rep")?.textContent).toContain("Rep 0/10"));
+      } finally { dispose(); }
     });
 
     it("Develop with strong hold + funds: coin.add −(tier+1)*8, tier.add +1, rep reset, hold.set weak", async () => {
@@ -3134,7 +3161,7 @@ describe("FV-012 focus restoration", () => {
     turfPlus().focus();
     turfPlus().click();
 
-    await vi.waitFor(() => expect(root.textContent).toContain("1 / 6"));
+    await vi.waitFor(() => expect(root.querySelector(".turf-count")?.textContent).toBe("Turf: 1"));
     expect(document.activeElement).toBe(turfPlus());
   });
 

@@ -54,7 +54,7 @@ import {
 import type { CrewField } from "./crew-domain.js";
 import { renderCrewProfileSection } from "./crew-sections/profile.js";
 import { renderCrewNotesSection } from "./crew-sections/notes.js";
-import { renderCrewTrackersSection } from "./crew-sections/trackers.js";
+import { crewRepTurf, renderCrewTrackersSection } from "./crew-sections/trackers.js";
 import { renderCrewFundSection } from "./crew-sections/fund.js";
 import { renderCrewClaimsSection } from "./crew-sections/claims.js";
 import { renderCrewPlaybookSection } from "./crew-sections/playbook.js";
@@ -86,6 +86,8 @@ export interface RenderState {
   crewTypeData: Record<string, unknown> | null;
   crewTypesData: readonly Record<string, unknown>[] | null;
   crewGameData: Record<string, unknown> | null;
+  /** Core-game TurfMax for the manual counter; never guessed from the crew catalog. */
+  manualTurfMax: number | null;
   /** Server-computed crew capability projection (SC-F3); null until loaded or on fetch failure. */
   crewCaps: CrewCapabilities | null;
   isUndoLoading: boolean;
@@ -278,6 +280,7 @@ export function mountCrewDetailPage(
   let crewTypeData: Record<string, unknown> | null = null;
   let crewTypesData: readonly Record<string, unknown>[] | null = null;
   let crewGameData: Record<string, unknown> | null = null;
+  let manualTurfMax: number | null = null;
   let crewCaps: CrewCapabilities | null = null;
   let factionBounds: { min: number; max: number } | null = null;
   const factionDrafts: FactionDrafts = {
@@ -466,6 +469,7 @@ export function mountCrewDetailPage(
       crewTypeData,
       crewTypesData,
       crewGameData,
+      manualTurfMax,
       crewCaps,
       editingProfile,
       claimsEditMode,
@@ -764,7 +768,7 @@ export function mountCrewDetailPage(
     onDevelop: () => {
       if (!currentCrew || isDevelopLoading) return;
       const crew = currentCrew;
-      const threshold = crew.rep.max - crew.turf;
+      const { repThreshold: threshold } = crewRepTurf({ c: crew, crewCaps, crewTypeData, crewTypesData });
       if (crew.rep.current < threshold) return;
 
       if (crew.hold === "weak") {
@@ -1132,6 +1136,8 @@ export function mountCrewDetailPage(
           root.setAttribute("aria-busy", "false");
           currentCrew = crew;
           if (coreGame._tag === "Right") {
+            const turfLimit = coreGame.right.TurfMax;
+            manualTurfMax = typeof turfLimit === "number" && Number.isSafeInteger(turfLimit) && turfLimit >= 0 ? turfLimit : null;
             const range = coreGame.right.FactionStatus;
             if (typeof range === "object" && range !== null && !Array.isArray(range)) {
               const { Min, Max } = range as Record<string, unknown>;
