@@ -24,3 +24,10 @@ Playtest feedback: the Resolution crew XP step should show all four SRD crew XP 
 ## Residual
 
 - At 390px the full list does not fit the initial view. Card height is unchanged, per the product decision. Triggers two to four are reached by scrolling the card.
+
+## Follow-up: list-first order
+
+- The committed fix (713bc772) left the intro, lead-in and max note between the heading and the list. The working copy that the 390 evidence above was measured on moved the list directly under the heading; the intro paragraphs follow it. This follow-up commit records that order in `frontend/src/pages/character-sections/gameMode.ts`.
+- `game-mode-sheet.test.ts` and `crew-advancement.test.ts`: 83/83 with the order in place.
+- Probe rerun (`agent-docs/test-audit/browser-evidence/crew-xp-triggers-01/probe.mjs`, log `tasks/metrics/frontend/CREW-XP-TRIGGERS-01-followup-chromium.log`): 390×844 heading at 258px, first trigger at 293px of a 470px card. The first trigger's line runs past the card's bottom edge (`inCard: false` for all four, from the probe's full-box test), so it is partly visible in the initial view. Triggers two to four still need the card scrolled.
+- Not measured: the committed (pre-follow-up) order at 390px. No red test locks the list-before-intro order; the existing test checks only list-before-editor.
