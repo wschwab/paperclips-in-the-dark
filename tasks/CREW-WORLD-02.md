@@ -56,7 +56,7 @@ The aside used an explicit `grid-row: 3`. That overlapped the crews block below
 moving the explicit row into a `min-width: 840px` rule, so the single-column flow
 places the aside last. The Chromium check caught it before commit.
 
-## Pending
+## Mutation and review
 
-- Mutation campaign 28/28 with refreshed pins.
-- Sol 6.1 xhigh review pinned to the revision range.
+- Mutation campaign 28/28: P0 19/19, P1 9/9 (`tasks/metrics/contract/CREW-WORLD-02-mutation-combined.log`). Pins refreshed in `c2f6116c` only where they matched the pre-change bytes at `d4a2ac4f`.
+- Sol 6.1 xhigh review pinned to `d4a2ac4f7a82..c2f6116c`: see the verdict record and metrics.
