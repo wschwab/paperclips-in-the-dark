@@ -32,3 +32,10 @@ After implementation, the three new guards and both existing torn-seam layout gu
 ## Acceptance boundary
 
 The frozen-tree Chromium 3×3 check must include 1440×1000 with **map.scrollWidth === map.clientWidth**, and 768/390 containment plus bounded map panning in light, dark and high contrast. Full frontend/browser/validators/Vocs, refreshed mutation pins and **28/28**, and a pinned Sol 6.1 xhigh verdict are recorded at the combined-tree acceptance boundary before delivery. No full result is claimed at this scoped implementation commit.
+
+## Frozen-tree acceptance (takeover, tree `e360683e`)
+
+- Chromium probe (`agent-docs/test-audit/browser-evidence/crew-claims-edit-01/probe.mjs`, log `tasks/metrics/frontend/CREW-CLAIMS-EDIT-01-chromium.log`): at 1440×1000, `map.scrollWidth === map.clientWidth` and the document fits. At 768 both fit. At 390 the map pans inside its bounded container (`scrollWidth > clientWidth`), as designed.
+- Vitest 1006/1006; `tsc` clean; `vite build` green; browser 6/6 PASS; validators PASS; Vocs build 163 files.
+- Mutation campaign 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`).
+- Sol 6.1 xhigh: **NOT-RUN** (Codex `usage_limit_reached`). The user will run it when quota resets.

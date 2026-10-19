@@ -31,3 +31,10 @@ Playtest feedback: the Resolution crew XP step should show all four SRD crew XP 
 - `game-mode-sheet.test.ts` and `crew-advancement.test.ts`: 83/83 with the order in place.
 - Probe rerun (`agent-docs/test-audit/browser-evidence/crew-xp-triggers-01/probe.mjs`, log `tasks/metrics/frontend/CREW-XP-TRIGGERS-01-followup-chromium.log`): 390×844 heading at 258px, first trigger at 293px of a 470px card. The first trigger's line runs past the card's bottom edge (`inCard: false` for all four, from the probe's full-box test), so it is partly visible in the initial view. Triggers two to four still need the card scrolled.
 - Not measured: the committed (pre-follow-up) order at 390px. No red test locks the list-before-intro order; the existing test checks only list-before-editor.
+
+## Frozen-tree acceptance (takeover, tree `e360683e`)
+
+- Vitest 1006/1006; `tsc` clean; `vite build` green; browser 6/6 PASS; validators PASS; Vocs build 163 files.
+- Mutation campaign 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`).
+- The 390px first-trigger partial visibility above is unchanged by this acceptance; it is recorded for the user, not a blocker.
+- Sol 6.1 xhigh: **NOT-RUN** (Codex `usage_limit_reached`). The user will run it when quota resets.

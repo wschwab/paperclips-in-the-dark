@@ -57,3 +57,8 @@ outputs:
 ## Sol review
 
 NOT-RUN. The codex quota returned `usage_limit_reached`. The user will run Sol 6.1 xhigh when it resets.
+
+## Frozen-tree acceptance (takeover, tree `e360683e`)
+
+- Vitest 1006/1006; `tsc` clean; `vite build` green; browser 6/6 PASS; validators PASS; Vocs build 163 files; mutation 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`). Ada two-cycle not re-run (no backend change in this takeover).
+- Sol 6.1 xhigh: **NOT-RUN** (already recorded above).

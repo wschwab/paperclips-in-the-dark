@@ -40,3 +40,11 @@ Rules and API explanation: `docs/pages/contract/crew-trackers-and-claims.mdx`. S
 The concurrent worker owns cohort and crew-XP changes. Its expected legacy cohort test changes are separate from this card. The focused implementation is committed separately before releasing `crew-detail.ts` for that worker's scoped cohort-handler integration.
 
 Full Vitest/TypeScript/build/browser, Chromium 3×3, validators/Vocs, the pinned Sol 6.1 xhigh review, and mutation 28/28 are recorded at the frozen combined-tree acceptance boundary, before this card is delivered complete. All mutation campaigns are owned by this worker; none runs while the other worker edits pinned targets. No full gate or mutation result is claimed yet.
+
+## Frozen-tree acceptance (takeover, tree `e360683e`)
+
+- Vitest 1006/1006 (42 files); `tsc --noEmit` clean; `vite build` green. Browser suite 6/6 PASS (log in the takeover session; the `crew-create-trackers` rep/turf step now uses `Add 1 turf` and `.stress-box[data-turf="1"]`).
+- Validators PASS (metrics, finding traceability, reconcile); Vocs build 163 files.
+- Chromium 3×3 for Rep/Turf was **not re-run** in this takeover. The claims-map probe (1440/768/390) ran, see CREW-CLAIMS-EDIT-01.
+- Mutation campaign 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`). Five stale pins refreshed in `e360683e`.
+- Sol 6.1 xhigh: **NOT-RUN** (Codex `usage_limit_reached`). The user will run it when quota resets.
