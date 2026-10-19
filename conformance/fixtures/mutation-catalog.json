@@ -303,7 +303,7 @@
       "mutation": "Reduce the action-dot width/height below the contracted target size",
       "observableFailure": "action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "523774e1d1267be0cc0f2a7832927527664a4aa0569be723f461a6d6f79c4fad"
+        "frontend/src/styles/components.css": "091a51783536159d3f92b19b03b932967cb7271ecda862cca347dc200f875482"
       },
       "severity": "P1",
       "status": "not-run",
@@ -407,7 +407,7 @@
       "mutation": "Degraded rows hidden by filtering: the degraded filter flips to row.isReadable, emptying the recovery lane",
       "observableFailure": "unreadable/unreadable-but-repairable rows vanish from the roster, so their delete/repair recovery path becomes unreachable (the O-ROSTER trap E11 exists to prevent)",
       "restorationHash": {
-        "frontend/src/pages/roster.ts": "0e12dc7406b0645fe788e4a78ae31fb49fe1cfe14da8f1f04de16c8d1e8d2cef"
+        "frontend/src/pages/roster.ts": "87f46bc9467aac7de00edf0c2b7438d17b7aafc4187306ba5816ede7899ce872"
       },
       "severity": "P0",
       "status": "not-run",
@@ -426,7 +426,7 @@
       "mutation": "Unbounded roster rendering removed: ROSTER_PAGE_SIZE becomes Number.POSITIVE_INFINITY",
       "observableFailure": "the initial render maps the full readable set into the DOM, blowing the committed node budget and breaking pagination, focus, and status-region progress",
       "restorationHash": {
-        "frontend/src/pages/roster.ts": "0e12dc7406b0645fe788e4a78ae31fb49fe1cfe14da8f1f04de16c8d1e8d2cef"
+        "frontend/src/pages/roster.ts": "87f46bc9467aac7de00edf0c2b7438d17b7aafc4187306ba5816ede7899ce872"
       },
       "severity": "P1",
       "status": "not-run",
