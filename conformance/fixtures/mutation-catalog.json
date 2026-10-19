@@ -303,7 +303,7 @@
       "mutation": "Reduce the action-dot width/height below the contracted target size",
       "observableFailure": "action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "54de93114b131afb8dedfcf8a450302bbeb44a07b1ad516adc137d7909a3040e"
+        "frontend/src/styles/components.css": "887fe18c7aa70d93c6a0fbb100eaf7e3b321fa6ff1690f6acb6ab247ace0e114"
       },
       "severity": "P1",
       "status": "not-run",

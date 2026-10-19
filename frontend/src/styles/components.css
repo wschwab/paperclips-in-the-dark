@@ -133,6 +133,26 @@
   cursor: default;
   opacity: 1;
 }
+/* Rep track: 12 boxes on one row when the card has room, else 6 + 6 (CREW-REP-TURF-01). */
+.crew-rep {
+  container-type: inline-size;
+}
+.crew-rep .stress-track {
+  display: grid;
+  flex: 1 0 100%;
+  min-width: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.crew-rep .stress-box {
+  width: auto;
+  height: auto;
+  aspect-ratio: 1;
+}
+@container (min-width: 430px) {
+  .crew-rep .stress-track {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+}
 .stress-label {
   margin-top: 6px;
   text-align: center;
@@ -1218,6 +1238,20 @@
   flex-direction: column;
   gap: 3px;
   font: inherit;
+}
+.cohort-field[hidden] {
+  display: none;
+}
+.cohort-trait-controls {
+  display: inline-flex;
+  gap: 0.35em;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.cohort-add .cohort-add-submit {
+  /* the Add button sits at the end of the form row, whatever wraps before it */
+  margin-left: auto;
+  align-self: flex-end;
 }
 .cohort-field input[type="checkbox"] {
   align-self: flex-start;

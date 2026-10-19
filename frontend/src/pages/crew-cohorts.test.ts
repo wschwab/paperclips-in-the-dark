@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 // CREW-COHORTS-01: cohort editor against SRD rules (cohorts section of the crew SRD).
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
 import { mountCrewDetailPage as mountCrewDetailPageImpl } from "./crew-detail.js";
 
 const CREW_ID = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
@@ -166,5 +167,23 @@ describe("CREW-COHORTS-01 cohort editor", () => {
     pick("Cohort flaw", "Savage", "Add flaw");
     expect(addBtn.disabled).toBe(false);
     expect(warning.hidden).toBe(true);
+  });
+
+  it("initial gang render under the real stylesheet: expert type and custom fields are not displayed", async () => {
+    const style = document.createElement("style");
+    style.textContent = readFileSync("src/styles/components.css", "utf8");
+    document.head.append(style);
+    const root = await openAddForm(crewDTO());
+    document.body.append(root); // computed style only cascades for attached nodes
+    try {
+      const displayed = (sel: string) =>
+        getComputedStyle((root.querySelector(sel) as HTMLElement).closest(".cohort-field") as HTMLElement).display !== "none";
+      expect(displayed('select[aria-label="Cohort gang type"]')).toBe(true);
+      expect(displayed('select[aria-label="Cohort expert type"]')).toBe(false);
+      expect(displayed('input[aria-label="Cohort expert custom type"]')).toBe(false);
+    } finally {
+      root.remove();
+      style.remove();
+    }
   });
 });

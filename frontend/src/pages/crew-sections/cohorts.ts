@@ -101,7 +101,7 @@ function traitPicker(
   const element = el(
     "span",
     { className: "cohort-trait-picker", style: "display: inline-flex; flex-direction: column; gap: 0.25em;" },
-    el("span", { style: "display: inline-flex; gap: 0.35em; flex-wrap: wrap; align-items: center;" }, select, customInput, addBtn),
+    el("span", { className: "cohort-trait-controls" }, select, customInput, addBtn),
     hint,
     chips,
   );
@@ -384,6 +384,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   });
   const addCohortBtn = el("button", {
     type: "button",
+    className: "cohort-add-submit",
     disabled: state.anyLoading,
     title: "Add cohort",
   }, state.isCohortLoading ? "…" : "+");
