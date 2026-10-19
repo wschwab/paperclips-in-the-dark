@@ -97,9 +97,11 @@ Open. Each item has a card; none is claimed done here.
   kinds can be named; the description is a longer textarea.
 - **Claims map — `CREW-CLAIMS-MAP-01`.** The map spans both columns and needs no
   scroll.
-- **Crew XP triggers — `CREW-XP-TRIGGERS-01`.** The Resolution XP step shows all
-  four SRD crew XP triggers, keeping the crew-type autoload. The earlier
-  `CREW-XP-INFO-01` missed three of them.
+- **Crew XP triggers — `CREW-XP-TRIGGERS-01`.** The Resolution crew XP step renders
+  all four SRD crew XP triggers (verified in the DOM and at 1440px). At 768px and
+  390px the triggers sat below the fold; they now come first in the step, but at
+  390px they still start below the card's first screen, so the card must be
+  scrolled. A product decision on narrow-screen card height is open.
 - **Claim editing — `CREW-CLAIMS-EDIT-01`.** Remove rename; click to claim out of
   sequence with a confirmation; "Edit claim" rewrites the claim.
 

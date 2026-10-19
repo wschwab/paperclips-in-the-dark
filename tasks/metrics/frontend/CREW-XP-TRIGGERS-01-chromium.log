@@ -1,0 +1,7 @@
+CREW-XP-TRIGGERS-01 Chromium probe (managed launcher, default theme, Resolution -> crew-xp)
+probe: agent-docs/test-audit/browser-evidence/crew-xp-triggers-01/probe.mjs
+result: agent-docs/test-audit/browser-evidence/crew-xp-triggers-01/probe.json
+
+width 1440 height 1000: card clientHeight 964, headingTop 182, firstTop 217, all 4 triggers inCard=true, wheelScrolls=true
+width 768  height 1024: card clientHeight 578, headingTop 182, firstTop 217, all 4 triggers inCard=true, wheelScrolls=true
+width 390  height 844:  card clientHeight 470, headingTop 258, firstTop 293, triggers inCard=false (heading and first trigger line visible; items 2-4 require card scroll), wheelScrolls=true
