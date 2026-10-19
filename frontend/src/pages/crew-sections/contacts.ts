@@ -1,6 +1,7 @@
 /** Contacts and user-entered faction records; no setting catalogue is bundled. */
 import { el } from "../../lib/dom.js";
 import type { RenderState } from "../crew-detail.js";
+import { doskvolDistrictsDisclosure, stockFactionPicker } from "./doskvol-world.js";
 
 export function renderCrewContactsSection(state: RenderState): HTMLElement {
   const { c, handlers } = state;
@@ -109,6 +110,12 @@ export function renderCrewContactsSection(state: RenderState): HTMLElement {
   }
   const addFactionBtn = el("button", { type: "button", title: "Add faction", disabled: state.anyLoading }, state.isFactionLoading ? "Saving…" : "Add");
   addFactionBtn.addEventListener("click", () => submitFaction(nameInput.value, tierInput.value, statusInput.value, true));
+  const stockPicker = stockFactionPicker((f) => {
+    nameInput.value = f.name;
+    tierInput.value = String(f.tier);
+    drafts.add.name = f.name;
+    drafts.add.tier = String(f.tier);
+  }, state.anyLoading);
   const starting = drafts.starting ?? { ally: c.startingFactions?.ally ?? "", rival: c.startingFactions?.rival ?? "" };
   const startingPickers = (["ally", "rival"] as const).map((role) => {
     const select = el("select", { "aria-label": `Starting ${role}`, disabled: state.anyLoading },
@@ -164,6 +171,7 @@ return el(
         ? `Status range: ${state.factionBounds.min} to ${state.factionBounds.max}. The server applies these bounds.`
         : "Status bounds unavailable. You can still enter an integer; the server applies the game’s bounds."),
       el("div", { className: "faction-add-row" },
+        el("label", { className: "faction-field faction-stock-field" }, "Stock", stockPicker),
         el("label", { className: "faction-field faction-name-field" }, "Name", nameInput),
         el("label", { className: "faction-field" }, "Tier (optional)", tierInput),
         el("label", { className: "faction-field" }, "Status", statusInput),
@@ -173,5 +181,6 @@ return el(
       factions.length === 0
         ? el("p", { className: "empty" }, "No tracked factions. Add a faction by name, then choose starting relationships from your list.")
         : el("div", { className: "faction-list" }, ...factionEntries),
+      doskvolDistrictsDisclosure(),
     );
 }

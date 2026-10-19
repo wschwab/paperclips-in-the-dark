@@ -10,6 +10,7 @@ import type { EntityKind } from "../api/import-repair.js";
 import type { Roster, CharacterSummary, CrewSummary } from "../schema/campaign.js";
 import { renderDegradedRow, NOUN } from "./roster-recovery.js";
 import { mountImportPage } from "./import.js";
+import { renderAboutLicence } from "./about-licence.js";
 
 
 // RECOVERY-01: per-row Character/Crew Import links are gone — general import
@@ -440,6 +441,7 @@ function renderRoster(roster: Roster, onChanged: () => void): HTMLElement {
       crewPlate.noteEl,
       crewPlate.moreBtn,
     ),
+    renderAboutLicence(),
   );
 }
 

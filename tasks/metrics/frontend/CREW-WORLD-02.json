@@ -1,0 +1,34 @@
+{
+  "task": "CREW-WORLD-02",
+  "track": "frontend + data + docs",
+  "date": "2026-10-19",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp, single session)",
+  "reviewAgent": "pending: Sol 6.1 xhigh review pinned to the revision range",
+  "iterationsToGreen": 2,
+  "iterationNotes": "First Chromium run failed 6 of 9 rows. The aside's explicit grid-row 3 overlapped the crews block below 840px. The second run still failed because the base rule was cascaded after the media rule. The third run passed 9/9.",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 0,
+    "review": 0,
+    "human": 0,
+    "chromiumProbe": 1
+  },
+  "notes": "Scope is the human-approved fan-project decision, not an SRD grant. The 49/11 split is provisional. District summaries are app-written. No locations are sourced.",
+  "metricsMethodology": {
+    "method": "not measured: wall-clock and token counts were not recorded",
+    "source": "vitest 979/979 (37 files), tsc 0, build 0, browser 6/6, Chromium 9/9",
+    "locNote": "implementationLoc=unknown",
+    "scaffoldingLocNote": "scaffoldingLoc=unknown",
+    "tokensNote": "tokens recorded as 0"
+  },
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "passRateAtFirstDoneClaim": "crew-world-02 and about-licence tests 7/7 after implementation",
+  "passRateAfterReview": "pending mutation 28/28 and Sol review",
+  "defectCatchingLayer": [
+    "Chromium probe"
+  ],
+  "status": "in progress: code and docs written; gates green; mutation and Sol pending"
+}

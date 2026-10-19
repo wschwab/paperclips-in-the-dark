@@ -1662,3 +1662,57 @@ code {
   overflow-wrap: anywhere;
   margin: 0.5rem 0 0;
 }
+
+/* CREW-WORLD-02: launch-screen About & licence sits full width under both roster columns
+ * at every size, so the two-column roster grid above is unchanged. Links wrap instead of
+ * forcing horizontal scroll at 390px. */
+.about-licence {
+  grid-column: 1 / -1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.about-licence h2 {
+  margin-top: 0;
+}
+
+@media (min-width: 840px) {
+  .about-licence {
+    grid-row: 3;
+  }
+}
+
+.about-licence .about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em 1.1em;
+  margin: 0.5em 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* CREW-WORLD-02: stock picker sits in the existing add row and wraps with it. */
+.faction-stock-field select {
+  max-width: 100%;
+}
+
+/* CREW-WORLD-02: Doskvol districts disclosure, nested locations indented under each district. */
+.doskvol-districts {
+  margin-top: 1em;
+  min-width: 0;
+}
+.doskvol-districts summary {
+  cursor: pointer;
+}
+.doskvol-district {
+  border-top: var(--border-thin) solid var(--rule);
+  margin-top: 0.5em;
+  padding-top: 0.5em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.doskvol-district h4 {
+  margin: 0;
+}
+.doskvol-district .doskvol-locations {
+  margin: 0.25em 0 0 1em;
+}

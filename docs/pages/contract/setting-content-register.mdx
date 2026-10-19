@@ -4,32 +4,42 @@ title: Setting content register
 
 # Setting content register
 
-This page records where official setting material currently lives, and the steps to fold the private research draft back in if the community and the rights holder agree. It contains **no official names**. The licence boundary is in [Crew world data: verified scope and options](./crew-world-sources.mdx).
+This register records where Doskvol setting names live, what each location is for,
+and what remains open. The licence reasoning is in
+[Crew world data — licence, scope and sources](./crew-world-sources.mdx).
 
-## Where official setting names already live
+## Approved shipping data
 
-| Location | What it holds | Status |
-|---|---|---|
-| `data/games/` Rolodex entries (playbook content) | District and NPC names inside the bundled game data | Pre-existing; flagged for a human decision, unchanged |
-| `conformance/fixtures/` and frontend test data | Setting names in seed crews, characters and expected strings | Pre-existing test data; unchanged |
-| `tasks/metrics/contract/CREW-WORLD-01-frontend-red.log` | Captured failing-test output that echoes two setting names | Captured record; candidate for redaction in a follow-up |
-| `docs/pages/contract/crew-world-sources.mdx` | One district mention in the research note | Descriptive note; candidate for redaction |
-| Unpublished local history before `ecfb9881` | The original research transcription (removed from the pushed history by an approved local rewrite) | Not published; must not be republished |
+| Location | Contents | Status |
+| --- | --- | --- |
+| `data/world/doskvol.json` | 49 faction rows (name, sheet group, tier, hold) and 11 district rows (name, tier, hold, app-written one-line summary, empty locations) | Shipped by CREW-WORLD-02, human-approved for a free fan project. Split is provisional. |
+| `frontend/src/pages/crew-sections/doskvol-world.ts` | Imports the data; renders the stock faction picker and the districts disclosure | Shipped by CREW-WORLD-02 |
+| `frontend/src/pages/about-licence.ts` | Launch-screen About & licence aside with attribution and links | Shipped by CREW-WORLD-02 |
 
-## The private draft
+Rules for shipped data:
 
-- Location: `~/code/private-crew-world/doskvol-draft.json` (outside the repository, not committed).
-- Counts: **11 districts** and **49 faction rows**. The faction rows split into five groups: 16, 14, 10, 8 and 1.
-- Provenance: transcribed from the official Factions of Doskvol campaign-tracking sheet. The licence page excludes the setting, so the draft is research material, not approved data.
-- A visual check found a layout judgement the draft makes that may not match the sheet (the grouping of one Citizenry row). Re-verify before use.
+- Summaries are written for this app from tier and hold only. No book prose is
+  copied.
+- Noteworthy locations stay empty unless they can be sourced. None have been.
+- Choosing a stock faction fills the manual entry only. Saved crew records are
+  the user's own.
 
-## Fold-back steps (only with written permission)
+## Still outside shipped data
 
-Do these only after the rights holder grants permission in writing and the grant is recorded in the crew world card.
+| Location | Contents | Status |
+| --- | --- | --- |
+| `data/games/blades-in-the-dark.json` | Playbook Rolodex entries (district and NPC names) | Pre-existing; not changed by CREW-WORLD-02. Flagged in [Setting content open items](/backlog/setting-content-open-items). |
+| Conformance fixtures and frontend tests | Setting names in test data (for example Ironhook Prison, Bluecoats) | Test data only. Not user-facing. |
+| `tasks/metrics/contract/CREW-WORLD-01-frontend-red.log` | Captured test output containing setting names | Historical record. Redaction is a candidate. |
+| `docs/pages/contract/crew-world-sources.mdx` | Setting names are no longer named there | Updated by CREW-WORLD-02 |
 
-1. **Data file.** Add a `data/world/` file that holds the approved names, tiers and holds, with source and attribution fields. Validate it against a schema first. Do not copy the research draft as is; re-check every row against the grant.
-2. **Stock faction picker.** Add a picker to the faction editor in `frontend/src/pages/crew-sections/contacts.ts` that reads the new file. The manual entry stays as the fallback. Starting ally and rival pickers keep drawing from the crew's own factions, so a stock choice becomes an ordinary crew faction only when the user adds it.
-3. **Districts disclosure.** Add a collapsed districts section that shows each approved district with its description and location text, only if the grant covers those descriptions. Otherwise show names only.
-4. **Attribution.** Update the README copyright section and the sources page with the grant's wording, the licence and the publisher contact. Keep the CC-BY 3.0 Unported statement for the SRD content.
-5. **Tests and gates.** Add a red test for the picker and for the disclosure before the UI change. Run the full suite, the browser journeys, and a Sol review of the range.
-6. **Publication.** Confirm the research draft is absent from every commit in the range you push. Do not push a history that contains the draft.
+## Private research draft
+
+The research draft used to build `data/world/doskvol.json` remains outside the
+repository (`/home/x/code/private-crew-world/doskvol-draft.json`). It is not
+committed. Its meta says the sheet prints twelve Citizenry rows, which is why the
+49/11 split is recorded as provisional.
+
+## Open items
+
+See [Setting content open items](/backlog/setting-content-open-items).

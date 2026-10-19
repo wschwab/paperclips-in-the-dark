@@ -1,0 +1,406 @@
+{
+  "source": {
+    "factions": "Factions of Doskvol, official Campaign Tracking sheet v8.2 (bladesinthedark.com downloads). Names, tiers and W/S hold marks were transcribed from it.",
+    "districts": "Eleven rows split from the same sheet's Citizenry rows. PROVISIONAL: the sheet prints twelve Citizenry rows; the split is a transcription judgement, not an official taxonomy.",
+    "licence": "Setting material of Blades in the Dark (Duskwall/Shattered Isles), the property of John Harper / One Seven Design. Included for a free fan project; not CC-BY. The SRD licence at https://bladesinthedark.com/licensing excludes this setting material.",
+    "srd": "https://bladesinthedark.com/licensing"
+  },
+  "summaryAuthor": "app",
+  "holds": {
+    "strong": "Strong (sheet mark S; faction-game SRD: S = strong)",
+    "weak": "Weak (sheet mark W; faction-game SRD: W = weak)"
+  },
+  "groups": [
+    "UNDERWORLD",
+    "INSTITUTIONS",
+    "LABOR & TRADE",
+    "THE FRINGE",
+    "CITIZENRY"
+  ],
+  "factions": [
+    {
+      "name": "The Unseen",
+      "group": "UNDERWORLD",
+      "tier": 4,
+      "hold": "strong"
+    },
+    {
+      "name": "The Hive",
+      "group": "UNDERWORLD",
+      "tier": 4,
+      "hold": "strong"
+    },
+    {
+      "name": "The Circle of Flame",
+      "group": "UNDERWORLD",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "The Silver Nails",
+      "group": "UNDERWORLD",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "Lord Scurlock",
+      "group": "UNDERWORLD",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "The Crows",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "The Lampblacks",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "The Red Sashes",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "The Dimmer Sisters",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "strong"
+    },
+    {
+      "name": "The Grinders",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "The Billhooks",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "The Wraiths",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "The Gray Cloaks",
+      "group": "UNDERWORLD",
+      "tier": 2,
+      "hold": "strong"
+    },
+    {
+      "name": "Ulf Ironborn",
+      "group": "UNDERWORLD",
+      "tier": 1,
+      "hold": "strong"
+    },
+    {
+      "name": "The Fog Hounds",
+      "group": "UNDERWORLD",
+      "tier": 1,
+      "hold": "weak"
+    },
+    {
+      "name": "The Lost",
+      "group": "UNDERWORLD",
+      "tier": 1,
+      "hold": "weak"
+    },
+    {
+      "name": "Imperial Military",
+      "group": "INSTITUTIONS",
+      "tier": 6,
+      "hold": "strong"
+    },
+    {
+      "name": "City Council",
+      "group": "INSTITUTIONS",
+      "tier": 5,
+      "hold": "strong"
+    },
+    {
+      "name": "Ministry of Preservation",
+      "group": "INSTITUTIONS",
+      "tier": 5,
+      "hold": "strong"
+    },
+    {
+      "name": "Leviathan Hunters",
+      "group": "INSTITUTIONS",
+      "tier": 5,
+      "hold": "strong"
+    },
+    {
+      "name": "Ironhook Prison",
+      "group": "INSTITUTIONS",
+      "tier": 4,
+      "hold": "strong"
+    },
+    {
+      "name": "Sparkwrights",
+      "group": "INSTITUTIONS",
+      "tier": 4,
+      "hold": "strong"
+    },
+    {
+      "name": "Spirit Wardens",
+      "group": "INSTITUTIONS",
+      "tier": 4,
+      "hold": "strong"
+    },
+    {
+      "name": "Bluecoats",
+      "group": "INSTITUTIONS",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "Inspectors",
+      "group": "INSTITUTIONS",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "Iruvian Consulate",
+      "group": "INSTITUTIONS",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "Skovlan Consulate",
+      "group": "INSTITUTIONS",
+      "tier": 3,
+      "hold": "weak"
+    },
+    {
+      "name": "The Brigade",
+      "group": "INSTITUTIONS",
+      "tier": 2,
+      "hold": "strong"
+    },
+    {
+      "name": "Severosi Consulate",
+      "group": "INSTITUTIONS",
+      "tier": 1,
+      "hold": "strong"
+    },
+    {
+      "name": "Dagger Isles Consulate",
+      "group": "INSTITUTIONS",
+      "tier": 1,
+      "hold": "strong"
+    },
+    {
+      "name": "The Foundation",
+      "group": "LABOR & TRADE",
+      "tier": 4,
+      "hold": "strong"
+    },
+    {
+      "name": "Dockers",
+      "group": "LABOR & TRADE",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "Gondoliers",
+      "group": "LABOR & TRADE",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "Sailors",
+      "group": "LABOR & TRADE",
+      "tier": 3,
+      "hold": "weak"
+    },
+    {
+      "name": "Laborers",
+      "group": "LABOR & TRADE",
+      "tier": 3,
+      "hold": "weak"
+    },
+    {
+      "name": "Cabbies",
+      "group": "LABOR & TRADE",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "Cyphers",
+      "group": "LABOR & TRADE",
+      "tier": 2,
+      "hold": "strong"
+    },
+    {
+      "name": "Ink Rakes",
+      "group": "LABOR & TRADE",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "Rail Jacks",
+      "group": "LABOR & TRADE",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "Servants",
+      "group": "LABOR & TRADE",
+      "tier": 2,
+      "hold": "weak"
+    },
+    {
+      "name": "Whitecrown",
+      "group": "CITIZENRY",
+      "tier": 5,
+      "hold": "strong"
+    },
+    {
+      "name": "The Church of Ecstasy",
+      "group": "THE FRINGE",
+      "tier": 4,
+      "hold": "strong"
+    },
+    {
+      "name": "The Horde",
+      "group": "THE FRINGE",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "The Path of Echoes",
+      "group": "THE FRINGE",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "The Forgotten Gods",
+      "group": "THE FRINGE",
+      "tier": 3,
+      "hold": "weak"
+    },
+    {
+      "name": "The Reconciled",
+      "group": "THE FRINGE",
+      "tier": 3,
+      "hold": "strong"
+    },
+    {
+      "name": "Skovlander Refugees",
+      "group": "THE FRINGE",
+      "tier": 3,
+      "hold": "weak"
+    },
+    {
+      "name": "The Weeping Lady",
+      "group": "THE FRINGE",
+      "tier": 2,
+      "hold": "strong"
+    },
+    {
+      "name": "Deathlands Scavengers",
+      "group": "THE FRINGE",
+      "tier": 2,
+      "hold": "weak"
+    }
+  ],
+  "districts": [
+    {
+      "name": "Brightstone",
+      "tier": 4,
+      "hold": "strong",
+      "summary": "Doskvol district at tier IV, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Charterhall",
+      "tier": 4,
+      "hold": "strong",
+      "summary": "Doskvol district at tier IV, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Six Towers",
+      "tier": 3,
+      "hold": "weak",
+      "summary": "Doskvol district at tier III, with a weak hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Silkshore",
+      "tier": 2,
+      "hold": "strong",
+      "summary": "Doskvol district at tier II, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Nightmarket",
+      "tier": 2,
+      "hold": "strong",
+      "summary": "Doskvol district at tier II, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Crow's Foot",
+      "tier": 2,
+      "hold": "strong",
+      "summary": "Doskvol district at tier II, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "The Docks",
+      "tier": 2,
+      "hold": "strong",
+      "summary": "Doskvol district at tier II, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Barrowcleft",
+      "tier": 2,
+      "hold": "strong",
+      "summary": "Doskvol district at tier II, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Coalridge",
+      "tier": 2,
+      "hold": "weak",
+      "summary": "Doskvol district at tier II, with a weak hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Charhollow",
+      "tier": 1,
+      "hold": "strong",
+      "summary": "Doskvol district at tier I, with a strong hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    },
+    {
+      "name": "Dunslough",
+      "tier": 1,
+      "hold": "weak",
+      "summary": "Doskvol district at tier I, with a weak hold rating on the campaign sheet.",
+      "summaryAuthor": "app",
+      "locations": []
+    }
+  ]
+}
