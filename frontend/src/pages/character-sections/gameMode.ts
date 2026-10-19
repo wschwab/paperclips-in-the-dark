@@ -557,9 +557,6 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
     }
     case "crew-xp":
       content = h("div", {},
-        h("p", { className: "serif" }, "Add the agreed crew XP directly here, then review the crew XP triggers at the end of the session."),
-        crewEditor("XP", crew?.experience.points ?? null, "xp", "Update crew XP", ctx, gm, linked),
-        h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
         h("h3", {}, "Crew XP triggers"),
         h("p", { className: "serif" }, CREW_XP_INTRO),
         h("p", { className: "serif" }, CREW_XP_LEADIN),
@@ -571,6 +568,9 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
           i === 0 ? h("p", { className: "small" }, ui.crewXpTrigger
             ? `This crew’s trigger: ${ui.crewXpTrigger}`
             : "This crew’s trigger is on its crew type; check the crew sheet.") : null))),
+        h("p", { className: "serif" }, "Review the triggers at the end of the session, then add the agreed crew XP here."),
+        crewEditor("XP", crew?.experience.points ?? null, "xp", "Update crew XP", ctx, gm, linked),
+        h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
         h("h3", {}, "Advancement"),
         h("p", { className: "serif" }, CREW_ADVANCE_TEXT),
         h("p", { className: "small" }, CREW_ADVANCE_ORIGIN_TEXT),

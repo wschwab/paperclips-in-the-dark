@@ -740,6 +740,30 @@ describe("GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05)", () => {
     });
   });
 
+  it("CREW-XP-TRIGGERS-01: Resolution Crew XP shows all four SRD crew XP triggers and keeps the crew-type autoload", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
+    await vi.waitFor(() => {
+      const text = root.querySelector(".game-mode-resolution")!.textContent ?? "";
+      expect(text).toContain("Your crew-specific xp trigger.");
+      expect(text).toContain("Contend with challenges above your current station.");
+      expect(text).toContain("Bolster your crew’s reputation or develop a new one.");
+      expect(text).toContain("Express the goals, drives, inner conflict, or essential nature of the crew.");
+      expect(text).toContain("Execute a successful murder, ransom, or assassination operation.");
+    });
+  });
+
+  it("CREW-XP-TRIGGERS-01: the four crew XP triggers come before the crew XP editor so they show without scrolling", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
+    await vi.waitFor(() => {
+      const text = root.querySelector(".game-mode-resolution")!.textContent ?? "";
+      const firstTrigger = text.indexOf("Your crew-specific xp trigger.");
+      const editor = text.indexOf("Update crew XP");
+      expect(firstTrigger).toBeGreaterThanOrEqual(0);
+      expect(editor).toBeGreaterThanOrEqual(0);
+      expect(firstTrigger).toBeLessThan(editor);
+    });
+  });
+
   it("R2-05: Crew Rep links to the Payoff SRD page", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-rep" } }), crewDTO({}));
     expect(root.querySelector('.game-mode-resolution a[href="https://bladesinthedark.com/payoff"]')).not.toBeNull();
