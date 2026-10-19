@@ -66,7 +66,7 @@
       "mutation": "Truncate Collect_Removal_Keys at 512 entries",
       "observableFailure": "an import/repair preview no longer discloses every data-dropping property beyond the buffer, violating no-silent-data-loss; the UNKNOWN-KEY near-limit cases assert exact disclosure at 512/513/600 keys",
       "restorationHash": {
-        "backend-ada/server/src/pitd_normalize.adb": "b1bf17f9e33fba020fcbd48d3f140bee5ed2d47aef1a0ee4830d71b008122119"
+        "backend-ada/server/src/pitd_normalize.adb": "ac2284dd96cb5b4e3344329ab71dbe6017c610909f402531487a8262fc48a75d"
       },
       "severity": "P0",
       "status": "not-run",
@@ -85,7 +85,7 @@
       "mutation": "Change INVALID_ENTITY status from 422 to 500",
       "observableFailure": "degraded-entity direct access returns 500 instead of the frozen 422 typed client error, breaking the error union and typed recovery",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "707a7b9ee86b46753fd74bf6d5cad1f0fd6b9c8e2a154b407766e4167d5fb04d"
+        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
       },
       "severity": "P0",
       "status": "not-run",
@@ -120,7 +120,7 @@
       "mutation": "Skip the If-Match check block (if False then) so stale revisions mutate anyway",
       "observableFailure": "a stale writer overwrites recent changes with no STALE_REVISION; concurrent edits are lost silently",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "707a7b9ee86b46753fd74bf6d5cad1f0fd6b9c8e2a154b407766e4167d5fb04d"
+        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
       },
       "severity": "P0",
       "status": "not-run",
@@ -137,7 +137,7 @@
       "mutation": "Skip the pre-mutation snapshot (replaced by null)",
       "observableFailure": "snapshot-worthy mutations create no history entry, so undo has nothing to restore",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "707a7b9ee86b46753fd74bf6d5cad1f0fd6b9c8e2a154b407766e4167d5fb04d"
+        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
       },
       "severity": "P0",
       "status": "not-run",
@@ -155,7 +155,7 @@
       "mutation": "Skip snapshot consumption on undo (Delete_File replaced by null)",
       "observableFailure": "undo stops consuming snapshots, so a second undo replays stale state and history grows without bound",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "707a7b9ee86b46753fd74bf6d5cad1f0fd6b9c8e2a154b407766e4167d5fb04d"
+        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
       },
       "severity": "P0",
       "status": "not-run",
@@ -188,7 +188,7 @@
       "mutation": "Auto-add trauma on overflow: the pending raise is replaced by directly appending a trauma to monitor.trauma.traumas",
       "observableFailure": "traumaPending never raises while the traumas history silently grows; LIFECYCLE-STRESS-001 asserts the pending flag and typed attention",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "d1c5e33c069f40e175dfff0d1aa1a5d38078bfe2d1faf2a0b5fcb3c57f30c70a"
+        "backend-ada/server/src/pitd_ops.adb": "a50f5f7a7553ac961e8a5a8db0df0444f41adf7b78a717045ae444f7149c67d0"
       },
       "severity": "P0",
       "status": "not-run",
@@ -204,7 +204,7 @@
       "mutation": "Clear retirement during trauma removal: the arm additionally sets isRetired false",
       "observableFailure": "trauma.remove on a retired character flips isRetired to false, silently reversing retirement",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "d1c5e33c069f40e175dfff0d1aa1a5d38078bfe2d1faf2a0b5fcb3c57f30c70a"
+        "backend-ada/server/src/pitd_ops.adb": "a50f5f7a7553ac961e8a5a8db0df0444f41adf7b78a717045ae444f7149c67d0"
       },
       "severity": "P0",
       "status": "not-run",
@@ -236,7 +236,7 @@
       "mutation": "Skip the W5 owner-clock reassignment (elsif False then)",
       "observableFailure": "deleting a character/crew orphans its standalone clocks instead of reassigning them to campaign ownership with bumped revisions",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "707a7b9ee86b46753fd74bf6d5cad1f0fd6b9c8e2a154b407766e4167d5fb04d"
+        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
       },
       "severity": "P1",
       "status": "not-run",
@@ -252,7 +252,7 @@
       "mutation": "Skip the W4 unlink sweep (if False then)",
       "observableFailure": "a deleted clock's id remains in other clocks' relatedClockIds, leaving stale relationship references",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "707a7b9ee86b46753fd74bf6d5cad1f0fd6b9c8e2a154b407766e4167d5fb04d"
+        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
       },
       "severity": "P1",
       "status": "not-run",
@@ -268,7 +268,7 @@
       "mutation": "Hardcode the tier.add CrewTierMax settings lookup to 3",
       "observableFailure": "the enforced tier ceiling disagrees with the loaded game-settings JSON (Blades CrewTierMax), so a differently-configured game is mis-bounded",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "d1c5e33c069f40e175dfff0d1aa1a5d38078bfe2d1faf2a0b5fcb3c57f30c70a"
+        "backend-ada/server/src/pitd_ops.adb": "a50f5f7a7553ac961e8a5a8db0df0444f41adf7b78a717045ae444f7149c67d0"
       },
       "severity": "P0",
       "status": "not-run",
@@ -303,7 +303,7 @@
       "mutation": "Reduce the action-dot width/height below the contracted target size",
       "observableFailure": "action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "091a51783536159d3f92b19b03b932967cb7271ecda862cca347dc200f875482"
+        "frontend/src/styles/components.css": "54de93114b131afb8dedfcf8a450302bbeb44a07b1ad516adc137d7909a3040e"
       },
       "severity": "P1",
       "status": "not-run",
@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "5de576997a2509ea129a9a2cd469cb93363ba9ce7f37354079e6698dfda92b6c"
+        "frontend/src/api/client.ts": "fb5e0d204c9964dc3e303d4e9b6f52600324d87dd87b45adb888a19997b0395c"
       },
       "severity": "P0",
       "status": "not-run",
@@ -464,7 +464,7 @@
       "mutation": "Claim-operation coverage removed: all three dispatch arms become dead (elsif False), so claim ops fall through to the unknown-op failure",
       "observableFailure": "claim.set/customize/reset stop acquiring, customizing, and relinquishing claims; the conformance claim oracle cases fail",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "d1c5e33c069f40e175dfff0d1aa1a5d38078bfe2d1faf2a0b5fcb3c57f30c70a"
+        "backend-ada/server/src/pitd_ops.adb": "a50f5f7a7553ac961e8a5a8db0df0444f41adf7b78a717045ae444f7149c67d0"
       },
       "severity": "P0",
       "status": "not-run",
