@@ -11,7 +11,8 @@ Playtest feedback: the Resolution crew XP step should show all four SRD crew XP 
 ## Fix
 
 - `frontend/src/pages/character-sections/gameMode.ts` (`case "crew-xp"`): the "Crew XP triggers" heading and the four-item list now come first. The intro, lead-in and max note follow the list, then the editor and the Advancement text.
-- Red test first: `frontend/src/pages/game-mode-sheet.test.ts`, "the four crew XP triggers come before the crew XP editor". It failed before the change.
+- Test: `frontend/src/pages/game-mode-sheet.test.ts`, "the four crew XP triggers come before the crew XP editor". Its failing run before the original change is not saved, so the original red-first chronology is NOT evidenced and is not claimed.
+- Red/green guard for the list-first order (added in the re-review round): "the trigger list comes before the crew XP intro paragraph". Green on the committed order (`1 passed`). Red after temporarily moving the intro above the list: `expected 360 to be less than 162`. Order restored; the file is 84/84.
 
 ## Evidence
 

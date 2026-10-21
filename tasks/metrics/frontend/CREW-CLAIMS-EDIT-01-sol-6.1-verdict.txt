@@ -1,27 +1,8 @@
-VERDICT: FAIL
+VERDICT: NOT-RUN
 
-Evidence root: `S = /tmp/sol-review/CREW-CLAIMS-EDIT-01-scratch/`. Reviewed revision: `086cae527671808f293e297413f93d9a9dc52dfd`.
+Revision reviewed: 96dd79e9a034d914f0450de663e4f12b3d7c736e (prompt /tmp/sol-review/CREW-CLAIMS-EDIT-01-r2.md).
+Sol 6.1 xhigh did not produce a review. Error from CREW-CLAIMS-EDIT-01-r2.err:
 
-- **FAIL — P2: owned claim text becomes effectively invisible on hover.** Reproduction: create an Assassins crew → open its sheet → click **Training Rooms** → accept acquisition → hover the now-owned cell. Expected: its name and benefit remain readable, including in high contrast. Observed across all nine size/theme combinations: name contrast **1.205:1 in light/high contrast**, **1.036:1 in dark**, versus 4.5:1 for normal-sized text. `button:hover` changes the background but retains the owned cell’s inverse text color. Sources: `frontend/src/styles/base.css:191–196`, `frontend/src/styles/components.css:276–282`. Numeric evidence: `S/probe.json`, `rows[*].hover`. Visually confirmed in `S/1440-dark-owned-hover-crop.png`, `S/1440-light-owned-hover-crop.png`, and `S/390-high-owned-hover-crop.png`. Present at the pinned revision; introduction by this card is not asserted.
+    Codex error event: The usage limit has been reached (code=usage_limit_reached)
 
-- **PASS — revision consistency.** All **283 checked runtime source/input files** matched immutable pinned exports; the frontend was built from those exports. Evidence: `S/provenance.json`, `files[*].workingMatches`; `S/checks.json`, `frontendBuild`.
-
-- **PASS — active benefits and obsolete controls.** Active benefits contain **0 buttons**; `.claims-edit-toggle` count is **0** in every row. Source: `frontend/src/pages/crew-sections/claims.ts:134–174`. Evidence: `S/probe.json`, checks `Old toggles absent`, `Active benefits no buttons`.
-
-- **PASS — direct acquisition and relinquishment.** Accepted connected acquisition changed ownership **0→1**; cancelled relinquishment retained **1** without a POST; accepted relinquishment changed **1→0** with one POST. Disconnected acquisition displayed **“NOT connected”**; dismissing preserved ownership, accepting acquired exactly one claim. Evidence: `S/probe.json`, `rows[*].dialogs`, `operations`, and acquisition/relinquishment checks.
-
-- **PASS — chooser, editor, cancellation, ownership isolation.** “Edit claim” opened the chooser; selecting a claim opened a form prefilled with its current name and text, without a confirmation or mutation. Chooser and editor cancellation closed their respective panels. Editing owned and unowned claims preserved `claimedClaimIds`. Sources: `crew-sections/claims.ts:181–220`, `crew-detail.ts:921–937`. Evidence: `S/probe.json`, corresponding editor and ownership checks.
-
-- **PASS — save payload and persistence.** Name-only saves sent `{claimId,name}`; text-only saves sent `{claimId,description}`. Whitespace was trimmed and blank fields omitted. Both saved values survived server reads and page reloads and appeared in Active claim benefits. Source: `frontend/src/pages/crew-detail.ts:939–956`. Evidence: `S/probe.json`, `rows[*].operations`, `afterText.claimOverrides`, and persistence checks.
-
-- **PASS — blank refusal and draft lifetime.** Both blank fields produced exactly **“Enter a name or benefit text, or use Reset to default.”**, without a mutation. During a delayed save, the form and drafts remained present with controls disabled. A real **409 STALE_REVISION** rejection preserved both drafts through refetch; retry succeeded and closed the editor. Evidence: `S/probe.json`, `rows[*].inFlight`, `failedResponse`, and draft checks.
-
-- **PASS — reset.** Reset count was **0 without an override**, **1 with an override**. Clicking it posted `claim.reset` with `{claimId}`, removed the override, restored defaults, and preserved ownership. Evidence: `S/probe.json`, reset checks.
-
-- **PASS — responsive containment.** Document overflow was **0** initially, with the editor open, and after saving in all nine rows. Map client/scroll widths: **1038/1038** at 1440 light/dark, **1036/1036** high; **686/686** at 768 light/dark, **684/684** high; **308/560** at 390 light/dark, **306/560** high. Narrow-screen overflow remained inside `overflow-x:auto`. Evidence: `S/probe.json`, `rows[*].initial`, `editorInitial`, `final`.
-
-- **PASS — exercised functional gates.** Independent Chromium probe: **477/477 functional checks**. Frontend: **42 files, 1007 tests passed**, TypeScript clean, Vite build passed. The card’s 118/1006 counts describe earlier takeover results, not current-pin counts. Evidence: `S/checks.json`.
-
-- **PASS — journeys, documentation, supplied audit evidence.** Browser journeys **6/6 passed**, including claim counts **2 acquired → 2 after reload → 1 after removal**. Evidence: `S/pitd-browser/2026-10-21T11-11-54-350Z-8450666c/journey-results.json`, `passed` and claim checkpoints. Vocs generated **163 files**; metrics validation passed **190 files**, traceability **231 checks**, reconciliation exited **0**. Evidence: `S/checks.json`, `S/validator-checks.json`. Ignored audit inputs and validator programs were copied from the supplied audit directory; that scope is recorded.
-
-- **PASS — cited historical artifacts inspected.** Opened the cited editor screenshots at 1440, 768, and 390, plus dark/high-contrast matrix screenshots; their recorded geometry and functional results agree with independent observations. The pinned mutation log records **P0 19/19, P1 9/9 killed** at `tasks/metrics/contract/MUTATION-28-final-combined.log:162–163`; mutation execution was not repeated. The functional passes do not resolve the hover visibility failure above.
+The previous FAIL verdict on 086cae52 is kept as CREW-CLAIMS-EDIT-01-sol-6.1-verdict-086cae52.txt. This card needs a Sol re-review when quota is available.

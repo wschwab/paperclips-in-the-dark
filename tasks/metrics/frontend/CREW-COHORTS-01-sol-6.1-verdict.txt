@@ -1,21 +1,8 @@
-VERDICT: FAIL
+VERDICT: NOT-RUN
 
-Evidence root: `/tmp/sol-review/CREW-COHORTS-01-scratch/` (`S/` below). Source references are at `086cae527671808f293e297413f93d9a9dc52dfd`.
+Revision reviewed: 96dd79e9a034d914f0450de663e4f12b3d7c736e (prompt /tmp/sol-review/CREW-COHORTS-01-r2.md).
+Sol 6.1 xhigh did not produce a review. Error from CREW-COHORTS-01-r2.err:
 
-- **[FAIL — naming an existing unnamed cohort]** Create a gang or expert without a name; edit it, enter a name, and Save. Expected: the name persists. Observed: HTTP **200**, `ok:true`, but `name` remains absent. Reproduced through Chromium and directly through the API, for both kinds. `backend-ada/server/src/pitd_ops.adb:1881–1884` copies an update field only when it already exists in the cohort; optional `name` therefore cannot be introduced. Evidence: `S/direct-name-repro.json` keys `request`, `status`, `ok`, `gang`; `S/independent.json` → `apiChecks[].after` and `rows[].gangRenamed.stored.cohorts`.
+    Codex error event: The usage limit has been reached (code=usage_limit_reached)
 
-- **[FAIL — mobile Custom picker containment]** At **390×844**, select **Custom** in the Add form’s Edges picker. Expected: controls remain visible without horizontal overflow. Observed: document width becomes **406px** in light/dark and **413px** in high contrast. In light mode, the form is **308px** wide but its scroll width is **365px**; the edge “+” ends at **405.875px**, outside the viewport. The screenshot clips it out of the form. Source: `frontend/src/styles/components.css:1245–1249` forces the expanded controls onto one non-wrapping row. Evidence: `S/independent.json` → `rows[6..8].customEdge`; `S/custom-edge-390-light.png`. Also independently reproduced with the browser tool.
-
-- **[FAIL — cited geometry evidence is stale]** Create a fresh Tier-0 Assassins crew, open its sheet without scrolling, and measure the Cohorts section in light mode at the three cited sizes. Expected from `tasks/CREW-COHORTS-01.md:45–47` and the cited `probe.json`: **481/401/684px**. Observed at the pinned implementation: **409/329/612px**. Evidence: `S/independent.json` → `rows[0,3,6].initial.sectionHeight`; original `agent-docs/test-audit/browser-evidence/crew-cohorts-01/probe.json` → `rows[].sectionHeight`. Those older measurements do not describe this revision.
-
-- **[PASS — revision fidelity]** **315** source, settings, launcher, journey, and fixture inputs compared with immutable revision bytes; no mismatches. Frontend rebuilt before browser exercise. Evidence: `S/source-verification.json`, `S/frontend-build.log`.
-
-- **[PASS — conditional fields and default layout]** Both kinds exercised at **1440, 768, and 390**, in **light, dark, and high contrast**. Gang shows nine fields, expert seven; exactly one Type field is visible. Expert Custom appears only for Custom; expert Armor and Scale remain hidden. All **18 default forms** have document/form overflow **0**, Add right gap **0**, and picker “+” on the select’s row. Evidence: `S/independent.json` → `rows[].gang`, `expert`, `customExpertVisible`, `doctorCustomHidden`; `S/summary.json`; `S/forms-contact-sheet.png`. Opened the cited gang/expert screenshots as well.
-
-- **[PASS — derived values and persistence]** Tier 0 displays gang **0/0**, expert quality **1**; at Tier 2, saved gang quality/scale are **2/2**, expert **3/0**. Multiline descriptions, harm changes, and gang armor changes persist. Edit requests omit quality. Names supplied during creation persist; an already-named expert can be renamed. Evidence: `S/independent.json` → `rows[].gangAdded`, `gangRenamed`, `expertRenamed`, `requests`; `S/direct-named-gang-create.json`.
-
-- **[PASS — game-data pickers and Add gate]** Skulks spelling, five gang types, five expert types plus one Custom, and four named edges/flaws match the authored data. In all nine configurations, **1 edge/0 flaws** disables Add with the explicit equal-count message; matching counts re-enable it; **2/2** disables further additions. Evidence: `data/games/blades-in-the-dark-crews.json:2344–2357`; `S/independent.json` → option lists, `mismatch`, `matchedEnabled`, `maxTwo`.
-
-- **[PASS — exercised gates; insufficient to catch the failures above]** Build/typecheck passed; focused suites **106/106**; full frontend **1007/1007**; managed browser journeys **6/6**, including `cohort-derived-stats-stored = 1` and `cohort-added-cards = 1`. Evidence: `S/frontend-build.log`, `S/cohort-tests.log`, `S/full-frontend-tests.log`, `S/browser-suite/journey-results.json`.
-
-- **[PASS — historical gate records only]** The cited Ada log records **74 files/627 tests** passing in each cycle (`:655–656`, `:1303–1304`); the mutation log records **P0 19/19**, **P1 9/9** killed (`:158–163`). These historical gates were inspected, not rerun, and do not cover the unnamed-to-named transition or expanded mobile Custom picker.
+The previous FAIL verdict on 086cae52 is kept as CREW-COHORTS-01-sol-6.1-verdict-086cae52.txt. This card needs a Sol re-review when quota is available.

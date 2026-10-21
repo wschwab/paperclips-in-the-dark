@@ -764,6 +764,18 @@ describe("GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05)", () => {
     });
   });
 
+  it("CREW-XP-TRIGGERS-01: the trigger list comes before the crew XP intro paragraph", async () => {
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }), crewDTO({}));
+    await vi.waitFor(() => {
+      const text = root.querySelector(".game-mode-resolution")!.textContent ?? "";
+      const firstTrigger = text.indexOf("Your crew-specific xp trigger.");
+      const intro = text.indexOf("At the end of the session, review the crew xp triggers");
+      expect(firstTrigger).toBeGreaterThanOrEqual(0);
+      expect(intro).toBeGreaterThanOrEqual(0);
+      expect(firstTrigger).toBeLessThan(intro);
+    });
+  });
+
   it("R2-05: Crew Rep links to the Payoff SRD page", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-rep" } }), crewDTO({}));
     expect(root.querySelector('.game-mode-resolution a[href="https://bladesinthedark.com/payoff"]')).not.toBeNull();
