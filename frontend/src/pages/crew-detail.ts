@@ -322,7 +322,12 @@ export function mountCrewDetailPage(
     const seq = ++capsRefreshSeq;
     void Effect.runPromise(
       Effect.match(getCrewCapabilities(crewId), {
-        onFailure: () => undefined,
+        onFailure: () => {
+          // A failed refresh must not leave the pre-mutation projection on screen; the read-only fallback takes over.
+          if (cancelled || seq !== capsRefreshSeq) return;
+          crewCaps = null;
+          renderDetail();
+        },
         onSuccess: (caps) => {
           if (cancelled || seq !== capsRefreshSeq) return;
           crewCaps = caps;

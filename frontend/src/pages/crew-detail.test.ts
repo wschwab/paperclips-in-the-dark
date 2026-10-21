@@ -3188,6 +3188,34 @@ describe("FV-012 focus restoration", () => {
     expect(document.activeElement).toBe(turfPlus());
   });
 
+  it("drops a stale capability projection when the refresh after a mutation fails", async () => {
+    let capsCalls = 0;
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === `/api/crews/${CREW_ID}`) return Promise.resolve(ok(crewDTO({ turf: 0 })));
+      if (url === `/api/crews/${CREW_ID}/capabilities`) {
+        capsCalls += 1;
+        if (capsCalls === 1) {
+          // Stale projection from before the mutation: Turf 3, Develop at Rep 9.
+          return Promise.resolve(ok({ crewId: CREW_ID, upgrades: [], abilities: [], effectiveTurf: 3, developThreshold: 9, tierMax: 4 }));
+        }
+        return Promise.resolve({ ok: false, status: 500, text: async () => "boom" });
+      }
+      if (url.endsWith("/ops/turf.add")) return Promise.resolve(ok(crewOpOk(crewDTO({ revision: 6, turf: 1 }), "turf.add")));
+      if (url === "/api/games/blades-in-the-dark/crews") {
+        return Promise.resolve(ok({ Name: "Blades in the Dark", CrewTypes: [ASSASSIN_TYPE] }));
+      }
+      return Promise.resolve(ok(ASSASSIN_TYPE));
+    });
+    mountCrewDetailPage(root, CREW_ID);
+    await vi.waitFor(() => expect(turfPlus()).not.toBeNull());
+    await vi.waitFor(() => expect(root.querySelector(".turf-count")?.textContent).toBe("Turf: 3"));
+
+    turfPlus().click();
+
+    await vi.waitFor(() => expect(capsCalls).toBe(2));
+    await vi.waitFor(() => expect(root.querySelector(".turf-count")?.textContent).toBe("Turf: 1"));
+  });
+
   it("moves focus to the new contact's remove button after adding a contact", async () => {
     const withContact = crewDTO({
       revision: 6,

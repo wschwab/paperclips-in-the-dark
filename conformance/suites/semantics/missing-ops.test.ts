@@ -40,6 +40,22 @@ describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp", () => {
     expect(unknown.error?.code).toBe("NOT_FOUND");
   });
 
+  testCase("SEMANTICS-COHORT-002", "cohort.update names a cohort that was created without a name", async () => {
+    const crew = await newCrew();
+    const added = await api.crewOp(crew.id, "cohort.add", {
+      cohortKind: "expert", expertType: "Physicker",
+    });
+    expect(added.ok).toBe(true);
+    const cohort = added.crew?.cohorts[0];
+    expect(cohort?.name).toBeUndefined();
+
+    const renamed = await api.crewOp(crew.id, "cohort.update", {
+      cohortId: cohort?.id ?? "", name: "Mercy",
+    });
+    expect(renamed.ok).toBe(true);
+    expect(renamed.crew?.cohorts[0].name).toBe("Mercy");
+  });
+
   testCase("SEMANTICS-CREW-FUND-001", "crew coin.add / stash.add / tier.add report applied deltas; stash clamps at derived capacity; tier floors at 0", async () => {
     const crew = await newCrew();
     const coin = await api.crewOp(crew.id, "coin.add", { delta: 5 });

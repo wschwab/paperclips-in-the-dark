@@ -1880,7 +1880,8 @@ elsif Op = "harm.add" then
                   declare C : constant JSON_Value := Get(A,I);
                      procedure Copy (Name : UTF8_String; Value : JSON_Value) is
                      begin
-                        if Has_Field(C,Name) then Set_Field(C,Name,Clone(Value)); end if;
+                        --  a cohort created without a name can be named; other fields copy only when present.
+                        if Has_Field(C,Name) or else Name = "name" then Set_Field(C,Name,Clone(Value)); end if;
                      end Copy;
                   begin
                      Map_JSON_Object (B, Copy'Access);

@@ -37,14 +37,14 @@ Verified 2026-10-19 against `https://bladesinthedark.com/crew`, "Cohorts" sectio
 - Vitest: `crew-cohorts.test.ts` and `crew-detail.test.ts` 104/104 (`npx vitest run src/pages/crew-detail.test.ts src/pages/crew-cohorts.test.ts`); `crew-detail.test.ts` 99/99 after the cast.
 - Full frontend vitest: 995/998. The 3 failures are `crew-claims-map.test.ts` (CREW-CLAIMS-MAP-01, `mode-mockups`' uncommitted work), not this change.
 - `npx tsc --noEmit`: clean. `npm run build` (frontend): green.
-- Browser, `cd conformance && npm run test:browser`: NOT GREEN. The failing journey is `crew-create-trackers`, which waits 10s for `.turf-track .turf-slot[data-stress="1"]`. Commit `6da06235` (CREW-REP-TURF-01) removed the separate turf track; `crew-detail.test.ts` now asserts `.turf-track` is null. The journey is stale against that commit and belongs to the Rep/Turf scope. Its declared cohort checkpoints are never reached, so `crew01-cohort-add.mjs` (before/after below) has NOT run in the browser gate. The runner has no per-journey filter.
+- Browser, `cd conformance && npm run test:browser`: 6/6 PASS on the tree before commit `e163eb36` (the earlier `crew-create-trackers` failure was fixed in CREW-REP-TURF-01).
 - Checkpoint before/after, `conformance/suites-browser/checkpoints/crew01-cohort-add.mjs`:
   - Before: selects `Skulls`; `page.fill` on `input[aria-label="Cohort quality"]` = 3 and `Cohort scale` = 2; asserts the stored values.
   - After: selects `Skulks`; reads `.cohort-add .cohort-quality-derived` and `.cohort-scale-derived` before submit (fails on NaN); after add asserts `.cohort-entry[data-cohort-kind="gang"] .cohort-quality` = `Quality <derived>` and `.cohort-scale` = `Scale <derived>`; checkpoint `cohort-derived-stats-stored`.
 - Chromium probe, `agent-docs/test-audit/browser-evidence/crew-cohorts-01/probe.mjs` (run via `managed-browser-smoke.mjs`), crew at Tier 0, log `tasks/metrics/frontend/CREW-COHORTS-01-chromium.log`, `probe.json` written by the probe:
-  - 1440×1000: section 481px high, no horizontal overflow, first control 139px into the section, cohort section below the fold (`headingVisibleInitially: false` measured without scrolling). Derived quality/scale `0/0` (Tier 0), no quality input.
-  - 768×1024: section 401px, no overflow, below the fold, same derived values.
-  - 390×844: section 684px, no overflow, below the fold, same derived values.
+  - 1440×1000: section 409px high (refreshed by `probe.mjs` at `086cae52`), no horizontal overflow, first control 139px into the section, cohort section below the fold (`headingVisibleInitially: false`). Derived quality/scale `0/0` (Tier 0), no quality input.
+  - 768×1024: section 329px, no overflow, below the fold, same derived values.
+  - 390×844: section 612px, no overflow, below the fold, same derived values.
   - Card height: the probe did not measure card height before and after. Not verified.
 - Validators and vocs: run at the end (see Hand-off).
 
@@ -66,4 +66,8 @@ Verified 2026-10-19 against `https://bladesinthedark.com/crew`, "Cohorts" sectio
 - Mutation campaign at `e163eb36` (after this fix and the layout change): 28/28 killed, 0 survivors, P0 19/19, P1 9/9 (`tasks/metrics/contract/MUTATION-28-cohort-rep-e163eb36.log`).
 - Sol 6.1 xhigh review of the follow-up: NOT-RUN (Codex usage limit). Needs a rerun before close.
 - gameMode.ts: the uncommitted Crew XP intro reorder was adopted as the CREW-XP-TRIGGERS-01 follow-up (commit `5274eb1e`), not this card.
+- Sol 6.1 xhigh at `086cae52` returned FAIL on three points; each is fixed:
+  - Naming a cohort created without a name was silently dropped (HTTP 200, name absent). Red: conformance `SEMANTICS-COHORT-002` (`conformance/suites/semantics/missing-ops.test.ts`) failed with `expected undefined to be 'Mercy'`. Fix: `backend-ada/server/src/pitd_ops.adb` `Copy` lets `name` be introduced on `cohort.update`; other fields still copy only when present. Green on the rebuilt server; Ada two-cycle 74/74 files, 628/628 tests.
+  - At 390px, choosing Custom in the Edges picker widened the page (16–23px overflow; the edge "+" ended at 405.9px). This came from my `nowrap` picker row. Red: `crew-cohorts-01/custom-picker-probe.mjs` (`custom-picker.json`). Fix: `.cohort-trait-controls` wraps and its controls shrink (`components.css`). Green: overflow 0 and the "+" at 281.3px at all nine rows.
+  - The cited geometry (481/401/684px) was stale. `probe.mjs` was re-run: 409/329/612px, now recorded above (`probe.json`).
 - Full vitest failures in `crew-claims-map.test.ts` were resolved by `mode-mockups`' commit `9a8a3812`; the full run is 998/998 on the current tree.

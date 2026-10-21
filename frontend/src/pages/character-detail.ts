@@ -2416,21 +2416,48 @@ export function mountCharacterDetailPage(
       renderDetailWrapper();
     }
   };
-  // The Resolution card is non-blocking (pointer-events: none), so a wheel over its area reaches the page
-  // underneath. Forward it to the card's own scroll position so its text and controls stay reachable.
-  const forwardResolutionWheel = (e: WheelEvent) => {
+  // The Resolution card is non-blocking (pointer-events: none), so a wheel or touch drag over its area reaches the
+  // page underneath. Forward it to the card's own scroll position so its text and controls stay reachable.
+  const resolutionCardAt = (clientX: number, clientY: number): HTMLElement | null => {
     const card = root.querySelector<HTMLElement>(".game-mode-resolution .game-mode-popup-card");
-    if (!card || card.scrollHeight <= card.clientHeight) return;
+    if (!card || card.scrollHeight <= card.clientHeight) return null;
     const r = card.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
-    // Compact: the mode footer is drawn over the lower part of the overlay; wheel there is the footer's.
+    if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) return null;
+    // Compact: the mode footer is drawn over the lower part of the overlay; input there is the footer's.
     const footer = root.querySelector(".mode-panel")?.getBoundingClientRect();
-    if (window.innerWidth <= 1099 && footer && e.clientY >= footer.top) return;
+    if (window.innerWidth <= 1099 && footer && clientY >= footer.top) return null;
+    return card;
+  };
+  const forwardResolutionWheel = (e: WheelEvent) => {
+    const card = resolutionCardAt(e.clientX, e.clientY);
+    if (!card) return;
     e.preventDefault();
     card.scrollTop += e.deltaY;
   };
+  // Touch: the page under the card would otherwise scroll instead; move the card by the finger's travel.
+  let touchLastY: number | null = null;
+  const onResolutionTouchStart = (e: TouchEvent) => {
+    touchLastY = e.touches[0] ? e.touches[0].clientY : null;
+  };
+  const forwardResolutionTouch = (e: TouchEvent) => {
+    const t = e.touches[0];
+    if (!t || touchLastY === null) return;
+    const dy = touchLastY - t.clientY;
+    touchLastY = t.clientY;
+    const card = resolutionCardAt(t.clientX, t.clientY);
+    if (!card) return;
+    e.preventDefault();
+    card.scrollTop += dy;
+  };
+  const onResolutionTouchEnd = () => {
+    touchLastY = null;
+  };
   window.addEventListener("resize", onResize);
   window.addEventListener("wheel", forwardResolutionWheel, { passive: false });
+  window.addEventListener("touchstart", onResolutionTouchStart, { passive: true });
+  window.addEventListener("touchmove", forwardResolutionTouch, { passive: false });
+  window.addEventListener("touchend", onResolutionTouchEnd);
+  window.addEventListener("touchcancel", onResolutionTouchEnd);
   // XP-TRACKER-04 (round 3 R2): the compact tracker is modal. Escape closes it from anywhere on the page
   // (capture phase, so it still works after a blocked background click), and focus that leaves the open
   // sheet returns to its Close button.
@@ -2455,6 +2482,10 @@ export function mountCharacterDetailPage(
     cancelled = true;
     window.removeEventListener("resize", onResize);
     window.removeEventListener("wheel", forwardResolutionWheel);
+    window.removeEventListener("touchstart", onResolutionTouchStart);
+    window.removeEventListener("touchmove", forwardResolutionTouch);
+    window.removeEventListener("touchend", onResolutionTouchEnd);
+    window.removeEventListener("touchcancel", onResolutionTouchEnd);
     document.removeEventListener("keydown", onXpEscape, true);
     document.removeEventListener("focusout", onXpFocusOut);
     setOutsideInert(false);

@@ -277,6 +277,11 @@
   background: var(--fill);
   color: var(--surface);
 }
+.claim-owned:hover,
+.claim-owned:active {
+  background: var(--fill);
+  color: var(--surface);
+}
 .claim-owned span {
   color: inherit;
   opacity: 0.85;
@@ -304,10 +309,16 @@
 }
 .active-claim-list li {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5em;
   align-items: baseline;
   padding: 0.25em 0;
   border-bottom: 1px solid var(--border-thin, var(--rule));
+}
+.active-claim-list strong,
+.active-claim-list span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .active-claim-list span {
   color: var(--text-muted);
@@ -1246,7 +1257,13 @@
   display: inline-flex;
   gap: 0.35em;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.cohort-trait-controls > select,
+.cohort-trait-controls > input {
+  min-width: 0;
+  max-width: 100%;
 }
 .cohort-add .cohort-add-submit {
   /* the Add button sits at the end of the form row, whatever wraps before it */
