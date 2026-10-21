@@ -13,8 +13,8 @@ outputs:
   - conformance/suites-browser/checkpoints/crew02-claims.mjs
   - conformance/suites-browser/crew-create-trackers.journey.mjs
   - docs/pages/frontend/f2u-crew-profile-trackers.mdx
-  - agent-docs/test-audit/browser-evidence/crew-claims-edit-01/probe.mjs
-  - agent-docs/test-audit/browser-evidence/crew-claims-edit-01/probe.json
+  - docs/public/evidence/crew-claims-edit-01/probe.mjs
+  - docs/public/evidence/crew-claims-edit-01/probe.json
   - tasks/metrics/frontend/CREW-CLAIMS-EDIT-01-chromium.log
 ---
 
@@ -62,7 +62,7 @@ NOT-RUN. The codex quota returned `usage_limit_reached`. The user will run Sol 6
 
 - Vitest 1006/1006; `tsc` clean; `vite build` green; browser 6/6 PASS; validators PASS; Vocs build 163 files; mutation 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`). Ada two-cycle not re-run (no backend change in this takeover).
 - Sol 6.1 xhigh: **NOT-RUN** (already recorded above).
-- Chromium 3×3 (`agent-docs/test-audit/browser-evidence/crew-3x3-takeover/probe.mjs`, log `tasks/metrics/frontend/CREW-3X3-takeover-chromium.log`): 9/9 rows pass in light, dark and high contrast at 1440, 768 and 390. Dismissing the confirm on an unconnected claim leaves ownership unchanged; accepting acquires it and the dialog text contains "NOT connected". Edit claim: the chooser, the inline form, and Save all work, and the saved name appears in Active claim benefits. Document overflow 0 in all nine rows.
+- Chromium 3×3 (`docs/public/evidence/crew-claims-edit-01/crew-3x3-takeover/probe.mjs`, log `tasks/metrics/frontend/CREW-3X3-takeover-chromium.log`): 9/9 rows pass in light, dark and high contrast at 1440, 768 and 390. Dismissing the confirm on an unconnected claim leaves ownership unchanged; accepting acquires it and the dialog text contains "NOT connected". Edit claim: the chooser, the inline form, and Save all work, and the saved name appears in Active claim benefits. Document overflow 0 in all nine rows.
 - Sol 6.1 xhigh at `086cae52` returned FAIL on two points, both fixed red-first:
-  - Owned claim text became nearly invisible on hover (1.04–1.20:1, against 13.2:1 at rest). Red: `crew-claims-edit-01/owned-hover-contrast-probe.mjs`. Fix: `components.css` `.claim-owned:hover, .claim-owned:active` keep the owned fill and inverse text. Green: 13.26 (light and high contrast) and 13.18 (dark) at hover, all nine rows (`owned-hover-contrast.json`).
-  - A 64-character claim name widened the page to 726px at 390px (`crew-claims-edit-01/long-claim-name-probe.mjs`, red). Fix: `components.css` `.active-claim-list` rows wrap and long names break inside them. Green: document overflow 0 at 1440, 768 and 390 (`long-claim-name.json`).
+  - Owned claim text became nearly invisible on hover (1.04–1.20:1, against 13.2:1 at rest). Red: `docs/public/evidence/crew-claims-edit-01/owned-hover-contrast-probe.mjs`. Fix: `components.css` `.claim-owned:hover, .claim-owned:active` keep the owned fill and inverse text. Green: 13.26 (light and high contrast) and 13.18 (dark) at hover, all nine rows (`owned-hover-contrast.json`).
+  - A 64-character claim name widened the page to 726px at 390px (`docs/public/evidence/crew-claims-edit-01/long-claim-name-probe.mjs`, red). Fix: `components.css` `.active-claim-list` rows wrap and long names break inside them. Green: document overflow 0 at 1440, 768 and 390 (`long-claim-name.json`).

@@ -1,0 +1,938 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "theme": "light",
+    "crewId": "59642155-0911-4cc7-82ad-481493a121e0",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 1440-light — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 1440,
+    "height": 1000,
+    "theme": "dark",
+    "crewId": "857ac634-e618-4217-8f65-5a637d1e8355",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 1440-dark — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1239,
+          "viewport": 1440
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 1440,
+    "height": 1000,
+    "theme": "high",
+    "crewId": "20645242-4d12-47e6-81a8-4313091e6731",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 1440-high — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 1238,
+          "viewport": 1440
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "theme": "light",
+    "crewId": "67807131-1515-4123-8560-219997f1f054",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 768-light — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "theme": "dark",
+    "crewId": "63149192-5f51-46b5-813b-384190240731",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 768-dark — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 727,
+          "viewport": 768
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "theme": "high",
+    "crewId": "85b66171-9f44-4d82-8110-9a1335521a94",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 768-high — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        },
+        "claimsMap": {
+          "overflowX": 0,
+          "right": 726,
+          "viewport": 768
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "light",
+    "crewId": "6a1b2769-3918-4152-8865-3796961a9035",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 252,
+          "right": 349,
+          "viewport": 390
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 252,
+          "right": 349,
+          "viewport": 390
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 390-light — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 252,
+          "right": 349,
+          "viewport": 390
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "dark",
+    "crewId": "fce381a0-327c-4222-8017-8d154976274c",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 252,
+          "right": 349,
+          "viewport": 390
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 252,
+          "right": 349,
+          "viewport": 390
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 390-dark — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 349,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 252,
+          "right": 349,
+          "viewport": 390
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "high",
+    "crewId": "85418264-8d17-431b-8712-32189b3615f4",
+    "repTurf": {
+      "before": {
+        "rep": "Rep 0/12−1+1",
+        "turf": "Turf: 0",
+        "manual": "Other turf: 0"
+      },
+      "overflowBefore": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 348,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 348,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 254,
+          "right": 348,
+          "viewport": 390
+        }
+      },
+      "addTurfDisabled": false,
+      "afterManual": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "overflowAfter": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 348,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 348,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 254,
+          "right": 348,
+          "viewport": 390
+        }
+      }
+    },
+    "claims": {
+      "dialogsBeforeAcquire": 1,
+      "turfClaimAvailable": true,
+      "turfBeforeClaim": {
+        "rep": "Rep 0/11−1+1",
+        "turf": "Turf: 1",
+        "manual": "Other turf: 1"
+      },
+      "turfAfterClaimAcquire": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "turfClaimMessage": "Acquire the claim \"Turf\"?",
+      "hasUnconnected": true,
+      "ownedAfterDismiss": 1,
+      "dismissedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "ownedAfterAccept": 2,
+      "acceptedMessage": "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "turfAfterClaim": {
+        "rep": "Rep 0/10−1+1",
+        "turf": "Turf: 2",
+        "manual": "Other turf: 1"
+      },
+      "activeListAfterEdit": "Probe 390-high — +1 scale for your Skulks cohortsTurf",
+      "overflowAfterEdit": {
+        "document": 0,
+        "rep": {
+          "overflowX": 0,
+          "right": 348,
+          "viewport": 390
+        },
+        "turf": {
+          "overflowX": 0,
+          "right": 348,
+          "viewport": 390
+        },
+        "claimsMap": {
+          "overflowX": 254,
+          "right": 348,
+          "viewport": 390
+        }
+      }
+    },
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?",
+      "WARNING — out-of-sequence acquisition. \"Training Rooms\" is NOT connected to your controlled network (the Lair or any acquired claim), and crews usually expand claim by claim.\n\nAcquire \"Training Rooms\" anyway?"
+    ]
+  }
+]

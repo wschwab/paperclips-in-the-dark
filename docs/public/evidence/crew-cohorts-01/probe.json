@@ -1,0 +1,38 @@
+{
+  "crewId": "60b882d3-6671-4711-815e-352111442197",
+  "rows": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "sectionHeight": 409,
+      "sectionOverflowX": false,
+      "headingVisibleInitially": false,
+      "firstControlTopInSection": 139,
+      "derivedQuality": "0",
+      "derivedScale": "0",
+      "hasQualityInput": false
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "sectionHeight": 329,
+      "sectionOverflowX": false,
+      "headingVisibleInitially": false,
+      "firstControlTopInSection": 139,
+      "derivedQuality": "0",
+      "derivedScale": "0",
+      "hasQualityInput": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "sectionHeight": 612,
+      "sectionOverflowX": false,
+      "headingVisibleInitially": false,
+      "firstControlTopInSection": 139,
+      "derivedQuality": "0",
+      "derivedScale": "0",
+      "hasQualityInput": false
+    }
+  ]
+}

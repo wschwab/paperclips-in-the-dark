@@ -1,0 +1,74 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "mapScrollWidth": 1038,
+    "mapClientWidth": 1038,
+    "docScrollWidth": 1440,
+    "docClientWidth": 1440,
+    "gridLeft": 201,
+    "gridRight": 1239,
+    "gridBottom": 1678,
+    "viewportWidth": 1440,
+    "viewportHeight": 1000,
+    "editToggleCount": 0,
+    "activeListButtons": 0,
+    "ownedBeforeAcquire": 0,
+    "ownedAfterAcquire": 1,
+    "ownedAfterCancelledRelinquish": 1,
+    "editorName": "Fixer",
+    "dialogs": [
+      "Acquire the claim \"Fixer\" — +2 coin for lower-class targets?",
+      "Relinquish \"Fixer\"? This removes the claim from your crew and its benefit stops applying. If it was linking further territory, that ground may become unreachable. You can re-acquire it later."
+    ],
+    "screenshot": "claims-1440.png"
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "mapScrollWidth": 686,
+    "mapClientWidth": 686,
+    "docScrollWidth": 768,
+    "docClientWidth": 768,
+    "gridLeft": 41,
+    "gridRight": 727,
+    "gridBottom": 2121,
+    "viewportWidth": 768,
+    "viewportHeight": 1024,
+    "editToggleCount": 0,
+    "activeListButtons": 0,
+    "ownedBeforeAcquire": 1,
+    "ownedAfterAcquire": 2,
+    "ownedAfterCancelledRelinquish": 2,
+    "editorName": "Fixer",
+    "dialogs": [
+      "Acquire the claim \"Turf\"?",
+      "Relinquish \"Fixer\"? This removes the claim from your crew and its benefit stops applying. If it was linking further territory, that ground may become unreachable. You can re-acquire it later."
+    ],
+    "screenshot": "claims-768.png"
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "mapScrollWidth": 560,
+    "mapClientWidth": 308,
+    "docScrollWidth": 390,
+    "docClientWidth": 390,
+    "gridLeft": 41,
+    "gridRight": 601,
+    "gridBottom": 2506,
+    "viewportWidth": 390,
+    "viewportHeight": 844,
+    "editToggleCount": 0,
+    "activeListButtons": 0,
+    "ownedBeforeAcquire": 2,
+    "ownedAfterAcquire": 3,
+    "ownedAfterCancelledRelinquish": 3,
+    "editorName": "Vice Den",
+    "dialogs": [
+      "Acquire the claim \"Vice Den\" — (Tier roll) - Heat = coin in downtime?",
+      "Relinquish \"Vice Den\"? This removes the claim from your crew and its benefit stops applying. If it was linking further territory, that ground may become unreachable. You can re-acquire it later."
+    ],
+    "screenshot": "claims-390.png"
+  }
+]

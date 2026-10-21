@@ -1,0 +1,95 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "pointerEvents": "none",
+    "overflowY": "auto",
+    "cardClient": 964,
+    "cardScroll": 1275,
+    "headingTop": 182,
+    "firstTop": 217,
+    "visible": [
+      {
+        "title": "Your crew-specific xp trigger.",
+        "inCard": true
+      },
+      {
+        "title": "Contend with challenges above your current station.",
+        "inCard": true
+      },
+      {
+        "title": "Bolster your crew’s reputation or develop a new one.",
+        "inCard": true
+      },
+      {
+        "title": "Express the goals, drives, inner conflict, or essential nature of the crew.",
+        "inCard": true
+      }
+    ],
+    "wheelBefore": 0,
+    "wheelAfter": 311,
+    "wheelScrolls": true
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "pointerEvents": "none",
+    "overflowY": "auto",
+    "cardClient": 578,
+    "cardScroll": 1275,
+    "headingTop": 182,
+    "firstTop": 217,
+    "visible": [
+      {
+        "title": "Your crew-specific xp trigger.",
+        "inCard": true
+      },
+      {
+        "title": "Contend with challenges above your current station.",
+        "inCard": true
+      },
+      {
+        "title": "Bolster your crew’s reputation or develop a new one.",
+        "inCard": true
+      },
+      {
+        "title": "Express the goals, drives, inner conflict, or essential nature of the crew.",
+        "inCard": true
+      }
+    ],
+    "wheelBefore": 0,
+    "wheelAfter": 600,
+    "wheelScrolls": true
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "pointerEvents": "none",
+    "overflowY": "auto",
+    "cardClient": 470,
+    "cardScroll": 1956,
+    "headingTop": 258,
+    "firstTop": 293,
+    "visible": [
+      {
+        "title": "Your crew-specific xp trigger.",
+        "inCard": false
+      },
+      {
+        "title": "Contend with challenges above your current station.",
+        "inCard": false
+      },
+      {
+        "title": "Bolster your crew’s reputation or develop a new one.",
+        "inCard": false
+      },
+      {
+        "title": "Express the goals, drives, inner conflict, or essential nature of the crew.",
+        "inCard": false
+      }
+    ],
+    "wheelBefore": 0,
+    "wheelAfter": 600,
+    "wheelScrolls": true
+  }
+]

@@ -1,0 +1,2135 @@
+[
+  {
+    "width": 1440,
+    "height": 1000,
+    "theme": "light",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 493,
+        "repCardWidth": 493
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 493,
+        "repCardWidth": 493
+      }
+    }
+  },
+  {
+    "width": 1440,
+    "height": 1000,
+    "theme": "dark",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 493,
+        "repCardWidth": 493
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 493,
+        "repCardWidth": 493
+      }
+    }
+  },
+  {
+    "width": 1440,
+    "height": 1000,
+    "theme": "high",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -40,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 491,
+        "repCardWidth": 491
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -40,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 491,
+        "repCardWidth": 491
+      }
+    }
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "theme": "light",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 686,
+        "repCardWidth": 686
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 686,
+        "repCardWidth": 686
+      }
+    }
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "theme": "dark",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 686,
+        "repCardWidth": 686
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 686,
+        "repCardWidth": 686
+      }
+    }
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "theme": "high",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -40,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 684,
+        "repCardWidth": 684
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -40,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 1,
+        "repTrackWidth": 684,
+        "repCardWidth": 684
+      }
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "light",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 2,
+        "repTrackWidth": 308,
+        "repCardWidth": 308
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 2,
+        "repTrackWidth": 308,
+        "repCardWidth": 308
+      }
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "dark",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 2,
+        "repTrackWidth": 308,
+        "repCardWidth": 308
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -38,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 2,
+        "repTrackWidth": 308,
+        "repCardWidth": 308
+      }
+    }
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "high",
+    "gang": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -40,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 2,
+        "repTrackWidth": 306,
+        "repCardWidth": 306
+      }
+    },
+    "expert": {
+      "fields": [
+        {
+          "label": "Kind*",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort kind"
+        },
+        {
+          "label": "Name",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort name"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort gang type"
+        },
+        {
+          "label": "Type",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort expert type"
+        },
+        {
+          "label": "Custom type",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort expert custom type"
+        },
+        {
+          "label": "Quality (from Tier)",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "span"
+        },
+        {
+          "label": "Scale (from Tier)",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "span"
+        },
+        {
+          "label": "Armor",
+          "hiddenAttr": true,
+          "display": "none",
+          "visibility": "visible",
+          "visible": false,
+          "control": "Cohort armor"
+        },
+        {
+          "label": "Edges",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort edge"
+        },
+        {
+          "label": "Flaws",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort flaw"
+        },
+        {
+          "label": "Description",
+          "hiddenAttr": false,
+          "display": "flex",
+          "visibility": "visible",
+          "visible": true,
+          "control": "Cohort description"
+        }
+      ],
+      "layout": {
+        "addButtonRightGap": 0,
+        "addButtonTopBelowLastFieldBottom": -40,
+        "pickers": [
+          {
+            "kind": "Cohort edge",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          },
+          {
+            "kind": "Cohort flaw",
+            "plusSameRowAsSelect": true,
+            "plusRightOfSelect": true,
+            "plusInsidePicker": true
+          }
+        ],
+        "docOverflowX": 0,
+        "addOverflowX": 0,
+        "repBoxes": 12,
+        "repRows": 2,
+        "repTrackWidth": 306,
+        "repCardWidth": 306
+      }
+    }
+  }
+]

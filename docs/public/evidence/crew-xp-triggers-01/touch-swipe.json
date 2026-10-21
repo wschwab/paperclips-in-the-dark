@@ -1,0 +1,24 @@
+{
+  "before": {
+    "card": 0,
+    "page": 0
+  },
+  "swipes": [
+    {
+      "card": 390,
+      "page": 0
+    },
+    {
+      "card": 780,
+      "page": 0
+    },
+    {
+      "card": 1170,
+      "page": 0
+    }
+  ],
+  "cardScrolledAfterTouch": true,
+  "pageScrolledAfterTouch": false,
+  "lastTriggerBottomAfterSwipes": -301,
+  "viewportHeight": 844
+}

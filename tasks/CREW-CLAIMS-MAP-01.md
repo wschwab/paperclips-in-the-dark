@@ -35,8 +35,8 @@ The frozen-tree Chromium 3×3 check must include 1440×1000 with **map.scrollWid
 
 ## Frozen-tree acceptance (takeover, tree `e360683e`)
 
-- Chromium probe (`agent-docs/test-audit/browser-evidence/crew-claims-edit-01/probe.mjs`, log `tasks/metrics/frontend/CREW-CLAIMS-EDIT-01-chromium.log`): at 1440×1000, `map.scrollWidth === map.clientWidth` and the document fits. At 768 both fit. At 390 the map pans inside its bounded container (`scrollWidth > clientWidth`), as designed.
+- Chromium probe (`docs/public/evidence/crew-claims-map-01/probe.mjs`, log `tasks/metrics/frontend/CREW-CLAIMS-EDIT-01-chromium.log`): at 1440×1000, `map.scrollWidth === map.clientWidth` and the document fits. At 768 both fit. At 390 the map pans inside its bounded container (`scrollWidth > clientWidth`), as designed.
 - Vitest 1006/1006; `tsc` clean; `vite build` green; browser 6/6 PASS; validators PASS; Vocs build 163 files.
 - Mutation campaign 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`).
 - Sol 6.1 xhigh: **NOT-RUN** (Codex `usage_limit_reached`). The user will run it when quota resets.
-- Sol 6.1 xhigh at `086cae52` returned FAIL: a 64-character claim name widened the document at 390px (726/390), because the Active claim benefits rows did not wrap. Red and green: `crew-claims-edit-01/long-claim-name-probe.mjs`, `long-claim-name.json`; fix in `components.css` (`.active-claim-list`). Document overflow is 0 at 1440, 768 and 390. The map itself was already bounded and is unchanged.
+- Sol 6.1 xhigh at `086cae52` returned FAIL: a 64-character claim name widened the document at 390px (726/390), because the Active claim benefits rows did not wrap. Red and green: `docs/public/evidence/crew-claims-map-01/long-claim-name-probe.mjs`, `long-claim-name.json`; fix in `components.css` (`.active-claim-list`). Document overflow is 0 at 1440, 768 and 390. The map itself was already bounded and is unchanged.

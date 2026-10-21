@@ -1,0 +1,128 @@
+[
+  {
+    "width": 1440,
+    "theme": "light",
+    "atRest": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    },
+    "hovered": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    }
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "atRest": {
+      "text": "rgb(20, 18, 16)",
+      "bg": "rgb(225, 216, 195)",
+      "ratio": 13.18
+    },
+    "hovered": {
+      "text": "rgb(20, 18, 16)",
+      "bg": "rgb(225, 216, 195)",
+      "ratio": 13.18
+    }
+  },
+  {
+    "width": 1440,
+    "theme": "high",
+    "atRest": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    },
+    "hovered": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    }
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "atRest": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    },
+    "hovered": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    }
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "atRest": {
+      "text": "rgb(20, 18, 16)",
+      "bg": "rgb(225, 216, 195)",
+      "ratio": 13.18
+    },
+    "hovered": {
+      "text": "rgb(20, 18, 16)",
+      "bg": "rgb(225, 216, 195)",
+      "ratio": 13.18
+    }
+  },
+  {
+    "width": 768,
+    "theme": "high",
+    "atRest": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    },
+    "hovered": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    }
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "atRest": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    },
+    "hovered": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    }
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "atRest": {
+      "text": "rgb(20, 18, 16)",
+      "bg": "rgb(225, 216, 195)",
+      "ratio": 13.18
+    },
+    "hovered": {
+      "text": "rgb(20, 18, 16)",
+      "bg": "rgb(225, 216, 195)",
+      "ratio": 13.18
+    }
+  },
+  {
+    "width": 390,
+    "theme": "high",
+    "atRest": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    },
+    "hovered": {
+      "text": "rgb(232, 224, 208)",
+      "bg": "rgb(26, 26, 26)",
+      "ratio": 13.26
+    }
+  }
+]

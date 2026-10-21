@@ -1,0 +1,101 @@
+[
+  {
+    "width": 1440,
+    "theme": "light",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 493,
+    "formScroll": 493,
+    "plusRight": 565.9,
+    "viewport": 1440,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 493,
+    "formScroll": 493,
+    "plusRight": 565.9,
+    "viewport": 1440,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 1440,
+    "theme": "high",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 491,
+    "formScroll": 491,
+    "plusRight": 572.9,
+    "viewport": 1440,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 686,
+    "formScroll": 686,
+    "plusRight": 460,
+    "viewport": 768,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 686,
+    "formScroll": 686,
+    "plusRight": 460,
+    "viewport": 768,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 768,
+    "theme": "high",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 684,
+    "formScroll": 684,
+    "plusRight": 467,
+    "viewport": 768,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 390,
+    "theme": "light",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 308,
+    "formScroll": 308,
+    "plusRight": 281.3,
+    "viewport": 390,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 390,
+    "theme": "dark",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 308,
+    "formScroll": 308,
+    "plusRight": 281.3,
+    "viewport": 390,
+    "plusInsideViewport": true
+  },
+  {
+    "width": 390,
+    "theme": "high",
+    "pickedAria": "Cohort edge",
+    "documentOverflow": 0,
+    "formClient": 306,
+    "formScroll": 306,
+    "plusRight": 286.3,
+    "viewport": 390,
+    "plusInsideViewport": true
+  }
+]

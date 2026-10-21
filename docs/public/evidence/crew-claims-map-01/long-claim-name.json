@@ -1,0 +1,32 @@
+[
+  {
+    "width": 1440,
+    "documentScroll": 1440,
+    "documentClient": 1440,
+    "activeListScroll": 1038,
+    "activeListClient": 1038,
+    "mapScroll": 1038,
+    "mapClient": 1038,
+    "documentOverflow": 0
+  },
+  {
+    "width": 768,
+    "documentScroll": 768,
+    "documentClient": 768,
+    "activeListScroll": 686,
+    "activeListClient": 686,
+    "mapScroll": 686,
+    "mapClient": 686,
+    "documentOverflow": 0
+  },
+  {
+    "width": 390,
+    "documentScroll": 390,
+    "documentClient": 390,
+    "activeListScroll": 308,
+    "activeListClient": 308,
+    "mapScroll": 560,
+    "mapClient": 308,
+    "documentOverflow": 0
+  }
+]
