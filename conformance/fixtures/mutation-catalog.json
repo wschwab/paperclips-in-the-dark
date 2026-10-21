@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "732e1f910ab79ffbfbf91f007b8b130336ff897b298308d5ccefa90d31f7d651"
+        "frontend/src/pages/character-detail.ts": "756eba7eb31b340a85e1a03ebd386cdd8a6fd3faab3d0becf64cfb10109fbc35"
       },
       "severity": "P1",
       "status": "not-run",
@@ -464,7 +464,7 @@
       "mutation": "Claim-operation coverage removed: all three dispatch arms become dead (elsif False), so claim ops fall through to the unknown-op failure",
       "observableFailure": "claim.set/customize/reset stop acquiring, customizing, and relinquishing claims; the conformance claim oracle cases fail",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "a50f5f7a7553ac961e8a5a8db0df0444f41adf7b78a717045ae444f7149c67d0"
+        "backend-ada/server/src/pitd_ops.adb": "1d6a1b8bbb6241fbe73d1b90149244165a5365d2169038888967decf8617d57f"
       },
       "severity": "P0",
       "status": "not-run",
