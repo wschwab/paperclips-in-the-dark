@@ -51,7 +51,7 @@ outputs:
 - `checkpoints/crew02-claims.mjs`: removed the "Edit claims" toggle and the per-claim Relinquish button click. It now asserts `.claims-edit-toggle` count is 0, then relinquishes by clicking the owned cell (`ownedCell(page, "Vice Den").click()`). Confirmation text, POST, and count assertions are unchanged.
   - Before: toggle click → Relinquish button click.
   - After: toggle count 0 → owned-cell click.
-- `crew-create-trackers.journey.mjs` (lines ~99–104): the rep/turf step selected `.turf-track .turf-slot[data-stress="1"]`, which no longer exists. It now clicks `Add 1 turf`, waits for `.turf-count` to read `Turf: 1`, then clicks `.crew-rep .stress-box[data-turf="1"]`. Checkpoint `rep-turf-bumped` is unchanged.
+- `crew-create-trackers.journey.mjs` (lines ~99–104): the rep/turf step selected `.turf-track .turf-slot[data-stress="1"]`, which no longer exists. It now clicks `Add 1 turf`, waits for `.turf-count` to read `Turf: 1`, then waits for `.crew-rep .stress-box[data-turf="1"]` to be visible (it does not click that box). Checkpoint `rep-turf-bumped` is unchanged.
 - `checkpoints/crew01-cohort-add.mjs`: declared the already-recorded `cohort-derived-stats-stored` checkpoint, which the journey reported as undeclared.
 
 ## Sol review
