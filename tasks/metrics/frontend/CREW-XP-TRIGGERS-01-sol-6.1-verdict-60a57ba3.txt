@@ -1,0 +1,21 @@
+VERDICT: PASS
+
+Evidence root (`S`): `/tmp/sol-review/CREW-XP-TRIGGERS-01-scratch/`.
+
+- **PASS — Pinned revision.** Reviewed `60a57ba309c60f4bb9d653de09f48a6743512f1e`. All 308 checked runtime/source files matched its bytes before delivery; `S/r4-verification-summary.json`: `sourceDrift: []`. Frontend rebuilt from matching source.
+
+- **PASS — Four triggers, list-first order, crew-specific text.** `frontend/src/data/crew-advancement.ts:25–42` defines four categories; `frontend/src/pages/character-sections/gameMode.ts:558–578` renders heading → list → intro/maximum note → editor → Advancement. All nine Chromium cases observed four triggers, correct order, and the Assassins-specific trigger; `S/review-probe.json`: `rows[*].initial.{triggers,order,text}`.
+
+- **PASS — Desktop/tablet visibility.** At 1440×1000 and 768×1024, light/dark heading offsets were **182px**; all four trigger boxes fit initially. Card heights were **964px/578px**. High contrast also contained all four, with heading offset **229px**. Evidence: `S/review-probe.json`, rows `1440-*` and `768-*`; corresponding `*-initial.png` screenshots inspected.
+
+- **PASS — Explicit mobile residual.** At 390×844, light/dark heading offset **258px**, first-trigger offset **293px**, card height **470px**: heading and part of trigger one visible initially; triggers two–four require scrolling. High contrast measured **271/306/468px**, with the same behavior. Evidence: `S/review-probe.json`, rows `390-*`; `390-*-initial.png`. These observations match the card’s stated limitation.
+
+- **PASS — Wheel/touch reachability and containment.** At 390px in all three themes, wheel scrolling reached **600px**; three touch swipes produced **0 → 390 → 780 → 1170px**, while page scroll stayed **0**. Incremental wheel checks made every trigger fully readable. All nine cases had no document or card horizontal overflow. Evidence: `S/review-probe.json`: `wheelAfter`, `wheelReach`, `swipes`, `initial.card`; `390-*-swipe-1.png`. Touch/wheel share hit testing, and teardown removes listeners: `character-detail.ts:2421–2460,2483–2488`.
+
+- **PASS — Cited artifacts agree with behavior.** Inspected pinned `docs/public/evidence/crew-xp-triggers-01/{probe.json,touch-swipe.json}` and all three cited screenshots. Their default-theme geometry and scroll values were reproduced. Screenshots are post-wheel captures, consistent with `probe.mjs:51–60`; independent initial screenshots supply initial-visibility evidence.
+
+- **PASS — Editor and confirmation remain functional.** All nine cases saved crew XP **0 → 3**, displayed **3 after reload**, and showed the expected Skip confirmation: “Skip this optional step? Nothing is awarded or changed. You can come back to it.” Dismissal preserved `resolution/crew-xp`. Evidence: `S/review-probe.json`: `saved`, `reloadLabel`, `dialogText`, `afterDismiss`; zero page errors/API failures.
+
+- **PASS — Tests and order guard.** Pinned suite: **1009/1009**, including **84 sheet + 5 advancement tests**; `S/vitest.log:45–50`. Scratch-only intro-before-list mutation reproduced **“expected 360 to be less than 162”**; pinned order passed: `S/order-guard-red.log:101`, `order-guard-green.log:6–7`. Older 88/1007 counts are historical runs, not pinned-tree totals.
+
+- **PASS — Remaining gates.** Typecheck/build succeeded (`S/frontend-build-observation.json`); **6/6 browser journeys** passed (`S/browser-suite/journey-results.json`: `passed: true`); metrics **190**, traceability **231/231**, reconciliation **17/17** passed (`S/validation/` logs/summary). Isolated pinned Vocs build generated **163 files** (`S/vocs-build.log:945`). Archived mutation claim is supported by pinned `tasks/metrics/contract/MUTATION-28-final-combined.log:162–163`: **P0 19/19, P1 9/9**; mutation campaign not rerun under the read-only restriction.

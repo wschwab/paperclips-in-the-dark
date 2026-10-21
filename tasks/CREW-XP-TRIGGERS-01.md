@@ -40,3 +40,4 @@ Playtest feedback: the Resolution crew XP step should show all four SRD crew XP 
 - Mutation campaign 28/28 (P0 19/19, P1 9/9; `tasks/metrics/contract/MUTATION-28-final-combined.log`).
 - The 390px first-trigger partial visibility above is unchanged by this acceptance; it is recorded for the user, not a blocker.
 - Sol 6.1 xhigh: **NOT-RUN** (Codex `usage_limit_reached`). The user will run it when quota resets.
+- Re-review status (2026-10-21): Sol 6.1 xhigh at `60a57ba3` returned PASS (`tasks/metrics/frontend/CREW-XP-TRIGGERS-01-sol-6.1-verdict-60a57ba3.txt`). The `637a89c6` re-review did not run (`usage_limit_reached` for about 6 hours). The PASS is therefore not established for the current head; this card is NOT PASS on `637a89c6` until that review returns PASS.
