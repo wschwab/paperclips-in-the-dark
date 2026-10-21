@@ -1,8 +1,27 @@
-VERDICT: NOT-RUN
+VERDICT: FAIL
 
-Revision reviewed: 96dd79e9a034d914f0450de663e4f12b3d7c736e (prompt /tmp/sol-review/CREW-COHORTS-01-r2.md).
-Sol 6.1 xhigh did not produce a review. Error from CREW-COHORTS-01-r2.err:
+Behavioral checks passed. The pinned card still contains incorrect or unsupported acceptance evidence.
 
-    Codex error event: The usage limit has been reached (code=usage_limit_reached)
+Evidence root: `/tmp/sol-review/CREW-COHORTS-01-scratch/` (`S` below). Repository references are at `60a57ba309c60f4bb9d653de09f48a6743512f1e`.
 
-The previous FAIL verdict on 086cae52 is kept as CREW-COHORTS-01-sol-6.1-verdict-086cae52.txt. This card needs a Sol re-review when quota is available.
+- **[FAIL] Custom-picker coordinates do not match the card.** `tasks/CREW-COHORTS-01.md:71` claims the edge “+” ends at **281.3px in all nine rows**. The pinned `docs/public/evidence/crew-cohorts-01/custom-picker.json` instead records **565.9, 565.9, 572.9, 460, 460, 467, 281.3, 281.3, 286.3px**. Independent Chromium measurements reproduce those values.
+  - **Reproduce:** use a 390×844 viewport, enable high contrast, select **Custom** under Edges, measure the edge “+” with `getBoundingClientRect().right`.
+  - **Observed:** **286.28125px**, not **281.3px**. Document overflow remains **0px**.
+  - Evidence: `S/independent.json`, `.rows[8].customEdge.pickers[0].plus.right`; `S/evidence-comparison.json`.
+
+- **[FAIL] Post-fix Ada two-cycle claim lacks matching evidence.** Card line 70 claims **74 files / 628 tests in both cycles**. Its cited `tasks/metrics/ada/CREW-COHORTS-01-ada-two-cycle.log:655-656,1303-1304` records **74 files / 627 tests** in each cycle.
+  - **Reproduce:** read that log using `jj file show -r 60a57ba309c60f4bb9d653de09f48a6743512f1e tasks/metrics/ada/CREW-COHORTS-01-ada-two-cycle.log`.
+  - **Observed vs expected:** two recorded **627-test** runs; no matching **628-test** two-cycle evidence. The new regression independently passes, but that does not establish the claimed full two-cycle result.
+
+- **[FAIL] “Current tree” frontend count is stale.** Card line 73 claims **998/998**. The pinned frontend runs **1009/1009**, including **7 cohort tests** and **100 crew-detail tests**.
+  - **Reproduce:** from `frontend/`, run `npx vitest run --no-cache --reporter=json --outputFile=/tmp/sol-review/CREW-COHORTS-01-scratch/frontend-vitest.json`.
+  - **Observed vs expected:** **1009 passed**, not **998**; zero failures.
+  - Evidence: `S/frontend-vitest.json`, `numPassedTests` and `testResults`.
+
+- **[PASS] Conditional fields, menus and descriptions.** Independently exercised 1440×1000, 768×1024 and 390×844 in light, dark and high contrast. Gang/expert fields follow kind; one visible Type select; expert Custom input appears only for Custom; descriptions are four-row textareas. SRD menus contain Skulks, five expert types plus one Custom, and the stated edges/flaws. Source: `frontend/src/pages/crew-sections/cohorts.ts:302-445`; evidence: `S/independent.json`, `.rows[].options`, `.checks`. Inspected pinned desktop/tablet/mobile screenshots and independent Custom/edit screenshots.
+
+- **[PASS] Derived stats and persistence.** Tier 0 gang shows **0/0** without numeric inputs. Tier 2 gang saves **quality 2 / scale 2**; expert saves **3/0**, without armor. Names, descriptions, traits, armor and harm changes persist; edit requests omit quality/scale. Previously unnamed expert successfully becomes **Legacy Mercy**. Evidence: `S/independent.json`, `.rows[].savedGang`, `.savedExpert`, `.updatedGang`, `.updatedExpert`, `.persisted`, `.legacy`, `.requests`.
+
+- **[PASS] Trait gating and responsive layout.** Two-edge cap works; unequal counts disable Add with visible explanatory text; matching counts enable it. Default Add right gap is **0px**, default picker buttons remain beside selects, and checked default/Custom/edit states have **0px horizontal overflow** across all nine combinations. Light-theme section heights reproduce **409/329/612px**, first-control offset **139px**, heading initially below the fold. Evidence: `S/independent.json`; **256 checks, zero failures**.
+
+- **[PASS] Contract and exercised gates.** Optional name is represented in OpenAPI, DTO decoders, generated validator and Ada normalization/update handling. Existing backend regression file: **4/4 passed**, including `SEMANTICS-COHORT-002`. Fresh frontend typecheck/build passed. Managed browser gate: **6/6 journeys passed**, no reported problems. Pinned mutation log supports **P0 19/19 + P1 9/9 killed**. Evidence: `S/backend-vitest.json`, `S/browser-gate/journey-results.json`; generated validator lines **620-624,1093-1108**; mutation log lines **162-163**.

@@ -197,4 +197,30 @@ describe("claim operation observable coverage", () => {
       expect((await api.crew(crew.id)).claimOverrides).toEqual(reloaded.claimOverrides);
     },
   );
+
+  testCase(
+    "CLAIM-OVERRIDE-EFFECTS-001",
+    "a claim's customized effects override drives the crew capability projection, not the static game effects",
+    async () => {
+      const crew = await newCrew(BLADES, "Assassins");
+      const capability = async (id: string) =>
+        JSON.parse((await api.get(`crews/${id}/capabilities`)).rawBody) as { effectiveTurf: number };
+      const base = (await capability(crew.id)).effectiveTurf;
+
+      const claimed = await api.crewOp(crew.id, "claim.set", { claimId: "turf-1", claimed: true }, crew.revision);
+      expect(claimed.error, "claim.set rejected").toBeNull();
+      expect(claimed.ok).toBe(true);
+      if (!claimed.crew) throw new Error("claim.set returned no crew");
+      expect((await capability(crew.id)).effectiveTurf).toBe(base + 1);
+
+      const customized = await api.crewOp(
+        crew.id,
+        "claim.customize",
+        { claimId: "turf-1", effects: [] },
+        claimed.crew.revision,
+      );
+      expect(customized.ok).toBe(true);
+      expect((await capability(crew.id)).effectiveTurf).toBe(base);
+    },
+  );
 });

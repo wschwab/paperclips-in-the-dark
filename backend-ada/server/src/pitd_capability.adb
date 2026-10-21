@@ -47,6 +47,28 @@ package body Pitd_Capability is
       return False;
    end Claim_Exists;
 
+   --  A claim's effective effects: a per-crew claimOverrides entry that carries
+   --  an effects array replaces the static game effects for that claim (the
+   --  override is what claim.customize writes); otherwise the game effects apply.
+   function Claim_Effects (E : JSON_Value; N : JSON_Value) return JSON_Array is
+      Ovs : constant JSON_Array :=
+        (if Has_Field (E, "claimOverrides") then Get (E, "claimOverrides")
+         else Empty_Array);
+      Id  : constant String := Str_Field (N, "Id");
+   begin
+      for I in 1 .. Length (Ovs) loop
+         declare O : constant JSON_Value := Get (Ovs, I); begin
+            if Str_Field (O, "claimId") = Id and then Has_Field (O, "effects") then
+               return Get (O, "effects");
+            end if;
+         end;
+      end loop;
+      if Has_Field (N, "Effects") then
+         return Get (N, "Effects");
+      end if;
+      return Empty_Array;
+   end Claim_Effects;
+
    --  Crew Claims (A15): derived effect evaluation.  Acquired claims carry
    --  typed effects ({Kind, Target, Delta}); only derivedDelta on crew.turf
    --  is currently modeled.  The effective value is BASE + SUM of deltas from
@@ -74,9 +96,8 @@ package body Pitd_Capability is
                   begin
                      for J in 1 .. Length (Ns) loop
                         declare N : constant JSON_Value := Get (Ns, J); begin
-                           if Has_Field (N, "Effects") then
-                              declare
-                                 Ef : constant JSON_Array := Get (N, "Effects");
+                           declare
+                              Ef : constant JSON_Array := Claim_Effects (E, N);
                                  Owned_Now : Boolean := False;
                               begin
                                  for K in 1 .. Length (Owned) loop
@@ -98,7 +119,6 @@ package body Pitd_Capability is
                                     end loop;
                                  end if;
                               end;
-                           end if;
                         end;
                      end loop;
                   end;
