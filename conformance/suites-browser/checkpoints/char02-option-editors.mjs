@@ -3,8 +3,8 @@
 // Creates a Hound through the same-origin unvalidated create endpoint and
 // drives every live game-data option editor on the sheet against the managed
 // server: playbook ability select (+ live description preview) → take,
-// heritage / background / vice canonical-option saves each followed by a real
-// page.reload() to prove server-side persistence, including the vice
+// user-entered heritage / canonical background / canonical vice saves each
+// followed by page.reload() to prove server-side persistence, including the vice
 // free-text purveyor description. The runner probes every visited route for
 // decode-failure notices and horizontal overflow automatically.
 //
@@ -27,7 +27,7 @@ export const checkpoints = [
   },
   {
     id: "heritage-saved-reloaded",
-    description: "1 when the saved canonical heritage survives a page reload",
+    description: "1 when a user-entered heritage survives a page reload without a stock description",
   },
   {
     id: "background-saved-reloaded",
@@ -47,7 +47,7 @@ export const checkpoints = [
   },
   {
     id: "game-data-fetch-degrades",
-    description: "1 when a failed game-data fetch leaves the sheet crash-free and the heritage editor usable through its Custom fallback",
+    description: "1 when a failed game-data fetch leaves the sheet crash-free and heritage usable through free text",
   },
 ];
 // The deliberately injected 500 on the game-settings endpoint (section 7)
@@ -116,21 +116,22 @@ export async function run(page, ctx) {
   }
   ctx.checkpoint("ability-taken-entry", await entry.count());
 
-  // -- 2. Heritage editor: canonical option → save → reload -----------------
+  // -- 2. Heritage editor: user text → save → reload (SETTING-PULL-01) --------
+  const heritageName = "Table-defined homeland";
   await page.locator('button[title="Edit Heritage"]').click();
-  await page.locator('select[aria-label="Heritage (choose)"]').selectOption("Skovlan");
+  const heritageInput = page.locator('input[aria-label="Heritage custom name"]');
+  await heritageInput.waitFor({ state: "visible", timeout: 10_000 });
+  if (await page.locator('select[aria-label="Heritage (choose)"]').count()) {
+    throw new Error("withdrawn heritage catalog must not leave a stock select");
+  }
+  await heritageInput.fill(heritageName);
   await saveOpenEditor(page, ".field-editing");
-  await page
-    .locator(".character-personal")
-    .getByText("Skovlan", { exact: true })
-    .waitFor({ state: "visible", timeout: 10_000 });
-
+  await page.locator(".character-personal").getByText(heritageName, { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
   await page.reload();
   await page.locator(".character-detail").waitFor({ state: "visible", timeout: 10_000 });
-  await page
-    .locator(".character-personal")
-    .getByText(/Unity War/)
-    .waitFor({ state: "visible", timeout: 10_000 });
+  const heritageRow = page.locator('[data-focus-key="named-heritage"]');
+  await heritageRow.getByText(heritageName, { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+  if (await heritageRow.locator(".serif").count()) throw new Error("custom heritage unexpectedly acquired a stock description");
   ctx.checkpoint("heritage-saved-reloaded", 1);
 
   // -- 3. Background editor: same pattern ------------------------------------
@@ -214,29 +215,25 @@ export async function run(page, ctx) {
   ctx.checkpoint("editor-accessible-state", 1);
 
   // -- 6. Editor survival across an intervening re-render --------------------
-  // An open option editor lives across the wholesale sheet replacement a
-  // mutation triggers: selection preserved, Save still functional.
+  // An open editor retains user text across the wholesale sheet replacement.
   await page.locator('button[title="Edit Heritage"]').click();
-  const heritSelect = page.locator('select[aria-label="Heritage (choose)"]');
-  await heritSelect.waitFor({ state: "visible", timeout: 10_000 });
-  await heritSelect.selectOption("Iruvia");
+  const draftName = "Another table-defined homeland";
+  await heritageInput.waitFor({ state: "visible", timeout: 10_000 });
+  await heritageInput.fill(draftName);
   // Intervening real op (+1 stress) re-renders the whole sheet.
   await page.locator('button[title="Add 1 stress"]').click();
-  await heritSelect.waitFor({ state: "visible", timeout: 10_000 });
-  if ((await heritSelect.inputValue()) !== "Iruvia") {
-    throw new Error("open heritage editor lost its selection across a rerender");
+  await heritageInput.waitFor({ state: "visible", timeout: 10_000 });
+  if ((await heritageInput.inputValue()) !== draftName) {
+    throw new Error("open heritage editor lost its user text across a rerender");
   }
   await saveOpenEditor(page, ".field-editing");
-  await page
-    .locator(".character-personal")
-    .getByText("Iruvia", { exact: true })
-    .waitFor({ state: "visible", timeout: 10_000 });
+  await page.locator(".character-personal").getByText(draftName, { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
   ctx.checkpoint("editor-survives-rerender", 1);
 
   // -- 7. Game-data fetch failure degrades gracefully ------------------------
   // Block only the game-settings endpoint (not /playbooks — the ability list
   // rides on it): the sheet must still render crash-free and the heritage
-  // editor must fall back to its Custom branch.
+  // editor must retain its free-text fallback.
   let blockedGameData = false;
   await page.route(/\/api\/games\/blades-in-the-dark$/, (route) => {
     blockedGameData = true;
@@ -253,12 +250,11 @@ export async function run(page, ctx) {
       throw new Error("injected game-data outage was never hit");
     }
     await page.locator('button[title="Edit Heritage"]').click();
-    const degradedSelect = page.locator('select[aria-label="Heritage (choose)"]');
-    await degradedSelect.waitFor({ state: "visible", timeout: 10_000 });
-    const customOption = degradedSelect.locator('option[value="__custom__"]');
-    if ((await customOption.count()) === 0) {
-      throw new Error("heritage editor lacks the Custom fallback after game-data failure");
+    await heritageInput.waitFor({ state: "visible", timeout: 10_000 });
+    if (await page.locator('select[aria-label="Heritage (choose)"]').count()) {
+      throw new Error("heritage unexpectedly regained stock choices after game-data failure");
     }
+    if ((await heritageInput.inputValue()) !== draftName) throw new Error("saved heritage was lost after game-data failure");
     ctx.checkpoint("game-data-fetch-degrades", 1);
     await ctx.screenshot("char02-game-data-degraded");
   } finally {

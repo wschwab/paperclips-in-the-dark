@@ -86,11 +86,12 @@ for our use under the Creative Commons Attribution 3.0 Unported license
 (http://creativecommons.org/licenses/by/3.0/).
 
 The SRD licence does not grant use of the excluded Duskwall/Shattered Isles setting.
-The Doskvol faction and district names in `data/world/doskvol.json` are setting
-material owned by John Harper and One Seven Design. They are included for this free
-fan project, approved by the project owner, and are not CC-BY licensed. The launch
-screen links the licence and the attribution. See the
-[crew world data scope and sources](docs/pages/contract/crew-world-sources.mdx).
+The stock Doskvol faction/district/location catalog and the setting heritage
+choices are **pulled pending permission** while the human asks John Harper.
+Manual faction and heritage entry still work. The complete pre-pull content is
+kept at the `setting-content` bookmark on both mirrors; the
+[setting content register](docs/pages/contract/setting-content-register.mdx)
+records the exact restore point, remaining names, and reversal procedure.
 
 ## Mirrors
 

@@ -692,38 +692,7 @@
 		"Instable",
 		"Vicieux"
 	],
-	"Heritages": [
-		{
-			"Name": "Akoros",
-			"BlurbFlavor": "ici en Akoros",
-			"Description": "Akoros est la nation la plus vaste et la plus avancée de tout l’Impérium. Elle abrite la capitale, mais aussi Doskvol elle-même. Akoros est un agrégat de diverses cultures ayant étroitement cohabité depuis plusieurs siècles, à l’image de l’Europe."
-		},
-		{
-			"Name": "Iles de la Dague",
-			"BlurbFlavor": "des Iles de la Dague",
-			"Description": "Iles recouvertes de jungles dont les habitants sont de grands marins, réputés comme corsaires et marchands. Leurs autochtones vivent sans barrières d’éclairs — affrontant les esprits par des moyens inconnus."
-		},
-		{
-			"Name": "Iruvia",
-			"BlurbFlavor": "du Royaume des sables d’Iruvia",
-			"Description": "Un riche et puissant royaume au grand raffinement, érigé au milieu des sables d’un désert du sud lointain. C’est une autre nation cosmopolite, dont les cultures sont similaires à celles de la Perse antique, l’Égypte et l’Inde."
-		},
-		{
-			"Name": "Severos",
-			"BlurbFlavor": "des steppes désolées de Severos",
-			"Description": "Steppes dévastées et sauvages habitées par des tribus de farouches cavaliers nomades, survivant dans les ruines d’antiques forteresses et caravansérails, dont les enchantements repoussent encore les esprits."
-		},
-		{
-			"Name": "Skovlan",
-			"BlurbFlavor": "du protectorat de Skovlan",
-			"Description": "Royaume nordique brimé et ostracisé par l’Impérium depuis sa longue guerre d’indépendance ayant échoué il y a quelques années. Skovla s’étend juste de l’autre côté du bras de mer qui le sépare de Doskvol. De nombreux Skovlandiens ayant perdu leurs foyers et leurs mode de vie se sont réfugiés à Doskvol, non sans tensions avec les locaux."
-		},
-		{
-			"Name": "Tycheros",
-			"BlurbFlavor": "de la lointaine et mystérieuse Tycheros",
-			"Description": "Terre légendaire située loin au-delà de la Mer du Vide. La superstition prétend que ses habitants ont du sang démoniaque. Un personnage tycherosi doit choisir une « marque occulte » (comme des yeux noirs de requin, des plumes en guise de cheveux, etc.), susceptible de faire réagir positivement ou négativement ses interlocuteurs."
-		}
-	],
+	"Heritages": [],
 	"Vices": [
 		{
 			"Name": "Croyance",

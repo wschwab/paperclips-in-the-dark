@@ -15,7 +15,7 @@ export function renderAboutLicence(): HTMLElement {
       {},
       "This work is based on Blades in the Dark (found at http://www.bladesinthedark.com/), product of One Seven Design, developed and authored by John Harper, and licensed for our use under the Creative Commons Attribution 3.0 Unported license (http://creativecommons.org/licenses/by/3.0/).",
     ),
-    el("p", {}, "Doskvol/Duskwall setting material is the property of John Harper / One Seven Design, used in a free fan project."),
+    el("p", {}, "Doskvol/Duskwall setting material is the property of John Harper / One Seven Design. Stock world references and setting heritage choices are pulled pending permission; user-entered records remain available."),
     el(
       "ul",
       { className: "about-links" },

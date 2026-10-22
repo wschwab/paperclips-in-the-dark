@@ -6482,11 +6482,9 @@ describe("CHAR-02 live option editors (Hound)", () => {
     expect(root.querySelector(".error-card")).toBeNull();
     expect(root.textContent).toContain("Brenda Hilton");
 
-    // Named editors have no live options: only the Custom… branch remains.
+    // With no heritage catalog, edit directly as free text; do not show an empty stock picker.
     (root.querySelector('button[title="Edit Heritage"]') as HTMLButtonElement).click();
-    const heritageSelect = root.querySelector('select[aria-label="Heritage (choose)"]') as HTMLSelectElement;
-    expect(Array.from(heritageSelect.options).map((o) => o.value)).toEqual(["__custom__"]);
-    expect(heritageSelect.value).toBe("__custom__");
+    expect(root.querySelector('select[aria-label="Heritage (choose)"]')).toBeNull();
     const customName = root.querySelector('input[aria-label="Heritage custom name"]') as HTMLInputElement;
     expect(customName).not.toBeNull();
     (root.querySelector('.field-editing button[title="Cancel"]') as HTMLButtonElement).click();

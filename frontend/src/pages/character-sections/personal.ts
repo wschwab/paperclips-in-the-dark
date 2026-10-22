@@ -96,18 +96,20 @@ export function renderPersonalSection(ctx: SectionCtx): HTMLElement {
       const editor = namedEditor!;
       const optionNames = gameDataOptions(gameData, key).map((o) => String(o.Name));
       const isCustom = editor.option === "__custom__" || !optionNames.includes(editor.option);
-      const select = el("select", {
+      const select = key === "heritage" && optionNames.length === 0 ? null : el("select", {
         "aria-label": `${label} (choose)`,
         disabled: anyLoading,
       },
         ...optionNames.map((n) => el("option", { value: n }, namedOptionLabel(n, gameDataDescription(gameData, key, n)))),
         el("option", { value: "__custom__" }, "Custom…"),
-      ) as HTMLSelectElement;
-      select.value = isCustom ? "__custom__" : editor.option;
-      select.addEventListener("change", () => {
-        editor.option = select.value;
-        state.rerender();
-      });
+      ) as HTMLSelectElement | null;
+      if (select) {
+        select.value = isCustom ? "__custom__" : editor.option;
+        select.addEventListener("change", () => {
+          editor.option = select.value;
+          state.rerender();
+        });
+      }
 
       const customInput = el("input", {
         type: "text",

@@ -1,4 +1,4 @@
-/** Contacts and faction records; the stock picker draws on the approved Doskvol data. */
+/** Contacts and manual faction records; optional stock controls appear only when world data is present. */
 import { el } from "../../lib/dom.js";
 import type { RenderState } from "../crew-detail.js";
 import { doskvolDistrictsDisclosure, stockFactionPicker } from "./doskvol-world.js";
@@ -171,7 +171,7 @@ return el(
         ? `Status range: ${state.factionBounds.min} to ${state.factionBounds.max}. The server applies these bounds.`
         : "Status bounds unavailable. You can still enter an integer; the server applies the game’s bounds."),
       el("div", { className: "faction-add-row" },
-        el("label", { className: "faction-field faction-stock-field" }, "Stock", stockPicker),
+        stockPicker ? el("label", { className: "faction-field faction-stock-field" }, "Stock", stockPicker) : null,
         el("label", { className: "faction-field faction-name-field" }, "Name", nameInput),
         el("label", { className: "faction-field" }, "Tier (optional)", tierInput),
         el("label", { className: "faction-field" }, "Status", statusInput),

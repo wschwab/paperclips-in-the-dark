@@ -1,8 +1,4 @@
-/**
- * Doskvol stock data for the crew sheet. Faction names, tiers and holds come from the
- * campaign sheet; district summaries are app-written. See data/world/doskvol.json.
- * Choosing a stock row only fills the manual entry: the crew keeps its own records.
- */
+/** Optional world-reference controls; empty catalogs stay hidden and saved crew records remain user-owned. */
 import { el } from "../../lib/dom.js";
 import worldData from "../../../../data/world/doskvol.json";
 
@@ -15,7 +11,8 @@ export const DOSKVOL_FACTIONS: readonly StockFaction[] = worldData.factions;
 export const DOSKVOL_DISTRICTS: readonly StockDistrict[] = worldData.districts;
 
 /** Stock picker: one optgroup per sheet group; a blank placeholder keeps manual entry the default. */
-export function stockFactionPicker(onPick: (faction: StockFaction) => void, disabled: boolean): HTMLSelectElement {
+export function stockFactionPicker(onPick: (faction: StockFaction) => void, disabled: boolean): HTMLSelectElement | null {
+  if (DOSKVOL_FACTIONS.length === 0) return null;
   const select = el(
     "select",
     { "aria-label": "Stock faction", disabled },
@@ -36,7 +33,8 @@ export function stockFactionPicker(onPick: (faction: StockFaction) => void, disa
 }
 
 /** Collapsed disclosure listing each district with its summary and nested locations. */
-export function doskvolDistrictsDisclosure(): HTMLElement {
+export function doskvolDistrictsDisclosure(): HTMLElement | null {
+  if (DOSKVOL_DISTRICTS.length === 0) return null;
   return el(
     "details",
     { className: "doskvol-districts" },

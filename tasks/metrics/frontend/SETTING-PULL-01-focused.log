@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/data/setting-pull.test.ts (4 tests) 2ms
+ ✓ src/pages/setting-pull.test.ts (5 tests) 12ms
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  18:14:35
+   Duration  489ms (transform 97ms, setup 0ms, collect 236ms, tests 14ms, environment 96ms, prepare 125ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/setting-pull.test.ts src/data/setting-pull.test.ts

@@ -12,9 +12,9 @@ and what remains open. The licence reasoning is in
 
 | Location | Contents | Status |
 | --- | --- | --- |
-| `data/world/doskvol.json` | 48 faction rows and all 12 districts, with original summaries and 27 sourced noteworthy locations with original short descriptions | CREW-WORLD-03 corrects the CREW-WORLD-02 transcription; human-approved free fan project. |
-| `frontend/src/pages/crew-sections/doskvol-world.ts` | Imports the data; renders the stock faction picker and named, described district locations | CREW-WORLD-02, extended by CREW-WORLD-03 |
-| `frontend/src/pages/about-licence.ts` | Launch-screen About & licence aside with attribution and links | Shipped by CREW-WORLD-02 |
+| `data/world/doskvol.json` | `factions` and `districts` emptied; `source` records the pull and the restore bookmark | Pulled pending permission (SETTING-PULL-01). Restore point: bookmark `setting-content`. |
+| `frontend/src/pages/crew-sections/doskvol-world.ts` | Stock faction picker and districts disclosure render only when world data is present | Pulled pending permission. The code paths remain for re-insertion. |
+| `frontend/src/pages/about-licence.ts` | Launch-screen About & licence aside; the setting-ownership line states the pull | Shipped by CREW-WORLD-02; copy updated by SETTING-PULL-01 |
 
 Rules for shipped data:
 
@@ -25,8 +25,41 @@ Rules for shipped data:
 - The official Factions sheet's **entire twelve-row Citizenry block** identifies
   the districts. Whitecrown (Tier V, strong) belongs here, not in the stock
   faction picker. The remaining four sheet groups contain 48 faction rows.
-- Choosing a stock faction fills the manual entry only. Saved crew records are
-  the user's own.
+- Stock factions are withdrawn. Manual faction entry is the only path until
+  re-insertion; saved crew records are the user's own.
+
+## Pulled pending permission (SETTING-PULL-01)
+
+Status: **pulled pending permission**. The human is asking John Harper for
+permission. The stock Doskvol content below is withdrawn from the head and is not
+shipped. Manual faction entry and user-entered heritage text keep working.
+
+| Withdrawn content | Where it lived before the pull | Restore point |
+| --- | --- | --- |
+| 48 stock faction rows | `data/world/doskvol.json` `factions` | `setting-content` |
+| 12 districts with 27 named locations | `data/world/doskvol.json` `districts` | `setting-content` |
+| Setting heritages (Akoros, The Dagger Isles, Iruvia, Severos, Skovlan, Tycheros) | `Heritages` in `data/games/blades-in-the-dark.json`, `français-blades-in-the-dark.json` and `rus-blades-in-the-dark.json` | `setting-content` |
+| Stock-faction picker and districts disclosure | `frontend/src/pages/crew-sections/doskvol-world.ts` | Code kept; hidden without data |
+
+Restore point: bookmark `setting-content` on both mirrors, at commit
+`dc73c0d9ce40a32a920d6f9c89834ebb773ef326`. It holds all of the withdrawn data. The pull sits on `main` at `f0c1022a`, which differs from `dc73c0d9` only by CREW-COHORTS-01 records; its data and frontend files are identical.
+The demo character heritage in
+`data/games/demo-character.json` is also blanked by the pull and comes back from the same point.
+
+Restore steps:
+
+1. Find the pull commit: the commit whose description starts with `SETTING-PULL-01`.
+2. Reverse it with `jj backout` onto the current head, then run the gates. That restores the data, the stock picker, the districts disclosure, the heritage picker, the about-licence wording, the checkpoint text and the deleted crew-world tests.
+3. For a single file, `jj file show -r setting-content <path>` gives the pre-pull version.
+4. Set this section's status to "restored", then push both mirrors.
+
+Remaining setting names (not pulled):
+
+- Playbook Rolodex friend and NPC names in `data/games/*.json`, which are served as game data and used to preload contacts.
+- Test and seed fixtures: heritage text such as "The Dagger Isles" and "Iruvian" in conformance fixtures and seed characters (test data only).
+- `data/world/doskvol.json` holds (generic strong and weak labels) and the source note.
+- Documentation: this register, `crew-world-sources.mdx`, the setting content open items, the README provenance paragraph, the CREW-WORLD task cards, and the historical CREW-WORLD-01 red log.
+- Not touched: `blades-in-the-sheets/` and `campaign-data/`.
 
 ## Other setting names in the repository
 

@@ -1,0 +1,114 @@
+{
+  "crewId": "acc152f4-5f56-40a1-8b1f-141d75732a71",
+  "rows": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "theme": "light",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "theme": "dark",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "theme": "high",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "high",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "high",
+      "stockFactionSelects": 0,
+      "districtsDisclosures": 0,
+      "stockFieldLabels": 0,
+      "manualFactionName": 1,
+      "docOverflowPx": 0,
+      "consoleErrors": [],
+      "pass": true
+    }
+  ],
+  "allPass": true
+}

@@ -1,0 +1,200 @@
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/data/setting-pull.test.ts (4 tests | 3 failed) 6ms
+   × SETTING-PULL-01 shipping data > ships no stock factions, districts or locations while permission is pending 4ms
+     → expected 48 to be +0 // Object.is equality
+   × SETTING-PULL-01 shipping data > empties heritage choices and descriptions in every shipped Doskvol edition discovered from the data directory 1ms
+     → blades-in-the-dark.json: expected 6 to be +0 // Object.is equality
+   × SETTING-PULL-01 shipping data > does not retain a setting heritage in the shipped demo scoundrel 1ms
+     → expected false to be true // Object.is equality
+   ✓ SETTING-PULL-01 shipping data > does not remove unrelated Scum and Villainy game choices in this Doskvol-only pull 0ms
+ ❯ src/pages/setting-pull.test.ts (5 tests | 4 failed) 15ms
+   × SETTING-PULL-01 no-world UI > omits the stock faction picker when no world factions are supplied 5ms
+     → expected <select …(1)>…(1)</select> to be null
+   × SETTING-PULL-01 no-world UI > omits the districts disclosure when no world districts are supplied 1ms
+     → expected <details …(1)>…(2)</details> to be null
+   × SETTING-PULL-01 no-world UI > keeps manual faction entry and starting relationships working without stock controls 4ms
+     → expected <select …(1)>…(1)</select> to be null
+   × SETTING-PULL-01 heritage without a catalog > offers free text rather than an empty stock dropdown and keeps the existing save action 2ms
+     → expected <select …(1)>…(1)</select> to be null
+   ✓ SETTING-PULL-01 heritage without a catalog > does not erase a scoundrel's existing user-entered heritage or description 1ms
+
+ Test Files  2 failed (2)
+      Tests  7 failed | 2 passed (9)
+   Start at  18:03:38
+   Duration  505ms (transform 95ms, setup 0ms, collect 239ms, tests 21ms, environment 97ms, prepare 117ms)
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/setting-pull.test.ts src/data/setting-pull.test.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/data/setting-pull.test.ts > SETTING-PULL-01 shipping data > ships no stock factions, districts or locations while permission is pending
+AssertionError: expected 48 to be +0 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 48[39m
+
+ ❯ src/data/setting-pull.test.ts:11:35
+      9|   it("ships no stock factions, districts or locations while permission…
+     10|     const world = json(fileURLToPath(new URL("../../../data/world/dosk…
+     11|     expect(world.factions.length).toBe(0);
+       |                                   ^
+     12|     expect(world.districts.length).toBe(0);
+     13|     expect(world.groups.length).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/data/setting-pull.test.ts > SETTING-PULL-01 shipping data > empties heritage choices and descriptions in every shipped Doskvol edition discovered from the data directory
+AssertionError: blades-in-the-dark.json: expected 6 to be +0 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 6[39m
+
+ ❯ src/data/setting-pull.test.ts:19:102
+     17|     const editions = readdirSync(gamesDir).filter(name => name.endsWit…
+     18|     expect(editions.length).toBeGreaterThan(0);
+     19|     for (const edition of editions) expect(json(`${gamesDir}/${edition…
+       |                                                                                                      ^
+     20|   });
+     21|   it("does not retain a setting heritage in the shipped demo scoundrel…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/data/setting-pull.test.ts > SETTING-PULL-01 shipping data > does not retain a setting heritage in the shipped demo scoundrel
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/data/setting-pull.test.ts:22:114
+     20|   });
+     21|   it("does not retain a setting heritage in the shipped demo scoundrel…
+     22|     expect(Object.values(json(`${gamesDir}/demo-character.json`).Dossi…
+       |                                                                                                                  ^
+     23|   });
+     24|   it("does not remove unrelated Scum and Villainy game choices in this…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/pages/setting-pull.test.ts > SETTING-PULL-01 no-world UI > omits the stock faction picker when no world factions are supplied
+AssertionError: expected <select …(1)>…(1)</select> to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<select
+  aria-label="Stock faction"
+>
+  <option
+    value=""
+  >
+    Stock faction…
+  </option>
+</select>
+
+ ❯ src/pages/setting-pull.test.ts:13:48
+     11| describe("SETTING-PULL-01 no-world UI", () => {
+     12|   it("omits the stock faction picker when no world factions are suppli…
+     13|     expect(stockFactionPicker(vi.fn(), false)).toBeNull();
+       |                                                ^
+     14|   });
+     15|   it("omits the districts disclosure when no world districts are suppl…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/pages/setting-pull.test.ts > SETTING-PULL-01 no-world UI > omits the districts disclosure when no world districts are supplied
+AssertionError: expected <details …(1)>…(2)</details> to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<details
+  class="doskvol-districts"
+>
+  <summary>
+    Doskvol districts (0)
+  </summary>
+  <p
+    class="rules-note"
+  >
+    Descriptions are written for this app. Canonical district and place names are sourced in the setting-content register.
+  </p>
+</details>
+
+ ❯ src/pages/setting-pull.test.ts:16:42
+     14|   });
+     15|   it("omits the districts disclosure when no world districts are suppl…
+     16|     expect(doskvolDistrictsDisclosure()).toBeNull();
+       |                                          ^
+     17|   });
+     18|   it("keeps manual faction entry and starting relationships working wi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/pages/setting-pull.test.ts > SETTING-PULL-01 no-world UI > keeps manual faction entry and starting relationships working without stock controls
+AssertionError: expected <select …(1)>…(1)</select> to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<select
+  aria-label="Stock faction"
+>
+  <option
+    value=""
+  >
+    Stock faction…
+  </option>
+</select>
+
+ ❯ src/pages/setting-pull.test.ts:26:70
+     24|     } as unknown as RenderState;
+     25|     const root = renderCrewContactsSection(state);
+     26|     expect(root.querySelector('select[aria-label="Stock faction"]')).t…
+       |                                                                      ^
+     27|     expect(root.querySelector(".faction-stock-field")).toBeNull();
+     28|     expect(root.querySelector(".doskvol-districts")).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  src/pages/setting-pull.test.ts > SETTING-PULL-01 heritage without a catalog > offers free text rather than an empty stock dropdown and keeps the existing save action
+AssertionError: expected <select …(1)>…(1)</select> to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<select
+  aria-label="Heritage (choose)"
+>
+  <option
+    value="__custom__"
+  >
+    Custom…
+  </option>
+</select>
+
+ ❯ src/pages/setting-pull.test.ts:57:74
+     55|     const { ctx, editor, handlers } = personalContext(true);
+     56|     const root = renderPersonalSection(ctx);
+     57|     expect(root.querySelector('select[aria-label="Heritage (choose)"]'…
+       |                                                                          ^
+     58|     const input = root.querySelector<HTMLInputElement>('input[aria-lab…
+     59|     expect(input.value).toBe("Our own heritage");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
