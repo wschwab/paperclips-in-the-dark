@@ -210,6 +210,31 @@ describe("crew-detail page", () => {
       });
     });
 
+    it("refreshes the capability projection after a successful undo", async () => {
+      let capsCalls = 0;
+      global.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url === `/api/crews/${CREW_ID}`) return Promise.resolve(ok(crewDTO()));
+        if (url === `/api/crews/${CREW_ID}/capabilities`) {
+          capsCalls += 1;
+          // Before undo a claimed Turf makes Turf 2; after undo the claim is gone, so Turf 1.
+          const effectiveTurf = capsCalls === 1 ? 2 : 1;
+          return Promise.resolve(ok({ crewId: CREW_ID, upgrades: [], abilities: [], effectiveTurf, developThreshold: 11, tierMax: 4 }));
+        }
+        if (url === `/api/crews/${CREW_ID}/undo`) {
+          return Promise.resolve(ok({ ok: true, crew: crewDTO({ revision: 6 }), applied: { op: "crew.undo" }, sideEffects: [], error: null, canUndo: false, historyCount: 0 }));
+        }
+        if (url === "/api/games/blades-in-the-dark/crews") return Promise.resolve(ok({ Name: "Blades in the Dark", CrewTypes: [ASSASSIN_TYPE] }));
+        return Promise.resolve(ok(ASSASSIN_TYPE));
+      });
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => expect(root.querySelector(".turf-count")?.textContent).toBe("Turf: 2"));
+
+      getUndoButton(root)!.click();
+
+      await vi.waitFor(() => expect(capsCalls).toBe(2));
+      await vi.waitFor(() => expect(root.querySelector(".turf-count")?.textContent).toBe("Turf: 1"));
+    });
+
     it("shows NO_HISTORY notice when undo returns NO_HISTORY error", async () => {
       const noHistoryResp = {
         ok: false,

@@ -538,6 +538,7 @@ export function mountCrewDetailPage(
             // FV-028: positive feedback naming the restored state, distinct
             // from the NO_HISTORY error copy above.
             undoNotice = `Undone — restored ${describeCrewRestore(before, crew)}.`;
+            refreshCaps();
             renderDetail();
           },
         }),
