@@ -2432,7 +2432,7 @@ export function mountCharacterDetailPage(
     const card = resolutionCardAt(e.clientX, e.clientY);
     if (!card) return;
     // Take the wheel only while the card can still move that way; at its end the page scrolls (TOUCH-SCROLL-01).
-    const canMove = e.deltaY > 0 ? card.scrollTop < card.scrollHeight - card.clientHeight : card.scrollTop > 0;
+    const canMove = e.deltaY > 0 ? card.scrollTop < card.scrollHeight - card.clientHeight : e.deltaY < 0 && card.scrollTop > 0;
     if (!canMove) return;
     e.preventDefault();
     card.scrollTop += e.deltaY;
@@ -2451,7 +2451,7 @@ export function mountCharacterDetailPage(
     if (!card) return;
     // Take the gesture only while the card can still move that way. At its end the page scrolls,
     // so the overlay never traps touch scrolling (TOUCH-SCROLL-01).
-    const canMove = dy > 0 ? card.scrollTop < card.scrollHeight - card.clientHeight : card.scrollTop > 0;
+    const canMove = dy > 0 ? card.scrollTop < card.scrollHeight - card.clientHeight : dy < 0 && card.scrollTop > 0;
     if (!canMove) return;
     e.preventDefault();
     card.scrollTop += dy;

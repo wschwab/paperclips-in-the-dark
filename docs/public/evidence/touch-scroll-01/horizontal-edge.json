@@ -1,0 +1,26 @@
+{
+  "width": 390,
+  "height": 844,
+  "maxScroll": 850,
+  "before": 100,
+  "afterWheel": {
+    "scrollTop": 100,
+    "prevented": false
+  },
+  "afterTouch": {
+    "scrollTop": 100,
+    "prevented": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "failures": []
+}

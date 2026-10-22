@@ -15,8 +15,8 @@ Touch scrolling over the Resolution card must scroll the card's own list, and at
 ## Green
 
 - `docs/public/evidence/touch-scroll-01/touch-scroll-probe.mjs` (run through `conformance/scripts/managed-browser-smoke.mjs --seed-defaults`), output `touch-scroll.json`. 0 failures.
-- 390×844: the card scrolled by the drag, the page was unchanged by it, the card reached its end (`cardScrollTop 850 = cardMax 850`), and the page then scrolled by the drag (`pageScrollY` 220 → 396). Horizontal overflow 0.
-- 768×1024: the card scrolled by the drag, the page was unchanged by it, the card reached its end (`347 = 347`), and the page scrolled by the drag (75 → 251). Horizontal overflow 0.
+- 390×844: the card scrolled by the drag, the page was unchanged by it, the card reached its end (`cardScrollTop 850 = cardMax 850`), and the page then scrolled by the drag (`pageScrollY` 223 → 399). Horizontal overflow 0.
+- 768×1024: the card scrolled by the drag, the page was unchanged by it, the card reached its end (`347 = 347`), and the page scrolled by the drag (74 → 249). Horizontal overflow 0. These values are from the `touch-scroll.json` regenerated in this commit; page positions vary with momentum between runs.
 
 ## Follow-up: mouse wheel (same trap)
 
@@ -24,6 +24,13 @@ Touch scrolling over the Resolution card must scroll the card's own list, and at
 - Fix: `character-detail.ts` `forwardResolutionWheel` takes the notch only while the card can move in its direction, the same rule as the touch fix.
 - Green (`wheel-scroll.json`, `wheel-scroll-green.log`): 0 failures. At each size the card reached its end, then the page scrolled 160px on the next notch. Horizontal overflow 0.
 - The 1440 case uses height 560 instead of 1000. At 1440×1000 the card fits, so its inner list cannot be tested. This is recorded in the probe.
+
+## Follow-up: horizontal-only input (review finding)
+
+- Sol review at `9d689c61`: FAIL. A zero vertical delta counted as upward movement whenever the card was scrolled down, so both forwarders cancelled horizontal-only wheel and touch input that the card cannot use.
+- Red, `docs/public/evidence/touch-scroll-01/horizontal-edge-probe.mjs` (`horizontal-edge-red.log`): the horizontal wheel notch was `defaultPrevented: true`, and all 11 horizontal touch moves were `defaultPrevented`. The card held at 100.
+- Fix: both forwarders take input only for a non-zero vertical delta in a direction the card can still move.
+- Green (`horizontal-edge.json`, `horizontal-edge-green.log`): neither input is prevented, the card holds at 100, 0 failures.
 
 
 ## Acceptance

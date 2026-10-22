@@ -1,0 +1,28 @@
+VERDICT: FAIL
+
+All repository references below are at `9d689c618e6fdd049759f425e27ff82e7dff46e7`. `E` = `docs/public/evidence/touch-scroll-01/`; `S` = `/tmp/sol-review/TOUCH-SCROLL-01-scratch/`.
+
+- **[FAIL] Both forwarders swallow input the card cannot consume.** `frontend/src/pages/character-detail.ts:2435-2438,2454-2457` treats zero vertical delta as upward movement whenever `card.scrollTop > 0`, then cancels the event without moving the card.
+  - **Reproduce:** Open Resolution → Payoff at 390×844; set the card’s `scrollTop = 100`. Over `(195,301)`, send a horizontal-only wheel input. Separately, dispatch CDP touch start at `(96,301)`, 12 horizontal moves to `(216,301)`, then touch end.
+  - **Expected:** Neither forwarder cancels these inputs; vertical delta is zero and the card has no horizontal overflow.
+  - **Observed:** Wheel `deltaY:0, deltaX:128, defaultPrevented:true`; all 11 delivered touch moves also canceled. Card remains at 100 in both cases.
+  - Evidence: `S/edge-evidence.json:49-68`; `S/horizontal-touch.json:2-56`.
+
+- **[FAIL] The card’s quoted touch measurements do not match its pinned artifact.** `tasks/TOUCH-SCROLL-01.md:18-19` reports page positions **220→396** and **75→251**.
+  - **Reproduce:** Compare those lines with pinned `E/touch-scroll.json`, keys `rows[*].atCardEnd.pageScrollY` and `rows[*].afterEndDrag.pageScrollY`.
+  - **Expected:** The quoted measurements match the cited artifact.
+  - **Observed:** The committed values are **222→398** and **76→251** (`E/touch-scroll.json:41,54,102,115`).
+
+- **[PASS] Vertical touch acceptance works in fresh Chromium.** Both sizes reported **0 failures**. First drag moved the card **0→157**, leaving the page at **0**. Loops reached **850/850** at 390×844 and **347/347** at 768×1024; the next drag scrolled the page **222→393** and **76→252**, respectively. Horizontal overflow **0**. Evidence: `S/touch-scroll.json`, `rows[*]`. Final page pixels varied from the committed momentum-dependent measurements; endpoints and acceptance booleans reproduced.
+
+- **[PASS] Vertical wheel acceptance reproduces exactly.** At 1440×560, 768×1024 and 390×844, first notch moved the card **0→160**; loops reached **401/401**, **347/347**, **850/850**; next notch moved the page **0→160**. Horizontal overflow **0** throughout; **0 failures**. Fresh `S/wheel-scroll.json` is byte-identical to pinned `E/wheel-scroll.json`.
+
+- **[PASS] Upward boundary handoff works.** Independent Chromium checks at 390×844, with card at its top and page at 500: upward wheel moved page **500→340**; downward finger drag moved page **500→325**. Events were not canceled. A continuous upward finger drag crossing the card’s bottom also moved card **810→850** and page **500→651**. Evidence: `S/edge-evidence.json`, labels `wheel-top`, `touch-top`; `S/continuous-touch.json`.
+
+- **[PASS] Probes exercise real, non-vacuous scrolling.** Touch uses mobile/touch contexts and CDP touch dispatch (`E/touch-scroll-probe.mjs:27-34,39-43,65-78`); wheel uses real mouse-wheel input (`E/wheel-scroll-probe.mjs:49-68`). Every observed endpoint equals a positive maximum. Touch’s failure predicate lacks an explicit reached-end assertion (`:97`), although both committed and fresh measurements establish it for this revision.
+
+- **[PASS] Desktop height adjustment is documented and justified.** Card `:26` and wheel probe `:23-24` specify **1440×560**, despite the probe’s stale opening comment mentioning 1000. Independent measurement at **1440×1000** found `clientHeight = scrollHeight = 925`, so no inner scrolling was available.
+
+- **[PASS — recorded symptoms] Red logs contain the claimed traps.** `E/touch-scroll-red.log:16-18`: **2 failures**, card moves, page remains trapped despite being scrollable. `E/wheel-scroll-red.log:16-19`: **3 failures**, card explicitly reaches its end, page remains trapped. These historical logs do not record source/build hashes, so their exact pre-fix build identity is not independently attested.
+
+- **[PASS] Build and managed execution completed.** `npm run build` passed; both probes ran through the requested guards and managed launcher. Scratch copies required only an import-root constant adjustment: unmodified relocation resolved dependencies under `/conformance/` and failed with `ERR_MODULE_NOT_FOUND`. No probe assertions or gesture logic were changed.
