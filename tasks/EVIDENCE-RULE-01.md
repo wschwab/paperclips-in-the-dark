@@ -4,7 +4,7 @@ Cited browser evidence must be committed, not left in gitignored scratch.
 
 ## Finding
 
-- Several cards cite `agent-docs/test-audit/browser-evidence/`, which is gitignored. A cited artifact there cannot be reproduced from the repository.
+- Several cards cite the gitignored browser-evidence scratch folder. A cited artifact there cannot be reproduced from the repository.
 - 24 task cards already cite it. They closed before this policy and are listed as historical exemptions.
 
 ## Change
@@ -15,7 +15,7 @@ Cited browser evidence must be committed, not left in gitignored scratch.
 
 ## Red and green
 
-- Red (planted fixture `/tmp/evrule-fixture/PLANTED-01.md`, citing `agent-docs/test-audit/browser-evidence/planted/probe.json`): `PLANTED-01.md:3: cites scratch evidence path …`, exit 1.
+- Red (planted fixture `/tmp/evrule-fixture/PLANTED-01.md`, citing a path under the scratch folder): `PLANTED-01.md:3: cites scratch evidence path …`, exit 1.
 - Green on the real tree: `validate-evidence-paths: OK (tasks/, 24 historical exemptions)`, exit 0.
 - Note: the checker was written with the red fixture run after it, not before. The red result is evidence the check fails on a violating card, not a retained pre-implementation run.
 

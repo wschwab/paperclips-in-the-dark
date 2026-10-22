@@ -3,22 +3,21 @@
 Browser evidence that a task card cites (probes, JSON results, screenshots)
 lives in the committed docs tree:
 
-    docs/public/evidence/<card-lowercase>/
+`docs/public/evidence/CARD/`, where `CARD` is the lowercase card id.
 
-`agent-docs/test-audit/browser-evidence/` is gitignored scratch. Probes may
-write there while work is in progress, but a card MUST NOT cite a path under
-it. A cited artifact that only exists in scratch cannot be reproduced from the
-repository.
+The gitignored browser-evidence scratch folder under the test-audit directory is
+scratch only. Probes may write there while work is in progress, but a card MUST
+NOT cite a path under it. A cited artifact that only exists in scratch cannot be
+reproduced from the repository.
 
 Rules:
 
-- Copy the artifacts a card cites into `docs/public/evidence/<card>/` and cite
-  that path.
+- Copy the artifacts a card cites into `docs/public/evidence/CARD/` and cite that path.
 - Keep the probe script next to its output so the evidence can be rerun.
 - Do not add a `.gitignore` exception to make scratch files committable.
 
 Enforcement: `npm --prefix conformance run validate:evidence` fails when a
-`tasks/*.md` card cites `agent-docs/test-audit/browser-evidence`. The 24 task
-cards closed before this policy are listed as historical exemptions in
-`conformance/scripts/validate-evidence-paths.mjs`; they keep their original
-citations and are not to be extended.
+`tasks/*.md` card cites the scratch folder. The 24 task cards closed before this
+policy are listed as historical exemptions in
+`conformance/scripts/validate-evidence-paths.mjs`. They keep their original
+citations and must not be extended.
