@@ -85,7 +85,7 @@
       "mutation": "Change INVALID_ENTITY status from 422 to 500",
       "observableFailure": "degraded-entity direct access returns 500 instead of the frozen 422 typed client error, breaking the error union and typed recovery",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
+        "backend-ada/server/src/pitd_callback.adb": "0c6d48087a55c41adcb13a6d53564c59e97786503830d3aa98b3b32744734d5e"
       },
       "severity": "P0",
       "status": "not-run",
@@ -120,7 +120,7 @@
       "mutation": "Skip the If-Match check block (if False then) so stale revisions mutate anyway",
       "observableFailure": "a stale writer overwrites recent changes with no STALE_REVISION; concurrent edits are lost silently",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
+        "backend-ada/server/src/pitd_callback.adb": "0c6d48087a55c41adcb13a6d53564c59e97786503830d3aa98b3b32744734d5e"
       },
       "severity": "P0",
       "status": "not-run",
@@ -137,7 +137,7 @@
       "mutation": "Skip the pre-mutation snapshot (replaced by null)",
       "observableFailure": "snapshot-worthy mutations create no history entry, so undo has nothing to restore",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
+        "backend-ada/server/src/pitd_callback.adb": "0c6d48087a55c41adcb13a6d53564c59e97786503830d3aa98b3b32744734d5e"
       },
       "severity": "P0",
       "status": "not-run",
@@ -155,7 +155,7 @@
       "mutation": "Skip snapshot consumption on undo (Delete_File replaced by null)",
       "observableFailure": "undo stops consuming snapshots, so a second undo replays stale state and history grows without bound",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
+        "backend-ada/server/src/pitd_callback.adb": "0c6d48087a55c41adcb13a6d53564c59e97786503830d3aa98b3b32744734d5e"
       },
       "severity": "P0",
       "status": "not-run",
@@ -236,7 +236,7 @@
       "mutation": "Skip the W5 owner-clock reassignment (elsif False then)",
       "observableFailure": "deleting a character/crew orphans its standalone clocks instead of reassigning them to campaign ownership with bumped revisions",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
+        "backend-ada/server/src/pitd_callback.adb": "0c6d48087a55c41adcb13a6d53564c59e97786503830d3aa98b3b32744734d5e"
       },
       "severity": "P1",
       "status": "not-run",
@@ -252,7 +252,7 @@
       "mutation": "Skip the W4 unlink sweep (if False then)",
       "observableFailure": "a deleted clock's id remains in other clocks' relatedClockIds, leaving stale relationship references",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "38aa1490e52ed41cf1d79682366f6b0e1a9a4db0025918ed8c1003341aea1a98"
+        "backend-ada/server/src/pitd_callback.adb": "0c6d48087a55c41adcb13a6d53564c59e97786503830d3aa98b3b32744734d5e"
       },
       "severity": "P1",
       "status": "not-run",
@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "fb5e0d204c9964dc3e303d4e9b6f52600324d87dd87b45adb888a19997b0395c"
+        "frontend/src/api/client.ts": "3198f56d459488bfa000266dd3936a812816ee2ad058dcabc3d7d8133bf8d172"
       },
       "severity": "P0",
       "status": "not-run",
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "756eba7eb31b340a85e1a03ebd386cdd8a6fd3faab3d0becf64cfb10109fbc35"
+        "frontend/src/pages/character-detail.ts": "01bcda6b733b7bd65e42893dbf805bbc0c7270f6f4cda9d084b189e02959a729"
       },
       "severity": "P1",
       "status": "not-run",
