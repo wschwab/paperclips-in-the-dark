@@ -1,0 +1,598 @@
+{
+  "rows": [
+    {
+      "width": 1440,
+      "height": 1000,
+      "theme": "light",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-1440-light-mismatch.png"
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "theme": "dark",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-1440-dark-mismatch.png"
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "theme": "high",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-1440-high-mismatch.png"
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-768-light-mismatch.png"
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-768-dark-mismatch.png"
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "high",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-768-high-mismatch.png"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-390-light-mismatch.png"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-390-dark-mismatch.png"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "high",
+      "initial": {
+        "edges": [
+          "Fearsome"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "mismatch": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled"
+        ],
+        "saveDisabled": true,
+        "warningPresent": true,
+        "warningHidden": false,
+        "warningText": "A cohort needs an equal number of edges and flaws (now 2 edges and 1 flaw). Add or remove to match.",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "matched": {
+        "edges": [
+          "Fearsome",
+          "Independent"
+        ],
+        "flaws": [
+          "Principled",
+          "Savage"
+        ],
+        "saveDisabled": false,
+        "warningPresent": true,
+        "warningHidden": true,
+        "warningText": "",
+        "docOverflowX": 0,
+        "childClasses": [
+          "cohort-kind-badge",
+          "cohort-edit-fields",
+          "cohort-count-mismatch lbl",
+          "DIV"
+        ]
+      },
+      "screenshot": "edit-390-high-mismatch.png"
+    }
+  ]
+}

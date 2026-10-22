@@ -29,6 +29,12 @@ export function derivedCohortStats(kind: "gang" | "expert", tier: number): { qua
   return kind === "gang" ? { quality: tier, scale: tier } : { quality: tier + 1, scale: 0 };
 }
 
+/** SRD: an equal number of edges and flaws. Returns the explanation while they differ, else null. */
+function countMismatchMessage(edges: number, flaws: number): string | null {
+  if (edges === flaws) return null;
+  return `A cohort needs an equal number of edges and flaws (now ${edges} edge${edges === 1 ? "" : "s"} and ${flaws} flaw${flaws === 1 ? "" : "s"}). Add or remove to match.`;
+}
+
 /** Expert type options always end with Custom (free-text entry), exactly once. */
 function expertOptions(values: readonly string[]): string[] {
   return values.includes("Custom") ? [...values] : [...values, "Custom"];
@@ -191,8 +197,11 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         checked: cohort.hasArmor,
         disabled: state.anyLoading,
       });
-      const edgesPicker = traitPicker("Edit", "edge", edgeOptions, cohort.edges, state.anyLoading);
-      const flawsPicker = traitPicker("Edit", "flaw", flawOptions, cohort.flaws, state.anyLoading);
+      // Edges and flaws must stay equal (SRD). The pickers report every change, including
+      // initial chips, before Save exists, so the gate is bound once Save is created.
+      let syncEditGate: (() => void) | undefined;
+      const edgesPicker = traitPicker("Edit", "edge", edgeOptions, cohort.edges, state.anyLoading, () => syncEditGate?.());
+      const flawsPicker = traitPicker("Edit", "flaw", flawOptions, cohort.flaws, state.anyLoading, () => syncEditGate?.());
       const harmSelect = el("select", {
         "aria-label": "Edit harm",
         disabled: state.anyLoading,
@@ -241,6 +250,15 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
           handlers.onCohortCancel();
         }
       });
+      const editMismatch = el("p", { className: "cohort-count-mismatch lbl", role: "alert" }) as HTMLElement;
+      editMismatch.hidden = true;
+      syncEditGate = () => {
+        const message = countMismatchMessage(edgesPicker.read().length, flawsPicker.read().length);
+        editMismatch.hidden = message === null;
+        editMismatch.textContent = message ?? "";
+        saveBtn.disabled = state.anyLoading || message !== null;
+      };
+      syncEditGate();
       const cancelBtn = el("button", {
         type: "button",
         disabled: state.anyLoading,
@@ -264,6 +282,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
           el("label", { className: "lbl" }, "Harm:", harmSelect),
           el("label", { className: "lbl" }, "Description:", descInput),
         ),
+        editMismatch,
         el("div", { style: "display: flex; gap: 0.5em;" }, saveBtn, cancelBtn),
       );
     }
@@ -393,14 +412,10 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   const countMismatch = el("p", { className: "cohort-count-mismatch lbl", role: "alert" }) as HTMLElement;
   countMismatch.hidden = true;
   const syncAddGate = () => {
-    const edges = edgesPicker.read().length;
-    const flaws = flawsPicker.read().length;
-    const mismatch = edges !== flaws;
-    countMismatch.hidden = !mismatch;
-    countMismatch.textContent = mismatch
-      ? `A cohort needs an equal number of edges and flaws (now ${edges} edge${edges === 1 ? "" : "s"} and ${flaws} flaw${flaws === 1 ? "" : "s"}). Add or remove to match.`
-      : "";
-    addCohortBtn.disabled = state.anyLoading || mismatch;
+    const message = countMismatchMessage(edgesPicker.read().length, flawsPicker.read().length);
+    countMismatch.hidden = message === null;
+    countMismatch.textContent = message ?? "";
+    addCohortBtn.disabled = state.anyLoading || message !== null;
   };
   syncAddGate();
 

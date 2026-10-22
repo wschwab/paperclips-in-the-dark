@@ -1816,7 +1816,7 @@ describe("crew-detail page", () => {
         scale: 1,
         hasArmor: true,
         edges: ["Tough", "Savage"],
-        flaws: ["Loud"],
+        flaws: ["Loud", "Frail"],
         harm: "healthy",
         description: "Street toughs who love a fight",
         ...overrides,

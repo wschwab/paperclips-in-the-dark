@@ -169,6 +169,33 @@ describe("CREW-COHORTS-01 cohort editor", () => {
     expect(warning.hidden).toBe(true);
   });
 
+  it("edit form blocks Save while edges and flaws differ, says why, and unblocks once they match", async () => {
+    const root = await openAddForm(crewDTO({ cohorts: [cohortDTO()] }));
+    (root.querySelector('button[title="Edit cohort: Thugs"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector(".cohort-entry.editing")).not.toBeNull();
+    });
+    const editing = root.querySelector(".cohort-entry.editing") as HTMLElement;
+    const saveBtn = editing.querySelector('button[title^="Save"]') as HTMLButtonElement;
+    const warning = editing.querySelector(".cohort-count-mismatch") as HTMLElement;
+    const pick = (aria: string, value: string, addTitle: string) => {
+      const select = editing.querySelector(`select[aria-label="${aria}"]`) as HTMLSelectElement;
+      select.value = value;
+      select.dispatchEvent(new Event("change"));
+      (editing.querySelector(`button[title="${addTitle}"]`) as HTMLButtonElement).click();
+    };
+    expect(saveBtn.disabled).toBe(false);
+
+    pick("Edit edge", "Loyal", "Add edge");
+    expect(saveBtn.disabled).toBe(true);
+    expect(warning.hidden).toBe(false);
+    expect(warning.textContent).toMatch(/equal number of edges and flaws/);
+
+    pick("Edit flaw", "Savage", "Add flaw");
+    expect(saveBtn.disabled).toBe(false);
+    expect(warning.hidden).toBe(true);
+  });
+
   it("initial gang render under the real stylesheet: expert type and custom fields are not displayed", async () => {
     const style = document.createElement("style");
     style.textContent = readFileSync("src/styles/components.css", "utf8");
