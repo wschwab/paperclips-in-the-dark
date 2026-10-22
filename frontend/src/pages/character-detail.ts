@@ -2446,6 +2446,10 @@ export function mountCharacterDetailPage(
     touchLastY = t.clientY;
     const card = resolutionCardAt(t.clientX, t.clientY);
     if (!card) return;
+    // Take the gesture only while the card can still move that way. At its end the page scrolls,
+    // so the overlay never traps touch scrolling (TOUCH-SCROLL-01).
+    const canMove = dy > 0 ? card.scrollTop < card.scrollHeight - card.clientHeight : card.scrollTop > 0;
+    if (!canMove) return;
     e.preventDefault();
     card.scrollTop += dy;
   };

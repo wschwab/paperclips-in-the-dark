@@ -1,0 +1,20 @@
+[managed-browser-smoke] runId=2026-10-22T13-09-29-669Z-055d84bc
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node docs/public/evidence/touch-scroll-01/touch-scroll-probe.mjs
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc/data (dir)
+[managed-browser-smoke] port=45689
+[managed-browser-smoke] baseUrl=http://127.0.0.1:45689
+[managed-browser-smoke] pid=4101709
+[managed-browser-smoke] ready=http://127.0.0.1:45689
+[managed-browser-smoke] commandPid=4101776
+touch scroll: 2 sizes, 2 failures
+{"width":390,"cardScrolledByDrag":true,"pageUnchangedByCardDrag":true,"pageScrolledAtCardEnd":false,"pageIsScrollable":true,"horizontalOverflow":0}
+{"width":768,"cardScrolledByDrag":true,"pageUnchangedByCardDrag":true,"pageScrolledAtCardEnd":false,"pageIsScrollable":true,"horizontalOverflow":0}
+[managed-browser-smoke] FAILED: command exited with code 1: node docs/public/evidence/touch-scroll-01/touch-scroll-probe.mjs
+[managed-browser-smoke] failure evidence removed: runDir=/tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc dataDir=/tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc/data log=/tmp/pitd-managed/2026-10-22T13-09-29-669Z-055d84bc/server.log port=45689
