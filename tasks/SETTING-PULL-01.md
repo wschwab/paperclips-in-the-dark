@@ -34,8 +34,8 @@ Authorized adaptation. Checkpoint IDs and all other assertions are unchanged.
 - Browser: `conformance` `npm run test:browser` exit 0 (includes adapted char02).
 - Chromium 3×3 (1440/768/390 × light/dark/high): `docs/public/evidence/setting-pull-01/pull-3x3.json`, 9/9 pass. Stock select and districts disclosure absent, manual faction entry present, zero overflow, zero console errors.
 - Validators: `validate-metrics.js`, `validate-finding-traceability.js`, `reconcile-audit.js` exit 0. `validate:evidence` exit 0. Vocs `npm run build` exit 0.
-- Ada: not run. No backend code changed; the Ada backend reads no setting heritage list.
-- Mutation: campaign requires an empty working copy, so it runs on the committed head. Result is recorded in the follow-up records commit.
+- Ada: no backend code changed. `backend-ada/server/src/pitd_callback.adb` validates `Heritages` as a required array (`S_Require_Arr`) and serves it at `/games/<stem>/heritages`; `[]` satisfies both. Ada `npm run test:ada -- --cycles 2 -- --run` on the pulled data: 74/74 files, 629/629 tests (`/tmp/ada.log`, run 2026-10-22).
+- Mutation: `npm --prefix conformance run test:mutation` on the committed head `4763dd24` (run on the pull commit before push): P0 19/19 killed, P1 9/9 killed (28/28). Raw output: `agent-docs/test-audit/mutation-raw-2026-10-22T15-55-38-762Z.txt`. No catalog pins changed for the pull's files; the three pinned files (`pitd_callback.adb`, `api/client.ts`, `character-detail.ts`) are untouched by it.
 
 ## Sol review
 
