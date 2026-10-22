@@ -1126,7 +1126,7 @@ function crewMutate(
   op: string,
   revision: number,
   body: unknown = {},
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
     const opResult = yield* fetchOperation(`/api/crews/${id}/ops/${op}`, {
       method: "POST",
@@ -1140,7 +1140,7 @@ function crewMutate(
     if (!opResult.crew) {
       return yield* Effect.fail(new DecodeError(new Error("Missing crew in OperationResult")));
     }
-    return opResult.crew;
+    return { ...opResult.crew, canUndo: opResult.canUndo, historyCount: opResult.historyCount };
   });
 }
 
@@ -1259,11 +1259,19 @@ export function crewFieldsUpdate(
   return crewMutate(id, "fields.update", revision, fields);
 }
 
+/** Derived snapshot-history metadata carried by every entity operation
+ * envelope (never stored): whether an undo is available and how many
+ * snapshots are retained. */
+export interface CrewOpHistory {
+  readonly canUndo?: boolean;
+  readonly historyCount?: number;
+}
+
 /** Result of a crew tracker (0..max bounded) op: the updated crew plus the
  * server's requested/effective deltas so the page can report clamping (P29/FV-029),
  * following the fund-result pattern. When the server applied the full requested
  * change, requested === effective and the page stays quiet. */
-export interface CrewTrackOpResult {
+export interface CrewTrackOpResult extends CrewOpHistory {
   crew: Crew;
   requested: number;
   effective: number;
@@ -1299,7 +1307,7 @@ function crewTrackMutate(
         ? (body as { delta: number }).delta
         : 0);
     const effective = opResult.applied.effective ?? requested;
-    return { crew: opResult.crew, requested, effective };
+    return { crew: opResult.crew, requested, effective, canUndo: opResult.canUndo, historyCount: opResult.historyCount };
   });
 }
 

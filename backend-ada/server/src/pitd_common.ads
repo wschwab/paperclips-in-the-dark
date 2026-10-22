@@ -104,6 +104,7 @@ package Pitd_Common is
    procedure Write_Baseline_Snapshot (Kind, Id, Op : String; Entity : JSON_Value);
    procedure Rebuild_Index (Kind, Id : String);
    function History_Count (Kind, Id : String) return Natural;
+   procedure Set_History_Metadata (Result : JSON_Value; Kind, Id : String);
    function History (Kind, Id : String) return JSON_Array;
 
    --  SC-A5: registers one validated settings entry (called by the glue's

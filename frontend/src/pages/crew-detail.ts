@@ -40,7 +40,7 @@ import {
   getCrewCapabilities,
   StaleRevisionError,
 } from "../api/client.js";
-import type { CrewCapabilities, CrewTrackOpResult } from "../api/client.js";
+import type { CrewCapabilities, CrewOpHistory, CrewTrackOpResult } from "../api/client.js";
 import { el, setChildren } from "../lib/dom.js";
 import { failMutation, type MutationTransport } from "../lib/mutation-transport.js";
 import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
@@ -74,6 +74,29 @@ interface ProfileEditingState {
 }
 
 
+/** CREW-COHORTS drafts: the add form and each open edit form keep their values in page state, so a re-render (a rep, turf, or other change) does not reset them. */
+export interface CohortDraft {
+  kind: "gang" | "expert";
+  gangType: string;
+  expertType: string;
+  expertCustom: string;
+  harm: string;
+  hasArmor: boolean;
+  edges: string[];
+  flaws: string[];
+  name: string;
+  description: string;
+}
+
+export interface CohortDrafts {
+  add: CohortDraft;
+  edits: Map<string, CohortDraft>;
+}
+
+export function blankCohortDraft(): CohortDraft {
+  return { kind: "gang", gangType: "", expertType: "", expertCustom: "", harm: "", hasArmor: false, edges: [], flaws: [], name: "", description: "" };
+}
+
 export interface FactionDrafts {
   add: { name: string; tier: string; status: string };
   rows: Map<string, { tier: string; status: string }>;
@@ -100,6 +123,7 @@ export interface RenderState {
   isFactionLoading: boolean;
   factionBounds: { min: number; max: number } | null;
   factionDrafts: FactionDrafts;
+  cohortDrafts: CohortDrafts;
   isProfileLoading: boolean;
   isRepLoading: boolean;
   isHeatLoading: boolean;
@@ -295,6 +319,7 @@ export function mountCrewDetailPage(
     starting: null,
     error: null,
   };
+  const cohortDrafts: CohortDrafts = { add: blankCohortDraft(), edits: new Map() };
   let editingProfile: ProfileEditingState | null = null;
   let editingCohortId: string | null = null;
   // CREW-04: advancement-edit mode gates ability removal / upgrade unmarking;
@@ -392,7 +417,7 @@ export function mountCrewDetailPage(
    */
   const runCrewOp = (
     setLoading: (v: boolean) => void,
-    program: Effect.Effect<Crew | CrewTrackOpResult, ApiError | DecodeError | StaleRevisionError>,
+    program: Effect.Effect<(Crew | CrewTrackOpResult) & CrewOpHistory, ApiError | DecodeError | StaleRevisionError>,
     successNotice?: string,
     clampLabel?: string,
     afterSuccess?: () => void,
@@ -408,6 +433,11 @@ export function mountCrewDetailPage(
           setLoading(false);
           const crew = isCrewTrackResult(result) ? result.crew : result;
           currentCrew = crew;
+          // The envelope's derived history metadata (never stored) drives the undo control.
+          if (typeof result.canUndo === "boolean") {
+            canUndoState = result.canUndo;
+            historyCountState = result.historyCount ?? null;
+          }
           if (isCrewTrackResult(result) && result.effective !== result.requested) {
             noticeMsg = `${clampLabel ?? "Value"} clamped to ${result.effective} (requested ${result.requested})`;
             setTimeout(() => {
@@ -463,6 +493,7 @@ export function mountCrewDetailPage(
       isFactionLoading,
       factionBounds,
       factionDrafts,
+      cohortDrafts,
       isProfileLoading,
       isRepLoading,
       isHeatLoading,
@@ -1000,6 +1031,7 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isCohortLoading = false;
+            cohortDrafts.add = blankCohortDraft();
             currentCrew = crew;
             renderDetail();
           },
@@ -1017,6 +1049,7 @@ export function mountCrewDetailPage(
       if (!currentCrew || isCohortLoading) return;
       isCohortLoading = true;
       editingCohortId = null;
+      cohortDrafts.edits.delete(cohortId);
       clearNotices();
       renderDetail();
 
@@ -1055,6 +1088,7 @@ export function mountCrewDetailPage(
     },
 
     onCohortCancel: () => {
+      if (editingCohortId !== null) cohortDrafts.edits.delete(editingCohortId);
       editingCohortId = null;
       renderDetail();
     },

@@ -19,7 +19,7 @@ import {
   type CohortTrait,
 } from "../crew-domain.js";
 import { CohortHarm, CohortType } from "../../schema/common.js";
-import type { RenderState } from "../crew-detail.js";
+import type { CohortDraft, RenderState } from "../crew-detail.js";
 
 /** SRD: a cohort has one or two edges and an equal number of flaws. */
 const MAX_TRAITS = 2;
@@ -48,7 +48,7 @@ function traitPicker(
   options: CohortTrait[],
   initial: readonly string[],
   disabled: boolean,
-  onChange?: () => void,
+  onChange?: (values: string[]) => void,
 ): { element: HTMLElement; read: () => string[] } {
   const chips = el("span", { className: "cohort-trait-list", "data-list": `${singular}s`, style: "display: inline-flex; gap: 0.35em; flex-wrap: wrap;" });
   const select = el("select", { "aria-label": `${prefix} ${singular}`, disabled }) as HTMLSelectElement;
@@ -67,10 +67,11 @@ function traitPicker(
   customInput.hidden = true;
   const addBtn = el("button", { type: "button", disabled, title: `Add ${singular}` }, "+") as HTMLButtonElement;
 
+  const readChips = () => [...chips.querySelectorAll("[data-value]")].map((c) => c.getAttribute("data-value") ?? "");
   const count = () => chips.querySelectorAll("[data-value]").length;
   const syncAddEnabled = () => {
     addBtn.disabled = disabled || count() >= MAX_TRAITS;
-    onChange?.();
+    onChange?.(readChips());
   };
   const addChip = (value: string) => {
     if ([...chips.querySelectorAll("[data-value]")].some((c) => c.getAttribute("data-value") === value)) return;
@@ -113,8 +114,30 @@ function traitPicker(
   );
   return {
     element,
-    read: () => [...chips.querySelectorAll("[data-value]")].map((c) => c.getAttribute("data-value") ?? ""),
+    read: readChips,
   };
+}
+
+/** The edit draft for a cohort, created from the saved cohort the first time its form is shown. */
+function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: RenderState): CohortDraft {
+  const existing = state.cohortDrafts.edits.get(cohort.id);
+  if (existing) return existing;
+  const expertTypes = extractCohortExpertTypes(state.crewGameData);
+  const isCustom = cohort.expertType === "Custom" || !expertTypes.includes(cohort.expertType);
+  const draft: CohortDraft = {
+    kind: cohort.cohortKind,
+    gangType: cohort.gangType,
+    expertType: isCustom ? "Custom" : cohort.expertType,
+    expertCustom: isCustom && cohort.expertType !== "Custom" ? cohort.expertType : "",
+    harm: cohort.harm,
+    hasArmor: cohort.hasArmor,
+    edges: [...cohort.edges],
+    flaws: [...cohort.flaws],
+    name: cohort.name ?? "",
+    description: cohort.description,
+  };
+  state.cohortDrafts.edits.set(cohort.id, draft);
+  return draft;
 }
 
 export function renderCrewCohortsSection(state: RenderState): HTMLElement {
@@ -133,6 +156,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       values.length === 0 ? "(none)" : values.join(", ");
 
     if (isEditing) {
+      const draft = editDraftFor(cohort, state);
       // Type: kind-specific dropdown from game data (canonical fallback). The
       // current type is kept even when absent from the lists (older snapshots).
       const gangTypes = extractCohortGangTypes(state.crewGameData);
@@ -140,9 +164,9 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       let typeControl: HTMLElement;
       let readType: () => string;
       if (cohort.cohortKind === "gang") {
-        const options = gangTypes.includes(cohort.gangType)
+        const options = gangTypes.includes(draft.gangType)
           ? gangTypes
-          : [...gangTypes, cohort.gangType];
+          : [...gangTypes, draft.gangType];
         const gangSelect = el("select", {
           "aria-label": "Edit gang type",
           disabled: state.anyLoading,
@@ -152,12 +176,11 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         }
         // Set via the select value after append: happy-dom does not honour
         // option.selected set before the option is attached.
-        gangSelect.value = cohort.gangType;
+        gangSelect.value = draft.gangType;
+        gangSelect.addEventListener("change", () => { draft.gangType = gangSelect.value; });
         typeControl = gangSelect;
         readType = () => gangSelect.value;
       } else {
-        const isCustom =
-          cohort.expertType === "Custom" || !expertTypes.includes(cohort.expertType);
         const expertSelect = el("select", {
           "aria-label": "Edit expert type",
           disabled: state.anyLoading,
@@ -165,15 +188,16 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         for (const value of expertOptions(expertTypes)) {
           expertSelect.append(el("option", { value }, value) as HTMLOptionElement);
         }
-        expertSelect.value = isCustom ? "Custom" : cohort.expertType;
+        expertSelect.value = draft.expertType;
+        expertSelect.addEventListener("change", () => { draft.expertType = expertSelect.value; });
         const customInput = el("input", {
           type: "text",
           "aria-label": "Edit expert custom type",
           disabled: state.anyLoading,
           placeholder: "custom type",
         });
-        customInput.value =
-          isCustom && cohort.expertType !== "Custom" ? cohort.expertType : "";
+        customInput.value = draft.expertCustom;
+        customInput.addEventListener("input", () => { draft.expertCustom = customInput.value; });
         const toggleCustom = () => {
           customInput.hidden = expertSelect.value !== "Custom";
         };
@@ -194,35 +218,39 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       const armorInput = el("input", {
         type: "checkbox",
         "aria-label": "Edit armor",
-        checked: cohort.hasArmor,
+        checked: draft.hasArmor,
         disabled: state.anyLoading,
       });
+      armorInput.addEventListener("change", () => { draft.hasArmor = armorInput.checked; });
       // Edges and flaws must stay equal (SRD). The pickers report every change, including
       // initial chips, before Save exists, so the gate is bound once Save is created.
       let syncEditGate: (() => void) | undefined;
-      const edgesPicker = traitPicker("Edit", "edge", edgeOptions, cohort.edges, state.anyLoading, () => syncEditGate?.());
-      const flawsPicker = traitPicker("Edit", "flaw", flawOptions, cohort.flaws, state.anyLoading, () => syncEditGate?.());
+      const edgesPicker = traitPicker("Edit", "edge", edgeOptions, draft.edges, state.anyLoading, (values) => { draft.edges = values; syncEditGate?.(); });
+      const flawsPicker = traitPicker("Edit", "flaw", flawOptions, draft.flaws, state.anyLoading, (values) => { draft.flaws = values; syncEditGate?.(); });
       const harmSelect = el("select", {
         "aria-label": "Edit harm",
         disabled: state.anyLoading,
       }) as HTMLSelectElement;
       for (const value of CohortHarm.literals) {
         const option = el("option", { value }, value) as HTMLOptionElement;
-        if (value === cohort.harm) option.selected = true;
+        if (value === draft.harm) option.selected = true;
         harmSelect.append(option);
       }
+      harmSelect.addEventListener("change", () => { draft.harm = harmSelect.value; });
       const nameInput = el("input", {
         type: "text",
         "aria-label": "Edit name",
         disabled: state.anyLoading,
       }) as HTMLInputElement;
-      nameInput.value = cohort.name ?? "";
+      nameInput.value = draft.name;
+      nameInput.addEventListener("input", () => { draft.name = nameInput.value; });
       const descInput = el("textarea", {
         "aria-label": "Edit description",
         disabled: state.anyLoading,
         rows: "4",
       }) as HTMLTextAreaElement;
-      descInput.value = cohort.description;
+      descInput.value = draft.description;
+      descInput.addEventListener("input", () => { draft.description = descInput.value; });
 
       const saveBtn = el("button", {
         type: "button",
@@ -318,6 +346,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     );
   });
 
+  const addDraft = state.cohortDrafts.add;
+  let syncAddGate: (() => void) | undefined;
   // Add form. Kind-specific fields are toggled locally so typed values survive a kind switch.
   const cohortKindSelect = el("select", {
     "aria-label": "Cohort kind",
@@ -327,7 +357,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   }) as HTMLSelectElement;
   for (const value of CohortType.literals) {
     const option = el("option", { value }, value) as HTMLOptionElement;
-    if (value === "gang") option.selected = true;
+    if (value === addDraft.kind) option.selected = true;
     cohortKindSelect.append(option);
   }
   const gangTypeSelect = el("select", {
@@ -337,7 +367,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   for (const value of extractCohortGangTypes(state.crewGameData)) {
     gangTypeSelect.append(el("option", { value }, value) as HTMLOptionElement);
   }
-  gangTypeSelect.value = "";
+  gangTypeSelect.value = addDraft.gangType;
+  gangTypeSelect.addEventListener("change", () => { addDraft.gangType = gangTypeSelect.value; });
   const expertTypeSelect = el("select", {
     "aria-label": "Cohort expert type",
     disabled: state.anyLoading,
@@ -345,12 +376,15 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   for (const value of expertOptions(extractCohortExpertTypes(state.crewGameData))) {
     expertTypeSelect.append(el("option", { value }, value) as HTMLOptionElement);
   }
-  expertTypeSelect.value = "";
+  expertTypeSelect.value = addDraft.expertType;
+  expertTypeSelect.addEventListener("change", () => { addDraft.expertType = expertTypeSelect.value; });
   const expertCustomInput = el("input", {
     type: "text",
     "aria-label": "Cohort expert custom type",
     disabled: state.anyLoading,
   });
+  expertCustomInput.value = addDraft.expertCustom;
+  expertCustomInput.addEventListener("input", () => { addDraft.expertCustom = expertCustomInput.value; });
   const qualityDerived = el("span", { className: "cohort-quality-derived" });
   const scaleDerived = el("span", { className: "cohort-scale-derived" });
   const armorInput = el("input", {
@@ -358,18 +392,24 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     "aria-label": "Cohort armor",
     disabled: state.anyLoading,
   });
-  const edgesPicker = traitPicker("Cohort", "edge", edgeOptions, [], state.anyLoading, () => syncAddGate());
-  const flawsPicker = traitPicker("Cohort", "flaw", flawOptions, [], state.anyLoading, () => syncAddGate());
+  armorInput.checked = addDraft.hasArmor;
+  armorInput.addEventListener("change", () => { addDraft.hasArmor = armorInput.checked; });
+  const edgesPicker = traitPicker("Cohort", "edge", edgeOptions, addDraft.edges, state.anyLoading, (values) => { addDraft.edges = values; syncAddGate?.(); });
+  const flawsPicker = traitPicker("Cohort", "flaw", flawOptions, addDraft.flaws, state.anyLoading, (values) => { addDraft.flaws = values; syncAddGate?.(); });
   const descInput = el("textarea", {
     "aria-label": "Cohort description",
     disabled: state.anyLoading,
     rows: "4",
   }) as HTMLTextAreaElement;
+  descInput.value = addDraft.description;
+  descInput.addEventListener("input", () => { addDraft.description = descInput.value; });
   const nameInput = el("input", {
     type: "text",
     "aria-label": "Cohort name",
     disabled: state.anyLoading,
   }) as HTMLInputElement;
+  nameInput.value = addDraft.name;
+  nameInput.addEventListener("input", () => { addDraft.name = nameInput.value; });
   // F-10: persistent labels over ruled blanks.
   const cohortField = (label: string, control: HTMLElement) =>
     el(
@@ -386,6 +426,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   const armorField = cohortField("Armor", armorInput);
   const toggleCohortKindFields = () => {
     const kind = cohortKindSelect.value === "expert" ? "expert" : "gang";
+    addDraft.kind = kind;
     const stats = derivedCohortStats(kind, tier);
     gangTypeField.hidden = kind !== "gang";
     expertTypeField.hidden = kind !== "expert";
@@ -411,7 +452,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   // SRD: an equal number of edges and flaws. Add stays disabled, and says why, while they differ.
   const countMismatch = el("p", { className: "cohort-count-mismatch lbl", role: "alert" }) as HTMLElement;
   countMismatch.hidden = true;
-  const syncAddGate = () => {
+  syncAddGate = () => {
     const message = countMismatchMessage(edgesPicker.read().length, flawsPicker.read().length);
     countMismatch.hidden = message === null;
     countMismatch.textContent = message ?? "";

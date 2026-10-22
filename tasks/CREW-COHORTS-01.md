@@ -50,7 +50,7 @@ Verified 2026-10-19 against `https://bladesinthedark.com/crew`, "Cohorts" sectio
 
 ## Gaps (recorded, not in scope of this card)
 
-- Equal edge/flaw count is enforced in the Add form only: Add is disabled with a visible message while the counts differ, and `readCohortAddBody` returns null on mismatch. The edit form does not enforce it yet (residual).
+- Equal edge/flaw count gate: resolved by CREW-COHORTS-02 (`ee87f61d`). The Add and edit forms both disable Save or Add with the same message while the counts differ. The Add form was the only one at `bcba18d7`, and the edit form gate is now covered by its own vitest test and Chromium probe. The earlier gap line is superseded.
 - SRD "A given cohort can have up to two types" is not modelled. The contract stores a single `gangType` or `expertType` string each (`contract/schemas/crew.json`). Two types need a contract change, so this is recorded and not built.
 - Armor is shown for gangs only. The SRD cohort section does not mention armor for experts; the expert card keeps "No armor". Judgement call.
 - Expert Custom appends a single "Custom" option in the UI (`expertOptions()`); the game-data fallback still lists it.

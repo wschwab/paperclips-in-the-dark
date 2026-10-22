@@ -1,0 +1,21 @@
+[managed-browser-smoke] runId=2026-10-22T14-20-41-086Z-a1be8855
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node docs/public/evidence/crew-review-01/undo-envelope-probe.mjs
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855/data (dir)
+[managed-browser-smoke] port=35775
+[managed-browser-smoke] baseUrl=http://127.0.0.1:35775
+[managed-browser-smoke] pid=67248
+[managed-browser-smoke] ready=http://127.0.0.1:35775
+[managed-browser-smoke] commandPid=67315
+undo envelope: 3 steps, 3 failures
+{"label":"rep.add #1","ok":false,"canUndo":null,"historyCount":null,"expectCanUndo":true,"expectCount":1,"error":null}
+{"label":"rep.add #2","ok":false,"canUndo":null,"historyCount":null,"expectCanUndo":true,"expectCount":2,"error":null}
+{"label":"crew.undo","ok":false,"canUndo":null,"historyCount":null,"expectCanUndo":true,"expectCount":1,"error":null}
+[managed-browser-smoke] FAILED: command exited with code 1: node docs/public/evidence/crew-review-01/undo-envelope-probe.mjs
+[managed-browser-smoke] failure evidence removed: runDir=/tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855 dataDir=/tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855/data log=/tmp/pitd-managed/2026-10-22T14-20-41-086Z-a1be8855/server.log port=35775

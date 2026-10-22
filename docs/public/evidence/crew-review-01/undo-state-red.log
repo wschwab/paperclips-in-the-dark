@@ -1,0 +1,137 @@
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/crew-detail.test.ts -t re-enables undo
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ❯ src/pages/crew-detail.test.ts (102 tests | 1 failed | 101 skipped) 1128ms
+   ↓ crew-detail page > renders the crew name after initial load
+   ↓ crew-detail page > names linked scoundrels in the permanent-delete confirmation (UI-CREATE-01)
+   ↓ crew-detail page > shows loading state before the crew resolves
+   ↓ crew-detail page > renders a recoverable error card while keeping technical details collapsed
+   ↓ crew-detail page > onUndo > re-renders the crew on successful undo
+   ↓ crew-detail page > onUndo > refreshes the capability projection after a successful undo
+   ↓ crew-detail page > onUndo > shows NO_HISTORY notice when undo returns NO_HISTORY error
+   ↓ crew-detail page > onUndo > re-renders synchronously before recovery fetch when undo hits StaleRevisionError
+   ↓ crew-detail page > F2y Contacts & Factions > renders contacts with name and profession
+   ↓ crew-detail page > F2y Contacts & Factions > marks the contact add row for narrow-sheet flex sizing
+   ↓ crew-detail page > F2y Contacts & Factions > adds a contact via the add form
+   ↓ crew-detail page > F2y Contacts & Factions > removes a contact
+   ↓ crew-detail page > F2y Contacts & Factions > shows a DUPLICATE error notice when adding a duplicate contact
+   ↓ crew-detail page > F2y Contacts & Factions > renders factions with name and status
+   ↓ crew-detail page > F2y Contacts & Factions > keeps faction-entry rows shrinkable on narrow sheets (FV-014)
+   ↓ crew-detail page > F2y Contacts & Factions > keeps the contact add row shrinkable (FV-014: contact row unchanged)
+   ↓ crew-detail page > F2y Contacts & Factions > shows the applied.effective when set-status clamps
+   ↓ crew-detail page > F2y Contacts & Factions > removes a faction
+   ↓ crew-detail page > F2y Contacts & Factions > shows a NOT_FOUND error notice when removing an unknown faction
+   ↓ crew-detail page > F2y Contacts & Factions > refetches the sheet after a STALE_REVISION on contact add
+   ↓ crew-detail page > F2u Profile & Trackers > renders profile fields and trackers (rep/heat/wanted boxes, tier, hold select, coin, stash)
+   ↓ crew-detail page > F2u Profile & Trackers > edits and saves a profile field via crewFieldsUpdate
+   ↓ crew-detail page > F2u Profile & Trackers > cancels a profile edit without saving
+   ↓ crew-detail page > F2u Profile & Trackers > ENTER in a profile input saves the typed value via crewFieldsUpdate — F2aa
+   ↓ crew-detail page > F2u Profile & Trackers > TAB order in a profile edit is input → save → cancel (natural document order) — F2aa
+   ↓ crew-detail page > F2u Profile & Trackers > rep +/− and box click issue rep.add with the right delta
+   ↓ crew-detail page > F2u Profile & Trackers > heat +/− and box click issue heat.add with the right delta
+   ↓ crew-detail page > F2u Profile & Trackers > wanted +/− and box click issue wanted.add with the right delta
+   ↓ crew-detail page > F2u Profile & Trackers > tier +/− issues tier.add with the right delta
+   ↓ crew-detail page > F2u Profile & Trackers > sets hold via the contract-enum select and hold.set
+   ↓ crew-detail page > F2u Profile & Trackers > coin and stash +/− issue coin.add and stash.add
+   ↓ crew-detail page > F2u Profile & Trackers > CONTRACT-04: renders Tier in Roman numerals (0 stays 0, over-scale falls back to decimal)
+   ↓ crew-detail page > F2u Profile & Trackers > shows an op-level error notice when a tracker op fails
+   ↓ crew-detail page > F2u Profile & Trackers > refetches the sheet after a STALE_REVISION on a tracker op
+   ↓ crew-detail page > F2v Playbook & Upgrades > renders taken abilities from DTO and the take select from game-data SpecialAbilities
+   ↓ crew-detail page > F2v Playbook & Upgrades > gates ability removal / upgrade unmarking behind an advancement-edit mode (CREW-04)
+   ↓ crew-detail page > F2v Playbook & Upgrades > take posts crewAbilityTake with the selected ability and renders the new entry
+   ↓ crew-detail page > F2v Playbook & Upgrades > remove posts crewAbilityRemove with the ability name
+   ↓ crew-detail page > F2v Playbook & Upgrades > shows an ABILITY_MAXED notice when take hits the server limit
+   ↓ crew-detail page > F2v Playbook & Upgrades > renders upgrades from DTO with boxes/total from game data and mark/unmark buttons
+   ↓ crew-detail page > F2v Playbook & Upgrades > mark menu lists eligible upgrades from game data and posts upgradeMark
+   ↓ crew-detail page > F2v Playbook & Upgrades > row mark and unmark buttons post upgradeMark / upgradeUnmark
+   ↓ crew-detail page > F2v Playbook & Upgrades > shows an UPGRADE_MAXED notice when mark hits the server limit
+   ↓ crew-detail page > F2v Playbook & Upgrades > renders the lair chart as a compact chart view of the same upgrades data
+   ↓ crew-detail page > F2v Playbook & Upgrades > refetches the sheet after a STALE_REVISION on an ability op
+   ↓ crew-detail page > F2w Cohorts > renders cohort cards from the DTO (kind badge, type, quality/scale, armor, edges/flaws, harm, description)
+   ↓ crew-detail page > F2w Cohorts > adds a gang cohort via the add form and posts cohort.add with only the filled fields
+   ↓ crew-detail page > F2w Cohorts > updates harm and armor through the edit form; derived quality is shown, not posted
+   ↓ crew-detail page > F2w Cohorts > removes a cohort via cohort.remove
+   ↓ crew-detail page > F2w Cohorts > shows a NOT_FOUND error notice when removing an unknown cohort
+   ↓ crew-detail page > F2w Cohorts > refetches the sheet after a STALE_REVISION on cohort add
+   ↓ crew-detail page > F2x Crew XP > renders the XP tracker (points/max from the DTO) and the ExperienceTrigger criteria text from crew game data
+   ↓ crew-detail page > F2x Crew XP > +/− post crewXpAdd with the right delta and clear posts crewXpClear (no body)
+   ↓ crew-detail page > F2x Crew XP > shows an op-level error notice when an XP op fails
+   ↓ crew-detail page > F2x Crew XP > refetches the sheet after a STALE_REVISION on an XP op
+   ↓ crew-detail page > F2x Crew XP > degrades gracefully when crew-type game data is unavailable (no criteria text, tracker still renders)
+   ↓ crew-detail page > F2ac Reputation dropdown > renders the reputation dropdown from game-data Reputations (the 8 values) with the current value selected
+   ↓ crew-detail page > F2ac Reputation dropdown > prefers the per-crew-type endpoint Reputations when it is available
+   ↓ crew-detail page > F2ac Reputation dropdown > saves a reputation change via crewFieldsUpdate { reputation }
+   ↓ crew-detail page > F2ac Reputation dropdown > degrades to a read-only value row when game data has no Reputations
+   ↓ crew-detail page > F2ac Rep & Turf tracker and Develop > reserves the rightmost Rep boxes for turf and keeps manual +/− controls
+   ↓ crew-detail page > F2ac Rep & Turf tracker and Develop > disables manual turf +/− at the settings-derived bounds
+   ↓ crew-detail page > F2ac Rep & Turf tracker and Develop > manual turf +/− post turf.add and re-render the combined track
+   ↓ crew-detail page > F2ac Rep & Turf tracker and Develop > Develop with weak hold: hold.set strong + rep reset to 0 (rep.add −current)
+   ↓ crew-detail page > F2ac Rep & Turf tracker and Develop > uses claimed Turf in the Develop handler, not just in the displayed threshold
+   ↓ crew-detail page > F2ac Rep & Turf tracker and Develop > Develop with strong hold + funds: coin.add −(tier+1)*8, tier.add +1, rep reset, hold.set weak
+   ↓ crew-detail page > F2ac Rep & Turf tracker and Develop > Develop with strong hold + insufficient funds surfaces INSUFFICIENT_FUNDS and sends no ops
+   ↓ crew-detail page > F2ac Notes > renders the multi-note list and the new-note textarea
+   ↓ crew-detail page > F2ac Notes > adds a note via note.add and renders it
+   ↓ crew-detail page > F2ac Notes > removes a note by index via note.remove
+   ↓ crew-detail page > F2ac Cohort conditional dropdowns > shows the gang select only when kind=gang and the expert select only when kind=expert, with Custom revealing a text input
+   ↓ crew-detail page > F2ac Cohort conditional dropdowns > marks cohortKind as the one contract-required add-form field and does not over-gate Add
+   ↓ crew-detail page > F2ac Cohort conditional dropdowns > adds an expert cohort with a custom type (Custom → text input → expertType)
+   ↓ crew-detail page > F2ac Cohort conditional dropdowns > edit form uses the gang select and preserves a gang type that is not in the game data
+   ↓ crew-detail page > F2ac Cohort conditional dropdowns > edit form maps a custom expert type onto the Custom input and saves it
+   ↓ SC-F3 tracker clamps > disables the rep + bound control when the track is full
+   ↓ SC-F3 tracker clamps > disables the stash + bound control when stash has reached the vault capacity
+   ↓ SC-F3 tracker clamps > keeps the stash + control enabled when below vault capacity
+   ↓ SC-F3 tracker clamps > keeps the coin + control enabled even when display-advised against capacity
+   ↓ SC-F3 tracker clamps > shows a clamp notice when the server applies less than the requested rep delta
+   × FV-012 focus restoration > re-enables undo when an ordinary op reports retained history after an undo emptied it 1127ms
+     → expected true to be false // Object.is equality
+   ↓ FV-012 focus restoration > keeps focus on the turf add button after a successful turf add
+   ↓ FV-012 focus restoration > returns focus to the turf add button after a failed (422) turf add
+   ↓ FV-012 focus restoration > drops a stale capability projection when the refresh after a mutation fails
+   ↓ FV-012 focus restoration > moves focus to the new contact's remove button after adding a contact
+   ↓ FV-012 focus restoration > moves focus to the next contact's remove button after deleting a contact
+   ↓ FV-012 focus restoration > moves focus to the new note's remove button after adding a note
+   ↓ FV-012 focus restoration > moves focus to the next note's remove button after deleting a middle note
+   ↓ FV-012 focus restoration > moves focus to the saved field's Edit button after a profile save
+   ↓ FV-012 focus restoration > keeps focus on the Set reputation button after saving a reputation
+   ↓ FV-012 focus restoration > keeps focus on the undo button after a successful undo
+   ↓ FV-012 focus restoration > moves focus to the next faction's remove button after deleting a faction
+   ↓ FV-012 focus restoration > moves focus to the newly taken ability's remove button
+   ↓ FV-012 focus restoration > moves focus to the next cohort's remove button after deleting a cohort
+   ↓ FV-012 focus restoration > returns focus to the add-contact button after a stale (409) refresh
+   ↓ CHAR-06 crew tracker affordances > labels every ±1 stepper with the +1/−1 convention
+   ↓ CHAR-06 crew tracker affordances > uses semantic default option text instead of -- in pickers
+   ↓ CREW-02 claim acquisition and removal gating > renders the claims map; active benefits are text with no Edit claims toggle or per-claim buttons
+   ↓ CREW-02 claim acquisition and removal gating > asks confirmation before acquiring; cancel writes nothing, accept posts ops/claim.set
+   ↓ CREW-02 claim acquisition and removal gating > strengthens the acquisition warning for a claim disconnected from the network
+   ↓ CREW-02 claim acquisition and removal gating > relinquishes an owned claim by clicking it: confirm first, cancel writes nothing, accept posts claimed:false
+   ↓ CREW-02 claim acquisition and removal gating > edits an owned claim's name through Edit claim without a relinquish or acquisition prompt
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/crew-detail.test.ts > FV-012 focus restoration > re-enables undo when an ordinary op reports retained history after an undo emptied it
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/pages/crew-detail.test.ts:3211:55
+    3209|     await vi.waitFor(() => expect(turfPlus().disabled).toBe(false));
+    3210|     turfPlus().click();
+    3211|     await vi.waitFor(() => expect(undoBtn().disabled).toBe(false));
+       |                                                       ^
+    3212|     expect(root.textContent).toContain("1 snapshotted change can be un…
+    3213|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 101 skipped (102)
+   Start at  17:31:05
+   Duration  1.73s (transform 175ms, setup 0ms, collect 340ms, tests 1.13s, environment 90ms, prepare 71ms)
+

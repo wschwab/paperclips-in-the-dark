@@ -1,0 +1,15 @@
+VERDICT: PASS
+
+- **[PASS] Shared add/edit explanation.** `frontend/src/pages/crew-sections/cohorts.ts:33–35,255–261,414–420` uses `countMismatchMessage` for both gates. Independent Chromium interaction confirmed identical add/edit text at 1 edge / 0 flaws; both buttons disabled. Evidence: `/tmp/sol-review/CREW-COHORTS-02-scratch/independent-transitions.json:add10`.
+
+- **[PASS] Initial render and picker changes.** Late-bound callbacks avoid accessing unconstructed pickers/Save; `syncEditGate()` runs before the edit element is returned (`cohorts.ts:200–204,255–286`). A persisted 2/1 cohort initially disabled Save. Adding/removing either trait type correctly toggled Save at 1/0, 1/1, 1/2, 2/1 and 2/2. Evidence: `independent-transitions.json:transitions`.
+
+- **[PASS] Loading cannot override the gate.** `cohorts.ts:259` sets `saveBtn.disabled = state.anyLoading || message !== null`. With a real mutation request held pending, Save and picker controls were disabled for both mismatched and matched cohorts. After completion, Save remained disabled at 2/1 and enabled at 2/2. Saving 2/2 persisted both trait arrays. Evidence: `independent-loading.json:mismatch,matched,savedCohorts` in the same scratch directory.
+
+- **[PASS] Committed Chromium evidence reproduced exactly.** Managed-launcher probe: **9 rows, 0 failures**, covering 1440×1000, 768×1024 and 390×844 in light, dark and high contrast. Every row reproduced enabled → disabled → enabled at 1/1 → 2/1 → 2/2, with document overflow **0**. Fresh JSON exactly equals committed `docs/public/evidence/crew-cohorts-02/edit-gate.json`; all nine `edit-*-mismatch.png` screenshots are pixel-identical. Evidence: scratch `evidence-comparison.json:jsonExactlyEqual,rows`.
+
+- **[PASS] Independent visual/responsive check.** Separate browser interaction confirmed document widths **1440/768/390**, matching viewport widths; edit-form and field-container `clientWidth === scrollWidth` in all nine combinations. Warning and controls remain contained. Evidence: scratch `independent-matrix.json:rows` and `independent-<width>-<theme>.png`.
+
+- **[PASS] Frontend gates and regression.** `npm run build` succeeded; fresh Vitest run passed **1011/1011**, including **8/8** cohort tests and **101/101** crew-detail tests. Evidence: scratch `vitest-results.json`. The pinned regression (`crew-cohorts.test.ts:172–196`) exercises 0/0 → 1/0 → 1/1; the browser probe separately covers the card’s 2/1 scenario. Historical red-run details were not independently recovered.
+
+- **[PASS] Fixture correction, not bypass.** `crew-detail.test.ts:1818–1819` now has two edges and two flaws. The harm/armor test retains its exact changed-fields payload assertion (`:2005–2009`). The unchanged display assertion (`:1873`) still checks the `Flaws: Loud` substring of `Flaws: Loud, Frail`; it does not assert complete flaw-list rendering.

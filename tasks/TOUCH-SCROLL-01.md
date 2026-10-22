@@ -28,7 +28,7 @@ Touch scrolling over the Resolution card must scroll the card's own list, and at
 ## Follow-up: horizontal-only input (review finding)
 
 - Sol review at `9d689c61`: FAIL. A zero vertical delta counted as upward movement whenever the card was scrolled down, so both forwarders cancelled horizontal-only wheel and touch input that the card cannot use.
-- Red, `docs/public/evidence/touch-scroll-01/horizontal-edge-probe.mjs` (`horizontal-edge-red.log`): the horizontal wheel notch was `defaultPrevented: true`, and all 11 horizontal touch moves were `defaultPrevented`. The card held at 100.
+- Red, `docs/public/evidence/touch-scroll-01/horizontal-edge-probe.mjs` (`horizontal-edge-red.log`): the horizontal wheel notch was `defaultPrevented: true`, and the horizontal touch moves were `defaultPrevented`. The red run asserted that at least one touch move was prevented (`.some`). The per-move array was not retained in the red run, because the green run overwrote `horizontal-edge.json`. The card therefore claims at least one prevented move, not all 11. The card held at 100.
 - Fix: both forwarders take input only for a non-zero vertical delta in a direction the card can still move.
 - Green (`horizontal-edge.json`, `horizontal-edge-green.log`): neither input is prevented, the card holds at 100, 0 failures.
 

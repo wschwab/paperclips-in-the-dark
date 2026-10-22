@@ -1,0 +1,32 @@
+{
+  "steps": [
+    {
+      "label": "rep.add #1",
+      "ok": true,
+      "canUndo": true,
+      "historyCount": 1,
+      "expectCanUndo": true,
+      "expectCount": 1,
+      "error": null
+    },
+    {
+      "label": "rep.add #2",
+      "ok": true,
+      "canUndo": true,
+      "historyCount": 2,
+      "expectCanUndo": true,
+      "expectCount": 2,
+      "error": null
+    },
+    {
+      "label": "crew.undo",
+      "ok": true,
+      "canUndo": true,
+      "historyCount": 1,
+      "expectCanUndo": true,
+      "expectCount": 1,
+      "error": null
+    }
+  ],
+  "failures": []
+}

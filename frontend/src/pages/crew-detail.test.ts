@@ -3183,6 +3183,77 @@ describe("FV-012 focus restoration", () => {
     mountCrewDetailPage(root, CREW_ID);
   };
 
+  it("re-enables undo when an ordinary op reports retained history after an undo emptied it", async () => {
+    const undoBtn = () => root.querySelector('button[title="Undo last change"]') as HTMLButtonElement;
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === `/api/crews/${CREW_ID}`) return Promise.resolve(ok(crewDTO({ turf: 0 })));
+      if (url === `/api/crews/${CREW_ID}/capabilities`) {
+        return Promise.resolve(ok({ crewId: CREW_ID, upgrades: [], abilities: [], effectiveTurf: 0, developThreshold: 9, tierMax: 4 }));
+      }
+      if (url === `/api/crews/${CREW_ID}/undo`) {
+        return Promise.resolve(ok({ ok: true, crew: crewDTO({ revision: 5, turf: 0 }), applied: { op: "crew.undo" }, sideEffects: [], error: null, canUndo: false, historyCount: 0 }));
+      }
+      if (url.endsWith("/ops/turf.add")) {
+        return Promise.resolve(ok({ ok: true, crew: crewDTO({ revision: 6, turf: 1 }), applied: { op: "turf.add" }, sideEffects: [], error: null, canUndo: true, historyCount: 1 }));
+      }
+      if (url === "/api/games/blades-in-the-dark") return Promise.resolve(ok({ TurfMax: 5 }));
+      if (url === "/api/games/blades-in-the-dark/crews") return Promise.resolve(ok({ Name: "Blades in the Dark", CrewTypes: [ASSASSIN_TYPE] }));
+      return Promise.resolve(ok(ASSASSIN_TYPE));
+    });
+    mountCrewDetailPage(root, CREW_ID);
+    await vi.waitFor(() => expect(turfPlus()).not.toBeNull());
+
+    undoBtn().click();
+    await vi.waitFor(() => expect(undoBtn().disabled).toBe(true));
+
+    await vi.waitFor(() => expect(turfPlus().disabled).toBe(false));
+    turfPlus().click();
+    await vi.waitFor(() => expect(undoBtn().disabled).toBe(false));
+    expect(root.textContent).toContain("1 snapshotted change can be undone.");
+  });
+
+  it("keeps cohort add-form drafts (name, kind, traits) across a sheet re-render", async () => {
+    let turfCalls = 0;
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === `/api/crews/${CREW_ID}`) return Promise.resolve(ok(crewDTO({ turf: 0 })));
+      if (url === `/api/crews/${CREW_ID}/capabilities`) {
+        return Promise.resolve(ok({ crewId: CREW_ID, upgrades: [], abilities: [], effectiveTurf: 0, developThreshold: 9, tierMax: 4 }));
+      }
+      if (url.endsWith("/ops/turf.add")) {
+        turfCalls += 1;
+        return Promise.resolve(ok({ ok: true, crew: crewDTO({ revision: 6, turf: 1 }), applied: { op: "turf.add" }, sideEffects: [], error: null, canUndo: false, historyCount: 0 }));
+      }
+      if (url === "/api/games/blades-in-the-dark") return Promise.resolve(ok({ TurfMax: 5 }));
+      if (url === "/api/games/blades-in-the-dark/crews") return Promise.resolve(ok({ Name: "Blades in the Dark", CrewTypes: [ASSASSIN_TYPE] }));
+      return Promise.resolve(ok(ASSASSIN_TYPE));
+    });
+    mountCrewDetailPage(root, CREW_ID);
+    await vi.waitFor(() => expect(turfPlus().disabled).toBe(false));
+
+    const name = root.querySelector('input[aria-label="Cohort name"]') as HTMLInputElement;
+    name.value = "Bravos";
+    name.dispatchEvent(new Event("input"));
+    const kind = root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement;
+    kind.value = "expert";
+    kind.dispatchEvent(new Event("change"));
+    const edgeSelect = root.querySelector('select[aria-label="Cohort edge"]') as HTMLSelectElement;
+    edgeSelect.value = "Custom";
+    edgeSelect.dispatchEvent(new Event("change"));
+    const customEdge = root.querySelector('input[aria-label="Cohort custom edge"]') as HTMLInputElement;
+    customEdge.value = "Ghost";
+    (root.querySelector('button[title="Add edge"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.querySelector('[data-list="edges"] [data-value="Ghost"]')).not.toBeNull());
+
+    const before = root.querySelector('input[aria-label="Cohort name"]');
+    turfPlus().click();
+    await vi.waitFor(() => expect(turfCalls).toBe(1));
+    await vi.waitFor(() => expect(root.querySelector('input[aria-label="Cohort name"]')).not.toBe(before));
+
+    expect((root.querySelector('input[aria-label="Cohort name"]') as HTMLInputElement).value).toBe("Bravos");
+    expect((root.querySelector('select[aria-label="Cohort kind"]') as HTMLSelectElement).value).toBe("expert");
+    expect(root.querySelector('[data-list="edges"] [data-value="Ghost"]')).not.toBeNull();
+  });
+
   const turfPlus = () => root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement;
   const addContact = () => root.querySelector('button[title="Add contact"]') as HTMLButtonElement;
   const contactName = () => root.querySelector('input[aria-label="Contact name"]') as HTMLInputElement;

@@ -913,6 +913,22 @@ end Snapshot;
       return Validation_Error (Op, Message, Root_Issues (Message), Entity);
    end Error_Result;
 
+   --  Entity-targeted results carry the derived history metadata
+   --  (contract operation-result.json; never stored).  A caller that builds
+   --  the envelope before the entity's snapshot is written must call this
+   --  again after the write, or the count is one behind.
+   procedure Set_History_Metadata (Result : JSON_Value; Kind, Id : String) is
+   begin
+      if Kind = "character" or else Kind = "crew" then
+         declare
+            Hc : constant Natural := History_Count (Kind, Id);
+         begin
+            Set_Field (Result, "canUndo", Hc > 0);
+            Set_Field (Result, "historyCount", Integer (Hc));
+         end;
+      end if;
+   end Set_History_Metadata;
+
    function Success_Result
      (Op : String; Entity : JSON_Value; Requested : Integer := Integer'First;
       Effective : Integer := Integer'First; Landed : String := "";
@@ -938,6 +954,7 @@ end Snapshot;
       --  keeps entity fields optional).
       if Entity.Kind = JSON_Object_Type then
          Set_Field (R, Str_Field (Entity, "kind"), Entity);
+         Set_History_Metadata (R, Str_Field (Entity, "kind"), Str_Field (Entity, "id"));
       end if;
       Add_Game_Mode_Assistance (R, Entity);
       return R;

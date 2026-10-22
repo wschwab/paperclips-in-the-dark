@@ -389,6 +389,8 @@ const OperationResult = Schema.Struct({
   suggestedOps: Schema.optional(Schema.Array(Schema.String)),
   crew: Schema.optional(Crew),
   clock: Schema.optional(Clock),
+  canUndo: Schema.optional(Schema.Boolean),
+  historyCount: Schema.optional(Schema.Int.pipe(Schema.greaterThanOrEqualTo(0))),
   applied: Schema.Struct({
     op: Schema.String,
     requested: Schema.optional(Schema.Int),

@@ -2090,6 +2090,7 @@ if Kind = "crew" then
                Stamp (E);
                Write_Entity (Kind, Id, E);
                Set_Field (R, Kind, E);
+               Set_History_Metadata (R, Kind, Id);
                if Header (Request, "Idempotency-Key") /= "" then
                   Idempotency_Store.Store
                     (To_String (Scope_Key), To_String (Body_Hash),
