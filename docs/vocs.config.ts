@@ -17,6 +17,7 @@ export default defineConfig({
       text: 'Overview',
       items: [
         { text: 'Introduction', link: '/' },
+        { text: 'Evidence policy', link: '/evidence-policy' },
         { text: 'Roadmap', link: '/roadmap' },
       ],
     },

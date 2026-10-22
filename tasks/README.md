@@ -29,3 +29,11 @@ Orchestrator handles C0 itself; human decides contract freeze, Z0 go/no-go,
 §10.3 escape hatch. A task is done only when its acceptance commands pass —
 run them; never trust the implementer's claim. `contract/` and `conformance/`
 are frozen for implementation tasks after C1.
+
+## Evidence policy
+
+Cited browser evidence lives under `docs/public/evidence/<card-lowercase>/`.
+`agent-docs/test-audit/browser-evidence/` is gitignored scratch and MUST NOT be
+cited by a card. `npm --prefix conformance run validate:evidence` enforces this.
+The 24 cards closed before this policy are historical exemptions, listed in
+`conformance/scripts/validate-evidence-paths.mjs`. Full policy: `docs/pages/evidence-policy.mdx`.
