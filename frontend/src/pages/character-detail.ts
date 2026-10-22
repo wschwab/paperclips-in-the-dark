@@ -2431,6 +2431,9 @@ export function mountCharacterDetailPage(
   const forwardResolutionWheel = (e: WheelEvent) => {
     const card = resolutionCardAt(e.clientX, e.clientY);
     if (!card) return;
+    // Take the wheel only while the card can still move that way; at its end the page scrolls (TOUCH-SCROLL-01).
+    const canMove = e.deltaY > 0 ? card.scrollTop < card.scrollHeight - card.clientHeight : card.scrollTop > 0;
+    if (!canMove) return;
     e.preventDefault();
     card.scrollTop += e.deltaY;
   };

@@ -1,0 +1,21 @@
+[managed-browser-smoke] runId=2026-10-22T13-24-55-956Z-0ae2946e
+[managed-browser-smoke] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-browser-smoke] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-browser-smoke] command=node docs/public/evidence/touch-scroll-01/wheel-scroll-probe.mjs
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-10-22T13-24-55-956Z-0ae2946e/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-10-22T13-24-55-956Z-0ae2946e/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-10-22T13-24-55-956Z-0ae2946e
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-10-22T13-24-55-956Z-0ae2946e/data (dir)
+[managed-browser-smoke] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-10-22T13-24-55-956Z-0ae2946e/data (dir)
+[managed-browser-smoke] port=44673
+[managed-browser-smoke] baseUrl=http://127.0.0.1:44673
+[managed-browser-smoke] pid=4137944
+[managed-browser-smoke] ready=http://127.0.0.1:44673
+[managed-browser-smoke] commandPid=4138011
+wheel scroll: 3 sizes, 0 failures
+{"width":1440,"cardCanScroll":true,"cardScrolledByWheel":true,"cardReachedEnd":true,"pageScrolledAtCardEnd":true,"pageIsScrollable":true,"horizontalOverflow":0}
+{"width":768,"cardCanScroll":true,"cardScrolledByWheel":true,"cardReachedEnd":true,"pageScrolledAtCardEnd":true,"pageIsScrollable":true,"horizontalOverflow":0}
+{"width":390,"cardCanScroll":true,"cardScrolledByWheel":true,"cardReachedEnd":true,"pageScrolledAtCardEnd":true,"pageIsScrollable":true,"horizontalOverflow":0}
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-10-22T13-24-55-956Z-0ae2946e)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-10-22T13-24-55-956Z-0ae2946e)

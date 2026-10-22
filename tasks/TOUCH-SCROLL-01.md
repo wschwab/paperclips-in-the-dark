@@ -18,9 +18,13 @@ Touch scrolling over the Resolution card must scroll the card's own list, and at
 - 390×844: the card scrolled by the drag, the page was unchanged by it, the card reached its end (`cardScrollTop 850 = cardMax 850`), and the page then scrolled by the drag (`pageScrollY` 220 → 396). Horizontal overflow 0.
 - 768×1024: the card scrolled by the drag, the page was unchanged by it, the card reached its end (`347 = 347`), and the page scrolled by the drag (75 → 251). Horizontal overflow 0.
 
-## Known exception, not changed
+## Follow-up: mouse wheel (same trap)
 
-- The wheel forwarder (`forwardResolutionWheel`) has the same always-`preventDefault` pattern. This card covers touch only. A wheel trap at the card's end is not covered by this card or its probe.
+- Red, `docs/public/evidence/touch-scroll-01/wheel-scroll-probe.mjs` (`wheel-scroll-red.log`): the wheel forwarder called `preventDefault` on every notch over the card. At 1440×560, 768×1024 and 390×844 the card scrolled, and then the page did not move at the card's end (`pageScrolledAtCardEnd: false`). 3 failures.
+- Fix: `character-detail.ts` `forwardResolutionWheel` takes the notch only while the card can move in its direction, the same rule as the touch fix.
+- Green (`wheel-scroll.json`, `wheel-scroll-green.log`): 0 failures. At each size the card reached its end, then the page scrolled 160px on the next notch. Horizontal overflow 0.
+- The 1440 case uses height 560 instead of 1000. At 1440×1000 the card fits, so its inner list cannot be tested. This is recorded in the probe.
+
 
 ## Acceptance
 

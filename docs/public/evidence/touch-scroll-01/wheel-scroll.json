@@ -1,0 +1,190 @@
+{
+  "rows": [
+    {
+      "width": 1440,
+      "height": 560,
+      "before": {
+        "cardScrollTop": 0,
+        "cardMaxScroll": 401,
+        "cardRect": {
+          "left": 384,
+          "top": 16,
+          "right": 1056,
+          "bottom": 544
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 2647,
+        "docOverflowX": 0
+      },
+      "afterCardWheel": {
+        "cardScrollTop": 160,
+        "cardMaxScroll": 401,
+        "cardRect": {
+          "left": 384,
+          "top": 16,
+          "right": 1056,
+          "bottom": 544
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 2647,
+        "docOverflowX": 0
+      },
+      "atCardEnd": {
+        "cardScrollTop": 401,
+        "cardMaxScroll": 401,
+        "cardRect": {
+          "left": 384,
+          "top": 16,
+          "right": 1056,
+          "bottom": 544
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 2647,
+        "docOverflowX": 0
+      },
+      "afterEndWheel": {
+        "cardScrollTop": 401,
+        "cardMaxScroll": 401,
+        "cardRect": {
+          "left": 384,
+          "top": 16,
+          "right": 1056,
+          "bottom": 544
+        },
+        "pageScrollY": 160,
+        "pageMaxScroll": 2647,
+        "docOverflowX": 0
+      },
+      "cardCanScroll": true,
+      "cardScrolledByWheel": true,
+      "cardReachedEnd": true,
+      "pageScrolledAtCardEnd": true,
+      "pageIsScrollable": true,
+      "horizontalOverflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "before": {
+        "cardScrollTop": 0,
+        "cardMaxScroll": 347,
+        "cardRect": {
+          "left": 48,
+          "top": 16,
+          "right": 720,
+          "bottom": 598
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 4670,
+        "docOverflowX": 0
+      },
+      "afterCardWheel": {
+        "cardScrollTop": 160,
+        "cardMaxScroll": 347,
+        "cardRect": {
+          "left": 48,
+          "top": 16,
+          "right": 720,
+          "bottom": 598
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 4670,
+        "docOverflowX": 0
+      },
+      "atCardEnd": {
+        "cardScrollTop": 347,
+        "cardMaxScroll": 347,
+        "cardRect": {
+          "left": 48,
+          "top": 16,
+          "right": 720,
+          "bottom": 598
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 4670,
+        "docOverflowX": 0
+      },
+      "afterEndWheel": {
+        "cardScrollTop": 347,
+        "cardMaxScroll": 347,
+        "cardRect": {
+          "left": 48,
+          "top": 16,
+          "right": 720,
+          "bottom": 598
+        },
+        "pageScrollY": 160,
+        "pageMaxScroll": 4670,
+        "docOverflowX": 0
+      },
+      "cardCanScroll": true,
+      "cardScrolledByWheel": true,
+      "cardReachedEnd": true,
+      "pageScrolledAtCardEnd": true,
+      "pageIsScrollable": true,
+      "horizontalOverflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "before": {
+        "cardScrollTop": 0,
+        "cardMaxScroll": 850,
+        "cardRect": {
+          "left": 16,
+          "top": 16,
+          "right": 374,
+          "bottom": 490
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 5734,
+        "docOverflowX": 0
+      },
+      "afterCardWheel": {
+        "cardScrollTop": 160,
+        "cardMaxScroll": 850,
+        "cardRect": {
+          "left": 16,
+          "top": 16,
+          "right": 374,
+          "bottom": 490
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 5734,
+        "docOverflowX": 0
+      },
+      "atCardEnd": {
+        "cardScrollTop": 850,
+        "cardMaxScroll": 850,
+        "cardRect": {
+          "left": 16,
+          "top": 16,
+          "right": 374,
+          "bottom": 490
+        },
+        "pageScrollY": 0,
+        "pageMaxScroll": 5734,
+        "docOverflowX": 0
+      },
+      "afterEndWheel": {
+        "cardScrollTop": 850,
+        "cardMaxScroll": 850,
+        "cardRect": {
+          "left": 16,
+          "top": 16,
+          "right": 374,
+          "bottom": 490
+        },
+        "pageScrollY": 160,
+        "pageMaxScroll": 5734,
+        "docOverflowX": 0
+      },
+      "cardCanScroll": true,
+      "cardScrolledByWheel": true,
+      "cardReachedEnd": true,
+      "pageScrolledAtCardEnd": true,
+      "pageIsScrollable": true,
+      "horizontalOverflow": 0
+    }
+  ]
+}
