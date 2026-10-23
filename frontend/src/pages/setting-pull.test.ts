@@ -20,7 +20,7 @@ describe("SETTING-PULL-01 no-world UI", () => {
     const state = {
       c: { contacts: [], factions: [{ name: "Our own faction", tier: 2, status: 1 }], startingFactions: { ally: "", rival: "" } },
       anyLoading: false, factionBounds: { min: -3, max: 3 },
-      factionDrafts: { add: { name: "", tier: "", status: "0" }, rows: new Map() }, handlers,
+      factionDrafts: { add: { name: "", tier: "", status: "0" }, rows: new Map() }, noteDraft: { text: "" }, contactDraft: { name: "", profession: "" }, handlers,
     } as unknown as RenderState;
     const root = renderCrewContactsSection(state);
     expect(root.querySelector('select[aria-label="Stock faction"]')).toBeNull();

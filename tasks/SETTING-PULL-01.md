@@ -6,13 +6,14 @@ Status: pulled on head (pending permission from John Harper / One Seven Design).
 
 Remove the stock Doskvol setting content from the head in one commit, leaving the app working:
 
-- `data/world/doskvol.json`: `factions` and `districts` emptied. `groups`/`holds` (generic labels) kept. `source` records the pull and the restore bookmark.
+- `data/world/doskvol.json`: `factions`, `districts` and `groups` emptied. `holds` (generic labels) kept. `source` records the pull and the restore bookmark.
 - `data/games/blades-in-the-dark.json`, `français-blades-in-the-dark.json`, `rus-blades-in-the-dark.json`: `Heritages` emptied to `[]`.
 - `data/games/demo-character.json`: heritage name and description blanked.
 - Frontend: the stock-faction picker and districts disclosure render only when world data is present (`crew-sections/doskvol-world.ts`); contacts keeps manual faction entry (`crew-sections/contacts.ts`); heritage uses free-form user text with no empty stock select (`character-sections/personal.ts`).
 - About & licence copy states the pull (`about-licence.ts`, and its test expectation).
 - Deleted `crew-world-02.test.ts` and `crew-world-03.test.ts` (their stock assertions no longer apply). Added red-first `frontend/src/data/setting-pull.test.ts` and `frontend/src/pages/setting-pull.test.ts`.
-- Not touched: `blades-in-the-sheets/`, `campaign-data/`, Rolodex names in `data/games`.
+- Vice purveyor and background examples: place, district and faction names removed from all three game files (follow-up commit). NPC names kept.
+- Not touched: `blades-in-the-sheets/`, `campaign-data/`, Rolodex and purveyor NPC names in `data/games`.
 
 ## Restore point
 
@@ -43,6 +44,7 @@ NOT-RUN: Codex `usage_limit_reached`. Review is deferred until the next Codex re
 
 ## Remaining setting names (not pulled)
 
-- Playbook Rolodex friend and NPC names in `data/games/*.json` (served as game data; preload contacts).
-- Heritage text in test and seed fixtures ("The Dagger Isles", "Iruvian", and similar). Test data only.
+- Playbook Rolodex friend and NPC names, and vice purveyor NPC names, in `data/games/*.json` (served as game data; preload contacts).
+- Test and seed fixtures: heritage text ("The Dagger Isles", "Iruvian") and stock names in frontend mocks ("The Crows", "Ironhook Prison", "The Red Sashes", "Brightstone"). Test data only.
+- Unlisted, found on review, not pulled: `frontend/src/pages/styleguide.ts` ("Doskvol" sample) and `docs/public/mockups/game-mode/` (Skovlan, The Silver Stag, gondoliers).
 - Documentation: `crew-world-sources.mdx`, setting content open items, the README provenance paragraph, CREW-WORLD task cards, the historical CREW-WORLD-01 red log.

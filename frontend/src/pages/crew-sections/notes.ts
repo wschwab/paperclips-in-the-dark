@@ -42,6 +42,8 @@ export function renderCrewNotesSection(state: RenderState): HTMLElement {
     disabled: state.anyLoading,
     placeholder: "Write a new note…",
   }) as HTMLTextAreaElement;
+  newNoteInput.value = state.noteDraft.text;
+  newNoteInput.addEventListener("input", () => { state.noteDraft.text = newNoteInput.value; });
   const addNoteBtn = el("button", {
     type: "button",
     disabled: state.anyLoading,

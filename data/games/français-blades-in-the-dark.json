@@ -698,56 +698,56 @@
 			"Name": "Croyance",
 			"Description": "Vous êtes dévoué à un pouvoir supérieur, un dieu oublié ou émergent, un ancêtre, etc.",
 			"Sources": [
-				"Révérende-Mère Narya, Maison de la Pleureuse, les Six Tours.",
-				"Ilacille, les ruines du Temple des Dieux Oubliés, Crête-Charbon.",
-				"Nelisanne, L’Église de l’Extase de la Chair, Pierre-Claire.",
-				"Lord Penderyn, les Archives des Échos, Charte-Halle."
+				"Révérende-Mère Narya.",
+				"Ilacille.",
+				"Nelisanne.",
+				"Lord Penderyn."
 			]
 		},
 		{
 			"Name": "Jeu",
 			"Description": "Vous êtes accro aux jeux de hasard, aux paris en tout genre, etc.",
 			"Sources": [
-				"Le Tripot de Spogg, Patte-de-Corbeau.",
-				"Grist, combats de boxe, les Docks.",
-				"Helene, le casino du Cerf d’Argent, Soie-Rivage.",
-				"Maître Vreen, courses de lévriers, Le Marché Nocturne.",
-				"Lady Dusk, Le Club du Manoir Dusk, Blanche-Couronne.",
-				"Le Sergent Velk, les arènes de combat,Gros-Bourbier."
+				"Le Tripot de Spogg.",
+				"Grist, combats de boxe.",
+				"Helene, le casino.",
+				"Maître Vreen, courses de lévriers.",
+				"Lady Dusk.",
+				"Le Sergent Velk, les arènes de combat."
 			]
 		},
 		{
 			"Name": "Lucre",
 			"Description": "Vous vous pavanez dans un étalage ostentatoire de pouvoir, argent et opulence.",
 			"Sources": [
-				"Singer, les bains, Patte-de-Corbeau.",
-				"Harvale Brogan, le Club Centuralia, Pierre-Claire.",
-				"Le Fumoir de Traven, Crête-Charbon.",
-				"Dunridge & Fils tissus raffinés et tailleur, Le Marché Nocturne.",
-				"Chef Roselle, restaurant la Prune Dorée,les Six Tours.",
-				"Maestro Helleren, le Théâtre de Flèchejardin, Blanche-Couronne."
+				"Singer, les bains.",
+				"Harvale Brogan.",
+				"Traven, le fumoir.",
+				"Dunridge & Fils, tissus raffinés et tailleur.",
+				"Chef Roselle, restaurant.",
+				"Maestro Helleren, théâtre."
 			]
 		},
 		{
 			"Name": "Plaisir",
 			"Description": "Vous sombrez dans la jouissance des plaisirs de la chair, de la nourriture, de la boisson, des drogues, de l’art, du théâtre, etc.",
 			"Sources": [
-				"Singer, les bains, Patte-de-Corbeau.",
-				"Harvale Brogan, le Club Centuralia, Pierre-Claire.",
-				"Le Fumoir de Traven, Crête-Charbon.",
-				"Dunridge & Fils tissus raffinés et tailleur, Le Marché Nocturne.",
-				"Chef Roselle, restaurant la Prune Dorée,les Six Tours.",
-				"Maestro Helleren, le Théâtre de Flèchejardin, Blanche-Couronne.",
-				"Mardin Gull, la taverne du Seau Troué, Patte-de-Corbeau.",
-				" Pux Bolin, la taverne du Singe Harpiste, Le Marché Nocturne.",
-				" Helene, le casino du Cerf d’Argent, Soie-Rivage.",
-				" Lady Freyla, le bar du Tonneau de l’Empereur, Blanche-Courronne.",
-				" Avrick, vendeur de poudre, Tertre-Fendu.",
-				" Rolan Volaris, club social du Voile, Le Marché Nocturne.",
-				" Madame Tesslyn, bordel de la Lanterne Rouge, Soie-Rivage.",
-				" Le Fumoir de Traven, Crête-Charbon.",
-				" Eldrin Prichard, la barge des plaisirs du Cygne d’Argent, les canaux de Pierre-Claire.",
-				" Jewel, Bird, et Shine, la ruelle des Chatières, les Docks."
+				"Singer, les bains.",
+				"Harvale Brogan.",
+				"Traven, le fumoir.",
+				"Dunridge & Fils, tissus raffinés et tailleur.",
+				"Chef Roselle, restaurant.",
+				"Maestro Helleren, théâtre.",
+				"Mardin Gull, taverne.",
+				"Pux Bolin, taverne.",
+				"Helene, casino.",
+				"Lady Freyla, bar.",
+				"Avrick, vendeur de poudre.",
+				"Rolan Volaris, club social.",
+				"Madame Tesslyn, bordel.",
+				"Traven, le fumoir.",
+				"Eldrin Prichard, barge des plaisirs.",
+				"Jewel, Bird, et Shine."
 			]
 		},
 		{
@@ -756,43 +756,42 @@
 			"Sources": [
 				"Parents (origines)",
 				"Anciens collègues (antécédents).",
-				"Hutton, Réfugiés Skovlans / Révolutionnaires, Val-Roussi.",
-				"Le Cercle de Flammes, une société secrète."
+				"Hutton, révolutionnaire."
 			]
 		},
 		{
 			"Name": "Addiction",
 			"Description": "Vous recherchez l’oubli dans l’abus de drogues, de boissons, de combats clandestins, etc.",
 			"Sources": [
-				"Mardin Gull, la taverne du Seau Troué, Patte-de-Corbeau.",
-				" Pux Bolin, la taverne du Singe Harpiste, Le Marché Nocturne.",
-				" Helene, le casino du Cerf d’Argent, Soie-Rivage.",
-				" Lady Freyla, le bar du Tonneau de l’Empereur, Blanche-Courronne.",
-				" Avrick, vendeur de poudre, Tertre-Fendu.",
-				" Rolan Volaris, club social du Voile, Le Marché Nocturne.",
-				" Madame Tesslyn, bordel de la Lanterne Rouge, Soie-Rivage.",
-				" Le Fumoir de Traven, Crête-Charbon.",
-				" Eldrin Prichard, la barge des plaisirs du Cygne d’Argent, les canaux de Pierre-Claire.",
-				" Jewel, Bird, et Shine, la ruelle des Chatières, les Docks."
+				"Mardin Gull, taverne.",
+				"Pux Bolin, taverne.",
+				"Helene, casino.",
+				"Lady Freyla, bar.",
+				"Avrick, vendeur de poudre.",
+				"Rolan Volaris, club social.",
+				"Madame Tesslyn, bordel.",
+				"Traven, le fumoir.",
+				"Eldrin Prichard, barge des plaisirs.",
+				"Jewel, Bird, et Shine."
 			]
 		},
 		{
 			"Name": "Lubie",
 			"Description": "Vous expérimentez avec d’étranges produits, pactisez avec des esprits sauvages, suivez des rituels bizarres ou des pratiques taboues, etc.",
 			"Sources": [
-				"Le propriétaire encapuchonné de la taverne de la grotte, près des docks. Là où d’étranges passages mènent à des salles plus étranges encore.",
-				"Le Père Yoren, la Maison de la Pleureuse, les Six Tours.",
-				"“Salia,” un esprit des Réconciliés, qui passe d’un corps à l’autre à sa convenance.",
-				"La Soeur Thorn, du gang des charognards des terres mortes, la Station Gaddoc.",
-				"Ojak, un vendeur des toits Tycherosi, Soie-Rivage.",
-				"Aranna la Bénie, cultiste d’un Dieu Oublié, sa barge est amarrée au Marché Nocturne."
+				"Le propriétaire encapuchonné d’une taverne-grotte. Là où d’étranges passages mènent à des salles plus étranges encore.",
+				"Le Père Yoren.",
+				"“Salia,” un esprit, qui passe d’un corps à l’autre à sa convenance.",
+				"La Soeur Thorn, du gang des charognards des terres mortes.",
+				"Ojak, un vendeur des toits.",
+				"Aranna la Bénie, cultiste d’un Dieu Oublié, sa barge."
 			]
 		}
 	],
 	"Backgrounds": [
 		{
 			"Name": "Académique",
-			"Example": "Un chercheur, un professeur ou un étudiant de l’Académie de Doskvol, un philosophe ou un journaliste, etc.",
+			"Example": "Un chercheur, un professeur ou un étudiant d’une académie, un philosophe ou un journaliste, etc.",
 			"BlurbFlavor": "un académique"
 		},
 		{
@@ -802,7 +801,7 @@
 		},
 		{
 			"Name": "Forces de l’ordre",
-			"Example": "Un avocat, un huissier, un bluecoat, un inspacteur (ou même un gardien spirite), un maton de la prison d’Ironhook, etc.",
+			"Example": "Un avocat, un huissier, un policier ou un inspecteur, un gardien de prison, etc.",
 			"BlurbFlavor": "un \"incorruptible\" représentant de la loi"
 		},
 		{
@@ -812,7 +811,7 @@
 		},
 		{
 			"Name": "Militaire",
-			"Example": "Un soldat impérial ou skovlandais, un mercenaire, un agent de renseignement, un sergent instructeur, etc.",
+			"Example": "Un soldat d’une puissance rivale, un mercenaire, un agent de renseignement, un sergent instructeur, etc.",
 			"BlurbFlavor": "un conscrit"
 		},
 		{

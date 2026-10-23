@@ -39,25 +39,28 @@ shipped. Manual faction entry and user-entered heritage text keep working.
 | 48 stock faction rows | `data/world/doskvol.json` `factions` | `setting-content` |
 | 12 districts with 27 named locations | `data/world/doskvol.json` `districts` | `setting-content` |
 | Setting heritages (Akoros, The Dagger Isles, Iruvia, Severos, Skovlan, Tycheros) | `Heritages` in `data/games/blades-in-the-dark.json`, `français-blades-in-the-dark.json` and `rus-blades-in-the-dark.json` | `setting-content` |
+| 4 stock group labels (UNDERWORLD, INSTITUTIONS, LABOR & TRADE, THE FRINGE) | `data/world/doskvol.json` `groups` | `setting-content` |
+| Place, district and faction names in vice purveyor sources and background examples (all three game files); NPC names kept | `Vices[].Sources` and `Backgrounds[].Example` in `data/games/*.json` | `setting-content` |
 | Stock-faction picker and districts disclosure | `frontend/src/pages/crew-sections/doskvol-world.ts` | Code kept; hidden without data |
 
-Restore point: bookmark `setting-content` on both mirrors, at commit
-`dc73c0d9ce40a32a920d6f9c89834ebb773ef326`. It holds all of the withdrawn data. The pull sits on `main` at `f0c1022a`, which differs from `dc73c0d9` only by CREW-COHORTS-01 records; its data and frontend files are identical.
+Restore point: bookmark `setting-content` on both mirrors, at commit `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`. It holds all of the withdrawn data.
+The pull sits on `main` as commit `4763dd24`, followed by the SETTING-PULL-01 follow-up that removed place and faction names from vice purveyors, background examples, and one Rolodex entry. Both are restored by reversing them together.
 The demo character heritage in
 `data/games/demo-character.json` is also blanked by the pull and comes back from the same point.
 
 Restore steps:
 
-1. Find the pull commit: the commit whose description starts with `SETTING-PULL-01`.
-2. Reverse it with `jj backout` onto the current head, then run the gates. That restores the data, the stock picker, the districts disclosure, the heritage picker, the about-licence wording, the checkpoint text and the deleted crew-world tests.
+1. Find the pull commits: the commits whose descriptions start with `SETTING-PULL-01`.
+2. Reverse them with `jj backout` onto the current head, then run the gates. That restores the data, the stock picker, the districts disclosure, the heritage picker, the about-licence wording, the checkpoint text and the deleted crew-world tests.
 3. For a single file, `jj file show -r setting-content <path>` gives the pre-pull version.
 4. Set this section's status to "restored", then push both mirrors.
 
 Remaining setting names (not pulled):
 
-- Playbook Rolodex friend and NPC names in `data/games/*.json`, which are served as game data and used to preload contacts.
-- Test and seed fixtures: heritage text such as "The Dagger Isles" and "Iruvian" in conformance fixtures and seed characters (test data only).
+- Playbook Rolodex friend and NPC names in `data/games/*.json`, which are served as game data and used to preload contacts. Vice purveyor NPC names (for example "Mother Narya", "Spogg") are kept on the same basis.
+- Test and seed fixtures: heritage text such as "The Dagger Isles" and "Iruvian" in conformance fixtures and seed characters, and stock names in frontend test mocks (for example "The Crows", "Ironhook Prison", "The Red Sashes", "Brightstone"). Test data only.
 - `data/world/doskvol.json` holds (generic strong and weak labels) and the source note.
+- Unlisted surfaces, found on review, not pulled: the styleguide city sample (`frontend/src/pages/styleguide.ts`, "Doskvol") and the game-mode design mockups under `docs/public/mockups/game-mode/` (Skovlan, The Silver Stag, gondoliers). Both are design or sample surfaces, not app content; pull or keep is pending permission.
 - Documentation: this register, `crew-world-sources.mdx`, the setting content open items, the README provenance paragraph, the CREW-WORLD task cards, and the historical CREW-WORLD-01 red log.
 - Not touched: `blades-in-the-sheets/` and `campaign-data/`.
 

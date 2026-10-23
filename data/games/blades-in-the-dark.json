@@ -691,56 +691,56 @@
 			"Name": "Faith",
 			"Description": "You’re dedicated to an unseen power, forgotten god, ancestor, etc.",
 			"Sources": [
-				"Mother Narya, House of the Weeping Lady, Six Towers.",
-				"Ilacille, the ruins of the Temple to forgotten gods, Coalridge.",
-				"Nelisanne, The Church of the Ecstasy of the Flesh, Brightstone.",
-				"Lord Penderyn, the Archive of Echoes, Charterhall."
+				"Mother Narya.",
+				"Ilacille.",
+				"Nelisanne.",
+				"Lord Penderyn."
 			]
 		},
 		{
 			"Name": "Gambling",
 			"Description": "You crave games of chance, betting on sporting events, etc.",
 			"Sources": [
-				"Spogg’s dice game, Crow’s Foot.",
-				"Grist, boxing, the Docks.",
-				"Helene, Silver Stag casino, Silkshore.",
-				"Master Vreen, hound racing, Nightmarket.",
-				"Lady Dusk, the Dusk Manor Club, Whitecrown.",
-				"Sergeant Velk, the fighting pits, Dunslough."
+				"Spogg’s dice game.",
+				"Grist, boxing.",
+				"Helene, casino.",
+				"Master Vreen, hound racing.",
+				"Lady Dusk.",
+				"Sergeant Velk, the fighting pits."
 			]
 		},
 		{
 			"Name": "Luxury",
 			"Description": "Expensive or ostentatious displays of opulence.",
 			"Sources": [
-				"Singer, bath house, Crow’s Foot.",
-				"Harvale Brogan, the Centuralia Club, Brightstone.",
-				"Traven’s smoke shop, Coalridge.",
-				"Dunridge & Sons fine fabrics and tailoring, Nightmarket.",
-				"Chef Roselle, the Golden Plum restaurant, Six Towers.",
-				"Maestro Helleren, Spiregarden theater, Whitecrown."
+				"Singer, bath house.",
+				"Harvale Brogan.",
+				"Traven, smoke shop.",
+				"Dunridge & Sons, fine fabrics and tailoring.",
+				"Chef Roselle, restaurant.",
+				"Maestro Helleren, theater."
 			]
 		},
 		{
 			"Name": "Pleasure",
 			"Description": "Gratification from lovers, food, drink, drugs, art, theater, etc.",
 			"Sources": [
-				"Singer, bath house, Crow’s Foot.",
-				"Harvale Brogan, the Centuralia Club, Brightstone.",
-				"Traven’s smoke shop, Coalridge.",
-				"Dunridge & Sons fine fabrics and tailoring, Nightmarket.",
-				"Chef Roselle, the Golden Plum restaurant, Six Towers.",
-				"Maestro Helleren, Spiregarden theater, Whitecrown.",
-				"Mardin Gull, the Leaky Bucket, tavern, Crow’s Foot.",
-				"Pux Bolin, the Harping Monkey, tavern, Nightmarket.",
-				"Helene, Silver Stag casino, Silkshore.",
-				"Lady Freyla, the Emperor’s Cask, bar, Whitecrown.",
-				"Avrick, powder dealer, Barrowcleft.",
-				"Rolan Volaris, the Veil, social club, Nightmarket.",
-				"Madame Tesslyn, the Red Lamp, brothel, Silkshore.",
-				"Traven’s smoke shop, Coalridge.",
-				"Eldrin Prichard, the Silver Swan pleasure barge, Brightstone canals.",
-				"Jewel, Bird, and Shine, Catcrawl Alley, the Docks."
+				"Singer, bath house.",
+				"Harvale Brogan.",
+				"Traven, smoke shop.",
+				"Dunridge & Sons, fine fabrics and tailoring.",
+				"Chef Roselle, restaurant.",
+				"Maestro Helleren, theater.",
+				"Mardin Gull, tavern.",
+				"Pux Bolin, tavern.",
+				"Helene, casino.",
+				"Lady Freyla, bar.",
+				"Avrick, powder dealer.",
+				"Rolan Volaris, social club.",
+				"Madame Tesslyn, brothel.",
+				"Traven, smoke shop.",
+				"Eldrin Prichard, pleasure barge.",
+				"Jewel, Bird, and Shine."
 			]
 		},
 		{
@@ -749,43 +749,42 @@
 			"Sources": [
 				"Family members (heritage).",
 				"Former co-workers (background).",
-				"Hutton, Skovlander Refugees/Revolutionaries, Charhollow.",
-				"The Circle of Flame, a secret society."
+				"Hutton, revolutionary."
 			]
 		},
 		{
 			"Name": "Stupor",
 			"Description": "You seek oblivion in the abuse of drugs, drinking to excess, getting beaten to a pulp in the fighting pits, etc.",
 			"Sources": [
-				"Mardin Gull, the Leaky Bucket, tavern, Crow’s Foot.",
-				"Pux Bolin, the Harping Monkey, tavern, Nightmarket.",
-				"Helene, Silver Stag casino, Silkshore.",
-				"Lady Freyla, the Emperor’s Cask, bar, Whitecrown.",
-				"Avrick, powder dealer, Barrowcleft.",
-				"Rolan Volaris, the Veil, social club, Nightmarket.",
-				"Madame Tesslyn, the Red Lamp, brothel, Silkshore.",
-				"Traven’s smoke shop, Coalridge.",
-				"Eldrin Prichard, the Silver Swan pleasure barge, Brightstone canals.",
-				"Jewel, Bird, and Shine, Catcrawl Alley, the Docks."
+				"Mardin Gull, tavern.",
+				"Pux Bolin, tavern.",
+				"Helene, casino.",
+				"Lady Freyla, bar.",
+				"Avrick, powder dealer.",
+				"Rolan Volaris, social club.",
+				"Madame Tesslyn, brothel.",
+				"Traven, smoke shop.",
+				"Eldrin Prichard, pleasure barge.",
+				"Jewel, Bird, and Shine."
 			]
 		},
 		{
 			"Name": "Weird",
 			"Description": "You experiment with strange essences, consort with rogue spirits, observe bizarre rituals or taboos, etc.",
 			"Sources": [
-				"The hooded proprietor of a half-flooded grotto tavern near the docks. Strange passageways lead to stranger chambers beyond.",
-				"Father Yoren, House of the Weeping Lady, Six Towers.",
-				"“Salia,” a spirit of the Reconciled, which moves from body to body at their whim.",
-				"Sister Thorn, deathlands scavenger gang, Gaddoc Station.",
-				"Ojak, Tycherosi rooftop market vendor, Silkshore.",
-				"Aranna the Blessed, cultist of a forgotten god, barge moored in Nightmarket."
+				"The hooded proprietor of a half-flooded grotto tavern. Strange passageways lead to stranger chambers beyond.",
+				"Father Yoren.",
+				"“Salia,” a spirit, which moves from body to body at their whim.",
+				"Sister Thorn, deathlands scavenger gang.",
+				"Ojak, rooftop market vendor.",
+				"Aranna the Blessed, cultist of a forgotten god, barge."
 			]
 		}
 	],
 	"Backgrounds": [
 		{
 			"Name": "Academic",
-			"Example": "A scholar, a professor or student from Doskvol Academy, a philosopher or journalist, etc.",
+			"Example": "A scholar, a professor or student from a university, a philosopher or journalist, etc.",
 			"BlurbFlavor": "an academic"
 		},
 		{
@@ -795,7 +794,7 @@
 		},
 		{
 			"Name": "Law",
-			"Example": "An advocate or barrister, a Bluecoat or inspector (or even Spirit Warden), a prison guard from Ironhook, etc.",
+			"Example": "An advocate or barrister, an inspector or a prison guard, etc.",
 			"BlurbFlavor": "an \"incorruptible\" representative of the law"
 		},
 		{
@@ -805,7 +804,7 @@
 		},
 		{
 			"Name": "Military",
-			"Example": "An Imperial or Skovlander soldier, a mercenary, an intelligence operative, a strategist, a training instructor, etc.",
+			"Example": "A soldier from a rival power, a mercenary, an intelligence operative, a strategist, a training instructor, etc.",
 			"BlurbFlavor": "an enlisted"
 		},
 		{

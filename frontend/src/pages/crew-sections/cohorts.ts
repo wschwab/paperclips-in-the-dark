@@ -19,7 +19,7 @@ import {
   type CohortTrait,
 } from "../crew-domain.js";
 import { CohortHarm, CohortType } from "../../schema/common.js";
-import type { CohortDraft, RenderState } from "../crew-detail.js";
+import type { CohortDraft, RenderState, TraitPending } from "../crew-detail.js";
 
 /** SRD: a cohort has one or two edges and an equal number of flaws. */
 const MAX_TRAITS = 2;
@@ -48,6 +48,7 @@ function traitPicker(
   options: CohortTrait[],
   initial: readonly string[],
   disabled: boolean,
+  pending: TraitPending,
   onChange?: (values: string[]) => void,
 ): { element: HTMLElement; read: () => string[] } {
   const chips = el("span", { className: "cohort-trait-list", "data-list": `${singular}s`, style: "display: inline-flex; gap: 0.35em; flex-wrap: wrap;" });
@@ -91,7 +92,13 @@ function traitPicker(
     const trait = options.find((t) => t.name === picked);
     hint.textContent = trait?.description ?? "";
   };
-  select.addEventListener("change", syncSelect);
+  select.addEventListener("change", () => {
+    pending.pick = select.value;
+    syncSelect();
+  });
+  customInput.addEventListener("input", () => {
+    pending.custom = customInput.value;
+  });
   addBtn.addEventListener("click", () => {
     const picked = select.value;
     if (!picked || count() >= MAX_TRAITS) return;
@@ -100,8 +107,12 @@ function traitPicker(
     addChip(value);
     select.value = "";
     customInput.value = "";
+    pending.pick = "";
+    pending.custom = "";
     syncSelect();
   });
+  select.value = pending.pick;
+  customInput.value = pending.custom;
   for (const value of initial) addChip(value);
   syncSelect();
 
@@ -126,6 +137,7 @@ function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: Render
   const isCustom = cohort.expertType === "Custom" || !expertTypes.includes(cohort.expertType);
   const draft: CohortDraft = {
     kind: cohort.cohortKind,
+    pending: { edge: { pick: "", custom: "" }, flaw: { pick: "", custom: "" } },
     gangType: cohort.gangType,
     expertType: isCustom ? "Custom" : cohort.expertType,
     expertCustom: isCustom && cohort.expertType !== "Custom" ? cohort.expertType : "",
@@ -225,8 +237,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       // Edges and flaws must stay equal (SRD). The pickers report every change, including
       // initial chips, before Save exists, so the gate is bound once Save is created.
       let syncEditGate: (() => void) | undefined;
-      const edgesPicker = traitPicker("Edit", "edge", edgeOptions, draft.edges, state.anyLoading, (values) => { draft.edges = values; syncEditGate?.(); });
-      const flawsPicker = traitPicker("Edit", "flaw", flawOptions, draft.flaws, state.anyLoading, (values) => { draft.flaws = values; syncEditGate?.(); });
+      const edgesPicker = traitPicker("Edit", "edge", edgeOptions, draft.edges, state.anyLoading, draft.pending.edge, (values) => { draft.edges = values; syncEditGate?.(); });
+      const flawsPicker = traitPicker("Edit", "flaw", flawOptions, draft.flaws, state.anyLoading, draft.pending.flaw, (values) => { draft.flaws = values; syncEditGate?.(); });
       const harmSelect = el("select", {
         "aria-label": "Edit harm",
         disabled: state.anyLoading,
@@ -394,8 +406,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   });
   armorInput.checked = addDraft.hasArmor;
   armorInput.addEventListener("change", () => { addDraft.hasArmor = armorInput.checked; });
-  const edgesPicker = traitPicker("Cohort", "edge", edgeOptions, addDraft.edges, state.anyLoading, (values) => { addDraft.edges = values; syncAddGate?.(); });
-  const flawsPicker = traitPicker("Cohort", "flaw", flawOptions, addDraft.flaws, state.anyLoading, (values) => { addDraft.flaws = values; syncAddGate?.(); });
+  const edgesPicker = traitPicker("Cohort", "edge", edgeOptions, addDraft.edges, state.anyLoading, addDraft.pending.edge, (values) => { addDraft.edges = values; syncAddGate?.(); });
+  const flawsPicker = traitPicker("Cohort", "flaw", flawOptions, addDraft.flaws, state.anyLoading, addDraft.pending.flaw, (values) => { addDraft.flaws = values; syncAddGate?.(); });
   const descInput = el("textarea", {
     "aria-label": "Cohort description",
     disabled: state.anyLoading,

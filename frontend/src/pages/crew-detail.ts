@@ -74,6 +74,12 @@ interface ProfileEditingState {
 }
 
 
+/** Unfinished trait-picker state (selected option and typed Custom text), kept with the draft so it survives a re-render. */
+export interface TraitPending {
+  pick: string;
+  custom: string;
+}
+
 /** CREW-COHORTS drafts: the add form and each open edit form keep their values in page state, so a re-render (a rep, turf, or other change) does not reset them. */
 export interface CohortDraft {
   kind: "gang" | "expert";
@@ -86,6 +92,7 @@ export interface CohortDraft {
   flaws: string[];
   name: string;
   description: string;
+  pending: { edge: TraitPending; flaw: TraitPending };
 }
 
 export interface CohortDrafts {
@@ -94,7 +101,7 @@ export interface CohortDrafts {
 }
 
 export function blankCohortDraft(): CohortDraft {
-  return { kind: "gang", gangType: "", expertType: "", expertCustom: "", harm: "", hasArmor: false, edges: [], flaws: [], name: "", description: "" };
+  return { kind: "gang", gangType: "", expertType: "", expertCustom: "", harm: "", hasArmor: false, edges: [], flaws: [], name: "", description: "", pending: { edge: { pick: "", custom: "" }, flaw: { pick: "", custom: "" } } };
 }
 
 export interface FactionDrafts {
@@ -124,6 +131,8 @@ export interface RenderState {
   factionBounds: { min: number; max: number } | null;
   factionDrafts: FactionDrafts;
   cohortDrafts: CohortDrafts;
+  noteDraft: { text: string };
+  contactDraft: { name: string; profession: string };
   isProfileLoading: boolean;
   isRepLoading: boolean;
   isHeatLoading: boolean;
@@ -313,6 +322,9 @@ export function mountCrewDetailPage(
   let manualTurfMax: number | null = null;
   let crewCaps: CrewCapabilities | null = null;
   let factionBounds: { min: number; max: number } | null = null;
+  // Unsaved note and contact text survives section re-renders (e.g. opening Edit claim).
+  const noteDraft = { text: "" };
+  const contactDraft = { name: "", profession: "" };
   const factionDrafts: FactionDrafts = {
     add: { name: "", tier: "", status: "0" },
     rows: new Map(),
@@ -456,6 +468,15 @@ export function mountCrewDetailPage(
     );
   };
 
+  /** Adopts the crew from an op endpoint, with the derived history metadata it carries (never stored). */
+  const adoptOp = (crew: Crew & CrewOpHistory) => {
+    currentCrew = crew;
+    if (typeof crew.canUndo === "boolean") {
+      canUndoState = crew.canUndo;
+      historyCountState = crew.historyCount ?? null;
+    }
+  };
+
   // FV-012: wholesale re-renders destroy the focused control; capture the
   // focused control's position before rendering and restore it after. The
   // request stays pending while the target is disabled (in-flight loading
@@ -464,6 +485,8 @@ export function mountCrewDetailPage(
 
   const renderDetail = () => {
     if (!currentCrew) return;
+    // A cohort removed by undo (or any refresh) must not keep the other cohorts' editors locked.
+    if (editingCohortId && !currentCrew.cohorts.some((c) => c.id === editingCohortId)) editingCohortId = null;
     if (!pendingFocus) pendingFocus = captureFocusTarget(root);
     setChildren(root, renderCrewDetail({
       c: currentCrew,
@@ -494,6 +517,8 @@ export function mountCrewDetailPage(
       factionBounds,
       factionDrafts,
       cohortDrafts,
+      noteDraft,
+      contactDraft,
       isProfileLoading,
       isRepLoading,
       isHeatLoading,
@@ -621,7 +646,9 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isContactLoading = false;
-            currentCrew = crew;
+            contactDraft.name = "";
+            contactDraft.profession = "";
+            adoptOp(crew);
             renderDetail();
           },
         }),
@@ -641,7 +668,7 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isContactLoading = false;
-            currentCrew = crew;
+            adoptOp(crew);
             renderDetail();
           },
         }),
@@ -661,7 +688,7 @@ export function mountCrewDetailPage(
           onSuccess: (result) => {
             if (cancelled) return;
             isFactionLoading = false;
-            currentCrew = result.crew;
+            adoptOp(result.crew);
             factionDrafts.rows.delete(name);
             if (adding) factionDrafts.add = { name: "", tier: "", status: "0" };
             factionDrafts.error = null;
@@ -691,7 +718,7 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isFactionLoading = false;
-            currentCrew = crew;
+            adoptOp(crew);
             factionDrafts.starting = null;
             renderDetail();
           },
@@ -712,7 +739,7 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isFactionLoading = false;
-            currentCrew = crew;
+            adoptOp(crew);
             factionDrafts.rows.delete(name);
             renderDetail();
           },
@@ -748,7 +775,7 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isProfileLoading = false;
-            currentCrew = crew;
+            adoptOp(crew);
             renderDetail();
           },
         }),
@@ -781,6 +808,9 @@ export function mountCrewDetailPage(
       runCrewOp(
         (v) => { isNoteLoading = v; },
         crewNoteAdd(crewId, text, currentCrew.revision),
+        undefined,
+        undefined,
+        () => { noteDraft.text = ""; },
       );
     },
 
@@ -1032,7 +1062,7 @@ export function mountCrewDetailPage(
             if (cancelled) return;
             isCohortLoading = false;
             cohortDrafts.add = blankCohortDraft();
-            currentCrew = crew;
+            adoptOp(crew);
             renderDetail();
           },
         }),
@@ -1060,7 +1090,7 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isCohortLoading = false;
-            currentCrew = crew;
+            adoptOp(crew);
             renderDetail();
           },
         }),
@@ -1080,7 +1110,7 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isCohortLoading = false;
-            currentCrew = crew;
+            adoptOp(crew);
             renderDetail();
           },
         }),

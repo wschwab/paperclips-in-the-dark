@@ -1178,7 +1178,7 @@ export function crewContactAdd(
   name: string,
   profession: string,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "contact.add", revision, { name, profession });
 }
 
@@ -1186,13 +1186,13 @@ export function crewContactRemove(
   id: string,
   name: string,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "contact.remove", revision, { name });
 }
 
 /** Result of factionSetStatus: includes the updated crew and the server-reported applied requested/effective status (clamp). */
 export interface FactionSetStatusResult {
-  crew: Crew;
+  crew: Crew & CrewOpHistory;
   requested: number;
   effective: number;
 }
@@ -1219,7 +1219,7 @@ export function factionSetStatus(
     }
     const requested = opResult.applied.requested ?? status;
     const effective = opResult.applied.effective ?? requested;
-    return { crew: opResult.crew, requested, effective };
+    return { crew: { ...opResult.crew, canUndo: opResult.canUndo, historyCount: opResult.historyCount }, requested, effective };
   });
 }
 
@@ -1229,7 +1229,7 @@ export function factionSetStarting(
   ally: string,
   rival: string,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "faction.set-starting", revision, { ally, rival });
 }
 
@@ -1237,7 +1237,7 @@ export function factionRemove(
   id: string,
   name: string,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "faction.remove", revision, { name });
 }
 
@@ -1255,7 +1255,7 @@ export function crewFieldsUpdate(
   id: string,
   fields: Record<string, unknown>,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "fields.update", revision, fields);
 }
 
@@ -1496,7 +1496,7 @@ export function cohortAdd(
   id: string,
   body: CohortAddBody,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "cohort.add", revision, body);
 }
 
@@ -1505,7 +1505,7 @@ export function cohortRemove(
   id: string,
   cohortId: string,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "cohort.remove", revision, { cohortId });
 }
 
@@ -1514,7 +1514,7 @@ export function cohortUpdate(
   id: string,
   body: CohortUpdateBody,
   revision: number,
-): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "cohort.update", revision, body);
 }
 

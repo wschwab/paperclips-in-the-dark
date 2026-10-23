@@ -36,12 +36,16 @@ export function renderCrewContactsSection(state: RenderState): HTMLElement {
     disabled: state.anyLoading,
     placeholder: "name",
   });
+  (contactNameInput as HTMLInputElement).value = state.contactDraft.name;
+  contactNameInput.addEventListener("input", () => { state.contactDraft.name = (contactNameInput as HTMLInputElement).value; });
   const contactProfessionInput = el("input", {
     type: "text",
     "aria-label": "Contact profession",
     disabled: state.anyLoading,
     placeholder: "profession",
   });
+  (contactProfessionInput as HTMLInputElement).value = state.contactDraft.profession;
+  contactProfessionInput.addEventListener("input", () => { state.contactDraft.profession = (contactProfessionInput as HTMLInputElement).value; });
   const addContactBtn = el("button", {
     type: "button",
     disabled: state.anyLoading,

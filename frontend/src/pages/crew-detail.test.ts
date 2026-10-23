@@ -1883,6 +1883,74 @@ describe("crew-detail page", () => {
       expect(expertCard?.textContent).toContain("Edges: (none)");
     });
 
+    it("updates undo availability and history count from a cohort add's history fields", async () => {
+      const added = crewDTO({ revision: 6, cohorts: [cohortDTO()] });
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok({ ...cohortOpOk(added, "cohort.add"), canUndo: true, historyCount: 1 }));
+
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Add cohort"]')).not.toBeNull();
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector(".cohort-add .cohort-quality-derived")?.textContent).toBe("1");
+      });
+      (root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement).value = "Rooks";
+      (root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement).checked = true;
+      const edgeSelect = root.querySelector('select[aria-label="Cohort edge"]') as HTMLSelectElement;
+      edgeSelect.value = "Tenacious";
+      edgeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      (root.querySelector('button[title="Add edge"]') as HTMLButtonElement).click();
+      const flawSelect = root.querySelector('select[aria-label="Cohort flaw"]') as HTMLSelectElement;
+      flawSelect.value = "Savage";
+      flawSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      (root.querySelector('button[title="Add flaw"]') as HTMLButtonElement).click();
+      (root.querySelector('textarea[aria-label="Cohort description"]') as HTMLTextAreaElement).value = "Street toughs who love a fight";
+
+      (root.querySelector('button[title="Add cohort"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(`.cohort-entry[data-cohort-id="${COHORT_ID}"]`)).not.toBeNull();
+      });
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("1 snapshotted change can be undone.");
+      });
+      expect(getUndoButton(root)!.disabled).toBe(false);
+    });
+
+    it("unlocks the other cohorts' Edit buttons when undo removes the cohort whose editor was open", async () => {
+      const ALPHA_ID = "a1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+      const BETA_ID = "b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e";
+      const alpha = cohortDTO({ id: ALPHA_ID, name: "Alpha" });
+      const beta = cohortDTO({ id: BETA_ID, name: "Beta" });
+      global.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url === `/api/crews/${CREW_ID}`) return Promise.resolve(ok(crewDTO({ revision: 6, cohorts: [alpha, beta] })));
+        if (url === `/api/crews/${CREW_ID}/capabilities`) {
+          return Promise.resolve(ok({ crewId: CREW_ID, upgrades: [], abilities: [], effectiveTurf: 0, developThreshold: 9, tierMax: 4 }));
+        }
+        if (url === `/api/crews/${CREW_ID}/undo`) {
+          return Promise.resolve(ok({ ok: true, crew: crewDTO({ revision: 7, cohorts: [alpha] }), applied: { op: "crew.undo" }, sideEffects: [], error: null, canUndo: false, historyCount: 0 }));
+        }
+        if (url === "/api/games/blades-in-the-dark") return Promise.resolve(ok({ TurfMax: 5 }));
+        if (url === "/api/games/blades-in-the-dark/crews") return Promise.resolve(ok({ Name: "Blades in the Dark", CrewTypes: [ASSASSIN_TYPE] }));
+        return Promise.resolve(ok(ASSASSIN_TYPE));
+      });
+      mountCrewDetailPage(root, CREW_ID);
+      const editOf = (id: string) => root.querySelector(`.cohort-entry[data-cohort-id="${id}"] button[title^="Edit"]`) as HTMLButtonElement;
+      await vi.waitFor(() => expect(editOf(BETA_ID)).not.toBeNull());
+
+      editOf(BETA_ID).click();
+      await vi.waitFor(() => expect(editOf(ALPHA_ID).disabled).toBe(true));
+
+      getUndoButton(root)!.click();
+      await vi.waitFor(() => expect(root.querySelector(`.cohort-entry[data-cohort-id="${BETA_ID}"]`)).toBeNull());
+      expect(editOf(ALPHA_ID).disabled).toBe(false);
+    });
+
     it("adds a gang cohort via the add form and posts cohort.add with only the filled fields", async () => {
       const added = crewDTO({ revision: 6, cohorts: [cohortDTO()] });
 
@@ -3254,6 +3322,39 @@ describe("FV-012 focus restoration", () => {
     expect(root.querySelector('[data-list="edges"] [data-value="Ghost"]')).not.toBeNull();
   });
 
+  it("keeps an unfinished Custom edge (picker selection and typed text) across a sheet re-render", async () => {
+    let turfCalls = 0;
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === `/api/crews/${CREW_ID}`) return Promise.resolve(ok(crewDTO({ turf: 0 })));
+      if (url === `/api/crews/${CREW_ID}/capabilities`) {
+        return Promise.resolve(ok({ crewId: CREW_ID, upgrades: [], abilities: [], effectiveTurf: 0, developThreshold: 9, tierMax: 4 }));
+      }
+      if (url.endsWith("/ops/turf.add")) {
+        turfCalls += 1;
+        return Promise.resolve(ok({ ok: true, crew: crewDTO({ revision: 6, turf: 1 }), applied: { op: "turf.add" }, sideEffects: [], error: null, canUndo: false, historyCount: 0 }));
+      }
+      if (url === "/api/games/blades-in-the-dark") return Promise.resolve(ok({ TurfMax: 5 }));
+      if (url === "/api/games/blades-in-the-dark/crews") return Promise.resolve(ok({ Name: "Blades in the Dark", CrewTypes: [ASSASSIN_TYPE] }));
+      return Promise.resolve(ok(ASSASSIN_TYPE));
+    });
+    mountCrewDetailPage(root, CREW_ID);
+    await vi.waitFor(() => expect(turfPlus().disabled).toBe(false));
+
+    const edgeSelect = root.querySelector('select[aria-label="Cohort edge"]') as HTMLSelectElement;
+    edgeSelect.value = "Custom";
+    edgeSelect.dispatchEvent(new Event("change"));
+    const customEdge = root.querySelector('input[aria-label="Cohort custom edge"]') as HTMLInputElement;
+    customEdge.value = "Ghosts in the walls";
+    customEdge.dispatchEvent(new Event("input"));
+
+    turfPlus().click();
+    await vi.waitFor(() => expect(turfCalls).toBe(1));
+    await vi.waitFor(() => expect(root.querySelector('input[aria-label="Cohort custom edge"]')).not.toBe(customEdge));
+
+    expect((root.querySelector('select[aria-label="Cohort edge"]') as HTMLSelectElement).value).toBe("Custom");
+    expect((root.querySelector('input[aria-label="Cohort custom edge"]') as HTMLInputElement).value).toBe("Ghosts in the walls");
+  });
+
   const turfPlus = () => root.querySelector('button[title="Add 1 turf"]') as HTMLButtonElement;
   const addContact = () => root.querySelector('button[title="Add contact"]') as HTMLButtonElement;
   const contactName = () => root.querySelector('input[aria-label="Contact name"]') as HTMLInputElement;
@@ -3859,5 +3960,25 @@ describe("CREW-02 claim acquisition and removal gating", () => {
         name: "North Markets (renamed)",
       });
     });
+  });
+
+  it("keeps unsaved note and contact drafts when Edit claim opens", async () => {
+    await mountWithClaims({ claimedClaimIds: ["north-markets"] });
+
+    const noteInput = root.querySelector<HTMLTextAreaElement>('textarea[aria-label="New note"]')!;
+    noteInput.value = "Remember the vault";
+    noteInput.dispatchEvent(new Event("input"));
+    const contactName = root.querySelector<HTMLInputElement>('input[aria-label="Contact name"]')!;
+    contactName.value = "Mira";
+    contactName.dispatchEvent(new Event("input"));
+    const contactProf = root.querySelector<HTMLInputElement>('input[aria-label="Contact profession"]')!;
+    contactProf.value = "Fence";
+    contactProf.dispatchEvent(new Event("input"));
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>("button")).find((b) => b.textContent === "Edit claim")!.click();
+
+    expect(root.querySelector<HTMLTextAreaElement>('textarea[aria-label="New note"]')!.value).toBe("Remember the vault");
+    expect(root.querySelector<HTMLInputElement>('input[aria-label="Contact name"]')!.value).toBe("Mira");
+    expect(root.querySelector<HTMLInputElement>('input[aria-label="Contact profession"]')!.value).toBe("Fence");
   });
 });
