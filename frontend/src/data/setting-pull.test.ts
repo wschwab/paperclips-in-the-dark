@@ -24,4 +24,11 @@ describe("SETTING-PULL-01 shipping data", () => {
   it("does not remove unrelated Scum and Villainy game choices in this Doskvol-only pull", () => {
     expect(json(`${gamesDir}/scum-and-villainy.json`).Heritages.length).toBeGreaterThan(0);
   });
+  it("ships no removed place, faction or business names in any game data file", () => {
+    const removed = ["Doskvol", "Дасквол", "Dunridge", "Дандридж"];
+    for (const name of readdirSync(gamesDir).filter(file => file.endsWith(".json"))) {
+      const text = readFileSync(`${gamesDir}/${name}`, "utf8");
+      for (const term of removed) expect(text.includes(term), `${name} contains ${term}`).toBe(false);
+    }
+  });
 });

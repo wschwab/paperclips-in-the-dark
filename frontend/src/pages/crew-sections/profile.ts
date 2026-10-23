@@ -95,9 +95,11 @@ export function renderCrewProfileSection(state: RenderState): HTMLElement {
   for (const value of reputationOptions) {
     reputationSelect.append(el("option", { value }, value) as HTMLOptionElement);
   }
-  if (reputationOptions.includes(c.reputation)) {
-    reputationSelect.value = c.reputation;
+  const shownReputation = state.reputationDraft.value ?? c.reputation;
+  if (reputationOptions.includes(shownReputation)) {
+    reputationSelect.value = shownReputation;
   }
+  reputationSelect.addEventListener("change", () => { state.reputationDraft.value = reputationSelect.value; });
   const reputationSetBtn = el("button", {
     type: "button",
     disabled: state.anyLoading || reputationOptions.length === 0,

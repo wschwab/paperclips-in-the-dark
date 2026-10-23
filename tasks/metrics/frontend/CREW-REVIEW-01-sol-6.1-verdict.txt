@@ -1,77 +1,30 @@
 VERDICT: FAIL
 
-- Reviewed only `b2ac9ca3cf1d686e001a9d7b8f1a52e87e962223`. Frontend production build passed.
-- Completed all nine managed Chromium combinations: 405 displayed/stored snapshots and 81 screenshots. Two reproducible bugs occurred in every combination.
-- Document horizontal overflow: **0px throughout**. Console errors, page errors and HTTP failures: **0 throughout**.
-- Evidence: `/tmp/sol-review/CREW-REVIEW-01-scratch/` — `probe.mjs`, `matrix.json`, `audit.json`, `review-summary.json`, screenshots, and supplementary `xp-visibility.mjs` / `xp-visibility.json`.
-- No repository source files were changed. Reload workarounds were recorded **after observing failures**, solely to exercise the remaining scenarios.
+### 1. [P2] Opening the claim editor discards an unsaved reputation selection
+**File:** `frontend/src/pages/crew-sections/profile.ts:98–99`
 
-## Reproducible findings
+**Reproduction:**
+1. Save the crew’s reputation as **Ambitious**.
+2. Select **Brutal** in the Reputation dropdown without pressing **Set**.
+3. Click **Edit claim**.
 
-### B1 — P1: Undo disables itself while retained history still exists
+**Observed:** The dropdown immediately resets to **Ambitious**, losing the pending selection. API state remains `reputation: "Ambitious"` at revision `35` before and after opening the chooser; no write occurred. Reproduced in **all nine viewport/theme combinations**.
 
-**Reproduction, 1440×900/light:**
-1. Create an Assassins crew; set Tier 1, Rep 10, other Turf 1 and XP 2 through the API.
-2. Customize disconnected `training-rooms`, acquire it, and add a cohort with one edge and one flaw.
-3. Acquire `turf-1`.
-4. Click **Undo last change**.
+The dropdown is reconstructed from `c.reputation` on every render and has no state-backed draft.
 
-**Observed:** The claim is correctly relinquished, and the refreshed sheet correctly shows `Rep 10/11`, `Turf: 1`, threshold 11 and Develop disabled. However, Undo becomes disabled and says **“0 snapshotted changes can be undone.”** `GET /api/crews/{id}/history` still contains **7 snapshots**.
+### Verification
+Reviewed application source at immutable revision `563545e340b5a2f3d055f7e2a727bcdf75b9121e`.
 
-**Expected:** Undo remains enabled and reports **7** remaining changes.
+The specified guarded managed-Chromium command completed **nine sessions, 40 recorded checkpoints each**:
+- 1440×1000, 768×1024, 390×844 × light, dark, high contrast.
+- Horizontal overflow: **0px at every checkpoint**.
+- Console errors: **0**; uncaught page errors: **0**.
+- No other assertion failures in the exercised sequence: claim editing and confirmations, Rep/Turf undo and capability refresh, cohort gates and drafts, manual factions, and crew XP agreed with stored state.
+- Turf undo restored displayed/API Turf **2 → 1**, Rep **10/10 → 10/11**, and disabled Develop.
 
-A subsequent claim, Rep/Turf, cohort, faction or XP mutation does not repair the disabled control. Independently, after exhausting history through reload-assisted undos, adding one crew XP creates **1 snapshot**, but the sheet still reports **0** and leaves Undo disabled.
+**Artifacts:**
+- Probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
+- Per-step displayed/API state and errors: `/tmp/sol-review/brief-crew-review-evidence.json`
+- Failure screenshot: `/tmp/sol-review/390-light-reputation-draft-lost.png`
 
-**Source evidence:** The successful undo response omits `canUndo` and `historyCount`; `frontend/src/api/client.ts:819–823` defaults them to false/zero. `crew-detail.ts:528–542` adopts those values. Ordinary mutations at `crew-detail.ts:406–423` do not refresh them. The response construction is in `backend-ada/server/src/pitd_common.adb:916–943`.
-
-### B2 — P2: Changing Rep silently discards unrelated cohort drafts
-
-**Reproduction, every combination:**
-1. Save a cohort with edges **Fearsome, Independent** and flaws **Principled, Savage**.
-2. Open a claim editor and enter an unsaved claim name.
-3. Edit the cohort: enter `KEEP EDIT <combination>` and remove Principled. Save is correctly disabled for **2 edges / 1 flaw**.
-4. Populate Add Cohort: name `KEEP ADD <combination>`, kind Expert, custom type Cartographer, Fearsome only. Add is correctly disabled for **1 edge / 0 flaws**.
-5. Open Doskvol districts.
-6. Click **Remove 1 rep**.
-
-**Observed:**
-- Rep correctly changes **10 → 9**, matching storage.
-- Add Cohort resets to **blank name, Gang, 0 edges / 0 flaws**, with Add enabled.
-- The cohort edit resets to its stored name and **2 edges / 2 flaws**, with Save enabled.
-- Districts collapses.
-- The claim draft survives. Stored cohort data remains unchanged.
-
-**Expected:** The unrelated cohort drafts, their mismatch warnings and disabled gates remain intact; the open disclosure remains open.
-
-**Source evidence:** `crew-detail.ts:435–499` replaces the whole sheet. Cohort drafts exist only in render-local controls in `crew-sections/cohorts.ts:214–225,321–420`, unlike the retained claim and faction draft state.
-
-## Per-step displayed-versus-stored results
-
-These named sequences define the matrix entries below. **✓ means the feature’s displayed persisted fields matched the API after each listed action; B1’s undo-metadata failure is reported separately.** Unchanged claims, active benefits, cohorts, XP and factions were also compared after each step.
-
-- **C — Claim edit/acquisition:** Choose disconnected `training-rooms`; draft name/text leaves ownership unchanged ✓; save override matches storage while still unowned ✓; accept the out-of-sequence acquisition warning, then map ownership, customized text and active benefit match storage ✓.
-- **A — Cohort add:** One edge/no flaws disables Add without writing ✓; one edge/one flaw enables Add ✓; save persists the name, type and traits ✓. At Tier 1, Gang quality/scale is **1/1**; custom Expert quality/scale is **2/0**, matching storage.
-- **T — Rep/Turf and undo:** Acquire `turf-1` → **Rep 10/10, Turf 2, Develop enabled** ✓; undo → **10/11, Turf 1, Develop disabled** ✓, but **B1**. Reacquire → **10/10, Turf 2** ✓; other Turf +1 → **10/9, Turf 3** ✓; undo → **10/10, Turf 2** ✓; Rep −1 → **9/10** ✓; undo → **10/10** ✓. Later undos required the recorded reload workaround.
-- **W — World:** Stock selection fills Bluecoats without saving ✓; Add persists **tier 3/status −1** ✓; manual Night Ledger persists **tier 2/status +1** ✓; save starting ally Night Ledger/rival Bluecoats matches storage without changing statuses ✓; disclosure contains **12 districts / 27 locations**.
-- **E — Cohort edit:** Two edges/one flaw disables Save without writing ✓; add the second flaw and save the changed name → stored/displayed **2/2** traits agree ✓.
-- **D — Simultaneous editors:** Populate both cohort drafts, claim draft and districts; Rep −1 matches storage, but silently resets cohort drafts and closes districts: **B2**. Cancel remaining editors and undo Rep → displayed/stored Rep 10 again ✓; **B1** recurs.
-- **X — XP across routes:** Crew-sheet XP **2 → 3** ✓; linked character Resolution displays current XP **3** and all four triggers ✓; award +2 → current/stored XP **5** ✓; return to crew → **5/10**, with claims, cohorts and factions still matching storage ✓.
-- **H — History boundary:** Reload-assisted undos restore default crew state and empty history ✓; add one XP → displayed/stored **1/10** ✓, but Undo remains disabled at displayed history **0** versus stored history **1**: **B1**.
-
-## Nine-combination matrix
-
-Map sizes are **clientWidth/scrollWidth**. The 390px map’s internal panning is intentional containment, not document overflow.
-
-| Viewport / theme | Sequence run, with results above | Cohort | First undo: displayed/stored history | Document overflow | Map size | Console errors | Result |
-|---|---|---|---:|---:|---:|---:|---|
-| 1440×900 / light | C✓ → A✓ → T/B1 → W✓ → E✓ → D/B2 → X✓ → H/B1 | Gang | **0/7** | 0px | 1038/1038 | 0 | **FAIL** |
-| 1440×900 / dark | W✓ → T/B1 → A✓ → C✓ → E✓ → D/B2 → X✓ → H/B1 | Expert | **0/7** | 0px | 1038/1038 | 0 | **FAIL** |
-| 1440×900 / high contrast | A✓ → C✓ → W✓ → T/B1 → E✓ → D/B2 → X✓ → H/B1 | Gang | **0/10** | 0px | 1036/1036 | 0 | **FAIL** |
-| 768×1024 / light | C✓ → A✓ → T/B1 → W✓ → E✓ → D/B2 → X✓ → H/B1 | Expert | **0/7** | 0px | 686/686 | 0 | **FAIL** |
-| 768×1024 / dark | W✓ → T/B1 → A✓ → C✓ → E✓ → D/B2 → X✓ → H/B1 | Gang | **0/7** | 0px | 686/686 | 0 | **FAIL** |
-| 768×1024 / high contrast | A✓ → C✓ → W✓ → T/B1 → E✓ → D/B2 → X✓ → H/B1 | Expert | **0/10** | 0px | 684/684 | 0 | **FAIL** |
-| 390×844 / light | C✓ → A✓ → T/B1 → W✓ → E✓ → D/B2 → X✓ → H/B1 | Gang | **0/7** | 0px | 308/560 | 0 | **FAIL** |
-| 390×844 / dark | W✓ → T/B1 → A✓ → C✓ → E✓ → D/B2 → X✓ → H/B1 | Expert | **0/7** | 0px | 308/560 | 0 | **FAIL** |
-| 390×844 / high contrast | A✓ → C✓ → W✓ → T/B1 → E✓ → D/B2 → X✓ → H/B1 | Gang | **0/10** | 0px | 306/560 | 0 | **FAIL** |
-
-Supplementary XP visibility checks passed in all nine combinations. All four triggers fit initially at 1440px and 768px. At 390px, real touch drags moved the card through scroll positions **0, 160, 320, 480px**, bringing every trigger fully into view while page scroll remained **0**. No additional settled-state mismatch was found beyond B1 and B2.
+No repository files edited. Full test suite not run.

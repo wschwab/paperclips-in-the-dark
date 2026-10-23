@@ -1,0 +1,116 @@
+VERDICT: FAIL
+
+Reviewed immutable revision `563545e340b5a2f3d055f7e2a727bcdf75b9121e`. The core removal and all nine Chromium combinations pass. The remaining-name register is incomplete, the documented restore commands fail literally, restoration leaves a task-card conflict, and actual `origin/main` is behind the reviewed head.
+
+1. **Unregistered setting names remain in shipped game data.**
+   - **Paths:** `data/games/blades-in-the-dark-crews.json:1173,1564,1951`; `data/games/rus-blades-in-the-dark.json:411`.
+   - **Check:** searched the pinned files for English and localized setting names.
+   - **Contradicted claim:** the remaining-name inventory in `docs/pages/contract/setting-content-register.mdx:58–65` does not identify these production surfaces.
+   - **Observed:** the Hawkers, Shadows and Smugglers descriptions still name **Doskvol**. The Russian Ghost Voice ability still says **“Дасквола”**. These are neither retained NPC names nor fixtures, design samples or documentation.
+   - Vice sources also retain **Dunridge & Sons / Dunridge & Fils / «Дандридж и Сыновья»**, a named tailoring business not explicitly classified by the register’s NPC-only exception.
+
+2. **The documented restore commands do not work literally in the fresh clone.**
+   - **Path:** `docs/pages/contract/setting-content-register.mdx:51–55`.
+   - **Command:** attempted `jj backout` for `563545e3` and `4763dd24` onto the reviewed head.
+   - **Contradicted claim:** step 2 provides an executable reversal procedure.
+   - **Observed:** installed **jj 0.46.0** exits **2**, `unrecognized subcommand 'backout'`.
+   - **Command:** `jj --ignore-working-copy file show -r setting-content data/world/doskvol.json` in the fresh clone.
+   - **Contradicted claim:** step 3’s named single-file restore works without additional bookmark setup.
+   - **Observed:** exit **1**, `Revision 'setting-content' doesn't exist`; the clone initially has only untracked **`setting-content@origin`**.
+   - Evidence: `/tmp/sol-review/restore-review/documented-backout-attempt.txt`, `commands.json`, and `clone-refs.txt`.
+
+3. **Equivalent mechanical reversal restores the requested files exactly, but leaves an undocumented conflict.**
+   - **Path:** `tasks/SETTING-PULL-01.md`; register restore steps `:53–56`.
+   - **Command, scratch clone only:**
+     ```sh
+     jj revert \
+       -r '563545e340b5 | 4763dd24' \
+       --onto 563545e340b5
+     ```
+   - **Contradicted claim:** the described reversal proceeds directly to gates/status update without an additional conflict-resolution step.
+   - **Observed:** the reverse-follow-up commit is clean; the reverse-pull commit `6a117c18` leaves **`tasks/SETTING-PULL-01.md: 2-sided conflict including 1 deletion`**. Intervening commit `6e5aeea7` modified the card added by the pull.
+   - **Important qualification:** comparison with `dc73c0d9` is **empty for every requested scope**: `data`, `frontend`, `conformance`, `README.md`, and `docs/pages/contract/setting-content-register.mdx`. The raw scoped diff is **0 bytes**.
+   - These are **all** residual differences in the whole-repository comparison:
+
+     | Path | Observed difference | Touched by pull/follow-up? |
+     |---|---|---|
+     | `tasks/SETTING-PULL-01.md` | Added, conflicted card | Both |
+     | `tasks/CREW-COHORTS-01.md` | Verdict pointer, counts and review records changed | Neither |
+     | `tasks/metrics/frontend/CREW-COHORTS-01-sol-6.1-verdict-bcba18d7.txt` | Historical verdict added | Neither |
+     | `tasks/metrics/frontend/CREW-COHORTS-01-sol-6.1-verdict.txt` | Reviewed revision and findings changed | Neither |
+     | `tasks/metrics/frontend/TOUCH-SCROLL-01-sol-6.1-verdict.txt` | Historical FAIL replaced by PASS at `00d6687b` | Neither |
+
+     The four unrelated record differences come from `f0c1022a`/`6e5aeea7`; they are not stated as restore exceptions in the card/register. Raw evidence: `/tmp/sol-review/restore-review/restore-all-raw-diff.txt`.
+
+4. **Reversing the follow-up also removes unrelated frontend fixes that the restore instructions do not disclose.**
+   - **Paths:** `frontend/src/api/client.ts`, `frontend/src/pages/crew-detail.ts`, `crew-detail.test.ts`, and `crew-sections/{cohorts,contacts,notes}.ts`.
+   - **Check:** inspected `jj diff -r 563545e340b5` and its inverse.
+   - **Contradicted claim:** the card/register describes restoration as restoring setting data and its associated controls/checkpoints/tests.
+   - **Observed:** reversal additionally removes crew operation undo/history propagation, cohort editor guards, unfinished Custom-trait draft persistence, and note/contact draft persistence. These paths return exactly to `dc73c0d9`, but the collateral rollback is not stated in the card/register.
+   - The pull also changes `frontend/src/pages/character-detail.test.ts`, which is not explicitly identified in the card’s changed-path scope.
+   - Evidence: `/tmp/sol-review/restore-review/followup-scope-raw-diff.txt:567–1108` and `results.json`.
+
+5. **Actual `origin/main` is not at the reviewed head.**
+   - **Command:**
+     ```sh
+     git ls-remote git@github.com:wschwab/paperclips-in-the-dark.git \
+       refs/heads/main refs/heads/setting-content
+     ```
+   - **Contradicted requirement:** confirm that origin main is at `563545e340b5`.
+   - **Observed:** actual GitHub `main` is **`6e5aeea79f488eff2ee9e334df34103e2f6088ed`**, one commit behind. The original repository’s `main@origin` agrees.
+   - **Confirmed:** `setting-content` is **`dc73c0d9ce40a32a920d6f9c89834ebb773ef326`**, locally and on origin; the local rad-agent tracking bookmark also matches.
+   - The scratch clone’s `main@origin` is `563545e3` because its origin is the **local repository**, not GitHub.
+   - Evidence: `/tmp/sol-review/restore-review/actual-origin-refs.txt`.
+
+6. **The card and linked documentation contain stale or contradictory scope statements.**
+   - **Path:** `tasks/SETTING-PULL-01.md:20`.
+     - **Check:** inspected immutable ancestry.
+     - **Claim:** the pull is `f0c1022a`.
+     - **Observed:** `f0c1022a` is the pull’s parent; the pull is **`4763dd24`**, correctly identified by the register.
+   - **Path:** card `:16`, versus register `:47`.
+     - **Check:** compared the three game files against `dc73c0d9`.
+     - **Claim:** Rolodex names were not touched.
+     - **Observed:** Russian `/Playbooks/3/Rolodex/Friends/1` changes **`Дармот, Синий Мундир` → `Дармот, стражник`**. The NPC name remains, but its faction designation changes; the register acknowledges this.
+   - **Path:** `docs/pages/backlog/setting-content-open-items.mdx:11`.
+     - **Claim:** “the shipped data now contains 48 factions and 12 districts.”
+     - **Observed:** both arrays are empty.
+
+### Verified acceptance checks
+
+**Content removal**
+- At `4763dd24`, world factions **48→0**, districts **12→0** including **27 locations**, and groups **4→0**.
+- `Heritages` is **`[]`** in all three Blades game files, both at the pull and reviewed head.
+- Demo heritage name and description are blank.
+- Reviewed the follow-up’s English, French and Russian vice/background replacements; the district/location strings identified in those replacements are removed.
+- Full before/after data evidence: `/tmp/sol-review/content-removal-audit.json`.
+
+**Remaining names outside the two excluded directories**
+- **Matches the register:** Rolodex/purveyor NPCs such as Scurlock, Mother Narya, Spogg and Lady Dusk; fixture/mock names including The Dagger Isles, Iruvian, The Crows, The Red Sashes, Ironhook Prison, Brightstone, Charterhall and Six Towers; styleguide Doskvol; mockup Skovlan, The Silver Stag and gondoliers; provenance/source documents and historical world evidence.
+- **Additional occurrences not individually inventoried there:** production references in finding 1; `docs/pages/contract/c3-crew-contacts-factions.mdx:71` (“The Crows”); `docs/pages/contract/wave0/validator-spike.mdx` (“Iruvian”, “Nightmarket”); historical `tasks/metrics/ada/LOAD-CREATE-01-*.log` responses containing Akoros/Duskwall.
+- About/licence text and dormant world-control code retain Doskvol/Duskwall wording, consistent with their separately documented purposes.
+- Complete pinned Rolodex and vice-source values for all three editions: `/tmp/sol-review/remaining-game-names.json`.
+
+**Chromium**
+Wrote and ran the requested probe from the real repository root using the exact guarded command:
+
+```sh
+node conformance/scripts/default-data-guard.mjs -- node conformance/scripts/managed-browser-smoke.mjs --seed-defaults -- node /tmp/sol-review/brief-setting-pull-probe.mjs
+```
+
+| Viewport | Theme | `scrollWidth - innerWidth` | Console errors | Result |
+|---|---|---:|---:|---|
+| 1440×1000 | Light | 0 | 0 | PASS |
+| 1440×1000 | Dark | 0 | 0 | PASS |
+| 1440×1000 | High contrast | 0 | 0 | PASS |
+| 768×1024 | Light | 0 | 0 | PASS |
+| 768×1024 | Dark | 0 | 0 | PASS |
+| 768×1024 | High contrast | 0 | 0 | PASS |
+| 390×844 | Light | 0 | 0 | PASS |
+| 390×844 | Dark | 0 | 0 | PASS |
+| 390×844 | High contrast | 0 | 0 | PASS |
+
+Every combination exercised free-text heritage **save/reload** and manual faction **add/reload**, with API persistence checks. Heritage selects, stock-faction controls and districts disclosures were absent. Overflow was zero initially, after faction reload, while editing heritage and after heritage reload. No page errors. Screenshots inspected.
+
+The initial crew measurements match `docs/public/evidence/setting-pull-01/pull-3x3.json` in all nine combinations. Results: `/tmp/sol-review/brief-setting-pull-probe-results.json`.
+
+A fresh pinned scratch build matched all **48** existing production-build files byte-for-byte. The guard passed; no real-repository files were edited. No full test suite was run.

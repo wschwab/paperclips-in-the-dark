@@ -12,12 +12,12 @@ Remove the stock Doskvol setting content from the head in one commit, leaving th
 - Frontend: the stock-faction picker and districts disclosure render only when world data is present (`crew-sections/doskvol-world.ts`); contacts keeps manual faction entry (`crew-sections/contacts.ts`); heritage uses free-form user text with no empty stock select (`character-sections/personal.ts`).
 - About & licence copy states the pull (`about-licence.ts`, and its test expectation).
 - Deleted `crew-world-02.test.ts` and `crew-world-03.test.ts` (their stock assertions no longer apply). Added red-first `frontend/src/data/setting-pull.test.ts` and `frontend/src/pages/setting-pull.test.ts`.
-- Vice purveyor and background examples: place, district and faction names removed from all three game files (follow-up commit). NPC names kept.
-- Not touched: `blades-in-the-sheets/`, `campaign-data/`, Rolodex and purveyor NPC names in `data/games`.
+- Vice purveyor and background examples: place, district, faction and business names removed from all three game files (follow-up commit), including Dunridge & Sons and the Doskvol mentions in the Hawkers, Shadows and Smugglers descriptions and the Russian Ghost Voice text. NPC names kept.
+- Not touched: `blades-in-the-sheets/`, `campaign-data/`, Rolodex and purveyor NPC names in `data/games`. One Russian Rolodex faction designation changed (`Дармот, Синий Мундир` → `Дармот, стражник`); see the register.
 
 ## Restore point
 
-Bookmark `setting-content` (both mirrors) = `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`, which holds all withdrawn data. The pull sits on `main` at `f0c1022a`; its data and frontend files are identical to `dc73c0d9`. Restore steps are in `docs/pages/contract/setting-content-register.mdx` ("Pulled pending permission").
+Bookmark `setting-content` (both mirrors) = `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`, which holds all withdrawn data. The pull sits on `main` at `4763dd24`, followed by the SETTING-PULL-01 follow-up commit; the data and frontend files of the pull are identical to `dc73c0d9`. Restore steps, including the collateral rollback of unrelated crew fixes, are in `docs/pages/contract/setting-content-register.mdx` ("Pulled pending permission").
 
 ## Checkpoint adaptation (char02-option-editors.mjs)
 
@@ -48,3 +48,4 @@ NOT-RUN: Codex `usage_limit_reached`. Review is deferred until the next Codex re
 - Test and seed fixtures: heritage text ("The Dagger Isles", "Iruvian") and stock names in frontend mocks ("The Crows", "Ironhook Prison", "The Red Sashes", "Brightstone"). Test data only.
 - Unlisted, found on review, not pulled: `frontend/src/pages/styleguide.ts` ("Doskvol" sample) and `docs/public/mockups/game-mode/` (Skovlan, The Silver Stag, gondoliers).
 - Documentation: `crew-world-sources.mdx`, setting content open items, the README provenance paragraph, CREW-WORLD task cards, the historical CREW-WORLD-01 red log.
+- Also found on the Sol review and kept: `docs/pages/contract/c3-crew-contacts-factions.mdx` ("The Crows"), `docs/pages/contract/wave0/validator-spike.mdx` ("Iruvian", "Nightmarket"), and historical `tasks/metrics/ada/LOAD-CREATE-01-*.log` responses (Akoros, Duskwall).

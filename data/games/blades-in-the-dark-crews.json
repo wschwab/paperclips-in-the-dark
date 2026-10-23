@@ -1170,7 +1170,7 @@
 		{
 			"Name": "Hawkers",
 			"Hook": "You're dealers in vice\u2014pleasure and addiction are your stock in trade.",
-			"Description": "Hawkers sell contraband, vices, and illicit goods to the citizens of Doskvol, using social connections and product quality to build their empire.",
+			"Description": "Hawkers sell contraband, vices, and illicit goods to the citizens of the city, using social connections and product quality to build their empire.",
 			"ExperienceTrigger": "Execute a successful operation involving product supply, sale, or acquisition of new clients or contraband sources.",
 			"SpecialAbilities": [
 				{
@@ -1561,7 +1561,7 @@
 		{
 			"Name": "Shadows",
 			"Hook": "You're stealthy thieves\u2014burglary and espionage are your stock in trade.",
-			"Description": "Shadows use stealth, infiltration, and burglary to steal secrets and treasure from the wealthy and powerful of Doskvol.",
+			"Description": "Shadows use stealth, infiltration, and burglary to steal secrets and treasure from the wealthy and powerful of the city.",
 			"ExperienceTrigger": "Execute a successful burglary, robbery, or espionage operation.",
 			"SpecialAbilities": [
 				{
@@ -1948,7 +1948,7 @@
 		{
 			"Name": "Smugglers",
 			"Hook": "You move contraband through the canals and back alleys\u2014everyone needs something they can't get legally.",
-			"Description": "Smugglers move contraband, passengers, and illicit goods through Doskvol's waterways and hidden routes.",
+			"Description": "Smugglers move contraband, passengers, and illicit goods through the city's waterways and hidden routes.",
 			"ExperienceTrigger": "Execute a smuggling operation or acquire new clients or contraband sources.",
 			"SpecialAbilities": [
 				{

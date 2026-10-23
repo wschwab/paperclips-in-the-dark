@@ -40,20 +40,21 @@ shipped. Manual faction entry and user-entered heritage text keep working.
 | 12 districts with 27 named locations | `data/world/doskvol.json` `districts` | `setting-content` |
 | Setting heritages (Akoros, The Dagger Isles, Iruvia, Severos, Skovlan, Tycheros) | `Heritages` in `data/games/blades-in-the-dark.json`, `français-blades-in-the-dark.json` and `rus-blades-in-the-dark.json` | `setting-content` |
 | 4 stock group labels (UNDERWORLD, INSTITUTIONS, LABOR & TRADE, THE FRINGE) | `data/world/doskvol.json` `groups` | `setting-content` |
-| Place, district and faction names in vice purveyor sources and background examples (all three game files); NPC names kept | `Vices[].Sources` and `Backgrounds[].Example` in `data/games/*.json` | `setting-content` |
+| Place, district, faction and business names in vice purveyor sources and background examples (all three game files); Doskvol mentions in the Hawkers, Shadows and Smugglers descriptions and in the Russian Ghost Voice text; NPC names kept | `Vices[].Sources`, `Backgrounds[].Example`, crew-type `Description`, and the Russian `Ghost Voice` description in `data/games/*.json` | `setting-content` |
 | Stock-faction picker and districts disclosure | `frontend/src/pages/crew-sections/doskvol-world.ts` | Code kept; hidden without data |
 
 Restore point: bookmark `setting-content` on both mirrors, at commit `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`. It holds all of the withdrawn data.
-The pull sits on `main` as commit `4763dd24`, followed by the SETTING-PULL-01 follow-up that removed place and faction names from vice purveyors, background examples, and one Rolodex entry. Both are restored by reversing them together.
+The pull sits on `main` as commit `4763dd24`, followed by the SETTING-PULL-01 follow-up commit (description starts `SETTING-PULL-01 follow-up`) that removed place, faction and business names from vice purveyors, background examples and crew descriptions, and changed one Russian Rolodex faction designation. Both are restored together by reversing them (see the steps below).
 The demo character heritage in
 `data/games/demo-character.json` is also blanked by the pull and comes back from the same point.
 
 Restore steps:
 
-1. Find the pull commits: the commits whose descriptions start with `SETTING-PULL-01`.
-2. Reverse them with `jj backout` onto the current head, then run the gates. That restores the data, the stock picker, the districts disclosure, the heritage picker, the about-licence wording, the checkpoint text and the deleted crew-world tests.
-3. For a single file, `jj file show -r setting-content <path>` gives the pre-pull version.
-4. Set this section's status to "restored", then push both mirrors.
+1. Find the pull commits: `4763dd24` and the follow-up commit (`jj log -r 'description(glob:"SETTING-PULL-01*")'`).
+2. Reverse them onto the current head: `jj revert -r '4763dd24 | <follow-up>' --onto @`. Verified in a scratch clone (Sol review): the data, frontend and conformance scopes match `setting-content` byte-for-byte. Resolve the one conflict in `tasks/SETTING-PULL-01.md` by keeping the current card text, then run the gates.
+3. Collateral: the same reversal also removes the crew fixes that share the follow-up commit, in `frontend/src/api/client.ts`, `frontend/src/pages/crew-detail.ts`, `frontend/src/pages/crew-detail.test.ts` and `frontend/src/pages/crew-sections/{cohorts,contacts,notes,profile}.ts`: crew operation undo and history, cohort editor guards, and unsaved Custom-trait, note, contact and reputation drafts. Re-apply those hunks from the follow-up commit before merging a restore. Also `frontend/src/pages/character-detail.test.ts` changed in the pull and is not in the card's changed-path list.
+4. For a single file, `jj file show -r setting-content <path>` gives the pre-pull version. `setting-content` is a remote-tracking bookmark in fresh clones; use `setting-content@origin` or `jj bookmark track setting-content@origin` first.
+5. Set this section's status to "restored", then push both mirrors.
 
 Remaining setting names (not pulled):
 

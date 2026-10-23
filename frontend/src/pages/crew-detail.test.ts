@@ -3793,6 +3793,7 @@ describe("CHAR-06 crew tracker affordances", () => {
  *  With nothing claimed, only north-markets is connected to the network. */
 const ASSASSIN_TYPE = {
   Name: "Assassins",
+  Reputations: ["Ambitious", "Brutal", "Daring", "Honorable", "Professional", "Savvy", "Subtle", "Strange"],
   Claims: {
     Columns: 5,
     Rows: 3,
@@ -3980,5 +3981,21 @@ describe("CREW-02 claim acquisition and removal gating", () => {
     expect(root.querySelector<HTMLTextAreaElement>('textarea[aria-label="New note"]')!.value).toBe("Remember the vault");
     expect(root.querySelector<HTMLInputElement>('input[aria-label="Contact name"]')!.value).toBe("Mira");
     expect(root.querySelector<HTMLInputElement>('input[aria-label="Contact profession"]')!.value).toBe("Fence");
+  });
+
+  it("keeps an unsaved reputation selection when Edit claim opens", async () => {
+    await mountWithClaims({ claimedClaimIds: ["north-markets"], reputation: "Ambitious" });
+
+    const select = root.querySelector<HTMLSelectElement>('select[aria-label="Reputation"]')!;
+    select.value = "Brutal";
+    select.dispatchEvent(new Event("change"));
+
+    Array.from(root.querySelectorAll<HTMLButtonElement>("button")).find((b) => b.textContent === "Edit claim")!.click();
+
+    expect(root.querySelector<HTMLSelectElement>('select[aria-label="Reputation"]')!.value).toBe("Brutal");
+    expect(global.fetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("/ops/fields.update"),
+      expect.anything(),
+    );
   });
 });

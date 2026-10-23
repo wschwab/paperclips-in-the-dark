@@ -133,6 +133,8 @@ export interface RenderState {
   cohortDrafts: CohortDrafts;
   noteDraft: { text: string };
   contactDraft: { name: string; profession: string };
+  /** Unsaved reputation choice from the dropdown; null shows the saved reputation. */
+  reputationDraft: { value: string | null };
   isProfileLoading: boolean;
   isRepLoading: boolean;
   isHeatLoading: boolean;
@@ -325,6 +327,8 @@ export function mountCrewDetailPage(
   // Unsaved note and contact text survives section re-renders (e.g. opening Edit claim).
   const noteDraft = { text: "" };
   const contactDraft = { name: "", profession: "" };
+  // Unsaved reputation choice survives section re-renders (e.g. opening Edit claim).
+  const reputationDraft: { value: string | null } = { value: null };
   const factionDrafts: FactionDrafts = {
     add: { name: "", tier: "", status: "0" },
     rows: new Map(),
@@ -519,6 +523,7 @@ export function mountCrewDetailPage(
       cohortDrafts,
       noteDraft,
       contactDraft,
+      reputationDraft,
       isProfileLoading,
       isRepLoading,
       isHeatLoading,
@@ -795,6 +800,9 @@ export function mountCrewDetailPage(
       runCrewOp(
         (v) => { isProfileLoading = v; },
         crewFieldsUpdate(crewId, { reputation: value }, currentCrew.revision),
+        undefined,
+        undefined,
+        () => { reputationDraft.value = null; },
       );
     },
 
