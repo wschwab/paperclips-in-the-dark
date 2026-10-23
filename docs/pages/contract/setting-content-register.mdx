@@ -50,8 +50,8 @@ The demo character heritage in
 
 Restore steps:
 
-1. Find the pull commits: `4763dd24` and the follow-up commit (`jj log -r 'description(glob:"SETTING-PULL-01*")'`).
-2. Reverse them onto the current head: `jj revert -r '4763dd24 | <follow-up>' --onto @`. Verified in a scratch clone (Sol review): the data, frontend and conformance scopes match `setting-content` byte-for-byte. Resolve the one conflict in `tasks/SETTING-PULL-01.md` by keeping the current card text, then run the gates.
+1. Find the pull commits: `4763dd24` (the pull), `563545e3` and `8e9a2ce9` (the two follow-ups). `jj log -r 'description(glob:"SETTING-PULL-01*")'` lists them.
+2. Reverse all three onto the current head: `jj revert -r '4763dd24 | 563545e3 | 8e9a2ce9' --onto @`. Verified in a scratch clone (Sol review, head `8e9a2ce9`): the only conflict is `tasks/SETTING-PULL-01.md`, and keeping the current card text leaves the data, frontend, conformance, README and register scopes identical to `setting-content`. Then run the gates.
 3. Collateral: the same reversal also removes the crew fixes that share the follow-up commit, in `frontend/src/api/client.ts`, `frontend/src/pages/crew-detail.ts`, `frontend/src/pages/crew-detail.test.ts` and `frontend/src/pages/crew-sections/{cohorts,contacts,notes,profile}.ts`: crew operation undo and history, cohort editor guards, and unsaved Custom-trait, note, contact and reputation drafts. Re-apply those hunks from the follow-up commit before merging a restore. Also `frontend/src/pages/character-detail.test.ts` changed in the pull and is not in the card's changed-path list.
 4. For a single file, `jj file show -r setting-content <path>` gives the pre-pull version. `setting-content` is a remote-tracking bookmark in fresh clones; use `setting-content@origin` or `jj bookmark track setting-content@origin` first.
 5. Set this section's status to "restored", then push both mirrors.
@@ -59,7 +59,9 @@ Restore steps:
 Remaining setting names (not pulled):
 
 - Playbook Rolodex friend and NPC names in `data/games/*.json`, which are served as game data and used to preload contacts. Vice purveyor NPC names (for example "Mother Narya", "Spogg") are kept on the same basis.
+- Rolodex faction designations kept as the generic watch term: "Bluecoats" / "Синих Мундиров" in `data/games/blades-in-the-dark.json` (Darmot, Jeren entries), its French edition, and `rus-blades-in-the-dark.json`. The Russian Darmot designation was changed by the follow-up (see above). These are open for the same permission decision as the NPC names.
 - Test and seed fixtures: heritage text such as "The Dagger Isles" and "Iruvian" in conformance fixtures and seed characters, and stock names in frontend test mocks (for example "The Crows", "Ironhook Prison", "The Red Sashes", "Brightstone"). Test data only.
+- Further test and historical surfaces: `docs/pages/contract/c3-crew-contacts-factions.mdx` ("The Crows"); `docs/pages/contract/wave0/validator-spike.mdx` ("Iruvian", "Nightmarket", "The Bluecoats"); historical `tasks/metrics/ada/LOAD-CREATE-01-*.log` responses (Akoros, Duskwall); and the CREW-WORLD-03 evidence screenshot `docs/public/evidence/crew-world-03/390-light-disclosure.png` (district and location names).
 - `data/world/doskvol.json` holds (generic strong and weak labels) and the source note.
 - Unlisted surfaces, found on review, not pulled: the styleguide city sample (`frontend/src/pages/styleguide.ts`, "Doskvol") and the game-mode design mockups under `docs/public/mockups/game-mode/` (Skovlan, The Silver Stag, gondoliers). Both are design or sample surfaces, not app content; pull or keep is pending permission.
 - Documentation: this register, `crew-world-sources.mdx`, the setting content open items, the README provenance paragraph, the CREW-WORLD task cards, and the historical CREW-WORLD-01 red log.
