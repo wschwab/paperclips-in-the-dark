@@ -37,3 +37,9 @@ The crew page is exercised with these features together, in one session per view
 
 - Verdict: `tasks/metrics/frontend/CREW-REVIEW-01-sol-6.1-verdict.txt`, first line `VERDICT: PASS` or `VERDICT: FAIL`.
 - Probe and evidence: `docs/public/evidence/crew-review-01/`, written when the review's probe is committed.
+
+## Round log
+
+- Sol 6.1 xhigh at `ed383b21`: FAIL on one P2. `onCohortUpdate` closed the editor and deleted its draft before `cohort.update` succeeded, so a STALE_REVISION conflict discarded the edits. Fixed red-first: the cohort update clears the editor and draft only on success (`frontend/src/pages/crew-detail.ts`), with the regression test `keeps the cohort editor and its unsaved draft when cohort.update returns STALE_REVISION` (`frontend/src/pages/crew-detail.test.ts`).
+- Sol 6.1 xhigh at `b8e311f8`: FAIL on a stale capability projection. Develop could validate against a projection fetched before a mutation or undo changed the crew. Fixed red-first: each projection is bound to the crew revision it was fetched for, and `projectionFor` (`frontend/src/pages/crew-sections/trackers.ts`) drops it once the revision changes. Test: `frontend/src/pages/crew-sections/trackers.test.ts`.
+- Sol 6.1 xhigh at `563545e3`: FAIL on unsaved reputation choice lost by Edit claim; fixed in `8e9a2ce9`.

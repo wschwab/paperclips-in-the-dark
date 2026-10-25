@@ -1091,8 +1091,6 @@ export function mountCrewDetailPage(
     onCohortUpdate: (cohortId: string, fields: Record<string, unknown>) => {
       if (!currentCrew || isCohortLoading) return;
       isCohortLoading = true;
-      editingCohortId = null;
-      cohortDrafts.edits.delete(cohortId);
       clearNotices();
       renderDetail();
 
@@ -1103,6 +1101,9 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isCohortLoading = false;
+            // Close the editor and drop its draft only once the update is saved; a conflict keeps both (CREW-REVIEW-01).
+            editingCohortId = null;
+            cohortDrafts.edits.delete(cohortId);
             adoptOp(crew);
             renderDetail();
           },

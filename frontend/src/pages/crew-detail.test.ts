@@ -1883,6 +1883,52 @@ describe("crew-detail page", () => {
       expect(expertCard?.textContent).toContain("Edges: (none)");
     });
 
+    it("keeps the cohort editor and its unsaved draft when cohort.update returns STALE_REVISION (CREW-REVIEW-01)", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "cohort.update" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          status: 409,
+          message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
+          details: { currentRevision: 7 },
+        },
+      };
+      const crew = crewDTO({ revision: 6, cohorts: [cohortDTO()] });
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce(ok(crew))
+        .mockResolvedValueOnce(ok(crew))
+        .mockResolvedValueOnce(ok(crew))
+        .mockResolvedValueOnce(ok(crew))
+        .mockResolvedValueOnce({ ok: false, status: 409, text: async () => JSON.stringify(staleResp) })
+        .mockResolvedValueOnce(ok(crewDTO({ revision: 7, cohorts: [cohortDTO()] })));
+
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector(`.cohort-entry[data-cohort-id="${COHORT_ID}"]`)).not.toBeNull();
+      });
+      const entry = root.querySelector(`.cohort-entry[data-cohort-id="${COHORT_ID}"]`) as HTMLElement;
+      [...entry.querySelectorAll("button")].find((b) => b.textContent === "✎")?.click();
+      await vi.waitFor(() => {
+        expect(root.querySelector('input[aria-label="Edit name"]')).not.toBeNull();
+      });
+      const nameInput = root.querySelector('input[aria-label="Edit name"]') as HTMLInputElement;
+      nameInput.value = "Renamed crew";
+      nameInput.dispatchEvent(new Event("input", { bubbles: true }));
+      (root.querySelector('button[title^="Save"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(6);
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('input[aria-label="Edit name"]')).not.toBeNull();
+      });
+      expect((root.querySelector('input[aria-label="Edit name"]') as HTMLInputElement).value).toBe("Renamed crew");
+    });
+
     it("updates undo availability and history count from a cohort add's history fields", async () => {
       const added = crewDTO({ revision: 6, cohorts: [cohortDTO()] });
       global.fetch = vi.fn()
