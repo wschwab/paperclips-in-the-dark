@@ -1,38 +1,60 @@
-VERDICT: PASS
+VERDICT: FAIL
 
-Reviewed immutable revision `201b763700e1`. No findings in the exercised cross-feature scenarios.
+Reviewed immutable revision `d902771f959d`. Two reproduced draft-loss bugs.
 
-### Chromium matrix
+## Findings
 
-Each session recorded **22 checkpoints**, including displayed state, crew API state, horizontal overflow, console errors, and page errors.
+### 1. [P2] Edit claim resets pending advancement selections
 
-| Viewport | Theme | Displayed vs stored | Max overflow | Console errors | Page errors |
-|---|---|---|---:|---:|---:|
-| 1440×1000 | Light | Match, 22/22 | 0 px | 0 | 0 |
-| 1440×1000 | Dark | Match, 22/22 | 0 px | 0 | 0 |
-| 1440×1000 | High contrast | Match, 22/22 | 0 px | 0 | 0 |
-| 768×1024 | Light | Match, 22/22 | 0 px | 0 | 0 |
-| 768×1024 | Dark | Match, 22/22 | 0 px | 0 | 0 |
-| 768×1024 | High contrast | Match, 22/22 | 0 px | 0 | 0 |
-| 390×844 | Light | Match, 22/22 | 0 px | 0 | 0 |
-| 390×844 | Dark | Match, 22/22 | 0 px | 0 | 0 |
-| 390×844 | High contrast | Match, 22/22 | 0 px | 0 | 0 |
+**Location:** `frontend/src/pages/crew-sections/playbook.ts:125–129,196–202`
 
-### Verified behavior
+**Reproduction:**
+1. Open an Assassins crew.
+2. Select **Deadly** under Take ability and **Training** under Mark upgrade.
+3. Open **Edit claim**, then Cancel.
+4. Click Take ability.
 
-- **Rep/Turf and undo:** effective Turf `1 → 2 → 1`; Rep display `10/11 → 10/10 → 10/11`; Develop disabled → enabled → disabled. Base Turf remained `1`.
-- **Claims:** editing a disconnected claim did not acquire it. Dismissing its out-of-sequence confirmation preserved ownership; accepting acquired it. Successive undos restored acquisition, customization, and Turf state without stale projections.
-- **Map:** fits at 1440 and 768. At 390, horizontal panning remains inside the bounded map; document overflow stays zero.
-- **Cohorts and drafts:** add/edit gates blocked unequal trait counts and enabled matching counts. Custom Expert add/edit succeeded. Cohort, reputation, note, contact, and faction drafts survived claim-editor rerenders and undo.
-- **XP and factions:** crew XP matched storage at `3 → 4 → 5`, including the Resolution mutation. All four Resolution triggers were reachable, with the correct crew-specific criterion. Manual faction tier/status and starting relationships persisted. Stock faction controls and districts remained absent.
+**Observed:** Opening Edit claim resets **Deadly → Predators** and **Training → blank**, although neither eligibility nor stored advancements changed. Clicking Take ability subsequently stores **Predators**, not the originally selected Deadly.
 
-Supplemental genuine `STALE_REVISION` checks confirmed that cohort and claim editors retain drafts and save successfully on retry. That separate deliberate-conflict run produced two expected HTTP-409 console messages; none occurred in the nine matrix sessions.
+The sheet-wide rerender recreates both selects without retaining their choices. Reproduced at 1440, 768, and 390 pixels in light theme, with zero console errors before the separate conflict scenario.
 
-### Evidence
+### 2. [P2] A rejected profile save permanently discards its draft
 
-- Probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
-- Per-step displayed/API records: `/tmp/sol-review/crew-review-r4-evidence/matrix.json`
-- Conflict recovery: `/tmp/sol-review/crew-review-r4-evidence/conflicts.json`
-- Verdict and 36 screenshots: `/tmp/sol-review/crew-review-r4-evidence/`
+**Location:** `frontend/src/pages/crew-detail.ts:771–784`, particularly `editingProfile = null` at line 776.
+
+**Reproduction:**
+1. Edit Lair and enter `Unsaved loft above the print shop`.
+2. From another client, increment the crew’s Rep.
+3. Save the Lair edit, causing `409 STALE_REVISION`.
+4. After the automatic refresh, reopen Edit Lair.
+
+**Observed:** The editor closes on submission. After conflict recovery, reopening it produces a blank input; the typed draft is gone, and API storage still contains `lair: ""`.
+
+The handler clears the sole draft before the request succeeds. Unlike the cohort editor, failure recovery cannot retain it. Reproduced at all three widths in light theme. Each deliberate conflict produced one HTTP-409 resource console message; these are separate from the clean matrix below.
+
+## Required Chromium matrix
+
+All nine required cross-feature sessions completed **33 recorded checkpoints each**. Displayed persisted state matched API state throughout; checked drafts survived except in the additional findings above.
+
+| Viewport | Theme | Displayed vs stored | Overflow | Console/page errors |
+|---|---|---|---:|---:|
+| 1440×1000 | Light | Match | 0 px | 0 |
+| 1440×1000 | Dark | Match | 0 px | 0 |
+| 1440×1000 | High contrast | Match | 0 px | 0 |
+| 768×1024 | Light | Match | 0 px | 0 |
+| 768×1024 | Dark | Match | 0 px | 0 |
+| 768×1024 | High contrast | Match | 0 px | 0 |
+| 390×844 | Light | Match | 0 px | 0 |
+| 390×844 | Dark | Match | 0 px | 0 |
+| 390×844 | High contrast | Match | 0 px | 0 |
+
+Verified claim acquisition, out-of-sequence edit/confirmation, LIFO undo through the Turf claim, refreshed Develop threshold, both cohort equality gates, gang/expert edits, manual factions and starting relationships, hidden stock/district controls, all four scroll-reachable Resolution XP triggers, and XP persistence back to the crew sheet.
+
+**Evidence**
+- [Required probe](./brief-crew-review-probe.mjs)
+- [Nine-session summary](./crew-review-r5-evidence/summary.json)
+- [Per-step displayed/API state](./crew-review-r5-evidence/results.json)
+- [Draft reproduction probe](./crew-review-r5-draft-probe.mjs)
+- [Draft-loss evidence](./crew-review-r5-draft-evidence/results.json)
 
 No repository files edited. Full test suite not run.

@@ -859,6 +859,48 @@ describe("crew-detail page", () => {
       expect(root.textContent).toContain("Northside safehouse");
     });
 
+    it("keeps a profile draft when the save returns STALE_REVISION (CREW-REVIEW-01)", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "fields.update" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          status: 409,
+          message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
+          details: { currentRevision: 6 },
+        },
+      };
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce({ ok: false, status: 409, text: async () => JSON.stringify(staleResp) })
+        .mockResolvedValue(ok(crewDTO({ revision: 6 })));
+
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector("h1")?.textContent).toContain("The Red Sashes");
+      });
+
+      (root.querySelector('button[title="Edit Lair"]') as HTMLButtonElement).click();
+      const input = root.querySelector('input[aria-label="Lair"]') as HTMLInputElement;
+      input.value = "Unsaved loft above the print shop";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      (root.querySelector('button[title="Save"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledTimes(6);
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('input[aria-label="Lair"]')).not.toBeNull();
+      });
+      expect((root.querySelector('input[aria-label="Lair"]') as HTMLInputElement).value).toBe("Unsaved loft above the print shop");
+    });
+
     it("ENTER in a profile input saves the typed value via crewFieldsUpdate — F2aa", async () => {
       const updated = crewDTO({ revision: 6, name: "Renamed Crew" });
       const fieldsOk = {
@@ -1798,6 +1840,34 @@ describe("crew-detail page", () => {
         },
         { timeout: 2000 },
       );
+    });
+
+    it("keeps the Take ability and Mark upgrade picks across a sheet rerender (CREW-REVIEW-01)", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(playbookDTO()))
+        .mockResolvedValueOnce(ok(CREW_TYPE_DATA))
+        .mockResolvedValueOnce(ok(CREW_TYPES_DATA))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValue(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('select[aria-label="Take ability"]')).not.toBeNull();
+      });
+      const take = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement;
+      take.value = "Patron";
+      take.dispatchEvent(new Event("change", { bubbles: true }));
+      const mark = root.querySelector('select[aria-label="Mark upgrade"]') as HTMLSelectElement;
+      mark.value = "Vault";
+      mark.dispatchEvent(new Event("change", { bubbles: true }));
+
+      (root.querySelector(".advancement-toggle") as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector(".advancement-toggle")?.textContent).toBe("Done editing");
+      });
+      expect((root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement).value).toBe("Patron");
+      expect((root.querySelector('select[aria-label="Mark upgrade"]') as HTMLSelectElement).value).toBe("Vault");
     });
   });
 

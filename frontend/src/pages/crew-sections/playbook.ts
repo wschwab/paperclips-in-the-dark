@@ -122,9 +122,14 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
       abilityDetails.textContent = abilityDescription(name);
       abilityDetails.hidden = name === "";
     };
-    abilitySelect.addEventListener("change", () => showAbilityDescription(abilitySelect.value));
-    if (eligible.length > 0) {
-      abilitySelect.value = String(eligible[0]!.Name);
+    abilitySelect.addEventListener("change", () => {
+      handlers.onAbilityPick(abilitySelect.value);
+      showAbilityDescription(abilitySelect.value);
+    });
+    // Keep the pick across sheet rerenders (CREW-REVIEW-01); fall back to the first eligible ability.
+    const pickedAbility = eligible.find((sa) => String(sa.Name) === state.abilityPick) ?? eligible[0];
+    if (pickedAbility) {
+      abilitySelect.value = String(pickedAbility.Name);
     }
     showAbilityDescription(abilitySelect.value);
 
@@ -200,6 +205,10 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
       el("option", { value: "" }, "Upgrade"),
       ...markable.map((u) => el("option", { value: String(u.Name) }, String(u.Name))),
     ) as HTMLSelectElement;
+    markSelect.addEventListener("change", () => handlers.onUpgradeMarkPick(markSelect.value));
+    if (state.upgradePick !== null && markable.some((u) => String(u.Name) === state.upgradePick)) {
+      markSelect.value = state.upgradePick;
+    }
     const markBtn = el("button", {
       type: "button",
       disabled: anyLoading || markable.length === 0,

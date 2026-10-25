@@ -1,31 +1,32 @@
 VERDICT: PASS
 
-Reviewed immutable revision `201b763700e1`. No contradictory findings.
+Reviewed only `d902771f959d`, using a freshly built immutable snapshot. No contradictory findings.
 
-1. **Forms and persistence match the card.** `tasks/CREW-COHORTS-01.md:24–29,53,55–56`; probe steps `gang saved`, `expert saved unnamed`, `gang edit saved`, `expert edit saved named`, and `reload persisted state`.
-   - Added and edited both gang and expert cohorts in every combination.
-   - Kind-specific fields, expert Custom visibility, game-data menus, multiline descriptions, names, harm, and gang armor behaved as claimed.
-   - Derived quality/scale matched crew Tiers **0, 1, and 2**; saved cards displayed stored values. Edit requests omitted quality/scale.
-   - An initially unnamed expert gained the persisted name **“Mercy”**.
-   - Displayed saved state matched API storage at every recorded step; unfinished edits left storage unchanged.
+1. **Forms and persistence match the card.** `tasks/CREW-COHORTS-01.md:24–29,53,55–56`; probe steps `gang-added`, `expert-added-unnamed`, `expert-edited-and-named`, `gang-edited`, `reload-persisted`.
+   - Added and edited both gang and expert cohorts in all nine combinations.
+   - Kind-specific fields, expert Custom visibility, SRD catalogs, names, multiline descriptions, harm and gang armor behaved as claimed.
+   - At Tier 2, gang quality/scale persisted as **2/2**; expert as **3/0**. Edit requests omitted quality/scale.
+   - An initially unnamed expert acquired a persisted name through editing.
+   - Saved cards matched API storage at every checkpoint. Unsaved edits left storage unchanged.
 
-2. **Both equal-count gates and Custom pickers work.** `frontend/src/pages/crew-sections/cohorts.ts:237–301,409–473`; probe steps `add gate 1/0`, `add gate 1/2`, `edit gate 0/1`, and `expert edit gate 2/1`.
-   - Unequal counts disabled Add/Save with the expected explanation; balanced counts re-enabled submission.
-   - Custom edges and flaws persisted through add, edit, and reload.
-   - Both forms prevented adding more than **two edges or two flaws**.
+2. **Equal-count gates and Custom pickers work.** `frontend/src/pages/crew-sections/cohorts.ts:237–301,409–473`; probe steps `gang-add-unequal-1-0`, `expert-add-unequal-1-0`, `expert-edit-unequal-2-1`, `gang-edit-unequal-2-1`.
+   - Unequal counts disabled Add/Save with the expected shared explanation; matching counts re-enabled submission.
+   - Custom edges/flaws survived add, edit and reload.
+   - Both forms prevented exceeding **two edges or two flaws**.
+   - Custom inputs and picker buttons remained inside every viewport.
 
-3. **Cited layout evidence is reproducible.** `docs/public/evidence/crew-cohorts-01/{probe.json,forms-3x3.json,custom-picker.json}`; independent geometry probe.
+3. **Cited layout evidence agrees.** `docs/public/evidence/crew-cohorts-01/{probe.json,forms-3x3.json,custom-picker.json}`; card lines `44–48,64–65,71–72`.
    - Reproduced light-theme section heights **409/329/612px**, first-control offset **139px**, and initially below-fold headings.
-   - All 18 default gang/expert forms had **0px overflow**, **0px Add right gap**, and picker buttons beside their selects.
-   - Custom-picker measurements matched all nine recorded rows. All **21 cited PNGs** existed and decoded.
-   - `tasks/metrics/frontend/CREW-COHORTS-01-chromium.log:21,32,43` retains **481/401/684px**. These are the superseded measurements explicitly corrected by the card—not the refreshed `probe.json` values.
+   - Default gang/expert forms had **0px Add right gap**, with picker buttons beside their selects.
+   - Custom-picker `plusRight` measurements matched all nine retained rows.
+   - All **21 cited PNGs** existed and were readable.
+   - `tasks/metrics/frontend/CREW-COHORTS-01-chromium.log:21,32,43` retains **481/401/684px**—the superseded measurements explicitly corrected by the card, not the refreshed `probe.json` values.
 
-4. **Contract and historical evidence agree.** `data/games/crew-settings-schema.json:272–292`, `contract/openapi.yaml:2647–2702`, and the cited metrics logs.
-   - Both shipped crew-settings files validated; all five cohort catalog keys are admitted.
-   - Optional names agree across contract, decoders, generated validator, and Ada handling.
-   - Retained Ada logs record **74/627 twice** and **74/629 twice**; mutation evidence records **19/19 P0 + 9/9 P1 killed**. Historical suites were inspected, not rerun.
+4. **Contract and retained historical evidence agree.** `contract/openapi.yaml:2647–2702`, `data/games/crew-settings-schema.json:272–292`, generated validators and Ada cohort handling.
+   - Optional names and all five catalog keys are supported as claimed.
+   - Cited Ada logs record **74/627 twice** and **74/629 twice**; mutation evidence records **19/19 P0 + 9/9 P1 killed**. Historical suites were inspected, not rerun.
 
-**Independent Chromium run: 243 recorded steps, 1,503 checks, zero failures.**
+**Independent Chromium run: 216 checkpoints, 1,701 checks, zero failures.**
 
 | Viewport | Theme | Maximum overflow¹ | Console errors | Uncaught errors | Saved UI/storage |
 |---|---|---:|---:|---:|---|
@@ -41,10 +42,7 @@ Reviewed immutable revision `201b763700e1`. No contradictory findings.
 
 ¹ `document.documentElement.scrollWidth - innerWidth`; **0 at every checkpoint**.
 
-Required guarded launcher exited **0**. Fresh typecheck passed; an external frontend build matched served `frontend/dist` byte-for-byte. No repository source files edited; no full test suite run.
+Required guarded launcher exited **0**. Fresh frontend typecheck/build and Ada build succeeded. No repository files edited; no full test suite run.
 
-Evidence:
-- Probe: `/tmp/sol-review/brief-cohorts-probe.mjs`
-- Results: `/tmp/sol-review/brief-cohorts-r4-results.json`
-- Geometry: `/tmp/sol-review/brief-cohorts-r4-geometry.json`
-- Verification: `/tmp/sol-review/brief-cohorts-r4-verification.json`
+Probe: `/tmp/sol-review/brief-cohorts-probe.mjs`  
+Results and screenshots: `/tmp/sol-review/brief-cohorts-r5-results/`

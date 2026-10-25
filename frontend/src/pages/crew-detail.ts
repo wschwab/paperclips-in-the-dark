@@ -123,6 +123,9 @@ export interface RenderState {
   isUndoLoading: boolean;
   isDeleteLoading: boolean;
   isAbilityLoading: boolean;
+  /** Advancement picks kept across sheet rerenders (CREW-REVIEW-01). */
+  abilityPick: string | null;
+  upgradePick: string | null;
   isUpgradeLoading: boolean;
   isCohortLoading: boolean;
   isXpLoading: boolean;
@@ -191,6 +194,8 @@ export interface RenderState {
     onAbilityRemove: (name: string) => void;
     onUpgradeMark: (name: string) => void;
     onUpgradeMarkMenu: () => void;
+    onAbilityPick: (name: string) => void;
+    onUpgradeMarkPick: (name: string) => void;
     onUpgradeUnmark: (name: string) => void;
     onChartBox: (name: string, index: number) => void;
     onCohortAdd: () => void;
@@ -312,6 +317,8 @@ export function mountCrewDetailPage(
   let isCoinLoading = false;
   let isStashLoading = false;
   let isAbilityLoading = false;
+  let abilityPick: string | null = null;
+  let upgradePick: string | null = null;
   let isUpgradeLoading = false;
   let isCohortLoading = false;
   let isXpLoading = false;
@@ -538,6 +545,8 @@ export function mountCrewDetailPage(
       isCoinLoading,
       isStashLoading,
       isAbilityLoading,
+      abilityPick,
+      upgradePick,
       isUpgradeLoading,
       isCohortLoading,
       isXpLoading,
@@ -773,7 +782,6 @@ export function mountCrewDetailPage(
       const field = editingProfile.field;
       const value = editingProfile.value;
       isProfileLoading = true;
-      editingProfile = null;
       clearNotices();
       renderDetail();
 
@@ -785,6 +793,8 @@ export function mountCrewDetailPage(
           onSuccess: (crew) => {
             if (cancelled) return;
             isProfileLoading = false;
+            // Close the editor only once the save lands; a conflict keeps the draft (CREW-REVIEW-01).
+            editingProfile = null;
             adoptOp(crew);
             renderDetail();
           },
@@ -962,6 +972,12 @@ export function mountCrewDetailPage(
 
     // -- F2v: Playbook (abilities + upgrades + lair chart) -------------------
 
+    onAbilityPick: (name: string) => {
+      abilityPick = name;
+    },
+    onUpgradeMarkPick: (name: string) => {
+      upgradePick = name;
+    },
     onAbilityTake: () => {
       if (!currentCrew || isAbilityLoading) return;
       const sel = root.querySelector('select[aria-label="Take ability"]') as HTMLSelectElement | null;
