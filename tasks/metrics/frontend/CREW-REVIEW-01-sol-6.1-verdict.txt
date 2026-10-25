@@ -1,42 +1,38 @@
-VERDICT: FAIL
+VERDICT: PASS
 
-Revision: `ed383b219b0f`.
+Reviewed immutable revision `201b763700e1`. No findings in the exercised cross-feature scenarios.
 
-### 1. [P2] Concurrent Rep changes cause unsaved cohort edits to be discarded
+### Chromium matrix
 
-**Location:** `frontend/src/pages/crew-detail.ts:1094–1095`, in `onCohortUpdate`.
+Each session recorded **22 checkpoints**, including displayed state, crew API state, horizontal overflow, console errors, and page errors.
 
-**Reproduction — Chromium, 390×844, light:**
-1. Open a saved gang cohort with one edge and one flaw.
-2. Edit its name and description; add a second edge and matching flaw.
-3. From another client, increment the same crew’s Rep.
-4. Save the cohort from the original, now-stale sheet.
-5. Reopen its editor.
+| Viewport | Theme | Displayed vs stored | Max overflow | Console errors | Page errors |
+|---|---|---|---:|---:|---:|
+| 1440×1000 | Light | Match, 22/22 | 0 px | 0 | 0 |
+| 1440×1000 | Dark | Match, 22/22 | 0 px | 0 | 0 |
+| 1440×1000 | High contrast | Match, 22/22 | 0 px | 0 | 0 |
+| 768×1024 | Light | Match, 22/22 | 0 px | 0 | 0 |
+| 768×1024 | Dark | Match, 22/22 | 0 px | 0 | 0 |
+| 768×1024 | High contrast | Match, 22/22 | 0 px | 0 | 0 |
+| 390×844 | Light | Match, 22/22 | 0 px | 0 | 0 |
+| 390×844 | Dark | Match, 22/22 | 0 px | 0 | 0 |
+| 390×844 | High contrast | Match, 22/22 | 0 px | 0 | 0 |
 
-**Observed:** `cohort.update` returns HTTP 409 `STALE_REVISION`. The sheet refreshes and closes the editor. Reopening restores the original name, description, and one-edge/one-flaw selection; all drafted changes are lost. API state correctly retains the original cohort and the concurrent Rep increment.
+### Verified behavior
 
-The handler clears `editingCohortId` and deletes the draft **before** the request succeeds. Retain both until success so conflict recovery preserves the draft.
+- **Rep/Turf and undo:** effective Turf `1 → 2 → 1`; Rep display `10/11 → 10/10 → 10/11`; Develop disabled → enabled → disabled. Base Turf remained `1`.
+- **Claims:** editing a disconnected claim did not acquire it. Dismissing its out-of-sequence confirmation preserved ownership; accepting acquired it. Successive undos restored acquisition, customization, and Turf state without stale projections.
+- **Map:** fits at 1440 and 768. At 390, horizontal panning remains inside the bounded map; document overflow stays zero.
+- **Cohorts and drafts:** add/edit gates blocked unequal trait counts and enabled matching counts. Custom Expert add/edit succeeded. Cohort, reputation, note, contact, and faction drafts survived claim-editor rerenders and undo.
+- **XP and factions:** crew XP matched storage at `3 → 4 → 5`, including the Resolution mutation. All four Resolution triggers were reachable, with the correct crew-specific criterion. Manual faction tier/status and starting relationships persisted. Stock faction controls and districts remained absent.
 
-**Evidence:** [conflict probe](./brief-crew-review-conflict-probe.mjs), [displayed/API snapshots](./brief-crew-review-evidence/cohort-conflict.json), [reopened editor](./brief-crew-review-evidence/cohort-conflict-reopened.png).
+Supplemental genuine `STALE_REVISION` checks confirmed that cohort and claim editors retain drafts and save successfully on retry. That separate deliberate-conflict run produced two expected HTTP-409 console messages; none occurred in the nine matrix sessions.
 
-### Required cross-feature matrix
+### Evidence
 
-All nine normal sessions completed **36 recorded checkpoints each**. Displayed saved state matched API state throughout.
+- Probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
+- Per-step displayed/API records: `/tmp/sol-review/crew-review-r4-evidence/matrix.json`
+- Conflict recovery: `/tmp/sol-review/crew-review-r4-evidence/conflicts.json`
+- Verdict and 36 screenshots: `/tmp/sol-review/crew-review-r4-evidence/`
 
-| Viewport | Theme | Displayed vs. stored | Overflow | Console errors |
-|---|---|---|---:|---:|
-| 1440×1000 | Light | Match | 0 px | 0 |
-| 1440×1000 | Dark | Match | 0 px | 0 |
-| 1440×1000 | High contrast | Match | 0 px | 0 |
-| 768×1024 | Light | Match | 0 px | 0 |
-| 768×1024 | Dark | Match | 0 px | 0 |
-| 768×1024 | High contrast | Match | 0 px | 0 |
-| 390×844 | Light | Match | 0 px | 0 |
-| 390×844 | Dark | Match | 0 px | 0 |
-| 390×844 | High contrast | Match | 0 px | 0 |
-
-Verified claim acquisition/edit/confirmation, LIFO undo and refreshed Turf/Develop state, claims-map containment, gang/expert add and edit, equal-count gates, draft preservation across unrelated mutations, manual factions, and all four Resolution XP triggers with an XP round trip.
-
-The separate conflict reproduction produced one console error for its deliberately provoked HTTP 409; the matrix above had none.
-
-**Artifacts:** [requested probe](./brief-crew-review-probe.mjs), [324 checkpoint records](./brief-crew-review-evidence/results.json). No repository files edited; no full test suite run.
+No repository files edited. Full test suite not run.

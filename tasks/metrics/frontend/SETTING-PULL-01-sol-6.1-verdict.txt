@@ -1,98 +1,94 @@
 VERDICT: FAIL
 
-1. **Restore instructions omit advancing to the generated restore head.**  
-   **Path:** `docs/pages/contract/setting-content-register.mdx:54`, referenced by `tasks/SETTING-PULL-01.md`.  
-   **Command:** `jj revert -r '4763dd24 | 563545e3 | 8e9a2ce9' --onto @`.  
-   **Contradicted claim:** the documented sequence is sufficient to proceed with working-tree conflict resolution, comparison and gates.  
-   **Observed:** exit **0**, three revert commits created, but `@` remained at `d9fdcd02`—the unchanged, still-pulled tree. The scratch exercise required the undocumented `jj edit fe534a30` before resolving the five conflicts. After that advancement and the documented resolutions, restoration produced the expected result. Add an explicit instruction to select the final generated revert.  
-   **Evidence:** `/tmp/sol-review/setting-pull-r3-restore.md:13-29`, including exact command output.
+1. **Restore instructions leave two undocumented source conflicts.**  
+   **Path:** `docs/pages/contract/setting-content-register.mdx:54–55`; referenced by `tasks/SETTING-PULL-01.md` under “Restore point”.  
+   **Claim:** “Five paths conflict”; keeping the five named documentation/review files completes conflict resolution.  
+   **Command:** In a fresh scratch clone, ran:
+   ```sh
+   jj revert -r '4763dd24 | 563545e3 | 8e9a2ce9' --onto @
+   jj edit 'description(glob:"Revert \"SETTING-PULL-01: pull*")'
+   ```
+   **Observed:** **Seven** conflicted paths. After restoring exactly the five documented paths from `201b763700e1`, `jj resolve --list` still reports:
+   ```text
+   frontend/src/pages/crew-detail.test.ts 2-sided conflict
+   frontend/src/pages/crew-detail.ts     2-sided conflict
+   ```
+   The source conflict overlaps the newer cohort-update draft-retention change. The register supplies no resolution for these two files. Its stated verification at `89a4ac0b` does not establish a completed restore at the reviewed head.
 
-2. **The remaining-name inventory still omits repository surfaces and contains stale Rolodex prose.**  
-   **Path:** `docs/pages/contract/setting-content-register.mdx:59-75`.  
-   **Check:** pinned `jj file show -r ed383b219b0f`, vocabulary searches, and parsed Rolodex comparisons against `dc73c0d9`.  
-   **Contradicted claim:** the register accounts accurately for remaining setting-name locations outside the two excluded trees.  
+   Evidence: `/tmp/sol-review/restore-r4.conflicts-list.txt`, `/tmp/sol-review/restore-r4.documented-only-conflicts.txt`.
+
+2. **Restore comparison: seven differing files in the requested paths.**  
+   **Command:** Compared the documented-only restore with `dc73c0d9` using `jj diff --from dc73c0d9 --to 30b1a9fc`, scoped to `data`, `frontend`, `conformance`, `README.md`, and the register.
+
+   | Differing file | Observed difference | Register coverage |
+   |---|---|---|
+   | `data/games/crew-settings-schema.json` | Cohort schema additions, +28 lines | Documented preserved post-pull change |
+   | `conformance/suites/semantics/crew-settings-schema.test.ts` | Added, 25 lines | Documented preserved post-pull change |
+   | `frontend/src/pages/crew-sections/trackers.ts` | Capability-revision helper, +6 lines | Documented preserved post-pull change |
+   | `frontend/src/pages/crew-sections/trackers.test.ts` | Added, 17 lines | Documented preserved post-pull change |
+   | `frontend/src/pages/crew-detail.ts` | Preserved capability changes **and unresolved conflict** | File difference documented; conflict/resolution omitted |
+   | `frontend/src/pages/crew-detail.test.ts` | **Unresolved conflict** involving newer regression coverage and reversed follow-up tests | File difference documented; conflict/resolution omitted |
+   | `docs/pages/contract/setting-content-register.mdx` | Reviewed-head register retained | Explicit keep-current instruction |
+
+   **All other files in the requested comparison match `dc73c0d9` exactly**, including the withdrawn world/game data, `README.md`, the heritage checkpoint, and the pull’s frontend changes. The four schema/tracker paths above were not touched by the pull or either follow-up; all four are explicitly documented exceptions.
+
+   An additional, **exploratory** keep-head resolution of the two source conflicts produces a conflict-free tree with the same seven differing paths. It also retains follow-up crew fixes in those two files; that is a consequence of the exploratory choice, **not** the documented restore result.
+
+   Full literal diff: `/tmp/sol-review/restore-r4.documented-only.diff`.  
+   Exploratory diff: `/tmp/sol-review/restore-r4.vs-dc73.diff`.
+
+   Scratch used: `/tmp/scratch-setting-pull-r4`. The requested `/tmp/scratch-setting-pull` already contained prior conflicted review work and was preserved.
+
+3. **Content withdrawal verified; no additional removal failure confirmed.**  
+   **Paths:** `data/world/doskvol.json` and the three `data/games/*blades-in-the-dark.json` editions.  
+   **Checks:** Pinned JSON extraction and diffs of `4763dd24`, `563545e3`, and `8e9a2ce9`.  
    **Observed:**
-   - **“deathlands”** remains in `backend-zero/server/_prior-stalled/game_data.0:135` and `backend-zero/server/src/game_settings_compat.0:318`. The register acknowledges this Survivor text only in game JSON, not these two source copies.
-   - **“Doskvol”** remains in the stylesheet comment at `frontend/src/styles/components.css:1743`, also captured in `tasks/metrics/frontend/CREW-CLAIMS-MAP-01-red.log:1715`.
-   - Additional unenumerated historical text surfaces contain names such as **Whitecrown, Brightstone, Charterhall, Ironhook, Doskvol, Tycherosi** and **Leaky Bucket**:
-     - `tasks/metrics/contract/CREW-WORLD-01-sol-6.1-verdict.txt`
-     - `tasks/metrics/frontend/CREW-WORLD-03-red.log`
-     - `tasks/metrics/frontend/CREW-WORLD-03.json`
-     - `tasks/metrics/frontend/CREW-WORLD-03-sol-6.1-verdict.txt`
-     - `tasks/metrics/frontend/CREW-WORLD-03-sol-6.1-proof.jsonl`
-     - `tasks/metrics/frontend/SETTING-PULL-01-red.log`
-     - `tasks/metrics/frontend/SETTING-PULL-01-sol-6.1-verdict.txt`
-   - Row 75 describes Rolodex entries containing “district and NPC names”. English and French Rolodex groups are unchanged from `dc73c0d9`; Russian changes only Darmot’s designation. **Brightstone, Charterhall and Whitecrown were not in those baseline Rolodex groups.** This is stale inventory prose, not evidence of an undocumented Rolodex removal.
+   - World data: **48 factions → 0; 12 districts → 0; 27 locations → 0; four groups → 0**.
+   - Heritage arrays: **six → zero in each edition**.
+   - Demo heritage name and description are blank.
+   - Follow-ups remove the targeted vice/background place and business names, Dunridge variants, crew-description Doskvol mentions, and Russian Ghost Voice mention.
+   - Russian Darmot changes from `Дармот, Синий Мундир` to `Дармот, стражник`.
 
-   These are inventory/documentation findings, not a demand to delete retained rules text or historical records.
+   Counts: `/tmp/sol-review/setting-pull-r4-data-counts.json`.
 
-## Content removal verified
+4. **Remaining setting names match the register’s declared categories.**  
+   **Check:** Searched a pinned export, excluding `blades-in-the-sheets/` and `campaign-data/`, and inspected the multilingual vice/background strings.
 
-Immutable comparisons confirmed:
+   - **Game data:** Rolodex/purveyor NPCs such as Mother Narya, Spogg, Darmot, Jeren, Scurlock and Lady Dusk; `bluecoat` / `Синих Мундиров`; **Bluecoat Intimidation**, **Bluecoat Confederates**, **Deathlands**, and **Sister Thorn**, including translated equivalents.
+   - **Fixtures/tests:** The Dagger Isles, Akoros/Akorosi, Iruvian, Skovlan, Tycherosi, The Crows, The Lampblacks, The Red Sashes, Ironhook Prison, Brightstone, Charterhall, Six Towers, and House of the Weeping Lady.
+   - **Design/sample surfaces:** Doskvol in `frontend/src/pages/styleguide.ts`; Skovlan, Crow’s Foot, The Silver Stag and Bluecoat references under `docs/public/mockups/game-mode/`.
+   - **Source/comments:** Deathlands text in the two documented Zig source copies; Doskvol in the stylesheet comment and retained world-reference code/licence copy.
+   - **Documentation/history:** The register’s district/location table, provenance documents, task cards, historical logs and evidence retain the documented names.
 
-| Content | Before pull | `4763dd24` | Reviewed head |
-|---|---:|---:|---:|
-| Stock factions | 48 | 0 | 0 |
-| Districts / named locations | 12 / 27 | 0 / 0 | 0 / 0 |
-| Stock groups | 4 | 0 | 0 |
-| Heritages, each of three editions | 6 | 0 | 0 |
+   NPC names followed by generic occupations—such as “Traven, smoke shop”—are consistent with the explicit NPC exception; they are not established business-name-removal failures. Complete retained game strings: `/tmp/sol-review/setting-pull-r4-retained-game-strings.json`.
 
-Generic holds remain. Demo heritage name and description are blank. The follow-ups remove the targeted vice/background place and business names, Dunridge variants, crew-description Doskvol mentions and Russian Ghost Voice mention.
+5. **Chromium: all nine combinations pass and agree with committed numeric evidence.**  
+   **Probe:** `/tmp/sol-review/brief-setting-pull-probe.mjs`.  
+   **Command:** Ran the exact requested guarded managed-browser command; **exit 0**.
 
-Retained names match the register’s declared categories, except the additional surfaces above: Rolodex/purveyor NPCs including **Mother Narya, Spogg, Darmot, Jeren, Bazso Baz and Scurlock**; **bluecoat / Синих Мундиров**; **Bluecoat Intimidation**, **Bluecoat Confederates**, **Deathlands** and **Sister Thorn**; fixture names including **The Dagger Isles, Akoros/Akorosi, Iruvian, Skovlan, Tycherosi, The Crows, The Red Sashes, Ironhook Prison, Brightstone, Charterhall, Six Towers** and **House of the Weeping Lady**; styleguide **Doskvol** and mockup names including **Skovlan, The Silver Stag** and **Crow’s Foot**.
+   In every combination, exercised heritage text entry and save/reload; added and reloaded **Review Guild**, tier **2**, status **1**; confirmed no heritage select, stock-faction picker, or districts disclosure.
 
-Complete retained game strings: `/tmp/sol-review/setting-pull-r3-content.json`.
+   | Viewport | Theme | `scrollWidth - innerWidth` | Console errors |
+   |---|---|---:|---|
+   | 1440×1000 | Light | 0 | None |
+   | 1440×1000 | Dark | 0 | None |
+   | 1440×1000 | High contrast | 0 | None |
+   | 768×1024 | Light | 0 | None |
+   | 768×1024 | Dark | 0 | None |
+   | 768×1024 | High contrast | 0 | None |
+   | 390×844 | Light | 0 | None |
+   | 390×844 | Dark | 0 | None |
+   | 390×844 | High contrast | 0 | None |
 
-## Independent Chromium exercise
+   Overflow was **0 at all six measured stages per combination**; page errors were also empty. Stock-control counts and overflow match `docs/public/evidence/setting-pull-01/pull-3x3.json`. Inspected all nine form/editor captures. The served frontend is byte-identical to a scratch rebuild.
 
-Ran the requested command from the **pinned scratch repository root**, using `/tmp/sol-review/brief-setting-pull-probe.mjs`.
+   Results and screenshots: `/tmp/sol-review/setting-pull-r4-browser/`.
 
-Each combination successfully saved/reloaded free-text heritage without a stock select, added/reloaded **Review Guild, tier 2, status 1**, and omitted stock-faction controls and districts.
-
-| Viewport | Theme | `scrollWidth - innerWidth`¹ | Console errors | Result |
-|---|---|---:|---:|---|
-| 1440×1000 | Light | 0 | 0 | PASS |
-| 1440×1000 | Dark | 0 | 0 | PASS |
-| 1440×1000 | High contrast | 0 | 0 | PASS |
-| 768×1024 | Light | 0 | 0 | PASS |
-| 768×1024 | Dark | 0 | 0 | PASS |
-| 768×1024 | High contrast | 0 | 0 | PASS |
-| 390×844 | Light | 0 | 0 | PASS |
-| 390×844 | Dark | 0 | 0 | PASS |
-| 390×844 | High contrast | 0 | 0 | PASS |
-
-¹ Zero at all six measured stages per combination. Page errors were also zero. All nine initial crew measurements match `docs/public/evidence/setting-pull-01/pull-3x3.json`.
-
-Evidence: `/tmp/sol-review/setting-pull-r3-browser/results.json`, with screenshots alongside it.
-
-## Restore differences
-
-Preserved the existing `/tmp/scratch-setting-pull`; used `/tmp/scratch-setting-pull-20261025072554008298`. After selecting the final revert and retaining the five documented conflict paths, the final tree was `00f8a3f750e96279dbe7d1886c3a5b6d10d09f68`.
-
-Against **both `dc73c0d9` and `f0c1022a`**, the requested comparison scope has exactly these six differences:
-
-| Path | Difference | Documented? |
-|---|---|---|
-| `data/games/crew-settings-schema.json` | Retained cohort-catalog schema fix | Yes |
-| `conformance/suites/semantics/crew-settings-schema.test.ts` | Retained shipped-data schema validation | Yes |
-| `frontend/src/pages/crew-detail.ts` | Retained capability-revision binding | Yes |
-| `frontend/src/pages/crew-sections/trackers.ts` | Retained `projectionFor` helper | Yes |
-| `frontend/src/pages/crew-sections/trackers.test.ts` | Retained projection-validity cases | Yes |
-| `docs/pages/contract/setting-content-register.mdx` | Reviewed-head register deliberately retained | Yes |
-
-The schema file, schema test and two tracker files were **not touched by the three reversed commits**. Every other requested-scope path—including pulled game data, world data, restored stock controls/tests, char02 checkpoint and `README.md`—matches baseline exactly. **No undocumented scoped data/code delta.**
-
-Seven additional differences exist outside that scope:
-- Explicitly retained: `tasks/SETTING-PULL-01.md` and the three current `tasks/metrics/frontend/{CREW-COHORTS-01,CREW-REVIEW-01,SETTING-PULL-01}-sol-6.1-verdict.txt` records.
-- Not enumerated by the restore documentation: `tasks/CREW-COHORTS-01.md`, `tasks/metrics/frontend/CREW-COHORTS-01-sol-6.1-verdict-bcba18d7.txt`, and `tasks/metrics/frontend/TOUCH-SCROLL-01-sol-6.1-verdict.txt`. These are retained historical task/review changes, untouched by the three reversed commits.
-
-The documented collateral crew-fix rollback occurred; those fixes were not reapplied during this scratch exercise.
-
-## Refs and scope
-
-Live `git ls-remote origin refs/heads/main refs/heads/setting-content` confirmed:
-
-- `main` → `ed383b219b0f223160d4f6b8050516167d8967f6`
-- `setting-content` → `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`
-
-Local and origin-tracking bookmarks agree. Build, browser and restore work ran in scratch clones. No full test suite was run.
+6. **Revision/bookmark identities confirmed, including live origin.**  
+   **Command:** `git ls-remote origin refs/heads/main refs/heads/setting-content`.  
+   **Observed:**
+   ```text
+   main             201b763700e14d8a6c60c76aa334abcd4b9e2774
+   setting-content  dc73c0d9ce40a32a920d6f9c89834ebb773ef326
+   ```
+   No real-repository files edited, no full test suite run, and no publication performed. The blocking finding is the incomplete restore procedure, not the content withdrawal or browser behavior.
