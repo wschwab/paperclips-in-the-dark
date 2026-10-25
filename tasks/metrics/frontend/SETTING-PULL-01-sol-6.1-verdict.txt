@@ -1,74 +1,96 @@
 VERDICT: FAIL
 
-1. **The documented two-commit restore does not work at the reviewed head.**  
-   **Paths/claim:** `docs/pages/contract/setting-content-register.mdx:47–55` says to reverse the pull and its follow-up, resolve **one card conflict**, and obtain byte-identical data/frontend/conformance scopes. `tasks/SETTING-PULL-01.md:20` points to that procedure.
+1. **The documented restore procedure leaves two undocumented conflicts at `b8e311f8b7c6`.**  
+   **Claim checked:** `docs/pages/contract/setting-content-register.mdx:53–55` says the three-commit reversal, keeping the current card, leaves the requested scopes identical to `setting-content`; its cited verification is explicitly at the older head `8e9a2ce9`.
 
-   **Command, executed only in `/tmp/scratch-setting-pull`:**
-   ```sh
-   jj revert -r '4763dd24 | 563545e3' --onto @
+   Executed in a fresh scratch clone:
+   ```text
+   jj revert -r '4763dd24 | 563545e3 | 8e9a2ce9' --onto @
    ```
+   Then inspected the final reversal and kept `tasks/SETTING-PULL-01.md` from the reviewed head.
 
-   **Observed:** **9 conflicted paths**, not one. Keeping the current card resolves only that card conflict. Comparison against `dc73c0d9` still reports these **10 differing paths** in the requested scopes:
+   **Observed:** three initial conflicts, not one. Keeping the card leaves:
+   - `docs/pages/contract/setting-content-register.mdx`: two-sided conflict.
+   - `tasks/metrics/frontend/SETTING-PULL-01-sol-6.1-verdict.txt`: two-sided modify/delete conflict.
 
-   | Path | Observed difference |
+   Complete comparison against `dc73c0d9`:
+   | Requested scope | Observed difference |
    |---|---|
-   | `data/games/blades-in-the-dark-crews.json` | Hawkers, Shadows and Smugglers descriptions retain the substitutions removing “Doskvol”. |
-   | `data/games/blades-in-the-dark.json` | Two vice-source conflicts involving the later Dunridge removal. |
-   | `data/games/français-blades-in-the-dark.json` | Two corresponding vice-source conflicts. |
-   | `data/games/rus-blades-in-the-dark.json` | Two corresponding vice-source conflicts; Ghost Voice also retains its later Doskvol-removal change. |
-   | `docs/pages/contract/setting-content-register.mdx` | Conflict in the pull/restore documentation. |
-   | `frontend/src/data/setting-pull.test.ts` | Add/delete conflict; the later removed-name assertion prevents clean deletion. |
-   | `frontend/src/pages/crew-detail.test.ts` | Added reputation options and a conflict containing draft-preservation tests. |
-   | `frontend/src/pages/crew-detail.ts` | Three conflicts around draft state; the reputation-reset callback also remains. |
-   | `frontend/src/pages/crew-sections/profile.ts` | Reputation-draft selection and change handler remain. |
-   | `frontend/src/pages/setting-pull.test.ts` | Add/delete conflict involving the later `reputationDraft` fixture change. |
+   | `data/` | None; exact match |
+   | `frontend/` | None; exact match |
+   | `conformance/` | None; exact match |
+   | `README.md` | None; exact match |
+   | `docs/pages/contract/setting-content-register.mdx` | One unresolved conflict hunk containing the withdrawal/restore/remaining-content section |
 
-   **Two paths were touched by neither named reversal target:** `data/games/blades-in-the-dark-crews.json` and `frontend/src/pages/crew-sections/profile.ts`. Both changed in **`8e9a2ce9`**, the second follow-up omitted from the documented pair.
+   **No requested-scope differences occur in files untouched by the three reverted commits.** The unrelated crew fixes are rolled back as the register warns; they were not reapplied before the baseline comparison.
 
-   `README.md`, `conformance/`, and every other file in the requested comparison scopes match the baseline after this two-commit reversal. Full residual diff: `/tmp/sol-review/brief-setting-pull-restore-two.diff`.
+   Evidence: `/tmp/sol-review/brief-setting-pull-restore.json` and the complete `/tmp/sol-review/brief-setting-pull-restore.diff`. The specified `/tmp/scratch-setting-pull` already existed, so it was preserved; the fresh clone is `/tmp/sol-review/scratch-setting-pull-b8e311f8`.
 
-2. **The register’s “remaining” list is incomplete.**  
-   **Paths/claim:** `docs/pages/contract/setting-content-register.mdx:59–66` inventories retained setting names.
+2. **The register’s “remaining” inventory still omits shipped setting references.**  
+   **Claim checked:** `docs/pages/contract/setting-content-register.mdx:59–68` lists retained game-data names as NPC/purveyor names and Rolodex watch designations.
 
-   **Observed by source search and image inspection, outside the two excluded directories:**
-   - `docs/pages/contract/c3-crew-contacts-factions.mdx:71`: **The Crows**.
-   - `docs/pages/contract/wave0/validator-spike.mdx:1571,1785,1871`: **Iruvian**, **Nightmarket**, **The Bluecoats**.
-   - `tasks/metrics/ada/LOAD-CREATE-01-{decoder-probe,live-responses}.log`: historical **Akoros** and **Duskwall** responses.
-   - `docs/public/evidence/crew-world-03/390-light-disclosure.png`: retained district/location names, including **Whitecrown, Doskvol Academy, Brightstone, Silver Stag, Ironhook Prison**.
-   - `data/games/blades-in-the-dark.json:351,542` and its French edition: **bluecoat** designations remain in Darmot/Jeren entries. Russian `rus-blades-in-the-dark.json:545` still contains **Синих Мундиров** in Jeren’s entry, although Darmot’s designation was changed.
+   **Observed by inspecting game data:**
+   - `data/games/blades-in-the-dark-crews.json:665,692`: Bravos claims **“Bluecoat Intimidation”** and **“Bluecoat Confederates”**. These are not Rolodex entries.
+   - The same file, `:1064,2162`: Cultists and Smugglers Ancient Gate descriptions retain **“Safe passage in the Deathlands”**.
+   - `data/games/blades-in-the-dark.json:129`: Survivor retains **“the poisonous miasma of the deathlands”**.
+   - The English vice source at `:776` retains **“Sister Thorn, deathlands scavenger gang.”** Russian equivalents remain at `rus-blades-in-the-dark.json:131,775`.
 
-   The card explicitly acknowledges the first three locations at `tasks/SETTING-PULL-01.md:51`; the register’s remaining list does not. Historical screenshots are documented elsewhere in the register, but absent from that list. NPC names match the retained-NPC category; the retained Bluecoat faction designations are not explicitly distinguished from NPC names.
+   These retained locations/terms are not identified in the register’s remaining list. This is an inventory gap, not a claim that every retained rules term necessarily requires removal. Exact retained NPC/purveyor values and the four crew claim records are captured in `/tmp/sol-review/brief-setting-pull-content.json`.
 
-### Verified checks
+3. **Other remaining names mostly match the declared categories, but historical coverage is incomplete.**  
+   **Probe step:** canonical-name searches outside `blades-in-the-sheets/` and `campaign-data/`.
 
-- **Pinned content removal:** `4763dd24` changes the world catalog from **48 factions / 12 districts / 4 groups → 0 / 0 / 0**. All three named game editions change **6 heritages → 0**. Those counts remain zero at `8e9a2ce9`. Demo heritage name and description are blank. Reviewed vice/background values retain NPCs and generic descriptions, without the withdrawn place/business names. Doskvol/Dunridge removals described by the latest card are present.
+   **Matches the register:**
+   - Rolodex/purveyor NPCs, including Mother Narya, Spogg, Darmot, Jeren, Bazso Baz and Scurlock; English/French `bluecoat` and Russian `Синих Мундиров`.
+   - Test/seed names including The Dagger Isles, Akoros/Akorosi, Iruvian, Skovlan, Tycherosi, The Crows, The Red Sashes, Ironhook Prison, Charterhall, Brightstone, Six Towers, House of the Weeping Lady and Leaky Bucket.
+   - `frontend/src/pages/styleguide.ts`: Doskvol.
+   - `docs/public/mockups/game-mode/`: Skovlan, The Silver Stag, Crow’s Foot, Bluecoat and gondoliers.
+   - Provenance/register/backlog/task documentation and the named historical Ada responses.
 
-- **Other retained names match the register’s categories:** Rolodex/purveyor NPCs such as **Mother Narya, Spogg, Bazso Baz, Scurlock, Setarra**; fixture/mock names including **The Dagger Isles, Iruvian, The Crows, The Red Sashes, Ironhook Prison**; styleguide **Doskvol**; game-mode mockup **Skovlan, The Silver Stag, Crow’s Foot**; and provenance/licence documentation.
+   **Additional historical surfaces not enumerated by the list:**
+   - `tasks/metrics/frontend/CREW-REP-TURF-01-focused.log:199` retains the **complete 48-faction, 12-district, 27-location DOM transcript**, not merely isolated names.
+   - `tasks/metrics/frontend/CREW-WORLD-03-chromium.log` and `CREW-WORLD-03-chromium-managed.log` retain district-name records.
+   - `tasks/metrics/frontend/CHAR-02.json:24` retains Iruvia.
 
-- **Chromium: 9/9 passed**, using the exact requested launcher command and `/tmp/sol-review/brief-setting-pull-probe.mjs`.
+4. **The principal withdrawal itself is verified.**  
+   **Claim checked:** `tasks/SETTING-PULL-01.md:9–16` and the register’s withdrawn-content table.
 
-  | Viewport | Theme | `scrollWidth - innerWidth` | Console errors |
-  |---|---|---:|---:|
-  | 1440×1000 | Light | 0 | 0 |
-  | 1440×1000 | Dark | 0 | 0 |
-  | 1440×1000 | High contrast | 0 | 0 |
-  | 768×1024 | Light | 0 | 0 |
-  | 768×1024 | Dark | 0 | 0 |
-  | 768×1024 | High contrast | 0 | 0 |
-  | 390×844 | Light | 0 | 0 |
-  | 390×844 | Dark | 0 | 0 |
-  | 390×844 | High contrast | 0 | 0 |
+   **Observed through immutable-revision comparisons:**
+   - `data/world/doskvol.json`: baseline **48 factions, 12 districts, 27 locations, four groups**; `4763dd24` and the reviewed head have empty `factions`, `districts` and `groups`. Generic holds remain.
+   - All three character game files: **six heritages before the pull → zero at `4763dd24` → zero at the reviewed head**.
+   - `data/games/demo-character.json`: heritage name and description are blank.
+   - Vice/background cleanup and the subsequent Doskvol/Dunridge removals are present. Hawkers, Shadows and Smugglers descriptions use generic city wording; Russian Ghost Voice no longer names Doskvol.
+   - Russian Darmot is `Дармот, стражник`; the other retained Rolodex watch references are explicitly acknowledged by the register.
 
-  Every combination exercised **free-text heritage save/reload**, **manual faction addition with persisted tier/status**, and **absence of stock heritage select, stock faction picker and districts disclosure**. Overflow was also zero in the heritage editor and after both saved states; page errors were zero. All comparable measurements match `docs/public/evidence/setting-pull-01/pull-3x3.json`. Results: `/tmp/sol-review/brief-setting-pull-probe-results.json`.
+5. **Independent Chromium exercise passed all nine combinations.**  
+   **Claim checked:** `tasks/SETTING-PULL-01.md:36` and `docs/public/evidence/setting-pull-01/pull-3x3.json`.
 
-- **Complete restore is possible:** separately reversing **all three** commits—
-  ```sh
-  jj revert -r '4763dd24 | 563545e3 | 8e9a2ce9' --onto 8e9a2ce9
-  ```
-  —produced only the documented card conflict. After keeping the current card, **zero differences** remained against `dc73c0d9` across **`data/`, `frontend/`, `conformance/`, `README.md`, and the register**. `/tmp/sol-review/brief-setting-pull-restore-three.diff` is **0 bytes**. The documented collateral crew-fix rollback warning still applies.
+   Wrote `/tmp/sol-review/brief-setting-pull-probe.mjs` and ran the exact requested guard/managed-launcher command from the repository root. **Exit 0.**
 
-- **Remote refs confirmed with `git ls-remote --heads origin main setting-content`:**
-  - `setting-content` = `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`
-  - `origin` main = `8e9a2ce91a857abb8a0b173a75542e7ecb6a0c1d`
+   | Viewport | Theme | `scrollWidth − innerWidth`¹ | Console errors | Page errors |
+   |---|---|---:|---:|---:|
+   | 1440×1000 | Light | 0 | 0 | 0 |
+   | 1440×1000 | Dark | 0 | 0 | 0 |
+   | 1440×1000 | High contrast | 0 | 0 | 0 |
+   | 768×1024 | Light | 0 | 0 | 0 |
+   | 768×1024 | Dark | 0 | 0 | 0 |
+   | 768×1024 | High contrast | 0 | 0 | 0 |
+   | 390×844 | Light | 0 | 0 | 0 |
+   | 390×844 | Dark | 0 | 0 | 0 |
+   | 390×844 | High contrast | 0 | 0 | 0 |
 
-No files were edited in the real repository. No full test suite was run.
+   ¹ Zero during heritage editing, after heritage reload, during faction editing and after faction reload.
+
+   Every combination confirmed a text heritage editor with **zero heritage selects**, successful heritage save/reload, manual faction addition with **tier 2/status 1 surviving reload**, zero stock-faction controls and zero district disclosures. Theme state was applied through the real controls. All comparable committed-evidence fields matched. Screenshots were captured and inspected.
+
+   Evidence: `/tmp/sol-review/brief-setting-pull-results.json`; screenshots under `/tmp/sol-review/setting-pull-b8e311f8-browser/`.
+
+6. **Revision and bookmark checks passed.**  
+   **Command:** `git ls-remote origin refs/heads/main refs/heads/setting-content`.
+
+   **Observed:**
+   ```text
+   main             b8e311f8b7c60d5bd2cc090fc3807b4a38a23e0a
+   setting-content  dc73c0d9ce40a32a920d6f9c89834ebb773ef326
+   ```
+   Source paths used for the review matched the immutable revision. No real-repository files were edited; no full test suite was run.

@@ -5,6 +5,12 @@ import { extractCrewClaims } from "../crew-domain.js";
 import { Hold } from "../../schema/common.js";
 import { formatTier } from "../crew-domain.js";
 import type { RenderState } from "../crew-detail.js";
+import type { CrewCapabilities } from "../../api/client.js";
+
+/** A projection is only valid for the crew revision it was fetched for; a newer crew makes it stale (CREW-REVIEW-01). */
+export function projectionFor(caps: CrewCapabilities | null, capsRevision: number | null, revision: number): CrewCapabilities | null {
+  return caps && capsRevision === revision ? caps : null;
+}
 
 /** Prefer the server projection; the read-only fallback also honors sparse claim-effect overrides. */
 export function crewRepTurf(state: Pick<RenderState, "c" | "crewCaps" | "crewTypeData" | "crewTypesData">): { effectiveTurf: number; repThreshold: number } {

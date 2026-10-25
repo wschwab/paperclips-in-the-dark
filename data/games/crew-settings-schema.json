@@ -244,6 +244,15 @@
 				"SpecialAbilities",
 				"Upgrades"
 			]
+		},
+		"CohortTrait": {
+			"type": "object",
+			"properties": {
+				"Name": { "type": "string" },
+				"Description": { "type": "string" }
+			},
+			"additionalProperties": false,
+			"required": ["Name", "Description"]
 		}
 	},
 	"type": "object",
@@ -259,6 +268,25 @@
 			"items": {
 				"$ref": "#/definitions/CrewTypeSetting"
 			}
+		},
+		"CohortSource": {
+			"type": "string"
+		},
+		"CohortGangTypes": {
+			"type": "array",
+			"items": { "type": "string" }
+		},
+		"CohortExpertTypes": {
+			"type": "array",
+			"items": { "type": "string" }
+		},
+		"CohortEdges": {
+			"type": "array",
+			"items": { "$ref": "#/definitions/CohortTrait" }
+		},
+		"CohortFlaws": {
+			"type": "array",
+			"items": { "$ref": "#/definitions/CohortTrait" }
 		}
 	},
 	"additionalProperties": false,

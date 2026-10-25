@@ -1,30 +1,49 @@
 VERDICT: FAIL
 
-### 1. [P2] Opening the claim editor discards an unsaved reputation selection
-**File:** `frontend/src/pages/crew-sections/profile.ts:98–99`
+Reviewed revision `b8e311f8b7c60d5bd2cc090fc3807b4a38a23e0a`.
 
-**Reproduction:**
-1. Save the crew’s reputation as **Ambitious**.
-2. Select **Brutal** in the Reputation dropdown without pressing **Set**.
-3. Click **Edit claim**.
+## Finding: stale capability projection permits premature Develop
 
-**Observed:** The dropdown immediately resets to **Ambitious**, losing the pending selection. API state remains `reputation: "Ambitious"` at revision `35` before and after opening the chooser; no write occurred. Reproduced in **all nine viewport/theme combinations**.
+**Location:** `frontend/src/pages/crew-detail.ts:853`, with stale projection reuse at `frontend/src/pages/crew-sections/trackers.ts:10–11`.
 
-The dropdown is reconstructed from `c.reputation` on every render and has no state-backed draft.
+Mutation and undo success paths adopt the updated crew and re-enable controls before the capability refresh finishes (`crew-detail.ts:449–469`, `591–603`). Develop then validates against the previous projection.
 
-### Verification
-Reviewed application source at immutable revision `563545e340b5a2f3d055f7e2a727bcdf75b9121e`.
+**Reproduction**
+1. Create an Assassins crew with weak hold, 10 Rep, no manual Turf, and both Turf claims acquired: effective Turf 2, Develop threshold 10.
+2. Undo the second Turf acquisition, delaying the resulting `/capabilities` response.
+3. Before that response completes, click **Develop**.
 
-The specified guarded managed-Chromium command completed **nine sessions, 40 recorded checkpoints each**:
-- 1440×1000, 768×1024, 390×844 × light, dark, high contrast.
-- Horizontal overflow: **0px at every checkpoint**.
-- Console errors: **0**; uncaught page errors: **0**.
-- No other assertion failures in the exercised sequence: claim editing and confirmations, Rep/Turf undo and capability refresh, cohort gates and drafts, manual factions, and crew XP agreed with stored state.
-- Turf undo restored displayed/API Turf **2 → 1**, Rep **10/10 → 10/11**, and disabled Develop.
+**Observed**
+- Stored crew owns only one Turf claim; the API reports effective Turf **1**, threshold **11**.
+- UI still displays Turf **2**, threshold **10**, with Develop enabled.
+- Clicking Develop sends `hold.set` and `rep.add`; persisted state becomes **strong hold, Rep 0**, despite insufficient Rep.
+- Also reproduced after relinquishing a Turf claim and removing manual Turf. All three reproductions had **0px document overflow and 0 console errors**.
 
-**Artifacts:**
-- Probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
-- Per-step displayed/API state and errors: `/tmp/sol-review/brief-crew-review-evidence.json`
-- Failure screenshot: `/tmp/sol-review/390-light-reputation-draft-lost.png`
+Invalidate or revision-bind `crewCaps` when adopting updated crew state; the Develop guard must not consume an older projection.
 
-No repository files edited. Full test suite not run.
+## Nine-session results
+
+Each session completed 27 recorded checkpoints. Four captured the old Rep/Turf projection after acquisition, manual Turf addition, manual Turf undo, and Turf-claim undo; later checkpoints converged.
+
+| Viewport | Theme | Displayed/stored matching checkpoints | Max overflow | Console errors |
+|---|---|---:|---:|---:|
+| 1440×1000 | Light | 23/27 | 0px | 0 |
+| 1440×1000 | Dark | 23/27 | 0px | 0 |
+| 1440×1000 | High contrast | 23/27 | 0px | 0 |
+| 768×1024 | Light | 23/27 | 0px | 0 |
+| 768×1024 | Dark | 23/27 | 0px | 0 |
+| 768×1024 | High contrast | 23/27 | 0px | 0 |
+| 390×844 | Light | 23/27 | 0px | 0 |
+| 390×844 | Dark | 23/27 | 0px | 0 |
+| 390×844 | High contrast | 23/27 | 0px | 0 |
+
+No other checked discrepancies: out-of-sequence editing and confirmation, claims-map containment, cohort add/edit equal-count gates, draft retention, manual factions, hidden stock/district controls, and Resolution’s four XP triggers and stored XP.
+
+## Evidence
+
+- Required probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
+- Per-step displayed/stored state, overflow, and console counts: `/tmp/sol-review/brief-crew-review-evidence/results.json`
+- Deterministic Develop reproduction: `/tmp/sol-review/brief-crew-race-probe.mjs`
+- Persisted premature-development results: `/tmp/sol-review/brief-crew-race-evidence/results.json`
+
+No repository files edited. Full test suite not run. Chromium-generated favicon requests were fulfilled with 204; application console errors were recorded without filtering.

@@ -54,7 +54,7 @@ import type { CrewField } from "./crew-domain.js";
 import { claimsGraph, effectiveClaim, extractCrewClaims } from "./crew-domain.js";
 import { renderCrewProfileSection } from "./crew-sections/profile.js";
 import { renderCrewNotesSection } from "./crew-sections/notes.js";
-import { crewRepTurf, renderCrewTrackersSection } from "./crew-sections/trackers.js";
+import { crewRepTurf, projectionFor, renderCrewTrackersSection } from "./crew-sections/trackers.js";
 import { renderCrewFundSection } from "./crew-sections/fund.js";
 import { renderCrewClaimsSection } from "./crew-sections/claims.js";
 import { renderCrewPlaybookSection } from "./crew-sections/playbook.js";
@@ -323,6 +323,8 @@ export function mountCrewDetailPage(
   let crewGameData: Record<string, unknown> | null = null;
   let manualTurfMax: number | null = null;
   let crewCaps: CrewCapabilities | null = null;
+  // The crew revision the current crewCaps was fetched for (CREW-REVIEW-01).
+  let crewCapsRevision: number | null = null;
   let factionBounds: { min: number; max: number } | null = null;
   // Unsaved note and contact text survives section re-renders (e.g. opening Edit claim).
   const noteDraft = { text: "" };
@@ -360,6 +362,7 @@ export function mountCrewDetailPage(
   let capsRefreshSeq = 0;
   const refreshCaps = () => {
     if (cancelled || !currentCrew) return;
+    const issuedRevision = currentCrew.revision;
     const seq = ++capsRefreshSeq;
     void Effect.runPromise(
       Effect.match(getCrewCapabilities(crewId), {
@@ -367,11 +370,13 @@ export function mountCrewDetailPage(
           // A failed refresh must not leave the pre-mutation projection on screen; the read-only fallback takes over.
           if (cancelled || seq !== capsRefreshSeq) return;
           crewCaps = null;
+          crewCapsRevision = null;
           renderDetail();
         },
         onSuccess: (caps) => {
           if (cancelled || seq !== capsRefreshSeq) return;
           crewCaps = caps;
+          crewCapsRevision = issuedRevision;
           renderDetail();
         },
       }),
@@ -543,7 +548,7 @@ export function mountCrewDetailPage(
       crewTypesData,
       crewGameData,
       manualTurfMax,
-      crewCaps,
+      crewCaps: projectionFor(crewCaps, crewCapsRevision, currentCrew.revision),
       editingProfile,
       claimEditor,
       advancementEdit: advancementEditMode,
@@ -850,7 +855,7 @@ export function mountCrewDetailPage(
     onDevelop: () => {
       if (!currentCrew || isDevelopLoading) return;
       const crew = currentCrew;
-      const { repThreshold: threshold } = crewRepTurf({ c: crew, crewCaps, crewTypeData, crewTypesData });
+      const { repThreshold: threshold } = crewRepTurf({ c: crew, crewCaps: projectionFor(crewCaps, crewCapsRevision, crew.revision), crewTypeData, crewTypesData });
       if (crew.rep.current < threshold) return;
 
       if (crew.hold === "weak") {
@@ -1216,6 +1221,7 @@ export function mountCrewDetailPage(
           }
           if (caps._tag === "Right") {
             crewCaps = caps.right;
+            crewCapsRevision = crew.revision;
           }
           if (crewType._tag === "Right") {
             crewTypeData = crewType.right;

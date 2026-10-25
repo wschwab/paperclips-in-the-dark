@@ -1,21 +1,31 @@
-VERDICT: PASS
+VERDICT: FAIL
 
-No findings contradicting the card at `563545e340b5`. Built and exercised an isolated export of that revision; original repository untouched.
+1. **Stale review provenance — `tasks/CREW-COHORTS-01.md:76–77`.**  
+   **Claim:** `tasks/metrics/frontend/CREW-COHORTS-01-sol-6.1-verdict.txt` remains the r12 `VERDICT: FAIL`, scoped to `00d6687b`.  
+   **Observed at `b8e311f8b7c6`:** that cited file’s lines **1–3** instead contain **`VERDICT: PASS`**, scoped to **`563545e340b5`**. The card’s description of its retained evidence is incorrect. This earlier PASS does not establish a PASS for the reviewed revision.
 
-**Chromium results:** `/tmp/sol-review/brief-cohorts-results.json`, `rows[]`. Overflow is `document.documentElement.scrollWidth - innerWidth`, checked across 20 recorded steps per combination.
+2. **Incomplete game-data schema cutover — `data/games/crew-settings-schema.json:250–264`.**  
+   **Claim under review:** the game-data integration in `tasks/CREW-COHORTS-01.md:23,28` adds five supported top-level cohort catalog keys.  
+   **Observed:** the shipped schema still admits only `Name`, `Language`, and `CrewTypes`, with `additionalProperties: false`. Ajv validation of the **pinned schema and pinned game-data bytes** returned **`valid: false`**, with **5 additional-property errors**: `CohortSource`, `CohortGangTypes`, `CohortExpertTypes`, `CohortEdges`, and `CohortFlaws`. Removing exactly those keys makes validation pass. The Ada allow-list accepts them, so browser startup succeeds despite this schema inconsistency. Evidence: `/tmp/sol-review/brief-cohorts-settings-schema.json`.
 
-1. **1440×1000, light:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-2. **1440×1000, dark:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-3. **1440×1000, high contrast:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-4. **768×1024, light:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-5. **768×1024, dark:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-6. **768×1024, high contrast:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-7. **390×844, light:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-8. **390×844, dark:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
-9. **390×844, high contrast:** overflow **0px**, console errors **0**, uncaught errors **0**, displayed/stored state **matches**.
+**Chromium flows passed in all nine combinations:**
 
-Each combination added **gang and expert cohorts through the form**, edited both, exercised unequal/equal edge–flaw gates on Add and Edit, and expanded custom edge/flaw pickers. Verified conditional fields, game-data catalogs, derived stats at Tiers **0/1/2**, names—including naming an initially unnamed cohort—multiline descriptions, harm, armor, two-trait limits, and persistence after reload. Unsaved drafts left persisted state unchanged; edit requests omitted quality/scale.
+| Viewport | Theme | Overflow¹ | Console errors | Uncaught errors | Persisted UI/storage |
+|---|---|---:|---:|---:|---|
+| 1440×1000 | Light | 0 | 0 | 0 | Match |
+| 1440×1000 | Dark | 0 | 0 | 0 | Match |
+| 1440×1000 | High contrast | 0 | 0 | 0 | Match |
+| 768×1024 | Light | 0 | 0 | 0 | Match |
+| 768×1024 | Dark | 0 | 0 | 0 | Match |
+| 768×1024 | High contrast | 0 | 0 | 0 | Match |
+| 390×844 | Light | 0 | 0 | 0 | Match |
+| 390×844 | Dark | 0 | 0 | 0 | Match |
+| 390×844 | High contrast | 0 | 0 | 0 | Match |
 
-**Cited evidence:** inspected the scripts, JSON, screenshots and Chromium log. `probe.json` supports the corrected light-theme heights **409/329/612px**; the older Chromium log retains the superseded heights acknowledged by the card. Retained form/custom-picker evidence supports the nine-combination claims; edit-gate evidence contains **9 rows, 0 failures**. Historical Ada logs and mutation totals match the card.
+¹ `document.documentElement.scrollWidth - innerWidth`, measured across **25 recorded steps per combination**.
 
-**Fresh checks:** Ada build and frontend typecheck/build passed; targeted `crew-detail.test.ts` + `crew-cohorts.test.ts` passed **115/115**. No full suite run. Required guarded launcher exited **0**. Probe retained at `/tmp/sol-review/brief-cohorts-probe.mjs`.
+Each combination added and edited both gang and expert cohorts through the UI; exercised unequal/equal trait gates on Add and Edit; expanded custom trait/type controls; and verified persistence after reload. Derived stats were exercised at Tiers **0/1/2**, including naming an initially unnamed cohort. Unsaved changes left storage unchanged; edit requests omitted quality/scale.
+
+Retained form/custom-picker measurements, refreshed **409/329/612px** geometry, edit-gate evidence, and historical Ada/mutation totals matched their stated values. The older Chromium log contains the superseded heights acknowledged by the card.
+
+Required guarded launcher exited **0**. No repository files edited; no full suite run. Probe and results: `/tmp/sol-review/brief-cohorts-probe.mjs`, `/tmp/sol-review/brief-cohorts-results.json`.
