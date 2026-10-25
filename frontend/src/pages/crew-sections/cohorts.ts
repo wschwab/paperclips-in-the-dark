@@ -145,8 +145,9 @@ function editFieldsOf(cohort: RenderState["c"]["cohorts"][number], expertTypes: 
   };
 }
 
-const EDIT_FIELD_KEYS: readonly (keyof CohortEditFields)[] = [
-  "gangType", "expertType", "expertCustom", "harm", "hasArmor", "edges", "flaws", "name", "description",
+/** Rebase units. The expert type and its custom text are one persisted value, so they move together. */
+const EDIT_FIELD_GROUPS: readonly (readonly (keyof CohortEditFields)[])[] = [
+  ["gangType"], ["expertType", "expertCustom"], ["harm"], ["hasArmor"], ["edges"], ["flaws"], ["name"], ["description"],
 ];
 
 /** The edit draft for a cohort. A refreshed cohort moves only the fields the user has not changed (still equal to the last synced server value), so a retry never sends an old value back over a concurrent change (CREW-REVIEW-01). */
@@ -156,9 +157,10 @@ function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: Render
   if (existing) {
     const current = editFieldsOf(cohort, expertTypes);
     if (JSON.stringify(current) !== JSON.stringify(existing.synced)) {
-      for (const key of EDIT_FIELD_KEYS) {
-        if (JSON.stringify(existing[key]) === JSON.stringify(existing.synced[key])) {
-          Object.assign(existing, { [key]: current[key] });
+      for (const group of EDIT_FIELD_GROUPS) {
+        const untouched = group.every((key) => JSON.stringify(existing[key]) === JSON.stringify(existing.synced[key]));
+        if (untouched) {
+          for (const key of group) Object.assign(existing, { [key]: current[key] });
         }
       }
       existing.synced = current;

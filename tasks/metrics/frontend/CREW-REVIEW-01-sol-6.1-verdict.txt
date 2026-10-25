@@ -1,56 +1,57 @@
 VERDICT: FAIL
 
-Reviewed immutable revision `fc4975855680fbc3bfc66b0e015e91c45e13b957`. Three findings reproduced in Chromium at all three viewport sizes.
+Reviewed immutable revision `a0d6bd7b6ddc`. One P2 finding, reproduced in all nine viewport/theme combinations.
 
-### 1. [P2] Cohort save retry overwrites an unrelated concurrent change
+## P2 — Stale-revision refresh silently discards a custom expert type edit
 
-**Location:** `frontend/src/pages/crew-sections/cohorts.ts:133–135,280–285`; `frontend/src/pages/crew-detail.ts:403–408,1113`.
+**Source:** `frontend/src/pages/crew-sections/cohorts.ts:159–164` (`editDraftFor`); resulting save behavior at lines `248–251` and `298–299`.
 
-**Reproduction:**
-1. Open a gang editor with Harm **healthy**; change only Description.
-2. From another client, change that cohort’s Harm to **impaired**.
-3. Save the description. The request returns `409`; the sheet refreshes.
-4. Press Save again without touching Harm.
+**Reproduction**
+1. Create an expert with type `Old specialty`.
+2. Open Edit. Change its custom type to `Local specialty` and description to `Local custom description`.
+3. From another client, change that expert’s type to `Doctor`.
+4. Save the original editor. The server returns `409 STALE_REVISION`; the sheet refreshes.
+5. Retry Save.
 
-**Observed:** After refresh, the editor still shows **healthy**, while the API stores **impaired**. The retry sends:
+**Observed:** Refresh changes the type selector from **Custom** to **Doctor**, hiding the locally edited custom text. Retry sends only:
 ```json
-{"cohortId":"…","harm":"healthy","description":"Local description only"}
+{"cohortId":"…","description":"Local custom description"}
 ```
-It succeeds and overwrites the other client’s Harm change. The retained draft is compared against the refreshed cohort rather than tracking which fields the user changed.
+The request succeeds and closes the editor. Both the displayed cohort and fetched crew retain `expertType: "Doctor"`; the user’s custom-type edit is lost.
 
-### 2. [P2] Tier changes make cohort edit values disagree with stored state
+**Cause:** `editDraftFor` rebases `expertType` and `expertCustom` independently, although together they represent one persisted field. The unchanged `Custom` selector is overwritten despite its associated text being dirty. These controls need to be rebased as one logical field.
 
-**Location:** `frontend/src/pages/crew-sections/cohorts.ts:229,317–318`; read-only display at `349–350`.
+**Evidence:** `/tmp/sol-review/crew-review-r7-cohort-evidence/results.json`, checkpoints `custom-type-local-draft`, `custom-type-after-stale-refresh`, and `custom-type-after-retry`. Screenshots and per-combination JSON are in the same directory.
 
-**Reproduction:**
-1. Use a Tier 0 crew with a gang stored at Quality 0 / Scale 0.
-2. Open the gang editor.
-3. Click **Add 1 tier**.
+## Verification
 
-**Observed:** The rerendered editor shows **Quality 1 (from Tier)** and **Scale 1 (from Tier)**, but the fetched crew still stores `quality: 0, scale: 0`. Cancel returns to a card displaying **Quality 0 / Scale 0**. Edit and read-only views disagree about the same cohort.
+The baseline cross-feature sequence passed **324 checkpoints**:
 
-### 3. [P2] Saving an unchanged untyped expert invents a type
+| Viewport | Theme | Displayed vs stored | Overflow | Console/page errors |
+|---|---|---|---:|---:|
+| 1440×1000 | Light | Match | 0 px | 0 |
+| 1440×1000 | Dark | Match | 0 px | 0 |
+| 1440×1000 | High contrast | Match | 0 px | 0 |
+| 768×1024 | Light | Match | 0 px | 0 |
+| 768×1024 | Dark | Match | 0 px | 0 |
+| 768×1024 | High contrast | Match | 0 px | 0 |
+| 390×844 | Light | Match | 0 px | 0 |
+| 390×844 | Dark | Match | 0 px | 0 |
+| 390×844 | High contrast | Match | 0 px | 0 |
 
-**Location:** `frontend/src/pages/crew-sections/cohorts.ts:137–143,224–226,275–276`.
+Exercised claim acquisition, out-of-sequence edit and confirmation, undo restoring Turf/Develop, claims-map containment, cohort add/edit gates, drafts across rerenders, manual factions, starting relationships, four reachable Resolution XP triggers, XP awards, and reload persistence.
 
-**Reproduction:**
-1. Add an expert, leaving Expert type blank, with matching edges/flaws.
-2. Confirm its card shows **(no type)**.
-3. Open Edit and Save without changing anything.
+**Round-6 cases reverified in all nine combinations:**
+- Description-only retry posts only `cohortId` and `description`; refreshed `impaired` harm is shown and preserved.
+- At Tier 1, an existing gang editor shows stored quality/scale `0/0`; Add previews `1/1`. New experts derive `2/0`.
+- Untyped experts offer **“(no type)”**. Untouched Save sends no request; description updates omit `expertType`.
 
-**Observed:** `cohort.update` posts `expertType: "Custom"`. Stored `expertType` changes from `""` to `"Custom"`, and the card changes to **Custom**. Empty type is incorrectly treated as an unknown custom type.
+Separate conflict probes recorded exactly two expected HTTP-409 console messages per combination, one per deliberately induced conflict; no other console/page errors.
 
-### Verification and evidence
+Ran the requested guarded managed-launcher command. Exit `1` reflects the finding above; all sessions completed.
 
-- Required **nine viewport/theme sessions completed**, with **36 checkpoints each—324 total**. That sequence had displayed/API agreement, **0 horizontal overflow**, and **0 console/page errors** throughout.
-- Exercised claims and out-of-sequence confirmation, Rep/Turf undo, capability refresh, cohort gates, drafts, manual factions, XP triggers, linked XP awards, and reload persistence.
-- Separate conflict scenarios intentionally generated HTTP `409` resource logs; these are distinct from the zero-error main matrix.
+- Probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
+- Baseline evidence: `/tmp/sol-review/crew-review-r7-evidence/`
+- Verdict saved and confirmed: `/tmp/sol-review/crew-review-r7-verdict.txt`
 
-Artifacts:
-- Required probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
-- Matrix records/screenshots: `/tmp/sol-review/crew-review-r6-evidence/`
-- Finding reproducer: `/tmp/sol-review/crew-review-r6-cohort-repros.mjs`
-- Finding records/screenshots: `/tmp/sol-review/crew-review-r6-cohort-evidence/`
-- Verdict: `/tmp/sol-review/crew-review-r6-verdict.txt`
-
-Pinned source and runtime built in scratch. No original repository files edited; no full test suite run.
+No repository files edited. Full test suite not run.

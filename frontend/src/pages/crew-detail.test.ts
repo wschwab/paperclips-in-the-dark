@@ -3275,6 +3275,72 @@ describe("crew-detail page", () => {
         }),
       );
     });
+
+    it("a stale refresh keeps a custom expert type edit with its custom text (CREW-REVIEW-01)", async () => {
+      const expert = cohortDTO({ cohortKind: "expert", gangType: "", expertType: "Sage", hasArmor: false });
+      const doctor = cohortDTO({ cohortKind: "expert", gangType: "", expertType: "Doctor", hasArmor: false });
+      let serverCrew = crewDTO({ cohorts: [expert] });
+      const updateResponses: unknown[] = [
+        {
+          ok: false,
+          status: 409,
+          text: async () => JSON.stringify({
+            ok: false,
+            applied: { op: "cohort.update" },
+            sideEffects: [],
+            error: {
+              code: "STALE_REVISION",
+              status: 409,
+              message: "Crew revision mismatch",
+              retryable: true,
+              recovery: "Refresh the sheet and retry.",
+              details: { currentRevision: 7 },
+            },
+          }),
+        },
+        ok(crewOpOk(crewDTO({ revision: 8, cohorts: [cohortDTO({ cohortKind: "expert", gangType: "", expertType: "Local specialty", hasArmor: false, description: "Local custom description" })] }), "cohort.update")),
+      ];
+      global.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/ops/cohort.update")) return updateResponses.shift();
+        if (url.endsWith(`/api/crews/${CREW_ID}`)) return ok(serverCrew);
+        return ok(GAME_DATA);
+      });
+
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit cohort: Sage"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit cohort: Sage"]') as HTMLButtonElement).click();
+
+      const customInput = root.querySelector('input[aria-label="Edit expert custom type"]') as HTMLInputElement;
+      customInput.value = "Local specialty";
+      customInput.dispatchEvent(new Event("input", { bubbles: true }));
+      const desc = root.querySelector('textarea[aria-label="Edit description"]') as HTMLTextAreaElement;
+      desc.value = "Local custom description";
+      desc.dispatchEvent(new Event("input", { bubbles: true }));
+
+      serverCrew = crewDTO({ revision: 7, cohorts: [doctor] });
+      (root.querySelector('button[title="Save cohort: Sage"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.textContent).toContain("Sheet refreshed because it changed elsewhere");
+      });
+      expect((root.querySelector('select[aria-label="Edit expert type"]') as HTMLSelectElement).value).toBe("Custom");
+      expect((root.querySelector('input[aria-label="Edit expert custom type"]') as HTMLInputElement).value).toBe("Local specialty");
+
+      (root.querySelector('button[title="Save cohort: Doctor"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(vi.mocked(global.fetch).mock.calls.filter((c) => String(c[0]).endsWith("/ops/cohort.update"))).toHaveLength(2);
+      });
+      const updates = vi.mocked(global.fetch).mock.calls.filter((c) => String(c[0]).endsWith("/ops/cohort.update"));
+      const lastInit = updates.at(-1)?.[1] as RequestInit | undefined;
+      expect(JSON.parse(String(lastInit?.body))).toEqual({
+        cohortId: COHORT_ID,
+        expertType: "Local specialty",
+        description: "Local custom description",
+      });
+    });
   });
 
 });
