@@ -1,57 +1,46 @@
-VERDICT: FAIL
+VERDICT: PASS
 
-Reviewed immutable revision `a0d6bd7b6ddc`. One P2 finding, reproduced in all nine viewport/theme combinations.
+Reviewed immutable revision **`e30e016f9445d8cb0f8aae2bfd74a4a33e348c15`**. No actionable findings.
 
-## P2 — Stale-revision refresh silently discards a custom expert type edit
+The required managed Chromium command exited **0**. Nine sessions completed **40 checkpoints each**, with displayed state, API-fetched crew state, capability projection, overflow, and raw console errors recorded at every checkpoint.
 
-**Source:** `frontend/src/pages/crew-sections/cohorts.ts:159–164` (`editDraftFor`); resulting save behavior at lines `248–251` and `298–299`.
+| Viewport | Theme | Displayed vs. stored | Custom-type retry | Overflow | Console errors: main / forced 409 |
+|---|---|---|---|---:|---:|
+| 1440×1000 | Light | Agree | Agree | 0px | 0 / 1 expected |
+| 1440×1000 | Dark | Agree | Agree | 0px | 0 / 1 expected |
+| 1440×1000 | High contrast | Agree | Agree | 0px | 0 / 1 expected |
+| 768×1024 | Light | Agree | Agree | 0px | 0 / 1 expected |
+| 768×1024 | Dark | Agree | Agree | 0px | 0 / 1 expected |
+| 768×1024 | High contrast | Agree | Agree | 0px | 0 / 1 expected |
+| 390×844 | Light | Agree | Agree | 0px | 0 / 1 expected |
+| 390×844 | Dark | Agree | Agree | 0px | 0 / 1 expected |
+| 390×844 | High contrast | Agree | Agree | 0px | 0 / 1 expected |
 
-**Reproduction**
-1. Create an expert with type `Old specialty`.
-2. Open Edit. Change its custom type to `Local specialty` and description to `Local custom description`.
-3. From another client, change that expert’s type to `Doctor`.
-4. Save the original editor. The server returns `409 STALE_REVISION`; the sheet refreshes.
-5. Retry Save.
+**Console qualification:** the cross-feature sequence produced zero console errors. Each deliberately induced conflict produced one native Chromium “Failed to load resource … 409” diagnostic, retained in the evidence. There were **zero unexpected console errors and zero uncaught page exceptions**.
 
-**Observed:** Refresh changes the type selector from **Custom** to **Doctor**, hiding the locally edited custom text. Retry sends only:
-```json
-{"cohortId":"…","description":"Local custom description"}
-```
-The request succeeds and closes the editor. Both the displayed cohort and fetched crew retain `expertType: "Doctor"`; the user’s custom-type edit is lost.
+### Round-7 regression: verified in all nine
 
-**Cause:** `editDraftFor` rebases `expertType` and `expertCustom` independently, although together they represent one persisted field. The unchanged `Custom` selector is overwritten despite its associated text being dirty. These controls need to be rebased as one logical field.
+Source: `frontend/src/pages/crew-sections/cohorts.ts:148–167,298–315`.
 
-**Evidence:** `/tmp/sol-review/crew-review-r7-cohort-evidence/results.json`, checkpoints `custom-type-local-draft`, `custom-type-after-stale-refresh`, and `custom-type-after-retry`. Screenshots and per-combination JSON are in the same directory.
+1. Edited an expert with a stored custom type; changed only its custom text to `Local specialty`.
+2. A second client changed the stored type to `Doctor`.
+3. The stale save returned **409 STALE_REVISION**. After refresh, the editor retained **Custom** with visible text **Local specialty**, while the API stored **Doctor**. The pair also survived the notice-expiry rerender.
+4. Retry sent exactly `{cohortId, expertType: "Local specialty"}` using the refreshed revision. The displayed and stored type both became **Local specialty**.
 
-## Verification
+### Cross-feature results
 
-The baseline cross-feature sequence passed **324 checkpoints**:
+- Turf acquisition changed effective Turf **1→2** and Develop threshold **11→10**. After claim editing, out-of-sequence confirmation, and undo, display and API agreed on **Rep 10/11, Turf 1, threshold 11, Develop disabled**.
+- Cohort add/edit gates blocked unequal edges/flaws, then enabled and saved matching counts. Unsaved drafts survived unrelated mutations and undo.
+- Manual factions, starting relationships, removal, and undo matched stored state. Stock faction and district controls remained absent.
+- All four Resolution XP triggers were reachable. Awarding XP changed stored XP **1→3**, matched the crew sheet, and survived reload.
+- Claims maps fit at 1440/768; 390px panning stayed inside the map without document overflow.
 
-| Viewport | Theme | Displayed vs stored | Overflow | Console/page errors |
-|---|---|---|---:|---:|
-| 1440×1000 | Light | Match | 0 px | 0 |
-| 1440×1000 | Dark | Match | 0 px | 0 |
-| 1440×1000 | High contrast | Match | 0 px | 0 |
-| 768×1024 | Light | Match | 0 px | 0 |
-| 768×1024 | Dark | Match | 0 px | 0 |
-| 768×1024 | High contrast | Match | 0 px | 0 |
-| 390×844 | Light | Match | 0 px | 0 |
-| 390×844 | Dark | Match | 0 px | 0 |
-| 390×844 | High contrast | Match | 0 px | 0 |
+### Evidence
 
-Exercised claim acquisition, out-of-sequence edit and confirmation, undo restoring Turf/Develop, claims-map containment, cohort add/edit gates, drafts across rerenders, manual factions, starting relationships, four reachable Resolution XP triggers, XP awards, and reload persistence.
+- [Verdict]( /tmp/sol-review/crew-review-r8-verdict.txt)
+- [Probe](/tmp/sol-review/brief-crew-review-probe.mjs)
+- [Matrix summary](/tmp/sol-review/crew-review-r8-evidence/summary.json)
+- [360 checkpoint snapshots](/tmp/sol-review/crew-review-r8-evidence/results.json)
+- Screenshots and inspected contact sheets: `/tmp/sol-review/crew-review-r8-evidence/`
 
-**Round-6 cases reverified in all nine combinations:**
-- Description-only retry posts only `cohortId` and `description`; refreshed `impaired` harm is shown and preserved.
-- At Tier 1, an existing gang editor shows stored quality/scale `0/0`; Add previews `1/1`. New experts derive `2/0`.
-- Untyped experts offer **“(no type)”**. Untouched Save sends no request; description updates omit `expertType`.
-
-Separate conflict probes recorded exactly two expected HTTP-409 console messages per combination, one per deliberately induced conflict; no other console/page errors.
-
-Ran the requested guarded managed-launcher command. Exit `1` reflects the finding above; all sessions completed.
-
-- Probe: `/tmp/sol-review/brief-crew-review-probe.mjs`
-- Baseline evidence: `/tmp/sol-review/crew-review-r7-evidence/`
-- Verdict saved and confirmed: `/tmp/sol-review/crew-review-r7-verdict.txt`
-
-No repository files edited. Full test suite not run.
+No repository files edited. No full test suite run.

@@ -1,30 +1,26 @@
 VERDICT: PASS
 
-Reviewed only `a0d6bd7b6ddc`. No findings contradicting the card’s behavioral claims.
+1. **No findings contradicting the card’s behavior at `e30e016f9445`.** `tasks/CREW-COHORTS-01.md:24–29,53–56`; probe steps `gang-added`, `expert-added`, `gang-edited-and-unnamed-cohort-named`, `expert-edited`, `reload-stored-state`.
+   - Added and edited gang and expert cohorts in every configuration.
+   - Tier 2 gangs stored quality/scale **2/2**; experts stored **3/0**, without armor. Raising Tier afterward preserved existing cohorts’ stored stats.
+   - Naming an initially unnamed cohort persisted successfully.
+   - Kind-specific fields, expert Custom visibility, names, descriptions, harm and armor matched stored state.
+   - Edit requests omitted quality and scale.
 
-1. **Forms and persistence match the card.** `tasks/CREW-COHORTS-01.md:24–29,53,55–56`; probe steps `gang-added`, `expert-added`, `gang-edited`, `expert-edited`, `reload-persisted`.
-   - Added and edited gang and expert cohorts in every combination.
-   - Kind-specific fields, expert Custom visibility, game-data catalogs, names, multiline descriptions, harm and gang armor behaved as claimed.
-   - At Tiers **0/1/2**, gangs stored quality/scale **0/0, 1/1, 2/2**; experts stored **1/0, 2/0, 3/0**.
-   - Initially unnamed gangs acquired persisted names through editing.
-   - Edit requests omitted quality/scale. The editor displayed stored values and preserved deliberately different stored **7/5** values after saving.
-   - Saved cards matched both API responses and persisted `current.json` at every checkpoint.
-
-2. **Equal-count gates and Custom trait pickers work.** `frontend/src/pages/crew-sections/cohorts.ts:33–35,73–112,318–324,487–495`; probe steps `gang-add-1-0-gate`, `gang-edit-2-1-gate`, `gang-edit-balanced`.
-   - Unequal counts disabled Add/Save with the same explanation; matching counts re-enabled submission.
+2. **Equal-count gates and Custom trait pickers passed.** `frontend/src/pages/crew-sections/cohorts.ts:32–35,44–130,297–326,489–498`; probe steps `add-gate-2-1`, `edit-gate-2-1`, `edit-gang-ready`.
+   - Unequal counts disabled Add/Save with identical explanations; balancing counts re-enabled submission.
    - Custom edges/flaws persisted through add, edit and reload.
-   - Both forms capped each trait list at **two**.
-   - Expanded Custom controls caused **0px** document overflow.
+   - Two-edge cap enforced; expanded Custom controls produced **0px** document overflow.
 
-3. **Cited evidence supports the recorded values.** `docs/public/evidence/crew-cohorts-01/{probe.json,forms-3x3.json,custom-picker.json}` and `tasks/metrics/frontend/CREW-COHORTS-01-chromium.log`.
-   - Reproduced light-theme section heights **409/329/612px**, first-control offset **139px**, and initially below-fold headings.
-   - Default gang/expert forms showed **9/7 fields**, exactly one Type field, **0px Add right gap**, and picker buttons beside their selects.
-   - The original Chromium log retains **481/401/684px**—the superseded measurements explicitly acknowledged at card line **72**.
-   - Retained Ada logs record **74 files/627 tests twice** and **74/629 twice**; mutation evidence records **P0 19/19 + P1 9/9 killed**. Historical suites were inspected, not rerun.
+3. **Cited evidence supports the corrected measurements.** `docs/public/evidence/crew-cohorts-01/{probe.json,forms-3x3.json,custom-picker.json}` and cited screenshots exist at the pinned revision.
+   - Light-theme section heights reproduced: **409/329/612px**, first-control offset **139px**, headings initially below the fold.
+   - Default gang/expert forms showed **9/7 fields**, one Type field, **0px** Add right gap, and picker buttons beside their selects.
+   - `tasks/metrics/frontend/CREW-COHORTS-01-chromium.log` retains **481/401/684px**, explicitly superseded at card line **72**.
+   - Retained Ada logs confirm **74 files/627 tests twice** and **74/629 twice**. Mutation log confirms **P0 19/19 + P1 9/9 killed**. Historical suites were inspected, not rerun.
 
-4. **Independent Chromium matrix: 261 checkpoints, zero failures.**
+4. **Independent Chromium matrix: 234 checkpoints, zero failures.** Saved cards matched API state and persisted `current.json` throughout.
 
-   | Viewport | Theme | Overflow¹ | Console errors | Saved UI/storage |
+   | Viewport | Theme | Overflow¹ | Console errors | UI/storage |
    |---|---|---:|---:|---|
    | 1440×1000 | Light | 0 | 0 | Match |
    | 1440×1000 | Dark | 0 | 0 | Match |
@@ -36,9 +32,9 @@ Reviewed only `a0d6bd7b6ddc`. No findings contradicting the card’s behavioral 
    | 390×844 | Dark | 0 | 0 | Match |
    | 390×844 | High contrast | 0 | 0 | Match |
 
-   ¹ `document.documentElement.scrollWidth - innerWidth`; **0 at every checkpoint**. Uncaught page errors: **0** throughout.
+   ¹ `document.documentElement.scrollWidth - innerWidth`: **0 at every checkpoint**. Uncaught page errors: **0**.
 
-Required guarded launcher exited **0**. No repository files edited; no full test suite run.
+Required guarded launcher exited **0**. No repository files edited; no full test suite run. Working-copy-only evidence-scan conclusions were discarded and independently rechecked using pinned revision reads.
 
 Probe: `/tmp/sol-review/brief-cohorts-probe.mjs`  
-Results and screenshots: `/tmp/sol-review/brief-cohorts-r7-final/`
+Results: `/tmp/sol-review/brief-cohorts-results.json`
