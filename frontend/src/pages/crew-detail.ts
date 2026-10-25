@@ -80,9 +80,8 @@ export interface TraitPending {
   custom: string;
 }
 
-/** CREW-COHORTS drafts: the add form and each open edit form keep their values in page state, so a re-render (a rep, turf, or other change) does not reset them. */
-export interface CohortDraft {
-  kind: "gang" | "expert";
+/** The editable cohort fields, as a form holds them. */
+export interface CohortEditFields {
   gangType: string;
   expertType: string;
   expertCustom: string;
@@ -92,12 +91,21 @@ export interface CohortDraft {
   flaws: string[];
   name: string;
   description: string;
+}
+/** CREW-COHORTS drafts: the add form and each open edit form keep their values in page state, so a re-render (a rep, turf, or other change) does not reset them. */
+export interface CohortDraft extends CohortEditFields {
+  kind: "gang" | "expert";
   pending: { edge: TraitPending; flaw: TraitPending };
+}
+
+/** An open edit form: `synced` is the server state the form last followed. A refresh moves only the fields the user has not changed away from it (CREW-REVIEW-01). */
+export interface CohortEditDraft extends CohortDraft {
+  synced: CohortEditFields;
 }
 
 export interface CohortDrafts {
   add: CohortDraft;
-  edits: Map<string, CohortDraft>;
+  edits: Map<string, CohortEditDraft>;
 }
 
 export function blankCohortDraft(): CohortDraft {

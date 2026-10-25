@@ -2140,7 +2140,7 @@ describe("crew-detail page", () => {
       );
     });
 
-    it("updates harm and armor through the edit form; derived quality is shown, not posted", async () => {
+    it("updates harm and armor through the edit form; stored quality is shown, not posted", async () => {
       const updated = crewDTO({
         revision: 6,
         cohorts: [cohortDTO({ hasArmor: false, harm: "weakened" })],
@@ -2163,7 +2163,7 @@ describe("crew-detail page", () => {
       (root.querySelector('button[title="Edit cohort: Bravos"]') as HTMLButtonElement).click();
 
       expect(root.querySelector('input[aria-label="Edit quality"]')).toBeNull();
-      expect(root.textContent).toContain("Quality 1 (from Tier)");
+      expect(root.textContent).toContain("Quality 2");
       const armorInput = root.querySelector('input[aria-label="Edit armor"]') as HTMLInputElement;
       expect(armorInput.checked).toBe(true);
       armorInput.checked = false;
@@ -2308,6 +2308,79 @@ describe("crew-detail page", () => {
         },
         { timeout: 2000 },
       );
+    });
+
+    it("a retry after STALE_REVISION sends only the field the user changed (CREW-REVIEW-01)", async () => {
+      const staleResp = {
+        ok: false,
+        applied: { op: "cohort.update" },
+        sideEffects: [],
+        error: {
+          code: "STALE_REVISION",
+          status: 409,
+          message: "Crew revision mismatch",
+          retryable: true,
+          recovery: "Refresh the sheet and retry.",
+          details: { currentRevision: 7 },
+        },
+      };
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce(ok(crewDTO({ cohorts: [cohortDTO()] })))
+        .mockResolvedValueOnce({ ok: false, status: 409, text: async () => JSON.stringify(staleResp) })
+        .mockResolvedValueOnce(ok(crewDTO({ revision: 7, cohorts: [cohortDTO({ harm: "impaired" })] })))
+        .mockResolvedValueOnce(ok(cohortOpOk(crewDTO({ revision: 8, cohorts: [cohortDTO({ harm: "impaired", description: "Local only" })] }), "cohort.update")));
+
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit cohort: Bravos"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit cohort: Bravos"]') as HTMLButtonElement).click();
+      const desc = root.querySelector('textarea[aria-label="Edit description"]') as HTMLTextAreaElement;
+      desc.value = "Local only";
+      desc.dispatchEvent(new Event("input", { bubbles: true }));
+      (root.querySelector('button[title="Save cohort: Bravos"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect((root.querySelector('select[aria-label="Edit harm"]') as HTMLSelectElement).value).toBe("impaired");
+      });
+      expect((root.querySelector('textarea[aria-label="Edit description"]') as HTMLTextAreaElement).value).toBe("Local only");
+      (root.querySelector('button[title="Save cohort: Bravos"]') as HTMLButtonElement).click();
+
+      const updateCalls = () => vi.mocked(global.fetch).mock.calls.filter((c) => String(c[0]).endsWith("/ops/cohort.update"));
+      await vi.waitFor(() => {
+        expect(updateCalls()).toHaveLength(2);
+      });
+      const lastInit = updateCalls().at(-1)?.[1] as RequestInit | undefined;
+      expect(Object.keys(JSON.parse(String(lastInit?.body))).sort()).toEqual(["cohortId", "description"]);
+    });
+
+    it("the cohort editor shows stored quality and scale, not the current tier's (CREW-REVIEW-01)", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ cohorts: [cohortDTO({ quality: 2, scale: 1 })] })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit cohort: Bravos"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit cohort: Bravos"]') as HTMLButtonElement).click();
+      expect(root.querySelector(".cohort-entry.editing .cohort-quality-derived")?.textContent).toBe("Quality 2");
+      expect(root.querySelector(".cohort-entry.editing .cohort-scale-derived")?.textContent).toBe("Scale 1");
+    });
+
+    it("saving an untouched expert with no type sends no update (CREW-REVIEW-01)", async () => {
+      global.fetch = vi.fn().mockResolvedValue(ok(crewDTO({ cohorts: [cohortDTO({ cohortKind: "expert", expertType: "" })] })));
+      mountCrewDetailPage(root, CREW_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit cohort: (no type)"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit cohort: (no type)"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Save cohort: (no type)"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector(".cohort-entry.editing")).toBeNull();
+      });
+      expect(vi.mocked(global.fetch).mock.calls.some((c) => String(c[0]).endsWith("/ops/cohort.update"))).toBe(false);
     });
   });
 

@@ -17,7 +17,7 @@ Remove the stock Doskvol setting content from the head in one commit, leaving th
 
 ## Restore point
 
-Bookmark `setting-content` (both mirrors) = `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`, which holds all withdrawn data. The pull sits on `main` at `4763dd24`, followed by the SETTING-PULL-01 follow-up commit; the data and frontend files of the pull are identical to `dc73c0d9`. Restore steps, including the collateral rollback of unrelated crew fixes, are in `docs/pages/contract/setting-content-register.mdx` ("Pulled pending permission").
+Bookmark `setting-content` (both mirrors) = `dc73c0d9ce40a32a920d6f9c89834ebb773ef326`, which holds all withdrawn data. The pull sits on `main` at `4763dd24`, followed by the SETTING-PULL-01 follow-up commit. The pull's data and frontend files differ from `dc73c0d9` (`jj diff --from dc73c0d9 --to 4763dd24 --name-only data frontend` lists them), so the restore is not a file copy. The register's restore steps name the paths that conflict on reversal and the post-pull crew fixes kept on purpose, including the collateral rollback of unrelated crew fixes ("Pulled pending permission").
 
 ## Checkpoint adaptation (char02-option-editors.mjs)
 

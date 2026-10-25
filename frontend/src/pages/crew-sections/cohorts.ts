@@ -19,7 +19,7 @@ import {
   type CohortTrait,
 } from "../crew-domain.js";
 import { CohortHarm, CohortType } from "../../schema/common.js";
-import type { CohortDraft, RenderState, TraitPending } from "../crew-detail.js";
+import type { CohortEditDraft, CohortEditFields, RenderState, TraitPending } from "../crew-detail.js";
 
 /** SRD: a cohort has one or two edges and an equal number of flaws. */
 const MAX_TRAITS = 2;
@@ -129,15 +129,10 @@ function traitPicker(
   };
 }
 
-/** The edit draft for a cohort, created from the saved cohort the first time its form is shown. */
-function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: RenderState): CohortDraft {
-  const existing = state.cohortDrafts.edits.get(cohort.id);
-  if (existing) return existing;
-  const expertTypes = extractCohortExpertTypes(state.crewGameData);
-  const isCustom = cohort.expertType === "Custom" || !expertTypes.includes(cohort.expertType);
-  const draft: CohortDraft = {
-    kind: cohort.cohortKind,
-    pending: { edge: { pick: "", custom: "" }, flaw: { pick: "", custom: "" } },
+/** The editable fields a cohort's edit form holds. An expert with no type keeps "" (no Custom placeholder), so an untouched save sends nothing. */
+function editFieldsOf(cohort: RenderState["c"]["cohorts"][number], expertTypes: readonly string[]): CohortEditFields {
+  const isCustom = cohort.expertType !== "" && (cohort.expertType === "Custom" || !expertTypes.includes(cohort.expertType));
+  return {
     gangType: cohort.gangType,
     expertType: isCustom ? "Custom" : cohort.expertType,
     expertCustom: isCustom && cohort.expertType !== "Custom" ? cohort.expertType : "",
@@ -147,6 +142,34 @@ function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: Render
     flaws: [...cohort.flaws],
     name: cohort.name ?? "",
     description: cohort.description,
+  };
+}
+
+const EDIT_FIELD_KEYS: readonly (keyof CohortEditFields)[] = [
+  "gangType", "expertType", "expertCustom", "harm", "hasArmor", "edges", "flaws", "name", "description",
+];
+
+/** The edit draft for a cohort. A refreshed cohort moves only the fields the user has not changed (still equal to the last synced server value), so a retry never sends an old value back over a concurrent change (CREW-REVIEW-01). */
+function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: RenderState): CohortEditDraft {
+  const expertTypes = extractCohortExpertTypes(state.crewGameData);
+  const existing = state.cohortDrafts.edits.get(cohort.id);
+  if (existing) {
+    const current = editFieldsOf(cohort, expertTypes);
+    if (JSON.stringify(current) !== JSON.stringify(existing.synced)) {
+      for (const key of EDIT_FIELD_KEYS) {
+        if (JSON.stringify(existing[key]) === JSON.stringify(existing.synced[key])) {
+          Object.assign(existing, { [key]: current[key] });
+        }
+      }
+      existing.synced = current;
+    }
+    return existing;
+  }
+  const draft: CohortEditDraft = {
+    kind: cohort.cohortKind,
+    pending: { edge: { pick: "", custom: "" }, flaw: { pick: "", custom: "" } },
+    ...editFieldsOf(cohort, expertTypes),
+    synced: editFieldsOf(cohort, expertTypes),
   };
   state.cohortDrafts.edits.set(cohort.id, draft);
   return draft;
@@ -197,8 +220,9 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
           "aria-label": "Edit expert type",
           disabled: state.anyLoading,
         }) as HTMLSelectElement;
-        for (const value of expertOptions(expertTypes)) {
-          expertSelect.append(el("option", { value }, value) as HTMLOptionElement);
+        const expertOpts = draft.expertType === "" ? ["", ...expertOptions(expertTypes)] : expertOptions(expertTypes);
+        for (const value of expertOpts) {
+          expertSelect.append(el("option", { value }, value === "" ? "(no type)" : value) as HTMLOptionElement);
         }
         expertSelect.value = draft.expertType;
         expertSelect.addEventListener("change", () => { draft.expertType = expertSelect.value; });
@@ -226,7 +250,6 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
             ? customInput.value.trim() || "Custom"
             : expertSelect.value;
       }
-      const derived = derivedCohortStats(cohort.cohortKind, tier);
       const armorInput = el("input", {
         type: "checkbox",
         "aria-label": "Edit armor",
@@ -244,10 +267,10 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         disabled: state.anyLoading,
       }) as HTMLSelectElement;
       for (const value of CohortHarm.literals) {
-        const option = el("option", { value }, value) as HTMLOptionElement;
-        if (value === draft.harm) option.selected = true;
-        harmSelect.append(option);
+        harmSelect.append(el("option", { value }, value) as HTMLOptionElement);
       }
+      // Set via the select value after append: happy-dom does not honour option.selected set before the option is attached.
+      harmSelect.value = draft.harm;
       harmSelect.addEventListener("change", () => { draft.harm = harmSelect.value; });
       const nameInput = el("input", {
         type: "text",
@@ -314,8 +337,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         el("div", { className: "cohort-edit-fields", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
           el("label", { className: "lbl" }, `${kindLabel} type:`, typeControl),
           el("label", { className: "lbl" }, "Name:", nameInput),
-          el("span", { className: "lbl cohort-quality-derived" }, `Quality ${derived.quality} (from Tier)`),
-          isGang ? el("span", { className: "lbl cohort-scale-derived" }, `Scale ${derived.scale} (from Tier)`) : null,
+          el("span", { className: "lbl cohort-quality-derived" }, `Quality ${cohort.quality}`),
+          isGang ? el("span", { className: "lbl cohort-scale-derived" }, `Scale ${cohort.scale}`) : null,
           isGang ? el("label", { className: "lbl" }, "Armor:", armorInput) : null,
           el("label", { className: "lbl" }, "Edges:", edgesPicker.element),
           el("label", { className: "lbl" }, "Flaws:", flawsPicker.element),
