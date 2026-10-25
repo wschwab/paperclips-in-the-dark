@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "3198f56d459488bfa000266dd3936a812816ee2ad058dcabc3d7d8133bf8d172"
+        "frontend/src/api/client.ts": "57e55e47b69ffa044c50e8fbac9a3a8d20759385fd278e07cd51f56e6e9ca0fc"
       },
       "severity": "P0",
       "status": "not-run",
