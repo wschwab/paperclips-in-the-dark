@@ -165,7 +165,7 @@ function secondTypeControl(
   lists: { gang: readonly string[]; expert: readonly string[] },
   allowed: boolean,
   disabled: boolean,
-): { element: HTMLElement; read: () => string[]; setKind: (kind: "gang" | "expert") => void } {
+): { element: HTMLElement; read: () => string[] | null; setKind: (kind: "gang" | "expert") => void } {
   const select = el("select", { "aria-label": `${prefix} second type`, disabled }) as HTMLSelectElement;
   const custom = el("input", {
     type: "text",
@@ -196,8 +196,10 @@ function secondTypeControl(
   element.hidden = !allowed;
   return {
     element,
+    // null when the control is hidden (the game allows one type): the caller must not send a second type then.
     read: () => {
-      if (element.hidden || select.value === "") return [];
+      if (element.hidden) return null;
+      if (select.value === "") return [];
       return [select.value === "Custom" ? custom.value.trim() || "Custom" : select.value];
     },
     setKind: (kind) => {
@@ -388,7 +390,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         if (descInput.value !== cohort.description) fields.description = descInput.value;
         if (nameInput.value.trim() !== (cohort.name ?? "")) fields.name = nameInput.value.trim();
         const extra = secondEdit.read();
-        if (!arraysEqual(extra, [...(cohort.extraTypes ?? [])])) fields.extraTypes = extra;
+        if (extra !== null && !arraysEqual(extra, [...(cohort.extraTypes ?? [])])) fields.extraTypes = extra;
         if (Object.keys(fields).length > 0) {
           handlers.onCohortUpdate(cohort.id, fields);
         } else {

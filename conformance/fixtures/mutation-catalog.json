@@ -66,7 +66,7 @@
       "mutation": "Truncate Collect_Removal_Keys at 512 entries",
       "observableFailure": "an import/repair preview no longer discloses every data-dropping property beyond the buffer, violating no-silent-data-loss; the UNKNOWN-KEY near-limit cases assert exact disclosure at 512/513/600 keys",
       "restorationHash": {
-        "backend-ada/server/src/pitd_normalize.adb": "e136c0a9f99d4238282cb8b584f5200e743b3976e62df66ffd7203cd2eaaa000"
+        "backend-ada/server/src/pitd_normalize.adb": "7e0d97d89d8336ce091cb6206161013d8b30db35dbe4d300e6d385077b3a6585"
       },
       "severity": "P0",
       "status": "not-run",

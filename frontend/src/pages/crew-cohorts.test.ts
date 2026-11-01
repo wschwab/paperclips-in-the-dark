@@ -325,3 +325,36 @@ describe("CREW-COHORTS-03 second type in the edit form", () => {
     expect(update?.body).toMatchObject({ extraTypes: ["Smugglers"] });
   });
 });
+
+describe("CREW-COHORTS-03 hidden second type keeps the saved value", () => {
+  it("when the game data does not give CohortMaxTypes, a name-only edit does not send extraTypes", async () => {
+    const root = document.createElement("div");
+    const calls: Array<{ url: string; body: unknown }> = [];
+    global.fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/crews")) return Promise.resolve(ok({}) as Response);
+      if (init?.method === "POST") {
+        calls.push({ url, body: JSON.parse(String(init.body ?? "{}")) });
+        return Promise.resolve(ok(crewDTO({ cohorts: [cohortDTO({ extraTypes: ["Rooks"] })] })) as Response);
+      }
+      return Promise.resolve(ok(crewDTO({ cohorts: [cohortDTO({ extraTypes: ["Rooks"] })] })) as Response);
+    });
+    mountCrewDetailPage(root, CREW_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit cohort: Thugs"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Edit cohort: Thugs"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector('input[aria-label="Edit name"]')).not.toBeNull();
+    });
+    const name = root.querySelector('input[aria-label="Edit name"]') as HTMLInputElement;
+    name.value = "Renamed";
+    (root.querySelector('button[title="Save cohort: Thugs"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(calls.some((c) => c.url.includes("cohort.update"))).toBe(true);
+    });
+    const update = calls.find((c) => c.url.includes("cohort.update"));
+    expect(update?.body).toMatchObject({ name: "Renamed" });
+    expect(update?.body).not.toHaveProperty("extraTypes");
+  });
+});

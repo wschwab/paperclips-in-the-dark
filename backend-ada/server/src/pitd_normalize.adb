@@ -2978,6 +2978,51 @@ package body Pitd_Normalize is
          Check ("/turf", "TurfMax");
          --  CONTRACT-04: the crew tier ceiling is settings-derived too.
          Check ("/tier", "CrewTierMax");
+         --  CREW-COHORTS-03: a cohort's extraTypes hold at most
+         --  CohortMaxTypes - 1 entries (the first type is gangType/expertType).
+         declare
+            Extra_Max : constant Integer := Settings_Int (S, "CohortMaxTypes", 1) - 1;
+            Cohorts   : constant JSON_Value := Get_At_Pointer (Doc, "/cohorts");
+         begin
+            if Cohorts.Kind = JSON_Array_Type then
+               declare
+                  Arr : constant JSON_Array := Get (Cohorts);
+               begin
+                  for I in 1 .. Length (Arr) loop
+                     declare
+                        Item : constant JSON_Value := Get (Arr, I);
+                     begin
+                        if Item.Kind = JSON_Object_Type and then Has_Field (Item, "extraTypes") then
+                           declare
+                              Extra : constant JSON_Value := Get (Item, "extraTypes");
+                           begin
+                              if Extra.Kind = JSON_Array_Type then
+                                 declare
+                                    Extra_Arr : constant JSON_Array := Get (Extra);
+                                    Count     : constant Integer := Integer (Length (Extra_Arr));
+                                 begin
+                                    if Count > Extra_Max then
+                                       declare
+                                          X : JSON_Value := Create_Object;
+                                       begin
+                                          Set_Field (X, "pointer", "/cohorts/" & Trim_Image (I - 1) & "/extraTypes");
+                                          Set_Field (X, "reason",
+                                                     "value " & Trim_Image (Count)
+                                                     & " exceeds the settings-derived maximum " & Trim_Image (Extra_Max));
+                                          Set_Field (X, "expected",
+                                                     "an array of at most " & Trim_Image (Extra_Max) & " item(s)");
+                                          Append (Out_A, X);
+                                       end;
+                                    end if;
+                                 end;
+                              end if;
+                           end;
+                        end if;
+                     end;
+                  end loop;
+               end;
+            end if;
+         end;
       end if;
       return Out_A;
    end Settings_Maxima_Issues;

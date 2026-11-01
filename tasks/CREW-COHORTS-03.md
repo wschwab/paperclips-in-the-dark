@@ -56,3 +56,22 @@ Shipped behavior:
 - `cohort.update` copies `extraTypes` even when the cohort had none before, so an update that sets only the second type keeps the first.
 - Normalize keeps `extraTypes` on load.
 - The frontend shows a "Second type" select on both add and edit forms when `CohortMaxTypes >= 2`, with Custom support. Cards show the second type after the first; button titles keep the primary type.
+
+## Review round 1 (Sol 6.1 xhigh, pinned head f2bb33c2): FAIL, fixed
+
+Findings and fixes, each red-first unless noted:
+
+- P1 import admitted an over-limit `extraTypes`. The contract declares `maxItems`, but the generated validators check element types only, and the import path did not gate array length. Red: `CREW-COHORTS-03-IMPORT-001` (apply returned 200). Fix: `Settings_Maxima_Issues` (`pitd_normalize.adb`, crew branch) now reports `/cohorts/<i>/extraTypes` when the length exceeds `CohortMaxTypes - 1` (default 1, same as `cohort.add`). Green: 8/8 in `cohort-extra-types.test.ts`, and `published-limits.test.ts` still passes.
+- P1 a missing `CohortMaxTypes` hid the second-type control, and an unrelated edit then sent `extraTypes: []`, which cleared a valid second type. Red: frontend `CREW-COHORTS-03 hidden second type keeps the saved value` (sent `extraTypes`). Fix: the control's `read()` returns `null` when hidden, and save skips the field then. Green: 14/14 in `crew-cohorts.test.ts`.
+- P2 the over-limit `cohort.update` path had no behavioral test. Added `CREW-COHORTS-03-UPDATE-002`. It passes at once because `cohort.update` already enforced the limit. This is a coverage gap, not a behavior change.
+
+## Gate results after the fixes (pinned head before the metrics commit)
+
+- Frontend vitest 1034/1034, `tsc` 0, `npm run build` 0.
+- Conformance browser suite 0.
+- Ada `--cycles 2`: cycle 1/2 and 2/2 each 638/638 tests.
+- Chromium 3×3 probe (`second-type-3x3-probe.mjs`): 18/18, none out of the viewport.
+- Docs build 0. Validators: `validate-metrics`, `validate-finding-traceability`, `reconcile-audit` all 0.
+- Mutation pins: `pitd_normalize.adb` changed, so M04's pin was refreshed (1 string). With the earlier refresh, the pins are current.
+- Mutation campaign: see the metrics log `tasks/metrics/contract/CREW-COHORTS-03-mutation.log`. The results JSON is in `agent-docs/` (gitignored) and is not in `tasks/metrics/`, because the metrics validator treats every JSON there as a task record.
+- Regenerated `skill/api-reference/README.md` was required by TOOLING-GEN-002 (see the commit `CREW-COHORTS-03: regenerate API reference for extraTypes`).
