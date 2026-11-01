@@ -89,6 +89,13 @@ package Pitd_Common is
    procedure Initialize_Campaign (Entity : JSON_Value);
    function Entity_Ids (Kind : String) return JSON_Array;
 
+   --  Journal-owned metadata only; these cannot target entity documents.
+   procedure Write_Transaction_Metadata (Relative_Name : String; Value : JSON_Value);
+   procedure Delete_Transaction_Metadata (Relative_Name : String);
+   procedure Publish_Transaction_Snapshot
+     (Kind, Id, Snapshot_Id, Op, Taken_At : String; Entity : JSON_Value);
+   procedure Consume_Transaction_Snapshot (Kind, Id, Snapshot_Id : String);
+
    --  SC-A2: --test-hooks crash probe (REPAIR-ATOMIC-004); armed by the
    --  test-hooks route, fired inside Atomic_Write.
    procedure Crash_Arm (Entity_Id : String);
@@ -130,6 +137,9 @@ package Pitd_Common is
    --  Stored assistance defaults fill omissions only; malformed existing
    --  values remain available to the normal validation/repair pipeline.
    function Default_Mode_Flow return JSON_Value;
+   function Default_Flow_Progress return JSON_Value;
+   function Current_Flow_Instance (E : JSON_Value) return String;
+   procedure Begin_Flow_Instance (E : JSON_Value; Kind : String);
    function Default_Downtime (E : JSON_Value) return JSON_Value;
    procedure Ensure_Game_Mode_Defaults (E : JSON_Value);
    --  Response-only projection; never changes E or grants eligibility.

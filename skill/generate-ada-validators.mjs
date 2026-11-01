@@ -9,7 +9,7 @@
 // pattern matchers / enum membership / numeric-bound checks, and a
 // Validate_<Entity> entry point per entity DTO and campaign $defs root.
 //
-// Deterministic and idempotent: the output is a pure function of the five
+// Deterministic and idempotent: the output is a pure function of the loaded
 // schema files. The generator fails loudly on unsupported constructs instead
 // of emitting a partial validator. SC-A1 consumes the unit in Wave 4; it is
 // NOT referenced by server code yet (do not wire into builds).
@@ -31,7 +31,7 @@ const outDir = outFlag >= 0 ? resolve(process.argv[outFlag + 1]) : defaultOutDir
 // Schema loading and reference resolution
 // ---------------------------------------------------------------------------
 
-const FILE_ORDER = ["common", "character", "crew", "clock", "campaign"];
+const FILE_ORDER = ["common", "character", "crew", "clock", "campaign", "flow"];
 const schemas = {};
 for (const file of FILE_ORDER) {
   schemas[file] = await readJson(resolve(schemaDir, `${file}.json`));

@@ -1,0 +1,91 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --build -- run suites/semantics/flow-api.test.ts
+OK: canonical managed launcher
+[managed-run] building server in /home/x/code/paperclips-in-the-dark/backend-ada/server (XDG_RUNTIME_DIR=/tmp alr --non-interactive build)
+Note: Building paperclips_server=0.1.0/paperclips_server.gpr...
+Compile
+   [Ada]          pitd_callback.adb
+   [Ada]          pitd_capability.adb
+   [Ada]          pitd_common.adb
+   [Ada]          pitd_error.adb
+   [Ada]          pitd_flow.adb
+   [Ada]          pitd_normalize.adb
+   [Ada]          pitd_ops.adb
+   [Ada]          pitd_stored.adb
+   [Ada]          pitd_summary.adb
+   [Ada]          pitd_transactions.adb
+   [Ada]          pitd_schema_validators.adb
+pitd_schema_validators.adb:188:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:13: warning: suggested replacement: "S'First + 8" [-gnatww]
+pitd_schema_validators.adb:188:34: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:34: warning: suggested replacement: "S'First + 13" [-gnatww]
+pitd_schema_validators.adb:188:56: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:56: warning: suggested replacement: "S'First + 18" [-gnatww]
+pitd_schema_validators.adb:189:20: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:189:20: warning: suggested replacement: "S'First + 23" [-gnatww]
+pitd_schema_validators.adb:192:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:192:13: warning: suggested replacement: "S'First + 14" [-gnatww]
+pitd_schema_validators.adb:195:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:13: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:195:36: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:36: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:195:59: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:59: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:196:21: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:196:21: warning: suggested replacement: "S'First + 19" [-gnatww]
+Bind
+   [gprbind]      pitd.bexch
+   [Ada]          pitd.ali
+Link
+   [link]         pitd.adb
+Success: Build finished successfully in 12.26 seconds.
+[managed-run] runId=2026-11-02T15-06-09-298Z-45960d49
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=a0c30f647587
+[managed-run] testCommand=run suites/semantics/flow-api.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-11-02T15-06-09-298Z-45960d49/data
+[managed-run] logFile=/tmp/pitd-managed/2026-11-02T15-06-09-298Z-45960d49/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-11-02T15-06-09-298Z-45960d49
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-02T15-06-09-298Z-45960d49/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-02T15-06-09-298Z-45960d49/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-02T15-06-09-298Z-45960d49/data (dir)
+[managed-run] port=40983
+[managed-run] baseUrl=http://127.0.0.1:40983
+[managed-run] pid=3392932
+[managed-run] ready=http://127.0.0.1:40983
+[managed-run] vitestPid=3392999
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-001] pure inactive projection exposes the current revision and no current completion action 62ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-002] Score projection discovers Planning, typed completion inputs and shared guidance 86ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-003] Planning and Engagement complete via the same op without automatic dice or awards 224ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-004] Payoff atomically applies explicit crew and personal deltas and advances one cursor 179ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-005] a stale linked crew revision rejects the entire completion without character awards or navigation 172ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-006] durable completion IDs and revisiting an awarded step cannot award twice 263ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-007] completion ID reuse with changed input is a proper non-success and preserves both entities 172ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-008] XP completion awards and clears expressions with cursor advance, while skip preserves expressions 306ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-009] invalid XP allocation fails before any award, clearing or step advance 129ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-010] undo from the scoundrel restores linked crew awards and cursor together 265ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-011] group undo cannot overwrite a later unrelated crew edit 263ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-012] optional final steps can be skipped into Downtime without crew writes or budget resets 176ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-013] missing character If-Match and touched crew revision are validation failures without writes 218ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-014] an observed stale cursor rejects without awarding even if character revision is current 173ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-015] group undo initiated at the crew restores the character cursor and personal share too 179ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-016] invalid later batch member rolls back an earlier guided award and receipt 217ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-017] the projected action schema validates typed required Planning inputs and explicit skip 89ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-018] two guided groups undo in reverse order with fresh monotonic revisions 351ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-019] two scoundrels racing one observed crew revision cannot both award the crew 302ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-020] legacy characters silently expose default flow progress without rewriting stored bytes 90ms
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  17:06:21
+   Duration  4.31s (transform 61ms, setup 0ms, collect 290ms, tests 3.92s, environment 0ms, prepare 30ms)
+
+[managed-run] success; evidence removed (/tmp/pitd-managed/2026-11-02T15-06-09-298Z-45960d49)

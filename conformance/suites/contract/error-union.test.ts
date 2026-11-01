@@ -742,6 +742,7 @@ describe("contract error union (SC-O7)", () => {
       const character = await parseSchema("character.json");
       const crew = await parseSchema("crew.json");
       const clock = await parseSchema("clock.json");
+      const flow = await parseSchema("flow.json");
       // Boundary: the parsed files are the frozen contract; every access below
       // is additionally exercised by the behavioral probes.
       for (const [file, schema] of [
@@ -750,10 +751,11 @@ describe("contract error union (SC-O7)", () => {
         ["character.json", character],
         ["crew.json", crew],
         ["clock.json", clock],
+        ["flow.json", flow],
       ] as const) {
         expect(schema, `${file} is an object`).not.toBeNull();
       }
-      if (opSchema === null || common === null || character === null || crew === null || clock === null) return;
+      if (opSchema === null || common === null || character === null || crew === null || clock === null || flow === null) return;
 
       // Ajv2020 (draft 2020-12) over the real schema files. strict:false —
       // the frozen schemas carry the custom x-requiredWhenComplete annotation
@@ -763,7 +765,7 @@ describe("contract error union (SC-O7)", () => {
       // resolve against the operation-result base URI.
       const ajv = new Ajv2020({ allErrors: true, strict: false });
       addFormats(ajv);
-      for (const schema of [opSchema, common, character, crew, clock]) {
+      for (const schema of [opSchema, common, character, crew, clock, flow]) {
         const id = asString(schema.$id);
         expect(id, "$id present").not.toBeNull();
         if (id !== null) ajv.addSchema(schema as unknown as AnySchemaObject, id);

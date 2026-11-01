@@ -62,6 +62,53 @@ const ModeFlow = Schema.Struct({
     "heat", "entanglements", "crew-xp", "crew-rep",
   ),
 });
+
+// FLOW-API-01 additive stored progress and strict read projection.
+const JsonObject = Schema.Record({ key: Schema.String, value: Schema.Unknown });
+const FlowProgress = Schema.Struct({
+  instanceId: Schema.String,
+  kind: Schema.Literal("none", "score-start", "resolution"),
+  planApproach: Schema.String,
+  notes: Schema.Array(Schema.Struct({ step: Schema.String, text: Schema.String })),
+});
+const FlowCrewRevision = Schema.Union(Schema.Null, Schema.Struct({ id: Uuid, revision: Revision }));
+const FlowReceipt = Schema.Struct({
+  completionId: NonEmptyString,
+  transactionId: NonEmptyString,
+  instanceId: NonEmptyString,
+  kind: Schema.Literal("score-start", "resolution"),
+  step: Schema.String,
+  status: Schema.Literal("completed", "undone"),
+  skipped: Schema.Boolean,
+  inputs: JsonObject,
+  characterRevision: Revision,
+  crew: FlowCrewRevision,
+});
+const Flow = Schema.Struct({
+  characterId: Uuid,
+  revision: Revision,
+  crew: FlowCrewRevision,
+  mode: GameMode,
+  kind: Schema.Literal("none", "score-start", "resolution"),
+  step: Schema.String,
+  instanceId: Schema.String,
+  steps: Schema.Array(Schema.Struct({
+    kind: Schema.Literal("score-start", "resolution"),
+    step: Schema.String,
+    label: Schema.String,
+    skippable: Schema.Boolean,
+  })),
+  back: Schema.Union(Schema.String, Schema.Null),
+  next: Schema.Union(Schema.String, Schema.Null),
+  skippable: Schema.Boolean,
+  actions: Schema.Array(Schema.Struct({
+    id: Schema.String,
+    op: Schema.Literal("flow.step.complete", "mode.flow.set", "mode.set"),
+    inputSchema: JsonObject,
+  })),
+  guidance: JsonObject,
+  receipt: Schema.Union(Schema.Null, FlowReceipt),
+});
 const DowntimeActivity = Schema.Literal(
   "acquire-asset", "long-term-project", "recover", "reduce-heat",
   "train", "indulge-vice", "other",
@@ -108,6 +155,7 @@ const Character = Schema.Struct({
   stressClearPending: Schema.Boolean,
   mode: GameMode,
   modeFlow: ModeFlow,
+  flowProgress: FlowProgress,
   downtime: Downtime,
   dossier: Schema.Struct({
     name: Schema.String,
@@ -389,6 +437,8 @@ const OperationResult = Schema.Struct({
   character: Schema.optional(Character),
   mode: Schema.optional(GameMode),
   suggestedOps: Schema.optional(Schema.Array(Schema.String)),
+  flow: Schema.optional(Flow),
+  receipt: Schema.optional(FlowReceipt),
   crew: Schema.optional(Crew),
   clock: Schema.optional(Clock),
   canUndo: Schema.optional(Schema.Boolean),
@@ -511,6 +561,7 @@ export const Schemas = {
   Crew,
   Clock,
   OperationResult,
+  Flow,
   Health,
   CharacterSummary,
   CrewSummary,
@@ -563,6 +614,7 @@ export const SchemaName = {
   Crew: "crew",
   Clock: "clock",
   OperationResult: "operationResult",
+  Flow: "flow",
   OperationError: "operationError",
   PreviewResult: "previewResult",
 } as const;

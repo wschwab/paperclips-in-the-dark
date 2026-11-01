@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mountCharacterDetailPage } from "./character-detail.js";
 import { decodeCharacterEither } from "../schema/character.js";
+import sharedGuidance from "../../../data/games/flow-guidance.json";
 
 // GAME-MODE-03 sheet behaviour: mode panel, Score popups and loadout, Resolution
 // stepper and crew editors, entanglement filter, downtime tracker. Every
@@ -30,6 +31,7 @@ function characterDTO(overrides: Record<string, unknown> = {}) {
     stressClearPending: false,
     mode: "free-play",
     modeFlow: { kind: "none", step: "" },
+    flowProgress: { instanceId: "flow-one", kind: "none", planApproach: "", notes: [] },
     downtime: { free: 2, paid: 0, spent: 0, activities: [] },
     dossier: {
       name: "Brenda Hilton",
@@ -124,14 +126,50 @@ const CREW_GAME_DATA = {
   CrewTypes: [{ Name: "Assassins", ExperienceTrigger: "Execute a successful murder, ransom, or assassination operation." }],
 };
 
+function flowDTO(dto: Record<string, unknown>, overrides: Record<string, unknown> = {}) {
+  const cursor = dto.modeFlow as { kind: string; step: string };
+  const steps = cursor.kind === "resolution" ? sharedGuidance.resolution.steps
+    : dto.mode === "score" ? sharedGuidance.scoreStart.steps : [];
+  const index = steps.findIndex((s) => s.step === cursor.step);
+  return {
+    characterId: CHARACTER_ID, revision: dto.revision, crew: { id: CREW_ID, revision: 4 },
+    mode: dto.mode, kind: cursor.kind, step: cursor.step, instanceId: "flow-one",
+    steps, back: steps[index - 1]?.step ?? null, next: steps[index + 1]?.step ?? null,
+    skippable: cursor.kind !== "none", receipt: null, guidance: sharedGuidance,
+    actions: cursor.kind === "none" ? [] : [{
+      id: "complete", op: "flow.step.complete",
+      inputSchema: {
+        type: "object", required: ["completionId", "instanceId", "kind", "step", "inputs"],
+        properties: {
+          completionId: { type: "string", minLength: 1 }, instanceId: { const: "flow-one" },
+          kind: { const: cursor.kind }, step: { const: cursor.step }, skip: { type: "boolean" },
+          inputs: { type: "object", properties: {
+            planApproach: { type: "string" }, note: { type: "string" },
+            commitment: { enum: ["none", "light", "normal", "heavy"] }, items: { type: "array", items: { type: "string" } },
+            total: { type: "integer", minimum: 0 }, allocations: { type: "object" },
+            crewRevision: { type: "integer" },
+            crewCoin: { type: "integer", minimum: -3, maximum: 8 },
+            crewRep: { type: "integer", minimum: -5, maximum: 7 },
+            myShare: { type: "integer", minimum: -3, maximum: 10 },
+            crewHeat: { type: "integer", minimum: -4, maximum: 20 },
+            crewXp: { type: "integer", minimum: -1, maximum: 7 },
+          }, additionalProperties: false },
+        }, additionalProperties: false,
+      },
+    }],
+    ...overrides,
+  };
+}
+
 /** Routes every API call by URL; ops answer with the (possibly updated) character. */
-function mockApi(dto: Record<string, unknown>, crew: Record<string, unknown> | null = crewDTO()) {
+function mockApi(dto: Record<string, unknown>, crew: Record<string, unknown> | null = crewDTO(), flow = flowDTO(dto)) {
   const calls: Array<{ url: string; init: RequestInit }> = [];
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const request = init ?? {};
     calls.push({ url, init: request });
     const respond = (data: unknown) => ({ ok: true, status: 200, text: async () => JSON.stringify(data) });
     if (url === `/api/characters/${CHARACTER_ID}`) return respond(dto);
+    if (url === `/api/characters/${CHARACTER_ID}/flow`) return respond(flow);
     if (url.endsWith("/capabilities")) return respond({});
     if (url.endsWith("/history")) return respond([]);
     if (url === "/api/clocks") return respond([]);
@@ -250,13 +288,13 @@ describe("GAME-MODE-03 sheet", () => {
     const next = Array.from(root.querySelectorAll(".game-mode-resolution button")).find((b) => b.textContent === "Next") as HTMLButtonElement;
     next.click();
     await vi.waitFor(() => {
-      const call = calls.find((c) => c.url.endsWith("/ops/mode.flow.set"));
+      const call = calls.find((c) => c.url.endsWith("/ops/flow.step.complete"));
       expect(call).toBeTruthy();
-      expect(call!.init.body).toBe(JSON.stringify({ kind: "resolution", step: "heat" }));
+      expect(JSON.parse(call!.init.body as string)).toMatchObject({ kind: "resolution", step: "payoff", inputs: {} });
     });
   });
 
-  it("crew writes send the observed crew revision as If-Match", async () => {
+  it("crew completion sends observed character revision as If-Match and crew revision in explicit inputs", async () => {
     const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "heat" } }));
     await vi.waitFor(() => {
       expect(root.querySelector('[data-crew-track="heat"]')).not.toBeNull();
@@ -264,13 +302,14 @@ describe("GAME-MODE-03 sheet", () => {
     const editor = root.querySelector('[data-crew-track="heat"]')!;
     const amount = editor.querySelector("input") as HTMLInputElement;
     amount.value = "1";
-    const apply = editor.querySelector("button") as HTMLButtonElement;
-    apply.click();
+    amount.dispatchEvent(new Event("input", { bubbles: true }));
+    const next = Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-popup-footer button")).find((b) => b.textContent === "Next")!;
+    next.click();
     await vi.waitFor(() => {
-      const call = calls.find((c) => c.url === `/api/crews/${CREW_ID}/ops/heat.add`);
+      const call = calls.find((c) => c.url.endsWith("/ops/flow.step.complete"));
       expect(call).toBeTruthy();
-      expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe("4");
-      expect(call!.init.body).toBe(JSON.stringify({ delta: 1 }));
+      expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe("12");
+      expect(JSON.parse(call!.init.body as string)).toMatchObject({ inputs: { crewHeat: 1, crewRevision: 4 } });
     });
   });
 
@@ -284,9 +323,9 @@ describe("GAME-MODE-03 sheet", () => {
     confirmSpy.mockReturnValue(true);
     skip.click();
     await vi.waitFor(() => {
-      const call = calls.find((c) => c.url.endsWith("/ops/mode.flow.set"));
+      const call = calls.find((c) => c.url.endsWith("/ops/flow.step.complete"));
       expect(call).toBeTruthy();
-      expect(call!.init.body).toBe(JSON.stringify({ kind: "resolution", step: "crew-rep" }));
+      expect(JSON.parse(call!.init.body as string)).toMatchObject({ kind: "resolution", step: "crew-xp", skip: true, inputs: {} });
     });
     confirmSpy.mockRestore();
   });
@@ -367,7 +406,7 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "score-start", step: "engagement" } }));
     const dialog = root.querySelector(".game-mode-popup")!;
     const footer = Array.from(dialog.querySelectorAll(".game-mode-popup-footer button")).map((b) => b.textContent);
-    expect(footer).toEqual(["Back", "Leave flow", "Enter Score"]);
+    expect(footer).toEqual(["Back", "Skip", "Leave flow", "Enter Score"]);
     expect(dialog.textContent).toContain("Critical: past the first obstacle, controlled next");
     expect(dialog.textContent).toContain("This reminder doesn’t roll dice or require a result.");
   });
@@ -484,21 +523,22 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     confirmSpy.mockRestore();
   });
 
-  it("direct crew editors use the approved update labels per step", async () => {
+  it("crew award editors retain clear labels and defer all awards to completion", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
     await vi.waitFor(() => expect(root.querySelector('[data-crew-track="rep"]')).not.toBeNull());
-    expect(root.querySelector('[data-crew-track="rep"] button')?.textContent).toBe("Update crew");
-    expect(root.querySelector('[data-crew-track="coin"] button')?.textContent).toBe("Update crew");
+    expect(root.querySelector('[data-crew-track="rep"]')?.textContent).toContain("Update crew");
+    expect(root.querySelector('[data-crew-track="coin"]')?.textContent).toContain("Update crew");
+    expect(root.querySelector('[data-crew-track="coin"] button')).toBeNull();
   });
 
   it("Crew XP and Crew Rep use the approved update labels, and Crew Rep offers a confirmed Skip and Next: Downtime", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }));
     await vi.waitFor(() => expect(root.querySelector('[data-crew-track="xp"]')).not.toBeNull());
-    expect(root.querySelector('[data-crew-track="xp"] button')?.textContent).toBe("Update crew XP");
+    expect(root.querySelector('[data-crew-track="xp"]')?.textContent).toContain("Update crew XP");
     cleanupRoot();
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-rep" } }));
     await vi.waitFor(() => expect(root.querySelector('[data-crew-track="rep"]')).not.toBeNull());
-    expect(root.querySelector('[data-crew-track="rep"] button')?.textContent).toBe("Update crew rep");
+    expect(root.querySelector('[data-crew-track="rep"]')?.textContent).toContain("Update crew rep");
     const footer = Array.from(root.querySelectorAll(".game-mode-resolution .game-mode-popup-footer button")).map((b) => b.textContent);
     expect(footer).toEqual(["Back", "Skip", "Skip Resolution", "Leave flow", "Next: Downtime"]);
   });
@@ -603,7 +643,7 @@ describe("GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a)", () => 
     const left = Array.from(root.querySelectorAll(".game-mode-popup .game-mode-popup-footer > .left button")).map((b) => b.textContent);
     const right = Array.from(root.querySelectorAll(".game-mode-popup .game-mode-popup-footer > .right button")).map((b) => b.textContent);
     expect(left).toEqual(["Back"]);
-    expect(right).toEqual(["Leave flow", "Next: Loadout"]);
+    expect(right).toEqual(["Skip", "Leave flow", "Next: Loadout"]);
   });
 
   it("F7-2: the Resolution footer keeps Back left and Skip, Skip Resolution, Leave flow, Next right", async () => {
@@ -825,7 +865,7 @@ describe("GAME-MODE-03 Sol 6.1 findings (F8, F4, F2)", () => {
       },
     }));
     const popup = root.querySelector(".game-mode-popup")!;
-    expect(popup.textContent).toContain("of 5 load committed");
+    expect(popup.textContent).toContain("of 5 load proposed");
     expect(popup.textContent).not.toContain("of 9 load");
   });
 });
@@ -1064,7 +1104,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
     });
   });
 
-  it("Complete posts xp.resolve with the total and the allocations, under the current revision", async () => {
+  it("Complete posts one flow.step.complete with the XP total and allocations under the current revision", async () => {
     const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } });
     const { calls } = await mountWith(dto);
     for (const name of ["Playbook", "Insight", "Prowess", "Resolve"]) {
@@ -1077,9 +1117,10 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
       complete.click();
     });
     await vi.waitFor(() => {
-      const call = calls.find((c) => c.url.endsWith("/ops/xp.resolve"));
+      const call = calls.find((c) => c.url.endsWith("/ops/flow.step.complete"));
       expect(call).toBeTruthy();
-      expect(call!.init.body).toBe(JSON.stringify({ total: 4, allocations: { Playbook: 1, Insight: 1, Prowess: 1, Resolve: 1 } }));
+      expect(JSON.parse(call!.init.body as string)).toMatchObject({ kind: "resolution", step: "scoundrel-xp",
+        inputs: { total: 4, allocations: { Playbook: 1, Insight: 1, Prowess: 1, Resolve: 1 } } });
       expect((call!.init.headers as Record<string, string>)["If-Match"]).toBe(String(dto.revision));
     });
   });
@@ -1307,5 +1348,144 @@ describe("DESPERATE-LOG-01 Sol P2: a refused mark is shown inside the open XP Tr
       expect(sheet()).not.toBeNull();
       expect(sheet().textContent).toContain("attribute track is at its maximum");
     });
+  });
+});
+
+describe("FLOW-API-01 server-owned flow cutover", () => {
+  it("requests flow and renders server order, labels and shared guidance instead of local constants", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } });
+    const flow = flowDTO(dto, {
+      steps: [
+        { kind: "resolution", step: "heat", label: "Server first", skippable: false },
+        { kind: "resolution", step: "payoff", label: "Server second", skippable: false },
+      ],
+      back: "heat", next: null, skippable: false,
+      guidance: { ...sharedGuidance, resolution: { ...sharedGuidance.resolution,
+        payoff: { ...sharedGuidance.resolution.payoff, intro: "Shared server payoff advice." } } },
+    });
+    const { calls } = mockApi(dto, crewDTO(), flow);
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-resolution")).not.toBeNull());
+    expect(calls.some((c) => c.url.endsWith("/flow"))).toBe(true);
+    expect(Array.from(root.querySelectorAll(".resolution-stepper li")).map((n) => n.textContent))
+      .toEqual(["1. Server first", "2. Server second"]);
+    expect(root.querySelector(".game-mode-resolution")?.textContent).toContain("Shared server payoff advice.");
+    expect(Array.from(root.querySelectorAll(".game-mode-popup-footer button")).some((b) => b.textContent === "Skip")).toBe(false);
+  });
+
+  it("drafts payoff awards then sends only one atomic completion with the projected crew revision", async () => {
+    const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
+    const coin = root.querySelector<HTMLInputElement>('[data-crew-track="coin"] input')!;
+    coin.value = "2";
+    coin.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(calls.filter((c) => c.init.method === "POST")).toHaveLength(0);
+    Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-popup-footer button")).find((b) => b.textContent === "Next")!.click();
+    await vi.waitFor(() => expect(calls.some((c) => c.url.endsWith("/ops/flow.step.complete"))).toBe(true));
+    const writes = calls.filter((c) => c.init.method === "POST");
+    expect(writes).toHaveLength(1);
+    expect(JSON.parse(writes[0]!.init.body as string)).toMatchObject({
+      completionId: expect.any(String), instanceId: "flow-one", kind: "resolution", step: "payoff",
+      inputs: { crewCoin: 2, crewRevision: 4 },
+    });
+    expect((writes[0]!.init.headers as Record<string, string>)["If-Match"]).toBe("12");
+    expect(root.querySelector<HTMLInputElement>('[data-crew-track="coin"] input')?.max).toBe("8");
+  });
+
+  it("skips through the completion action with empty inputs, never award plus cursor writes", async () => {
+    const { calls } = await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "crew-xp" } }));
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    try {
+      Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-popup-footer button")).find((b) => b.textContent === "Skip")!.click();
+      await vi.waitFor(() => expect(calls.some((c) => c.url.endsWith("/ops/flow.step.complete"))).toBe(true));
+      expect(calls.filter((c) => c.init.method === "POST")).toHaveLength(1);
+      expect(JSON.parse(calls.find((c) => c.url.endsWith("/ops/flow.step.complete"))!.init.body as string))
+        .toMatchObject({ skip: true, inputs: {} });
+    } finally { confirm.mockRestore(); }
+  });
+
+  it("shows a prior receipt and follows its navigation-only action without another completion", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } });
+    const flow = flowDTO(dto, {
+      receipt: { completionId: "done-one", transactionId: "tx-one", instanceId: "flow-one",
+        kind: "resolution", step: "payoff", status: "completed", skipped: false,
+        inputs: { crewCoin: 2 }, characterRevision: 12, crew: { id: CREW_ID, revision: 4 } },
+      actions: [{ id: "next", op: "mode.flow.set", inputSchema: { type: "object",
+        required: ["kind", "step"], properties: { kind: { const: "resolution" }, step: { const: "heat" } },
+        additionalProperties: false } }],
+    });
+    const { calls } = mockApi(dto, crewDTO(), flow);
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => expect(root.querySelector("[data-flow-receipt]")).not.toBeNull());
+    expect(root.querySelector("[data-flow-receipt]")?.textContent).toContain("completed");
+    expect(root.querySelector<HTMLInputElement>('[data-crew-track="coin"] input')?.disabled).toBe(true);
+    Array.from(root.querySelectorAll<HTMLButtonElement>(".game-mode-popup-footer button")).find((b) => b.textContent === "Next")!.click();
+    await vi.waitFor(() => expect(calls.some((c) => c.url.endsWith("/ops/mode.flow.set"))).toBe(true));
+    expect(calls.some((c) => c.url.endsWith("/ops/flow.step.complete"))).toBe(false);
+  });
+
+  it("requires canonical stored flow progress while keeping the old cursor shape exact", () => {
+    const dto = characterDTO();
+    delete (dto as Record<string, unknown>).flowProgress;
+    expect(decodeCharacterEither(dto)._tag).toBe("Left");
+  });
+});
+
+describe("FLOW-API-01 advisory refresh draft continuity", () => {
+  it("preserves an ordinary stress-clear draft when a delayed flow projection rerenders the sheet", async () => {
+    const dto = characterDTO({ mode: "downtime" });
+    const { calls } = mockApi(dto);
+    const base = global.fetch;
+    let resolveFlow!: (response: Response) => void;
+    const pendingFlow = new Promise<Response>((resolve) => { resolveFlow = resolve; });
+    let flowRequested = false;
+    global.fetch = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/flow")) { flowRequested = true; return pendingFlow; }
+      return base(url, init);
+    }) as unknown as typeof fetch;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(flowRequested).toBe(true);
+      expect(root.querySelector('input[aria-label="Stress to clear"]')).not.toBeNull();
+    });
+    const amount = root.querySelector<HTMLInputElement>('input[aria-label="Stress to clear"]')!;
+    amount.focus();
+    amount.value = "5";
+    amount.dispatchEvent(new Event("input", { bubbles: true }));
+    resolveFlow(new Response(JSON.stringify(flowDTO(dto)), { status: 200 }));
+    await vi.waitFor(() => expect(root.querySelectorAll(".activity-menu button").length).toBeGreaterThan(0));
+    const restored = root.querySelector<HTMLInputElement>('input[aria-label="Stress to clear"]')!;
+    expect(restored.value).toBe("5");
+    expect(document.activeElement).toBe(restored);
+    root.querySelector<HTMLButtonElement>('button[title="Clear Stress — clears the chosen amount of marked stress"]')!.click();
+    await vi.waitFor(() => {
+      const call = calls.find((c) => c.url.endsWith("/ops/stress.clear"));
+      expect(call).toBeTruthy();
+      expect(JSON.parse(call!.init.body as string)).toEqual({ amount: 5 });
+    });
+    // Normal mutation renders still use their DTO/state, not the old passive snapshot.
+    await vi.waitFor(() => expect(root.querySelector<HTMLInputElement>('input[aria-label="Stress to clear"]')!.value).toBe("3"));
+  });
+
+  it("keeps text draft selection and distinguishes the two downtime activity forms during passive refresh", async () => {
+    const dto = characterDTO({ mode: "downtime" });
+    mockApi(dto);
+    const base = global.fetch;
+    let resolveFlow!: (response: Response) => void;
+    const pendingFlow = new Promise<Response>((resolve) => { resolveFlow = resolve; });
+    global.fetch = vi.fn((url: string, init?: RequestInit) => url.endsWith("/flow") ? pendingFlow : base(url, init)) as unknown as typeof fetch;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => expect(root.querySelector('[data-section="downtime-activities"] input')).not.toBeNull());
+    const description = root.querySelector<HTMLInputElement>('[data-section="downtime-activities"] input')!;
+    description.value = "careful recovery";
+    description.dispatchEvent(new Event("input", { bubbles: true }));
+    description.focus();
+    description.setSelectionRange(2, 7, "backward");
+    resolveFlow(new Response(JSON.stringify(flowDTO(dto)), { status: 200 }));
+    await vi.waitFor(() => expect(root.querySelectorAll(".activity-menu button").length).toBeGreaterThan(0));
+    const restored = root.querySelector<HTMLInputElement>('[data-section="downtime-activities"] input')!;
+    expect(restored.value).toBe("careful recovery");
+    expect(document.activeElement).toBe(restored);
+    expect([restored.selectionStart, restored.selectionEnd, restored.selectionDirection]).toEqual([2, 7, "backward"]);
+    expect(root.querySelector<HTMLInputElement>('[data-section="downtime-activities-panel"] input')!.value).toBe("");
   });
 });

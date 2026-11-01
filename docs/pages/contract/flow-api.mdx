@@ -1,0 +1,146 @@
+# Guided score flow (FLOW-API-01)
+
+Status: approved contract change, implementation in progress. The human authorized contract and conformance changes on 2026-11-01.
+
+## Scope and invariants
+
+The flow is a **per-scoundrel assistance surface**, not a campaign phase or a rules engine. Free Play, Score and Downtime remain non-linear. Ordinary operations work in every mode. Dice, position/effect and GM judgment stay external. The existing character `mode` and `modeFlow` remain the stored cursor; this API makes its meaning discoverable rather than creating another state machine.
+
+`GET /characters/{id}/flow` is a pure read projection. It returns the current character revision, linked crew revision when present, mode, flow kind/step, an instance identifier, ordered steps, current actions, typed JSON input schemas, Back/Next destinations and whether the current step is skippable. Inactive flow returns no current actions. Reads never migrate files on disk.
+
+The canonical stored character adds `flowProgress = {instanceId, kind, planApproach, notes:[{step,text}]}`. Missing legacy state silently defaults to empty strings, kind `none` and empty notes without a read writing disk. The existing exact `modeFlow = {kind,step}` shape stays unchanged. Within-instance navigation preserves progress; entering a different nonempty flow kind starts an instance, and explicit Score start/End Score always start fresh. Leaving a cursor retains its identity so returning cannot erase receipts.
+
+```json
+{
+  "characterId": "scoundrel-id",
+  "revision": 12,
+  "crew": { "id": "crew-id", "revision": 7 },
+  "mode": "score",
+  "kind": "resolution",
+  "step": "payoff",
+  "instanceId": "resolution-instance-id",
+  "back": "scoundrel-xp",
+  "next": "heat",
+  "skippable": true,
+  "actions": [{
+    "id": "complete",
+    "op": "flow.step.complete",
+    "inputSchema": {
+      "type": "object",
+      "required": ["completionId", "instanceId", "kind", "step", "inputs"],
+      "properties": {
+        "completionId": { "type": "string", "minLength": 1 },
+        "instanceId": { "const": "resolution-instance-id" },
+        "kind": { "const": "resolution" },
+        "step": { "const": "payoff" },
+        "inputs": {
+          "type": "object",
+          "properties": {
+            "crewRevision": { "type": "integer", "minimum": 0 },
+            "crewCoin": { "type": "integer" },
+            "crewRep": { "type": "integer" },
+            "myShare": { "type": "integer" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }]
+}
+```
+
+The example abbreviates guidance and the ordered step list. Award numbers are **explicit deltas**, not recomputed suggestions. Zero/omitted awards do not touch the crew. An award touching the linked crew requires its observed `crewRevision`; `If-Match` always supplies the character revision. Projection schemas publish limits from the selected edition's settings and current track room, never frontend constants. The server validates again at completion.
+
+## Per-step behavior
+
+| Kind / step | Explicit completion inputs | Atomic effects, then next |
+| --- | --- | --- |
+| Score start / Planning | Chosen plan approach, or skip | Store the choice in flow progress; advance to Loadout. |
+| Score start / Loadout | Commitment and complete item set, or keep current | Apply the existing atomic loadout validation; advance to Engagement. |
+| Score start / Engagement | Optional externally determined roll/position note | Record the note, finish the popup flow and remain in Score. No dice are rolled by the server. |
+| Resolution / Scoundrel XP | Explicit total and allocation to Playbook/attribute tracks, or skip | Apply existing `xp.resolve` validation and clear the three session expression tracks only on completion; advance to Payoff. A skip does not clear them. |
+| Resolution / Payoff | Optional crew Coin/Rep deltas and personal share delta | Apply only submitted awards, check touched revisions and track bounds; advance to Heat. |
+| Resolution / Heat | Optional explicit crew Heat delta | Apply the submitted adjustment; advance to Entanglements. |
+| Resolution / Entanglements | Optional externally determined outcome note | Record the note, not automatic penalties; advance to Crew XP. |
+| Resolution / Crew XP | Optional explicit crew XP delta, or skip | Apply submitted XP; advance to Crew Rep. Optional and skippable. |
+| Resolution / Crew Rep | Optional explicit crew Rep delta, or skip | Apply only an intentional further adjustment (not Payoff again); finish Resolution into Downtime. Optional and skippable. |
+
+Back/direct navigation uses the existing `mode.flow.set` operation, never reapplies awards. A completed step remains visibly receipted when revisited. Its Next action only navigates; changing an award requires an ordinary explicit adjustment or undo, not another hidden application. End Score still performs existing full-meter-only stress cleanup, out-of-action cleanup and downtime-budget reset when Resolution begins, retaining committed loadout by default. Mode switches do not reset the budget. Downtime's activity budget stays soft and its activities continue to use existing operations; the projection serves their shared guidance rather than inventing automatic recovery or vice outcomes.
+
+## Shared guidance
+
+Shared guidance lives in `data/games/flow-guidance.json`, loaded from the configured game-data directory and included in full as `flow.guidance`. It contains plan descriptions, engagement advice, payoff/heat reference tables, entanglement reference data, resolution labels/notes, downtime activity guidance, existing SRD links and the note to confirm judgments with the GM. Edition-specific mechanics and maxima continue to come from settings/action schemas. Both an AI client and the human sheet consume the same content, without a second frontend copy.
+
+Every crew editor retains: **Only one player should update the crew — check nobody else already has.** No per-scoundrel receipt can identify a fictional shared score on behalf of the whole table. Different scoundrels may intentionally submit awards; the warning and optimistic crew revision protect against accidental concurrent use, not a campaign-wide mode lock.
+
+## Completion, concurrency and durability
+
+`POST /characters/{id}/ops/flow.step.complete` follows the existing per-op path convention and returns the existing OperationResult envelope plus the updated flow projection/receipt. It uses `If-Match` and optional `Idempotency-Key` like other character operations. The body carries a stable client-generated `completionId`, the observed flow instance/kind/step and typed step inputs.
+
+1. Claim character and, only when touched, linked crew locks in the established global kind/id order; re-read under those locks.
+2. Check every touched revision and the observed instance/cursor. A stale cursor is a concurrency conflict, not a mode restriction. Existing errors/statuses only.
+3. Validate all explicit inputs and resulting documents before any persistent side effect. Existing atomic XP/loadout and generic crew/fund semantics are reused.
+4. Persist a recoverable transaction containing all before/after documents, the completion payload hash, receipt and snapshot metadata. Publish the whole transaction with startup recovery before serving requests; a crash must not strand crew awards without the cursor/receipt or vice versa.
+5. Increment each changed entity once and publish one linked snapshot group. Persist the completion receipt independently of the bounded in-memory idempotency cache.
+
+A repeated completion ID with the same payload returns its durable receipt without new writes, including after a restart and even if the client's old `If-Match` is now stale. Reusing it with a different payload uses the existing idempotency conflict behavior. One active receipt per instance/step prevents a different key from awarding the same step twice. New score starts/End Score create new instances; leaving/re-entering a cursor does not erase prior receipts.
+
+A fresh completion ID for a step with an active receipt returns existing `VALIDATION`/400 with no writes. The receipted projection instead advertises typed `mode.flow.set` (or final `mode.set`) navigation actions. Reusing a completion ID with changed input also uses existing `VALIDATION`/400; no new conflict code is introduced.
+
+The existing batch member object gains an optional `revision` integer, required for `flow.step.complete` members. It is the observed character revision at that point in the staged sequential plan. Ordinary members retain their existing shape and semantics. The member's `inputs.crewRevision` still checks every touched linked crew. Failed later members leave awards, cursor and receipts uncommitted.
+
+## Cross-entity undo
+
+Existing single-entity undo is insufficient for a completion that changes a linked crew. Flow completion snapshots therefore share a transaction identifier and before/after revisions. Undo initiated from either participant claims the entire group and restores **all** participants or none. It verifies that the group is still the latest relevant write for every participant; intervening crew edits produce the existing conflict response, never overwrite another player's work. Each restored document receives a fresh monotonic revision.
+
+The public history entry/snapshot schema stays unchanged. External transaction metadata maps snapshot identifiers to participant groups and their before/after revisions; no extra history wire fields are necessary.
+
+The transaction's receipt is marked undone in the same recoverable commit. Replaying its old completion ID reports that undone receipt and never reapplies awards. An explicit new completion ID may complete the restored step again; it is a new deliberate transaction, not an idempotency replay. Snapshot retention must retain the metadata needed for every undoable group, and consuming a group removes its linked history entries together. A batch containing this op must use the same transaction planner; nested partial commits are forbidden.
+
+## Before / after contract
+
+| Before | After |
+| --- | --- |
+| Stored `mode`/`modeFlow`, coarse `suggestedOps` only | Same state plus a pure typed guided-flow projection. |
+| Frontend chooses step order and owns reference text | Server projection supplies order/actions; served data owns shared text. |
+| UI performs separate award and cursor writes | One completion operation validates and commits awards + cursor + receipt. |
+| In-memory idempotency cache and independent snapshots | Existing behavior remains for ordinary ops; guided completions add durable receipts and guarded grouped undo. |
+| Agent must infer required inputs and which operation comes next | Projection describes required inputs, completion op, navigation and prior completion. |
+
+No new HTTP status or error code is introduced. OpenAPI paths increase **116 → 118**. The strict validator registry and conformance mirror gain the flow schema/progress fields; the golden character adds the empty `flowProgress` default. Existing exact modeFlow and public history shapes stay unchanged.
+
+The human separately authorized one semantic capability replacement on 2026-11-01: `characterXpResolve` changes from **human** to **agent**, and `characterFlowStepComplete` replaces it in the frozen human parity list. The `xp.resolve` endpoint and its tests stay intact; only the guided human UI stops making a separate XP award and cursor write. All other frozen list amendments are additive. Exact before/after evidence is recorded in the card.
+
+## Decisions and remaining questions
+
+- Guidance is advisory; validation enforces explicit input structure, revision integrity and existing numeric bounds, never GM judgment or mode gating.
+- Skip applies no awards. Revisiting a completed step cannot silently award again.
+- Shared crew awards remain explicitly chosen by one player; no campaign-wide score resource is introduced.
+- Cross-entity undo is guarded group undo, not subtraction from a later edited crew.
+- No product questions remain. Durable receipts have no expiry introduced by this card; they are independent of the bounded user-visible history.
+
+## Implemented boundaries and evidence
+
+The server projection and atomic completion are implemented in `Pitd_Flow`; recoverable publication, durable receipts and guarded grouped undo live in `Pitd_Transactions`. Existing single-entity operations and ordinary batches retain their prior persistence/undo semantics; a batch containing guided completion uses one linked transaction for all its touched entities. No new error code or HTTP status was needed. Missing undo participants return existing `NOT_FOUND`/404; degraded participants return `INVALID_ENTITY`/422 before restoration, rather than overwriting invalid files or producing an invalid stale-revision envelope.
+
+The frontend now consumes the projection's order, action schemas, guidance and receipts. It keeps explicit award/loadout drafts local until one completion request. A delayed advisory read also preserves ordinary form drafts, focus and text selection; real mutations/navigation do not restore stale drafts. This fixes the stress-clear/OVERINDULGED browser seam exposed by the additional read.
+
+The authorized frozen-oracle calibration is narrow: GAME-MODE `gameplay()` excludes `flowProgress` alongside its existing cursor/bookkeeping exclusions, without changing equality assertions; ERR-MISMATCH-006 registers `flow.json` alongside the five existing schemas, without weakening any union probes. The lifecycle browser journey waits for `flow.step.complete` instead of `xp.resolve`; every checkpoint and assertion is retained.
+
+Source verification includes 22 ordinary new flow cases and an isolated two-cycle crash/recovery oracle. The full Ada suite passes **664 tests in each of two cycles**; its intentionally isolated crash oracle is skipped there and separately passes both recovery cycles. Frontend **1040**, tooling **233**, browser journeys **6/6**, TypeScript and the frontend build pass. GNATprove proves **246 core checks**; HTTP/storage journals remain outside the SPARK boundary. Final mutation/review records are tracked in `tasks/FLOW-API-01.md`.
+
+### Chromium matrix
+
+Real Chromium exercised the entire Score start and six-step Resolution into Downtime at **1440×1000, 768×1024 and 390×844**, in light, dark and high contrast: **9 combinations, 126 measured states, zero document or popup horizontal overflow**. Personal stays present. Each Payoff submits exactly one mutation containing crew and personal awards plus the observed revisions. Long compact dialogs intentionally scroll vertically; the additional controls captures show their completion buttons are reachable.
+
+<p><a href="/evidence/flow-api-01/numeric.json">Numeric and request evidence</a> · <a href="/evidence/flow-api-01/payoff-matrix.png">Nine-case visual contact sheet</a></p>
+
+| Viewport | Light | Dark | High contrast |
+| --- | --- | --- | --- |
+| 1440×1000 | <a href="/evidence/flow-api-01/1440x1000-light-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/1440x1000-light-scoundrel-xp.png">XP</a> · <a href="/evidence/flow-api-01/1440x1000-light-payoff.png">Payoff</a> | <a href="/evidence/flow-api-01/1440x1000-dark-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/1440x1000-dark-scoundrel-xp.png">XP</a> · <a href="/evidence/flow-api-01/1440x1000-dark-payoff.png">Payoff</a> | <a href="/evidence/flow-api-01/1440x1000-hic-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/1440x1000-hic-scoundrel-xp.png">XP</a> · <a href="/evidence/flow-api-01/1440x1000-hic-payoff.png">Payoff</a> |
+| 768×1024 | <a href="/evidence/flow-api-01/768x1024-light-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/768x1024-light-scoundrel-xp.png">XP</a> · <a href="/evidence/flow-api-01/768x1024-light-payoff-awards.png">Awards/Next</a> | <a href="/evidence/flow-api-01/768x1024-dark-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/768x1024-dark-scoundrel-xp.png">XP</a> · <a href="/evidence/flow-api-01/768x1024-dark-payoff-awards.png">Awards/Next</a> | <a href="/evidence/flow-api-01/768x1024-hic-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/768x1024-hic-scoundrel-xp.png">XP</a> · <a href="/evidence/flow-api-01/768x1024-hic-payoff-awards.png">Awards/Next</a> |
+| 390×844 | <a href="/evidence/flow-api-01/390x844-light-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/390x844-light-xp-allocation-controls.png">XP controls</a> · <a href="/evidence/flow-api-01/390x844-light-payoff-awards.png">Awards/Next</a> | <a href="/evidence/flow-api-01/390x844-dark-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/390x844-dark-xp-allocation-controls.png">XP controls</a> · <a href="/evidence/flow-api-01/390x844-dark-payoff-awards.png">Awards/Next</a> | <a href="/evidence/flow-api-01/390x844-hic-loadout.png">Loadout</a> · <a href="/evidence/flow-api-01/390x844-hic-xp-allocation-controls.png">XP controls</a> · <a href="/evidence/flow-api-01/390x844-hic-payoff-awards.png">Awards/Next</a> |
+
+After building/deploying the matching frontend and Ada backend, restart an already-running older server process manually. This card does not add the separately deferred compatibility handshake or restart-server message.
+

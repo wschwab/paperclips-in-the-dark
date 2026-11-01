@@ -1,0 +1,78 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- -- run suites/semantics/flow-api.test.ts -t FLOW-API-018
+OK: canonical managed launcher
+[managed-run] runId=2026-11-01T15-19-20-763Z-37179658
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=e8e711515651
+[managed-run] testCommand=run suites/semantics/flow-api.test.ts -t FLOW-API-018
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658/data
+[managed-run] logFile=/tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658/data (dir)
+[managed-run] port=34127
+[managed-run] baseUrl=http://127.0.0.1:34127
+[managed-run] pid=77009
+[managed-run] ready=http://127.0.0.1:34127
+[managed-run] vitestPid=77076
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-001] pure inactive projection exposes the current revision and no current completion action
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-002] Score projection discovers Planning, typed completion inputs and shared guidance
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-003] Planning and Engagement complete via the same op without automatic dice or awards
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-004] Payoff atomically applies explicit crew and personal deltas and advances one cursor
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-005] a stale linked crew revision rejects the entire completion without character awards or navigation
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-006] durable completion IDs and revisiting an awarded step cannot award twice
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-007] completion ID reuse with changed input is a proper non-success and preserves both entities
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-008] XP completion awards and clears expressions with cursor advance, while skip preserves expressions
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-009] invalid XP allocation fails before any award, clearing or step advance
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-010] undo from the scoundrel restores linked crew awards and cursor together
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-011] group undo cannot overwrite a later unrelated crew edit
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-012] optional final steps can be skipped into Downtime without crew writes or budget resets
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-013] missing character If-Match and touched crew revision are validation failures without writes
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-014] an observed stale cursor rejects without awarding even if character revision is current
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-015] group undo initiated at the crew restores the character cursor and personal share too
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-016] invalid later batch member rolls back an earlier guided award and receipt
+ ↓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-017] the projected action schema validates typed required Planning inputs and explicit skip
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-018] two guided groups undo in reverse order with fresh monotonic revisions 70ms
+   → expected 404 to be 200 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-018] two guided groups undo in reverse order with fresh monotonic revisions
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:283:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 skipped (18)
+   Start at  17:19:20
+   Duration  460ms (transform 54ms, setup 0ms, collect 281ms, tests 70ms, environment 0ms, prepare 31ms)
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658 dataDir=/tmp/pitd-managed/2026-11-01T15-19-20-763Z-37179658/data port=34127
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-11-01T15-19-20-763Z-37179658-server.log

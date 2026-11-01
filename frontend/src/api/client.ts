@@ -1,6 +1,7 @@
 import { Effect, Either, Schema } from "effect";
 import { type Health, Health as HealthSchema, type Roster, Roster as RosterSchema, type HistoryEntry, HistoryEntry as HistoryEntrySchema } from "../schema/campaign.js";
 import { type Character, Character as CharacterSchema } from "../schema/character.js";
+import { decodeCharacterFlow, type CharacterFlow, type FlowCompleteRequest } from "../schema/flow.js";
 import { type ContactCloseness } from "../schema/common.js";
 import { type Crew, Crew as CrewSchema } from "../schema/crew.js";
 import { type CrewSummary, CrewSummary as CrewSummarySchema } from "../schema/campaign.js";
@@ -322,6 +323,32 @@ export function getCharacter(id: string): Effect.Effect<Character, ApiError | De
       try: () => Schema.decodeUnknownSync(CharacterSchema, { onExcessProperty: "error" })(raw),
       catch: (cause) => new DecodeError(cause),
     });
+  });
+}
+
+/** Pure server-owned navigation, action schemas, guidance and completion receipt. */
+export function getCharacterFlow(id: string): Effect.Effect<CharacterFlow, ApiError | DecodeError> {
+  return Effect.gen(function* () {
+    const raw = yield* fetchJson(`/api/characters/${id}/flow`);
+    return yield* Effect.try({ try: () => decodeCharacterFlow(raw), catch: (cause) => new DecodeError(cause) });
+  });
+}
+
+/** One revisioned transaction; never chains an award with a cursor write. */
+export function characterFlowStepComplete(
+  id: string,
+  request: FlowCompleteRequest,
+  revision: number,
+  idempotencyKey?: string,
+): Effect.Effect<OperationResult, ApiError | DecodeError | StaleRevisionError> {
+  return fetchOperation(`/api/characters/${id}/ops/flow.step.complete`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "If-Match": String(revision),
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+    },
+    body: JSON.stringify(request),
   });
 }
 

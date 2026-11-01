@@ -120,7 +120,7 @@ async function history(id: string) {
   return response.body;
 }
 function gameplay(character: Character) {
-  const { revision, updatedAt, mode, modeFlow, canUndo, historyCount, lastSnapshotId, ...state } = character;
+  const { revision, updatedAt, mode, modeFlow, flowProgress, canUndo, historyCount, lastSnapshotId, ...state } = character;
   return state;
 }
 function restorable(character: Character) {

@@ -310,12 +310,14 @@ package body Pitd_Common is
             Dir_Fd : constant GNAT.OS_Lib.File_Descriptor :=
               GNAT.OS_Lib.Open_Read (Dir, GNAT.OS_Lib.Binary);
          begin
-            if Dir_Fd /= GNAT.OS_Lib.Invalid_FD then
-               if C_Fsync (Interfaces.C.int (Dir_Fd)) = 0 then
-                  null;
-               end if;
-               GNAT.OS_Lib.Close (Dir_Fd, Status);
+            if Dir_Fd = GNAT.OS_Lib.Invalid_FD then
+               raise Ada.Text_IO.Device_Error with "cannot open atomic-write directory";
             end if;
+            if C_Fsync (Interfaces.C.int (Dir_Fd)) /= 0 then
+               GNAT.OS_Lib.Close (Dir_Fd, Status);
+               raise Ada.Text_IO.Device_Error with "atomic-write directory fsync failed";
+            end if;
+            GNAT.OS_Lib.Close (Dir_Fd, Status);
          end;
       end;
    end Atomic_Write;
@@ -403,6 +405,96 @@ package body Pitd_Common is
          raise Program_Error with "new entity write requires membership gate";
       end if;
    end Require_Entity_Lock;
+
+   function Metadata_Path (Relative_Name : String) return String is
+      Slash : constant Natural := Ada.Strings.Fixed.Index (Relative_Name, "/");
+   begin
+      if Slash = 0 or else Relative_Name'Length < 6
+        or else Relative_Name (Relative_Name'Last - 4 .. Relative_Name'Last) /= ".json"
+        or else Ada.Strings.Fixed.Index (Relative_Name, "..") /= 0
+      then raise Program_Error with "invalid transaction metadata path"; end if;
+      declare
+         Prefix : constant String := Relative_Name (Relative_Name'First .. Slash - 1);
+         Rest : constant String := Relative_Name (Slash + 1 .. Relative_Name'Last - 5);
+         Inner : constant Natural := Ada.Strings.Fixed.Index (Rest, "/");
+      begin
+         if Prefix = "transactions" or else Prefix = "flow-groups" then
+            if not Safe (Rest) then raise Program_Error with "invalid transaction id"; end if;
+         elsif Prefix = "flow-receipts" and then Inner /= 0 then
+            if not Safe (Rest (Rest'First .. Inner - 1))
+              or else not Safe (Rest (Inner + 1 .. Rest'Last))
+            then raise Program_Error with "invalid receipt id"; end if;
+         else raise Program_Error with "invalid transaction metadata namespace"; end if;
+      end;
+      return To_String (Data_Root) & "/" & Relative_Name;
+   end Metadata_Path;
+
+   procedure Sync_Directory (Name : String) is
+      Fd : constant GNAT.OS_Lib.File_Descriptor := GNAT.OS_Lib.Open_Read (Name, GNAT.OS_Lib.Binary);
+      Status : Boolean;
+   begin
+      if Fd = GNAT.OS_Lib.Invalid_FD then raise Ada.Text_IO.Device_Error with "cannot open durable directory"; end if;
+      if C_Fsync (Interfaces.C.int (Fd)) /= 0 then
+         GNAT.OS_Lib.Close (Fd, Status);
+         raise Ada.Text_IO.Device_Error with "directory fsync failed";
+      end if;
+      GNAT.OS_Lib.Close (Fd, Status);
+   end Sync_Directory;
+
+   procedure Write_Transaction_Metadata (Relative_Name : String; Value : JSON_Value) is
+   begin
+      Atomic_Write (Metadata_Path (Relative_Name), Value);
+      --  New receipt/transaction directories must themselves be durable
+      --  before the intent is removed; syncing only the file's directory
+      --  would not persist its newly-created link in its parent.
+      declare
+         Root : constant String := Ada.Directories.Full_Name (To_String (Data_Root));
+         Dir : Unbounded_String := To_Unbounded_String
+           (Ada.Directories.Full_Name (Ada.Directories.Containing_Directory (Metadata_Path (Relative_Name))));
+      begin
+         loop
+            Sync_Directory (To_String (Dir));
+            exit when To_String (Dir) = Root;
+            Dir := To_Unbounded_String (Ada.Directories.Containing_Directory (To_String (Dir)));
+         end loop;
+      end;
+   end Write_Transaction_Metadata;
+
+   procedure Delete_Transaction_Metadata (Relative_Name : String) is
+      Name : constant String := Metadata_Path (Relative_Name);
+   begin
+      if Ada.Directories.Exists (Name) then
+         Ada.Directories.Delete_File (Name);
+         Sync_Directory (Ada.Directories.Containing_Directory (Name));
+      end if;
+   end Delete_Transaction_Metadata;
+
+   procedure Publish_Transaction_Snapshot
+     (Kind, Id, Snapshot_Id, Op, Taken_At : String; Entity : JSON_Value) is
+      H : constant JSON_Value := Create_Object;
+      M : constant JSON_Value := Create_Object;
+   begin
+      Require_Entity_Lock (Kind, Id, Entity);
+      if not Safe (Snapshot_Id) then raise Program_Error with "invalid transaction snapshot id"; end if;
+      Set_Field (M, "snapshotId", Snapshot_Id);
+      Set_Field (M, "takenAt", Taken_At);
+      Set_Field (M, "op", Op);
+      Set_Field (H, "_snapshot", M);
+      Set_Field (H, "entity", Entity);
+      Atomic_Write (Entity_Dir (Kind, Id) & "/history/" & Snapshot_Id & ".json", H);
+   end Publish_Transaction_Snapshot;
+
+   procedure Consume_Transaction_Snapshot (Kind, Id, Snapshot_Id : String) is
+      Name : constant String := Entity_Dir (Kind, Id) & "/history/" & Snapshot_Id & ".json";
+   begin
+      if not Entity_Lock_Registry.Owned (Id) or else not Safe (Snapshot_Id) then
+         raise Program_Error with "transaction snapshot consumption requires entity lock";
+      end if;
+      if Ada.Directories.Exists (Name) then
+         Ada.Directories.Delete_File (Name);
+         Sync_Directory (Ada.Directories.Containing_Directory (Name));
+      end if;
+   end Consume_Transaction_Snapshot;
 
    procedure Write_Entity (Kind, Id : String; Entity : JSON_Value) is
    begin
@@ -1371,6 +1463,34 @@ end Snapshot;
       return F;
    end Default_Mode_Flow;
 
+   function Default_Flow_Progress return JSON_Value is
+      P : constant JSON_Value := Create_Object;
+   begin
+      Set_Field (P, "instanceId", "");
+      Set_Field (P, "kind", "none");
+      Set_Field (P, "planApproach", "");
+      Set_Field (P, "notes", Empty_Array);
+      return P;
+   end Default_Flow_Progress;
+
+   function Current_Flow_Instance (E : JSON_Value) return String is
+      P : constant JSON_Value := Obj_Field (E, "flowProgress");
+      F : constant JSON_Value := Obj_Field (E, "modeFlow");
+   begin
+      if Str_Field (P, "instanceId") /= "" then return Str_Field (P, "instanceId"); end if;
+      if Str_Field (F, "kind") = "none" then return ""; end if;
+      return GNAT.SHA256.Digest
+        (Str_Field (E, "id") & "|" & Str_Field (F, "kind") & "|" & Str_Field (E, "createdAt"));
+   end Current_Flow_Instance;
+
+   procedure Begin_Flow_Instance (E : JSON_Value; Kind : String) is
+      P : constant JSON_Value := Default_Flow_Progress;
+   begin
+      Set_Field (P, "instanceId", New_Id);
+      Set_Field (P, "kind", Kind);
+      Set_Field (E, "flowProgress", P);
+   end Begin_Flow_Instance;
+
    function Default_Downtime (E : JSON_Value) return JSON_Value is
       G : constant JSON_Value := Game (Str_Field (E, "gameStem"));
       D : JSON_Value := Create_Object;
@@ -1391,6 +1511,9 @@ end Snapshot;
       end if;
       if not Has_Field (E, "modeFlow") then
          Set_Field (E, "modeFlow", Default_Mode_Flow);
+      end if;
+      if not Has_Field (E, "flowProgress") then
+         Set_Field (E, "flowProgress", Default_Flow_Progress);
       end if;
       if not Has_Field (E, "downtime") then
          Set_Field (E, "downtime", Default_Downtime (E));

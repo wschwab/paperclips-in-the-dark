@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "links": {
+    "planning": "https://bladesinthedark.com/planning-engagement",
+    "advancement": "https://bladesinthedark.com/advancement",
+    "payoff": "https://bladesinthedark.com/payoff",
+    "heat": "https://bladesinthedark.com/heat",
+    "entanglements": "https://bladesinthedark.com/entanglements",
+    "downtime": "https://bladesinthedark.com/downtime-activities",
+    "crewAdvancement": "https://bladesinthedark.com/advancement#crew-advancement"
+  },
+  "gmNote": "Confirm with your GM. Resolve the fiction at the table; this sheet doesn’t choose an outcome.",
+  "onePlayerWarning": "Only one player should update the crew — check nobody else already has.",
+  "scoreStart": {
+    "title": "Start a Score",
+    "steps": [
+      { "kind": "score-start", "step": "planning", "label": "Planning", "skippable": true },
+      { "kind": "score-start", "step": "loadout", "label": "Loadout", "skippable": true },
+      { "kind": "score-start", "step": "engagement", "label": "Engagement", "skippable": true }
+    ],
+    "planning": {
+      "intro": "Choose the plan your scoundrel is joining, then choose your loadout.",
+      "approaches": [
+        { "value": "Assault", "description": "Do violence to a target." },
+        { "value": "Deception", "description": "Lure, trick, or manipulate." },
+        { "value": "Stealth", "description": "Trespass unseen." },
+        { "value": "Occult", "description": "Engage a supernatural power." },
+        { "value": "Social", "description": "Negotiate, bargain, or persuade." },
+        { "value": "Transport", "description": "Carry cargo or people through danger." }
+      ]
+    },
+    "loadout": {
+      "intro": "Choose the load and items for this scoundrel. Limits come from the game settings.",
+      "note": "Choose items now or declare more during the score. This suggests a load limit; it never blocks play."
+    },
+    "engagement": {
+      "intro": "The crew makes the engagement roll, then cuts straight to the first obstacle.",
+      "diceNotes": ["Start with 1d for sheer luck.", "+1d for each major advantage.", "−1d for each major disadvantage."],
+      "factorHeaders": ["Consider", "Advantage · +1d", "Disadvantage · −1d"],
+      "factors": [
+        { "factor": "Operation", "advantage": "Particularly bold or daring", "disadvantage": "Overly complex; contingent on many factors" },
+        { "factor": "Plan’s detail", "advantage": "Exposes a vulnerability; hits the target where they’re weakest", "disadvantage": "The target is strongest here; special defenses or preparations" },
+        { "factor": "People", "advantage": "Friends or contacts provide aid or insight", "disadvantage": "Enemies or rivals interfere" },
+        { "factor": "Other elements", "advantage": "A lower-Tier target; a helpful district situation", "disadvantage": "A higher-Tier target; a harmful district situation" }
+      ],
+      "positionNote": "Starting position: Critical: past the first obstacle, controlled next · 6: controlled · 4/5: risky · 1–3: desperate. Roll at the table. This reminder doesn’t roll dice or require a result."
+    }
+  },
+  "resolution": {
+    "title": "Score resolution",
+    "steps": [
+      { "kind": "resolution", "step": "scoundrel-xp", "label": "Scoundrel XP", "skippable": true },
+      { "kind": "resolution", "step": "payoff", "label": "Payoff", "skippable": true },
+      { "kind": "resolution", "step": "heat", "label": "Heat", "skippable": true },
+      { "kind": "resolution", "step": "entanglements", "label": "Entanglements", "skippable": true },
+      { "kind": "resolution", "step": "crew-xp", "label": "Crew XP", "skippable": true },
+      { "kind": "resolution", "step": "crew-rep", "label": "Crew Rep", "skippable": true }
+    ],
+    "scoundrelXp": {
+      "intro": "End-of-session review. For each trigger that occurred, mark at least 1 XP; 2 if it occurred a lot. Success isn’t required. No trigger means no automatic XP.",
+      "note": "Mark this XP on any attribute or your playbook track. Desperate-action XP is already marked during play.",
+      "completionNote": "Completing clears the three session expression counters. Permanent XP is kept; the flow advances to the next step.",
+      "zeroNote": "A zero total awards nothing, but completion still clears the counters.",
+      "desperateNote": "Pick the attribute you used. It marks 1 XP there now.",
+      "trackerNote": "1 per trigger, 2 if it happened a lot. Resolution clears them."
+    },
+    "payoff": {
+      "intro": "Crew receives 2 rep, plus or minus the target-minus-crew Tier difference, minimum zero. A completely quiet score earns zero rep.",
+      "notes": ["If a boss is owed, subtract crew Tier + 1 coin as tithe. Ask your GM whether a tithe applies."],
+      "table": { "head": ["Coin", "Score"], "rows": [["2", "A minor job; several full purses"], ["4", "A small job; a strongbox"], ["6", "A standard score; decent loot"], ["8", "A big score; serious loot"], ["10+", "A major score; impressive loot"]] }
+    },
+    "heat": {
+      "intro": "Base heat above. Add +1 for a high-profile or well-connected target, +1 hostile turf, +1 at war, +2 if killing was involved.",
+      "note": "At the crew’s heat maximum, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements.",
+      "noteTemplate": "At {heatMax} heat, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements.",
+      "table": { "head": ["Heat", "Exposure"], "rows": [["0", "Smooth & quiet; low exposure"], ["2", "Contained; standard exposure"], ["4", "Loud & chaotic; high exposure"], ["6", "Wild; devastating exposure"]] }
+    },
+    "entanglements": {
+      "warning": "Before you roll: check that nobody else on the crew is already rolling entanglements for this score.",
+      "intro": "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result. Otherwise use the highest die, as with a fortune roll. The GM generates the entanglement for the crew.",
+      "bringIntoPlay": "Bring the entanglement into play immediately, or hold off until an appropriate moment. Entanglements manifest fully before the PCs have a chance to avoid them.",
+      "bands": [{ "label": "0–3", "min": 0, "max": 3 }, { "label": "4–5", "min": 4, "max": 5 }, { "label": "6+", "min": 6, "max": null }],
+      "rows": [
+        { "result": "1–3", "outcomes": { "0–3": "Gang Trouble or The Usual Suspects", "4–5": "Gang Trouble or Questioning", "6+": "Flipped or Interrogation" } },
+        { "result": "4–5", "outcomes": { "0–3": "Rivals or Unquiet Dead", "4–5": "Reprisals or Unquiet Dead", "6+": "Demonic Notice or Show of Force" } },
+        { "result": "6", "outcomes": { "0–3": "Cooperation", "4–5": "Show of Force", "6+": "Arrest" } }
+      ],
+      "descriptions": {
+        "Arrest": "An Inspector presents a case file of evidence to a magistrate, to begin prosecution of your crew. They send a detail to arrest you (a gang at least equal in scale to your wanted level). Pay them off with coin equal to your wanted level +3, hand someone over for arrest (this clears your heat), or try to evade capture.",
+        "Cooperation": "A +3 status faction asks you for a favor. Agree to do it, or forfeit 1 rep per Tier of the friendly faction, or lose 1 status with them. If you don’t have a +3 faction status, you avoid entanglements right now.",
+        "Demonic Notice": "A demon approaches the crew with a dark offer. Accept their bargain, hide until it loses interest (forfeit 3 rep), or deal with it another way.",
+        "Flipped": "One of the PCs’ rivals arranges for one of your contacts, patrons, clients, or a group of your customers to switch allegiances due to the heat on you. They’re loyal to another faction now.",
+        "Gang Trouble": "One of your gangs (or other cohorts) causes trouble due to their flaw(s). You can lose face (forfeit rep equal to your Tier +1), make an example of one of the gang members, or face reprisals from the wronged party.",
+        "Interrogation": "The officers round up one of the PCs to question them about the crew’s crimes. How did they manage to capture you? Either pay them off with 3 coin, or they beat you up (level 2 harm) and you tell them what they want to know (+3 heat). You can resist each of those consequences separately.",
+        "Questioning": "The cops grab an NPC member of your crew or one of the crew’s contacts, to question them about your crimes. Who do they think is most vulnerable? Make a fortune roll to see how much they talk (1-3: +2 heat, 4/5: +1 heat), or pay the constables off with 2 coin.",
+        "Reprisals": "An enemy faction makes a move against you (or a friend, contact, or vice purveyor). Pay them (1 rep and 1 coin) per Tier of the enemy as an apology, allow them to mess with you or yours, or fight back and show them who’s boss.",
+        "Rivals": "A neutral faction throws their weight around. They threaten you, a friend, a contact, or one of your vice purveyors. Forfeit (1 rep or 1 coin) per Tier of the rival, or stand up to them and lose 1 status with them.",
+        "Show of Force": "A faction with whom you have a negative status makes a play against your holdings. Give them 1 claim or go to war (drop to -3 status). If you have no claims, lose 1 hold instead.",
+        "The Usual Suspects": "The cops grab someone in the periphery of your crew. One player volunteers a friend or vice purveyor as the person most likely to be taken. Make a fortune roll to find out if they resist questioning (1-3: +2 heat, 4/5: level 2 harm), or pay them off with 1 coin.",
+        "Unquiet Dead": "A rogue spirit is drawn to you—perhaps it’s a past victim? Acquire the services of an occultist to attempt to destroy or banish it, or deal with it yourself."
+      }
+    },
+    "crewXp": {
+      "intro": "At the end of the session, review the crew xp triggers and mark 1 crew xp for each item that occurred during the session. If an item occurred multiple times or in a major way, mark 2 crew xp for it.",
+      "leadin": "The crew xp triggers are:",
+      "note": "Each category can yield up to 2 XP: 1 if it occurred, 2 if it occurred multiple times or in a major way.",
+      "categories": [
+        { "title": "Your crew-specific xp trigger.", "text": "For example, the Smugglers’ is “Execute a smuggling operation or acquire new clients or contraband sources.” If the crew successfully completed an operation from this trigger, mark xp." },
+        { "title": "Contend with challenges above your current station.", "text": "If you tangled with higher Tiers or more dangerous opposition, mark xp for this." },
+        { "title": "Bolster your crew’s reputation or develop a new one.", "text": "Review your crew’s reputation. Did you do anything to promote it? Also mark xp if you developed a new reputation for the crew." },
+        { "title": "Express the goals, drives, inner conflict, or essential nature of the crew.", "text": "This one is very broad! Essentially, did anything happen that highlighted the specific elements that make your crew unique?" }
+      ],
+      "review": "Review the triggers at the end of the session, then add the agreed crew XP here.",
+      "advance": "When you fill your crew advancement tracker, clear the marks and take a new special ability or mark two crew upgrade boxes.",
+      "origin": "Say how you’ve obtained this new ability or upgrades for the crew. Where did it come from? How does it become a new part of the crew?",
+      "profits": "Every time the crew advances, each PC gets stash equal to the crew Tier+2, to represent profits generated by the crew as they’ve been operating.",
+      "attribution": "Source: Blades in the Dark SRD (CC-BY)."
+    },
+    "crewRep": {
+      "intro": "Optional: update crew rep here, or skip. If rep was already recorded during Payoff, skip: this is not a second award.",
+      "note": "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."
+    }
+  },
+  "downtime": {
+    "intro": "Each explicit activity pick spends one unit. Helping someone is their Recover, not yours. Over-budget spending is allowed.",
+    "activities": [
+      { "value": "acquire-asset", "label": "Acquire Asset", "guidance": "Agree the asset and its quality with the GM; record the result at the table." },
+      { "value": "long-term-project", "label": "Long-Term Project", "guidance": "Resolve the activity at the table, then update the chosen project clock explicitly." },
+      { "value": "recover", "label": "Recover", "guidance": "Resolve treatment at the table, then update healing or harm explicitly." },
+      { "value": "reduce-heat", "label": "Reduce Heat", "guidance": "Resolve the activity at the table. Only one player should apply the agreed crew heat adjustment." },
+      { "value": "train", "label": "Train", "guidance": "Agree the training award with the GM and update the chosen XP track explicitly." },
+      { "value": "indulge-vice", "label": "Indulge Vice", "guidance": "Resolve vice and any overindulgence at the table, then record the agreed stress adjustment explicitly." },
+      { "value": "other", "label": "Other", "guidance": "Describe the activity and agree any consequences with the GM." }
+    ]
+  }
+}

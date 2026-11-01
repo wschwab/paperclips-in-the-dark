@@ -90,17 +90,16 @@ import {
   characterDowntimeSpend,
   getCrew,
   getCrewGameData,
-  crewRepAdd,
-  crewCoinAdd,
-  crewHeatAdd,
-  crewXpAdd,
-  characterXpResolve,
+  getCharacterFlow,
+  characterFlowStepComplete,
   characterDesperateMark,
   characterGearSetLoadout,
 } from "../api/client.js";
 import type { CharacterCapabilities } from "../api/client.js";
 import { extractExperienceTrigger } from "./crew-domain.js";
 import type { Crew } from "../schema/crew.js";
+import type { CharacterFlow, FlowCompleteRequest } from "../schema/flow.js";
+import { flowInputSchema, navigationBody, schemaObject } from "./flow-presentation.js";
 import {
   renderGameModePanel,
   renderScorePopup,
@@ -111,11 +110,12 @@ import {
   type GameModeHandlers,
   type GameModeUi,
 } from "./character-sections/gameMode.js";
-import { EMPTY_XP_DRAFT, type XpDraft } from "./character-sections/xp-allocation.js";
+import { EMPTY_XP_DRAFT, checkXpDraft, xpTracks, type XpDraft } from "./character-sections/xp-allocation.js";
 import { renderXpTrackerSheet } from "./character-sections/xp-tracker.js";
 import { commitmentFor, type LoadoutProposal } from "./game-mode.js";
 import { el, setChildren } from "../lib/dom.js";
 import { captureFocusTarget, applyFocusTarget, type FocusTarget } from "../lib/focus.js";
+import { captureFormDrafts, restoreFormDrafts } from "../lib/form-drafts.js";
 import { completionCues, type CompletionCue } from "../lib/completion-cues.js";
 import { errorCard } from "../components/error-card.js";
 import type { Character } from "../schema/character.js";
@@ -263,7 +263,7 @@ function renderDetail(state: RenderState): HTMLElement {
 
     renderPersonalSection(ctx),
     // GAME-MODE-03: the Downtime activity menu sits in the sheet, above the fixed footer on narrow screens.
-    state.c.mode === "downtime" ? renderDowntimeActivities(ctx, state.handlers.gm, "sheet") : null,
+    state.c.mode === "downtime" ? renderDowntimeActivities(ctx, state.handlers.gm, "sheet", state.gameMode) : null,
     // GAME-MODE-03: Score shows the committed loadout, the Score popup and the
     // Resolution stepper. They are assistance only and gate no operation.
     state.c.mode === "score" ? renderCommittedLoadout(ctx, state.handlers.gm, state.gameMode) : null,
@@ -464,6 +464,12 @@ export function mountCharacterDetailPage(
   // GAME-MODE-03: per-scoundrel mode UI state. Mode, flow and budget live on the
   // character; only presentation state and the linked crew are kept here.
   let isGameModeLoading = false;
+  let currentFlow: CharacterFlow | null = null;
+  let flowRequestedRevision: number | null = null;
+  let flowError: string | null = null;
+  let flowInputs: Record<string, unknown> = {};
+  let flowDraftIdentity = "";
+  let pendingCompletion: { signature: string; request: FlowCompleteRequest } | null = null;
   let linkedCrew: Crew | null = null;
   // CREW-XP-INFO-01: the crew game data's crew types, for the linked crew's own XP trigger.
   let crewGameTypes: readonly Record<string, unknown>[] | null = null;
@@ -718,6 +724,106 @@ export function mountCharacterDetailPage(
   };
   const needsLinkedCrew = (c: Character) => c.mode === "score" || c.modeFlow.kind === "resolution";
 
+  /** Re-project after every sheet revision, without changing ordinary sheet operations. */
+  const refreshFlow = () => {
+    if (!currentCharacter || cancelled || flowRequestedRevision === currentCharacter.revision) return;
+    const revision = currentCharacter.revision;
+    flowRequestedRevision = revision;
+    currentFlow = null;
+    flowError = null;
+    void Effect.runPromise(Effect.match(getCharacterFlow(characterId), {
+      onFailure: (err) => {
+        if (cancelled || currentCharacter?.revision !== revision) return;
+        flowError = `Guided flow could not be loaded. Your sheet still works. ${opErrorText(err)}`;
+        renderDetailWrapper({ passive: true });
+      },
+      onSuccess: (flow) => {
+        if (cancelled || currentCharacter?.revision !== revision) return;
+        if (flow.characterId !== characterId || flow.revision !== revision) {
+          flowError = "The guided flow changed elsewhere. Refresh the sheet before completing a step.";
+          renderDetailWrapper({ passive: true });
+          return;
+        }
+        const identity = `${flow.instanceId}/${flow.kind}/${flow.step}/${flow.receipt?.status ?? ""}`;
+        if (identity !== flowDraftIdentity) {
+          flowInputs = flow.receipt?.status === "completed" ? { ...flow.receipt.inputs } : {};
+          gmPlanApproach = typeof flowInputs.planApproach === "string" ? flowInputs.planApproach : currentCharacter.flowProgress.planApproach || null;
+          gmXpDraft = EMPTY_XP_DRAFT;
+          if (flow.receipt?.status === "completed" && typeof flowInputs.total === "number") {
+            gmXpDraft = {
+              total: flowInputs.total, adjust: false,
+              allocations: Object.fromEntries(Object.entries(schemaObject(flowInputs.allocations))
+                .flatMap(([name, amount]) => typeof amount === "number" ? [[name, amount]] : [])),
+            };
+          }
+          pendingCompletion = null;
+          flowDraftIdentity = identity;
+        }
+        currentFlow = flow;
+        renderDetailWrapper({ passive: true });
+      },
+    }));
+  };
+
+  const completeFlow = (skip = false, explicit?: Record<string, unknown>) => {
+    const flow = currentFlow;
+    const current = currentCharacter;
+    if (!current || !flow || isGameModeLoading || flow.kind === "none" ||
+      flow.revision !== current.revision || !flow.actions.some((a) => a.op === "flow.step.complete")) return;
+    const properties = schemaObject(flowInputSchema(flow).properties);
+    const candidate = explicit ?? flowInputs;
+    const inputs: Record<string, unknown> = skip ? {} : Object.fromEntries(Object.entries(candidate)
+      .filter(([key, value]) => Object.hasOwn(properties, key) && value !== "" && value !== undefined && value !== 0));
+    if (!skip && flow.kind === "score-start" && flow.step === "planning" && gmPlanApproach) inputs.planApproach = gmPlanApproach;
+    if (!skip && flow.kind === "score-start" && flow.step === "loadout") {
+      inputs.commitment = candidate.commitment ?? current.gear.commitment;
+      inputs.items = candidate.items ?? current.gear.loadout.map((item) => item.name);
+    }
+    if (!skip && flow.kind === "resolution" && flow.step === "scoundrel-xp") {
+      const check = checkXpDraft(current, gmXpDraft, flow);
+      if (!check.canComplete) return;
+      inputs.total = check.total;
+      inputs.allocations = Object.fromEntries(xpTracks(current, flow).map((track) => [track.name, gmXpDraft.allocations[track.name] ?? 0]));
+    }
+    const touchesCrew = ["crewCoin", "crewRep", "crewHeat", "crewXp"].some((key) => typeof inputs[key] === "number" && inputs[key] !== 0);
+    if (touchesCrew && flow.crew) inputs.crewRevision = flow.crew.revision;
+    const payload = { instanceId: flow.instanceId, kind: flow.kind, step: flow.step, ...(skip ? { skip: true } : {}), inputs };
+    const signature = JSON.stringify(payload);
+    if (!pendingCompletion || pendingCompletion.signature !== signature) {
+      pendingCompletion = { signature, request: { completionId: crypto.randomUUID(), ...payload } };
+    }
+    const request = pendingCompletion.request;
+    isGameModeLoading = true;
+    clearNotices();
+    renderDetailWrapper();
+    runMutation(transport, "lifecycle", characterFlowStepComplete(characterId, request, flow.revision, request.completionId),
+      (result) => {
+        if (!result.character) { flowError = "The flow response did not include the updated scoundrel."; return; }
+        currentCharacter = result.character;
+        pendingCompletion = null;
+        gmLoadoutChange = null;
+        gmXpTrackerOpen = false;
+        if (result.flow && result.flow.revision === result.character.revision) {
+          currentFlow = result.flow;
+          flowRequestedRevision = result.flow.revision;
+          flowDraftIdentity = "";
+          flowInputs = {};
+          gmXpDraft = EMPTY_XP_DRAFT;
+        }
+        refreshLinkedCrew();
+        renderDetailWrapper();
+      },
+      () => { isGameModeLoading = false; },
+      undefined,
+      () => {
+        pendingCompletion = null;
+        flowRequestedRevision = null;
+        gmCrewNotice = "The sheet or crew changed elsewhere. Review the refreshed values before completing.";
+        refreshAndShowNotice();
+        refreshLinkedCrew();
+      });
+  };
+
   const gmHandlers: GameModeHandlers = {
     onMode: (mode) => {
       if (!currentCharacter || isGameModeLoading) return;
@@ -767,27 +873,10 @@ export function mountCharacterDetailPage(
       // Closing returns focus to the footer tab that opened the sheet.
       if (!open) queueMicrotask(() => root.querySelector<HTMLElement>(".xp-tracker-tab")?.focus());
     },
-    onXpResolve: (total, allocations) => {
-      if (!currentCharacter || isXpLoading) return;
-      isXpLoading = true;
-      clearNotices();
-      renderDetailWrapper();
-      const program = characterXpResolve(characterId, currentCharacter.revision, total, allocations);
-      runCharacterMutate(
-        "talents",
-        program,
-        (character) => {
-          currentCharacter = character;
-          gmXpDraft = EMPTY_XP_DRAFT;
-          gmXpTrackerOpen = false;
-          noticeMsg = `Scoundrel XP completed: ${total} XP placed; session expression counters cleared.`;
-          renderDetailWrapper();
-        },
-        () => { isXpLoading = false; },
-      );
-    },
+    onXpResolve: (_total, _allocations) => completeFlow(),
     onPlanApproach: (approach) => {
       gmPlanApproach = approach;
+      flowInputs = { ...flowInputs, planApproach: approach };
       renderDetailWrapper();
     },
     onLoadoutChange: (proposal) => {
@@ -829,37 +918,15 @@ export function mountCharacterDetailPage(
     },
     onLoadoutCommitment: (choice) => {
       if (!currentCharacter || isGameModeLoading) return;
-      isGameModeLoading = true;
-      clearNotices();
+      flowInputs = { ...flowInputs, commitment: commitmentFor(choice) };
       renderDetailWrapper();
-      const program = gearSetCommitment(characterId, commitmentFor(choice), currentCharacter.revision);
-      runCharacterMutate(
-        "gear",
-        program,
-        (character) => {
-          currentCharacter = character;
-          renderDetailWrapper();
-        },
-        () => { isGameModeLoading = false; },
-      );
     },
     onLoadoutToggle: (name, commit) => {
       if (!currentCharacter || isGameModeLoading) return;
-      isGameModeLoading = true;
-      clearNotices();
+      const items = Array.isArray(flowInputs.items) ? flowInputs.items as string[] : currentCharacter.gear.loadout.map((item) => item.name);
+      const rest = items.filter((item) => item !== name);
+      flowInputs = { ...flowInputs, items: commit ? [...rest, name] : rest };
       renderDetailWrapper();
-      const program = commit
-        ? gearCommit(characterId, name, currentCharacter.revision)
-        : gearUncommit(characterId, name, currentCharacter.revision);
-      runCharacterMutate(
-        "gear",
-        program,
-        (character) => {
-          currentCharacter = character;
-          renderDetailWrapper();
-        },
-        () => { isGameModeLoading = false; },
-      );
     },
     // DESPERATE-LOG-01: a desperate action is one atomic op: +1 attribute XP and one tally entry.
     onDesperate: (attribute) => {
@@ -917,37 +984,29 @@ export function mountCharacterDetailPage(
         () => { isGameModeLoading = false; },
       );
     },
-    onCrewDelta: (track, delta) => {
-      const crew = linkedCrew;
-      if (!crew || isGameModeLoading || delta === 0) return;
-      isGameModeLoading = true;
-      clearNotices();
-      gmCrewNotice = null;
+    onFlowComplete: completeFlow,
+    onFlowRetry: () => {
+      flowRequestedRevision = null;
+      refreshAndShowNotice();
       renderDetailWrapper();
-      // Every crew write carries the observed crew revision (If-Match).
-      const program =
-        track === "rep" ? crewRepAdd(crew.id, delta, crew.revision)
-          : track === "coin" ? crewCoinAdd(crew.id, delta, crew.revision)
-            : track === "heat" ? crewHeatAdd(crew.id, delta, crew.revision)
-              : crewXpAdd(crew.id, delta, crew.revision);
-      runMutation(
-        transport,
-        null,
-        program,
-        (result) => {
-          linkedCrew = result.crew;
-          renderDetailWrapper();
-        },
-        () => { isGameModeLoading = false; },
-        undefined,
-        () => {
-          gmCrewNotice = "The crew changed elsewhere. Check its current value, then reconcile before applying again.";
-          refreshLinkedCrew();
-        },
-      );
     },
-    // "My share" edits this scoundrel's personal fund, never the crew.
-    onMyShare: (delta) => handlers.onFundDelta(delta),
+    onFlowInput: (key, value) => {
+      flowInputs = { ...flowInputs, [key]: value };
+      renderDetailWrapper();
+    },
+    onFlowNext: () => {
+      const flow = currentFlow;
+      if (!flow || !currentCharacter || isGameModeLoading) return;
+      const action = flow.actions[0];
+      if (!action) return;
+      if (action.op === "flow.step.complete") { completeFlow(); return; }
+      const body = navigationBody(action.inputSchema);
+      if (action.op === "mode.set" && (body.mode === "free-play" || body.mode === "score" || body.mode === "downtime")) {
+        gmHandlers.onMode(body.mode);
+      } else if (action.op === "mode.flow.set" && (body.kind === "none" || body.kind === "score-start" || body.kind === "resolution") && typeof body.step === "string") {
+        gmHandlers.onFlowSet(body.kind, body.step);
+      }
+    },
   };
 
   const handlers = {
@@ -2246,12 +2305,19 @@ export function mountCharacterDetailPage(
     gmXpTrackerOpen && currentCharacter?.mode === "score" && window.innerWidth <= 1099,
   );
 
-  const renderDetailWrapper = () => {
+  const renderDetailWrapper = (options?: { passive: true }) => {
     if (!currentCharacter) return;
+    refreshFlow();
     if (!pendingFocus) pendingFocus = captureFocusTarget(root);
+    // A same-revision advisory GET must not erase unsent ordinary sheet form values.
+    // Mutations/navigation use the default render and intentionally do not restore these.
+    const drafts = options?.passive ? captureFormDrafts(root) : null;
     setChildren(root, renderDetail({
       c: currentCharacter,
       gameMode: {
+        flow: currentFlow,
+        flowInputs,
+        flowError: flowError ?? (error?.section === "lifecycle" ? formatErrorSummary(error) : null),
         linkedCrew,
         crewXpTrigger: linkedCrew ? extractExperienceTrigger(null, crewGameTypes, linkedCrew.crewTypeName) : null,
         loadoutChange: gmLoadoutChange,
@@ -2277,7 +2343,7 @@ export function mountCharacterDetailPage(
       isTraumaPickerLoading,
       healNotice,
       isEndScoreLoading,
-      isXpLoading,
+      isXpLoading: isXpLoading || isGameModeLoading,
       isRetireLoading,
       isDeleteLoading,
       canUndo: canUndoState,
@@ -2319,6 +2385,7 @@ export function mountCharacterDetailPage(
       handlers: { ...wrappedHandlers, gm: gmHandlers },
     }));
     if (pendingFocus && applyFocusTarget(root, pendingFocus)) pendingFocus = null;
+    if (drafts) restoreFormDrafts(root, drafts);
     // CHAR-03: the routed section alert must be visible when it fully sits
     // off screen; run the guard here where the sheet is attached and layout
     // is measurable. On-screen alerts never move (scroll preserved).

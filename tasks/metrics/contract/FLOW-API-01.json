@@ -1,0 +1,129 @@
+{
+  "task": "FLOW-API-01",
+  "track": "contract",
+  "date": "2026-11-02",
+  "status": "Implemented; all non-mutation gates pass; isolated mutation and independent review pending",
+  "implementationAgent": "mode-mockups with FlowBackend and FlowFrontend implementation workers",
+  "reviewAgent": "playtest-ui-fixes owns independent Sol 6.1 xhigh review; pending",
+  "iterationsToGreen": null,
+  "wallClockMinutes": 45.37,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "No done claim before full acceptance; first focused backend20/20, first focused frontend96/97.",
+  "passRateAfterReview": "Pending independent review; current full frontend1040/1040, Ada664 per cycle, browser6/6.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {
+    "compiler": 1,
+    "conformance": 2,
+    "review": 1,
+    "human": 0
+  },
+  "defectCatchingLayer": [
+    "compiler",
+    "conformance",
+    "browser",
+    "source-review"
+  ],
+  "notes": "Known implementation findings: nullable popup child (compiler); passive advisory rerender reset ordinary form drafts and then lost numeric-input focus (browser/unit); grouped undo lacked secondary-participant missing/degraded admission (source review with two red oracles). Contract calibration amendments and expected feature reds are not counted as implementation defects. No full-campaign or review PASS claimed yet.",
+  "metricsMethodology": {
+    "method": "Exact command logs and observed counters; no estimated token/LOC claims.",
+    "source": "tasks/FLOW-API-01.md and tasks/metrics/contract/FLOW-API-01-*.log",
+    "wallClockNote": "Measured elapsed minutes since 2026-11-02 resume only; pre-quota work and offline interval are not measured.",
+    "tokensNote": "Provider token accounting unavailable; null is unknown.",
+    "locNote": "Multi-slice/generated-code delta not classified into implementation LOC.",
+    "scaffoldingLocNote": "Generated references, validators, screenshots and test scaffolding not counted separately."
+  },
+  "verification": {
+    "backend-focused": {
+      "exit": 0,
+      "seconds": 16.98,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-backend-focused.log"
+    },
+    "frontend-vitest": {
+      "exit": 0,
+      "seconds": 15.08,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-frontend-vitest.log"
+    },
+    "tooling": {
+      "exit": 0,
+      "seconds": 75.05,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-tooling.log"
+    },
+    "recovery": {
+      "exit": 0,
+      "seconds": 1.93,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-recovery.log"
+    },
+    "frontend-build": {
+      "exit": 0,
+      "seconds": 3.92,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-frontend-build.log"
+    },
+    "conformance-tsc": {
+      "exit": 0,
+      "seconds": 2.06,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-conformance-tsc.log"
+    },
+    "ada-ci": {
+      "exit": 0,
+      "seconds": 3.29,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-ada-ci.log"
+    },
+    "browser": {
+      "exit": 0,
+      "seconds": 77.14,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-browser.log"
+    },
+    "continuity-green": {
+      "exit": 0,
+      "seconds": 1.23,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-continuity-green.log"
+    },
+    "undo-admission-green": {
+      "exit": 0,
+      "seconds": 9.9,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-undo-admission-green.log"
+    },
+    "ada-two-cycle": {
+      "exit": 0,
+      "seconds": 183.33,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-ada-two-cycle.log"
+    },
+    "chromium": {
+      "exit": 0,
+      "seconds": 21.6,
+      "log": "/home/x/code/paperclips-in-the-dark/tasks/metrics/contract/FLOW-API-01-chromium.log"
+    },
+    "vocs": { "exit": 0, "seconds": 23.24, "log": "tasks/metrics/contract/FLOW-API-01-vocs.log" },
+    "metrics-validator": { "exit": 0, "log": "tasks/metrics/contract/FLOW-API-01-metrics-validator.log" },
+    "traceability-validator": { "exit": 0, "log": "tasks/metrics/contract/FLOW-API-01-traceability-validator.log" },
+    "audit-reconcile": { "exit": 0, "log": "tasks/metrics/contract/FLOW-API-01-audit-reconcile.log" }
+  },
+  "red": {
+    "ordinaryFlowCases": 22,
+    "isolatedRecoveryCases": 1,
+    "frontendFeatureCases": 8,
+    "additionalContinuityCases": 2,
+    "evidence": "See per-ID red logs and card; initial16 missing GET404, later oracles recorded separately."
+  },
+  "counts": {
+    "adaPerCycle": 664,
+    "adaCycles": 2,
+    "adaSkippedPerCycle": 1,
+    "isolatedRecoveryPasses": 2,
+    "frontend": 1040,
+    "tooling": 233,
+    "browser": 6,
+    "gnatproveChecks": 246,
+    "chromiumCombinations": 9,
+    "chromiumStates": 126,
+    "horizontalOverflow": 0
+  },
+  "mutation": {
+    "status": "pending",
+    "plannedWorkspace": "/tmp/flow-api-01-mutation-ws"
+  },
+  "review": {
+    "status": "pending"
+  }
+}

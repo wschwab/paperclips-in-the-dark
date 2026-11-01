@@ -1,0 +1,122 @@
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/api/game-mode-client.test.ts src/pages/game-mode-sheet.test.ts
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/api/game-mode-client.test.ts (8 tests) 15ms
+ ❯ src/pages/game-mode-sheet.test.ts (89 tests | 1 failed) 5693ms
+   ✓ GAME-MODE-03 sheet > shows the mode switch with Free Play selected and Personal always visible 59ms
+   ✓ GAME-MODE-03 sheet > switching to Score posts mode.set with the chosen mode and If-Match 63ms
+   ✓ GAME-MODE-03 sheet > Score collapses Projects and Contacts and shows the committed loadout with a confirmed change 59ms
+   ✓ GAME-MODE-03 sheet > opens the Score Planning popup from the stored cursor and reads load limits from settings 52ms
+   ✓ GAME-MODE-03 sheet > Score Loadout popup shows the load choices with the gear checklist and the approved footer 52ms
+   ✓ GAME-MODE-03 sheet > Resolution Payoff shows the approved coin table, the tithe rule and the Leave flow footer 52ms
+   ✓ GAME-MODE-03 sheet > walks the Resolution stepper with stored steps and shows the one-player warning on crew editors 74ms
+   ✓ GAME-MODE-03 sheet > crew completion sends observed character revision as If-Match and crew revision in explicit inputs 75ms
+   ✓ GAME-MODE-03 sheet > Skip on an optional Resolution step asks for confirmation before advancing 70ms
+   ✓ GAME-MODE-03 sheet > skipping the whole Resolution asks for confirmation and clears the workflow cursor 68ms
+   ✓ GAME-MODE-03 sheet > shows the downtime budget as remaining of free plus paid, and never blocks a spend when over 64ms
+   ✓ GAME-MODE-03 sheet > requires the stored mode, flow and downtime fields in the Character decoder (contract required list) 1ms
+   ✓ GAME-MODE-03 sheet > explicit adjust posts coin/gift/correction to downtime.adjust without a mode change 59ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > Planning is an overlay dialog (aria-modal) outside the sheet, with the six approach descriptions 53ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > Engagement footer ends with Enter Score and shows the approved starting-position reminder 53ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > Change loadout opens a confirmation with Light/Normal/Heavy, gear checkboxes and Back/Leave flow/Confirm change 56ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > Change loadout Back cancels the proposal and sends no gear write; Confirm change applies the proposed items 100ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > Change loadout rejection keeps the proposal and old committed items with no partial-write fallback 120ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > End Score with partial stress does not claim stress was cleared 107ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > crew award editors retain clear labels and defer all awards to completion 52ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > Crew XP and Crew Rep use the approved update labels, and Crew Rep offers a confirmed Skip and Next: Downtime 104ms
+   ✓ GAME-MODE-03 approved surfaces (Luna review findings) > the Downtime activity menu lives in the sheet (above the fixed footer on narrow), not only in the panel 51ms
+   ✓ GAME-MODE-03 Sol round-3 Planning cards (R3-03) > R3-03: each Planning approach is one selectable card holding its title and description 52ms
+   ✓ GAME-MODE-03 Sol round-3 Planning cards (R3-03) > R3-03: clicking the description itself selects the approach 56ms
+   ✓ GAME-MODE-03 Sol round-3 narrow Downtime card (R3-02) > R3-02: the sheet activities card carries the budget readout and adjustments, not only the panel 52ms
+   ✓ GAME-MODE-03 Sol round-3 narrow Downtime card (R3-02) > R3-02: the activity menu is one two-column grid in the sheet card, with Other last and spanning the row 52ms
+   ✓ GAME-MODE-03 Sol round-3 first-step Back (R3-01) > R3-01: the first Resolution step's Back is enabled and returns to the Score sheet 71ms
+   ✓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-1: the Score popup header carries the title, the 'Start a Score · N of 3' subtitle and a Close control 51ms
+   ✓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-1: Loadout and Engagement carry 2 of 3 and 3 of 3 102ms
+   ✓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-1: the header Close returns to the Score sheet (flow cleared, mode kept) 66ms
+   ✓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-2: the footer splits Back on the left and Leave flow with Next on the right 51ms
+   ✓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-2: the Resolution footer keeps Back left and Skip, Skip Resolution, Leave flow, Next right 52ms
+   ✓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-4: Payoff shows the approved Coin / Score table beside the rep and tithe reference 52ms
+   ✓ GAME-MODE-03 F7 residual layout (Sol focused check, 8642bf5a) > F7-4: Heat shows the approved Heat / Exposure table beside the modifiers 51ms
+   ✓ GAME-MODE-03 Sol round-3 approved reminders (R3-04) > R3-04a: Scoundrel XP carries the success and track-assignment reminders 52ms
+   ✓ GAME-MODE-03 Sol round-3 approved reminders (R3-04) > R3-04b: Heat carries the reminder with the crew's own heat maximum (never a literal 9) 52ms
+   ✓ GAME-MODE-03 Sol round-3 approved reminders (R3-04) > R3-04c: Entanglements says the GM generates the entanglement 52ms
+   ✓ Entanglements: SRD text, roll reminder and per-entanglement disclosures > shows the roll reminder near the top and lists the heat-4 column's five entanglements as disclosures 52ms
+   ✓ Entanglements: SRD text, roll reminder and per-entanglement disclosures > lists the heat-6 column's entanglements for a crew at heat 6 51ms
+   ✓ Entanglements: SRD text, roll reminder and per-entanglement disclosures > attributes the SRD text with a CC-BY note and an SRD ↗ link 51ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 finding (R2-03) > R2-03: Scoundrel XP shows each track's current total beside its mark 51ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-02: Scoundrel XP shows this playbook's condition, not the generic Lurk example 52ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-04: Entanglements carries the highest-die rule and the bring-into-play reminder 52ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-05: Crew XP states that each category can yield up to 2 XP, with the SRD text, CC-BY attribution and SRD link 51ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-05: Crew XP shows the crew type's own XP trigger from the crew data 52ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > CREW-XP-TRIGGERS-01: Resolution Crew XP shows all four SRD crew XP triggers and keeps the crew-type autoload 52ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > CREW-XP-TRIGGERS-01: the four crew XP triggers come before the crew XP editor so they show without scrolling 51ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > CREW-XP-TRIGGERS-01: the trigger list comes before the crew XP intro paragraph 51ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-02, R2-04, R2-05) > R2-05: Crew Rep links to the Payoff SRD page 52ms
+   ✓ GAME-MODE-03 Sol 6.1 round 2 findings (R2-06) > R2-06: the End Score tooltip does not promise an out-of-action transition 52ms
+   ✓ GAME-MODE-03 Sol 6.1 findings (F8, F4, F2) > F8: the End Score confirmation does not claim the scoundrel goes out of action 52ms
+   ✓ GAME-MODE-03 Sol 6.1 findings (F8, F4, F2) > F4: the crew editor copy describes the amount added (a delta), not a displayed total 51ms
+   × GAME-MODE-03 Sol 6.1 findings (F8, F4, F2) > F2: load totals use the selected commitment allowance (Normal 5, Heavy 6), not the absolute maximum 56ms
+     → expected 'LoadoutStart a Score · 2 of 3CloseLig…' to contain 'of 5 load committed'
+   ✓ GAME-MODE-03 Luna round 5 findings (F10, F1) > entanglements show the matching heat band table, and Show all reveals the full result-by-heat table 52ms
+   ✓ GAME-MODE-03 Luna round 5 findings (F10, F1) > the Resolution surface is an aria-modal overlay outside the sheet, with the six-step title and subtitle 52ms
+   ✓ GAME-MODE-03 Luna round 4 findings > Planning Back is enabled and returns to the score sheet (clears the popup cursor) 72ms
+   ✓ GAME-MODE-03 Luna round 4 findings > Engagement shows the approved factor table: Operation, Plan's detail, People, Other elements 51ms
+   ✓ GAME-MODE-03 Luna round 4 findings > the Resolution stepper offers six direct-selection controls that set the stored step 68ms
+   ✓ GAME-MODE-03 Luna round 3 finding: committed gear is listed once > the Score Loadout checklist lists each owned item once, checked only when committed 52ms
+   ✓ GAME-MODE-03 Luna round 3 finding: committed gear is listed once > the Change-loadout checklist lists each owned item once, with the proposal checked 57ms
+   ✓ GAME-MODE-03 Luna round 2 findings > the Resolution stepper shows the approved step names, not enum ids 52ms
+   ✓ GAME-MODE-03 Luna round 2 findings > the Downtime activity menu is in the Game Mode panel on wide screens and duplicated in the sheet for narrow screens 52ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the XP Tracker exists only in Score mode 51ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the tracker holds Desperate action XP and the three expression tracks in the sheet's stress structure 51ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the compact tab opens the bottom sheet (aria-expanded), Escape closes it and returns focus to the tab 114ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the allocation screen shows the counters as the GM total, and remaining XP updates live 58ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > completion is disabled until every XP is placed, then enabled 82ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > a track beyond its room blocks completion and says by how much 97ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > Adjust unlocks the GM total, and a zero total is allowed with the counters warning 69ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > Complete posts one flow.step.complete with the XP total and allocations under the current revision 107ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > the compact sheet traps Tab and Shift+Tab inside the dialog (XP-TRACKER-04 review R2) 58ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > while the compact sheet is open, the sheet and the mode panel behind it are inert (XP-TRACKER-04 review R2) 57ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > widening to the wide layout closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1) 76ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > leaving Score closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1) 77ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > while the compact sheet is open, the page outside the character (header, skip link, footer) is inert too (XP-TRACKER-04 review round 2 R2) 63ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > Escape still closes the compact sheet after focus was lost to the page (blocked background click, XP-TRACKER-04 round 3 R2) 62ms
+   ✓ XP Tracker and Scoundrel XP completion (XP-TRACKER-04) > focus that leaves the open compact sheet returns to its Close button (XP-TRACKER-04 round 3 R2) 108ms
+   ✓ LOADOUT-ATOMIC-01 frontend gap: Confirm with level none and items checked > disables Confirm change and says a level is needed, rather than sending none with items 62ms
+   ✓ DESPERATE-LOG-01 XP Tracker tally and desperate.mark control > lists this Score's marks per attribute, in the order first marked 50ms
+   ✓ DESPERATE-LOG-01 XP Tracker tally and desperate.mark control > says so when no desperate action XP has been marked this Score 51ms
+   ✓ DESPERATE-LOG-01 XP Tracker tally and desperate.mark control > the + Desperate action XP control posts desperate.mark with the chosen attribute and the revision 60ms
+   ✓ DESPERATE-LOG-01 XP Tracker tally and desperate.mark control > the marks list is rendered from the server's response, not from the request 109ms
+   ✓ LOADOUT-ATOMIC-01 Sol P2: a rejected confirmation is shown inside the open dialog > keeps the proposal and shows the server's reason and recovery in the confirmation dialog 127ms
+   ✓ DESPERATE-LOG-01 Sol P2: a refused mark is shown inside the open XP Tracker > keeps the tracker open and says why the mark was refused, with no write 119ms
+   ✓ FLOW-API-01 server-owned flow cutover > requests flow and renders server order, labels and shared guidance instead of local constants 52ms
+   ✓ FLOW-API-01 server-owned flow cutover > drafts payoff awards then sends only one atomic completion with the projected crew revision 75ms
+   ✓ FLOW-API-01 server-owned flow cutover > skips through the completion action with empty inputs, never award plus cursor writes 67ms
+   ✓ FLOW-API-01 server-owned flow cutover > shows a prior receipt and follows its navigation-only action without another completion 69ms
+   ✓ FLOW-API-01 server-owned flow cutover > requires canonical stored flow progress while keeping the old cursor shape exact 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/pages/game-mode-sheet.test.ts > GAME-MODE-03 Sol 6.1 findings (F8, F4, F2) > F2: load totals use the selected commitment allowance (Normal 5, Heavy 6), not the absolute maximum
+AssertionError: expected 'LoadoutStart a Score · 2 of 3CloseLig…' to contain 'of 5 load committed'
+
+Expected: [32m"of 5 load committed"[39m
+Received: [31m"LoadoutStart a Score · 2 of 3CloseLight · 3Normal · 5Heavy · 6Choose the load and items for this scoundrel. Limits come from the game settings.0 of 5 load proposed Fine lockpicks 0 load Climbing gear 2 loadChoose items now or declare more during the score. This suggests a load limit; it never blocks play.SRD ↗BackSkipLeave flowNext: Engagement"[39m
+
+ ❯ src/pages/game-mode-sheet.test.ts:868:31
+    866|     }));
+    867|     const popup = root.querySelector(".game-mode-popup")!;
+    868|     expect(popup.textContent).toContain("of 5 load committed");
+       |                               ^
+    869|     expect(popup.textContent).not.toContain("of 9 load");
+    870|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 96 passed (97)
+   Start at  17:06:09
+   Duration  6.43s (transform 274ms, setup 0ms, collect 674ms, tests 5.71s, environment 100ms, prepare 110ms)
+

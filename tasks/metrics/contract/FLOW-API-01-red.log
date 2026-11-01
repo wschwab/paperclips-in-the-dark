@@ -1,0 +1,403 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- -- run suites/semantics/flow-api.test.ts
+OK: canonical managed launcher
+[managed-run] runId=2026-11-01T15-10-14-139Z-da90c4f2
+[managed-run] server=/home/x/code/paperclips-in-the-dark/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/home/x/code/paperclips-in-the-dark/frontend/dist
+[managed-run] gamesDir=/home/x/code/paperclips-in-the-dark/data/games
+[managed-run] revision=e8e711515651
+[managed-run] testCommand=run suites/semantics/flow-api.test.ts
+[managed-run] seedSet=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds,/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2/data
+[managed-run] logFile=/tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2/data (dir)
+[managed-run] seed=/home/x/code/paperclips-in-the-dark/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2/data (dir)
+[managed-run] port=39503
+[managed-run] baseUrl=http://127.0.0.1:39503
+[managed-run] pid=17430
+[managed-run] ready=http://127.0.0.1:39503
+[managed-run] vitestPid=17498
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/conformance
+
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-001] pure inactive projection exposes the current revision and no current completion action 19ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-002] Score projection discovers Planning, typed completion inputs and shared guidance 46ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-003] Planning and Engagement complete via the same op without automatic dice or awards 46ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-004] Payoff atomically applies explicit crew and personal deltas and advances one cursor 93ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-005] a stale linked crew revision rejects the entire completion without character awards or navigation 89ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-006] durable completion IDs and revisiting an awarded step cannot award twice 88ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-007] completion ID reuse with changed input is a proper non-success and preserves both entities 45ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-008] XP completion awards and clears expressions with cursor advance, while skip preserves expressions 44ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-009] invalid XP allocation fails before any award, clearing or step advance 44ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-010] undo from the scoundrel restores linked crew awards and cursor together 88ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-011] group undo cannot overwrite a later unrelated crew edit 88ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-012] optional final steps can be skipped into Downtime without crew writes or budget resets 87ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-013] missing character If-Match and touched crew revision are validation failures without writes 88ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-014] an observed stale cursor rejects without awarding even if character revision is current 44ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-015] group undo initiated at the crew restores the character cursor and personal share too 88ms
+   → expected 404 to be 200 // Object.is equality
+ × suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-016] invalid later batch member rolls back an earlier guided award and receipt 89ms
+   → expected 404 to be 200 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-001] pure inactive projection exposes the current revision and no current completion action
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ suites/semantics/flow-api.test.ts:54:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-002] Score projection discovers Planning, typed completion inputs and shared guidance
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ suites/semantics/flow-api.test.ts:62:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-003] Planning and Engagement complete via the same op without automatic dice or awards
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ suites/semantics/flow-api.test.ts:74:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-004] Payoff atomically applies explicit crew and personal deltas and advances one cursor
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:90:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-005] a stale linked crew revision rejects the entire completion without character awards or navigation
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:105:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-006] durable completion IDs and revisiting an awarded step cannot award twice
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:117:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-007] completion ID reuse with changed input is a proper non-success and preserves both entities
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:134:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-008] XP completion awards and clears expressions with cursor advance, while skip preserves expressions
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:145:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-009] invalid XP allocation fails before any award, clearing or step advance
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:162:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-010] undo from the scoundrel restores linked crew awards and cursor together
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:171:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-011] group undo cannot overwrite a later unrelated crew edit
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:190:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-012] optional final steps can be skipped into Downtime without crew writes or budget resets
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:205:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-013] missing character If-Match and touched crew revision are validation failures without writes
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:218:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-014] an observed stale cursor rejects without awarding even if character revision is current
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:230:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-015] group undo initiated at the crew restores the character cursor and personal share too
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:239:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/16]⎯
+
+ FAIL  suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-016] invalid later batch member rolls back an earlier guided award and receipt
+AssertionError: expected 404 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 404[39m
+
+ ❯ flow suites/semantics/flow-api.test.ts:25:27
+     23| async function flow(id: string): Promise<Json> {
+     24|   const response = await api.get(`characters/${id}/flow`);
+     25|   expect(response.status).toBe(200);
+       |                           ^
+     26|   validateOrThrow("flow", response.body);
+     27|   return response.body as Json;
+ ❯ at suites/semantics/flow-api.test.ts:41:35
+ ❯ suites/semantics/flow-api.test.ts:252:39
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/16]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  16 failed (16)
+   Start at  17:10:14
+   Duration  1.49s (transform 57ms, setup 0ms, collect 300ms, tests 1.09s, environment 0ms, prepare 31ms)
+
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2 dataDir=/tmp/pitd-managed/2026-11-01T15-10-14-139Z-da90c4f2/data port=39503
+[managed-run] retainedLog=/home/x/code/paperclips-in-the-dark/agent-docs/test-audit/managed-run-logs/2026-11-01T15-10-14-139Z-da90c4f2-server.log

@@ -33,6 +33,8 @@ with Pitd_Common;
 with Pitd_Capability;
 with Pitd_Normalize;
 with Pitd_Ops;
+with Pitd_Flow;
+with Pitd_Transactions;
 with Pitd_Summary;
 with Pitd_Error;
 with Pitd_Stored;
@@ -867,6 +869,10 @@ package body Pitd_Callback is
       Suffix : constant String :=
         Part (Path, 4) & (if Part (Path, 5) /= "" then "/" & Part (Path, 5) else "");
       Is_Post : constant Boolean := AWS.Status.Method (Request) = AWS.Status.POST;
+      Is_Flow_Completion : constant Boolean :=
+        Kind = "character" and then Suffix = "ops/flow.step.complete" and then Is_Post;
+      Is_Flow_Read : constant Boolean :=
+        Kind = "character" and then Suffix = "flow" and then not Is_Post;
       B, E, R, Ctx : JSON_Value;
       Lock_Held : Boolean := False;
       Entity_Exists, Entity_Parse_Ok : Boolean := False;
@@ -886,6 +892,21 @@ package body Pitd_Callback is
          Append (Pending_Writes, Item);
       end Plan_Write;
       Undo_Doc : JSON_Value := JSON_Null;
+      Undo_Group : JSON_Value := JSON_Null;
+
+      function Linked_Crew return JSON_Value is
+         Crew_Id : constant String := Str_Field (Get (E, "dossier"), "crewId");
+         C, Context : JSON_Value;
+         Issues : JSON_Array;
+         Canonical : Boolean;
+      begin
+         if Crew_Id = "" then return JSON_Null; end if;
+         if not Ada.Directories.Exists (Current_File ("crew", Crew_Id)) then return JSON_Null; end if;
+         Classify_Stored ("crew", Crew_Id, Read_File (Current_File ("crew", Crew_Id)),
+                          C, Context, Issues, Canonical);
+         if not Canonical then return Invalid_Entity_Error ("flow", Issues); end if;
+         return C;
+      end Linked_Crew;
 
       procedure Release_Locks is
       begin
@@ -918,6 +939,7 @@ package body Pitd_Callback is
          Ordered.Include (Kind & "/" & Id);
          Best := Null_Unbounded_String;
          Doc := JSON_Null;
+         Undo_Group := JSON_Null;
          if Suffix = "delete" then
             if Kind = "crew" then Add_Kind ("character"); end if;
             Add_Kind ("clock");
@@ -929,12 +951,35 @@ package body Pitd_Callback is
                     (Read (Read_File (Entity_Dir (Kind, Id) & "/history/" & To_String (Best))),
                      "entity");
                   Add_Reference_Locks (Ordered, Kind, Doc);
+                  declare Name : constant String := To_String (Best); begin
+                     Undo_Group := Pitd_Transactions.Snapshot_Group (Name (Name'First .. Name'Last - 5));
+                     if Undo_Group.Kind = JSON_Object_Type then
+                        declare A : constant JSON_Array := Pitd_Transactions.Group_Locks (Undo_Group); begin
+                           for I in 1 .. Length (A) loop Ordered.Include (String'(Get (Get (A, I)))); end loop;
+                        end;
+                     else
+                        declare A : constant JSON_Array := Pitd_Transactions.Undo_Locks
+                          (Kind, Id, Name (Name'First .. Name'Last - 5), Doc);
+                        begin
+                           for I in 1 .. Length (A) loop Ordered.Include (String'(Get (Get (A, I)))); end loop;
+                        end;
+                     end if;
+                  end;
                end if;
             exception
                --  Discovery is only a lock footprint, never restored state.
                --  A concurrent undo may remove its file before our own lock.
                when GNATCOLL.JSON.Invalid_JSON_Stream | Ada.Text_IO.End_Error =>
                   if not Optimistic then raise; end if;
+            end;
+         elsif Is_Flow_Completion or else Is_Flow_Read then
+            declare
+               C : constant JSON_Value := Read_Entity ("character", Id);
+               Crew_Id : constant String := Str_Field (Obj_Field (C, "dossier"), "crewId");
+            begin
+               if Crew_Id /= "" and then (Is_Flow_Read or else Pitd_Flow.Touches_Crew (B)) then
+                  Ordered.Include ("crew/" & Crew_Id);
+               end if;
             end;
          end if;
          Keys := Empty_Array;
@@ -1032,6 +1077,14 @@ package body Pitd_Callback is
            (Request, Path, Kind, Kind & ".create", E);
       end if;
       if not Safe (Id) then return Fail (AWS.Messages.S404, "get", "NOT_FOUND"); end if;
+      if Is_Flow_Completion then
+         B := Parse_Body (To_String (AWS.Status.Binary_Data (Request)));
+         declare Bad : Unbounded_String; begin
+            if not Pitd_Flow.Validate_Request (B, Bad) then
+               return Fail (AWS.Messages.S400, "flow.step.complete", "VALIDATION", Message => To_String (Bad));
+            end if;
+         end;
+      end if;
       --  BUG-001: every mutation of an existing entity claims that entity's
       --  lock BEFORE the read, and holds it across read+mutate+snapshot+
       --  write.  The lock is released on every exit path and on exception.
@@ -1045,7 +1098,9 @@ package body Pitd_Callback is
             delay 0.001;
          end loop;
       end if;
-      if Is_Post and then (Suffix = "delete" or else Suffix = "undo") then
+      if (Is_Post and then (Suffix = "delete" or else Suffix = "undo"))
+        or else Is_Flow_Completion or else Is_Flow_Read
+      then
          loop
             Plan_Locks (True, Lock_Keys, Undo_Best, Undo_Doc);
             loop
@@ -1124,6 +1179,21 @@ package body Pitd_Callback is
             return X;
          end;
       end if;
+      if Is_Flow_Read then
+         declare C : constant JSON_Value := Linked_Crew; V : JSON_Value; begin
+            if C.Kind = JSON_Object_Type and then Has_Field (C, "ok") then
+               Release_Locks;
+               return Json_Response (C, AWS.Messages.S422);
+            end if;
+            if C.Kind = JSON_Null_Type and then Str_Field (Get (E, "dossier"), "crewId") /= "" then
+               Release_Locks;
+               return Fail (AWS.Messages.S404, "flow.get", "NOT_FOUND", Message => "linked crew not found");
+            end if;
+            V := Pitd_Flow.Projection (E, C);
+            Release_Locks;
+            return Json_Response (V);
+         end;
+      end if;
       if Suffix = "history" then
          declare
             X : constant AWS.Response.Data := Json_Response (Create (History (Kind, Id)));
@@ -1176,7 +1246,7 @@ package body Pitd_Callback is
             return Json_Response (X);
          end;
       end if;
-      if not Is_Post then return Fail (AWS.Messages.S404, "request", "NOT_FOUND"); end if;
+      if not Is_Post then Release_Locks; return Fail (AWS.Messages.S404, "request", "NOT_FOUND"); end if;
       --  SC-A3: write-path admission happened above through the shared
       --  Classify_Stored path — every mutation on a degraded entity already
       --  returned 422 INVALID_ENTITY with pointer-level details and no
@@ -1214,9 +1284,9 @@ package body Pitd_Callback is
             begin
                Idempotency_Store.Lookup (Scope, Hash, Found, Match, Stored);
                if Found then
-                  Release_Locks;
+                  if not Is_Flow_Completion or else not Match then Release_Locks; end if;
                   if Match then
-                     return Json_Text (To_String (Stored));
+                     if not Is_Flow_Completion then return Json_Text (To_String (Stored)); end if;
                   else
                      return Fail (AWS.Messages.S409, Suffix, "VALIDATION", E,
                                   "idempotency key already used with a different body");
@@ -1224,6 +1294,56 @@ package body Pitd_Callback is
                end if;
                Scope_Key := To_Unbounded_String (Scope);
                Body_Hash := To_Unbounded_String (Hash);
+            end;
+         end if;
+         if Is_Flow_Completion then
+            declare
+               Stored_Receipt : constant JSON_Value := Pitd_Transactions.Receipt (Id, Str_Field (B, "completionId"));
+               C : constant JSON_Value := (if Stored_Receipt.Kind = JSON_Object_Type then JSON_Null else Linked_Crew);
+               Before : constant JSON_Value := Clone (E);
+               Crew_Before : constant JSON_Value := Clone (C);
+               Plan : constant JSON_Value := Pitd_Transactions.New_Plan ("flow.step.complete");
+               Changed, Crew_Changed, Valid : Boolean;
+               Status : AWS.Messages.Status_Code := AWS.Messages.S200;
+            begin
+               if C.Kind = JSON_Object_Type and then Has_Field (C, "ok") then
+                  Release_Locks;
+                  return Json_Response (C, AWS.Messages.S422);
+               end if;
+               R := Pitd_Flow.Complete (E, C, B, Header (Request, "If-Match"),
+                                        Plan, Changed, Crew_Changed, Stored_Receipt);
+               if Bool_Field (R, "ok") and then Changed then
+                  Schema_Check ("character", E, Valid);
+                  if Valid and then Crew_Changed then Schema_Check ("crew", C, Valid); end if;
+                  if not Valid then
+                     Release_Locks;
+                     return Fail (AWS.Messages.S500, "flow.step.complete", "INTERNAL",
+                                  Message => "flow result fails schema validation; nothing written");
+                  end if;
+                  Stamp (E);
+                  Pitd_Transactions.Stage (Plan, Before, E);
+                  if Crew_Changed then
+                     Stamp (C);
+                     Pitd_Transactions.Stage (Plan, Crew_Before, C);
+                  end if;
+                  Pitd_Transactions.Commit (Plan);
+                  Set_Field (R, "character", E);
+                  Set_Field (R, "flow", Pitd_Flow.Projection (E, C));
+                  Set_History_Metadata (R, "character", Id);
+               elsif not Bool_Field (R, "ok") then
+                  declare Error : constant JSON_Value := Get (R, "error"); begin
+                     if Str_Field (Error, "code") = "VALIDATION" then
+                        Status := (if Int_Field (Error, "status") = 409 then AWS.Messages.S409 else AWS.Messages.S400);
+                     elsif Str_Field (Error, "code") = "STALE_REVISION" then Status := AWS.Messages.S409;
+                     end if;
+                  end;
+               end if;
+               if Bool_Field (R, "ok") and then Header (Request, "Idempotency-Key") /= "" then
+                  Idempotency_Store.Store (To_String (Scope_Key), To_String (Body_Hash),
+                                          String'(Write (R, Compact => False)) & ASCII.LF);
+               end if;
+               Release_Locks;
+               return Json_Response (R, Status);
             end;
          end if;
          --  SC-A3: CONC-IFMATCH-001/002/003 — undo, delete, and retire
@@ -1435,6 +1555,17 @@ if Kind = "crew" then
                Base   : constant String := Entity_Dir (Kind, Id) & "/history";
                Best : constant Unbounded_String := Undo_Best;
             begin
+               if Undo_Group.Kind = JSON_Object_Type then
+                  R := Pitd_Transactions.Undo (Undo_Group, Kind, Id);
+                  Release_Locks;
+                  return Json_Response
+                    (R, (if not Bool_Field (R, "ok") and then Str_Field (Get (R, "error"), "code") = "STALE_REVISION"
+                         then AWS.Messages.S409
+                         elsif not Bool_Field (R, "ok") and then Str_Field (Get (R, "error"), "code") = "NOT_FOUND"
+                         then AWS.Messages.S404
+                         elsif not Bool_Field (R, "ok") and then Str_Field (Get (R, "error"), "code") = "INVALID_ENTITY"
+                         then AWS.Messages.S422 else AWS.Messages.S200));
+               end if;
                if Length (Best) = 0 then
                   Release_Locks;
                   return Json_Response (No_History_Error ("undo", "no history", E));
@@ -1474,11 +1605,16 @@ if Kind = "crew" then
                   end if;
                   Set_Field (Restored, "revision", Int_Field (E, "revision") + 1);
                   Set_Field (Restored, "updatedAt", Now);
-                  Write_Entity (Kind, Id, Restored);
-                  Ada.Directories.Delete_File (Path);
-                  --  OPT-002: keep the sidecar consistent after undo consumes
-                  --  the newest snapshot.
-                  Rebuild_Index (Kind, Id);
+                  if Kind = "character" then Ensure_Game_Mode_Defaults (Restored); end if;
+                  declare Name : constant String := To_String (Best); begin
+                     if not Pitd_Transactions.Undo_Single
+                       (Kind, Id, Name (Name'First .. Name'Last - 5), E, Restored)
+                     then
+                        Write_Entity (Kind, Id, Restored);
+                        Ada.Directories.Delete_File (Path);
+                        Rebuild_Index (Kind, Id);
+                     end if;
+                  end;
                   Release_Locks;
                   return Json_Response (Success_Result ("undo", Restored));
                end;
@@ -2171,378 +2307,268 @@ if Kind = "crew" then
    end Handle_Entity;
 
    function Handle_Batch (Request : AWS.Status.Data) return AWS.Response.Data is
-      Response : AWS.Response.Data;
-   begin
-         --  BUG-005: sequential all-or-nothing multi-op planner.
-         declare
-            B    : constant JSON_Value := Parse_Body (To_String (AWS.Status.Binary_Data (Request)));
-            Ops  : JSON_Array;
-            Outs : JSON_Array := Empty_Array;
-            OK   : Boolean := True;
-            Fail_Code, Fail_Msg : Unbounded_String := Null_Unbounded_String;
-            Batch_Ctx  : JSON_Value := JSON_Null;
-            Batch_Issues : JSON_Array := Empty_Array;
-            Batch_Canonical : Boolean := False;
-            Batch_Err  : JSON_Value := JSON_Null;
-            type Ent is record
-               Kind : Unbounded_String := Null_Unbounded_String;
-               Id   : Unbounded_String := Null_Unbounded_String;
-               Op   : Unbounded_String := Null_Unbounded_String;
-               Args : JSON_Value := JSON_Null;
-               E    : JSON_Value := JSON_Null;
-               Changed : Boolean := False;
-            end record;
-            Ents : array (1 .. Max_Batch_Operations) of Ent :=
-              (others => (Kind => Null_Unbounded_String, Id => Null_Unbounded_String,
-                          Op => Null_Unbounded_String, Args => JSON_Null,
-                          E => JSON_Null, Changed => False));
-            N    : Natural := 0;
-            Lock_Order : array (1 .. Max_Batch_Operations) of Positive :=
-              (others => 1);
-            Locked : array (1 .. Max_Batch_Operations) of Boolean := (others => False);
-         begin
-            if B.Kind = JSON_Object_Type and then not Only_Fields (B, "|ops|") then
-               Response := Json_Response
-                 (Validation_Error ("batch", "unknown batch property",
-                                    Root_Issues ("unknown batch property")),
-                  AWS.Messages.S400);
-            elsif B.Kind /= JSON_Object_Type or else not Has_Field (B, "ops")
-              or else Get (B, "ops").Kind /= JSON_Array_Type
-            then
-               Response := Json_Response
-                 (Validation_Error ("batch", "ops must be a non-empty array",
-                                    Root_Issues ("ops must be a non-empty array")),
-                  AWS.Messages.S400);
-            else
-               Ops := Get (B, "ops");
-               if Length (Ops) = 0 or else Length (Ops) > Max_Batch_Operations then
-                  Response := Json_Response
-                    (Validation_Error ("batch", "ops must contain 1..50 operations",
-                                       Root_Issues ("ops must contain 1..50 operations")));
-               else
-                  for I in 1 .. Length (Ops) loop
-                     declare
-                        O   : constant JSON_Value := Get (Ops, I);
-                        K, ID, OP : Unbounded_String := Null_Unbounded_String;
-                     begin
-                        if O.Kind /= JSON_Object_Type
-                          or else not Has_Field (O, "entity")
-                          or else not Has_Field (O, "id")
-                          or else not Has_Field (O, "op")
-                          or else not Has_Field (O, "args")
+      B : constant JSON_Value := Parse_Body (To_String (AWS.Status.Binary_Data (Request)));
+      Ops : JSON_Array := Empty_Array;
+      Outs : JSON_Array := Empty_Array;
+      Work : constant JSON_Value := Create_Object;
+      Plan : constant JSON_Value := Pitd_Transactions.New_Plan ("campaign.batch");
+      Keys : JSON_Array := Empty_Array;
+      Held : Boolean := False;
+      All_Ok : Boolean := True;
+      Has_Flow : Boolean := False;
+      Admission_Error : JSON_Value := JSON_Null;
+
+      procedure Release_Locks is
+      begin
+         if Held then Entity_Lock_Registry.Release_Set (Keys); Held := False; end if;
+      end Release_Locks;
+
+      function Invalid (Message : String) return AWS.Response.Data is
+        (Json_Response (Validation_Error ("batch", Message, Root_Issues (Message)), AWS.Messages.S400));
+
+      function Discover return JSON_Array is
+         Ordered : String_Sets.Set;
+         Result : JSON_Array := Empty_Array;
+      begin
+         for I in 1 .. Length (Ops) loop
+            declare
+               O : constant JSON_Value := Get (Ops, I);
+               Kind : constant String := Str_Field (O, "entity");
+               Id : constant String := Str_Field (O, "id");
+            begin
+               Ordered.Include (Kind & "/" & Id);
+               if Str_Field (O, "op") = "flow.step.complete"
+                 and then Pitd_Flow.Touches_Crew (Get (O, "args"))
+               then
+                  declare
+                     C : constant JSON_Value := Read_Entity ("character", Id);
+                     Crew_Id : constant String := Str_Field (Obj_Field (C, "dossier"), "crewId");
+                  begin
+                     if Crew_Id /= "" then Ordered.Include ("crew/" & Crew_Id); end if;
+                  end;
+                  --  A prior staged dossier edit can change the participant.
+                  for J in 1 .. Length (Ops) loop
+                     declare P : constant JSON_Value := Get (Ops, J); begin
+                        if Str_Field (P, "entity") = "character" and then Str_Field (P, "id") = Id
+                          and then Str_Field (P, "op") = "dossier.update"
                         then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("each op requires entity, id, op, args");
-                           exit;
-                        end if;
-                        if not Only_Fields (O, "|entity|id|op|args|") then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("unknown batch operation property");
-                           exit;
-                        end if;
-                        K := To_Unbounded_String (Str_Field (O, "entity"));
-                        if To_String (K) /= "character" and then To_String (K) /= "crew"
-                          and then To_String (K) /= "clock" then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("entity must be character, crew or clock");
-                           exit;
-                        end if;
-                        ID := To_Unbounded_String (Str_Field (O, "id"));
-                        OP := To_Unbounded_String (Str_Field (O, "op"));
-                        if not Safe (To_String (ID)) then
-                           OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                           Fail_Msg := To_Unbounded_String ("invalid entity id");
-                           exit;
-                        end if;
-                        N := N + 1;
-                        Ents (N) := (Kind => K, Id => ID,
-                                     Op => OP, Args => Get (O, "args"),
-                                     E => JSON_Null, Changed => False);
-                        Lock_Order (N) := N;
-                     end;
-                  end loop;
-                  if OK then
-                     for I in 1 .. N - 1 loop
-                        for J in I + 1 .. N loop
-                           declare
-                              KI : constant String := To_String (Ents (Lock_Order (I)).Kind) & "/" & To_String (Ents (Lock_Order (I)).Id);
-                              KJ : constant String := To_String (Ents (Lock_Order (J)).Kind) & "/" & To_String (Ents (Lock_Order (J)).Id);
-                           begin
-                              if KJ < KI then
-                                 declare T : constant Positive := Lock_Order (I); begin
-                                    Lock_Order (I) := Lock_Order (J); Lock_Order (J) := T;
-                                 end;
-                              end if;
+                           declare Crew_Id : constant String := Str_Field (Obj_Field (P, "args"), "crewId"); begin
+                              if Crew_Id /= "" then Ordered.Include ("crew/" & Crew_Id); end if;
                            end;
-                        end loop;
-                     end loop;
-                     for I in 1 .. N loop
-                        declare
-                           Idx : constant Positive := Lock_Order (I);
-                           H : Boolean;
-                           Already : Boolean := False;
-                           KeyI : constant String :=
-                             To_String (Ents (Idx).Kind) & "/" & To_String (Ents (Idx).Id);
-                        begin
-                           for P in 1 .. I - 1 loop
-                              if To_String (Ents (Lock_Order (P)).Kind) & "/" & To_String (Ents (Lock_Order (P)).Id) = KeyI
-                              then
-                                 Already := True; exit;
-                              end if;
-                           end loop;
-                           if not Already then
-                              --  bounded spin like the per-entity routes: a
-                              --  transiently busy registry must not fail a
-                              --  whole batch under parallel load
-                              Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), H);
-                              for T in 1 .. 200 loop
-                                 exit when H;
-                                 delay 0.001;
-                                 Entity_Lock_Registry.Claim (To_String (Ents (Idx).Id), H);
-                              end loop;
-                              if not H then OK := False; Fail_Code := To_Unbounded_String ("VALIDATION");
-                                 Fail_Msg := To_Unbounded_String ("too many concurrent batches");
-                                 exit;
-                              end if;
-                           end if;
-                           Locked (Idx) := not Already;
-                        end;
-                     end loop;
-                  end if;
-                  if OK then
-                     --  Read and classify only after acquiring every entity
-                     --  lock; the plan must never start from a stale DTO.
-                     for I in 1 .. N loop
-                        declare
-                           K : constant String := To_String (Ents (I).Kind);
-                           ID : constant String := To_String (Ents (I).Id);
-                        begin
-                           if Ada.Directories.Exists (Current_File (K, ID)) then
-                              Classify_Stored
-                                (K, ID, Read_File (Current_File (K, ID)),
-                                 Ents (I).E, Batch_Ctx, Batch_Issues, Batch_Canonical);
-                              if not Batch_Canonical then
-                                 OK := False;
-                                 Fail_Code := To_Unbounded_String ("INVALID_ENTITY");
-                                 Fail_Msg := To_Unbounded_String
-                                   ("entity is degraded; repair before mutating");
-                                 Batch_Err := Invalid_Entity_Error ("batch", Batch_Issues);
-                                 exit;
-                              end if;
-                           else
-                              OK := False; Fail_Code := To_Unbounded_String ("NOT_FOUND");
-                              Fail_Msg := To_Unbounded_String
-                                ("entity not found: " & K & "/" & ID);
-                              exit;
-                           end if;
-                        end;
-                     end loop;
-                  end if;
-                  if OK then
-                     for I in 1 .. N loop
-                        declare
-                           R   : JSON_Value;
-                           OpS : constant String := To_String (Ents (I).Op);
-                           KeyI : constant String :=
-                             To_String (Ents (I).Kind) & "/" & To_String (Ents (I).Id);
-                        begin
-                           for P in reverse 1 .. I - 1 loop
-                              if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
-                                and then Ents (P).Changed
-                              then
-                                 Ents (I).E := Ents (P).E;
-                                 exit;
-                              end if;
-                           end loop;
-                           --  SC-A1: batch is a write path — the stored
-                           --  entity must be canonical before mutating, and
-                           --  every mutation must keep it canonical.
-                           if not Entity_Is_Canonical
-                             (To_String (Ents (I).Kind), To_String (Ents (I).Id),
-                              Ents (I).E)
-                           then
-                              OK := False;
-                              Fail_Code := To_Unbounded_String ("INVALID_ENTITY");
-                              Fail_Msg := To_Unbounded_String
-                                ("entity is degraded; repair before mutating");
-                              exit;
-                           end if;
-                           declare
-                              Bad : Unbounded_String;
-                              Valid : Boolean := False;
-                           begin
-                              begin
-                                 Valid := Validate_Mutation_Request
-                                   (To_String (Ents (I).Kind), To_String (Ents (I).Id),
-                                    OpS, Ents (I).Args, Bad);
-                              exception
-                                 when Constraint_Error =>
-                                    Bad := To_Unbounded_String ("request integer is out of range");
-                              end;
-                              if Valid then
-                                 R := Mutate (To_String (Ents (I).Kind), OpS, Ents (I).E, Ents (I).Args);
-                              else
-                                 R := Validation_Error
-                                   (OpS, To_String (Bad), Root_Issues (To_String (Bad)), Ents (I).E);
-                              end if;
-                           end;
-                           if Bool_Field (R, "ok") then
-                              declare
-                                 Batch_Mutated_Ok : Boolean;
-                              begin
-                                 Schema_Check (To_String (Ents (I).Kind), Ents (I).E,
-                                                       Batch_Mutated_Ok);
-                                 if not Batch_Mutated_Ok then
-                                    raise Program_Error with
-                                      "mutation result fails schema validation";
-                                 end if;
-                              end;
-                              Ents (I).Changed := True;
-                              declare
-                                 Item : JSON_Value := Create_Object;
-                              begin
-                                 Set_Field (Item, "ok", True);
-                                 Set_Field (Item, "op", OpS);
-                                 Append (Outs, Item);
-                              end;
-                           else
-                              OK := False;
-                              --  SC-A3: batch items carry the same whole-error
-                              --  union as the top-level error (ERR-BATCH-008).
-                              --  All planned items are still evaluated and
-                              --  reported (all-or-nothing refers to writes:
-                              --  nothing is written once any item failed).
-                              declare
-                                 Item : JSON_Value := Create_Object;
-                                 Err  : constant JSON_Value := Get (R, "error");
-                              begin
-                                 Set_Field (Item, "ok", False);
-                                 Set_Field (Item, "op", Create (OpS));
-                                 Set_Field (Item, "error", Err);
-                                 Append (Outs, Item);
-                              end;
-                           end if;
-                        end;
-                     end loop;
-                  end if;
-                  --  Validate final documents, not transient per-op states.
-                  if OK then
-                     for I in 1 .. N loop
-                        declare Last : Boolean := Ents (I).Changed; begin
-                           for P in I + 1 .. N loop
-                              if Ents (P).Kind = Ents (I).Kind and then Ents (P).Id = Ents (I).Id then
-                                 Last := False; exit;
-                              end if;
-                           end loop;
-                           if Last then
-                              declare
-                                 Issues : constant JSON_Array := Reference_Issues
-                                   (To_String (Ents (I).Kind), To_String (Ents (I).Id), Ents (I).E);
-                              begin
-                                 if Length (Issues) > 0 then
-                                    OK := False;
-                                    declare
-                                       Item : constant JSON_Value := Get (Outs, I);
-                                       Failure : constant JSON_Value := Validation_Error
-                                         (Str_Field (Item, "op"), Str_Field (Get (Issues, 1), "reason"), Issues);
-                                    begin
-                                       Set_Field (Item, "ok", False);
-                                       Set_Field (Item, "error", JSON_Value'(Get (Failure, "error")));
-                                    end;
-                                 end if;
-                              end;
-                           end if;
-                        end;
-                     end loop;
-                  end if;
-                  if OK then
-                     for I in 1 .. N loop
-                        declare
-                           K : constant String := To_String (Ents (I).Kind);
-                           ID : constant String := To_String (Ents (I).Id);
-                           KeyI : constant String := K & "/" & ID;
-                           Seen : Boolean := False;
-                        begin
-                           for P in 1 .. I - 1 loop
-                              if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI
-                              then Seen := True; exit; end if;
-                           end loop;
-                           if not Seen and then Ents (I).Changed then
-                              declare
-                                 Before : constant JSON_Value := Clone (Read_Entity (K, ID));
-                                 Last : Positive := I;
-                              begin
-                                 for P in I + 1 .. N loop
-                                    if To_String (Ents (P).Kind) & "/" & To_String (Ents (P).Id) = KeyI then
-                                       Last := P;
-                                    end if;
-                                 end loop;
-                                 --  The composite itself is x-snapshot:true,
-                                 --  including batches made entirely of micro-ops.
-                                 Snapshot (K, ID, "campaign.batch", Before);
-                                 Stamp (Ents (Last).E);
-                                 Write_Entity (K, ID, Ents (Last).E);
-                              end;
-                           end if;
-                        end;
-                     end loop;
-                     declare V : JSON_Value := Create_Object; begin
-                        Set_Field (V, "ok", True);
-                        Set_Field (V, "applied", Create_Object);
-                        Set_Field (Get (V, "applied"), "op", "campaign.batch");
-                        Set_Field (V, "batch", Outs);
-                        Set_Field (V, "sideEffects", Empty_Array);
-                        Set_Field (V, "error", JSON_Null);
-                        if Header (Request, "Idempotency-Key") /= "" then
-                           Idempotency_Store.Store
-                             (AWS.Status.Method (Request) & "|/api/campaign/batch|"
-                                & Header (Request, "Idempotency-Key"),
-                              GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))),
-                              String'(Write (V, Compact => False)) & ASCII.LF);
                         end if;
-                        Response := Json_Response (V);
                      end;
-                  else
-                     if Length (Outs) > 0 then
-                        --  SC-A3: per-item outcomes carry the failing item's
-                        --  typed union error; the batch envelope stays 200
-                        --  with batch=Outs (all-or-nothing: nothing written).
-                        declare V : JSON_Value := Create_Object; begin
-                           Set_Field (V, "ok", True);
-                           Set_Field (V, "applied", Create_Object);
-                           Set_Field (Get (V, "applied"), "op", "campaign.batch");
-                           Set_Field (V, "batch", Outs);
-                           Set_Field (V, "sideEffects", Empty_Array);
-                           Set_Field (V, "error", JSON_Null);
-                           Response := Json_Response (V);
-                        end;
-                     elsif Batch_Err.Kind = JSON_Object_Type then
-                        Response := Json_Response (Batch_Err);
-                     else
-                        Response := Json_Response
-                          (Error_Result ("batch", To_String (Fail_Code), To_String (Fail_Msg)),
-                           (if To_String (Fail_Code) = "VALIDATION"
-                            then AWS.Messages.S400 else AWS.Messages.S200));
-                     end if;
-                  end if;
-                  for I in 1 .. N loop
-                     if Locked (I) then
-                        Entity_Lock_Registry.Release (To_String (Ents (I).Id));
-                        Locked (I) := False;
-                     end if;
                   end loop;
                end if;
+            end;
+         end loop;
+         for Key of Ordered loop Append (Result, Create (Key)); end loop;
+         return Result;
+      end Discover;
+
+      function Same_Keys (Left, Right : JSON_Array) return Boolean is
+      begin
+         if Length (Left) /= Length (Right) then return False; end if;
+         for I in 1 .. Length (Left) loop
+            if String'(Get (Get (Left, I))) /= String'(Get (Get (Right, I))) then return False; end if;
+         end loop;
+         return True;
+      end Same_Keys;
+
+      function Load (Kind, Id : String) return Boolean is
+         Key : constant String := Kind & "/" & Id;
+         E, Context : JSON_Value;
+         Issues : JSON_Array;
+         Canonical : Boolean;
+         Item : constant JSON_Value := Create_Object;
+      begin
+         if Has_Field (Work, Key) then return True; end if;
+         if not Ada.Directories.Exists (Current_File (Kind, Id)) then
+            Admission_Error := Not_Found_Error ("batch", "entity not found: " & Key);
+            return False;
+         end if;
+         Classify_Stored (Kind, Id, Read_File (Current_File (Kind, Id)), E, Context, Issues, Canonical);
+         if not Canonical then Admission_Error := Invalid_Entity_Error ("batch", Issues); return False; end if;
+         Set_Field (Item, "kind", Kind); Set_Field (Item, "id", Id);
+         Set_Field (Item, "before", Clone (E)); Set_Field (Item, "document", E);
+         Set_Field (Item, "changed", False); Set_Field (Item, "lastIndex", Integer'(0));
+         Set_Field (Work, Key, Item);
+         return True;
+      end Load;
+
+      procedure Validate_Final (Key : UTF8_String; Item : JSON_Value) is
+         pragma Unreferenced (Key);
+         E : constant JSON_Value := Get (Item, "document");
+         Kind : constant String := Str_Field (Item, "kind");
+         Id : constant String := Str_Field (Item, "id");
+         Issues : constant JSON_Array := Reference_Issues (Kind, Id, E);
+         Valid : Boolean;
+      begin
+         if not Bool_Field (Item, "changed") then return; end if;
+         Schema_Check (Kind, E, Valid);
+         if not Valid then raise Program_Error with "batch result fails schema validation"; end if;
+         if Length (Issues) > 0 then
+            All_Ok := False;
+            declare
+               Output : constant JSON_Value := Get (Outs, Positive (Int_Field (Item, "lastIndex")));
+               Failure : constant JSON_Value := Validation_Error
+                 (Str_Field (Output, "op"), Str_Field (Get (Issues, 1), "reason"), Issues);
+            begin
+               Set_Field (Output, "ok", False); Set_Field (Output, "error", JSON_Value'(Get (Failure, "error")));
+            end;
+         end if;
+      end Validate_Final;
+
+      procedure Stage_Final (Key : UTF8_String; Item : JSON_Value) is
+         pragma Unreferenced (Key);
+         E : constant JSON_Value := Get (Item, "document");
+      begin
+         if Bool_Field (Item, "changed") then
+            Stamp (E);
+            Pitd_Transactions.Stage (Plan, Get (Item, "before"), E);
+         end if;
+      end Stage_Final;
+   begin
+      if B.Kind /= JSON_Object_Type or else not Only_Fields (B, "|ops|")
+        or else not Has_Field (B, "ops") or else Get (B, "ops").Kind /= JSON_Array_Type
+      then return Invalid ("ops must be a non-empty array with no other batch properties"); end if;
+      Ops := Get (B, "ops");
+      if Length (Ops) = 0 or else Length (Ops) > Max_Batch_Operations then
+         return Json_Response (Validation_Error ("batch", "ops must contain 1..50 operations", Root_Issues ("ops must contain 1..50 operations")));
+      end if;
+      for I in 1 .. Length (Ops) loop
+         declare O : constant JSON_Value := Get (Ops, I); Bad : Unbounded_String; begin
+            if O.Kind /= JSON_Object_Type or else not Only_Fields (O, "|entity|id|op|args|revision|")
+              or else not Has_Field (O, "entity") or else Get (O, "entity").Kind /= JSON_String_Type
+              or else not Has_Field (O, "id") or else Get (O, "id").Kind /= JSON_String_Type
+              or else not Has_Field (O, "op") or else Get (O, "op").Kind /= JSON_String_Type
+              or else not Has_Field (O, "args") or else Get (O, "args").Kind /= JSON_Object_Type
+              or else (Str_Field (O, "entity") /= "character" and then Str_Field (O, "entity") /= "crew" and then Str_Field (O, "entity") /= "clock")
+              or else not Safe (Str_Field (O, "id"))
+            then return Invalid ("each op requires valid entity, id, op and args"); end if;
+            if Has_Field (O, "revision") then
+               if Get (O, "revision").Kind /= JSON_Int_Type then return Invalid ("revision must be a nonnegative integer"); end if;
+               begin
+                  if Int_Field (O, "revision") < 0 then return Invalid ("revision must be a nonnegative integer"); end if;
+               exception when Constraint_Error => return Invalid ("revision is out of range"); end;
             end if;
-         exception
-            when others =>
-               for I in 1 .. N loop
-                  if Locked (I) then
-                     Entity_Lock_Registry.Release (To_String (Ents (I).Id));
-                  end if;
-               end loop;
-               raise;
+            if Str_Field (O, "op") = "flow.step.complete" then
+               Has_Flow := True;
+               if Str_Field (O, "entity") /= "character" or else not Has_Field (O, "revision") then
+                  return Invalid ("flow completion requires a character and revision");
+               end if;
+               if not Pitd_Flow.Validate_Request (Get (O, "args"), Bad) then return Invalid (To_String (Bad)); end if;
+            end if;
          end;
-      return Response;
+      end loop;
+      loop
+         Keys := Discover;
+         loop
+            Entity_Lock_Registry.Claim_Set (Keys, Held);
+            exit when Held;
+            delay 0.001;
+         end loop;
+         exit when Same_Keys (Keys, Discover);
+         Release_Locks;
+      end loop;
+      for I in 1 .. Length (Ops) loop
+         declare O : constant JSON_Value := Get (Ops, I); begin
+            if not Load (Str_Field (O, "entity"), Str_Field (O, "id")) then
+               Release_Locks;
+               return Json_Response (Admission_Error);
+            end if;
+         end;
+      end loop;
+      for I in 1 .. Length (Ops) loop
+         declare
+            O : constant JSON_Value := Get (Ops, I);
+            Kind : constant String := Str_Field (O, "entity");
+            Id : constant String := Str_Field (O, "id");
+            Op : constant String := Str_Field (O, "op");
+            Item : constant JSON_Value := Get (Work, Kind & "/" & Id);
+            E : constant JSON_Value := Get (Item, "document");
+            Args : constant JSON_Value := Get (O, "args");
+            Output : constant JSON_Value := Create_Object;
+            Result : JSON_Value;
+            Changed : Boolean := False;
+            Crew_Changed : Boolean := False;
+            Crew : JSON_Value := JSON_Null;
+            Crew_Item : JSON_Value := JSON_Null;
+            Bad : Unbounded_String;
+            Valid : Boolean := False;
+         begin
+            if Op = "flow.step.complete" then
+               declare Prior : constant JSON_Value := Pitd_Transactions.Receipt (Id, Str_Field (Args, "completionId")); begin
+                  Result := JSON_Null;
+                  if Prior.Kind = JSON_Null_Type and then Pitd_Flow.Touches_Crew (Args) then
+                     declare Crew_Id : constant String := Str_Field (Get (E, "dossier"), "crewId"); begin
+                        if Crew_Id /= "" then
+                           if Load ("crew", Crew_Id) then
+                              Crew_Item := Get (Work, "crew/" & Crew_Id);
+                              Crew := Get (Crew_Item, "document");
+                           else Result := Admission_Error; end if;
+                        end if;
+                     end;
+                  end if;
+                  if Result.Kind = JSON_Null_Type then
+                     Result := Pitd_Flow.Complete
+                       (E, Crew, Args, Trim_Image (Int_Field (O, "revision")), Plan, Changed, Crew_Changed, Prior);
+                  end if;
+               end;
+            else
+               begin
+                  Valid := Validate_Mutation_Request (Kind, Id, Op, Args, Bad);
+               exception when Constraint_Error => Bad := To_Unbounded_String ("request integer is out of range"); end;
+               if Valid then
+                  Result := Mutate (Kind, Op, E, Args); Changed := Bool_Field (Result, "ok");
+               else Result := Validation_Error (Op, To_String (Bad), Root_Issues (To_String (Bad)), E); end if;
+            end if;
+            Set_Field (Output, "op", Op); Set_Field (Output, "ok", Bool_Field (Result, "ok"));
+            if Bool_Field (Result, "ok") then
+               if Changed then Set_Field (Item, "changed", True); Set_Field (Item, "lastIndex", I); end if;
+               if Crew_Changed then Set_Field (Crew_Item, "changed", True); Set_Field (Crew_Item, "lastIndex", I); end if;
+            else All_Ok := False; Set_Field (Output, "error", JSON_Value'(Get (Result, "error"))); end if;
+            Append (Outs, Output);
+         end;
+      end loop;
+      if All_Ok then Map_JSON_Object (Work, Validate_Final'Access); end if;
+      if All_Ok then
+         Map_JSON_Object (Work, Stage_Final'Access);
+         if Has_Flow then
+            if Length (JSON_Array'(Get (Plan, "participants"))) > 0 then Pitd_Transactions.Commit (Plan); end if;
+         else
+            --  Ordinary batches retain their existing independent undo
+            --  histories. Only a batch containing guided completion adopts
+            --  the recoverable linked snapshot group.
+            declare A : constant JSON_Array := Get (Plan, "participants"); begin
+               for I in 1 .. Length (A) loop
+                  declare P : constant JSON_Value := Get (A, I); begin
+                     Require_Entity_Write (Str_Field (P, "kind"), Str_Field (P, "id"), Get (P, "after"));
+                  end;
+               end loop;
+               for I in 1 .. Length (A) loop
+                  declare P : constant JSON_Value := Get (A, I); begin
+                     Snapshot (Str_Field (P, "kind"), Str_Field (P, "id"), "campaign.batch", Get (P, "before"));
+                     Write_Entity (Str_Field (P, "kind"), Str_Field (P, "id"), Get (P, "after"));
+                  end;
+               end loop;
+            end;
+         end if;
+      end if;
+      declare V : constant JSON_Value := Create_Object; begin
+         Set_Field (V, "ok", True); Set_Field (V, "applied", Create_Object);
+         Set_Field (Get (V, "applied"), "op", "campaign.batch"); Set_Field (V, "batch", Outs);
+         Set_Field (V, "sideEffects", Empty_Array); Set_Field (V, "error", JSON_Null);
+         if All_Ok and then Header (Request, "Idempotency-Key") /= "" then
+            Idempotency_Store.Store
+              (AWS.Status.Method (Request) & "|/api/campaign/batch|" & Header (Request, "Idempotency-Key"),
+               GNAT.SHA256.Digest (To_String (AWS.Status.Binary_Data (Request))),
+               String'(Write (V, Compact => False)) & ASCII.LF);
+         end if;
+         Release_Locks;
+         return Json_Response (V);
+      end;
+   exception
+      when others => Release_Locks; raise;
    end Handle_Batch;
 
    --  Serialize lookup -> canonical write -> response store per scope.
@@ -3228,6 +3254,8 @@ if Kind = "crew" then
       --  catalog when present) before the server starts listening; any
       --  invalid file raises Startup_Failure and aborts startup loudly.
       Load_Settings_At_Startup;
+      Pitd_Flow.Load_Guidance;
+      Pitd_Transactions.Recover;
    end Configure;
 
    function Handle (Request : AWS.Status.Data) return AWS.Response.Data is
@@ -3301,7 +3329,7 @@ if Kind = "crew" then
                  (To_String (AWS.Status.Binary_Data (Request)));
             begin
                if B.Kind = JSON_Object_Type and then
-                 Str_Field (B, "entity") = "character" and then
+                 (Str_Field (B, "entity") = "character" or else Str_Field (B, "entity") = "crew") and then
                  Str_Field (B, "id") /= ""
                then
                   Crash_Arm (Str_Field (B, "id"));

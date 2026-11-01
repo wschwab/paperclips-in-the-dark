@@ -22,6 +22,7 @@ const SCHEMA_ID_BY_FILE: Record<string, string> = {
   "crew.json": "https://paperclips-in-the-dark/schemas/crew.json",
   "clock.json": "https://paperclips-in-the-dark/schemas/clock.json",
   "operation-result.json": "https://paperclips-in-the-dark/schemas/operation-result.json",
+  "flow.json": "https://paperclips-in-the-dark/schemas/flow.json",
 };
 
 type JsonObject = Record<string, unknown>;

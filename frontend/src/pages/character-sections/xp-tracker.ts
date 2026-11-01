@@ -7,7 +7,8 @@
  */
 import { el } from "../../lib/dom.js";
 import { stressTrack } from "../../components/stress-track.js";
-import { SRD, desperateAttributes } from "../game-mode.js";
+import { desperateAttributes } from "../game-mode.js";
+import { flowGuidance } from "../flow-presentation.js";
 import type { SectionCtx } from "./context.js";
 import type { GameModeHandlers, GameModeUi } from "./gameMode.js";
 import { sessionXpTotal } from "./xp-allocation.js";
@@ -69,13 +70,13 @@ function trackerBody(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTM
   });
 
   const nodes: Array<HTMLElement | null> = [
-    el("p", { className: "small" }, "Pick the attribute you used. It marks 1 XP there now."),
+    el("p", { className: "small" }, flowGuidance(ui.flow)?.resolution.scoundrelXp.desperateNote ?? ""),
     el("div", { className: "xp-tracker-desperate" }, select, mark),
     desperateMarkList(c.session.desperateMarks),
     ui.desperateError ? el("p", { className: "small", role: "alert" }, ui.desperateError) : null,
-    el("p", { className: "small", style: "margin-top: 0.5em;" }, "1 per trigger, 2 if it happened a lot. Resolution clears them."),
+    el("p", { className: "small", style: "margin-top: 0.5em;" }, flowGuidance(ui.flow)?.resolution.scoundrelXp.trackerNote ?? ""),
     ...rows,
-    el("p", { className: "small" }, el("a", { className: "srd-link", href: SRD.advancement, target: "_blank", rel: "noopener noreferrer" }, "SRD ↗")),
+    flowGuidance(ui.flow) ? el("p", { className: "small" }, el("a", { className: "srd-link", href: flowGuidance(ui.flow)!.links.advancement, target: "_blank", rel: "noopener noreferrer" }, "SRD ↗")) : null,
   ];
   return nodes.filter((n): n is HTMLElement => n !== null);
 }

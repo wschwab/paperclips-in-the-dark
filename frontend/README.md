@@ -41,3 +41,20 @@ Style guide: `docs/pages/frontend/f1-styleguide.mdx`.
 | `/` | Health check (F0) |
 | `/styleguide` | Component library (F1) — build sheets against this |
 | `/roster` | Character and crew summaries from the Ada backend (F2a) |
+
+## Guided score flow
+
+The character sheet reads `GET /api/characters/{id}/flow` for step order, labels,
+navigation, skippability, action input schemas and prior completion receipts.
+Award and loadout edits stay local until one `flow.step.complete` request commits
+the step. A receipted step follows its advertised navigation-only action; it
+never submits another award. Ordinary sheet operations remain independent.
+
+Shared advice lives in `../data/games/flow-guidance.json`. The backend loads it
+from its games directory and includes it in the projection, including inactive
+Downtime guidance. The browser does not bundle a duplicate or fetch a separate
+static document. Edition limits come from settings and projected action schemas.
+
+Same-revision passive flow responses preserve unsent sheet form values and the
+focused text selection across rendering. Snapshots are scoped to that render;
+actual mutations and navigation do not restore stale submitted values.

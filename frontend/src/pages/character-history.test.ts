@@ -63,6 +63,7 @@ const characterDTO = {
   contacts: [],
   mode: "free-play",
   modeFlow: { kind: "none", step: "" },
+  flowProgress: { instanceId: "", kind: "none", planApproach: "", notes: [] },
   downtime: { free: 2, paid: 0, spent: 0, activities: [] },
   session: {
     playbookExpressions: 0,

@@ -1,4 +1,4 @@
-import { renderXpAllocation, type XpDraft } from "./xp-allocation.js";
+import { checkXpDraft, renderXpAllocation, type XpDraft } from "./xp-allocation.js";
 import { renderXpTrackerPanel, renderXpTrackerTab } from "./xp-tracker.js";
 /**
  * Per-scoundrel game mode UI (GAME-MODE-03). Assistance only: nothing here
@@ -9,40 +9,16 @@ import { el } from "../../lib/dom.js";
 import type { Crew } from "../../schema/crew.js";
 import type { SectionCtx } from "./context.js";
 import {
-  type ScoreStartStep,
-  DOWNTIME_ACTIVITIES,
-  LOAD_CHOICES,
-  ONE_PLAYER_WARNING,
-  PLAN_APPROACHES,
-  RESOLUTION_LABELS,
-  RESOLUTION_STEPS,
-  type ResolutionStep,
-  SCORE_START_STEPS,
-  SRD,
-  choiceForCommitment,
-  commitmentFor,
-  downtimeRemaining,
-  entanglementCurrent,
-  loadLimitFor,
-  stepAfter,
-  stepBefore,
-  type LoadChoice,
-  type LoadoutProposal,
+  LOAD_CHOICES, choiceForCommitment, commitmentFor, downtimeRemaining, loadLimitFor,
+  type LoadChoice, type LoadoutProposal,
 } from "../game-mode.js";
-import { ENTANGLEMENT_ROWS, entanglementsInBand, ENTANGLEMENT_DESCRIPTIONS, ENTANGLEMENTS_SRD_URL } from "../../data/entanglements.js";
-import {
-  CREW_ADVANCE_ORIGIN_TEXT,
-  CREW_ADVANCE_TEXT,
-  CREW_ADVANCEMENT_ATTRIBUTION,
-  CREW_ADVANCEMENT_SRD_URL,
-  CREW_PROFITS_TEXT,
-  CREW_XP_CATEGORIES,
-  CREW_XP_INTRO,
-  CREW_XP_LEADIN,
-  CREW_XP_MAX_NOTE,
-} from "../../data/crew-advancement.js";
+import type { CharacterFlow } from "../../schema/flow.js";
+import { flowGuidance, flowInputField, flowInputSchema, type FlowGuidance } from "../flow-presentation.js";
 
 export interface GameModeUi {
+  flow: CharacterFlow | null;
+  flowInputs: Record<string, unknown>;
+  flowError: string | null;
   /** The linked crew, loaded for the Resolution editors; null when unlinked or not loaded. */
   linkedCrew: Crew | null;
   /** The linked crew type's own XP trigger from the crew game data; null when unknown. */
@@ -54,10 +30,10 @@ export interface GameModeUi {
   loadoutError: string | null;
   /** The last refused Desperate action XP mark, shown inside the XP Tracker; null otherwise. */
   desperateError: string | null;
-  /** Planning approach picked in the popup (assistance only; not persisted). */
+  /** Planning draft; completion stores the chosen approach on the server. */
   planApproach: string | null;
   crewNotice: string | null;
-  /** Scoundrel XP draft (split, GM total, Adjust). Assistance only; completion goes through xp.resolve. */
+  /** Explicit XP allocation draft; one flow completion awards it and advances. */
   xpDraft: XpDraft;
   /** The compact XP Tracker bottom sheet is open. */
   xpTrackerOpen: boolean;
@@ -66,6 +42,9 @@ export interface GameModeUi {
 export interface GameModeHandlers {
   onMode: (mode: "free-play" | "score" | "downtime") => void;
   onFlowSet: (kind: "none" | "score-start" | "resolution", step: string) => void;
+  onFlowComplete: (skip?: boolean, inputs?: Record<string, unknown>) => void;
+  onFlowInput: (key: string, value: unknown) => void;
+  onFlowRetry: () => void;
   onPlanApproach: (approach: string) => void;
   /** Open (non-null) or cancel (null) the loadout replacement proposal. */
   onLoadoutChange: (proposal: LoadoutProposal | null) => void;
@@ -80,8 +59,7 @@ export interface GameModeHandlers {
   onXpResolve: (total: number, allocations: Record<string, number>) => void;
   onDowntimeAdjust: (delta: number, reason: "coin" | "gift" | "correction") => void;
   onDowntimeSpend: (activity: string, description: string) => void;
-  onCrewDelta: (track: "rep" | "coin" | "heat" | "xp", delta: number) => void;
-  onMyShare: (delta: number) => void;
+  onFlowNext: () => void;
 }
 
 const h = el;
@@ -94,33 +72,32 @@ function srdLink(href: string): HTMLElement {
   return h("a", { className: "srd-link", href, target: "_blank", rel: "noopener noreferrer" }, "SRD ↗");
 }
 
-function amountInput(label: string): HTMLInputElement {
-  return h("input", { type: "number", step: "1", "aria-label": label, value: "1", style: "width: 5em;" }) as HTMLInputElement;
+function amountInput(label: string, key: string, ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLInputElement {
+  const schema = flowInputField(ui.flow, key);
+  const input = h("input", {
+    type: "number", step: "1", "aria-label": label,
+    value: String(ui.flowInputs[key] ?? 0), style: "width: 5em;",
+    disabled: ctx.anyLoading || ui.flow?.receipt?.status === "completed",
+    ...(typeof schema.minimum === "number" ? { min: String(schema.minimum) } : {}),
+    ...(typeof schema.maximum === "number" ? { max: String(schema.maximum) } : {}),
+    required: Array.isArray(flowInputSchema(ui.flow).required) && (flowInputSchema(ui.flow).required as string[]).includes(key),
+  }) as HTMLInputElement;
+  input.addEventListener("input", () => gm.onFlowInput(key, input.value === "" ? "" : Number(input.value)));
+  return input;
 }
 
-/** Crew editor: current total, an amount to add, the one-player warning. `button` is the approved update label. */
-function crewEditor(
-  label: string,
-  current: number | null,
-  track: "rep" | "coin" | "heat" | "xp",
-  button: string,
-  ctx: SectionCtx,
-  gm: GameModeHandlers,
-  linked: boolean,
-): HTMLElement {
-  const input = amountInput(`${label} amount`);
-  const apply = h("button", {
-    type: "button",
-    disabled: ctx.anyLoading || !linked,
-    title: `${button} (${label.toLowerCase()})`,
-  }, button);
-  apply.addEventListener("click", () => gm.onCrewDelta(track, Number(input.value) || 0));
+/** Crew deltas remain a local draft until the single completion action. */
+function crewEditor(label: string, current: number | null, track: "rep" | "coin" | "heat" | "xp",
+  button: string, ctx: SectionCtx, gm: GameModeHandlers, linked: boolean, ui: GameModeUi): HTMLElement {
+  const key = { rep: "crewRep", coin: "crewCoin", heat: "crewHeat", xp: "crewXp" }[track];
+  const input = amountInput(`${label} amount`, key, ctx, gm, ui);
+  input.disabled ||= !linked;
   return h("div", { className: "game-mode-crew-editor", "data-crew-track": track },
-    h("p", { className: "lbl", style: "margin: 0;" }, `${label} · current ${current ?? "—"}`),
+    h("p", { className: "lbl", style: "margin: 0;" }, `${button} · ${label} · current ${current ?? "—"}`),
     h("p", { className: "small", style: "margin: 0 0 0.25em;" },
-      "Enter the amount to add (use a minus to subtract). The number on the left is the current total; your entry is added to it."),
-    h("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" }, input, apply),
-    h("p", { className: "small notice", role: "note", style: "margin: 0.25em 0 0;" }, ONE_PLAYER_WARNING),
+      "Enter the amount to add (use a minus to subtract). Applied together when you complete this step."),
+    h("div", { style: "display: flex; gap: 0.5em; align-items: center; flex-wrap: wrap;" }, input),
+    h("p", { className: "small notice", role: "note", style: "margin: 0.25em 0 0;" }, flowGuidance(ui.flow)?.onePlayerWarning ?? ""),
   );
 }
 
@@ -176,18 +153,19 @@ function renderDowntimeBudget(ctx: SectionCtx, gm: GameModeHandlers, variant: "p
  * wide screens (approved panel), the sheet copy above the fixed footer on narrow
  * screens (approved narrow mockup). CSS shows exactly one per layout.
  */
-export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers, variant: "panel" | "sheet"): HTMLElement {
+export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers, variant: "panel" | "sheet", ui: GameModeUi): HTMLElement {
+  const guidance = flowGuidance(ui.flow);
   const desc = h("input", { type: "text", "aria-label": "Activity description", placeholder: "what you did" }) as HTMLInputElement;
-  const activityButtons = DOWNTIME_ACTIVITIES.map(({ value, label }) => {
-    const b = h("button", { type: "button", disabled: ctx.anyLoading, title: `Record activity: ${label}` }, label);
+  const activityButtons = (guidance?.downtime.activities ?? []).map(({ value, label, guidance: advice }) => {
+    const b = h("button", { type: "button", disabled: ctx.anyLoading, title: advice }, label);
     b.addEventListener("click", () => gm.onDowntimeSpend(value, desc.value.trim()));
     return b;
   });
   const body = [
-    h("p", { className: "small" }, "Each explicit activity pick spends one unit. Helping someone is their Recover, not yours. Over-budget spending is allowed."),
+    h("p", { className: "small" }, guidance?.downtime.intro ?? "Loading activity guidance…"),
     desc,
     h("div", { className: "activity-menu" }, ...activityButtons),
-    h("p", { className: "small" }, srdLink(SRD.downtime)),
+    guidance ? h("p", { className: "small" }, srdLink(guidance.links.downtime)) : null,
   ];
   if (variant === "panel") {
     return h("div", { className: "game-mode-block game-mode-activities-panel", "data-section": "downtime-activities-panel" },
@@ -200,9 +178,9 @@ export function renderDowntimeActivities(ctx: SectionCtx, gm: GameModeHandlers, 
 function renderScorePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
   const endScore = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading || ctx.retired || ctx.pendingTrauma, title: ctx.endScoreTitle }, "End Score");
   endScore.addEventListener("click", ctx.handlers.onEndScore);
-  const steps = SCORE_START_STEPS.map((s) => {
-    const b = h("button", { type: "button", disabled: ctx.anyLoading }, s.charAt(0).toUpperCase() + s.slice(1));
-    b.addEventListener("click", () => gm.onFlowSet("score-start", s));
+  const steps = (ui.flow?.steps ?? []).filter((s) => s.kind === "score-start").map((s) => {
+    const b = h("button", { type: "button", disabled: ctx.anyLoading }, s.label);
+    b.addEventListener("click", () => gm.onFlowSet(s.kind, s.step));
     return b;
   });
   return section("Score in progress",
@@ -217,16 +195,19 @@ function renderScorePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi)
 /** The mode panel: sticky left gutter on wide screens, footer on narrow (see CSS). */
 export function renderGameModePanel(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
   const c = ctx.c;
+  const retry = h("button", { type: "button" }, "Retry guided flow");
+  retry.addEventListener("click", gm.onFlowRetry);
   const body = c.mode === "score"
     ? renderScorePanel(ctx, gm, ui)
     : c.mode === "downtime"
-      ? h("div", {}, renderDowntimeBudget(ctx, gm, "panel"), renderDowntimeActivities(ctx, gm, "panel"))
+      ? h("div", {}, renderDowntimeBudget(ctx, gm, "panel"), renderDowntimeActivities(ctx, gm, "panel", ui))
       : section("Free Play", h("p", { className: "serif", style: "margin: 0.25em 0;" },
           "The sheet works as usual. Pick Score or Downtime when you want guided assistance."));
   return h("aside", { className: "mode-panel", "data-section": "game-mode", "aria-label": "Game mode" },
     h("h2", {}, "Game mode"),
     h("p", { className: "small scope" }, `For ${c.dossier.name || "this scoundrel"} only`),
     renderModeSwitch(ctx, gm),
+    ui.flowError && ctx.c.mode !== "free-play" ? h("p", { className: "notice small", role: "alert" }, ui.flowError, retry) : null,
     c.mode === "score" ? renderXpTrackerTab(ctx, gm, ui) : null,
     h("div", { className: "panel-content" }, body),
     c.mode === "score" ? renderXpTrackerPanel(ctx, gm, ui) : null,
@@ -259,79 +240,80 @@ function overlay(label: string, dataSection: string, extraClass: string, title: 
     ));
 }
 
-/** Score popup: Planning → Loadout → Engagement, read from the stored cursor. Rendered as an overlay outside the sheet. */
+/** Score popups keep their approved layout; the projection owns navigation and copy. */
 export function renderScorePopup(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement | null {
-  const flow = ctx.c.modeFlow;
-  if (flow.kind !== "score-start") return null;
+  const flow = ui.flow;
+  const guidance = flowGuidance(flow);
+  if (flow?.kind !== "score-start" || !guidance) return null;
   const step = flow.step;
-  const back = stepBefore("score-start", step);
-  const next = stepAfter("score-start", step);
-  const title = step === "planning" ? "Planning" : step === "loadout" ? "Loadout" : "Engagement";
+  const position = flow.steps.findIndex((s) => s.step === step);
+  const title = flow.steps[position]?.label ?? step;
+  const completed = flow.receipt?.status === "completed";
   const body: HTMLElement[] = [];
   if (step === "planning") {
+    const vocabulary = flowInputField(flow, "planApproach").enum;
     body.push(
-      h("p", { className: "serif" }, "Choose the plan your scoundrel is joining, then choose your loadout."),
-      // Each approach is one selectable card: its title and description are inside the button (approved 02-planning).
-      h("div", { className: "approach-grid" },
-        ...PLAN_APPROACHES.map((p) => {
-          const card = h("button", { type: "button", className: "approach-card", "aria-pressed": ui.planApproach === p.value ? "true" : "false", disabled: ctx.anyLoading },
-            h("strong", {}, p.value),
-            h("span", { className: "small" }, p.description));
+      h("p", { className: "serif" }, guidance.scoreStart.planning.intro),
+      h("div", { className: "approach-grid" }, ...guidance.scoreStart.planning.approaches
+        .filter((p) => !Array.isArray(vocabulary) || vocabulary.includes(p.value))
+        .map((p) => {
+          const card = h("button", { type: "button", className: "approach-card",
+            "aria-pressed": ui.planApproach === p.value ? "true" : "false", disabled: ctx.anyLoading || completed },
+            h("strong", {}, p.value), h("span", { className: "small" }, p.description));
           card.addEventListener("click", () => gm.onPlanApproach(p.value));
           return card;
         })),
-      h("p", { className: "small" }, srdLink(SRD.planning)),
     );
   } else if (step === "loadout") {
-    body.push(renderLoadoutChoices(ctx, gm));
-    body.push(h("p", { className: "small" }, "Choose items now or declare more during the score. This suggests a load limit; it never blocks play."));
-    body.push(h("p", { className: "small" }, srdLink(SRD.planning)));
-  } else {
+    body.push(renderLoadoutChoices(ctx, gm, ui), h("p", { className: "small" }, guidance.scoreStart.loadout.note));
+  } else if (step === "engagement") {
     body.push(
-      h("p", { className: "serif" }, "The crew makes the engagement roll, then cuts straight to the first obstacle."),
-      h("ul", { className: "small" },
-        h("li", {}, "Start with 1d for sheer luck."),
-        h("li", {}, "+1d for each major advantage."),
-        h("li", {}, "−1d for each major disadvantage.")),
-      engagementFactors(),
-      h("p", { className: "small", "data-starting-position": "" },
-        "Starting position: Critical: past the first obstacle, controlled next · 6: controlled · 4/5: risky · 1–3: desperate. Roll at the table. This reminder doesn’t roll dice or require a result."),
-      h("p", { className: "small" }, srdLink(SRD.planning)),
+      h("p", { className: "serif" }, guidance.scoreStart.engagement.intro),
+      h("ul", { className: "small" }, ...guidance.scoreStart.engagement.diceNotes.map((text) => h("li", {}, text))),
+      engagementFactors(guidance),
+      h("p", { className: "small", "data-starting-position": "" }, guidance.scoreStart.engagement.positionNote),
+      flowNote(ctx, gm, ui),
     );
   }
-  // Back on Planning returns to the score sheet (cursor cleared; mode stays Score).
-  const backBtn = h("button", { type: "button", disabled: ctx.anyLoading }, "Back");
-  backBtn.addEventListener("click", () => (back ? gm.onFlowSet("score-start", back) : gm.onFlowSet("none", "")));
+  body.push(h("p", { className: "small" }, srdLink(guidance.links.planning)));
+  if (ui.flowError) body.push(h("p", { className: "notice small", role: "alert" }, ui.flowError));
+  if (flow.receipt) body.push(receiptNotice(flow));
+  const back = h("button", { type: "button", disabled: ctx.anyLoading }, "Back");
+  back.addEventListener("click", () => gm.onFlowSet(flow.back === null ? "none" : flow.kind, flow.back ?? ""));
   const leave = h("button", { type: "button", disabled: ctx.anyLoading }, "Leave flow");
   leave.addEventListener("click", () => gm.onFlowSet("none", ""));
-  const nextLabel = next === "engagement" ? "Next: Engagement" : next === "loadout" ? "Next: Loadout" : "Enter Score";
-  const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, nextLabel);
-  nextBtn.addEventListener("click", () => (next ? gm.onFlowSet("score-start", next) : gm.onFlowSet("none", "")));
+  const nextLabel = flow.next === null ? "Enter Score" : `Next: ${flow.steps.find((s) => s.step === flow.next)?.label ?? flow.next}`;
+  const requiredInputs = flowInputSchema(flow).required;
+  const needsApproach = step === "planning" && Array.isArray(requiredInputs) && requiredInputs.includes("planApproach") && !ui.planApproach;
+  const next = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading || flow.actions.length === 0 || needsApproach }, nextLabel);
+  next.addEventListener("click", gm.onFlowNext);
+  const skip = flow.skippable && !completed ? h("button", { type: "button", disabled: ctx.anyLoading }, "Skip") : null;
+  skip?.addEventListener("click", () => gm.onFlowComplete(true));
   const close = h("button", { type: "button", className: "btn-secondary", disabled: ctx.anyLoading }, "Close");
   close.addEventListener("click", () => gm.onFlowSet("none", ""));
-  const position = SCORE_START_STEPS.indexOf(step as ScoreStartStep) + 1;
   return overlay(`Score ${step}`, "game-mode-popup", "", title, body,
-    { left: [backBtn], right: [leave, nextBtn] },
-    { subtitle: `Start a Score · ${position} of ${SCORE_START_STEPS.length}`, close });
+    { left: [back], right: [skip, leave, next].filter((b): b is HTMLButtonElement => b !== null) },
+    { subtitle: `${guidance.scoreStart.title} · ${position + 1} of ${flow.steps.length}`, close });
 }
 
-/** Approved reference rows (mockups 06b-payoff and 06c-heat). */
-const PAYOFF_GUIDE: ReadonlyArray<readonly [string, string]> = [
-  ["2", "A minor job; several full purses"],
-  ["4", "A small job; a strongbox"],
-  ["6", "A standard score; decent loot"],
-  ["8", "A big score; serious loot"],
-  ["10+", "A major score; impressive loot"],
-];
-const HEAT_EXPOSURE: ReadonlyArray<readonly [string, string]> = [
-  ["0", "Smooth & quiet; low exposure"],
-  ["2", "Contained; standard exposure"],
-  ["4", "Loud & chaotic; high exposure"],
-  ["6", "Wild; devastating exposure"],
-];
+function receiptNotice(flow: CharacterFlow): HTMLElement {
+  const receipt = flow.receipt!;
+  return h("p", { className: "notice small", "data-flow-receipt": receipt.completionId, role: "status" },
+    `Step ${receipt.status}${receipt.skipped ? " · skipped" : ""}. ${receipt.status === "completed"
+      ? "Next only navigates; awards are not applied again. Use an ordinary adjustment or Undo to change them."
+      : "This completion was undone. A new deliberate completion can apply this step again."}`);
+}
+
+function flowNote(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
+  const input = h("textarea", { "aria-label": "External outcome note",
+    disabled: ctx.anyLoading || ui.flow?.receipt?.status === "completed" }) as HTMLTextAreaElement;
+  input.value = String(ui.flowInputs.note ?? "");
+  input.addEventListener("input", () => gm.onFlowInput("note", input.value));
+  return h("label", { className: "small" }, "Optional table outcome note", input);
+}
 
 /** A two-column reference table: a header row, then one row per approved entry. */
-function referenceTable(head: readonly [string, string], rows: ReadonlyArray<readonly [string, string]>): HTMLElement {
+function referenceTable(head: readonly string[], rows: ReadonlyArray<readonly string[]>): HTMLElement {
   return h("table", { className: "rule-table reference-table" },
     h("tbody", {},
       h("tr", {}, h("th", { scope: "col" }, head[0]), h("th", { scope: "col" }, head[1])),
@@ -343,36 +325,29 @@ function entanglementTable(head: HTMLElement[], body: HTMLElement[]): HTMLElemen
   return h("table", { className: "rule-table ent-table" }, h("tbody", {}, ...head, ...body));
 }
 
-/** The approved engagement factor table (mockup 04-engagement wording). */
-const ENGAGEMENT_FACTORS: Array<{ factor: string; advantage: string; disadvantage: string }> = [
-  { factor: "Operation", advantage: "Particularly bold or daring", disadvantage: "Overly complex; contingent on many factors" },
-  { factor: "Plan’s detail", advantage: "Exposes a vulnerability; hits the target where they’re weakest", disadvantage: "The target is strongest here; special defenses or preparations" },
-  { factor: "People", advantage: "Friends or contacts provide aid or insight", disadvantage: "Enemies or rivals interfere" },
-  { factor: "Other elements", advantage: "A lower-Tier target; a helpful district situation", disadvantage: "A higher-Tier target; a harmful district situation" },
-];
-
-function engagementFactors(): HTMLElement {
+function engagementFactors(guidance: FlowGuidance): HTMLElement {
   return h("table", { className: "engagement-factors" },
-    h("thead", {}, h("tr", {}, h("th", {}, "Consider"), h("th", {}, "Advantage · +1d"), h("th", {}, "Disadvantage · −1d"))),
+    h("thead", {}, h("tr", {}, ...guidance.scoreStart.engagement.factorHeaders.map((label) => h("th", {}, label)))),
     h("tbody", {},
-      ...ENGAGEMENT_FACTORS.map((row) =>
+      ...guidance.scoreStart.engagement.factors.map((row) =>
         h("tr", {}, h("th", { scope: "row" }, row.factor), h("td", {}, row.advantage), h("td", {}, row.disadvantage)))));
 }
 
-function renderLoadoutChoices(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
-  const current = ctx.c.gear.commitment;
-  const choices = LOAD_CHOICES.map((choice) => {
+function renderLoadoutChoices(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
+  const current = typeof ui.flowInputs.commitment === "string" ? ui.flowInputs.commitment : ctx.c.gear.commitment;
+  const vocabulary = flowInputField(ui.flow, "commitment").enum;
+  const choices = LOAD_CHOICES.filter((choice) => !Array.isArray(vocabulary) || vocabulary.includes(commitmentFor(choice))).map((choice) => {
     const limit = loadLimitFor(ctx.gameData, choice);
     const pressed = commitmentFor(choice) === current;
-    const b = h("button", { type: "button", "aria-pressed": pressed ? "true" : "false", disabled: ctx.anyLoading || ctx.c.gear.isCommitmentLocked },
+    const b = h("button", { type: "button", "aria-pressed": pressed ? "true" : "false", disabled: ctx.anyLoading || ctx.c.gear.isCommitmentLocked || ui.flow?.receipt?.status === "completed" },
       limit === null ? choice : `${choice} · ${limit}`);
     b.addEventListener("click", () => gm.onLoadoutCommitment(choice));
     return b;
   });
   return h("div", {},
     h("div", { style: "display: flex; gap: 0.35em; flex-wrap: wrap;" }, ...choices),
-    h("p", { className: "small" }, "Choose the load and items for this scoundrel. Limits come from the game settings."),
-    renderGearChecklist(ctx, gm),
+    h("p", { className: "small" }, flowGuidance(ui.flow)?.scoreStart.loadout.intro ?? ""),
+    renderGearChecklist(ctx, gm, ui),
   );
 }
 
@@ -388,18 +363,20 @@ function ownedItems(g: SectionCtx["c"]["gear"]): Array<{ name: string; bulk: num
   return [...byName.values()];
 }
 
-function renderGearChecklist(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
+function renderGearChecklist(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
   const g = ctx.c.gear;
-  const committed = new Set(g.loadout.map((i) => i.name));
+  const committed = new Set(Array.isArray(ui.flowInputs.items) ? ui.flowInputs.items as string[] : g.loadout.map((i) => i.name));
   const row = (item: { name: string; bulk: number }) => {
     const on = committed.has(item.name);
-    const cb = h("input", { type: "checkbox", checked: on, disabled: ctx.anyLoading }) as HTMLInputElement;
+    const cb = h("input", { type: "checkbox", checked: on, disabled: ctx.anyLoading || ui.flow?.receipt?.status === "completed" }) as HTMLInputElement;
     cb.addEventListener("change", () => gm.onLoadoutToggle(item.name, cb.checked));
     return h("label", { className: "gear" }, cb, ` ${item.name} `, h("span", { className: "small" }, `${item.bulk} load`));
   };
-  const used = g.loadout.reduce((sum, i) => sum + i.bulk, 0);
+  const used = ownedItems(g).filter((item) => committed.has(item.name)).reduce((sum, i) => sum + i.bulk, 0);
   return h("div", { className: "game-mode-loadout" },
-    h("p", { className: "lbl" }, loadTotalText(used, loadLimitFor(ctx.gameData, g.commitment), "committed")),
+    h("p", { className: "lbl" }, loadTotalText(used,
+      loadLimitFor(ctx.gameData, typeof ui.flowInputs.commitment === "string" ? ui.flowInputs.commitment : g.commitment),
+      ui.flow?.receipt?.status === "completed" ? "committed" : "proposed")),
     ...ownedItems(g).map(row),
   );
 }
@@ -430,7 +407,7 @@ function renderProposalChecklist(ctx: SectionCtx, gm: GameModeHandlers, proposal
 }
 
 /** Committed loadout card (Score sheet). Change loadout opens the replacement proposal; nothing changes until Confirm. */
-export function renderCommittedLoadout(ctx: SectionCtx, gm: GameModeHandlers, _ui: GameModeUi): HTMLElement {
+export function renderCommittedLoadout(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
   const g = ctx.c.gear;
   const used = g.loadout.reduce((sum, i) => sum + i.bulk, 0);
   const change = h("button", { type: "button", className: "btn-secondary", disabled: ctx.anyLoading || g.isCommitmentLocked }, "Change loadout");
@@ -439,7 +416,7 @@ export function renderCommittedLoadout(ctx: SectionCtx, gm: GameModeHandlers, _u
     items: g.loadout.map((i) => i.name),
   }));
   return h("section", { className: "sheet-card focus-load", "data-section": "committed-loadout", style: "grid-column: 1 / -1;" },
-    h("h2", {}, "Loadout", " ", srdLink(SRD.planning)),
+    h("h2", {}, "Loadout", " ", flowGuidance(ui.flow) ? srdLink(flowGuidance(ui.flow)!.links.planning) : null),
     h("p", { className: "lbl" }, loadTotalText(used, loadLimitFor(ctx.gameData, g.commitment), "committed") + ` · ${g.commitment}`),
     h("ul", {}, ...g.loadout.map((i) => h("li", {}, `${i.name} · ${i.bulk} load`))),
     change,
@@ -450,6 +427,7 @@ export function renderCommittedLoadout(ctx: SectionCtx, gm: GameModeHandlers, _u
 export function renderLoadoutConfirm(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement | null {
   const proposal = ui.loadoutChange;
   if (proposal === null) return null;
+  const guidance = flowGuidance(ui.flow);
   const choices = LOAD_CHOICES.map((choice) => {
     const limit = loadLimitFor(ctx.gameData, choice);
     const b = h("button", { type: "button", "aria-pressed": proposal.commitment === choice ? "true" : "false", disabled: ctx.anyLoading },
@@ -473,163 +451,144 @@ export function renderLoadoutConfirm(ctx: SectionCtx, gm: GameModeHandlers, ui: 
       h("p", { className: "small", role: "status" },
         needsLevel ? "Choose Light, Normal or Heavy to carry these items. None carries nothing." : (ui.loadoutError ?? "")),
       renderProposalChecklist(ctx, gm, proposal),
-      h("p", { className: "small" }, "Choose items now or declare more during the score. This suggests a load limit; it never blocks play."),
-      h("p", { className: "small" }, srdLink(SRD.planning)),
+      h("p", { className: "small" }, guidance?.scoreStart.loadout.note ?? ""),
+      ...(guidance ? [h("p", { className: "small" }, srdLink(guidance.links.planning))] : []),
     ],
     { left: [back], right: [leave, confirm] });
 }
 
-/** Resolution: six-step stepper, Back/Next stored as the cursor, step content with crew editors. */
+/** Resolution renders the projected order and commits the entire local step draft once. */
 export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement | null {
-  const flow = ctx.c.modeFlow;
-  if (flow.kind !== "resolution") return null;
-  const step = flow.step;
-  const idx = RESOLUTION_STEPS.indexOf(step as (typeof RESOLUTION_STEPS)[number]);
+  const flow = ui.flow;
+  const guidance = flowGuidance(flow);
+  if (flow?.kind !== "resolution" || !guidance) return null;
+  const { step } = flow;
+  const idx = flow.steps.findIndex((s) => s.step === step);
   const crew = ui.linkedCrew;
-  const linked = crew !== null;
-  // Direct selection: each step is a control that sets the stored step (no completion prerequisite).
+  const linked = flow.crew !== null;
+  const completed = flow.receipt?.status === "completed";
+  const guide = guidance.resolution;
   const stepper = h("ol", { className: "resolution-stepper", "aria-label": "Resolution steps" },
-    ...RESOLUTION_STEPS.map((s, i) => {
-      const btn = h("button", { type: "button", "aria-current": s === step ? "step" : undefined, disabled: ctx.anyLoading }, `${i + 1}. ${RESOLUTION_LABELS[s]}`);
-      btn.addEventListener("click", () => gm.onFlowSet("resolution", s));
-      return h("li", { className: s === step ? "active" : "" }, btn);
+    ...flow.steps.map((s, i) => {
+      const btn = h("button", { type: "button", "aria-current": s.step === step ? "step" : undefined, disabled: ctx.anyLoading }, `${i + 1}. ${s.label}`);
+      btn.addEventListener("click", () => gm.onFlowSet(s.kind, s.step));
+      return h("li", { className: s.step === step ? "active" : "" }, btn);
     }));
   let content: HTMLElement;
   switch (step) {
     case "scoundrel-xp":
       content = h("div", {},
-        h("p", { className: "serif" }, "End-of-session review. For each trigger that occurred, mark at least 1 XP; 2 if it occurred a lot. Success isn’t required. No trigger means no automatic XP."),
-        h("p", { className: "small" }, "Mark this XP on any attribute or your playbook track. Desperate-action XP is already marked during play."),
+        h("p", { className: "serif" }, guide.scoundrelXp.intro),
+        h("p", { className: "small" }, guide.scoundrelXp.note),
         h("p", { className: "small" }, ctx.state.experienceCondition
-          ? `Playbook-specific challenge: ${ctx.state.experienceCondition}.`
-          : "Playbook-specific challenge."),
+          ? `Playbook-specific challenge: ${ctx.state.experienceCondition}.` : "Playbook-specific challenge."),
         renderXpAllocation(ctx, gm, ui),
-        h("p", { className: "small" }, srdLink(SRD.advancement)));
+        h("p", { className: "small" }, srdLink(guidance.links.advancement)));
       break;
     case "payoff":
       content = h("div", {},
         h("div", { className: "two-col" },
-          h("div", {},
-            h("p", { className: "serif" }, "Crew receives 2 rep, plus or minus the target-minus-crew Tier difference, minimum zero. A completely quiet score earns zero rep."),
-            h("ul", { className: "small" },
-              h("li", {}, "If a boss is owed, subtract crew Tier + 1 coin as tithe. Ask your GM whether a tithe applies."))),
-          h("div", {}, referenceTable(["Coin", "Score"], PAYOFF_GUIDE))),
-        crewEditor("Rep", crew?.rep.current ?? null, "rep", "Update crew", ctx, gm, linked),
-        crewEditor("Coin", crew?.coin ?? null, "coin", "Update crew", ctx, gm, linked),
-        myShareEditor(ctx, gm),
-        h("p", { className: "small" }, srdLink(SRD.payoff)));
+          h("div", {}, h("p", { className: "serif" }, guide.payoff.intro),
+            h("ul", { className: "small" }, ...guide.payoff.notes.map((text) => h("li", {}, text)))),
+          h("div", {}, referenceTable(guide.payoff.table.head, guide.payoff.table.rows))),
+        crewEditor("Rep", crew?.rep.current ?? null, "rep", "Update crew", ctx, gm, linked, ui),
+        crewEditor("Coin", crew?.coin ?? null, "coin", "Update crew", ctx, gm, linked, ui),
+        h("div", { className: "game-mode-share" },
+          h("p", { className: "lbl" }, `My share · coin ${ctx.c.fund.satchel.coins} of ${ctx.c.fund.satchel.max}`),
+          h("p", { className: "small" }, "This edits your own fund, not the crew. Applied with this step."),
+          amountInput("My share coin amount", "myShare", ctx, gm, ui)),
+        h("p", { className: "small" }, srdLink(guidance.links.payoff)));
       break;
     case "heat":
       content = h("div", {},
         h("div", { className: "two-col" },
-          h("div", {}, referenceTable(["Heat", "Exposure"], HEAT_EXPOSURE)),
-          h("div", {}, h("p", { className: "serif" }, "Base heat above. Add +1 for a high-profile or well-connected target, +1 hostile turf, +1 at war, +2 if killing was involved."))),
-        h("p", { className: "note" }, crew ? `At ${crew.heat.max} heat, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements.` : "At the crew’s heat maximum, gain a wanted level and clear heat; excess heat rolls over. Use the crew’s resulting heat and wanted level for entanglements."),
-        crewEditor("Heat", crew?.heat.current ?? null, "heat", "Update crew", ctx, gm, linked),
-        h("p", { className: "small" }, srdLink(SRD.heat)));
+          h("div", {}, referenceTable(guide.heat.table.head, guide.heat.table.rows)),
+          h("div", {}, h("p", { className: "serif" }, guide.heat.intro))),
+        h("p", { className: "note" }, crew ? guide.heat.noteTemplate.replace("{heatMax}", String(crew.heat.max)) : guide.heat.note),
+        crewEditor("Heat", crew?.heat.current ?? null, "heat", "Update crew", ctx, gm, linked, ui),
+        h("p", { className: "small" }, srdLink(guidance.links.heat)));
       break;
     case "entanglements": {
+      const data = guide.entanglements;
       const heat = crew?.heat.current ?? 0;
-      const current = entanglementCurrent(heat);
+      const band = data.bands.find((b) => heat >= b.min && (b.max === null || heat <= b.max));
+      const outcomes = (r: (typeof data.rows)[number], label: string) => (r.outcomes as Record<string, string>)[label] ?? "";
+      const names = band ? [...new Set(data.rows.flatMap((r) => outcomes(r, band.label).split(" or ")))] : [];
       content = h("div", {},
-        h("p", { className: "serif", style: "font-weight: 600;" }, "Before you roll: check that nobody else on the crew is already rolling entanglements for this score."),
-        h("p", { className: "serif" }, "After payoff and heat are determined, find the column that matches the crew’s current heat level. Roll a number of dice equal to the crew’s wanted level, and use the result of the roll to select the entanglement. If wanted level is zero, roll two dice and keep the lowest result. Otherwise use the highest die, as with a fortune roll. The GM generates the entanglement for the crew."),
+        h("p", { className: "serif", style: "font-weight: 600;" }, data.warning),
+        h("p", { className: "serif" }, data.intro),
         h("div", { className: "current-heat" },
           h("strong", {}, crew ? `Crew’s current heat: ${heat}` : "Link a crew to see its heat."),
-          h("span", {}, ` · Matching band · Heat ${current.band}`)),
-        entanglementTable([
-          h("tr", {}, h("th", {}, "Result"), h("th", {}, `Heat ${current.band}`)),
-        ], current.rows.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result), h("td", {}, r.outcome)))),
-        h("details", { className: "all-entanglements" },
-          h("summary", {}, "Show all"),
+          h("span", {}, band ? ` · Matching band · Heat ${band.label}` : "")),
+        band ? entanglementTable(
+          [h("tr", {}, h("th", {}, "Result"), h("th", {}, `Heat ${band.label}`))],
+          data.rows.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result), h("td", {}, outcomes(r, band.label))))) : null,
+        h("details", { className: "all-entanglements" }, h("summary", {}, "Show all"),
           entanglementTable(
-            [h("tr", {}, h("th", {}, "Result"), ...["0–3", "4–5", "6+"].map((b) => h("th", {}, `Heat ${b}`)))],
-            ENTANGLEMENT_ROWS.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result), ...(["0–3", "4–5", "6+"] as const).map((b) => h("td", {}, r.outcomes[b])))),
-          )),
+            [h("tr", {}, h("th", {}, "Result"), ...data.bands.map((b) => h("th", {}, `Heat ${b.label}`)))],
+            data.rows.map((r) => h("tr", {}, h("th", { scope: "row" }, r.result),
+              ...data.bands.map((b) => h("td", {}, outcomes(r, b.label))))))),
         h("div", { className: "entanglement-descriptions" },
-          ...entanglementsInBand(current.band).map((name) =>
-            h("details", {}, h("summary", {}, name), h("p", { className: "small" }, ENTANGLEMENT_DESCRIPTIONS[name] ?? "")))),
-        h("h3", {}, "Bring the trouble into play"),
-        h("p", {}, "Bring the entanglement into play immediately, or hold off until an appropriate moment. Entanglements manifest fully before the PCs have a chance to avoid them."),
-        h("p", { className: "small" }, "Confirm with your GM. Resolve the fiction at the table; this sheet doesn’t choose an outcome."),
-        h("p", { className: "small" }, "Source: Blades in the Dark SRD (CC-BY). ", srdLink(ENTANGLEMENTS_SRD_URL)));
+          ...names.map((name) => h("details", {}, h("summary", {}, name),
+            h("p", { className: "small" }, (data.descriptions as Record<string, string>)[name] ?? "")))),
+        h("h3", {}, "Bring the trouble into play"), h("p", {}, data.bringIntoPlay),
+        h("p", { className: "small" }, guidance.gmNote),
+        flowNote(ctx, gm, ui),
+        h("p", { className: "small" }, "Source: Blades in the Dark SRD (CC-BY). ", srdLink(guidance.links.entanglements)));
       break;
     }
     case "crew-xp":
       content = h("div", {},
         h("h3", {}, "Crew XP triggers"),
-        h("ul", {}, ...CREW_XP_CATEGORIES.map((cat, i) => h("li", {},
-          h("strong", {}, cat.title),
-          " ",
-          cat.text,
+        h("ul", {}, ...guide.crewXp.categories.map((cat, i) => h("li", {}, h("strong", {}, cat.title), " ", cat.text,
           i === 0 ? h("p", { className: "small" }, ui.crewXpTrigger
-            ? `This crew’s trigger: ${ui.crewXpTrigger}`
-            : "This crew’s trigger is on its crew type; check the crew sheet.") : null))),
-        h("p", { className: "serif" }, CREW_XP_INTRO),
-        h("p", { className: "serif" }, CREW_XP_LEADIN),
-        h("p", { className: "small" }, CREW_XP_MAX_NOTE),
-        h("p", { className: "serif" }, "Review the triggers at the end of the session, then add the agreed crew XP here."),
-        crewEditor("XP", crew?.experience.points ?? null, "xp", "Update crew XP", ctx, gm, linked),
-        h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
+            ? `This crew’s trigger: ${ui.crewXpTrigger}` : "This crew’s trigger is on its crew type; check the crew sheet.") : null))),
+        h("p", { className: "serif" }, guide.crewXp.intro),
+        h("p", { className: "serif" }, guide.crewXp.leadin),
+        h("p", { className: "small" }, guide.crewXp.note),
+        h("p", { className: "serif" }, guide.crewXp.review),
+        crewEditor("XP", crew?.experience.points ?? null, "xp", "Update crew XP", ctx, gm, linked, ui),
+        h("p", { className: "small" }, guidance.gmNote),
         h("h3", {}, "Advancement"),
-        h("p", { className: "serif" }, CREW_ADVANCE_TEXT),
-        h("p", { className: "small" }, CREW_ADVANCE_ORIGIN_TEXT),
-        h("p", { className: "serif" }, CREW_PROFITS_TEXT),
-        h("p", { className: "small" }, CREW_ADVANCEMENT_ATTRIBUTION, " ", srdLink(CREW_ADVANCEMENT_SRD_URL)));
+        h("p", { className: "serif" }, guide.crewXp.advance),
+        h("p", { className: "small" }, guide.crewXp.origin),
+        h("p", { className: "serif" }, guide.crewXp.profits),
+        h("p", { className: "small" }, guide.crewXp.attribution, " ", srdLink(guidance.links.crewAdvancement)));
+      break;
+    case "crew-rep":
+      content = h("div", {},
+        h("p", { className: "serif" }, guide.crewRep.intro),
+        crewEditor("Rep", crew?.rep.current ?? null, "rep", "Update crew rep", ctx, gm, linked, ui),
+        h("p", { className: "small" }, guide.crewRep.note),
+        h("p", { className: "small" }, srdLink(guidance.links.payoff)));
       break;
     default:
-      content = h("div", {},
-        h("p", { className: "serif" }, "Optional: update crew rep here, or skip. If rep was already recorded during Payoff, skip: this is not a second award."),
-        crewEditor("Rep", crew?.rep.current ?? null, "rep", "Update crew rep", ctx, gm, linked),
-        h("p", { className: "small" }, "Confirm with your GM. This optional edit affects the crew, not just this scoundrel."),
-        h("p", { className: "small" }, srdLink(SRD.payoff)));
+      content = h("p", { role: "alert" }, "This flow step has no sheet editor. Use its advertised API action.");
   }
-  const back = stepBefore("resolution", step);
-  const next = stepAfter("resolution", step);
-  // The first step's Back returns to the Score sheet (approved 06a: first Back links to 05-score).
-  const backBtn = h("button", { type: "button", disabled: ctx.anyLoading }, "Back");
-  backBtn.addEventListener("click", () => (back ? gm.onFlowSet("resolution", back) : gm.onFlowSet("none", "")));
-  const isOptional = idx === 4 || idx === 5;
-  // Optional steps (Crew XP, Crew Rep) skip after a confirm. Skipping Crew Rep ends Resolution into Downtime.
-  const skip = isOptional ? h("button", { type: "button", disabled: ctx.anyLoading }, "Skip") : null;
+  const back = h("button", { type: "button", disabled: ctx.anyLoading }, "Back");
+  back.addEventListener("click", () => gm.onFlowSet(flow.back === null ? "none" : flow.kind, flow.back ?? ""));
+  const skip = flow.skippable && !completed ? h("button", { type: "button", disabled: ctx.anyLoading }, "Skip") : null;
   skip?.addEventListener("click", () => {
-    if (window.confirm("Skip this optional step? Nothing is awarded or changed. You can come back to it.")) {
-      if (next !== null) gm.onFlowSet("resolution", next);
-      else gm.onMode("downtime");
-    }
+    if (window.confirm("Skip this optional step? Nothing is awarded or changed. You can come back to it.")) gm.onFlowComplete(true);
   });
   const skipAll = h("button", { type: "button", disabled: ctx.anyLoading }, "Skip Resolution");
   skipAll.addEventListener("click", () => {
-    if (window.confirm("Skip the rest of Resolution? Nothing is awarded or changed. The step cursor clears; the sheet keeps its current state.")) {
-      gm.onFlowSet("none", "");
-    }
+    if (window.confirm("Skip the rest of Resolution? Nothing is awarded or changed. The step cursor clears; the sheet keeps its current state.")) gm.onFlowSet("none", "");
   });
   const leave = h("button", { type: "button", disabled: ctx.anyLoading }, "Leave flow");
   leave.addEventListener("click", () => gm.onFlowSet("none", ""));
-  const nextBtn = h("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading }, next ? "Next" : "Next: Downtime");
-  nextBtn.addEventListener("click", () => (next ? gm.onFlowSet("resolution", next) : gm.onMode("downtime")));
-  // Resolution is an approved overlay dialog (aria-modal), like the Score popups (mockups 06a-06f).
-  return overlay(
-    "Resolution",
-    "resolution",
-    "game-mode-resolution",
-    RESOLUTION_LABELS[step as ResolutionStep],
-    [
-      h("p", { className: "small" }, `Score resolution · ${idx + 1} of ${RESOLUTION_STEPS.length}`),
-      h("p", { className: "small" }, "Confirm with your GM before you mark anything."),
-      stepper,
-      content,
-    ],
-    { left: [backBtn], right: [skip, skipAll, leave, nextBtn].filter((b): b is HTMLButtonElement => b !== null) },
-  );
-}
-
-function myShareEditor(ctx: SectionCtx, gm: GameModeHandlers): HTMLElement {
-  const input = amountInput("My share coin amount");
-  const apply = h("button", { type: "button", disabled: ctx.anyLoading }, "Apply to my share · coin");
-  apply.addEventListener("click", () => gm.onMyShare(Number(input.value) || 0));
-  return h("div", { className: "game-mode-share" },
-    h("p", { className: "lbl", style: "margin: 0;" }, `My share · coin ${ctx.c.fund.satchel.coins} of ${ctx.c.fund.satchel.max}`),
-    h("p", { className: "small", style: "margin: 0 0 0.25em;" }, "This edits your own fund, not the crew."),
-    h("div", { style: "display: flex; gap: 0.35em; align-items: center; flex-wrap: wrap;" }, input, apply));
+  const xpCheck = step === "scoundrel-xp" && !completed ? checkXpDraft(ctx.c, ui.xpDraft, flow) : null;
+  const invalidNumber = Object.values(ui.flowInputs).some((value) => typeof value === "number" && !Number.isInteger(value) || value === "");
+  const next = h("button", { type: "button", className: "btn-primary",
+    disabled: ctx.anyLoading || flow.actions.length === 0 || invalidNumber || (xpCheck !== null && !xpCheck.canComplete) },
+    flow.next === null ? "Next: Downtime" : "Next");
+  next.addEventListener("click", gm.onFlowNext);
+  return overlay("Resolution", "resolution", "game-mode-resolution", flow.steps[idx]?.label ?? step, [
+    h("p", { className: "small" }, `${guide.title} · ${idx + 1} of ${flow.steps.length}`),
+    h("p", { className: "small" }, guidance.gmNote), stepper,
+    flow.receipt ? receiptNotice(flow) : null,
+    ui.flowError ? h("p", { className: "notice small", role: "alert" }, ui.flowError) : null,
+    content,
+  ].filter((node): node is HTMLElement => node !== null),
+  { left: [back], right: [skip, skipAll, leave, next].filter((b): b is HTMLButtonElement => b !== null) });
 }

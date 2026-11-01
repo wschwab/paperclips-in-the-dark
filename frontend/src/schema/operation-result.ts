@@ -3,6 +3,7 @@ import { Character } from "./character.js";
 import { Clock } from "./clock.js";
 import { HarmIntensity } from "./common.js";
 import { Crew } from "./crew.js";
+import { CharacterFlow, FlowReceipt } from "./flow.js";
 
 // ---------------------------------------------------------------------------
 // Whole-error union (contract/schemas/operation-result.json#/$defs/operationError)
@@ -156,6 +157,8 @@ export const OperationResult = Schema.Struct({
   // are derived hints, never an allowlist.
   mode: Schema.optional(Schema.Literal("free-play", "score", "downtime")),
   suggestedOps: Schema.optional(Schema.Array(Schema.String)),
+  flow: Schema.optional(CharacterFlow),
+  receipt: Schema.optional(FlowReceipt),
   historyCount: Schema.optional(
     Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   ),

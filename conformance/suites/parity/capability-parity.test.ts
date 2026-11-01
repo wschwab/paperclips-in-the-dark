@@ -66,9 +66,8 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   "dossierUpdate", "noteAdd", "noteRemove", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove",
   "stressFix",
   "characterModeSet", "characterModeFlowSet", "characterDowntimeSpend", "characterDowntimeAdjust",
-  // XP-TRACKER-02 (human-approved additive amendment, same precedent as GAME-MODE-02): atomic
-  // Scoundrel XP completion is sheet-management and has a reachable human route in Resolution.
-  "characterXpResolve",
+  // FLOW-API-01 human-authorized replacement (2026-11-01):
+  // characterXpResolve is agent-only; its endpoint/tests remain intact.
   // LOADOUT-ATOMIC-01 (human-approved additive amendment): the full-loadout Save
   // control uses one atomic sheet-management operation without mode gating.
   "characterGearSetLoadout",
@@ -78,6 +77,9 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   // CREW-WORLD-01 (human-approved additive amendment): explicit starting
   // faction records are saved atomically through the crew sheet control.
   "factionSetStarting",
+  // FLOW-API-01 (human-authorized 2026-11-01): awards and guided cursor
+  // completion are one reachable revisioned sheet-management operation.
+  "characterFlowStepComplete",
 ];
 
 /** Runtime narrowing for JSON bodies: object and not an array. */

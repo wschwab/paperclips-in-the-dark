@@ -29,6 +29,7 @@
     "stressClearPending",
     "mode",
     "modeFlow",
+    "flowProgress",
     "downtime"
   ],
   "additionalProperties": false,
@@ -87,6 +88,10 @@
     "modeFlow": {
       "$ref": "#/$defs/modeFlow",
       "description": "Stored assistance cursor; default {kind:none,step:empty string}. Navigation never applies rewards or budget resets."
+    },
+    "flowProgress": {
+      "$ref": "flow.json#/$defs/progress",
+      "description": "FLOW-API-01 stored flow instance and explicit planning/outcome notes. Missing legacy field silently defaults to {instanceId:empty string,kind:none,planApproach:empty string,notes:[]}; pure reads do not write. New Score start and End Score create a fresh instance; Back/Next and leaving/revisiting retain its receipt identity."
     },
     "downtime": {
       "type": "object",

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperclips-in-the-dark/schemas/flow.json",
+  "title": "CharacterFlow",
+  "description": "FLOW-API-01 pure per-scoundrel guided-flow projection. Actions and navigation are advisory; ordinary operations remain legal in every mode. Dice and GM judgments are external. Input-schema bounds are derived from the selected edition and current state.",
+  "type": "object",
+  "required": ["characterId", "revision", "crew", "mode", "kind", "step", "instanceId", "steps", "back", "next", "skippable", "actions", "guidance", "receipt"],
+  "additionalProperties": false,
+  "properties": {
+    "characterId": { "$ref": "common.json#/$defs/uuid" },
+    "revision": { "$ref": "common.json#/$defs/revision" },
+    "crew": { "$ref": "#/$defs/crewRevision" },
+    "mode": { "$ref": "character.json#/$defs/mode" },
+    "kind": { "enum": ["none", "score-start", "resolution"] },
+    "step": { "type": "string" },
+    "instanceId": { "type": "string" },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "step", "label", "skippable"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "enum": ["score-start", "resolution"] },
+          "step": { "type": "string" },
+          "label": { "type": "string" },
+          "skippable": { "type": "boolean" }
+        }
+      }
+    },
+    "back": { "type": ["string", "null"] },
+    "next": { "type": ["string", "null"] },
+    "skippable": { "type": "boolean" },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "op", "inputSchema"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "op": { "enum": ["flow.step.complete", "mode.flow.set", "mode.set"], "description": "Uncompleted steps use flow.step.complete. A receipted step exposes navigation only through existing mode.flow.set or final mode.set, never a second award." },
+          "inputSchema": { "type": "object", "description": "A JSON Schema for the complete operation request at the observed step, including typed required inputs and settings-derived numeric bounds." }
+        }
+      }
+    },
+    "guidance": { "type": "object", "description": "Shared served game-flow guidance, including all step labels/reference text, SRD links, downtime activities and one-player crew warning. Presentation text is data, not frontend-owned workflow logic." },
+    "receipt": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/receipt" }] }
+  },
+  "$defs": {
+    "crewRevision": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["id", "revision"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "$ref": "common.json#/$defs/uuid" },
+            "revision": { "$ref": "common.json#/$defs/revision" }
+          }
+        }
+      ]
+    },
+    "progress": {
+      "type": "object",
+      "required": ["instanceId", "kind", "planApproach", "notes"],
+      "additionalProperties": false,
+      "properties": {
+        "instanceId": { "type": "string", "description": "Stable flow instance; empty for legacy/inactive defaults until an instance is created." },
+        "kind": { "enum": ["none", "score-start", "resolution"], "description": "Last active instance kind; retained across navigation to none so revisiting does not erase completion identity." },
+        "planApproach": { "type": "string" },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["step", "text"],
+            "additionalProperties": false,
+            "properties": { "step": { "type": "string" }, "text": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "required": ["completionId", "transactionId", "instanceId", "kind", "step", "status", "skipped", "inputs", "characterRevision", "crew"],
+      "additionalProperties": false,
+      "properties": {
+        "completionId": { "type": "string", "minLength": 1 },
+        "transactionId": { "type": "string", "minLength": 1 },
+        "instanceId": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["score-start", "resolution"] },
+        "step": { "type": "string" },
+        "status": { "enum": ["completed", "undone"] },
+        "skipped": { "type": "boolean" },
+        "inputs": { "type": "object", "description": "The validated explicit inputs recorded for this completion; same step input vocabulary as completeRequest." },
+        "characterRevision": { "$ref": "common.json#/$defs/revision" },
+        "crew": { "$ref": "#/$defs/crewRevision" }
+      }
+    },
+    "completeRequest": {
+      "type": "object",
+      "required": ["completionId", "instanceId", "kind", "step", "inputs"],
+      "additionalProperties": false,
+      "properties": {
+        "completionId": { "type": "string", "minLength": 1, "description": "Stable client-generated durable replay identifier; reusing it with different input is VALIDATION, never another award." },
+        "instanceId": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["score-start", "resolution"] },
+        "step": { "enum": ["planning", "loadout", "engagement", "scoundrel-xp", "payoff", "heat", "entanglements", "crew-xp", "crew-rep"] },
+        "skip": { "type": "boolean", "default": false },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "planApproach": { "type": "string", "description": "Planning: one approach from the shared guidance vocabulary." },
+            "commitment": { "enum": ["none", "light", "normal", "heavy", "encumbered"] },
+            "items": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "note": { "type": "string" },
+            "total": { "type": "integer", "minimum": 0 },
+            "allocations": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 }, "description": "Playbook plus exactly the edition's attribute names; sum must equal total and each amount fit current track room." },
+            "crewRevision": { "$ref": "common.json#/$defs/revision" },
+            "crewCoin": { "type": "integer", "description": "Payoff: explicit signed crew Coin delta." },
+            "crewRep": { "type": "integer", "description": "Payoff or Crew Rep: explicit signed Rep delta, not an automatic second payoff." },
+            "myShare": { "type": "integer", "description": "Payoff: explicit signed personal satchel Coin delta using existing fund semantics." },
+            "crewHeat": { "type": "integer", "description": "Heat: explicit signed crew Heat delta." },
+            "crewXp": { "type": "integer", "description": "Crew XP: explicit signed crew XP delta." }
+          },
+          "description": "Only inputs applicable to the supplied kind/step are admitted. Skips have empty inputs. Crew revision is required exactly when nonzero crew awards touch the linked crew. Current action inputSchema refines this union to the step's required fields and settings-derived limits."
+        }
+      },
+      "description": "Atomic completion checks If-Match plus every touched crew revision, validates all inputs before writing, applies explicit awards and advances once. Same completionId/payload replays its durable receipt before stale revision checks, including after restart/undo. A new ID for an already actively receipted instance/step is VALIDATION/400; use projected navigation actions instead. Ordinary operations remain ungated."
+    }
+  }
+}

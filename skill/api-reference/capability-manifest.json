@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 119,
+  "operationCount": 121,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -525,16 +525,30 @@
       ],
       "humanControl": "Reachable Planning / Loadout / Engagement and Resolution Back/Next navigation; no prerequisite or automatic award."
     },
-    "characterXpResolve": {
+    "getCharacterFlow": {
+      "disposition": "agent",
+      "method": "GET",
+      "path": "/characters/{id}/flow",
+      "agentReference": "api-reference/README.md#getcharacterflow",
+      "summary": "Discover the scoundrel's current guided step, typed actions and shared guidance"
+    },
+    "characterFlowStepComplete": {
       "disposition": "human",
       "method": "POST",
-      "path": "/characters/{id}/ops/xp.resolve",
-      "agentReference": "api-reference/README.md#characterxpresolve",
-      "summary": "Atomic Scoundrel XP completion (XP-TRACKER-02). In one revisioned write, add each allocation to its Playbook or attribute XP track, then set the three session expression counters (playbookExpressions, characterExpressions, struggleExpressions) to 0, with one snapshot. Each allocation must fit the track's room (settings maximum minus current points); an allocation beyond room, a negative or non-integer value, or a sum that differs from total is rejected with VALIDATION 400 and changes nothing, including the revision. The op never changes mode, never reads or writes the flow cursor, and never awards desperate-action XP again. If-Match and Idempotency-Key follow the other character operations.",
+      "path": "/characters/{id}/ops/flow.step.complete",
+      "agentReference": "api-reference/README.md#characterflowstepcomplete",
+      "summary": "Atomically apply explicit step awards and advance the guided cursor",
       "categories": [
         "sheet-management"
       ],
-      "humanControl": "Reachable Scoundrel XP completion; the GM total and split are explicit, and nothing is awarded or cleared automatically."
+      "humanControl": "Reachable guided Score/Resolution Next or Complete control; submits explicit awards and current revisions in one atomic completion with a durable receipt."
+    },
+    "characterXpResolve": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/xp.resolve",
+      "agentReference": "api-reference/README.md#characterxpresolve",
+      "summary": "Atomic Scoundrel XP completion (XP-TRACKER-02). In one revisioned write, add each allocation to its Playbook or attribute XP track, then set the three session expression counters (playbookExpressions, characterExpressions, struggleExpressions) to 0, with one snapshot. Each allocation must fit the track's room (settings maximum minus current points); an allocation beyond room, a negative or non-integer value, or a sum that differs from total is rejected with VALIDATION 400 and changes nothing, including the revision. The op never changes mode, never reads or writes the flow cursor, and never awards desperate-action XP again. If-Match and Idempotency-Key follow the other character operations."
     },
     "characterDesperateMark": {
       "disposition": "human",

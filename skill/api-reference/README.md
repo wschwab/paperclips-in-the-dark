@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 119
+Operations: 121
 
 ## Conventions
 
@@ -176,6 +176,8 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/end-score` | [`endScore`](#endscore) | true |
 | POST | `/characters/{id}/ops/mode.set` | [`characterModeSet`](#charactermodeset) | true |
 | POST | `/characters/{id}/ops/mode.flow.set` | [`characterModeFlowSet`](#charactermodeflowset) | true |
+| GET | `/characters/{id}/flow` | [`getCharacterFlow`](#getcharacterflow) | — |
+| POST | `/characters/{id}/ops/flow.step.complete` | [`characterFlowStepComplete`](#characterflowstepcomplete) | true |
 | POST | `/characters/{id}/ops/xp.resolve` | [`characterXpResolve`](#characterxpresolve) | true |
 | POST | `/characters/{id}/ops/desperate.mark` | [`characterDesperateMark`](#characterdesperatemark) | true |
 | POST | `/characters/{id}/ops/downtime.spend` | [`characterDowntimeSpend`](#characterdowntimespend) | true |
@@ -349,7 +351,13 @@ schema:
           id: { type: string }
           op: { type: string, description: "dotted op name, e.g. stress.add" }
           args: { type: object }
+          revision: { type: integer, minimum: 0, description: "FLOW-API-01: required for flow.step.complete; observed character revision before this member in the staged sequential plan." }
         oneOf:
+          - required: [revision]
+            properties:
+              entity: { const: character }
+              op: { const: flow.step.complete }
+              args: { $ref: "./schemas/flow.json#/$defs/completeRequest" }
           - properties:
               entity: { const: character }
               op: { const: mode.set }
@@ -372,7 +380,7 @@ schema:
               args: { $ref: "#/components/schemas/CharacterDowntimeReset" }
           - properties:
               op:
-                not: { enum: [mode.set, mode.flow.set, downtime.spend, downtime.adjust, downtime.reset] }
+                not: { enum: [mode.set, mode.flow.set, flow.step.complete, downtime.spend, downtime.adjust, downtime.reset] }
 ```
 
 Responses:
@@ -1858,6 +1866,50 @@ Request body schema:
 
 ```yaml
 schema: { $ref: "#/components/schemas/CharacterModeFlowSet" }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
+- `500`: OperationResult
+
+## getCharacterFlow
+
+`GET /characters/{id}/flow`
+
+Discover the scoundrel's current guided step, typed actions and shared guidance
+
+Parameters: `id`
+
+Request body schema:
+
+None
+
+Responses:
+
+- `200`: Current guided flow projection
+- `404`: OperationResult
+- `422`: OperationResult
+- `500`: OperationResult
+
+## characterFlowStepComplete
+
+`POST /characters/{id}/ops/flow.step.complete`
+
+Atomically apply explicit step awards and advance the guided cursor
+
+Parameters: `id`, `idempotencyKey`, `If-Match`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { $ref: "./schemas/flow.json#/$defs/completeRequest" }
 ```
 
 Responses:

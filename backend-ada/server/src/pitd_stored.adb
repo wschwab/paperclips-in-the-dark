@@ -177,8 +177,8 @@ package body Pitd_Stored is
    --  four normalizer outcomes: canonical / repairable / needs-input /
    --  unreadable).  Direct GET, history reads, mutations, batch,
    --  capabilities, and collection projection all share this function.
-   --  E is the parsed entity with absent GAME-MODE-01 top-level fields
-   --  overlaid for legacy characters (JSON_Null for unreadable), Ctx the
+   --  E is the parsed entity with absent assistance fields (including
+   --  flowProgress) overlaid for legacy characters, Ctx the
    --  normalizer context, Issues the pointer-level admission details, and
    --  Canonical whether the view admits without repair. Purely read-only.
    procedure Classify_Stored
@@ -199,7 +199,7 @@ package body Pitd_Stored is
          if Kind = "character" and then E.Kind = JSON_Object_Type then
             Game_Mode_Defaults_Added :=
               not Has_Field (E, "mode") or else not Has_Field (E, "modeFlow")
-              or else not Has_Field (E, "downtime");
+              or else not Has_Field (E, "downtime") or else not Has_Field (E, "flowProgress");
             if Game_Mode_Defaults_Added then
                Ensure_Game_Mode_Defaults (E);
             end if;

@@ -1,0 +1,12 @@
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run src/pages/game-mode-sheet.test.ts -t advisory refresh draft continuity
+
+ RUN  v3.2.7 /home/x/code/paperclips-in-the-dark/frontend
+
+ ✓ src/pages/game-mode-sheet.test.ts (91 tests | 89 skipped) 227ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 89 skipped (91)
+   Start at  17:23:55
+   Duration  899ms (transform 216ms, setup 0ms, collect 399ms, tests 227ms, environment 90ms, prepare 43ms)
+

@@ -18,6 +18,8 @@
       "readOnly": true,
       "description": "Same conditional presence as mode; derived dotted operation names from latest returned character mode/flow, including op-level failure state. Never persisted or added to character/read/roster/capabilities; never an eligibility allowlist. Score may suggest attribute-xp.add, gear operations and end-score; Downtime may suggest downtime.spend and sheet mutations. Batch items retain their existing outcome-only shape."
     },
+    "flow": { "$ref": "flow.json", "description": "FLOW-API-01 completion result's current pure projection; absent on unrelated operations." },
+    "receipt": { "$ref": "flow.json#/$defs/receipt", "description": "Durable FLOW-API-01 completion or replay receipt. An undone receipt never reapplies awards." },
     "crew": { "$ref": "crew.json" },
     "clock": { "$ref": "clock.json" },
     "canUndo": {

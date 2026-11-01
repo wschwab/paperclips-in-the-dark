@@ -1,6 +1,6 @@
 /**
- * Scoundrel XP completion (XP-TRACKER-04, Resolution step 1). The GM confirms a total, places it on
- * the Playbook and attribute tracks, and completes atomically through xp.resolve (XP-TRACKER-02).
+ * Scoundrel XP completion: the GM confirms a total and allocates it across tracks.
+ * The projected completion action atomically awards XP and advances the flow.
  * Maxima and current points come from the character's settings-derived tracks, never literals.
  * Completion is blocked while XP is unplaced, over the total, over a track's room, or the total is
  * not a whole number of 0 or more.
@@ -9,10 +9,10 @@ import { el } from "../../lib/dom.js";
 import type { Character } from "../../schema/character.js";
 import type { SectionCtx } from "./context.js";
 import type { GameModeHandlers, GameModeUi } from "./gameMode.js";
+import type { CharacterFlow } from "../../schema/flow.js";
+import { flowGuidance, flowInputField, schemaObject } from "../flow-presentation.js";
 
-export const XP_DESTINATIONS = ["Playbook", "Insight", "Prowess", "Resolve"] as const;
-export type XpDestination = (typeof XP_DESTINATIONS)[number];
-export type XpAllocations = Record<XpDestination, number>;
+export type XpAllocations = Record<string, number>;
 
 /** The GM's draft. total null follows the session counters; adjust unlocks the total. */
 export interface XpDraft {
@@ -24,22 +24,24 @@ export interface XpDraft {
 export const EMPTY_XP_DRAFT: XpDraft = {
   total: null,
   adjust: false,
-  allocations: { Playbook: 0, Insight: 0, Prowess: 0, Resolve: 0 },
+  allocations: {},
 };
 
 export interface XpTrack {
-  name: XpDestination;
+  name: string;
   points: number;
   max: number;
 }
 
 /** Current points and maximum of each destination, from the character's own tracks. */
-export function xpTracks(c: Character): XpTrack[] {
-  return XP_DESTINATIONS.map((name) => {
-    const xp = name === "Playbook"
-      ? c.playbook.experience
-      : c.talent.attributes.find((a) => a.name === name)?.experience;
-    return { name, points: xp?.points ?? 0, max: xp?.max ?? 0 };
+export function xpTracks(c: Character, flow: CharacterFlow | null = null): XpTrack[] {
+  const schemas = schemaObject(flowInputField(flow, "allocations").properties);
+  const names = Object.keys(schemas).length > 0 ? Object.keys(schemas) : ["Playbook", ...c.talent.attributes.map((a) => a.name)];
+  return names.map((name) => {
+    const xp = name === "Playbook" ? c.playbook.experience : c.talent.attributes.find((a) => a.name === name)?.experience;
+    const room = schemaObject(schemas[name]).maximum;
+    return { name, points: xp?.points ?? 0,
+      max: typeof room === "number" ? (xp?.points ?? 0) + room : xp?.max ?? 0 };
   });
 }
 
@@ -58,14 +60,17 @@ export interface XpCheck {
 }
 
 /** Live totals and every reason completion is blocked. Pure, so the UI and tests share it. */
-export function checkXpDraft(c: Character, draft: XpDraft): XpCheck {
+export function checkXpDraft(c: Character, draft: XpDraft, flow: CharacterFlow | null = null): XpCheck {
   const total = draft.total ?? sessionXpTotal(c);
   const totalValid = Number.isInteger(total) && total >= 0;
   const errors: string[] = [];
   if (!totalValid) errors.push("The GM total must be a whole number, 0 or more.");
+  const totalSchema = flowInputField(flow, "total");
+  if (typeof totalSchema.minimum === "number" && total < totalSchema.minimum) errors.push(`The GM total must be at least ${totalSchema.minimum}.`);
+  if (typeof totalSchema.maximum === "number" && total > totalSchema.maximum) errors.push(`The GM total must be at most ${totalSchema.maximum}.`);
   let allocated = 0;
-  for (const track of xpTracks(c)) {
-    const amount = draft.allocations[track.name];
+  for (const track of xpTracks(c, flow)) {
+    const amount = draft.allocations[track.name] ?? 0;
     if (!Number.isInteger(amount) || amount < 0) {
       errors.push(`${track.name} allocation must be a whole number, 0 or more.`);
       continue;
@@ -85,15 +90,6 @@ export function checkXpDraft(c: Character, draft: XpDraft): XpCheck {
     errors,
     canComplete: errors.length === 0 && totalValid && remaining === 0,
   };
-}
-
-/** Completion copy: what the counters do, and the zero-total case. */
-export function completionNotes(c: Character, draft: XpDraft): string[] {
-  const notes = ["Completing clears the three session expression counters. Permanent XP is kept; nothing else changes."];
-  if (draft.total === 0 || (draft.total === null && sessionXpTotal(c) === 0)) {
-    notes.push("A zero total awards nothing, but completion still clears the counters.");
-  }
-  return notes;
 }
 
 /** Destination row: filled, pending and empty boxes against the maximum, with the room left. */
@@ -124,41 +120,50 @@ function numberInput(label: string, value: number | null, disabled: boolean, onI
 export function renderXpAllocation(ctx: SectionCtx, gm: GameModeHandlers, ui: GameModeUi): HTMLElement {
   const c = ctx.c;
   const draft = ui.xpDraft;
-  const check = checkXpDraft(c, draft);
+  const guidance = flowGuidance(ui.flow)?.resolution.scoundrelXp;
+  const check = checkXpDraft(c, draft, ui.flow);
   const setDraft = (next: XpDraft) => gm.onXpDraft(next);
+  const completed = ui.flow?.receipt?.status === "completed";
+  const disabled = ctx.anyLoading || completed;
 
-  const totalInput = numberInput("GM total XP", check.total, !draft.adjust || ctx.anyLoading, (raw) => {
+  const totalInput = numberInput("GM total XP", check.total, !draft.adjust || disabled, (raw) => {
     const n = raw.trim() === "" ? NaN : Number(raw);
     setDraft({ ...draft, total: Number.isNaN(n) ? null : n });
   });
-  const adjust = el("input", { type: "checkbox", checked: draft.adjust, disabled: ctx.anyLoading }) as HTMLInputElement;
+  const totalSchema = flowInputField(ui.flow, "total");
+  if (typeof totalSchema.minimum === "number") totalInput.min = String(totalSchema.minimum);
+  if (typeof totalSchema.maximum === "number") totalInput.max = String(totalSchema.maximum);
+  const adjust = el("input", { type: "checkbox", checked: draft.adjust, disabled }) as HTMLInputElement;
   adjust.addEventListener("change", () => setDraft({ ...draft, adjust: adjust.checked }));
 
-  const rows = xpTracks(c).map((track) => {
-    const amount = draft.allocations[track.name];
-    const planned = track.points + (Number.isInteger(amount) && amount > 0 ? amount : 0);
+  const rows = xpTracks(c, ui.flow).map((track) => {
+    const amount = draft.allocations[track.name] ?? 0;
+    const planned = track.points + (!completed && Number.isInteger(amount) && amount > 0 ? amount : 0);
     const room = track.max - track.points;
-    const minus = el("button", { type: "button", className: "btn-secondary", "aria-label": `Remove 1 ${track.name} allocation`, disabled: ctx.anyLoading || !(amount > 0) }, "−");
-    const plus = el("button", { type: "button", className: "btn-secondary", "aria-label": `Add 1 ${track.name} allocation`, disabled: ctx.anyLoading }, "+");
+    const minus = el("button", { type: "button", className: "btn-secondary", "aria-label": `Remove 1 ${track.name} allocation`, disabled: disabled || !(amount > 0) }, "−");
+    const plus = el("button", { type: "button", className: "btn-secondary", "aria-label": `Add 1 ${track.name} allocation`, disabled }, "+");
     const set = (next: number) => setDraft({ ...draft, allocations: { ...draft.allocations, [track.name]: next } });
     minus.addEventListener("click", () => set(Math.max(0, (Number.isInteger(amount) ? amount : 0) - 1)));
     plus.addEventListener("click", () => set((Number.isInteger(amount) ? amount : 0) + 1));
-    const input = numberInput(`${track.name} allocation`, Number.isNaN(amount) ? null : amount, ctx.anyLoading, (raw) => {
+    const input = numberInput(`${track.name} allocation`, Number.isNaN(amount) ? null : amount, disabled, (raw) => {
       const n = raw.trim() === "" ? NaN : Number(raw);
       set(Number.isNaN(n) ? 0 : n);
     });
+    input.max = String(room);
     return el("div", { className: "xp-alloc-row", "data-xp-destination": track.name },
       el("div", { className: "xp-alloc-copy" },
         el("p", { className: "lbl xp-alloc-name" }, `${track.name} XP`),
         el("p", { className: "small xp-alloc-room" },
-          `${track.points} / ${track.max} current → ${planned} / ${track.max} planned · ${room - (Number.isInteger(amount) ? amount : 0)} room left`),
+          completed ? `${track.points} / ${track.max} current · ${amount} XP recorded in this receipt`
+            : `${track.points} / ${track.max} current → ${planned} / ${track.max} planned · ${room - (Number.isInteger(amount) ? amount : 0)} room left`),
         trackBoxes(track, planned)),
       el("div", { className: "xp-alloc-stepper" }, minus, input, plus));
   });
 
-  const complete = el("button", { type: "button", className: "btn-primary", disabled: ctx.anyLoading || !check.canComplete },
+  const complete = el("button", { type: "button", className: "btn-primary", disabled: disabled || !check.canComplete },
     "Complete Scoundrel XP");
-  complete.addEventListener("click", () => gm.onXpResolve(check.total, draft.allocations));
+  complete.addEventListener("click", () => gm.onXpResolve(check.total,
+    Object.fromEntries(xpTracks(c, ui.flow).map((track) => [track.name, draft.allocations[track.name] ?? 0]))));
 
   return el("div", { className: "xp-alloc" },
     el("p", { className: "small xp-alloc-equation" },
@@ -168,9 +173,11 @@ export function renderXpAllocation(ctx: SectionCtx, gm: GameModeHandlers, ui: Ga
       totalInput,
       el("label", { className: "small" }, adjust, " Adjust")),
     el("p", { className: "xp-alloc-live", role: "status", "aria-live": "polite" },
-      `Available ${check.totalValid ? check.total : "—"} XP · Remaining ${check.totalValid ? check.remaining : "—"} XP`),
+      completed ? `Recorded ${check.total} XP · No additional award on Next`
+        : `Available ${check.totalValid ? check.total : "—"} XP · Remaining ${check.totalValid ? check.remaining : "—"} XP`),
     el("div", { className: "xp-alloc-rows" }, ...rows),
-    check.errors.length > 0 ? el("p", { className: "notice small", role: "alert" }, check.errors.join(" ")) : null,
-    el("p", { className: "small" }, completionNotes(c, draft).join(" ")),
+    !completed && check.errors.length > 0 ? el("p", { className: "notice small", role: "alert" }, check.errors.join(" ")) : null,
+    el("p", { className: "small" }, guidance?.completionNote ?? "",
+      check.total === 0 ? ` ${guidance?.zeroNote ?? ""}` : ""),
     el("div", { className: "xp-alloc-actions" }, complete));
 }

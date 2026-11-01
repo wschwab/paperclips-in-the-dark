@@ -170,7 +170,7 @@ package body Pitd_Normalize is
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|" &
      "updatedAt|isRetired|isDeadish|traumaPending|isOutOfAction|" &
      "stressClearPending|dossier|monitor|talent|playbook|gear|fund|" &
-     "contacts|session|notebook|mode|modeFlow|downtime|";
+     "contacts|session|notebook|mode|modeFlow|flowProgress|downtime|";
    Allowed_Named_Desc : constant String := "|name|description|";
    Allowed_Vice : constant String := "|name|description|purveyor|";
    Allowed_Monitor : constant String := "|stress|trauma|harm|armor|";
@@ -1969,6 +1969,58 @@ package body Pitd_Normalize is
       return X;
    end N_Mode_Flow;
 
+   function N_Flow_Progress (O : JSON_Value; C : in out N_Ctx) return JSON_Value is
+      X : constant JSON_Value := Default_Flow_Progress;
+      Src : JSON_Value;
+      Notes : JSON_Array := Empty_Array;
+   begin
+      if not Has_Field (O, "flowProgress") then return X; end if;
+      Src := Get (O, "flowProgress");
+      if Src.Kind = JSON_Null_Type then
+         Add_Change (C, "/flowProgress", "missing/null fill", JSON_Null, Clone (X),
+                     "Missing required flow progress: filled with canonical default");
+         return X;
+      elsif Src.Kind /= JSON_Object_Type then
+         Add_Needs (C, "/flowProgress", "wrong type: expected an object", "an object");
+         return Clone (Src);
+      end if;
+      List_Removals (Src, "/flowProgress", "|instanceId|kind|planApproach|notes|", C);
+      Set_Field (X, "instanceId", N_Str (Src, "instanceId", "/flowProgress/instanceId", "", C));
+      Set_Field (X, "kind", N_Enum (Src, "kind", "/flowProgress/kind", C,
+                                  "|none|score-start|resolution|", No_Legacy, "none"));
+      Set_Field (X, "planApproach", N_Str (Src, "planApproach", "/flowProgress/planApproach", "", C));
+      if not Has_Field (Src, "notes") or else Get (Src, "notes").Kind = JSON_Null_Type then
+         Add_Change (C, "/flowProgress/notes", "missing/null fill", JSON_Null, Create (Notes),
+                     "Missing flow notes: filled with empty array");
+      elsif Get (Src, "notes").Kind /= JSON_Array_Type then
+         Add_Needs (C, "/flowProgress/notes", "wrong type: expected array", "an array");
+         Set_Field (X, "notes", JSON_Value'(Get (Src, "notes")));
+         return X;
+      else
+         declare A : constant JSON_Array := Get (Src, "notes"); begin
+            for I in 1 .. Length (A) loop
+               declare
+                  Item : constant JSON_Value := Get (A, I);
+                  Ptr : constant String := "/flowProgress/notes/" & Trim_Image (I - 1);
+                  Note : constant JSON_Value := Create_Object;
+               begin
+                  if Item.Kind /= JSON_Object_Type then
+                     Add_Needs (C, Ptr, "wrong type: expected object", "a note object");
+                     Append (Notes, Clone (Item));
+                  else
+                     List_Removals (Item, Ptr, "|step|text|", C);
+                     Set_Field (Note, "step", N_Str (Item, "step", Ptr & "/step", "", C));
+                     Set_Field (Note, "text", N_Str (Item, "text", Ptr & "/text", "", C));
+                     Append (Notes, Note);
+                  end if;
+               end;
+            end loop;
+         end;
+      end if;
+      Set_Field (X, "notes", Notes);
+      return X;
+   end N_Flow_Progress;
+
    function N_Downtime
      (O, Defaults : JSON_Value; S : Settings_Ref; C : in out N_Ctx)
       return JSON_Value
@@ -2135,6 +2187,7 @@ package body Pitd_Normalize is
                             "|free-play|score|downtime|", No_Legacy, "free-play"));
       end if;
       Set_Field (O, "modeFlow", N_Mode_Flow (V, C));
+      Set_Field (O, "flowProgress", N_Flow_Progress (V, C));
       Set_Field (O, "downtime", N_Downtime (V, O, S, C));
       Set_Field (O, "dossier", N_Dossier (V, C));
       Set_Field (O, "monitor", N_Monitor (V, S, C));

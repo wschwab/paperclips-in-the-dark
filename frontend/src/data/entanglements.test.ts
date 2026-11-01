@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-  ENTANGLEMENT_BANDS,
-  ENTANGLEMENT_DESCRIPTIONS,
-  ENTANGLEMENT_ROWS,
-  ENTANGLEMENTS_SRD_URL,
-  entanglementsInBand,
-} from "./entanglements.js";
+import guidance from "../../../data/games/flow-guidance.json";
+const ENTANGLEMENT_BANDS = guidance.resolution.entanglements.bands;
+const ENTANGLEMENT_DESCRIPTIONS: Record<string, string> = guidance.resolution.entanglements.descriptions;
+const ENTANGLEMENT_ROWS = guidance.resolution.entanglements.rows;
+const ENTANGLEMENTS_SRD_URL = guidance.links.entanglements;
 
 // Transcribed from https://bladesinthedark.com/entanglements (SRD, CC-BY).
 describe("entanglement SRD data", () => {
@@ -34,7 +32,7 @@ describe("entanglement SRD data", () => {
 
   it("gives every heat column exactly five entanglements, each with its SRD description", () => {
     for (const band of ENTANGLEMENT_BANDS) {
-      const names = entanglementsInBand(band.label);
+      const names = [...new Set(ENTANGLEMENT_ROWS.flatMap((r) => r.outcomes[band.label as "0–3"].split(" or ")))];
       expect(names).toHaveLength(5);
       expect(new Set(names).size).toBe(5);
       for (const name of names) {

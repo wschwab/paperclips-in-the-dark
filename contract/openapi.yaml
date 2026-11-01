@@ -549,7 +549,13 @@ paths:
                       id: { type: string }
                       op: { type: string, description: "dotted op name, e.g. stress.add" }
                       args: { type: object }
+                      revision: { type: integer, minimum: 0, description: "FLOW-API-01: required for flow.step.complete; observed character revision before this member in the staged sequential plan." }
                     oneOf:
+                      - required: [revision]
+                        properties:
+                          entity: { const: character }
+                          op: { const: flow.step.complete }
+                          args: { $ref: "./schemas/flow.json#/$defs/completeRequest" }
                       - properties:
                           entity: { const: character }
                           op: { const: mode.set }
@@ -572,7 +578,7 @@ paths:
                           args: { $ref: "#/components/schemas/CharacterDowntimeReset" }
                       - properties:
                           op:
-                            not: { enum: [mode.set, mode.flow.set, downtime.spend, downtime.adjust, downtime.reset] }
+                            not: { enum: [mode.set, mode.flow.set, flow.step.complete, downtime.spend, downtime.adjust, downtime.reset] }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }
@@ -1891,6 +1897,66 @@ paths:
         content:
           application/json:
             schema: { $ref: "#/components/schemas/CharacterModeFlowSet" }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/flow:
+    get:
+      operationId: getCharacterFlow
+      summary: Discover the scoundrel's current guided step, typed actions and shared guidance
+      description: >
+        FLOW-API-01 pure projection of the existing per-scoundrel mode/cursor and
+        linked crew revision. Returns ordered navigation, current typed action
+        input schemas with settings-derived bounds, guidance and a durable receipt
+        when this step was completed. Inactive flows have no completion action.
+        Reads never write. Navigation and all ordinary operations remain advisory
+        and ungated; dice and GM judgment remain external.
+      parameters: [{ $ref: "#/components/parameters/id" }]
+      responses:
+        "200":
+          description: Current guided flow projection
+          content:
+            application/json:
+              schema: { $ref: "./schemas/flow.json" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/flow.step.complete:
+    post:
+      operationId: characterFlowStepComplete
+      summary: Atomically apply explicit step awards and advance the guided cursor
+      x-snapshot: true
+      description: >
+        FLOW-API-01. If-Match is required for the character; inputs.crewRevision
+        is required when a nonzero award touches its linked crew. Validate every
+        touched revision and all resulting documents before any write. Apply
+        explicit XP/loadout/Coin/Rep/Heat/personal share inputs only for this
+        step, then advance once. Skips apply no awards. Dice and judgments are
+        external. This checks the observed cursor for concurrency, not mode
+        eligibility; ordinary operations remain legal in every mode.
+        Completion IDs are durable across restarts: same ID/payload replays
+        its receipt before stale revision checks; different payload is
+        VALIDATION/400. A fresh ID for an already actively receipted step is
+        VALIDATION/400; use projected navigation actions to revisit.
+        A recoverable transaction commits all entity writes, grouped snapshots,
+        cursor and receipt together. Undo from either participant restores the
+        whole group only while every participant remains at its transaction tip;
+        otherwise STALE_REVISION/409 leaves everything unchanged. Undo marks the
+        receipt undone, and replaying the old ID never re-awards. Batch members
+        stage this operation in the enclosing atomic plan with member revision.
+      parameters:
+        - { $ref: "#/components/parameters/id" }
+        - { name: If-Match, in: header, required: true, schema: { type: integer, minimum: 0 }, description: "Observed character revision; durable exact receipt replays precede stale checks." }
+        - { $ref: "#/components/parameters/idempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "./schemas/flow.json#/$defs/completeRequest" }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "400": { $ref: "#/components/responses/OpResult" }

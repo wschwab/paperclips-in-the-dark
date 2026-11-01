@@ -16,6 +16,7 @@ const SCHEMA_FILES = [
   "crew.json",
   "clock.json",
   "operation-result.json",
+  "flow.json",
 ] as const;
 
 type JsonSchema = Record<string, unknown>;
@@ -82,6 +83,7 @@ const VALIDATORS: Record<string, ValidatorFn> = {
   crew: requireValidator("crew", crew),
   clock: requireValidator("clock", clock),
   operationResult: requireValidator("operationResult", opResult),
+  flow: requireValidator("flow", "https://paperclips-in-the-dark/schemas/flow.json"),
   operationError: requireValidator("operationError", `${opResult}#/$defs/operationError`),
   previewResult: requireValidator("previewResult", `${opResult}#/$defs/previewResult`),
 };

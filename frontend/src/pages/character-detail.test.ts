@@ -2,6 +2,19 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import type { MutationContinuityRecord } from "../lib/mutation-continuity.js";
 import { mountCharacterDetailPage, ensureSectionAlertVisible } from "./character-detail.js";
+import { Effect } from "effect";
+import type * as ApiClient from "../api/client.js";
+
+// These tests pin ordinary sheet operations and their ordered transport fixtures.
+// Guided-flow HTTP/loading/completion is exercised independently in game-mode-sheet.
+vi.mock("../api/client.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof ApiClient>();
+  return { ...actual, getCharacterFlow: (id: string) => Effect.succeed({
+    characterId: id, revision: 12, crew: null, mode: "free-play", kind: "none", step: "",
+    instanceId: "", steps: [], back: null, next: null, skippable: false,
+    actions: [], guidance: {}, receipt: null,
+  }) };
+});
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -72,6 +85,7 @@ function characterDTO(overrides: Record<string, unknown> = {}) {
     contacts: [],
     mode: "free-play",
     modeFlow: { kind: "none", step: "" },
+    flowProgress: { instanceId: "", kind: "none", planApproach: "", notes: [] },
     downtime: { free: 2, paid: 0, spent: 0, activities: [] },
     session: {
       playbookExpressions: 0,

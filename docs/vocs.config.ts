@@ -25,6 +25,7 @@ export default defineConfig({
       text: 'Proposals and open questions',
       items: [
         { text: 'Game mode proposal', link: '/contract/game-mode-proposal' },
+        { text: 'Guided score flow API', link: '/contract/flow-api' },
         { text: 'Cohort bounds (open issue)', link: '/contract/open-issue-cohort-bounds' },
         { text: 'Repair reference policy', link: '/contract/repair-reference-policy' },
         { text: 'Spec change draft', link: '/contract/spec-change-draft' },

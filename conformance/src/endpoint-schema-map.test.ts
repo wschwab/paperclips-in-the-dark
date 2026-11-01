@@ -26,7 +26,8 @@ describe("endpoint schema map", () => {
     // LOADOUT-ATOMIC-01 adds only the atomic full-loadout endpoint (113 → 114).
     // DESPERATE-LOG-01 adds the desperate.mark operation (114 → 115).
     // CREW-WORLD-01 adds only faction.set-starting (115 → 116).
-    expect(routes.length).toBe(116);
+    // FLOW-API-01 adds GET flow + atomic completion (116 → 118).
+    expect(routes.length).toBe(118);
     // Every declared operation appears in the map under its operationId.
     for (const route of routes) {
       const methods = Object.keys(spec.paths[route]).filter((m) =>

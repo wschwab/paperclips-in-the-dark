@@ -60,7 +60,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "faction.set-starting"
         or else Op = "end-score" or else Op = "end-downtime"
         or else Op = "retire"
-        or else Op = "mode.set" or else Op = "mode.flow.set"
+        or else Op = "mode.set" or else Op = "mode.flow.set" or else Op = "flow.step.complete"
         or else Op = "downtime.spend" or else Op = "downtime.adjust"
         or else Op = "downtime.reset" or else Op = "xp.resolve"
         or else Op = "desperate.mark"
@@ -828,6 +828,7 @@ begin
                if Str_Field (B, "mode") = "score" then
                   --  DESPERATE-LOG-01: changing into Score from another mode starts a fresh tally.
                   Set_Field (Get (E, "session"), "desperateMarks", Create (Empty_Array));
+                  Begin_Flow_Instance (E, "score-start");
                end if;
                declare
                   Flow : JSON_Value := Default_Mode_Flow;
@@ -840,6 +841,18 @@ begin
                end;
             end if;
          elsif Op = "mode.flow.set" then
+            if Str_Field (B, "kind") /= "none"
+              and then Str_Field (Get (E, "flowProgress"), "kind") /= Str_Field (B, "kind")
+            then
+               if Str_Field (Get (E, "modeFlow"), "kind") = Str_Field (B, "kind")
+                 and then Str_Field (Get (E, "flowProgress"), "instanceId") = ""
+               then
+                  declare P : constant JSON_Value := Get (E, "flowProgress"); begin
+                     Set_Field (P, "instanceId", Current_Flow_Instance (E));
+                     Set_Field (P, "kind", Str_Field (B, "kind"));
+                  end;
+               else Begin_Flow_Instance (E, Str_Field (B, "kind")); end if;
+            end if;
             Set_Field (E, "modeFlow", Clone (B));
             if Str_Field (B, "kind") /= "none" then
                Set_Field (E, "mode", "score");
@@ -2225,6 +2238,7 @@ elsif Op = "harm.add" then
             Set_Field (Flow, "kind", "resolution");
             Set_Field (Flow, "step", "scoundrel-xp");
             Set_Field (E, "modeFlow", Flow);
+            Begin_Flow_Instance (E, "resolution");
             Set_Field (E, "downtime", Default_Downtime (E));
          end;
          Set_Field (E, "isOutOfAction", False);

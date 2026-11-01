@@ -11,8 +11,8 @@ package Pitd_Stored is
    use GNATCOLL.JSON;
 
    --  SC-A3: the ONE stored-entity classification path. E is the parsed
-   --  entity with absent top-level mode/modeFlow/downtime overlaid for legacy
-   --  characters (JSON_Null for unreadable). Existing malformed fields are
+   --  entity with absent mode/modeFlow/downtime/flowProgress overlaid for
+   --  legacy characters (JSON_Null for unreadable). Malformed fields are
    --  never replaced. Ctx is the normalizer context, with internal
    --  gameModeDefaultsAdded=true only when this overlay occurred; routes
    --  serialize E for that legacy view, otherwise preserve the raw bytes.

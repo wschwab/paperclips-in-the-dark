@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { FlowProgress } from "./flow.js";
 import {
   BoundedInteger,
   Commitment,
@@ -225,6 +226,7 @@ export const Character = Schema.Struct({
   // GAME-MODE-01 contract: mode, modeFlow and downtime are required canonical fields.
   mode: GameMode,
   modeFlow: ModeFlow,
+  flowProgress: FlowProgress,
   downtime: Downtime,
   dossier: Dossier,
   monitor: Monitor,

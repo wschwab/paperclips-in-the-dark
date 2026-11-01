@@ -191,9 +191,9 @@ export async function run(page, ctx) {
 
   // -- 6. Scoundrel XP completion (XP-TRACKER-04 replaced the End downtime button) --
   // End score opens Resolution at Scoundrel XP. The GM total is adjusted to zero, which
-  // is allowed and clears the three session counters through the atomic xp.resolve op.
+  // is allowed and clears the three session counters through atomic flow.step.complete.
   const xpResponse = page.waitForResponse(
-    (r) => r.url().includes("/ops/xp.resolve") && r.status() === 200,
+    (r) => r.url().includes("/ops/flow.step.complete") && r.status() === 200,
     { timeout: 15_000 },
   );
   await page.locator('.xp-alloc-total input[type="checkbox"]').check();

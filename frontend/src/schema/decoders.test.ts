@@ -103,8 +103,8 @@ describe("schema decoders against golden fixtures", () => {
     expect(Either.isLeft(result)).toBe(true);
   });
 
-  it.each(["traumaPending", "isOutOfAction", "stressClearPending"])(
-    "rejects a current character missing required lifecycle property %s",
+  it.each(["traumaPending", "isOutOfAction", "stressClearPending", "flowProgress"])(
+    "rejects a current character missing required canonical property %s",
     (property) => {
       const data = loadFixture("golden-character.json") as Record<string, unknown>;
       const { [property]: _missing, ...withoutProperty } = data;

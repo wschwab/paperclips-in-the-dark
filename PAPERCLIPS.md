@@ -24,7 +24,7 @@ Notes should be kept locally and untracked in `agent-docs/`.
 
 ### 1.1 Non-goals
 
-- No dice rolling, position/effect, engagement, downtime procedure, or any encoding of GM judgment.
+- No dice rolling, automatic position/effect or encoding of GM judgment. FLOW-API-01 (human-authorized 2026-11-01) adds advisory per-scoundrel score/downtime guidance and explicit atomic step completion, not a rules engine or campaign phase gate; see `docs/pages/contract/flow-api.mdx`.
 - No reproduction of rulebook text. Game-mechanical structure comes from the game-settings JSON only; anything else the agent skill reads ephemerally from a user-supplied rulebook (see §12).
 - No multi-tenant deployment, auth, or cloud hosting in v1. Target: **single local process, single table, trusted localhost user.**
 - No migration of blades-in-the-sheets localStorage data.
