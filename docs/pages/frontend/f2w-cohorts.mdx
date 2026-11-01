@@ -87,6 +87,18 @@ fields are sent, but the derived quality/scale, `hasArmor` (explicit true/false)
 are always included. Name (optional) is sent when non-empty. An "+ Add cohort"
 button → `cohortAdd`.
 
+CREW-COHORTS-03: a cohort may carry a second type (SRD). The add and edit forms
+show an optional "Second type" select after the type field, offering the same
+options as the primary type (the kind's SRD list plus Custom; Custom reveals a
+text input). It appears only when the game's `CohortMaxTypes` setting is 2 or
+more; Blades in the Dark sets 2. The value is sent as `extraTypes` (a list of
+at most `CohortMaxTypes - 1`, currently one). The primary type stays in
+`gangType`/`expertType`. The cohort card shows the second type after the first,
+and its edit button keeps the primary type in its title. Backend limit checks
+return `VALIDATION` (the operation result envelope) when a request exceeds the
+limit. The 3×3 Chromium evidence is in
+`agent-docs/test-audit/browser-evidence/crew-cohorts-03/`.
+
 CREW-05 (2026-08-27): the add form marks `cohortKind` — the only field
 openapi requires on `cohort.add` (`required: [cohortKind]`) — with
 `aria-required` and a visible marker, and Add is gated **only** on

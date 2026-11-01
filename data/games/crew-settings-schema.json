@@ -280,6 +280,10 @@
 			"type": "array",
 			"items": { "type": "string" }
 		},
+		"CohortMaxTypes": {
+			"type": "integer",
+			"minimum": 1
+		},
 		"CohortEdges": {
 			"type": "array",
 			"items": { "$ref": "#/definitions/CohortTrait" }

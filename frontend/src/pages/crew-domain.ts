@@ -144,6 +144,15 @@ export function extractCohortExpertTypes(
   return [...COHORT_EXPERT_TYPES];
 }
 
+/** CREW-COHORTS-03: how many types one cohort may carry (game-data CohortMaxTypes). A game
+ * without the setting allows one type, so nothing is assumed. */
+export function extractCohortMaxTypes(
+  crewGameData: Record<string, unknown> | null,
+): number {
+  const value = crewGameData?.CohortMaxTypes;
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 ? value : 1;
+}
+
 /** A named cohort edge or flaw with its SRD description. */
 export interface CohortTrait {
   name: string;

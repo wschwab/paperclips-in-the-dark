@@ -544,6 +544,7 @@ elsif Op = "clock.create" then
          return Check_Fields (B, (Spec ("cohortKind", JSON_String_Type, En => "gang|expert"),
                                   Spec ("gangType", JSON_String_Type, Rq => False),
                                   Spec ("expertType", JSON_String_Type, Rq => False),
+                                  Spec ("extraTypes", JSON_Array_Type, Rq => False),
                                  Spec ("name", JSON_String_Type, Rq => False),
                                   Spec ("quality", JSON_Int_Type, MnI => 0, Rq => False),
                                   Spec ("scale", JSON_Int_Type, MnI => 0, Rq => False),
@@ -557,6 +558,7 @@ elsif Op = "clock.create" then
          if not Check_Fields (B, (Spec ("cohortId", JSON_String_Type, MnL => 1),
                                   Spec ("gangType", JSON_String_Type, Rq => False),
                                   Spec ("expertType", JSON_String_Type, Rq => False),
+                                  Spec ("extraTypes", JSON_Array_Type, Rq => False),
                                  Spec ("name", JSON_String_Type, Rq => False),
                                   Spec ("quality", JSON_Int_Type, MnI => 0, Rq => False),
                                   Spec ("scale", JSON_Int_Type, MnI => 0, Rq => False),
@@ -1852,6 +1854,22 @@ elsif Op = "harm.add" then
             declare A : constant JSON_Array := Get(E,"cohorts"); O : JSON_Array := A; X : JSON_Value := Create_Object; begin
                Set_Field(X,"id",New_Id);Set_Field(X,"cohortKind",Kind_Of);
                if Has_Field(B,"name") then Set_Field(X,"name",Str_Field(B,"name")); end if;
+               if Has_Field(B,"extraTypes") then
+                  declare
+                     Max_Types : constant Integer := Settings_Int
+                       ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                         Game (Str_Field (E, "gameStem") & "-crews")), "CohortMaxTypes", 1);
+                     Extra : constant JSON_Array := Get (B, "extraTypes");
+                  begin
+                     --  CREW-COHORTS-03: the first type is gangType/expertType; extraTypes
+                     --  holds the rest, up to CohortMaxTypes - 1.
+                     if Length (Extra) > Max_Types - 1 then
+                        return Validation_Error (Op, "too many types for this cohort",
+                                                 Root_Issues ("extraTypes exceeds CohortMaxTypes"), E);
+                     end if;
+                     Set_Field(X,"extraTypes",JSON_Value'(Get(B,"extraTypes")));
+                  end;
+               end if;
                Set_Field(X,"gangType",Str_Field(B,"gangType"));Set_Field(X,"expertType",Str_Field(B,"expertType"));
                Set_Field(X,"quality",Int_Field(B,"quality"));Set_Field(X,"scale",Int_Field(B,"scale"));
                Set_Field(X,"hasArmor",Bool_Field(B,"hasArmor"));
@@ -1874,14 +1892,30 @@ elsif Op = "harm.add" then
          end;
       elsif Op = "cohort.update" then
          declare A : constant JSON_Array := Get(E,"cohorts"); Id : constant String := Str_Field(B,"cohortId"); Found : Boolean := False; begin
+         if Has_Field(B,"extraTypes") then
+            declare
+               Extra : constant JSON_Array := Get(B,"extraTypes");
+               Max_Types : constant Integer := Settings_Int
+                 ((To_Unbounded_String (Str_Field (E, "gameStem")),
+                   Game (Str_Field (E, "gameStem") & "-crews")), "CohortMaxTypes", 1);
+            begin
+               if Length (Extra) > Max_Types - 1 then
+                  return Validation_Error (Op, "too many types for this cohort",
+                                           Root_Issues ("extraTypes exceeds CohortMaxTypes"), E);
+               end if;
+            end;
+         end if;
             for I in 1..Length(A) loop
                if Str_Field(Get(A,I),"id") = Id then
                   Found := True;
                   declare C : constant JSON_Value := Get(A,I);
                      procedure Copy (Name : UTF8_String; Value : JSON_Value) is
                      begin
-                        --  a cohort created without a name can be named; other fields copy only when present.
-                        if Has_Field(C,Name) or else Name = "name" then Set_Field(C,Name,Clone(Value)); end if;
+                        --  a cohort created without a name can be named, and one without
+                        --  extra types can gain them; other fields copy only when present.
+                        if Has_Field(C,Name) or else Name = "name" or else Name = "extraTypes" then
+                           Set_Field(C,Name,Clone(Value));
+                        end if;
                      end Copy;
                   begin
                      Map_JSON_Object (B, Copy'Access);

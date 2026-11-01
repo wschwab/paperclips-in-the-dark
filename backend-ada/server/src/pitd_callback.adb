@@ -2898,7 +2898,11 @@ if Kind = "crew" then
       end if;
       --  CREW-COHORTS-01: SRD cohort lists are served raw to the frontend.
       S_No_Extra (V, "|Name|Language|CrewTypes|CohortSource|CohortGangTypes|" &
-                     "CohortExpertTypes|CohortEdges|CohortFlaws|", Where);
+                     "CohortExpertTypes|CohortMaxTypes|CohortEdges|CohortFlaws|", Where);
+      --  CREW-COHORTS-03: optional; a cohort holds at most this many types.
+      if Has_Field (V, "CohortMaxTypes") and then S_Int (V, "CohortMaxTypes", Where) < 1 then
+         Settings_Error (Where, "CohortMaxTypes must be at least 1");
+      end if;
       S_Require_Str (V, "Name", Where);
       S_Require_Str (V, "Language", Where);
       declare

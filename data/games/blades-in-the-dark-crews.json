@@ -2344,6 +2344,7 @@
 	"CohortSource": "Blades in the Dark SRD, Cohorts section (CC-BY). https://bladesinthedark.com/crew",
 	"CohortGangTypes": ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"],
 	"CohortExpertTypes": ["Doctor", "Investigator", "Occultist", "Assassin", "Spy"],
+	"CohortMaxTypes": 2,
 	"CohortEdges": [
 		{ "Name": "Fearsome", "Description": "The cohort is terrifying in aspect and reputation." },
 		{ "Name": "Independent", "Description": "The cohort can be trusted to make good decisions and act on their own initiative in the absence of direct orders." },

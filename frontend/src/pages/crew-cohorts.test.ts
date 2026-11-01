@@ -3,6 +3,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { mountCrewDetailPage as mountCrewDetailPageImpl } from "./crew-detail.js";
+import { readCohortAddBody } from "./crew-sections/cohorts.js";
 
 const CREW_ID = "8f14e45f-ceea-467f-a2d3-1f6ecfa1b1a2";
 
@@ -212,5 +213,115 @@ describe("CREW-COHORTS-01 cohort editor", () => {
       root.remove();
       style.remove();
     }
+  });
+});
+
+// CREW-COHORTS-03: a cohort holds up to CohortMaxTypes types (SRD). The second
+// type is extraTypes; the picker is shown only when the game allows two types.
+const BLADES_CREW_GAME_DATA = {
+  CohortGangTypes: ["Adepts", "Rooks", "Rovers", "Skulks", "Thugs"],
+  CohortExpertTypes: ["Doctor", "Investigator", "Occultist", "Assassin", "Spy"],
+  CohortMaxTypes: 2,
+};
+
+async function openAddFormWithGameData(crew: Record<string, unknown>, gameData: Record<string, unknown>): Promise<HTMLElement> {
+  const root = document.createElement("div");
+  global.fetch = vi.fn((input: RequestInfo | URL) => {
+    if (String(input).endsWith("/crews")) return Promise.resolve(ok(gameData) as Response);
+    return Promise.resolve(ok(crew) as Response);
+  });
+  mountCrewDetailPage(root, CREW_ID);
+  await vi.waitFor(() => {
+    expect(root.querySelector(".crew-cohorts")).not.toBeNull();
+  });
+  return root;
+}
+
+describe("CREW-COHORTS-03 second type", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("offers a second-type picker with the same kind list plus Custom when CohortMaxTypes is 2", async () => {
+    const root = await openAddFormWithGameData(crewDTO(), BLADES_CREW_GAME_DATA);
+    const second = root.querySelector('select[aria-label="Cohort second type"]') as HTMLSelectElement;
+    expect(second).not.toBeNull();
+    expect([...second.options].map((o) => o.value).filter(Boolean)).toEqual([
+      "Adepts", "Rooks", "Rovers", "Skulks", "Thugs", "Custom",
+    ]);
+  });
+
+  it("sends the chosen second type as extraTypes in the add body", async () => {
+    const root = await openAddFormWithGameData(crewDTO(), BLADES_CREW_GAME_DATA);
+    const gang = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement;
+    gang.value = "Thugs";
+    gang.dispatchEvent(new Event("change"));
+    const second = root.querySelector('select[aria-label="Cohort second type"]') as HTMLSelectElement;
+    second.value = "Rooks";
+    second.dispatchEvent(new Event("change"));
+    const body = readCohortAddBody(root, 2);
+    expect(body?.gangType).toBe("Thugs");
+    expect(body?.extraTypes).toEqual(["Rooks"]);
+  });
+
+  it("Custom second type sends its typed text", async () => {
+    const root = await openAddFormWithGameData(crewDTO(), BLADES_CREW_GAME_DATA);
+    const gang = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement;
+    gang.value = "Thugs";
+    gang.dispatchEvent(new Event("change"));
+    const second = root.querySelector('select[aria-label="Cohort second type"]') as HTMLSelectElement;
+    second.value = "Custom";
+    second.dispatchEvent(new Event("change"));
+    const custom = root.querySelector('input[aria-label="Cohort second custom type"]') as HTMLInputElement;
+    custom.value = "Smugglers";
+    custom.dispatchEvent(new Event("input"));
+    expect(readCohortAddBody(root, 2)?.extraTypes).toEqual(["Smugglers"]);
+  });
+
+  it("hides the second-type picker when the game allows only one type", async () => {
+    const root = await openAddFormWithGameData(crewDTO(), { ...BLADES_CREW_GAME_DATA, CohortMaxTypes: 1 });
+    const second = root.querySelector('select[aria-label="Cohort second type"]');
+    expect(second?.closest("label")?.hidden).toBe(true);
+    const gang = root.querySelector('select[aria-label="Cohort gang type"]') as HTMLSelectElement;
+    gang.value = "Thugs";
+    gang.dispatchEvent(new Event("change"));
+    expect(readCohortAddBody(root, 2)?.extraTypes).toBeUndefined();
+  });
+});
+
+describe("CREW-COHORTS-03 second type in the edit form", () => {
+  it("edit form shows the saved second type, and Save sends the changed extraTypes", async () => {
+    const root = document.createElement("div");
+    const calls: Array<{ url: string; body: unknown }> = [];
+    global.fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/crews")) return Promise.resolve(ok(BLADES_CREW_GAME_DATA) as Response);
+      if (init?.method === "POST") {
+        calls.push({ url, body: JSON.parse(String(init.body ?? "{}")) });
+        return Promise.resolve(ok(crewDTO({ cohorts: [cohortDTO({ extraTypes: ["Smugglers"] })] })) as Response);
+      }
+      return Promise.resolve(ok(crewDTO({ cohorts: [cohortDTO({ extraTypes: ["Rooks"] })] })) as Response);
+    });
+    mountCrewDetailPage(root, CREW_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector('button[title="Edit cohort: Thugs"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Edit cohort: Thugs"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector('select[aria-label="Edit second type"]')).not.toBeNull();
+    });
+    const second = root.querySelector('select[aria-label="Edit second type"]') as HTMLSelectElement;
+    expect(second.value).toBe("Rooks");
+    second.value = "Custom";
+    second.dispatchEvent(new Event("change"));
+    const custom = root.querySelector('input[aria-label="Edit second custom type"]') as HTMLInputElement;
+    custom.value = "Smugglers";
+    custom.dispatchEvent(new Event("input"));
+    (root.querySelector('button[title="Save cohort: Thugs"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(calls.some((c) => c.url.includes("cohort.update"))).toBe(true);
+    });
+    const update = calls.find((c) => c.url.includes("cohort.update"));
+    expect(update?.body).toMatchObject({ extraTypes: ["Smugglers"] });
   });
 });

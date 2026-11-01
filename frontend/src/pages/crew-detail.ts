@@ -85,6 +85,9 @@ export interface CohortEditFields {
   gangType: string;
   expertType: string;
   expertCustom: string;
+  /** CREW-COHORTS-03: optional second type; "Custom" uses extraCustom. */
+  extraType: string;
+  extraCustom: string;
   harm: string;
   hasArmor: boolean;
   edges: string[];
@@ -109,7 +112,7 @@ export interface CohortDrafts {
 }
 
 export function blankCohortDraft(): CohortDraft {
-  return { kind: "gang", gangType: "", expertType: "", expertCustom: "", harm: "", hasArmor: false, edges: [], flaws: [], name: "", description: "", pending: { edge: { pick: "", custom: "" }, flaw: { pick: "", custom: "" } } };
+  return { kind: "gang", gangType: "", expertType: "", expertCustom: "", extraType: "", extraCustom: "", harm: "", hasArmor: false, edges: [], flaws: [], name: "", description: "", pending: { edge: { pick: "", custom: "" }, flaw: { pick: "", custom: "" } } };
 }
 
 export interface FactionDrafts {

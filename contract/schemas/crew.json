@@ -179,6 +179,14 @@
           "expertType": {
             "type": "string"
           },
+          "extraTypes": {
+            "type": "array",
+            "maxItems": 1,
+            "description": "CREW-COHORTS-03: optional second type. maxItems is CohortMaxTypes - 1 (game settings: CohortMaxTypes 2). Absent on single-type records.",
+            "items": {
+              "type": "string"
+            }
+          },
           "quality": {
             "type": "integer",
             "minimum": 0

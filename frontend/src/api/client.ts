@@ -1465,6 +1465,8 @@ export interface CohortAddBody {
   cohortKind: "gang" | "expert";
   gangType?: string;
   expertType?: string;
+  /** CREW-COHORTS-03: optional second type; at most CohortMaxTypes - 1 entries. */
+  extraTypes?: string[];
   name?: string;
   quality?: number;
   scale?: number;
@@ -1480,6 +1482,7 @@ export interface CohortUpdateBody {
   cohortId: string;
   gangType?: string;
   expertType?: string;
+  extraTypes?: string[];
   name?: string;
   quality?: number;
   scale?: number;

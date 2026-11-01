@@ -15,6 +15,7 @@ import {
   extractCohortExpertTypes,
   extractCohortFlaws,
   extractCohortGangTypes,
+  extractCohortMaxTypes,
   arraysEqual,
   type CohortTrait,
 } from "../crew-domain.js";
@@ -130,12 +131,22 @@ function traitPicker(
 }
 
 /** The editable fields a cohort's edit form holds. An expert with no type keeps "" (no Custom placeholder), so an untouched save sends nothing. */
-function editFieldsOf(cohort: RenderState["c"]["cohorts"][number], expertTypes: readonly string[]): CohortEditFields {
+function editFieldsOf(
+  cohort: RenderState["c"]["cohorts"][number],
+  gangTypes: readonly string[],
+  expertTypes: readonly string[],
+): CohortEditFields {
   const isCustom = cohort.expertType !== "" && (cohort.expertType === "Custom" || !expertTypes.includes(cohort.expertType));
+  // CREW-COHORTS-03: the second type follows the same Custom split as the expert type.
+  const extra = cohort.extraTypes?.[0] ?? "";
+  const extraKnown = cohort.cohortKind === "gang" ? gangTypes : expertTypes;
+  const extraIsCustom = extra !== "" && (extra === "Custom" || !extraKnown.includes(extra));
   return {
     gangType: cohort.gangType,
     expertType: isCustom ? "Custom" : cohort.expertType,
     expertCustom: isCustom && cohort.expertType !== "Custom" ? cohort.expertType : "",
+    extraType: extraIsCustom ? "Custom" : extra,
+    extraCustom: extraIsCustom && extra !== "Custom" ? extra : "",
     harm: cohort.harm,
     hasArmor: cohort.hasArmor,
     edges: [...cohort.edges],
@@ -145,17 +156,75 @@ function editFieldsOf(cohort: RenderState["c"]["cohorts"][number], expertTypes: 
   };
 }
 
+/** CREW-COHORTS-03: the optional second type (SRD: a cohort holds up to CohortMaxTypes types).
+ * Options follow the cohort kind: the kind's SRD list plus Custom. The field is shown only when
+ * the game allows two types. `read` returns the one extra type, or none. */
+function secondTypeControl(
+  prefix: "Cohort" | "Edit",
+  draft: { kind: "gang" | "expert"; extraType: string; extraCustom: string },
+  lists: { gang: readonly string[]; expert: readonly string[] },
+  allowed: boolean,
+  disabled: boolean,
+): { element: HTMLElement; read: () => string[]; setKind: (kind: "gang" | "expert") => void } {
+  const select = el("select", { "aria-label": `${prefix} second type`, disabled }) as HTMLSelectElement;
+  const custom = el("input", {
+    type: "text",
+    "aria-label": `${prefix} second custom type`,
+    disabled,
+    placeholder: "custom type",
+  }) as HTMLInputElement;
+  let currentKind = draft.kind;
+  const fill = (kind: "gang" | "expert") => {
+    const values = kind === "gang" ? [...lists.gang, "Custom"] : expertOptions(lists.expert);
+    select.replaceChildren(
+      el("option", { value: "" }, "(none)") as HTMLOptionElement,
+      ...values.map((value) => el("option", { value }, value) as HTMLOptionElement),
+    );
+  };
+  const sync = () => {
+    custom.hidden = select.value !== "Custom";
+    draft.extraType = select.value;
+  };
+  fill(currentKind);
+  // Set via the select value after the options are attached (happy-dom ignores option.selected before attach).
+  select.value = draft.extraType;
+  custom.value = draft.extraCustom;
+  select.addEventListener("change", sync);
+  custom.addEventListener("input", () => { draft.extraCustom = custom.value; });
+  sync();
+  const element = el("label", { className: "lbl cohort-field" }, "Second type:", select, custom);
+  element.hidden = !allowed;
+  return {
+    element,
+    read: () => {
+      if (element.hidden || select.value === "") return [];
+      return [select.value === "Custom" ? custom.value.trim() || "Custom" : select.value];
+    },
+    setKind: (kind) => {
+      if (kind === currentKind) return;
+      currentKind = kind;
+      draft.extraType = "";
+      draft.extraCustom = "";
+      fill(kind);
+      select.value = "";
+      custom.value = "";
+      sync();
+    },
+  };
+}
+
 /** Rebase units. The expert type and its custom text are one persisted value, so they move together. */
 const EDIT_FIELD_GROUPS: readonly (readonly (keyof CohortEditFields)[])[] = [
-  ["gangType"], ["expertType", "expertCustom"], ["harm"], ["hasArmor"], ["edges"], ["flaws"], ["name"], ["description"],
+  ["gangType"], ["expertType", "expertCustom"], ["extraType", "extraCustom"], ["harm"], ["hasArmor"], ["edges"], ["flaws"], ["name"], ["description"],
 ];
 
 /** The edit draft for a cohort. A refreshed cohort moves only the fields the user has not changed (still equal to the last synced server value), so a retry never sends an old value back over a concurrent change (CREW-REVIEW-01). */
 function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: RenderState): CohortEditDraft {
+  const gangTypes = extractCohortGangTypes(state.crewGameData);
   const expertTypes = extractCohortExpertTypes(state.crewGameData);
   const existing = state.cohortDrafts.edits.get(cohort.id);
   if (existing) {
-    const current = editFieldsOf(cohort, expertTypes);
+    const current = editFieldsOf(cohort, gangTypes, expertTypes);
     if (JSON.stringify(current) !== JSON.stringify(existing.synced)) {
       for (const group of EDIT_FIELD_GROUPS) {
         const untouched = group.every((key) => JSON.stringify(existing[key]) === JSON.stringify(existing.synced[key]));
@@ -170,8 +239,8 @@ function editDraftFor(cohort: RenderState["c"]["cohorts"][number], state: Render
   const draft: CohortEditDraft = {
     kind: cohort.cohortKind,
     pending: { edge: { pick: "", custom: "" }, flaw: { pick: "", custom: "" } },
-    ...editFieldsOf(cohort, expertTypes),
-    synced: editFieldsOf(cohort, expertTypes),
+    ...editFieldsOf(cohort, gangTypes, expertTypes),
+    synced: editFieldsOf(cohort, gangTypes, expertTypes),
   };
   state.cohortDrafts.edits.set(cohort.id, draft);
   return draft;
@@ -187,8 +256,10 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
     const isEditing = state.editingCohortId === cohort.id;
     const kindLabel = cohort.cohortKind === "gang" ? "Gang" : "Expert";
     const typeField = cohort.cohortKind === "gang" ? "gangType" : "expertType";
-    const typeValue = cohort[typeField] || "(no type)";
-    const title = `cohort: ${typeValue}`;
+    const primaryType = cohort[typeField] || "(no type)";
+    // CREW-COHORTS-03: the second type shows after the first; button titles keep the primary type.
+    const typeValue = [primaryType, ...(cohort.extraTypes ?? [])].join(" + ");
+    const title = `cohort: ${primaryType}`;
     const shown = (values: readonly string[]) =>
       values.length === 0 ? "(none)" : values.join(", ");
 
@@ -289,6 +360,13 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       descInput.value = draft.description;
       descInput.addEventListener("input", () => { draft.description = descInput.value; });
 
+      const secondEdit = secondTypeControl(
+        "Edit",
+        draft,
+        { gang: gangTypes, expert: expertTypes },
+        extractCohortMaxTypes(state.crewGameData) >= 2,
+        state.anyLoading,
+      );
       const saveBtn = el("button", {
         type: "button",
         disabled: state.anyLoading,
@@ -309,6 +387,8 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         if (harmSelect.value !== cohort.harm) fields.harm = harmSelect.value;
         if (descInput.value !== cohort.description) fields.description = descInput.value;
         if (nameInput.value.trim() !== (cohort.name ?? "")) fields.name = nameInput.value.trim();
+        const extra = secondEdit.read();
+        if (!arraysEqual(extra, [...(cohort.extraTypes ?? [])])) fields.extraTypes = extra;
         if (Object.keys(fields).length > 0) {
           handlers.onCohortUpdate(cohort.id, fields);
         } else {
@@ -338,6 +418,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
         el("span", { className: "cohort-kind-badge" }, kindLabel),
         el("div", { className: "cohort-edit-fields", style: "display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center;" },
           el("label", { className: "lbl" }, `${kindLabel} type:`, typeControl),
+          secondEdit.element,
           el("label", { className: "lbl" }, "Name:", nameInput),
           el("span", { className: "lbl cohort-quality-derived" }, `Quality ${cohort.quality}`),
           isGang ? el("span", { className: "lbl cohort-scale-derived" }, `Scale ${cohort.scale}`) : null,
@@ -458,12 +539,20 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
   const gangTypeField = cohortField("Type", gangTypeSelect);
   const expertTypeField = cohortField("Type", expertTypeSelect);
   const expertCustomField = cohortField("Custom type", expertCustomInput);
+  const secondType = secondTypeControl(
+    "Cohort",
+    addDraft,
+    { gang: extractCohortGangTypes(state.crewGameData), expert: extractCohortExpertTypes(state.crewGameData) },
+    extractCohortMaxTypes(state.crewGameData) >= 2,
+    state.anyLoading,
+  );
   const qualityField = cohortField("Quality (from Tier)", qualityDerived);
   const scaleField = cohortField("Scale (from Tier)", scaleDerived);
   const armorField = cohortField("Armor", armorInput);
   const toggleCohortKindFields = () => {
     const kind = cohortKindSelect.value === "expert" ? "expert" : "gang";
     addDraft.kind = kind;
+    secondType.setKind(kind);
     const stats = derivedCohortStats(kind, tier);
     gangTypeField.hidden = kind !== "gang";
     expertTypeField.hidden = kind !== "expert";
@@ -525,6 +614,7 @@ export function renderCrewCohortsSection(state: RenderState): HTMLElement {
       gangTypeField,
       expertTypeField,
       expertCustomField,
+      secondType.element,
       qualityField,
       scaleField,
       armorField,
@@ -561,6 +651,13 @@ export function readCohortAddBody(root: HTMLElement, tier: number): CohortAddBod
   const stats = derivedCohortStats(cohortKind, tier);
   body.quality = stats.quality;
   body.scale = stats.scale;
+  // CREW-COHORTS-03: the second type is read from the add form, unless its field is hidden (one-type game).
+  const secondSelect = root.querySelector('select[aria-label="Cohort second type"]') as HTMLSelectElement | null;
+  const secondField = secondSelect?.closest("label");
+  if (secondSelect && secondField && !secondField.hidden && secondSelect.value) {
+    const secondCustom = root.querySelector('input[aria-label="Cohort second custom type"]') as HTMLInputElement | null;
+    body.extraTypes = [secondSelect.value === "Custom" ? secondCustom?.value?.trim() || "Custom" : secondSelect.value];
+  }
   body.hasArmor = cohortKind === "gang"
     ? (root.querySelector('input[aria-label="Cohort armor"]') as HTMLInputElement | null)?.checked ?? false
     : false;
