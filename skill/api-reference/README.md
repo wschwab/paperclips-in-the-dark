@@ -2763,6 +2763,7 @@ schema:
     cohortKind: { $ref: "./schemas/common.json#/$defs/cohortType" }
     gangType: { type: string }
     expertType: { type: string }
+    extraTypes: { type: array, maxItems: 1, items: { type: string } }
     name: { type: string }
     quality: { type: integer, minimum: 0 }
     scale: { type: integer, minimum: 0 }
@@ -2801,6 +2802,7 @@ schema:
     cohortId: { type: string }
     gangType: { type: string }
     expertType: { type: string }
+    extraTypes: { type: array, maxItems: 1, items: { type: string } }
     name: { type: string }
     quality: { type: integer, minimum: 0 }
     scale: { type: integer, minimum: 0 }
