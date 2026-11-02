@@ -75,3 +75,17 @@ Findings and fixes, each red-first unless noted:
 - Mutation pins: `pitd_normalize.adb` changed, so M04's pin was refreshed (1 string). With the earlier refresh, the pins are current.
 - Mutation campaign: see the metrics log `tasks/metrics/contract/CREW-COHORTS-03-mutation.log`. The results JSON is in `agent-docs/` (gitignored) and is not in `tasks/metrics/`, because the metrics validator treats every JSON there as a task record.
 - Regenerated `skill/api-reference/README.md` was required by TOOLING-GEN-002 (see the commit `CREW-COHORTS-03: regenerate API reference for extraTypes`).
+
+## Review round 2 (Sol 6.1 xhigh via omp, pinned head e224e50e): FAIL, fixed
+
+Findings and fixes, each red-first:
+
+- P1 the import gate read `CohortMaxTypes` from the base game file (`Game(Stem)`), where it is absent, so the default 1 gave a bound of 0 extras. A valid one-extra import was refused. Red: `CREW-COHORTS-03-IMPORT-002` (apply returned 400). Fix: `Settings_Maxima_Issues` reads `CohortMaxTypes` from `Game(Stem & "-crews")`, and `Cohort_Item` does the same. Green.
+- P1 the stored or repair path kept an over-limit `extraTypes` unchanged. Red: `CREW-COHORTS-03-REPAIR-001` (the import preview had no clamp change for `/cohorts/0/extraTypes`). Fix: `Cohort_Item` clamps to the first `CohortMaxTypes - 1` entries and records an `Add_Change` with the reason "settings-derived clamp". The preview is a 409 `NORMALIZATION_REQUIRED` carrying that change. The same shape as the CONTRACT-04 tier clamp.
+- A clamp applied before the apply gate would hide an over-limit import, so the apply gate now runs on the submitted entity (`Entity_V`), not the normalized preview document. Without this, `CREW-COHORTS-03-IMPORT-001` returned 200. Green: 400 `INVALID_ENTRY`.
+- P2 the conformance cohort decoder rejected `extraTypes` (the strict struct). Red: `CREW-COHORTS-03-DECODE-001` (`ParseError` on `cohorts[0]`). Fix: optional `extraTypes` in `conformance/src/schemas.ts`. Green.
+- P2 `CREW-COHORTS-03-IMPORT-001` accepted any 4xx and fell back to a fake token. It now requires a token issued by the preview, status 400, and code `INVALID_ENTRY`.
+
+Known gap, recorded and not fixed here: `skill/generate-ada-validators.mjs` emits no `maxItems` check for any field. The generated `pitd_schema_validators.adb` therefore admits any array length. The bound is enforced in the normalizer (repair) and at import apply, not by the generated validator. Adding `maxItems` to the generator would change validators across the whole contract and is a separate change.
+
+Evidence: cohort-extra-types 11/11 and published-limits 16/16 (27/27 in one run), each new test red before its fix.

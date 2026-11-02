@@ -1682,7 +1682,7 @@ if Kind = "crew" then
                      --  above the game-settings bounds
                      declare
                         Max_Issues : constant JSON_Array :=
-                          Settings_Maxima_Issues (Kind, Doc);
+                          Settings_Maxima_Issues (Kind, Entity_V);
                      begin
                         if Length (Max_Issues) > 0 then
                            Release_Locks;

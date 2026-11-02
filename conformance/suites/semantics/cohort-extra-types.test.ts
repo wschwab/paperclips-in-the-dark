@@ -31,6 +31,29 @@ function cohortsOf(body: unknown): Json[] {
   return Array.isArray(cohorts) ? (cohorts as Json[]) : [];
 }
 
+function previewTokenOf(raw: string): string | undefined {
+  const body = JSON.parse(raw) as {
+    previewToken?: unknown;
+    error?: { token?: unknown; details?: { previewToken?: unknown } };
+  };
+  const token = body.previewToken ?? body.error?.token ?? body.error?.details?.previewToken;
+  return typeof token === "string" && token.length > 0 ? token : undefined;
+}
+
+function hasClampChange(value: unknown, pointer: string): boolean {
+  if (Array.isArray(value)) return value.some((v) => hasClampChange(v, pointer));
+  const rec = asRecord(value);
+  if (rec === undefined) return false;
+  if (
+    rec.pointer === pointer &&
+    typeof rec.reason === "string" &&
+    rec.reason.includes("settings-derived clamp")
+  ) {
+    return true;
+  }
+  return Object.values(rec).some((v) => hasClampChange(v, pointer));
+}
+
 describe("CREW-COHORTS-03 cohort second type", () => {
   testCase(
     "CREW-COHORTS-03-ADD-001",
@@ -203,19 +226,83 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
       cohorts[0].extraTypes = ["Rooks", "Adepts"];
 
       const preview = await api.post(`crews/${id}/import?preview=1`, { entity: doc });
-      const previewBody = JSON.parse(preview.rawBody) as {
-        previewToken?: string;
-        error?: { token?: string; details?: { previewToken?: string } };
-      };
-      const previewToken = previewBody.previewToken ?? previewBody.error?.token ?? previewBody.error?.details?.previewToken;
+      const previewToken = previewTokenOf(preview.rawBody);
+      expect(previewToken, "preview issues a token").toBeDefined();
       const response = await api.post(
         `crews/${id}/import`,
-        { entity: doc, previewToken: previewToken ?? "preview-token", confirm: true },
+        { entity: doc, previewToken, confirm: true },
         { "If-Match": String(rev2) },
       );
-      expect(response.status).toBeGreaterThanOrEqual(400);
+      expect(response.status).toBe(400);
+      expect(asRecord(asRecord(response.body)?.error)?.code).toBe("INVALID_ENTRY");
       const after = await api.get(`crews/${id}`);
       expect(cohortsOf(after.body)[0]?.extraTypes).toEqual(["Rooks"]);
+    },
+  );
+
+  testCase(
+    "CREW-COHORTS-03-IMPORT-002",
+    "crew import applies a valid cohort that carries one extra type",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(200);
+      const rev2 = asRecord(asRecord(added.body)?.crew)?.revision;
+      if (typeof rev2 !== "number") throw new Error("no revision");
+      const doc = JSON.parse(JSON.stringify(asRecord(added.body)?.crew)) as Json;
+
+      const preview = await api.post(`crews/${id}/import?preview=1`, { entity: doc });
+      const previewToken = previewTokenOf(preview.rawBody);
+      expect(previewToken, "preview issues a token").toBeDefined();
+      const response = await api.post(
+        `crews/${id}/import`,
+        { entity: doc, previewToken, confirm: true },
+        { "If-Match": String(rev2) },
+      );
+      expect(response.status).toBe(200);
+      const after = await api.get(`crews/${id}`);
+      expect(cohortsOf(after.body)[0]?.extraTypes).toEqual(["Rooks"]);
+    },
+  );
+
+  testCase(
+    "CREW-COHORTS-03-REPAIR-001",
+    "import preview reports an over-limit extraTypes as a repair, not as canonical",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(200);
+      const doc = JSON.parse(JSON.stringify(asRecord(added.body)?.crew)) as Json;
+      const cohorts = doc.cohorts as Json[];
+      cohorts[0].extraTypes = ["Rooks", "Adepts"];
+
+      const preview = await api.post(`crews/${id}/import?preview=1`, { entity: doc });
+      expect(preview.status).toBe(409);
+      expect(hasClampChange(JSON.parse(preview.rawBody), "/cohorts/0/extraTypes")).toBe(true);
+    },
+  );
+
+  testCase(
+    "CREW-COHORTS-03-DECODE-001",
+    "the typed crew decoder accepts a cohort that carries extraTypes",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(200);
+      const crew = await api.crew(id);
+      expect(cohortsOf(crew)[0]?.extraTypes).toEqual(["Rooks"]);
     },
   );
 });

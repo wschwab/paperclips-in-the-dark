@@ -212,6 +212,8 @@ const Crew = Schema.Struct({
       cohortKind: CohortType,
       gangType: Schema.String,
       expertType: Schema.String,
+      // CREW-COHORTS-03: optional second type; absent on single-type records.
+      extraTypes: Schema.optional(Schema.Array(Schema.String)),
       quality: NonNegativeInt,
       scale: NonNegativeInt,
       hasArmor: Schema.Boolean,

@@ -1344,7 +1344,33 @@ package body Pitd_Normalize is
       Set_Field (X, "gangType", N_Str (V, "gangType", Ptr & "/gangType", "", C));
       Set_Field (X, "expertType", N_Str (V, "expertType", Ptr & "/expertType", "", C));
       if Has_Field (V, "extraTypes") then
-         Set_Field (X, "extraTypes", N_Array (V, "extraTypes", Ptr & "/extraTypes", C));
+         declare
+            Max_Extra : constant Integer :=
+              Settings_Int ((S.Stem, Game (To_String (S.Stem) & "-crews")), "CohortMaxTypes", 1) - 1;
+            Arr  : constant JSON_Value := N_Array (V, "extraTypes", Ptr & "/extraTypes", C);
+            Kept : JSON_Array := Empty_Array;
+         begin
+            if Arr.Kind /= JSON_Array_Type then
+               Set_Field (X, "extraTypes", Arr);
+            else
+               declare
+                  Items : constant JSON_Array := Get (Arr);
+               begin
+                  if Length (Items) <= Max_Extra then
+                     Set_Field (X, "extraTypes", Arr);
+                  else
+                     for I in 1 .. Max_Extra loop
+                        Append (Kept, Get (Items, I));
+                     end loop;
+                     Add_Change (C, Ptr & "/extraTypes",
+                                 "settings-derived clamp: extraTypes holds at most CohortMaxTypes - 1 entries",
+                                 Arr, Create (Kept),
+                                 "extraTypes above CohortMaxTypes - 1 clamped to its first entries");
+                     Set_Field (X, "extraTypes", Create (Kept));
+                  end if;
+               end;
+            end if;
+         end;
       end if;
       if Has_Field (V, "name") then
          Set_Field (X, "name", N_Str (V, "name", Ptr & "/name", "", C));
@@ -2981,7 +3007,8 @@ package body Pitd_Normalize is
          --  CREW-COHORTS-03: a cohort's extraTypes hold at most
          --  CohortMaxTypes - 1 entries (the first type is gangType/expertType).
          declare
-            Extra_Max : constant Integer := Settings_Int (S, "CohortMaxTypes", 1) - 1;
+            Extra_Max : constant Integer :=
+              Settings_Int ((S.Stem, Game (Stem & "-crews")), "CohortMaxTypes", 1) - 1;
             Cohorts   : constant JSON_Value := Get_At_Pointer (Doc, "/cohorts");
          begin
             if Cohorts.Kind = JSON_Array_Type then
