@@ -350,6 +350,29 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
       return Count > 0;
    end Has_Any_Field;
 
+   --  every element of a supplied extraTypes array must be a string; a non-array is
+   --  left to Check_Fields, which reports the field's type
+   function Extra_Types_Are_Strings (B : JSON_Value; Bad : out Unbounded_String) return Boolean is
+   begin
+      if B.Kind /= JSON_Object_Type or else not Has_Field (B, "extraTypes") then
+         return True;
+      end if;
+      if Get (B, "extraTypes").Kind /= JSON_Array_Type then
+         return True;
+      end if;
+      declare
+         Items : constant JSON_Array := Get (B, "extraTypes");
+      begin
+         for I in 1 .. Length (Items) loop
+            if Get (Items, I).Kind /= JSON_String_Type then
+               Bad := To_Unbounded_String ("extraTypes must be an array of strings");
+               return False;
+            end if;
+         end loop;
+      end;
+      return True;
+   end Extra_Types_Are_Strings;
+
    function Check_Fields (B : JSON_Value; Specs : Spec_List; Bad : out Unbounded_String) return Boolean is
       Allowed : Unbounded_String := To_Unbounded_String ("|");
       Allowed_Passed : Boolean := True;
@@ -541,6 +564,7 @@ elsif Op = "clock.create" then
       elsif Op = "hold.set" then
          return Check_Fields (B, Spec_List'(1 => Spec ("hold", JSON_String_Type, En => "strong|weak")), Bad);
       elsif Op = "cohort.add" then
+         if not Extra_Types_Are_Strings (B, Bad) then return False; end if;
          return Check_Fields (B, (Spec ("cohortKind", JSON_String_Type, En => "gang|expert"),
                                   Spec ("gangType", JSON_String_Type, Rq => False),
                                   Spec ("expertType", JSON_String_Type, Rq => False),
@@ -555,6 +579,7 @@ elsif Op = "clock.create" then
       elsif Op = "cohort.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("cohortId", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "cohort.update" then
+         if not Extra_Types_Are_Strings (B, Bad) then return False; end if;
          if not Check_Fields (B, (Spec ("cohortId", JSON_String_Type, MnL => 1),
                                   Spec ("gangType", JSON_String_Type, Rq => False),
                                   Spec ("expertType", JSON_String_Type, Rq => False),

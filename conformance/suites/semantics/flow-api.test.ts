@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { describe, expect } from "vitest";
 import { api } from "../../src/api.js";
@@ -144,6 +144,18 @@ describe("FLOW-API-01 server guided score flow", () => {
     expect((await api.get(`characters/${character.id}`)).rawBody).toBe(before.rawBody);
   });
 
+  testCase("FLOW-API-025", "completion ID reuse with changed input under an Idempotency-Key is the same 400 as the headerless path", async () => {
+    const { character, view } = await at("heat");
+    const body = completion(view);
+    const headers = { "If-Match": String(character.revision), "Idempotency-Key": "flow-api-025-key" };
+    expect((await api.post(`characters/${character.id}/ops/flow.step.complete`, body, headers)).status).toBe(200);
+    const before = await api.get(`characters/${character.id}`);
+    const response = await api.post(`characters/${character.id}/ops/flow.step.complete`, { ...body, inputs: { crewHeat: 1 } }, headers);
+    expect(response.status).toBe(400);
+    expect((response.body as Json).error?.code).toBe("VALIDATION");
+    expect((await api.get(`characters/${character.id}`)).rawBody).toBe(before.rawBody);
+  });
+
   testCase("FLOW-API-008", "XP completion awards and clears expressions with cursor advance, while skip preserves expressions", async () => {
     const { character } = await at("scoundrel-xp");
     const prepared = (await op(character.id, "session.set", { playbookExpressions: 1, characterExpressions: 1, struggleExpressions: 1 }, character.revision)).character;
@@ -187,6 +199,42 @@ describe("FLOW-API-01 server guided score flow", () => {
     // An old transport replay must not silently redo an undone award.
     expect((await complete(character.id, character.revision, body)).status).toBe(200);
     expect(((await api.get(`crews/${crew!.id}`)).body as Json).coin).toEqual(beforeCrew.coin);
+  });
+
+  testCase("FLOW-API-024", "grouped undo refuses to restore a crew award snapshot whose second types exceed the settings bound", async () => {
+    const { character, crew } = await at("payoff", true);
+    const added = await api.post(
+      `crews/${crew!.id}/ops/cohort.add`,
+      { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+      { "If-Match": String(crew!.revision) },
+    );
+    expect(added.status).toBe(200);
+    const crewRevision = (added.body as Json).crew.revision as number;
+    const view = await flow(character.id);
+    expect((await complete(character.id, character.revision, completion(view, { crewRevision, crewCoin: 1, myShare: 1 }))).status).toBe(200);
+    const after = await api.character(character.id);
+
+    // the settings bound has since dropped: the award group's crew snapshot now
+    // holds a second-type record above the bound while the current crew is valid
+    const groupsDir = join((await api.health()).dataDir, "flow-groups");
+    let tampered = 0;
+    for (const file of await readdir(groupsDir)) {
+      const path = join(groupsDir, file);
+      const group = JSON.parse(await readFile(path, "utf8")) as Json;
+      for (const participant of (group.participants ?? []) as Json[]) {
+        if (participant.kind !== "crew" || participant.id !== crew!.id) continue;
+        (((participant.before as Json).cohorts as Json[])[0] as Json).extraTypes = ["Rooks", "Adepts"];
+        await writeFile(path, JSON.stringify(group));
+        tampered += 1;
+      }
+    }
+    expect(tampered).toBeGreaterThan(0);
+
+    const crewBefore = await api.get(`crews/${crew!.id}`);
+    const undo = await api.post(`characters/${character.id}/undo`, undefined, { "If-Match": String(after.revision) });
+    expect(undo.status).toBe(400);
+    expect((undo.body as Json).error?.code).toBe("INVALID_ENTRY");
+    expect((await api.get(`crews/${crew!.id}`)).rawBody).toBe(crewBefore.rawBody);
   });
 
   testCase("FLOW-API-011", "group undo cannot overwrite a later unrelated crew edit", async () => {
@@ -389,5 +437,20 @@ describe("FLOW-API-01 server guided score flow", () => {
     const steps = view.steps as Array<{ kind: string; step: string }>;
     expect(steps.length).toBeGreaterThan(0);
     expect(steps.every((s) => s.kind === "score-start")).toBe(true);
+  });
+
+  testCase("FLOW-API-026", "an unparseable stored character is refused with INVALID_ENTITY on flow reads and completions, never a server fault", async () => {
+    const { character, view } = await at("heat");
+    const dataDir = (await api.health()).dataDir;
+    expect(resolve(dataDir)).toMatch(/^\/tmp\/pitd-managed\/[^/]+\/data$/);
+    const path = join(dataDir, "characters", character.id, "current.json");
+    await writeFile(path, "{ not json");
+    const read = await api.get(`characters/${character.id}/flow`);
+    expect(read.status).toBe(422);
+    expect(read.body).toMatchObject({ ok: false, error: { code: "INVALID_ENTITY", status: 422 } });
+    const completed = await complete(character.id, character.revision, completion(view));
+    expect(completed.status).toBe(422);
+    expect(completed.body).toMatchObject({ ok: false, error: { code: "INVALID_ENTITY", status: 422 } });
+    expect(await readFile(path, "utf8")).toBe("{ not json");
   });
 });

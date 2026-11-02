@@ -66,6 +66,20 @@ package Pitd_Common is
    private
       Held : Lock_Owners.Map;
    end Entity_Lock_Registry;
+   --  A transactional publish writes several entity files. Campaign-wide reads
+   --  (the roster) must see all of it or none: publishes bracket their writes,
+   --  and a reader accepts its snapshot only when no publish was in progress and
+   --  none completed while it read.
+   protected Publication_Gate is
+      procedure Begin_Publish;
+      procedure End_Publish;
+      entry Await_Quiet;
+      function Generation return Natural;
+      function Quiet_Since (Gen : Natural) return Boolean;
+   private
+      In_Progress : Natural := 0;
+      Completed   : Natural := 0;
+   end Publication_Gate;
    function Check_Clock_Refs
      (B : JSON_Value; Self_Id : String; Bad : out Unbounded_String) return Boolean;
    function Missing_Reference (Kind : String; Doc : JSON_Value) return String;
@@ -82,6 +96,10 @@ package Pitd_Common is
    procedure Try_Read_Entity
      (Kind, Id : String; V : out JSON_Value;
       Exists, Parse_Ok : out Boolean);
+   --  Crew id named by a stored character's dossier, for lock discovery only.
+   --  Bytes that do not parse yield "": admission refuses the record as
+   --  INVALID_ENTITY, so it needs no crew lock and must not raise.
+   function Stored_Dossier_Crew_Id (Character_Id : String) return String;
    procedure Write_Entity (Kind, Id : String; Entity : JSON_Value);
    --  Contract-pending exception: confirmed repair preserves previewed links.
    --  It still requires the caller's primary mutex and matching identity.

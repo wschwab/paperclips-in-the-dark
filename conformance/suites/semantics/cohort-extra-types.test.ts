@@ -438,6 +438,40 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
   );
 
   testCase(
+    "CREW-COHORTS-03-ADMIT-001",
+    "cohort.add and cohort.update refuse an extraTypes array holding a non-string element before any mutation",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: [7] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(400);
+      expect(added.rawBody).not.toContain("INTERNAL");
+      expect((await api.get(`crews/${id}`)).body).toMatchObject({ revision });
+
+      const seeded = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(seeded.status).toBe(200);
+      const cohortId = cohortsOf(seeded.body)[0]?.id;
+      const rev2 = asRecord(asRecord(seeded.body)?.crew)?.revision;
+      if (typeof cohortId !== "string" || typeof rev2 !== "number") throw new Error("no cohort");
+      const updated = await api.post(
+        `crews/${id}/ops/cohort.update`,
+        { cohortId, extraTypes: [7] },
+        { "If-Match": String(rev2) },
+      );
+      expect(updated.status).toBe(400);
+      expect(updated.rawBody).not.toContain("INTERNAL");
+      expect((await api.get(`crews/${id}`)).body).toMatchObject({ revision: rev2 });
+    },
+  );
+
+  testCase(
     "CREW-COHORTS-03-REPAIR-003",
     "repair-preview refuses a caller-supplied extraTypes whose elements are not strings",
     async () => {
@@ -486,6 +520,30 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
       expect(refused.status).toBe(400);
       expect(asRecord(asRecord(refused.body)?.error)?.code).toBe("INVALID_ENTRY");
       expect(refused.rawBody).toContain("extraTypes must be an array of strings");
+    },
+  );
+
+  testCase(
+    "CREW-COHORTS-03-REPAIR-006",
+    "repair-preview refuses a stored extraTypes array holding a non-string element instead of minting a token",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(200);
+      const health = await api.health();
+      const storedPath = join(health.dataDir, "crews", id, "current.json");
+      const stored = JSON.parse(readFileSync(storedPath, "utf8")) as Json;
+      (cohortsOf(stored)[0] as Json).extraTypes = [7];
+      writeFileSync(storedPath, JSON.stringify(stored));
+
+      const refused = await api.post(`crews/${id}/repair-preview`, {});
+      expect(refused.status).toBe(400);
+      expect(asRecord(asRecord(refused.body)?.error)?.code).toBe("INVALID_ENTRY");
+      expect(refused.body).not.toHaveProperty("token");
     },
   );
 

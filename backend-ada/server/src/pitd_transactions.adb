@@ -5,6 +5,7 @@ with GNAT.OS_Lib;
 with GNAT.SHA256;
 with Pitd_Common;
 with Pitd_Error;
+with Pitd_Normalize;
 with Pitd_Stored;
 
 package body Pitd_Transactions is
@@ -207,7 +208,7 @@ package body Pitd_Transactions is
       return Group_Locks (Group);
    end Undo_Locks;
 
-   procedure Publish (Plan : JSON_Value) is
+   procedure Publish_Entities (Plan : JSON_Value) is
       A : constant JSON_Array := Get (Plan, "participants");
       Receipts : constant JSON_Array := Get (Plan, "receipts");
       Consumed : constant JSON_Array := Get (Plan, "consume");
@@ -278,6 +279,20 @@ package body Pitd_Transactions is
          end;
       end loop;
       Delete_Transaction_Metadata ("transactions/" & Str_Field (Plan, "id") & ".json");
+   end Publish_Entities;
+
+   --  Campaign-wide readers see this publish whole or not at all.
+   procedure Publish (Plan : JSON_Value) is
+   begin
+      Publication_Gate.Begin_Publish;
+      begin
+         Publish_Entities (Plan);
+      exception
+         when others =>
+            Publication_Gate.End_Publish;
+            raise;
+      end;
+      Publication_Gate.End_Publish;
    end Publish;
 
    procedure Commit (Plan : JSON_Value) is
@@ -390,6 +405,15 @@ package body Pitd_Transactions is
             declare Restored : constant JSON_Value := Clone (Before); begin
                Set_Field (Restored, "revision", Int_Field (Current, "revision") + 1);
                Set_Field (Restored, "updatedAt", Now);
+               --  a grouped restore must meet the same cohort bound as a single undo:
+               --  the settings-derived maximum may have dropped since the snapshot
+               if K = "crew" then
+                  declare Bound_Issues : constant JSON_Array := Pitd_Normalize.Cohort_Type_Issues (Restored); begin
+                     if Length (Bound_Issues) > 0 then
+                        return Invalid_Entry_Error ("undo", Bound_Issues);
+                     end if;
+                  end;
+               end if;
                Stage (Plan, Current, Restored, Take_Snapshot => False);
                declare Advanced : constant Boolean := Advance_Predecessor
                  (Plan, K, Entity_Id, Str_Field (P, "snapshotId"), Int_Field (Restored, "revision"));

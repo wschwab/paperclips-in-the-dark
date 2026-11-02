@@ -974,8 +974,7 @@ package body Pitd_Callback is
             end;
          elsif Is_Flow_Completion or else Is_Flow_Read then
             declare
-               C : constant JSON_Value := Read_Entity ("character", Id);
-               Crew_Id : constant String := Str_Field (Obj_Field (C, "dossier"), "crewId");
+               Crew_Id : constant String := Stored_Dossier_Crew_Id (Id);
             begin
                if Crew_Id /= "" and then (Is_Flow_Read or else Pitd_Flow.Touches_Crew (B)) then
                   Ordered.Include ("crew/" & Crew_Id);
@@ -1288,6 +1287,12 @@ package body Pitd_Callback is
                   if Match then
                      if not Is_Flow_Completion then return Json_Text (To_String (Stored)); end if;
                   else
+                     --  a flow completion reused with a changed body is the durable
+                     --  receipt refusal (400), whether or not an Idempotency-Key was sent
+                     if Is_Flow_Completion then
+                        return Fail (AWS.Messages.S400, Suffix, "VALIDATION", E,
+                                     "completion ID already used with a different body");
+                     end if;
                      return Fail (AWS.Messages.S409, Suffix, "VALIDATION", E,
                                   "idempotency key already used with a different body");
                   end if;
@@ -1564,7 +1569,9 @@ if Kind = "crew" then
                          elsif not Bool_Field (R, "ok") and then Str_Field (Get (R, "error"), "code") = "NOT_FOUND"
                          then AWS.Messages.S404
                          elsif not Bool_Field (R, "ok") and then Str_Field (Get (R, "error"), "code") = "INVALID_ENTITY"
-                         then AWS.Messages.S422 else AWS.Messages.S200));
+                         then AWS.Messages.S422
+                         elsif not Bool_Field (R, "ok") and then Str_Field (Get (R, "error"), "code") = "INVALID_ENTRY"
+                         then AWS.Messages.S400 else AWS.Messages.S200));
                end if;
                if Length (Best) = 0 then
                   Release_Locks;
@@ -2061,6 +2068,18 @@ if Kind = "crew" then
                                    and then Length (Ch) = 0);
                      end;
                   end if;
+                  --  the document that would be persisted must satisfy the cohort
+                  --  second-type shape and bound whatever the needs-input state
+                  declare
+                     Max_Issues : constant JSON_Array := Cohort_Type_Issues (Get (Ctx, "document"));
+                  begin
+                     if Length (Max_Issues) > 0 then
+                        Release_Locks;
+                        return Json_Response
+                          (Invalid_Entry_Result ("repair-preview", Max_Issues),
+                           AWS.Messages.S400);
+                     end if;
+                  end;
                   Needs := Get (Ctx, "needsInputPointers");
                   Issues := Get (Ctx, "issues");
                   Changes := Get (Ctx, "changes");
@@ -2341,8 +2360,7 @@ if Kind = "crew" then
                  and then Pitd_Flow.Touches_Crew (Get (O, "args"))
                then
                   declare
-                     C : constant JSON_Value := Read_Entity ("character", Id);
-                     Crew_Id : constant String := Str_Field (Obj_Field (C, "dossier"), "crewId");
+                     Crew_Id : constant String := Stored_Dossier_Crew_Id (Id);
                   begin
                      if Crew_Id /= "" then Ordered.Include ("crew/" & Crew_Id); end if;
                   end;

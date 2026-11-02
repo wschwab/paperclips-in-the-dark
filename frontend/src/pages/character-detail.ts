@@ -744,7 +744,7 @@ export function mountCharacterDetailPage(
           renderDetailWrapper({ passive: true });
           return;
         }
-        const identity = `${flow.instanceId}/${flow.kind}/${flow.step}/${flow.receipt?.status ?? ""}/${flow.crew?.revision ?? ""}`;
+        const identity = `${flow.instanceId}/${flow.kind}/${flow.step}/${flow.receipt?.status ?? ""}/${flow.crew?.id ?? ""}/${flow.crew?.revision ?? ""}`;
         if (identity !== flowDraftIdentity) {
           flowInputs = flow.receipt?.status === "completed" ? { ...flow.receipt.inputs } : {};
           gmPlanApproach = typeof flowInputs.planApproach === "string" ? flowInputs.planApproach : currentCharacter.flowProgress.planApproach || null;
@@ -1533,7 +1533,7 @@ export function mountCharacterDetailPage(
             noticeMsg = null;
             currentCharacter = character;
             // Grouped undo can restore the crew balance; reload the displayed crew.
-            refreshLinkedCrew();
+            refreshLinkedCrew({ passive: true });
             canUndoState = canUndo;
             historyCountState = historyCount;
             // FV-028: positive feedback that names the restored state, distinct

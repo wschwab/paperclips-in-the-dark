@@ -402,13 +402,25 @@ package body Pitd_Summary is
    --  the route-derived identity (Q15); degraded rows carry canonical
    --  empties, isReadable:false, isRepairable, isComplete:false, and the
    --  raw-byte deleteToken.  Read-only: never writes.
+   --  A publish that writes characters then crews must not be read half-done:
+   --  the snapshot is taken only when no publish was in progress and none
+   --  completed during the read; otherwise the read is repeated.
    function Roster_Value return JSON_Value is
-      CC : constant JSON_Array := Character_Rows;
-      V  : JSON_Value := Create_Object;
    begin
-      Set_Field (V, "characters", CC);
-      Set_Field (V, "crews", Crew_Rows (CC));
-      return V;
+      loop
+         Publication_Gate.Await_Quiet;
+         declare
+            Gen : constant Natural := Publication_Gate.Generation;
+            CC  : constant JSON_Array := Character_Rows;
+            V   : JSON_Value := Create_Object;
+         begin
+            Set_Field (V, "characters", CC);
+            Set_Field (V, "crews", Crew_Rows (CC));
+            if Publication_Gate.Quiet_Since (Gen) then
+               return V;
+            end if;
+         end;
+      end loop;
    end Roster_Value;
 
 end Pitd_Summary;

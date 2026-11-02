@@ -97,6 +97,29 @@ package body Pitd_Common is
       end Next;
    end Snapshot_Clock;
 
+   protected body Publication_Gate is
+      procedure Begin_Publish is
+      begin
+         In_Progress := In_Progress + 1;
+      end Begin_Publish;
+
+      procedure End_Publish is
+      begin
+         In_Progress := In_Progress - 1;
+         Completed := Completed + 1;
+      end End_Publish;
+
+      entry Await_Quiet when In_Progress = 0 is
+      begin
+         null;
+      end Await_Quiet;
+
+      function Generation return Natural is (Completed);
+
+      function Quiet_Since (Gen : Natural) return Boolean is
+        (In_Progress = 0 and then Completed = Gen);
+   end Publication_Gate;
+
    --  Unique temp-name counter for Atomic_Write (BUG-009): two concurrent
    --  writers must never share a ".tmp" name.
    protected Temp_Counter is
@@ -356,6 +379,24 @@ package body Pitd_Common is
       when others =>
          V := JSON_Null; Exists := True; Parse_Ok := False;
    end Try_Read_Entity;
+
+   function Stored_Dossier_Crew_Id (Character_Id : String) return String is
+      V : JSON_Value;
+      Exists, Parse_Ok : Boolean;
+   begin
+      Try_Read_Entity ("character", Character_Id, V, Exists, Parse_Ok);
+      if not Parse_Ok or else V.Kind /= JSON_Object_Type then
+         return "";
+      end if;
+      declare
+         Dossier : constant JSON_Value := Obj_Field (V, "dossier");
+      begin
+         if Dossier.Kind /= JSON_Object_Type then
+            return "";
+         end if;
+         return Str_Field (Dossier, "crewId");
+      end;
+   end Stored_Dossier_Crew_Id;
 
    --  Cross-entity ids in the persisted schemas: character dossier.crewId,
    --  clock ownerKind/ownerId, and clock relatedClockIds. Crew child ids and
