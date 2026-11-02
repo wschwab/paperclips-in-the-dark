@@ -3086,7 +3086,17 @@ package body Pitd_Normalize is
                   declare
                      Extra : constant JSON_Value := Get (Item, "extraTypes");
                   begin
-                     if Extra.Kind = JSON_Array_Type then
+                     if Extra.Kind /= JSON_Array_Type then
+                        declare
+                           X : JSON_Value := Create_Object;
+                        begin
+                           Set_Field (X, "pointer",
+                                      "/cohorts/" & Trim_Image (I - 1) & "/extraTypes");
+                           Set_Field (X, "reason", "extraTypes must be an array of strings");
+                           Set_Field (X, "expected", "an array of strings");
+                           Append (Out_A, X);
+                        end;
+                     else
                         declare
                            Extra_Arr  : constant JSON_Array := Get (Extra);
                            Count      : constant Integer := Integer (Length (Extra_Arr));

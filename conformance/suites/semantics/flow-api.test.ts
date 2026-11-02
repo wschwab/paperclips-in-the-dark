@@ -138,7 +138,8 @@ describe("FLOW-API-01 server guided score flow", () => {
     expect((await complete(character.id, character.revision, body)).status).toBe(200);
     const before = await api.get(`characters/${character.id}`);
     const response = await complete(character.id, character.revision, { ...body, inputs: { crewHeat: 1 } });
-    expect(response.status).toBeGreaterThanOrEqual(400);
+    expect(response.status).toBe(400);
+    expect((response.body as Json).error?.code).toBe("VALIDATION");
     expect(response.body).toMatchObject({ ok: false });
     expect((await api.get(`characters/${character.id}`)).rawBody).toBe(before.rawBody);
   });
@@ -375,5 +376,18 @@ describe("FLOW-API-01 server guided score flow", () => {
     expect(response.body).toMatchObject({ ok: false, error: { code: "INVALID_ENTITY", status: 422 } });
     expect((await api.get(`crews/${crew!.id}`)).rawBody).toBe(beforeCrew.rawBody);
     expect(await readFile(path, "utf8")).toBe(bytes);
+  });
+
+  testCase("FLOW-API-023", "a Score character with no active cursor still exposes the Score entry steps so the scoundrel can re-enter", async () => {
+    const character = await newCharacter();
+    const started = await op(character.id, "mode.set", { mode: "score" }, character.revision);
+    expect(started.ok).toBe(true);
+    const cleared = await op(character.id, "mode.flow.set", { kind: "none", step: "" }, started.character.revision);
+    expect(cleared.ok).toBe(true);
+    const view = await flow(character.id);
+    expect(view).toMatchObject({ mode: "score", kind: "none", step: "", actions: [] });
+    const steps = view.steps as Array<{ kind: string; step: string }>;
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps.every((s) => s.kind === "score-start")).toBe(true);
   });
 });

@@ -711,15 +711,15 @@ const mutations = {
         throw new Error("M18: Could not find .action-dot in components.css");
       }
       content = content.replace(
-        /(\.action-dot\s*\{[^}]*?width:\s*)16px/g,
+        /(\.action-dots\.is-interactive button\.action-dot::before\s*\{[^}]*?width:\s*)24px/,
         '$18px'
       );
       content = content.replace(
-        /(\.action-dot\s*\{[^}]*?height:\s*)16px/g,
+        /(\.action-dots\.is-interactive button\.action-dot::before\s*\{[^}]*?height:\s*)24px/,
         '$18px'
       );
       writeFileSync(file, content);
-      return "Reduced action-dot from 16x16 to 8x8";
+      return "Reduced the interactive action-dot hit affordance from 24x24 to 8x8";
     },
   },
 
@@ -937,7 +937,12 @@ function layerTestCommand(layer, report) {
       // managed-run tooling fixture, not a suite test: it blocks until its
       // 60s timeout and would fail every campaign baseline. Excluded here;
       // it is exercised directly by conformance/src/managed-run.test.ts.
-      return { cmd: `cd conformance && npm run test:ada -- --run --exclude "suites/__sc_o0_blocker__.test.ts" --reporter=json --outputFile="${report}"`, cwd: REPO_ROOT, timeout: 2400000 };
+      // FLOW-API-01 recovery oracle (suites/persistence/flow-api-recovery.test.ts)
+      // kills its managed server between cycles and only runs under the
+      // two-cycle launcher. In this single-cycle campaign it kills the shared
+      // server and fails unrelated tests with ECONNREFUSED. Excluded here, as
+      // the default suite already skips it; it is gated by its own two-cycle run.
+      return { cmd: `cd conformance && npm run test:ada -- --run --exclude "suites/__sc_o0_blocker__.test.ts" --exclude "suites/persistence/flow-api-recovery.test.ts" --reporter=json --outputFile="${report}"`, cwd: REPO_ROOT, timeout: 2400000 };
     case "frontend":
       return { cmd: `npx vitest run --reporter=json --outputFile="${report}"`, cwd: join(REPO_ROOT, "frontend"), timeout: 900000 };
     case "conformance":

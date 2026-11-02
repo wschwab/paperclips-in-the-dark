@@ -2311,7 +2311,7 @@ if Kind = "crew" then
       Ops : JSON_Array := Empty_Array;
       Outs : JSON_Array := Empty_Array;
       Work : constant JSON_Value := Create_Object;
-      Plan : constant JSON_Value := Pitd_Transactions.New_Plan ("campaign.batch");
+      Plan : JSON_Value := JSON_Null;  --  created under the participant locks
       Keys : JSON_Array := Empty_Array;
       Held : Boolean := False;
       All_Ok : Boolean := True;
@@ -2470,6 +2470,9 @@ if Kind = "crew" then
          exit when Same_Keys (Keys, Discover);
          Release_Locks;
       end loop;
+      --  Snapshot ID and takenAt are allocated only now, under the locks, so
+      --  a concurrent commit cannot be ordered between allocation and lock.
+      Plan := Pitd_Transactions.New_Plan ("campaign.batch");
       for I in 1 .. Length (Ops) loop
          declare O : constant JSON_Value := Get (Ops, I); begin
             if not Load (Str_Field (O, "entity"), Str_Field (O, "id")) then

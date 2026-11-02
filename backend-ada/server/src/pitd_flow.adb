@@ -369,7 +369,10 @@ package body Pitd_Flow is
       V : constant JSON_Value := Create_Object;
       F : constant JSON_Value := Get (Character, "modeFlow");
       Kind : constant String := Str_Field (F, "kind"); Step : constant String := Str_Field (F, "step");
-      A : constant JSON_Array := Steps (Kind);
+      --  A Score with no active cursor (after Close, Leave, or a finished Engagement)
+      --  still offers its entry steps, so the scoundrel can re-enter the Score.
+      A : constant JSON_Array :=
+        Steps (if Kind = "none" and then Str_Field (Character, "mode") = "score" then "score-start" else Kind);
       Actions : JSON_Array := Empty_Array;
       Previous : constant JSON_Value := Destination (Kind, Step, -1);
       Following : constant JSON_Value := Destination (Kind, Step, 1);
@@ -471,7 +474,7 @@ package body Pitd_Flow is
       end if;
       if Stored.Kind = JSON_Object_Type then
          if Str_Field (Stored, "payloadHash") /= Hash then
-            return Error_Value (Completion_Op, "VALIDATION", 409,
+            return Error_Value (Completion_Op, "VALIDATION", 400,
               "completion ID already used with a different body", False, "refresh",
               Pointer_Details (Root_Issues ("completion ID already used with a different body")), Character);
          end if;
@@ -491,7 +494,8 @@ package body Pitd_Flow is
          declare Receipts : constant JSON_Array := Get (Plan, "receipts"); begin
             for I in 1 .. Length (Receipts) loop
                declare R : constant JSON_Value := Get (Get (Receipts, I), "receipt"); begin
-                  if Str_Field (R, "instanceId") = Instance_Id (Character)
+                  if Str_Field (Get (Receipts, I), "characterId") = Str_Field (Character, "id")
+                    and then Str_Field (R, "instanceId") = Instance_Id (Character)
                     and then Str_Field (R, "kind") = Kind and then Str_Field (R, "step") = Step
                     and then Str_Field (R, "status") = "completed"
                   then Stored := R; exit; end if;

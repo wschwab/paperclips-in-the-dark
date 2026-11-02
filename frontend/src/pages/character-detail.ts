@@ -744,7 +744,7 @@ export function mountCharacterDetailPage(
           renderDetailWrapper({ passive: true });
           return;
         }
-        const identity = `${flow.instanceId}/${flow.kind}/${flow.step}/${flow.receipt?.status ?? ""}`;
+        const identity = `${flow.instanceId}/${flow.kind}/${flow.step}/${flow.receipt?.status ?? ""}/${flow.crew?.revision ?? ""}`;
         if (identity !== flowDraftIdentity) {
           flowInputs = flow.receipt?.status === "completed" ? { ...flow.receipt.inputs } : {};
           gmPlanApproach = typeof flowInputs.planApproach === "string" ? flowInputs.planApproach : currentCharacter.flowProgress.planApproach || null;
@@ -758,6 +758,12 @@ export function mountCharacterDetailPage(
           }
           pendingCompletion = null;
           flowDraftIdentity = identity;
+        }
+        // A crew change made elsewhere moves the projection's crew revision while
+        // the displayed balance is still the old linked crew. Reload it, and the
+        // identity above resets the draft so no stale amount is submitted.
+        if (flow.crew && needsLinkedCrew(currentCharacter) && (!linkedCrew || linkedCrew.id !== flow.crew.id || linkedCrew.revision !== flow.crew.revision)) {
+          refreshLinkedCrew();
         }
         currentFlow = flow;
         renderDetailWrapper({ passive: true });
@@ -1526,6 +1532,8 @@ export function mountCharacterDetailPage(
             error = null;
             noticeMsg = null;
             currentCharacter = character;
+            // Grouped undo can restore the crew balance; reload the displayed crew.
+            refreshLinkedCrew();
             canUndoState = canUndo;
             historyCountState = historyCount;
             // FV-028: positive feedback that names the restored state, distinct

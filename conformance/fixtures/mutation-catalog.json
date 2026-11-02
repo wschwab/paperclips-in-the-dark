@@ -66,7 +66,7 @@
       "mutation": "Truncate Collect_Removal_Keys at 512 entries",
       "observableFailure": "an import/repair preview no longer discloses every data-dropping property beyond the buffer, violating no-silent-data-loss; the UNKNOWN-KEY near-limit cases assert exact disclosure at 512/513/600 keys",
       "restorationHash": {
-        "backend-ada/server/src/pitd_normalize.adb": "731e11cf2837d48d00bf9f6d74d4ed66b5eda7da473c205ce6c01493545ccd2a"
+        "backend-ada/server/src/pitd_normalize.adb": "8c491df4a6bd2208f46ab56944a06c6df4bd5e991704e8a6c750f29111e81f1b"
       },
       "severity": "P0",
       "status": "not-run",
@@ -85,7 +85,7 @@
       "mutation": "Change INVALID_ENTITY status from 422 to 500",
       "observableFailure": "degraded-entity direct access returns 500 instead of the frozen 422 typed client error, breaking the error union and typed recovery",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "886aebe424c73f19b2570d629b2b9a4cac788c162eaa75856dd496f961b751f7"
+        "backend-ada/server/src/pitd_callback.adb": "6fdb214e5322a26da6e8d18e5f8f5aa41add2f6cb560739d11a5d4237ad58cb0"
       },
       "severity": "P0",
       "status": "not-run",
@@ -120,7 +120,7 @@
       "mutation": "Skip the If-Match check block (if False then) so stale revisions mutate anyway",
       "observableFailure": "a stale writer overwrites recent changes with no STALE_REVISION; concurrent edits are lost silently",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "886aebe424c73f19b2570d629b2b9a4cac788c162eaa75856dd496f961b751f7"
+        "backend-ada/server/src/pitd_callback.adb": "6fdb214e5322a26da6e8d18e5f8f5aa41add2f6cb560739d11a5d4237ad58cb0"
       },
       "severity": "P0",
       "status": "not-run",
@@ -137,7 +137,7 @@
       "mutation": "Skip the pre-mutation snapshot (replaced by null)",
       "observableFailure": "snapshot-worthy mutations create no history entry, so undo has nothing to restore",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "886aebe424c73f19b2570d629b2b9a4cac788c162eaa75856dd496f961b751f7"
+        "backend-ada/server/src/pitd_callback.adb": "6fdb214e5322a26da6e8d18e5f8f5aa41add2f6cb560739d11a5d4237ad58cb0"
       },
       "severity": "P0",
       "status": "not-run",
@@ -155,7 +155,7 @@
       "mutation": "Skip snapshot consumption on undo (Delete_File replaced by null)",
       "observableFailure": "undo stops consuming snapshots, so a second undo replays stale state and history grows without bound",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "886aebe424c73f19b2570d629b2b9a4cac788c162eaa75856dd496f961b751f7"
+        "backend-ada/server/src/pitd_callback.adb": "6fdb214e5322a26da6e8d18e5f8f5aa41add2f6cb560739d11a5d4237ad58cb0"
       },
       "severity": "P0",
       "status": "not-run",
@@ -236,7 +236,7 @@
       "mutation": "Skip the W5 owner-clock reassignment (elsif False then)",
       "observableFailure": "deleting a character/crew orphans its standalone clocks instead of reassigning them to campaign ownership with bumped revisions",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "886aebe424c73f19b2570d629b2b9a4cac788c162eaa75856dd496f961b751f7"
+        "backend-ada/server/src/pitd_callback.adb": "6fdb214e5322a26da6e8d18e5f8f5aa41add2f6cb560739d11a5d4237ad58cb0"
       },
       "severity": "P1",
       "status": "not-run",
@@ -252,7 +252,7 @@
       "mutation": "Skip the W4 unlink sweep (if False then)",
       "observableFailure": "a deleted clock's id remains in other clocks' relatedClockIds, leaving stale relationship references",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "886aebe424c73f19b2570d629b2b9a4cac788c162eaa75856dd496f961b751f7"
+        "backend-ada/server/src/pitd_callback.adb": "6fdb214e5322a26da6e8d18e5f8f5aa41add2f6cb560739d11a5d4237ad58cb0"
       },
       "severity": "P1",
       "status": "not-run",
@@ -300,14 +300,14 @@
       "id": "M18",
       "intendedCatchingLayer": "frontend component accessibility tests (A11Y-01 hit affordance)",
       "layer": "frontend",
-      "mutation": "Reduce the action-dot width/height below the contracted target size",
-      "observableFailure": "action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
+      "mutation": "Reduce the interactive action-dot 24x24 hit affordance (::before pseudo-element) to 8x8",
+      "observableFailure": "interactive action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
         "frontend/src/styles/components.css": "b1471f3d040f2b1cbbfd2360eee6556428eedf461a4015add4f4a8047ce82bc5"
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "frontend/src/styles/components.css \u2014 .action-dot rule (A11Y-01 24px hit-affordance contract)"
+      "target": "frontend/src/styles/components.css \u2014 .action-dots.is-interactive button.action-dot::before rule (A11Y-01 24px hit-affordance contract)"
     },
     {
       "expectedTestIds": [
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "7f4addc81d5949a2ac5268fa26dd88550a01c25095f317a7db8ab0c995f7f582"
+        "frontend/src/pages/character-detail.ts": "76524d5ba62b02fedc22317608c06bb2a028dcaeaac4dcb8e2f8d770ff65c481"
       },
       "severity": "P1",
       "status": "not-run",

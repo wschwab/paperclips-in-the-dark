@@ -1489,3 +1489,17 @@ describe("FLOW-API-01 advisory refresh draft continuity", () => {
     expect(root.querySelector<HTMLInputElement>('[data-section="downtime-activities-panel"] input')!.value).toBe("");
   });
 });
+
+describe("FLOW-API-01 crew revision seam", () => {
+  it("reloads the linked crew when the flow projection reports a newer crew revision", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" } });
+    const flow = { ...flowDTO(dto), crew: { id: CREW_ID, revision: 5 } };
+    const api = mockApi(dto, crewDTO({ revision: 4 }), flow);
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => {
+      expect(root.querySelector(".mode-panel")).not.toBeNull();
+      const crewLoads = api.calls.filter((call) => call.url === `/api/crews/${CREW_ID}`).length;
+      expect(crewLoads).toBeGreaterThanOrEqual(2);
+    });
+  });
+});
