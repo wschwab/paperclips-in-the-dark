@@ -89,3 +89,12 @@ Findings and fixes, each red-first:
 Known gap, recorded and not fixed here: `skill/generate-ada-validators.mjs` emits no `maxItems` check for any field. The generated `pitd_schema_validators.adb` therefore admits any array length. The bound is enforced in the normalizer (repair) and at import apply, not by the generated validator. Adding `maxItems` to the generator would change validators across the whole contract and is a separate change.
 
 Evidence: cohort-extra-types 11/11 and published-limits 16/16 (27/27 in one run), each new test red before its fix.
+
+## Review round 3 (Sol 6.1 xhigh via omp, pinned head 3d4bd24b): FAIL, addressed
+
+- P1 "caller-supplied replacement for a needs-input pointer can persist an over-limit array". Not reachable through the import API: the import body is limited to `entity`, `previewToken`, and `confirm` by `Only_Fields` (pitd_callback.adb ~1521 and ~1527), so the pre-existing caller-value block (~1800) never receives a value. Guard test `CREW-COHORTS-03-IMPORT-003` pins this: an extra key is refused with `VALIDATION`, and the record is unchanged. No code change for this path.
+- P1 "undo restores the over-limit array removed by repair". Fixed: undo of a crew refuses (400 `INVALID_ENTRY`, nothing written) when the restored snapshot violates the settings-derived maxima (pitd_callback.adb ~1453). Not covered by a conformance test: the API has no route that stores an over-limit cohort, so the snapshot cannot be produced through the public surface. Verified by build and review trace only.
+- P2 "omitting gameStem bypasses the import gate". Red: `CREW-COHORTS-03-IMPORT-004` returned 200 for an over-limit apply that omitted gameStem. Fix: the apply gate (pitd_callback.adb ~1683) gates a clone of the submitted entity, with gameStem taken from the normalized preview document when the submitted entity lacks it. Green: 400 `INVALID_ENTRY`.
+- P2 "IMPORT-002 does not prove the import applies". Fixed: IMPORT-002 now imports a different second type (`["Adepts"]`) and asserts `ok === true`, a revision advance, and the readback value.
+
+Evidence: cohort-extra-types 13/13 plus published-limits 16/16 (29/29 in one run). IMPORT-004 red on the round-2 build.

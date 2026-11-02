@@ -1450,6 +1450,19 @@ if Kind = "crew" then
                                      "snapshot reference no longer exists: " & Missing);
                      end if;
                   end;
+                  --  a snapshot restored over the settings-derived maxima would
+                  --  be stored where the apply gate refuses to write: refuse undo
+                  if Kind = "crew" then
+                     declare
+                        Max_Issues : constant JSON_Array := Settings_Maxima_Issues (Kind, Restored);
+                     begin
+                        if Length (Max_Issues) > 0 then
+                           Release_Locks;
+                           return Json_Response
+                             (Invalid_Entry_Result ("undo", Max_Issues), AWS.Messages.S400);
+                        end if;
+                     end;
+                  end if;
                   if Kind = "clock" then
                      declare Bad : Unbounded_String; begin
                         if not Check_Clock_Refs (Restored, Id, Bad) then
@@ -1681,9 +1694,18 @@ if Kind = "crew" then
                      --  schema-valid document must never store trackers
                      --  above the game-settings bounds
                      declare
-                        Max_Issues : constant JSON_Array :=
-                          Settings_Maxima_Issues (Kind, Entity_V);
+                        Gate_Doc   : JSON_Value := Clone (Entity_V);
+                        Max_Issues : JSON_Array;
                      begin
+                        --  partial imports omit gameStem; the preview filled it,
+                        --  so the gate reads the stem from the normalized document
+                        if Gate_Doc.Kind = JSON_Object_Type
+                          and then (not Has_Field (Gate_Doc, "gameStem")
+                                    or else Get (Gate_Doc, "gameStem").Kind = JSON_Null_Type)
+                        then
+                           Set_Field (Gate_Doc, "gameStem", Str_Field (Doc, "gameStem"));
+                        end if;
+                        Max_Issues := Settings_Maxima_Issues (Kind, Gate_Doc);
                         if Length (Max_Issues) > 0 then
                            Release_Locks;
                            return Json_Response
