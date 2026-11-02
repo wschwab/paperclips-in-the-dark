@@ -680,7 +680,7 @@ export function mountCharacterDetailPage(
   };
 
   /** Load the linked crew for Resolution editors (score/resolution only; unlinked stays null). */
-  const refreshLinkedCrew = () => {
+  const refreshLinkedCrew = (options?: { passive: true }) => {
     const crewId = currentCharacter?.dossier.crewId ?? "";
     if (!crewId) {
       linkedCrew = null;
@@ -691,25 +691,25 @@ export function mountCharacterDetailPage(
         onFailure: () => {
           if (cancelled) return;
           linkedCrew = null;
-          renderDetailWrapper();
+          renderDetailWrapper(options);
         },
         onSuccess: (crew) => {
           if (cancelled) return;
           linkedCrew = crew;
-          renderDetailWrapper();
-          loadCrewGameTypes(crew.gameStem);
+          renderDetailWrapper(options);
+          loadCrewGameTypes(crew.gameStem, options);
         },
       }),
     );
   };
   /** Crew types from the crew game data (CREW-XP-INFO-01); a failure leaves the generic trigger wording. */
-  const loadCrewGameTypes = (gameStem: string) => {
+  const loadCrewGameTypes = (gameStem: string, options?: { passive: true }) => {
     void Effect.runPromise(
       Effect.match(getCrewGameData(gameStem), {
         onFailure: () => {
           if (cancelled) return;
           crewGameTypes = null;
-          renderDetailWrapper();
+          renderDetailWrapper(options);
         },
         onSuccess: (data) => {
           if (cancelled) return;
@@ -717,7 +717,7 @@ export function mountCharacterDetailPage(
           crewGameTypes = Array.isArray(types)
             ? types.filter((ct): ct is Record<string, unknown> => typeof ct === "object" && ct !== null)
             : null;
-          renderDetailWrapper();
+          renderDetailWrapper(options);
         },
       }),
     );
@@ -763,7 +763,7 @@ export function mountCharacterDetailPage(
         // the displayed balance is still the old linked crew. Reload it, and the
         // identity above resets the draft so no stale amount is submitted.
         if (flow.crew && needsLinkedCrew(currentCharacter) && (!linkedCrew || linkedCrew.id !== flow.crew.id || linkedCrew.revision !== flow.crew.revision)) {
-          refreshLinkedCrew();
+          refreshLinkedCrew({ passive: true });
         }
         currentFlow = flow;
         renderDetailWrapper({ passive: true });
