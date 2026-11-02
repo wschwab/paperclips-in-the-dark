@@ -436,4 +436,56 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
       expect(cohortsOf(after.body)).toHaveLength(0);
     },
   );
+
+  testCase(
+    "CREW-COHORTS-03-REPAIR-003",
+    "repair-preview refuses a caller-supplied extraTypes whose elements are not strings",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(200);
+      const health = await api.health();
+      const storedPath = join(health.dataDir, "crews", id, "current.json");
+      const stored = JSON.parse(readFileSync(storedPath, "utf8")) as Json;
+      (cohortsOf(stored)[0] as Json).extraTypes = "Rooks";
+      writeFileSync(storedPath, JSON.stringify(stored));
+
+      const refused = await api.post(`crews/${id}/repair-preview`, {
+        "/cohorts/0/extraTypes": [7],
+      });
+      expect(refused.status).toBe(400);
+      expect(asRecord(asRecord(refused.body)?.error)?.code).toBe("INVALID_ENTRY");
+      expect(refused.rawBody).toContain("extraTypes elements must be strings");
+    },
+  );
+
+  testCase(
+    "CREW-COHORTS-03-REPAIR-004",
+    "repair-preview refuses an over-limit caller value even when the game settings do not resolve",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(200);
+      const health = await api.health();
+      const storedPath = join(health.dataDir, "crews", id, "current.json");
+      const stored = JSON.parse(readFileSync(storedPath, "utf8")) as Json;
+      (cohortsOf(stored)[0] as Json).extraTypes = "Rooks";
+      stored.gameStem = "no-such-game";
+      writeFileSync(storedPath, JSON.stringify(stored));
+
+      const refused = await api.post(`crews/${id}/repair-preview`, {
+        "/cohorts/0/extraTypes": ["Rooks", "Adepts"],
+      });
+      expect(refused.status).toBe(400);
+      expect(asRecord(asRecord(refused.body)?.error)?.code).toBe("INVALID_ENTRY");
+    },
+  );
 });

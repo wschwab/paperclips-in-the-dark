@@ -107,3 +107,10 @@ Correction to round 3: the caller-supplied-value block (pitd_callback.adb ~1822)
 - P2 "the undo refusal blocks legacy single-type crews with unrelated tracker maxima". Fixed: undo uses `Cohort_Type_Issues`, which keeps only issues whose pointer ends in `/extraTypes` (package-level helper, pitd_callback.adb ~249). Red: `CREW-COHORTS-03-UNDO-001` returned 400 on the unscoped check (round-3 behavior, reproduced by temporarily reverting the call). Green: 200 with the scoped check.
 
 Evidence: cohort-extra-types 15/15, published-limits 16/16.
+
+## Review round 5 (Sol 6.1 xhigh via omp, pinned head 57a4b422): FAIL, addressed
+
+- P1 "repair-preview persists schema-invalid extraTypes elements (e.g. [7])". Fixed: the normalizer's `Cohort_Type_Issues` refuses any non-string element; repair-preview refuses 400 `INVALID_ENTRY` before minting a token. Red: `REPAIR-003` returned 409 on the round-4 build. Green: 400.
+- P2 "unresolved game settings bypass the cohort bound". Fixed: the bound is computed directly from `Settings_Int` with the `CohortMaxTypes` default 1, so an unresolvable game gives zero extras. The cohort check moved out of the early-return path in `Settings_Maxima_Issues`, so it no longer depends on the game resolving. Red: `REPAIR-004` returned 409 on the round-4 build. Green: 400.
+
+Evidence: cohort-extra-types + published-limits 33/33 (round-4 build: 2 new reds, 2 passing).

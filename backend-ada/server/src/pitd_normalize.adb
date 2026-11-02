@@ -2922,7 +2922,7 @@ package body Pitd_Normalize is
    --  apply is refused with nothing written.  Unresolvable settings (no
    --  gameStem / missing game file) skip the gate.
    function Settings_Maxima_Issues (Kind : String; Doc : JSON_Value) return JSON_Array is
-      Out_A : JSON_Array := Empty_Array;
+      Out_A : JSON_Array := Cohort_Type_Issues (Doc);
       Stem  : constant String := Str_Field (Doc, "gameStem");
       G     : constant JSON_Value := Game (Stem);
       S     : constant Settings_Ref := (To_Unbounded_String (Stem), G);
@@ -3004,55 +3004,80 @@ package body Pitd_Normalize is
          Check ("/turf", "TurfMax");
          --  CONTRACT-04: the crew tier ceiling is settings-derived too.
          Check ("/tier", "CrewTierMax");
-         --  CREW-COHORTS-03: a cohort's extraTypes hold at most
-         --  CohortMaxTypes - 1 entries (the first type is gangType/expertType).
-         declare
-            Extra_Max : constant Integer :=
-              Settings_Int ((S.Stem, Game (Stem & "-crews")), "CohortMaxTypes", 1) - 1;
-            Cohorts   : constant JSON_Value := Get_At_Pointer (Doc, "/cohorts");
-         begin
-            if Cohorts.Kind = JSON_Array_Type then
-               declare
-                  Arr : constant JSON_Array := Get (Cohorts);
-               begin
-                  for I in 1 .. Length (Arr) loop
-                     declare
-                        Item : constant JSON_Value := Get (Arr, I);
-                     begin
-                        if Item.Kind = JSON_Object_Type and then Has_Field (Item, "extraTypes") then
-                           declare
-                              Extra : constant JSON_Value := Get (Item, "extraTypes");
-                           begin
-                              if Extra.Kind = JSON_Array_Type then
-                                 declare
-                                    Extra_Arr : constant JSON_Array := Get (Extra);
-                                    Count     : constant Integer := Integer (Length (Extra_Arr));
-                                 begin
-                                    if Count > Extra_Max then
-                                       declare
-                                          X : JSON_Value := Create_Object;
-                                       begin
-                                          Set_Field (X, "pointer", "/cohorts/" & Trim_Image (I - 1) & "/extraTypes");
-                                          Set_Field (X, "reason",
-                                                     "value " & Trim_Image (Count)
-                                                     & " exceeds the settings-derived maximum " & Trim_Image (Extra_Max));
-                                          Set_Field (X, "expected",
-                                                     "an array of at most " & Trim_Image (Extra_Max) & " item(s)");
-                                          Append (Out_A, X);
-                                       end;
-                                    end if;
-                                 end;
-                              end if;
-                           end;
-                        end if;
-                     end;
-                  end loop;
-               end;
-            end if;
-         end;
       end if;
       return Out_A;
    end Settings_Maxima_Issues;
+
+   --  CREW-COHORTS-03: a cohort's extraTypes hold at most CohortMaxTypes - 1
+   --  entries, with each entry a string.  The bound comes from the game's crew
+   --  settings; an unresolvable game falls back to zero extras (CohortMaxTypes
+   --  defaults to 1), so this never depends on the game resolving.
+   function Cohort_Type_Issues (Doc : JSON_Value) return JSON_Array is
+      Out_A     : JSON_Array := Empty_Array;
+      Stem      : constant String := Str_Field (Doc, "gameStem");
+      Extra_Max : constant Integer :=
+        Settings_Int ((To_Unbounded_String (Stem), Game (Stem & "-crews")), "CohortMaxTypes", 1) - 1;
+      Cohorts   : constant JSON_Value := Get_At_Pointer (Doc, "/cohorts");
+   begin
+      if Cohorts.Kind /= JSON_Array_Type then
+         return Out_A;
+      end if;
+      declare
+         Arr : constant JSON_Array := Get (Cohorts);
+      begin
+         for I in 1 .. Length (Arr) loop
+            declare
+               Item : constant JSON_Value := Get (Arr, I);
+            begin
+               if Item.Kind = JSON_Object_Type and then Has_Field (Item, "extraTypes") then
+                  declare
+                     Extra : constant JSON_Value := Get (Item, "extraTypes");
+                  begin
+                     if Extra.Kind = JSON_Array_Type then
+                        declare
+                           Extra_Arr  : constant JSON_Array := Get (Extra);
+                           Count      : constant Integer := Integer (Length (Extra_Arr));
+                           Ptr        : constant String :=
+                             "/cohorts/" & Trim_Image (I - 1) & "/extraTypes";
+                           Non_String : Boolean := False;
+                        begin
+                           if Count > Extra_Max then
+                              declare
+                                 X : JSON_Value := Create_Object;
+                              begin
+                                 Set_Field (X, "pointer", Ptr);
+                                 Set_Field (X, "reason",
+                                            "value " & Trim_Image (Count)
+                                            & " exceeds the settings-derived maximum " & Trim_Image (Extra_Max));
+                                 Set_Field (X, "expected",
+                                            "an array of at most " & Trim_Image (Extra_Max) & " item(s)");
+                                 Append (Out_A, X);
+                              end;
+                           end if;
+                           for J in 1 .. Count loop
+                              if Get (Extra_Arr, J).Kind /= JSON_String_Type then
+                                 Non_String := True;
+                              end if;
+                           end loop;
+                           if Non_String then
+                              declare
+                                 X : JSON_Value := Create_Object;
+                              begin
+                                 Set_Field (X, "pointer", Ptr);
+                                 Set_Field (X, "reason", "extraTypes elements must be strings");
+                                 Set_Field (X, "expected", "an array of strings");
+                                 Append (Out_A, X);
+                              end;
+                           end if;
+                        end;
+                     end if;
+                  end;
+               end if;
+            end;
+         end loop;
+      end;
+      return Out_A;
+   end Cohort_Type_Issues;
 
    --  True when any change entry in Changes has the given reason prefix
    --  (used to detect classified unknown-key removals).

@@ -52,6 +52,10 @@ package Pitd_Normalize is
    --  SC-A5: settings-bound maxima admission issues for a canonical document.
    function Settings_Maxima_Issues (Kind : String; Doc : JSON_Value) return JSON_Array;
 
+   --  CREW-COHORTS-03: cohort extraTypes bound and string shape; holds with or
+   --  without game settings resolved (unresolved settings give zero extras).
+   function Cohort_Type_Issues (Doc : JSON_Value) return JSON_Array;
+
    --  SC-A2: the preview member carried by NORMALIZATION_REQUIRED and by
    --  preview 200 responses.
    function Preview_Result_Value

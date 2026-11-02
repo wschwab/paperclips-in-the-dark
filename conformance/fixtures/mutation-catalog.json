@@ -66,7 +66,7 @@
       "mutation": "Truncate Collect_Removal_Keys at 512 entries",
       "observableFailure": "an import/repair preview no longer discloses every data-dropping property beyond the buffer, violating no-silent-data-loss; the UNKNOWN-KEY near-limit cases assert exact disclosure at 512/513/600 keys",
       "restorationHash": {
-        "backend-ada/server/src/pitd_normalize.adb": "b2a033f350bddef656da15bd9b9de8f479e0f4b63c3d20a550f6ab52167cc5b0"
+        "backend-ada/server/src/pitd_normalize.adb": "61d0333b6e2ab51409209e5635c7a8980ebac521da35f08437d626f04d4d16ea"
       },
       "severity": "P0",
       "status": "not-run",
@@ -85,7 +85,7 @@
       "mutation": "Change INVALID_ENTITY status from 422 to 500",
       "observableFailure": "degraded-entity direct access returns 500 instead of the frozen 422 typed client error, breaking the error union and typed recovery",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "4906bf8b288efe55de3937c1a97b39b2ecbeb6850a6538488ed8996dd0c3d849"
+        "backend-ada/server/src/pitd_callback.adb": "5a1151d962048d0cd0ee12d30eb8b4049a341bbbdf65190a28517f5fd5c8e5ff"
       },
       "severity": "P0",
       "status": "not-run",
@@ -120,7 +120,7 @@
       "mutation": "Skip the If-Match check block (if False then) so stale revisions mutate anyway",
       "observableFailure": "a stale writer overwrites recent changes with no STALE_REVISION; concurrent edits are lost silently",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "4906bf8b288efe55de3937c1a97b39b2ecbeb6850a6538488ed8996dd0c3d849"
+        "backend-ada/server/src/pitd_callback.adb": "5a1151d962048d0cd0ee12d30eb8b4049a341bbbdf65190a28517f5fd5c8e5ff"
       },
       "severity": "P0",
       "status": "not-run",
@@ -137,7 +137,7 @@
       "mutation": "Skip the pre-mutation snapshot (replaced by null)",
       "observableFailure": "snapshot-worthy mutations create no history entry, so undo has nothing to restore",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "4906bf8b288efe55de3937c1a97b39b2ecbeb6850a6538488ed8996dd0c3d849"
+        "backend-ada/server/src/pitd_callback.adb": "5a1151d962048d0cd0ee12d30eb8b4049a341bbbdf65190a28517f5fd5c8e5ff"
       },
       "severity": "P0",
       "status": "not-run",
@@ -155,7 +155,7 @@
       "mutation": "Skip snapshot consumption on undo (Delete_File replaced by null)",
       "observableFailure": "undo stops consuming snapshots, so a second undo replays stale state and history grows without bound",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "4906bf8b288efe55de3937c1a97b39b2ecbeb6850a6538488ed8996dd0c3d849"
+        "backend-ada/server/src/pitd_callback.adb": "5a1151d962048d0cd0ee12d30eb8b4049a341bbbdf65190a28517f5fd5c8e5ff"
       },
       "severity": "P0",
       "status": "not-run",
@@ -236,7 +236,7 @@
       "mutation": "Skip the W5 owner-clock reassignment (elsif False then)",
       "observableFailure": "deleting a character/crew orphans its standalone clocks instead of reassigning them to campaign ownership with bumped revisions",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "4906bf8b288efe55de3937c1a97b39b2ecbeb6850a6538488ed8996dd0c3d849"
+        "backend-ada/server/src/pitd_callback.adb": "5a1151d962048d0cd0ee12d30eb8b4049a341bbbdf65190a28517f5fd5c8e5ff"
       },
       "severity": "P1",
       "status": "not-run",
@@ -252,7 +252,7 @@
       "mutation": "Skip the W4 unlink sweep (if False then)",
       "observableFailure": "a deleted clock's id remains in other clocks' relatedClockIds, leaving stale relationship references",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "4906bf8b288efe55de3937c1a97b39b2ecbeb6850a6538488ed8996dd0c3d849"
+        "backend-ada/server/src/pitd_callback.adb": "5a1151d962048d0cd0ee12d30eb8b4049a341bbbdf65190a28517f5fd5c8e5ff"
       },
       "severity": "P1",
       "status": "not-run",
