@@ -1,0 +1,24 @@
+==> building core
+Note: Building paperclips_core=0.1.0/paperclips_core.gpr...
+Success: Build finished successfully in 0.23 seconds.
+==> testing core
+gprbuild: "core_tests" up to date
+==> building server
+Note: Building paperclips_server=0.1.0/paperclips_server.gpr...
+gprbuild: "pitd" up to date
+Success: Build finished successfully in 0.30 seconds.
+==> testing executable-relative launch defaults
+launch-path regression passed from /tmp
+  dataDir: /tmp/pitd-launch-paths.u27JdH/data
+  port: 36689
+  pid: 3708651
+==> testing SPA deep-link routes
+  dataDir: /tmp/pitd-spa.7Jo0fF/data
+  port: 49457
+  pid: 3708743
+==> proving core
+Phase 1 of 3: generation of data representation information ...
+Phase 2 of 3: generation of Global contracts ...
+Phase 3 of 3: flow analysis and proof ...
+Success: all checks proved (246 checks).
+Summary logged in /tmp/flow-combined-ws/backend-ada/core/obj/gnatprove/gnatprove.out

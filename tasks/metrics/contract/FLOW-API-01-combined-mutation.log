@@ -1,0 +1,4 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:mutation
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/mutation-harness.mjs
+OK: internal harness delegating to managed launcher
+campaign failed: provenance capture failed: empty working-copy @ has uncommitted changes; commit or stash before running

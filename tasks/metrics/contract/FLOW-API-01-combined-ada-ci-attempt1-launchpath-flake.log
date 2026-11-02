@@ -1,0 +1,69 @@
+==> building core
+Note: Building paperclips_core=0.1.0/paperclips_core.gpr...
+Setup
+   [mkdir]        object directory for project Paperclips_Core
+Compile
+   [Ada]          paperclips_core-bounded_integers.adb
+   [Ada]          paperclips_core-characters.ads
+   [Ada]          paperclips_core-clocks.adb
+   [Ada]          paperclips_core-crews.adb
+   [Ada]          paperclips_core-experience_trackers.adb
+   [Ada]          paperclips_core-funds.adb
+   [Ada]          paperclips_core-gear.adb
+   [Ada]          paperclips_core-monitors.adb
+   [Ada]          paperclips_core.ads
+Success: Build finished successfully in 0.25 seconds.
+==> testing core
+Setup
+   [mkdir]        object directory for project Core_Tests
+   [mkdir]        exec directory for project Core_Tests
+Compile
+   [Ada]          core_tests.adb
+Bind
+   [gprbind]      core_tests.bexch
+   [Ada]          core_tests.ali
+Link
+   [link]         core_tests.adb
+==> building server
+Note: Building paperclips_server=0.1.0/paperclips_server.gpr...
+Setup
+   [mkdir]        object directory for project Paperclips_Server
+   [mkdir]        exec directory for project Paperclips_Server
+Compile
+   [Ada]          pitd.adb
+   [Ada]          pitd_callback.adb
+   [Ada]          pitd_capability.adb
+   [Ada]          pitd_common.adb
+   [Ada]          pitd_error.adb
+   [Ada]          pitd_flow.adb
+   [Ada]          pitd_normalize.adb
+   [Ada]          pitd_ops.adb
+   [Ada]          pitd_stored.adb
+   [Ada]          pitd_summary.adb
+   [Ada]          pitd_transactions.adb
+   [Ada]          pitd_schema_validators.adb
+pitd_schema_validators.adb:188:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:13: warning: suggested replacement: "S'First + 8" [-gnatww]
+pitd_schema_validators.adb:188:34: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:34: warning: suggested replacement: "S'First + 13" [-gnatww]
+pitd_schema_validators.adb:188:56: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:188:56: warning: suggested replacement: "S'First + 18" [-gnatww]
+pitd_schema_validators.adb:189:20: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:189:20: warning: suggested replacement: "S'First + 23" [-gnatww]
+pitd_schema_validators.adb:192:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:192:13: warning: suggested replacement: "S'First + 14" [-gnatww]
+pitd_schema_validators.adb:195:13: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:13: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:195:36: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:36: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:195:59: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:195:59: warning: suggested replacement: "S'First + 19" [-gnatww]
+pitd_schema_validators.adb:196:21: warning: index for "S" may assume lower bound of 1 [-gnatww]
+pitd_schema_validators.adb:196:21: warning: suggested replacement: "S'First + 19" [-gnatww]
+Bind
+   [gprbind]      pitd.bexch
+   [Ada]          pitd.ali
+Link
+   [link]         pitd.adb
+Success: Build finished successfully in 12.35 seconds.
+==> testing executable-relative launch defaults

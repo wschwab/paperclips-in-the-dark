@@ -1,0 +1,68 @@
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run
+
+ RUN  v3.2.7 /tmp/flow-combined-ws/frontend
+
+ ✓ src/pages/game-mode.test.ts (5 tests) 6ms
+ ✓ src/components/clock.test.ts (4 tests) 12ms
+ ✓ src/components/trauma-stamps.test.ts (4 tests) 8ms
+ ✓ src/components/error-card.test.ts (4 tests) 11ms
+ ✓ src/components/harm-table.test.ts (5 tests) 15ms
+ ✓ src/data/playbook-blurbs.test.ts (7 tests) 7ms
+ ✓ src/lib/completion-cues.test.ts (8 tests) 10ms
+ ✓ src/components/action-dots.test.ts (11 tests) 30ms
+ ✓ src/lib/mutation-continuity.test.ts (19 tests) 39ms
+(node:3701245) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/api/loadout-atomic.test.ts (3 tests) 13ms
+ ✓ src/api/game-mode-client.test.ts (8 tests) 27ms
+ ✓ src/schema/decoders.test.ts (74 tests) 44ms
+ ✓ src/data/setting-pull.test.ts (5 tests) 7ms
+ ✓ src/styles/game-mode-contrast.test.ts (9 tests) 7ms
+ ✓ src/lib/chargen.test.ts (25 tests) 6ms
+ ✓ src/data/entanglements.test.ts (5 tests) 5ms
+ ✓ src/styles/sheet-columns.test.ts (2 tests) 3ms
+ ✓ src/head.test.ts (7 tests) 6ms
+ ✓ src/api/import-repair.test.ts (10 tests) 19ms
+ ✓ src/data/crew-advancement.test.ts (5 tests) 5ms
+ ✓ src/pages/crew-claims-map.test.ts (3 tests) 15ms
+(node:3701244) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/crew-rep-turf.test.ts (4 tests) 21ms
+ ✓ src/pages/setting-pull.test.ts (5 tests) 22ms
+ ✓ src/pages/about-licence.test.ts (1 test) 59ms
+(node:3701246) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/crew-claims-edit.test.ts (7 tests) 31ms
+(node:3701247) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/shell.test.ts (9 tests) 406ms
+   ✓ shell accessibility skeleton (Design Audit F-13) > composes with a route to exactly one page-level h1  360ms
+ ✓ src/api/client.test.ts (284 tests) 201ms
+ ✓ src/schema/internal-error.test.ts (6 tests) 3ms
+ ✓ src/schema/campaign-summary.test.ts (3 tests) 3ms
+(node:3701199) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/schema/common.test.ts (4 tests) 2ms
+ ✓ src/pages/crew-sections/trackers.test.ts (3 tests) 2ms
+ ✓ src/pages/character-history.test.ts (5 tests) 290ms
+ ✓ src/pages/crew-history.test.ts (5 tests) 291ms
+ ✓ src/pages/crew-create.test.ts (8 tests) 457ms
+(node:3701243) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ✓ src/pages/crew-world.test.ts (8 tests) 540ms
+ ✓ src/pages/character-create.test.ts (18 tests) 564ms
+ ✓ src/pages/import.test.ts (7 tests) 640ms
+ ✓ src/main.test.ts (12 tests) 1249ms
+   ✓ app router (F2aa) > redirects "/" to "/roster" and mounts the roster page  651ms
+ ✓ src/pages/crew-cohorts.test.ts (14 tests) 806ms
+ ✓ src/pages/roster.test.ts (51 tests) 2121ms
+ ✓ src/pages/game-mode-sheet.test.ts (91 tests) 5980ms
+ ✓ src/pages/crew-detail.test.ts (115 tests) 10468ms
+ ✓ src/pages/character-detail.test.ts (157 tests) 13369ms
+
+ Test Files  43 passed (43)
+      Tests  1040 passed (1040)
+   Start at  18:07:08
+   Duration  14.70s (transform 3.70s, setup 0ms, collect 18.60s, tests 37.82s, environment 5.85s, prepare 2.98s)
+
