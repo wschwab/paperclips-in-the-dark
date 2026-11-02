@@ -1,0 +1,4 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 validate:evidence
+npm notice run node scripts/validate-evidence-paths.mjs
+validate-evidence-paths: OK (tasks/, 24 historical exemptions)
+exit 0
