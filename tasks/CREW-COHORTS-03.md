@@ -98,3 +98,12 @@ Evidence: cohort-extra-types 11/11 and published-limits 16/16 (27/27 in one run)
 - P2 "IMPORT-002 does not prove the import applies". Fixed: IMPORT-002 now imports a different second type (`["Adepts"]`) and asserts `ok === true`, a revision advance, and the readback value.
 
 Evidence: cohort-extra-types 13/13 plus published-limits 16/16 (29/29 in one run). IMPORT-004 red on the round-2 build.
+
+## Review round 4 (Sol 6.1 xhigh via omp, pinned head fdb366a9): FAIL, addressed
+
+Correction to round 3: the caller-supplied-value block (pitd_callback.adb ~1822) is reachable through `POST crews/{id}/repair-preview`, which accepts pointer-keyed values. The import body rules (`Only_Fields`, ~1521/1527) do not apply to that route. Round 3 wrongly called the block unreachable.
+
+- P1 "repair-preview accepts an over-limit caller value for a needs-input extraTypes". Fixed: repair-preview refuses (400 `INVALID_ENTRY`, nothing written, no token) when a supplied `extraTypes` exceeds the bound (pitd_callback.adb ~1861). Red: `CREW-COHORTS-03-REPAIR-002` returned 409 instead of 400 on the round-3 build. Green: 400 `INVALID_ENTRY`, and a within-limit value still reaches the 409 preview token.
+- P2 "the undo refusal blocks legacy single-type crews with unrelated tracker maxima". Fixed: undo uses `Cohort_Type_Issues`, which keeps only issues whose pointer ends in `/extraTypes` (package-level helper, pitd_callback.adb ~249). Red: `CREW-COHORTS-03-UNDO-001` returned 400 on the unscoped check (round-3 behavior, reproduced by temporarily reverting the call). Green: 200 with the scoped check.
+
+Evidence: cohort-extra-types 15/15, published-limits 16/16.

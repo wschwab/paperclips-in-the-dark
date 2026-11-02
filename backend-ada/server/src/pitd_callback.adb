@@ -246,6 +246,26 @@ package body Pitd_Callback is
    function Invalid_Entry_Result (Op : String; Issues : JSON_Array) return JSON_Value is
      (Invalid_Entry_Error (Op, Issues));
 
+   --  CREW-COHORTS-03: only the cohort second-type bound (extraTypes pointers)
+   --  refuses here; unrelated settings maxima on legacy records do not block undo
+   --  or repair-preview.
+   function Cohort_Type_Issues (Kind : String; Doc : JSON_Value) return JSON_Array is
+      All_Issues : constant JSON_Array := Settings_Maxima_Issues (Kind, Doc);
+      Out_A      : JSON_Array := Empty_Array;
+   begin
+      for I in 1 .. Length (All_Issues) loop
+         declare
+            X : constant JSON_Value := Get (All_Issues, I);
+            P : constant String := Str_Field (X, "pointer");
+         begin
+            if P'Length >= 11 and then P (P'Last - 10 .. P'Last) = "/extraTypes" then
+               Append (Out_A, X);
+            end if;
+         end;
+      end loop;
+      return Out_A;
+   end Cohort_Type_Issues;
+
    function Stale_Result
      (Op : String; Entity : JSON_Value;
       Current_Revision : Integer; Current_Token : String := "")
@@ -1454,7 +1474,7 @@ if Kind = "crew" then
                   --  be stored where the apply gate refuses to write: refuse undo
                   if Kind = "crew" then
                      declare
-                        Max_Issues : constant JSON_Array := Settings_Maxima_Issues (Kind, Restored);
+                        Max_Issues : constant JSON_Array := Cohort_Type_Issues (Kind, Restored);
                      begin
                         if Length (Max_Issues) > 0 then
                            Release_Locks;
@@ -1858,6 +1878,18 @@ if Kind = "crew" then
                               end if;
                            end;
                         end loop;
+                        --  a caller-supplied value must satisfy the cohort second-type
+                        --  bound before a token is minted: refuse, never clamp here
+                        declare
+                           Max_Issues : constant JSON_Array := Cohort_Type_Issues (Kind, Doc);
+                        begin
+                           if Length (Max_Issues) > 0 then
+                              Release_Locks;
+                              return Json_Response
+                                (Invalid_Entry_Result ("repair-preview", Max_Issues),
+                                 AWS.Messages.S400);
+                           end if;
+                        end;
                         for I in 1 .. Length (JSON_Array'(Get (Ctx, "issues"))) loop
                            declare
                               X    : constant JSON_Value := Get (Get (Ctx, "issues"), I);
