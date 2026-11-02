@@ -407,7 +407,7 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
   );
 
   testCase(
-    "CREW-COHORTS-03-UNDO-001",
+    "CREW-COHORTS-03-UNDO-002",
     "undo of a cohort add still succeeds when the record carries an unrelated legacy tracker maximum",
     async () => {
       const { id, revision } = await newCrewRevision();
@@ -472,6 +472,35 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
   );
 
   testCase(
+    "CREW-COHORTS-03-WRITE-001",
+    "fields.update refuses a cohorts write whose extraTypes exceed CohortMaxTypes - 1 and leaves the crew unchanged",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const seeded = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(seeded.status).toBe(200);
+      const rev2 = asRecord(asRecord(seeded.body)?.crew)?.revision;
+      const cohort = cohortsOf(seeded.body)[0];
+      if (typeof rev2 !== "number" || !cohort) throw new Error("no seeded cohort");
+      const overBound = { ...cohort, extraTypes: ["Rooks", "Stokers"] };
+      const written = await api.post(
+        `crews/${id}/ops/fields.update`,
+        { cohorts: [overBound] },
+        { "If-Match": String(rev2) },
+      );
+      expect(written.status).toBe(400);
+      expect(written.rawBody).not.toContain("INTERNAL");
+      const after = await api.get(`crews/${id}`);
+      expect(after.status).toBe(200);
+      expect(after.body).toMatchObject({ revision: rev2 });
+      expect(cohortsOf(after.body)[0]?.extraTypes).toEqual(["Rooks"]);
+    },
+  );
+
+  testCase(
     "CREW-COHORTS-03-REPAIR-003",
     "repair-preview refuses a caller-supplied extraTypes whose elements are not strings",
     async () => {
@@ -520,6 +549,30 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
       expect(refused.status).toBe(400);
       expect(asRecord(asRecord(refused.body)?.error)?.code).toBe("INVALID_ENTRY");
       expect(refused.rawBody).toContain("extraTypes must be an array of strings");
+    },
+  );
+
+  testCase(
+    "CREW-COHORTS-03-REPAIR-007",
+    "repair-preview refuses a stored null extraTypes instead of canonicalizing it to an empty array",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const added = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(added.status).toBe(200);
+      const health = await api.health();
+      const storedPath = join(health.dataDir, "crews", id, "current.json");
+      const stored = JSON.parse(readFileSync(storedPath, "utf8")) as Json;
+      (cohortsOf(stored)[0] as Json).extraTypes = null;
+      writeFileSync(storedPath, JSON.stringify(stored));
+
+      const refused = await api.post(`crews/${id}/repair-preview`, {});
+      expect(refused.status).toBe(400);
+      expect(asRecord(asRecord(refused.body)?.error)?.code).toBe("INVALID_ENTRY");
+      expect(refused.rawBody).not.toContain("previewToken");
     },
   );
 

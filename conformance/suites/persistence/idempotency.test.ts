@@ -41,8 +41,7 @@ describe("persistence idempotency scope", () => {
       expect(first.status).toBe(200);
 
       const conflict = await api.post(`characters/${character.id}/ops/note.add`, { text: "second" }, headers);
-      expect(conflict.status).toBeGreaterThanOrEqual(400);
-      expect(conflict.status).toBeLessThan(500);
+      expect(conflict.status).toBe(409);
       const result = await api.operation(conflict);
       expect(result.ok).toBe(false);
       expect(result.error?.code).toBeTruthy();

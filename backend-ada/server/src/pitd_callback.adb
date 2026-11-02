@@ -1913,6 +1913,43 @@ if Kind = "crew" then
                         AWS.Messages.S422);
                   end;
                end if;
+               --  A stored null extraTypes is canonicalized to [] before the gate
+               --  sees it, which would hide a value undo and import refuse. Other
+               --  stored non-array shapes stay needs-input and are repaired by the
+               --  caller-supplied value, so only null is refused here.
+               declare
+                  Null_Issues : JSON_Array := Empty_Array;
+               begin
+                  if Has_Field (E, "cohorts")
+                    and then Get (E, "cohorts").Kind = JSON_Array_Type
+                  then
+                     declare
+                        Stored_Cohorts : constant JSON_Array := Get (E, "cohorts");
+                     begin
+                        for I in 1 .. Length (Stored_Cohorts) loop
+                           declare
+                              Item : constant JSON_Value := Get (Stored_Cohorts, I);
+                           begin
+                              if Item.Kind = JSON_Object_Type
+                                and then Has_Field (Item, "extraTypes")
+                                and then Get (Item, "extraTypes").Kind = JSON_Null_Type
+                              then
+                                 Append (Null_Issues, Issue_At
+                                   ("/cohorts/" & Trim_Image (I - 1) & "/extraTypes",
+                                    "extraTypes must be an array of strings",
+                                    "an array of strings"));
+                              end if;
+                           end;
+                        end loop;
+                     end;
+                  end if;
+                  if Length (Null_Issues) > 0 then
+                     Release_Locks;
+                     return Json_Response
+                       (Invalid_Entry_Result ("repair-preview", Null_Issues),
+                        AWS.Messages.S400);
+                  end if;
+               end;
                Cur_Token := To_Unbounded_String
                  (Content_Token (Read_File (Current_File (Kind, Id))));
                --  If-Match is optional on preview; when present it must
@@ -2259,6 +2296,17 @@ if Kind = "crew" then
                return Json_Response (R, AWS.Messages.S400);
             end if;
             if Bool_Field (R, "ok") then
+               --  Every crew write (any op, including fields.update) must keep
+               --  each cohort within the second-type shape and bound.
+               declare
+                  Max_Issues : constant JSON_Array := Cohort_Type_Issues (E);
+               begin
+                  if Length (Max_Issues) > 0 then
+                     Release_Locks;
+                     return Json_Response
+                       (Invalid_Entry_Result (Op, Max_Issues), AWS.Messages.S400);
+                  end if;
+               end;
                --  SC-A1: every write persists the complete canonical shape —
                --  a mutation that would produce a non-canonical document is
                --  rejected before any snapshot or write.
