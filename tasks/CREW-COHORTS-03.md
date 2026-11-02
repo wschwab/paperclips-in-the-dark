@@ -114,3 +114,7 @@ Evidence: cohort-extra-types 15/15, published-limits 16/16.
 - P2 "unresolved game settings bypass the cohort bound". Fixed: the bound is computed directly from `Settings_Int` with the `CohortMaxTypes` default 1, so an unresolvable game gives zero extras. The cohort check moved out of the early-return path in `Settings_Maxima_Issues`, so it no longer depends on the game resolving. Red: `REPAIR-004` returned 409 on the round-4 build. Green: 400.
 
 Evidence: cohort-extra-types + published-limits 33/33 (round-4 build: 2 new reds, 2 passing).
+
+## Combined-head record (CREW on FLOW head, pinned `70423dc5`)
+
+Round 6 at `09748d40` was blocked by a codex usage limit. Sol 6.1 xhigh review is pending on the combined head `70423dc5`, and the CREW verdict is not claimed. Gates on the combined head are recorded in `FLOW-API-01.md` ("Combined-head gate record"): Ada CI, two-cycle, browser, vitest, build, Chromium, validators, and mutation 28/28 (P0 19/19, P1 9/9). Logs are under `tasks/metrics/contract/FLOW-API-01-combined-*.log`.

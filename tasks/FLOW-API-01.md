@@ -97,3 +97,14 @@ Mutation pin preparation: observed SHA-256 values refreshed for **7 changed targ
 Both implementation workers stopped with `usage_limit_reached` after writing partial backend/frontend integration; no green gate or completion was claimed. The human reported a reset and instructed resume from the uncommitted tree. Backend/frontend owners were revived with the same slice ownership and no-verification instruction. Parent runs all integration gates after they finish. The final mutation campaign uses a separate `/tmp/flow-api-01-mutation-ws` jj workspace pinned to the completed immutable revision, never the peer's `/tmp/c3-mutation-ws` or the live working tree.
 
 Commit only explicit owned paths through jj; no abandon, restore or force push. Push main to origin and rad-agent, then reconcile Radicle remote state.
+
+### Combined-head gate record (FLOW on CREW head, pinned `70423dc5`)
+
+FLOW-API-01 was rebased onto CREW-COHORTS-03 `09748d40` (linear history, catalog conflict resolved by recomputing pins). Gates in a fresh workspace, logs under `tasks/metrics/contract/FLOW-API-01-combined-*.log`:
+
+- Ada CI `backend-ada/ci.sh`: exit 0, `all checks proved (246 checks)`. The first attempt failed on the launch-path port race (`ada-ci-attempt1-launchpath-flake`); a rerun was green.
+- Tooling 233/233; conformance typecheck 0; Ada two-cycle green; recovery oracle (`FLOW_RECOVERY_ORACLE=1`) green; browser journeys 0; frontend vitest 1040/1040; frontend build 0; Chromium 3×3 probe 0; Vocs 0.
+- Validators: `validate-evidence` green after a CREW card path citation fix; metrics, traceability, and audit reconcile 0.
+- Isolated mutation 28/28 at `70423dc5`: P0 19/19, P1 9/9, 0 survived. Baselines green: backend-ada 671, conformance 233, frontend 1040. Log: `FLOW-API-01-combined-mutation.log`.
+- Harness caveat: the backend-ada baseline counts skipped tests as non-green. The recovery oracle is skipped unless `FLOW_RECOVERY_ORACLE=1`, so the campaign was run with that variable exported; test commands and mutant definitions are unchanged. Two earlier campaign attempts failed the backend-ada baseline with a nonzero Ada test exit (`mutation-attempt1/2`). The third attempt passed with the same code. The failing test was not captured; treat it as an unexplained intermittent flake.
+- Sol 6.1 xhigh independent review: pending (codex usage limit). It will run on this same head once codex resets. No acceptance is claimed beyond the gates above until that verdict is recorded.
