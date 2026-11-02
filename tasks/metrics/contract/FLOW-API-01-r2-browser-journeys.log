@@ -1,0 +1,32 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:browser
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/browser-suite.mjs
+OK: internal harness delegating to managed launcher
+[browser-suite] frontend/dist is newer than src; skipping vite build
+[browser-suite] artifacts dir: /tmp/pitd-browser/2026-11-02T21-50-07-000Z-56150ae6
+[managed-browser-smoke] runId=2026-11-02T21-50-07-029Z-e7e982f9
+[managed-browser-smoke] server=/tmp/flow-combined-ws/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/tmp/flow-combined-ws/frontend/dist
+[managed-browser-smoke] gamesDir=/tmp/flow-combined-ws/data/games
+[managed-browser-smoke] command=node /tmp/flow-combined-ws/conformance/scripts/browser-suite.mjs --child
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-11-02T21-50-07-029Z-e7e982f9/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-11-02T21-50-07-029Z-e7e982f9/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-11-02T21-50-07-029Z-e7e982f9
+[managed-browser-smoke] seed=/tmp/flow-combined-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-02T21-50-07-029Z-e7e982f9/data (dir)
+[managed-browser-smoke] seed=/tmp/flow-combined-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-02T21-50-07-029Z-e7e982f9/data (dir)
+[managed-browser-smoke] port=37753
+[managed-browser-smoke] baseUrl=http://127.0.0.1:37753
+[managed-browser-smoke] pid=1003116
+[managed-browser-smoke] ready=http://127.0.0.1:37753
+[managed-browser-smoke] commandPid=1003183
+[browser-suite] chromium: /home/x/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome (headless: true)
+[browser-suite] journey character-create-edit: PASS
+[browser-suite] journey clock: PASS
+[browser-suite] journey crew-create-trackers: PASS
+[browser-suite] journey import-repair: PASS
+[browser-suite] journey lifecycle: PASS
+[browser-suite] journey roster-recovery: PASS
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-11-02T21-50-07-029Z-e7e982f9)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-11-02T21-50-07-029Z-e7e982f9)
+[browser-suite] PASS — launcher cleaned up ("success; evidence removed"), all journeys green
+[browser-suite] artifacts: /tmp/pitd-browser/2026-11-02T21-50-07-000Z-56150ae6
+exit 0

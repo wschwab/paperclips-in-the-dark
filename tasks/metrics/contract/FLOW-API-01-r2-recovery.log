@@ -1,0 +1,57 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --cycles 2 -- --run suites/persistence/flow-api-recovery.test.ts
+OK: canonical managed launcher
+[managed-run] runId=2026-11-02T21-50-05-492Z-fe85e6d0
+[managed-run] server=/tmp/flow-combined-ws/backend-ada/server/bin/pitd
+[managed-run] cycles=2
+[managed-run] staticDir=/tmp/flow-combined-ws/frontend/dist
+[managed-run] gamesDir=/tmp/flow-combined-ws/data/games
+[managed-run] revision=f05a664ac340
+[managed-run] testCommand=--run suites/persistence/flow-api-recovery.test.ts
+[managed-run] seedSet=/tmp/flow-combined-ws/conformance/fixtures/sc-o2-seeds,/tmp/flow-combined-ws/conformance/fixtures/completeness-seeds,/tmp/flow-combined-ws/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/2
+[managed-run] dataDir=/tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data
+[managed-run] logFile=/tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0
+[managed-run] seed=/tmp/flow-combined-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data (dir)
+[managed-run] seed=/tmp/flow-combined-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data (dir)
+[managed-run] seed=/tmp/flow-combined-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data (dir)
+[managed-run] port=40909
+[managed-run] baseUrl=http://127.0.0.1:40909
+[managed-run] pid=1002617
+[managed-run] ready=http://127.0.0.1:40909
+[managed-run] vitestPid=1002684
+
+ RUN  v3.2.7 /tmp/flow-combined-ws/conformance
+
+ ↓ suites/persistence/flow-api-recovery.test.ts > FLOW-API-01 managed transaction crash/restart > [FLOW-API-RECOVERY-001] crew-publication crash recovers the character, crew, cursor and durable receipt together, without replay awards
+
+ Test Files  1 skipped (1)
+      Tests  1 skipped (1)
+   Start at  23:50:05
+   Duration  371ms (transform 51ms, setup 0ms, collect 268ms, tests 0ms, environment 0ms, prepare 29ms)
+
+[managed-run] cycle=2/2
+[managed-run] dataDir=/tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data
+[managed-run] logFile=/tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0
+[managed-run] seed=/tmp/flow-combined-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data (dir)
+[managed-run] seed=/tmp/flow-combined-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data (dir)
+[managed-run] seed=/tmp/flow-combined-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0/data (dir)
+[managed-run] port=40377
+[managed-run] baseUrl=http://127.0.0.1:40377
+[managed-run] pid=1002811
+[managed-run] ready=http://127.0.0.1:40377
+[managed-run] vitestPid=1002881
+
+ RUN  v3.2.7 /tmp/flow-combined-ws/conformance
+
+ ↓ suites/persistence/flow-api-recovery.test.ts > FLOW-API-01 managed transaction crash/restart > [FLOW-API-RECOVERY-001] crew-publication crash recovers the character, crew, cursor and durable receipt together, without replay awards
+
+ Test Files  1 skipped (1)
+      Tests  1 skipped (1)
+   Start at  23:50:06
+   Duration  365ms (transform 51ms, setup 0ms, collect 265ms, tests 0ms, environment 0ms, prepare 30ms)
+
+[managed-run] success; evidence removed (/tmp/pitd-managed/2026-11-02T21-50-05-492Z-fe85e6d0)
+exit 0
