@@ -138,12 +138,17 @@ Evidence: cohort-extra-types 22/22 at the round-8 head. FLOW's non-flow idempote
 - P1: the round-8 bound gate covered only the single-entity route. `POST /api/campaign/batch` `fields.update` could persist an over-bound `extraTypes`. Fixed in `Validate_Final` (`pitd_callback.adb`) using `Cohort_Type_Issues`, and pinned by red test `CREW-COHORTS-03-WRITE-002` (was 200, now a per-item VALIDATION refusal with the crew unchanged).
 - P2: `flow.step.complete` writes the linked crew through `Pitd_Transactions.Commit` with only `Schema_Check`. Not reachable today, since `pitd_flow.adb` never mutates cohorts. Known residual, recorded here rather than gated.
 
-## Review round 10 (Sol 6.1 xhigh, pinned head 20c12483): pending
+## Review round 10 (Sol 6.1 xhigh, pinned head d3296c48): FAIL, two P2
+
+- P2: a campaign batch `fields.update` with a non-string `extraTypes` element returned 500. `Validate_Final` ran `Schema_Check` (which raises) before the cohort bound. Fixed: the bound check now runs first and refuses per item. Red test `CREW-COHORTS-03-WRITE-003` (was 500, now a VALIDATION refusal, crew unchanged).
+- P2: a stored `extraTypes: ["Rooks", 7]` passed repair-preview. The settings clamp dropped the non-string element before the element check saw it, so a token was minted (409). Fixed: `Cohort_Element_Issues` (new, exported from `pitd_normalize`) runs on the raw stored document before canonicalization. Red test `CREW-COHORTS-03-REPAIR-008` (was 409, now 400 INVALID_ENTRY, no token). Over-bound string arrays stay repairable.
+
+## Review round 11 (Sol 6.1 xhigh, pinned code head 31974516): pending
 
 The verdict is recorded here once the reviewer lands.
 
-## Gate record at head 20c12483
+## Gate record at head 31974516
 
-Logs `tasks/metrics/contract/FLOW-API-01-r5-*.log`: all 12 gates exit 0. Cohort suite 23/23 (WRITE-002 added). Mutation 28/28 at `20c12483` (`FLOW-API-01-r5-mutation.log`). Documented gap, unchanged: generated validators have no `maxItems` check; enforcement is in the normalizer, the write gate, batch validation, and import apply.
+Logs `tasks/metrics/contract/FLOW-API-01-r6-*.log`: all 12 gates exit 0. Cohort suite 25/25 (WRITE-002, WRITE-003, REPAIR-008 added). Mutation 28/28 at `31974516` (`FLOW-API-01-r6-mutation.log`). Documented gap, unchanged: generated validators have no `maxItems` check; enforcement is in the normalizer, the write gate, batch validation, and import apply.
 
 
