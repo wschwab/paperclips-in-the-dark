@@ -143,9 +143,9 @@ Evidence: cohort-extra-types 22/22 at the round-8 head. FLOW's non-flow idempote
 - P2: a campaign batch `fields.update` with a non-string `extraTypes` element returned 500. `Validate_Final` ran `Schema_Check` (which raises) before the cohort bound. Fixed: the bound check now runs first and refuses per item. Red test `CREW-COHORTS-03-WRITE-003` (was 500, now a VALIDATION refusal, crew unchanged).
 - P2: a stored `extraTypes: ["Rooks", 7]` passed repair-preview. The settings clamp dropped the non-string element before the element check saw it, so a token was minted (409). Fixed: `Cohort_Element_Issues` (new, exported from `pitd_normalize`) runs on the raw stored document before canonicalization. Red test `CREW-COHORTS-03-REPAIR-008` (was 409, now 400 INVALID_ENTRY, no token). Over-bound string arrays stay repairable.
 
-## Review round 11 (Sol 6.1 xhigh, pinned code head 31974516): pending
+## Review round 11 (Sol 6.1 xhigh, pinned code head 31974516): PASS, no findings
 
-The verdict is recorded here once the reviewer lands.
+Verdict: `tasks/metrics/frontend/CREW-COHORTS-03-sol-6.1-verdict.txt`.
 
 ## Gate record at head 31974516
 

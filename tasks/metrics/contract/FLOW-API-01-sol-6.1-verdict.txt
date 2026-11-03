@@ -1,0 +1,4 @@
+VERDICT: PASS
+FINDINGS:
+1. P2 — frontend/src/pages/character-detail.ts:805-820 — [INFERENCE; not browser-exercised] Guided Payoff ignores `result.sideEffects`. When `myShare` exceeds remaining satchel-plus-stash capacity, `fund.gain` stores only what fits and reports the remainder, but the UI advances without displaying that warning. The ordinary fund path displays overflow feedback.
+2. P2 — tasks/FLOW-API-01.md:118-120 — At pinned head `31974516`, the card still marks round 5 pending at `20c12483` and records only r5 gates. The round-5 PASS/caret residual and r6 gate record appear only in the later card revision `40d508bf`; the pinned acceptance record is stale.
