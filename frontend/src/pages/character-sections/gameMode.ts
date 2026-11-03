@@ -28,6 +28,8 @@ export interface GameModeUi {
   loadoutChange: LoadoutProposal | null;
   /** The last gear rejection while the confirmation is open (the reason and recovery); null otherwise. */
   loadoutError: string | null;
+  /** Feedback from the step that just completed (for example fund overflow), shown inside the active popup; null otherwise. */
+  flowNotice: string | null;
   /** The last refused Desperate action XP mark, shown inside the XP Tracker; null otherwise. */
   desperateError: string | null;
   /** Planning draft; completion stores the chosen approach on the server. */
@@ -588,6 +590,7 @@ export function renderResolution(ctx: SectionCtx, gm: GameModeHandlers, ui: Game
     h("p", { className: "small" }, guidance.gmNote), stepper,
     flow.receipt ? receiptNotice(flow) : null,
     ui.flowError ? h("p", { className: "notice small", role: "alert" }, ui.flowError) : null,
+    ui.flowNotice ? h("p", { className: "notice small", role: "status" }, ui.flowNotice) : null,
     content,
   ].filter((node): node is HTMLElement => node !== null),
   { left: [back], right: [skip, skipAll, leave, next].filter((b): b is HTMLButtonElement => b !== null) });

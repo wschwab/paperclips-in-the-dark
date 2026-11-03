@@ -1,0 +1,21 @@
+Working...
+VERDICT: FAIL
+
+1. **P2 — Overflow feedback is rendered off-screen, outside the active guided dialog.**  
+   `frontend/src/pages/character-detail.ts:815`; `frontend/src/pages/character-sections/coin.ts:80–81`  
+   Payoff advances to the Heat modal, but places the notice in the underlying Coin section. Chromium measured its top at **2232.6 px** in a **1440×1000** viewport, and **5114.9 px** at **390×844**. It has no live-region ancestor and expires without being visible in the normal completion viewport. The original human-feedback problem therefore remains despite the DOM containing the correct text. Surface the notice inside the active guided surface.  
+   Evidence: `review-evidence.json` → `visibility`; screenshots referenced there.
+
+2. **P2 — A stale Payoff timeout clears a newer coin notice prematurely.**  
+   `frontend/src/pages/character-detail.ts:816–821`  
+   The callback unconditionally clears shared `coinNotice`; neither replacement nor `clearNotices()` cancels it. Reproduced: Payoff overflow → Leave flow → ordinary coin gain. The newer notice appeared at **2034.8 ms**, then the Payoff timer removed it at **5078.7 ms**: approximately **3044 ms**, not 5000 ms. Cancel the previous timer or guard it with notice-generation ownership.  
+   Evidence: `review-evidence.json` → `timerRace`.
+
+3. **P2 — Durable completion replay loses overflow feedback, including with the same `Idempotency-Key`.**  
+   `backend-ada/server/src/pitd_flow.adb:481–483,615–625`; `backend-ada/server/src/pitd_callback.adb:1287–1288`  
+   Repeating an overflowing Payoff with identical body, completion ID, revision and idempotency key returned the same completed receipt but changed `sideEffects` from `["2 coin could not be stored"]` to `[]`. The replay branch constructs a fresh success envelope without restoring the original side effects. If the first response is lost, the successful retry gives the frontend no overflow notice. Preserve the original overflow result durably without reapplying awards.  
+   Evidence: `review-evidence.json` → `sameKeyReplay`.
+
+**Verified:** the named frontend regression and `FLOW-API-027` each passed in fresh focused runs. Partial/full-overflow copy is correct; zero-share, no-overflow and non-Payoff completion produced no new notice. The parser matches the specified phrase and consumes decoded `string[]`. Both mutation restoration hashes match the pinned files.
+
+Evidence: `/tmp/sol-review/FLOW-API-01-r7-scratch/review-evidence.json`. No repository source files edited.

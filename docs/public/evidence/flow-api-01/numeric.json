@@ -780,10 +780,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/mode.set",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -796,11 +796,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "1718b8b5-803a-47c1-ad18-061d4a8c4cc2",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "b6c59a98-0c3b-4b84-8880-7042a66792a4",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -808,8 +808,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "1718b8b5-803a-47c1-ad18-061d4a8c4cc2",
-            "instanceId": "77484281-0d8a-4beb-8834-431cf96db1e1",
+            "completionId": "b6c59a98-0c3b-4b84-8880-7042a66792a4",
+            "instanceId": "a9759834-8914-416c-8fc7-561572a52446",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -818,11 +818,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "7544be23-5ec0-44f0-8352-e0c8d1a657e0",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "326b9ef1-5761-4614-af32-8a81e79760a7",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -830,8 +830,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "7544be23-5ec0-44f0-8352-e0c8d1a657e0",
-            "instanceId": "77484281-0d8a-4beb-8834-431cf96db1e1",
+            "completionId": "326b9ef1-5761-4614-af32-8a81e79760a7",
+            "instanceId": "a9759834-8914-416c-8fc7-561572a52446",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -841,11 +841,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "2dfb3032-fa93-4a57-8f94-43732f9c65f9",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "8b4349be-e787-4cc4-bd62-b825222fa7e7",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -853,8 +853,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "2dfb3032-fa93-4a57-8f94-43732f9c65f9",
-            "instanceId": "77484281-0d8a-4beb-8834-431cf96db1e1",
+            "completionId": "8b4349be-e787-4cc4-bd62-b825222fa7e7",
+            "instanceId": "a9759834-8914-416c-8fc7-561572a52446",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -863,10 +863,10 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/end-score",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -877,11 +877,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "9aadba85-cfe1-485c-8603-ebb7f796246e",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "b1303257-3cee-42f5-a544-92597aa588dd",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -889,8 +889,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "9aadba85-cfe1-485c-8603-ebb7f796246e",
-            "instanceId": "5884424a-7826-4382-86d5-fe199f72642c",
+            "completionId": "b1303257-3cee-42f5-a544-92597aa588dd",
+            "instanceId": "372361c8-c405-4b22-8058-2649adaa5641",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -905,11 +905,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "861cc703-d94b-49f1-b6fc-1bf686fab688",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "3775c091-6d11-4eb3-b792-001b977db0d6",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -917,8 +917,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "861cc703-d94b-49f1-b6fc-1bf686fab688",
-            "instanceId": "5884424a-7826-4382-86d5-fe199f72642c",
+            "completionId": "3775c091-6d11-4eb3-b792-001b977db0d6",
+            "instanceId": "372361c8-c405-4b22-8058-2649adaa5641",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -930,11 +930,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "7bd3f6f6-bb4d-459b-9f4c-a1f7d4af49fe",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "acf94b6b-8350-4eae-9e13-a19b0f3a7774",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -942,8 +942,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "7bd3f6f6-bb4d-459b-9f4c-a1f7d4af49fe",
-            "instanceId": "5884424a-7826-4382-86d5-fe199f72642c",
+            "completionId": "acf94b6b-8350-4eae-9e13-a19b0f3a7774",
+            "instanceId": "372361c8-c405-4b22-8058-2649adaa5641",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -953,11 +953,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "3777eda8-78be-4af7-91cc-dc010ab55e17",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "822e8090-f521-426a-9778-c1265d84ec86",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -965,8 +965,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "3777eda8-78be-4af7-91cc-dc010ab55e17",
-            "instanceId": "5884424a-7826-4382-86d5-fe199f72642c",
+            "completionId": "822e8090-f521-426a-9778-c1265d84ec86",
+            "instanceId": "372361c8-c405-4b22-8058-2649adaa5641",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -975,11 +975,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "1d600c9b-1f85-497c-b31f-beccda70d533",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "41683874-79c1-4850-ad09-16b903e1d352",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -987,8 +987,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "1d600c9b-1f85-497c-b31f-beccda70d533",
-            "instanceId": "5884424a-7826-4382-86d5-fe199f72642c",
+            "completionId": "41683874-79c1-4850-ad09-16b903e1d352",
+            "instanceId": "372361c8-c405-4b22-8058-2649adaa5641",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -998,11 +998,11 @@
           }
         },
         {
-          "url": "/api/characters/95d416f2-4723-4332-8088-b62723e12713/ops/flow.step.complete",
+          "url": "/api/characters/426b11df-83a5-4951-884e-81a4ed22a862/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/95d416f2-4723-4332-8088-b62723e12713",
-            "idempotency-key": "b94972f4-207d-4b22-97a0-16d0082d6ba7",
+            "referer": "http://127.0.0.1:45263/character/426b11df-83a5-4951-884e-81a4ed22a862",
+            "idempotency-key": "c5f8543f-be00-44d8-ba23-31d3cc36f9a9",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -1010,8 +1010,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "b94972f4-207d-4b22-97a0-16d0082d6ba7",
-            "instanceId": "5884424a-7826-4382-86d5-fe199f72642c",
+            "completionId": "c5f8543f-be00-44d8-ba23-31d3cc36f9a9",
+            "instanceId": "372361c8-c405-4b22-8058-2649adaa5641",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -1799,10 +1799,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/mode.set",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -1815,11 +1815,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "9b56cd4f-81eb-473b-92cc-68ee272fafe6",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "89a26993-9440-4552-9cd4-8f28ef7dd718",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -1827,8 +1827,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "9b56cd4f-81eb-473b-92cc-68ee272fafe6",
-            "instanceId": "a4d2e164-f251-4524-81ba-14621dc88262",
+            "completionId": "89a26993-9440-4552-9cd4-8f28ef7dd718",
+            "instanceId": "c2955192-3441-432a-8f29-e622283d1659",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -1837,11 +1837,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "de68a5b4-9dae-4fca-826a-30ee656ff358",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "6c8373fa-6393-4c5b-bf43-148e12fdff24",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -1849,8 +1849,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "de68a5b4-9dae-4fca-826a-30ee656ff358",
-            "instanceId": "a4d2e164-f251-4524-81ba-14621dc88262",
+            "completionId": "6c8373fa-6393-4c5b-bf43-148e12fdff24",
+            "instanceId": "c2955192-3441-432a-8f29-e622283d1659",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -1860,11 +1860,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "6df598aa-1386-496c-ab5b-ab4df6489674",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "9ebd1e99-c5be-434d-83dc-9bdbb82e522c",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -1872,8 +1872,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "6df598aa-1386-496c-ab5b-ab4df6489674",
-            "instanceId": "a4d2e164-f251-4524-81ba-14621dc88262",
+            "completionId": "9ebd1e99-c5be-434d-83dc-9bdbb82e522c",
+            "instanceId": "c2955192-3441-432a-8f29-e622283d1659",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -1882,10 +1882,10 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/end-score",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -1896,11 +1896,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "b829ff7c-d986-4d71-b635-769fbb6fa8f7",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "a6099470-dbb7-4dc9-a7ea-d3c17fa56a71",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -1908,8 +1908,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "b829ff7c-d986-4d71-b635-769fbb6fa8f7",
-            "instanceId": "f28955a6-ea32-4c13-8e0d-19180d1a8748",
+            "completionId": "a6099470-dbb7-4dc9-a7ea-d3c17fa56a71",
+            "instanceId": "21399164-2917-4632-8a4a-8ada7f59671e",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -1924,11 +1924,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "8abe179a-5d7c-4313-a45f-4297c4363c79",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "962689c5-29c0-4db8-ba76-45aa8cdf97ed",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -1936,8 +1936,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "8abe179a-5d7c-4313-a45f-4297c4363c79",
-            "instanceId": "f28955a6-ea32-4c13-8e0d-19180d1a8748",
+            "completionId": "962689c5-29c0-4db8-ba76-45aa8cdf97ed",
+            "instanceId": "21399164-2917-4632-8a4a-8ada7f59671e",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -1949,11 +1949,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "20a2df98-a573-4d24-872b-b7c483d00c79",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "3e79a9a4-2b88-4a6b-b32b-8c88677e3307",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -1961,8 +1961,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "20a2df98-a573-4d24-872b-b7c483d00c79",
-            "instanceId": "f28955a6-ea32-4c13-8e0d-19180d1a8748",
+            "completionId": "3e79a9a4-2b88-4a6b-b32b-8c88677e3307",
+            "instanceId": "21399164-2917-4632-8a4a-8ada7f59671e",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -1972,11 +1972,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "04edac77-3a61-48aa-a21a-b9f5055fd4d9",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "ea675325-8711-4bd6-b6ff-1b1d83238a1f",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -1984,8 +1984,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "04edac77-3a61-48aa-a21a-b9f5055fd4d9",
-            "instanceId": "f28955a6-ea32-4c13-8e0d-19180d1a8748",
+            "completionId": "ea675325-8711-4bd6-b6ff-1b1d83238a1f",
+            "instanceId": "21399164-2917-4632-8a4a-8ada7f59671e",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -1994,11 +1994,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "3391130f-f4e4-4bfc-9ac3-1b6c5d89abd7",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "bd95e700-aa57-4af3-8f67-1edcedbfe588",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -2006,8 +2006,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "3391130f-f4e4-4bfc-9ac3-1b6c5d89abd7",
-            "instanceId": "f28955a6-ea32-4c13-8e0d-19180d1a8748",
+            "completionId": "bd95e700-aa57-4af3-8f67-1edcedbfe588",
+            "instanceId": "21399164-2917-4632-8a4a-8ada7f59671e",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -2017,11 +2017,11 @@
           }
         },
         {
-          "url": "/api/characters/40722226-71c1-434c-869b-871f8977f7a3/ops/flow.step.complete",
+          "url": "/api/characters/c2f458d9-3b11-4204-84a2-11f4a2069716/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/40722226-71c1-434c-869b-871f8977f7a3",
-            "idempotency-key": "5373d368-4c03-4a61-8c31-3688c4d63cdd",
+            "referer": "http://127.0.0.1:45263/character/c2f458d9-3b11-4204-84a2-11f4a2069716",
+            "idempotency-key": "2c2f2b01-d2ba-41c4-b84b-be232e6cbc8a",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -2029,8 +2029,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "5373d368-4c03-4a61-8c31-3688c4d63cdd",
-            "instanceId": "f28955a6-ea32-4c13-8e0d-19180d1a8748",
+            "completionId": "2c2f2b01-d2ba-41c4-b84b-be232e6cbc8a",
+            "instanceId": "21399164-2917-4632-8a4a-8ada7f59671e",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -2818,10 +2818,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/mode.set",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -2834,11 +2834,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "bb85cb1f-fef7-4265-8204-a897cd94d341",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "da7a6db2-0166-44a3-90c3-ce919656035f",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -2846,8 +2846,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "bb85cb1f-fef7-4265-8204-a897cd94d341",
-            "instanceId": "a22aa1a5-539c-4afb-8b2d-d1d26536e6a4",
+            "completionId": "da7a6db2-0166-44a3-90c3-ce919656035f",
+            "instanceId": "71847d71-14eb-49df-86b8-d41e61776912",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -2856,11 +2856,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "0a5050b3-5a73-4b4b-8702-8eb4d6882701",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "50addaa2-c873-4df3-ae82-b03e605e4cc7",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -2868,8 +2868,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "0a5050b3-5a73-4b4b-8702-8eb4d6882701",
-            "instanceId": "a22aa1a5-539c-4afb-8b2d-d1d26536e6a4",
+            "completionId": "50addaa2-c873-4df3-ae82-b03e605e4cc7",
+            "instanceId": "71847d71-14eb-49df-86b8-d41e61776912",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -2879,11 +2879,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "6b66d9ba-45b8-4480-980f-d0476a7edd1e",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "1c93df4b-3332-4458-abd7-4eac86584363",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -2891,8 +2891,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "6b66d9ba-45b8-4480-980f-d0476a7edd1e",
-            "instanceId": "a22aa1a5-539c-4afb-8b2d-d1d26536e6a4",
+            "completionId": "1c93df4b-3332-4458-abd7-4eac86584363",
+            "instanceId": "71847d71-14eb-49df-86b8-d41e61776912",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -2901,10 +2901,10 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/end-score",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -2915,11 +2915,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "110f7484-3044-4d79-b2e6-13b3162b8a85",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "cf82b617-40ab-40ee-a371-0b6927791eba",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -2927,8 +2927,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "110f7484-3044-4d79-b2e6-13b3162b8a85",
-            "instanceId": "8445e154-c811-4178-87a7-62b522640b79",
+            "completionId": "cf82b617-40ab-40ee-a371-0b6927791eba",
+            "instanceId": "c59ad115-8458-4668-8643-42fe77b29675",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -2943,11 +2943,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "d63de368-df47-4dbe-8c16-8ec1ce11d31e",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "ce86dfda-9d00-4fc7-8a99-e34b6e07bcff",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -2955,8 +2955,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "d63de368-df47-4dbe-8c16-8ec1ce11d31e",
-            "instanceId": "8445e154-c811-4178-87a7-62b522640b79",
+            "completionId": "ce86dfda-9d00-4fc7-8a99-e34b6e07bcff",
+            "instanceId": "c59ad115-8458-4668-8643-42fe77b29675",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -2968,11 +2968,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "4543bda0-c4aa-41fb-b670-b04dc7aad026",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "538cb789-db9b-493a-ade3-0dba173d64c5",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -2980,8 +2980,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "4543bda0-c4aa-41fb-b670-b04dc7aad026",
-            "instanceId": "8445e154-c811-4178-87a7-62b522640b79",
+            "completionId": "538cb789-db9b-493a-ade3-0dba173d64c5",
+            "instanceId": "c59ad115-8458-4668-8643-42fe77b29675",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -2991,11 +2991,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "97c1d9b5-6efb-4382-bea5-a6fa2b1380f0",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "549b678a-e787-439f-a155-dfc230314bec",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -3003,8 +3003,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "97c1d9b5-6efb-4382-bea5-a6fa2b1380f0",
-            "instanceId": "8445e154-c811-4178-87a7-62b522640b79",
+            "completionId": "549b678a-e787-439f-a155-dfc230314bec",
+            "instanceId": "c59ad115-8458-4668-8643-42fe77b29675",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -3013,11 +3013,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "43f2a54e-f38b-48b5-a539-08f75f63c80c",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "3a8e1aa3-9878-49cf-8c4f-6bdfa749f669",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -3025,8 +3025,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "43f2a54e-f38b-48b5-a539-08f75f63c80c",
-            "instanceId": "8445e154-c811-4178-87a7-62b522640b79",
+            "completionId": "3a8e1aa3-9878-49cf-8c4f-6bdfa749f669",
+            "instanceId": "c59ad115-8458-4668-8643-42fe77b29675",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -3036,11 +3036,11 @@
           }
         },
         {
-          "url": "/api/characters/8b4641f1-0a37-4132-8637-2f1d56db1a72/ops/flow.step.complete",
+          "url": "/api/characters/5d848aac-9f9e-4941-8183-617d7b518469/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/8b4641f1-0a37-4132-8637-2f1d56db1a72",
-            "idempotency-key": "ed1a4c29-c81b-4c0b-aedd-fac572866903",
+            "referer": "http://127.0.0.1:45263/character/5d848aac-9f9e-4941-8183-617d7b518469",
+            "idempotency-key": "7e358708-e388-42c4-9fe2-44dfabb8402f",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -3048,8 +3048,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "ed1a4c29-c81b-4c0b-aedd-fac572866903",
-            "instanceId": "8445e154-c811-4178-87a7-62b522640b79",
+            "completionId": "7e358708-e388-42c4-9fe2-44dfabb8402f",
+            "instanceId": "c59ad115-8458-4668-8643-42fe77b29675",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -3837,10 +3837,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/mode.set",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -3853,11 +3853,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "05f444c5-6c92-4d75-a2e4-8d0ddda9de96",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "4feec627-4393-4db2-a878-706295f545b2",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -3865,8 +3865,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "05f444c5-6c92-4d75-a2e4-8d0ddda9de96",
-            "instanceId": "39b0adb5-47a5-4521-8c8b-4c28fe1572e0",
+            "completionId": "4feec627-4393-4db2-a878-706295f545b2",
+            "instanceId": "d4336175-15c2-4c43-8270-03b75e192a2b",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -3875,11 +3875,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "ecd5ee41-caf0-4b1b-a125-a44a93a6a433",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "36066f50-fa10-4071-9781-f519ebd06b36",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -3887,8 +3887,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "ecd5ee41-caf0-4b1b-a125-a44a93a6a433",
-            "instanceId": "39b0adb5-47a5-4521-8c8b-4c28fe1572e0",
+            "completionId": "36066f50-fa10-4071-9781-f519ebd06b36",
+            "instanceId": "d4336175-15c2-4c43-8270-03b75e192a2b",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -3898,11 +3898,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "06913f1a-0ab2-4fcc-be29-823b93b094a1",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "dabeb96e-d419-4702-9209-c757967caa54",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -3910,8 +3910,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "06913f1a-0ab2-4fcc-be29-823b93b094a1",
-            "instanceId": "39b0adb5-47a5-4521-8c8b-4c28fe1572e0",
+            "completionId": "dabeb96e-d419-4702-9209-c757967caa54",
+            "instanceId": "d4336175-15c2-4c43-8270-03b75e192a2b",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -3920,10 +3920,10 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/end-score",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -3934,11 +3934,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "66f991e3-f184-4871-aec8-51178c8b5aa9",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "b962afe2-4eb1-461a-a84a-949bda91be89",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -3946,8 +3946,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "66f991e3-f184-4871-aec8-51178c8b5aa9",
-            "instanceId": "6d94235a-1674-4812-8024-1d51525798a0",
+            "completionId": "b962afe2-4eb1-461a-a84a-949bda91be89",
+            "instanceId": "86e1b166-4f48-43a4-88ce-d57ea2810908",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -3962,11 +3962,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "f9e57d46-6232-4f6a-a3c4-2345069a8dfb",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "4ff5a808-1d78-41f5-96c8-1f85908e6867",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -3974,8 +3974,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "f9e57d46-6232-4f6a-a3c4-2345069a8dfb",
-            "instanceId": "6d94235a-1674-4812-8024-1d51525798a0",
+            "completionId": "4ff5a808-1d78-41f5-96c8-1f85908e6867",
+            "instanceId": "86e1b166-4f48-43a4-88ce-d57ea2810908",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -3987,11 +3987,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "17e3c9d4-e287-4e2a-81a8-251f14230e12",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "de2b2501-eac6-45fb-934b-1e20c36e3f1f",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -3999,8 +3999,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "17e3c9d4-e287-4e2a-81a8-251f14230e12",
-            "instanceId": "6d94235a-1674-4812-8024-1d51525798a0",
+            "completionId": "de2b2501-eac6-45fb-934b-1e20c36e3f1f",
+            "instanceId": "86e1b166-4f48-43a4-88ce-d57ea2810908",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -4010,11 +4010,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "f3907b3b-2f10-4c1b-8847-194d57f00dcc",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "61187068-03b1-4e9f-9dee-2f4b35c28312",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -4022,8 +4022,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "f3907b3b-2f10-4c1b-8847-194d57f00dcc",
-            "instanceId": "6d94235a-1674-4812-8024-1d51525798a0",
+            "completionId": "61187068-03b1-4e9f-9dee-2f4b35c28312",
+            "instanceId": "86e1b166-4f48-43a4-88ce-d57ea2810908",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -4032,11 +4032,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "5fe91fbe-1d91-492b-8b55-3e8c21b4ed07",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "ef4156b9-479f-4cb8-bbf4-c5576c5ab592",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -4044,8 +4044,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "5fe91fbe-1d91-492b-8b55-3e8c21b4ed07",
-            "instanceId": "6d94235a-1674-4812-8024-1d51525798a0",
+            "completionId": "ef4156b9-479f-4cb8-bbf4-c5576c5ab592",
+            "instanceId": "86e1b166-4f48-43a4-88ce-d57ea2810908",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -4055,11 +4055,11 @@
           }
         },
         {
-          "url": "/api/characters/33780273-a241-41a3-8a40-213268e12972/ops/flow.step.complete",
+          "url": "/api/characters/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/33780273-a241-41a3-8a40-213268e12972",
-            "idempotency-key": "f1faef85-e18b-41ef-9079-debbf4adf422",
+            "referer": "http://127.0.0.1:45263/character/6aaea1a5-a6f1-4cd4-8875-0a185dfc1665",
+            "idempotency-key": "21cabea6-e6cd-4716-a217-d678f242066d",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -4067,8 +4067,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "f1faef85-e18b-41ef-9079-debbf4adf422",
-            "instanceId": "6d94235a-1674-4812-8024-1d51525798a0",
+            "completionId": "21cabea6-e6cd-4716-a217-d678f242066d",
+            "instanceId": "86e1b166-4f48-43a4-88ce-d57ea2810908",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -4856,10 +4856,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/mode.set",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -4872,11 +4872,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "84cfafb7-7c72-4c90-bd7f-6cb74ce4d40d",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "6025293a-3059-4e44-8b11-2d39d1a60826",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -4884,8 +4884,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "84cfafb7-7c72-4c90-bd7f-6cb74ce4d40d",
-            "instanceId": "b431a16c-7a16-4e86-83a3-8198a47f3ee7",
+            "completionId": "6025293a-3059-4e44-8b11-2d39d1a60826",
+            "instanceId": "78cda31f-8323-4349-8654-e7ab46c24738",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -4894,11 +4894,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "222da696-113f-47ed-a00b-6636ca5433bc",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "b405fd73-182f-4286-8650-0426c441c784",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -4906,8 +4906,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "222da696-113f-47ed-a00b-6636ca5433bc",
-            "instanceId": "b431a16c-7a16-4e86-83a3-8198a47f3ee7",
+            "completionId": "b405fd73-182f-4286-8650-0426c441c784",
+            "instanceId": "78cda31f-8323-4349-8654-e7ab46c24738",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -4917,11 +4917,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "0980d394-a95b-4a20-b925-13c8ee6cb499",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "98c8ca9f-545a-47ac-88a8-f185fe9268ad",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -4929,8 +4929,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "0980d394-a95b-4a20-b925-13c8ee6cb499",
-            "instanceId": "b431a16c-7a16-4e86-83a3-8198a47f3ee7",
+            "completionId": "98c8ca9f-545a-47ac-88a8-f185fe9268ad",
+            "instanceId": "78cda31f-8323-4349-8654-e7ab46c24738",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -4939,10 +4939,10 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/end-score",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -4953,11 +4953,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "93b3add7-e2c2-4257-937b-c171b7704b86",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "4d0c2f91-8d3d-42a8-9535-8345728496ea",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -4965,8 +4965,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "93b3add7-e2c2-4257-937b-c171b7704b86",
-            "instanceId": "e434c78a-c969-4af7-8999-b7a51842531e",
+            "completionId": "4d0c2f91-8d3d-42a8-9535-8345728496ea",
+            "instanceId": "32a26185-e167-444d-8dd4-99726a751821",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -4981,11 +4981,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "f0ebe248-160e-4d44-b6ce-f267f3d5aa52",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "8c046e19-9b5d-41e3-9d2e-b41f12d11f0d",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -4993,8 +4993,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "f0ebe248-160e-4d44-b6ce-f267f3d5aa52",
-            "instanceId": "e434c78a-c969-4af7-8999-b7a51842531e",
+            "completionId": "8c046e19-9b5d-41e3-9d2e-b41f12d11f0d",
+            "instanceId": "32a26185-e167-444d-8dd4-99726a751821",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -5006,11 +5006,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "a4adab81-65ba-4edd-afbd-c8180ab48917",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "ce7c935a-cc1c-4101-b569-c677b8d50d94",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -5018,8 +5018,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "a4adab81-65ba-4edd-afbd-c8180ab48917",
-            "instanceId": "e434c78a-c969-4af7-8999-b7a51842531e",
+            "completionId": "ce7c935a-cc1c-4101-b569-c677b8d50d94",
+            "instanceId": "32a26185-e167-444d-8dd4-99726a751821",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -5029,11 +5029,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "fa7f5fe2-7f67-4c78-bc9a-707c6e3b85eb",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "af834f7d-b341-4f38-95ab-8ea19a7b8924",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -5041,8 +5041,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "fa7f5fe2-7f67-4c78-bc9a-707c6e3b85eb",
-            "instanceId": "e434c78a-c969-4af7-8999-b7a51842531e",
+            "completionId": "af834f7d-b341-4f38-95ab-8ea19a7b8924",
+            "instanceId": "32a26185-e167-444d-8dd4-99726a751821",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -5051,11 +5051,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "698ec926-3517-45f9-949f-78904ce0d987",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "fc6a90c9-2568-4a05-bd8e-7f7d9c8301d4",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -5063,8 +5063,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "698ec926-3517-45f9-949f-78904ce0d987",
-            "instanceId": "e434c78a-c969-4af7-8999-b7a51842531e",
+            "completionId": "fc6a90c9-2568-4a05-bd8e-7f7d9c8301d4",
+            "instanceId": "32a26185-e167-444d-8dd4-99726a751821",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -5074,11 +5074,11 @@
           }
         },
         {
-          "url": "/api/characters/79941255-6326-420f-8619-89764291437d/ops/flow.step.complete",
+          "url": "/api/characters/8a718164-12f1-43a7-8378-222504ac65b9/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/79941255-6326-420f-8619-89764291437d",
-            "idempotency-key": "5e526b22-cf65-493a-bf2c-79d2c7fc2cae",
+            "referer": "http://127.0.0.1:45263/character/8a718164-12f1-43a7-8378-222504ac65b9",
+            "idempotency-key": "45076de4-a84b-4157-8601-cf3e8b90050f",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -5086,8 +5086,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "5e526b22-cf65-493a-bf2c-79d2c7fc2cae",
-            "instanceId": "e434c78a-c969-4af7-8999-b7a51842531e",
+            "completionId": "45076de4-a84b-4157-8601-cf3e8b90050f",
+            "instanceId": "32a26185-e167-444d-8dd4-99726a751821",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -5875,10 +5875,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/mode.set",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -5891,11 +5891,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "32564cb0-0bf9-4cc7-91fb-58acb6f202c5",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "ff7cf489-0c23-4b51-967b-ff5f2faedfe9",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -5903,8 +5903,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "32564cb0-0bf9-4cc7-91fb-58acb6f202c5",
-            "instanceId": "7f9841d2-473e-43aa-88ca-52570429e152",
+            "completionId": "ff7cf489-0c23-4b51-967b-ff5f2faedfe9",
+            "instanceId": "ab06b24a-6b12-4146-8ada-85963a799672",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -5913,11 +5913,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "a111c900-fc49-4008-ac1f-549ed1d5652d",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "9cb7dd92-f13f-44b1-9833-92418cc851bf",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -5925,8 +5925,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "a111c900-fc49-4008-ac1f-549ed1d5652d",
-            "instanceId": "7f9841d2-473e-43aa-88ca-52570429e152",
+            "completionId": "9cb7dd92-f13f-44b1-9833-92418cc851bf",
+            "instanceId": "ab06b24a-6b12-4146-8ada-85963a799672",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -5936,11 +5936,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "b04b9a9a-1339-4d27-a676-23edabcd84fb",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "c5e70293-b41e-44e0-942d-8da9bae43bc5",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -5948,8 +5948,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "b04b9a9a-1339-4d27-a676-23edabcd84fb",
-            "instanceId": "7f9841d2-473e-43aa-88ca-52570429e152",
+            "completionId": "c5e70293-b41e-44e0-942d-8da9bae43bc5",
+            "instanceId": "ab06b24a-6b12-4146-8ada-85963a799672",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -5958,10 +5958,10 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/end-score",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -5972,11 +5972,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "df87473c-9b90-437b-9e44-ed6d44dbb194",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "93bb564c-dc6e-4157-aeec-f0db497b943c",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -5984,8 +5984,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "df87473c-9b90-437b-9e44-ed6d44dbb194",
-            "instanceId": "2648494b-8028-4b84-8550-581940f07c0e",
+            "completionId": "93bb564c-dc6e-4157-aeec-f0db497b943c",
+            "instanceId": "24567172-65d5-4788-881e-420163594002",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -6000,11 +6000,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "5c0dd8ec-9bd5-4aab-bb65-710d00aa48d7",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "a1e05a9d-d0b1-4d2a-9388-8c9a2a7ec2ef",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -6012,8 +6012,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "5c0dd8ec-9bd5-4aab-bb65-710d00aa48d7",
-            "instanceId": "2648494b-8028-4b84-8550-581940f07c0e",
+            "completionId": "a1e05a9d-d0b1-4d2a-9388-8c9a2a7ec2ef",
+            "instanceId": "24567172-65d5-4788-881e-420163594002",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -6025,11 +6025,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "45a566da-443c-4af5-a526-5783ac53fc95",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "606edbca-3eec-4e25-84b4-6369fa650daf",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -6037,8 +6037,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "45a566da-443c-4af5-a526-5783ac53fc95",
-            "instanceId": "2648494b-8028-4b84-8550-581940f07c0e",
+            "completionId": "606edbca-3eec-4e25-84b4-6369fa650daf",
+            "instanceId": "24567172-65d5-4788-881e-420163594002",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -6048,11 +6048,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "0a2b9b24-1412-48c5-882f-5cefd1356831",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "988174cb-63a8-42e9-a52c-78086b638065",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -6060,8 +6060,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "0a2b9b24-1412-48c5-882f-5cefd1356831",
-            "instanceId": "2648494b-8028-4b84-8550-581940f07c0e",
+            "completionId": "988174cb-63a8-42e9-a52c-78086b638065",
+            "instanceId": "24567172-65d5-4788-881e-420163594002",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -6070,11 +6070,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "249596cb-949f-4445-b004-2b723059e109",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "0a225dd6-58a4-4e90-9483-ef198970bbf1",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -6082,8 +6082,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "249596cb-949f-4445-b004-2b723059e109",
-            "instanceId": "2648494b-8028-4b84-8550-581940f07c0e",
+            "completionId": "0a225dd6-58a4-4e90-9483-ef198970bbf1",
+            "instanceId": "24567172-65d5-4788-881e-420163594002",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -6093,11 +6093,11 @@
           }
         },
         {
-          "url": "/api/characters/6b421179-302a-4288-847e-ea37e715ae39/ops/flow.step.complete",
+          "url": "/api/characters/628011da-4924-4121-867b-518352387715/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/6b421179-302a-4288-847e-ea37e715ae39",
-            "idempotency-key": "eb8e0760-9580-43ce-990b-476b5cea7f5c",
+            "referer": "http://127.0.0.1:45263/character/628011da-4924-4121-867b-518352387715",
+            "idempotency-key": "6041f269-59f4-4c11-8c4f-eab271ac089b",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -6105,8 +6105,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "eb8e0760-9580-43ce-990b-476b5cea7f5c",
-            "instanceId": "2648494b-8028-4b84-8550-581940f07c0e",
+            "completionId": "6041f269-59f4-4c11-8c4f-eab271ac089b",
+            "instanceId": "24567172-65d5-4788-881e-420163594002",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -6894,10 +6894,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/mode.set",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -6910,11 +6910,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "000f5428-9ced-441d-bed2-b1b14bed9be8",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "ed1aceb3-dd2e-4d5b-8569-83d3c4165b55",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -6922,8 +6922,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "000f5428-9ced-441d-bed2-b1b14bed9be8",
-            "instanceId": "a63691fa-0197-4584-8123-8524700b4391",
+            "completionId": "ed1aceb3-dd2e-4d5b-8569-83d3c4165b55",
+            "instanceId": "f1295476-e117-4640-8aa7-a7b259fa5154",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -6932,11 +6932,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "2c005b46-6095-4257-8922-ea9023b02739",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "ea79d06a-8736-427a-9976-7e63ec1d3bea",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -6944,8 +6944,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "2c005b46-6095-4257-8922-ea9023b02739",
-            "instanceId": "a63691fa-0197-4584-8123-8524700b4391",
+            "completionId": "ea79d06a-8736-427a-9976-7e63ec1d3bea",
+            "instanceId": "f1295476-e117-4640-8aa7-a7b259fa5154",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -6955,11 +6955,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "dc2b0858-6bb0-42ac-a372-9b7b6d64cc2f",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "7fa80dd4-d3df-4a0f-9bc4-5ee427a477bd",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -6967,8 +6967,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "dc2b0858-6bb0-42ac-a372-9b7b6d64cc2f",
-            "instanceId": "a63691fa-0197-4584-8123-8524700b4391",
+            "completionId": "7fa80dd4-d3df-4a0f-9bc4-5ee427a477bd",
+            "instanceId": "f1295476-e117-4640-8aa7-a7b259fa5154",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -6977,10 +6977,10 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/end-score",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -6991,11 +6991,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "a8ed96ee-7339-404d-8c0e-f2708a23dce8",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "3494c059-6726-43cc-8f07-996745330d72",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -7003,8 +7003,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "a8ed96ee-7339-404d-8c0e-f2708a23dce8",
-            "instanceId": "ef444175-c851-4fe5-818f-d8f1994491b2",
+            "completionId": "3494c059-6726-43cc-8f07-996745330d72",
+            "instanceId": "3e59526e-82fc-4735-8920-a97f27119641",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -7019,11 +7019,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "1533a026-8189-48d1-92cf-351b39bcd2e1",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "d0159b5d-a53d-4502-a38b-d2bb04d30e58",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -7031,8 +7031,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "1533a026-8189-48d1-92cf-351b39bcd2e1",
-            "instanceId": "ef444175-c851-4fe5-818f-d8f1994491b2",
+            "completionId": "d0159b5d-a53d-4502-a38b-d2bb04d30e58",
+            "instanceId": "3e59526e-82fc-4735-8920-a97f27119641",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -7044,11 +7044,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "41b9ca8e-f8dd-4dff-ba11-0b674b862332",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "d581f654-2fff-4b14-966e-35b788b6dc29",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -7056,8 +7056,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "41b9ca8e-f8dd-4dff-ba11-0b674b862332",
-            "instanceId": "ef444175-c851-4fe5-818f-d8f1994491b2",
+            "completionId": "d581f654-2fff-4b14-966e-35b788b6dc29",
+            "instanceId": "3e59526e-82fc-4735-8920-a97f27119641",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -7067,11 +7067,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "2d737b0d-fa8a-4ffa-b546-16858f76d3ff",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "bee8658a-ee6c-41fd-aa07-1e8782a5c005",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -7079,8 +7079,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "2d737b0d-fa8a-4ffa-b546-16858f76d3ff",
-            "instanceId": "ef444175-c851-4fe5-818f-d8f1994491b2",
+            "completionId": "bee8658a-ee6c-41fd-aa07-1e8782a5c005",
+            "instanceId": "3e59526e-82fc-4735-8920-a97f27119641",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -7089,11 +7089,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "34f66b64-2f67-4ad1-9dfd-37143b2d3bb8",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "bd743e3f-2baf-457a-9dde-dccaa6b61560",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -7101,8 +7101,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "34f66b64-2f67-4ad1-9dfd-37143b2d3bb8",
-            "instanceId": "ef444175-c851-4fe5-818f-d8f1994491b2",
+            "completionId": "bd743e3f-2baf-457a-9dde-dccaa6b61560",
+            "instanceId": "3e59526e-82fc-4735-8920-a97f27119641",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -7112,11 +7112,11 @@
           }
         },
         {
-          "url": "/api/characters/62b5e14a-a892-4b3c-8648-3d1130301337/ops/flow.step.complete",
+          "url": "/api/characters/195981f2-24e1-45d7-8d26-43788535f701/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/62b5e14a-a892-4b3c-8648-3d1130301337",
-            "idempotency-key": "97200fdc-90b5-400f-98a0-6d7ea676cc36",
+            "referer": "http://127.0.0.1:45263/character/195981f2-24e1-45d7-8d26-43788535f701",
+            "idempotency-key": "4d88e4d4-c104-4965-9ab6-7be942a11c8b",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -7124,8 +7124,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "97200fdc-90b5-400f-98a0-6d7ea676cc36",
-            "instanceId": "ef444175-c851-4fe5-818f-d8f1994491b2",
+            "completionId": "4d88e4d4-c104-4965-9ab6-7be942a11c8b",
+            "instanceId": "3e59526e-82fc-4735-8920-a97f27119641",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -7913,10 +7913,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/mode.set",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -7929,11 +7929,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "64cffacb-d603-4771-b66d-21f0a100da71",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "9d155125-e7fa-4438-86a4-836345e46fbc",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -7941,8 +7941,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "64cffacb-d603-4771-b66d-21f0a100da71",
-            "instanceId": "e6586160-e391-4f5d-8ba7-be60d3619224",
+            "completionId": "9d155125-e7fa-4438-86a4-836345e46fbc",
+            "instanceId": "244883d9-f819-43a2-8996-b1a2a5706109",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -7951,11 +7951,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "6dc3a52c-4315-4724-ab4b-28bc721feaed",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "a0ce6e08-ef2c-4ba4-99be-416312b5291b",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -7963,8 +7963,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "6dc3a52c-4315-4724-ab4b-28bc721feaed",
-            "instanceId": "e6586160-e391-4f5d-8ba7-be60d3619224",
+            "completionId": "a0ce6e08-ef2c-4ba4-99be-416312b5291b",
+            "instanceId": "244883d9-f819-43a2-8996-b1a2a5706109",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -7974,11 +7974,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "3e106316-e6c7-4cf5-8fe9-75bda0e3ac1d",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "f6074232-b021-4162-aeea-cefffe6c2ace",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -7986,8 +7986,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "3e106316-e6c7-4cf5-8fe9-75bda0e3ac1d",
-            "instanceId": "e6586160-e391-4f5d-8ba7-be60d3619224",
+            "completionId": "f6074232-b021-4162-aeea-cefffe6c2ace",
+            "instanceId": "244883d9-f819-43a2-8996-b1a2a5706109",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -7996,10 +7996,10 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/end-score",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -8010,11 +8010,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "e81779f4-f67d-4a3a-9c86-9e149baaecdd",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "00ffcd3a-21c5-48b9-97c7-add6b02f057a",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -8022,8 +8022,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "e81779f4-f67d-4a3a-9c86-9e149baaecdd",
-            "instanceId": "0a443138-184a-4679-8684-1913d65a9409",
+            "completionId": "00ffcd3a-21c5-48b9-97c7-add6b02f057a",
+            "instanceId": "e391615e-6271-48a6-8178-5691a21c1799",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -8038,11 +8038,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "25999b16-68c2-49f5-ab95-414d0354cbf5",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "0809b3ae-619e-4f58-904b-200298d0a196",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -8050,8 +8050,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "25999b16-68c2-49f5-ab95-414d0354cbf5",
-            "instanceId": "0a443138-184a-4679-8684-1913d65a9409",
+            "completionId": "0809b3ae-619e-4f58-904b-200298d0a196",
+            "instanceId": "e391615e-6271-48a6-8178-5691a21c1799",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -8063,11 +8063,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "3a634159-1816-4af6-9107-2347295315d6",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "fa5e56f2-6cf8-442f-9977-4787ac57a046",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -8075,8 +8075,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "3a634159-1816-4af6-9107-2347295315d6",
-            "instanceId": "0a443138-184a-4679-8684-1913d65a9409",
+            "completionId": "fa5e56f2-6cf8-442f-9977-4787ac57a046",
+            "instanceId": "e391615e-6271-48a6-8178-5691a21c1799",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -8086,11 +8086,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "0e3d6934-d642-44e3-a885-03f741332044",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "843722e7-6e5b-4a91-881a-26b1ac6640bf",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -8098,8 +8098,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "0e3d6934-d642-44e3-a885-03f741332044",
-            "instanceId": "0a443138-184a-4679-8684-1913d65a9409",
+            "completionId": "843722e7-6e5b-4a91-881a-26b1ac6640bf",
+            "instanceId": "e391615e-6271-48a6-8178-5691a21c1799",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -8108,11 +8108,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "bd19572f-54a6-47de-b636-6b4a3636493a",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "27e2475d-1da9-491d-8a8a-1bd99b27d6c6",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -8120,8 +8120,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "bd19572f-54a6-47de-b636-6b4a3636493a",
-            "instanceId": "0a443138-184a-4679-8684-1913d65a9409",
+            "completionId": "27e2475d-1da9-491d-8a8a-1bd99b27d6c6",
+            "instanceId": "e391615e-6271-48a6-8178-5691a21c1799",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -8131,11 +8131,11 @@
           }
         },
         {
-          "url": "/api/characters/4504b2b9-0451-4075-8186-40f114146086/ops/flow.step.complete",
+          "url": "/api/characters/da341251-9293-4a91-8121-973553a13945/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/4504b2b9-0451-4075-8186-40f114146086",
-            "idempotency-key": "9d05dd69-3054-46b1-8b62-29e871719755",
+            "referer": "http://127.0.0.1:45263/character/da341251-9293-4a91-8121-973553a13945",
+            "idempotency-key": "72d7ac61-b36a-4caf-a9bd-64068238f8ae",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -8143,8 +8143,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "9d05dd69-3054-46b1-8b62-29e871719755",
-            "instanceId": "0a443138-184a-4679-8684-1913d65a9409",
+            "completionId": "72d7ac61-b36a-4caf-a9bd-64068238f8ae",
+            "instanceId": "e391615e-6271-48a6-8178-5691a21c1799",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}
@@ -8932,10 +8932,10 @@
       "state": "requests",
       "requests": [
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/mode.set",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/mode.set",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "2",
             "sec-ch-ua-mobile": "?0",
@@ -8948,11 +8948,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "8643377b-8008-4027-bd2b-887a4f993de9",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "eeb913e2-520e-4971-a775-9058454f024a",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "3",
             "sec-ch-ua-mobile": "?0",
@@ -8960,8 +8960,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "8643377b-8008-4027-bd2b-887a4f993de9",
-            "instanceId": "ded30139-8882-4c91-8556-55d35d11aae4",
+            "completionId": "eeb913e2-520e-4971-a775-9058454f024a",
+            "instanceId": "43652297-2261-4622-8276-318a71d12124",
             "kind": "score-start",
             "step": "planning",
             "inputs": {
@@ -8970,11 +8970,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "87b70812-abd3-41d4-8d37-9148af6275be",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "98e25719-dc21-4315-9d6a-7cc6eb1ba759",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "4",
             "sec-ch-ua-mobile": "?0",
@@ -8982,8 +8982,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "87b70812-abd3-41d4-8d37-9148af6275be",
-            "instanceId": "ded30139-8882-4c91-8556-55d35d11aae4",
+            "completionId": "98e25719-dc21-4315-9d6a-7cc6eb1ba759",
+            "instanceId": "43652297-2261-4622-8276-318a71d12124",
             "kind": "score-start",
             "step": "loadout",
             "inputs": {
@@ -8993,11 +8993,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "454d87c6-599e-46dd-a264-42590cb45c58",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "e7d28076-5b34-43d5-8255-8c295df41977",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "5",
             "sec-ch-ua-mobile": "?0",
@@ -9005,8 +9005,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "454d87c6-599e-46dd-a264-42590cb45c58",
-            "instanceId": "ded30139-8882-4c91-8556-55d35d11aae4",
+            "completionId": "e7d28076-5b34-43d5-8255-8c295df41977",
+            "instanceId": "43652297-2261-4622-8276-318a71d12124",
             "kind": "score-start",
             "step": "engagement",
             "inputs": {
@@ -9015,10 +9015,10 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/end-score",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/end-score",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "6",
             "sec-ch-ua-mobile": "?0",
@@ -9029,11 +9029,11 @@
           "body": {}
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "3c47e717-d6c2-42e9-a94b-44130c2714cd",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "c68f2113-3138-41b1-99d3-009ec388b4b0",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "7",
             "sec-ch-ua-mobile": "?0",
@@ -9041,8 +9041,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "3c47e717-d6c2-42e9-a94b-44130c2714cd",
-            "instanceId": "4f6a5135-d118-496a-8196-6310b1211410",
+            "completionId": "c68f2113-3138-41b1-99d3-009ec388b4b0",
+            "instanceId": "0ad94684-c722-4b13-84f7-ab1e445d5446",
             "kind": "resolution",
             "step": "scoundrel-xp",
             "inputs": {
@@ -9057,11 +9057,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "e8197225-6409-4675-9028-4cce120e0527",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "959e726f-ea24-4756-ad08-ea671895d567",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "8",
             "sec-ch-ua-mobile": "?0",
@@ -9069,8 +9069,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "e8197225-6409-4675-9028-4cce120e0527",
-            "instanceId": "4f6a5135-d118-496a-8196-6310b1211410",
+            "completionId": "959e726f-ea24-4756-ad08-ea671895d567",
+            "instanceId": "0ad94684-c722-4b13-84f7-ab1e445d5446",
             "kind": "resolution",
             "step": "payoff",
             "inputs": {
@@ -9082,11 +9082,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "0fed7b10-3944-4adf-b5dc-776589f336f3",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "84c42d11-41c7-4254-8bbf-cd87fa8a2b8f",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "9",
             "sec-ch-ua-mobile": "?0",
@@ -9094,8 +9094,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "0fed7b10-3944-4adf-b5dc-776589f336f3",
-            "instanceId": "4f6a5135-d118-496a-8196-6310b1211410",
+            "completionId": "84c42d11-41c7-4254-8bbf-cd87fa8a2b8f",
+            "instanceId": "0ad94684-c722-4b13-84f7-ab1e445d5446",
             "kind": "resolution",
             "step": "heat",
             "inputs": {
@@ -9105,11 +9105,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "bf946c71-fa24-465b-a8e2-36dc28e57a47",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "90b3db33-bd18-474d-9750-0c5b8d23e936",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "10",
             "sec-ch-ua-mobile": "?0",
@@ -9117,8 +9117,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "bf946c71-fa24-465b-a8e2-36dc28e57a47",
-            "instanceId": "4f6a5135-d118-496a-8196-6310b1211410",
+            "completionId": "90b3db33-bd18-474d-9750-0c5b8d23e936",
+            "instanceId": "0ad94684-c722-4b13-84f7-ab1e445d5446",
             "kind": "resolution",
             "step": "entanglements",
             "inputs": {
@@ -9127,11 +9127,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "ce4f84ff-e052-4f1f-a5ce-9a94ef363ef4",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "5a8378b0-6353-4513-ae6b-2cee6911898e",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "11",
             "sec-ch-ua-mobile": "?0",
@@ -9139,8 +9139,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "ce4f84ff-e052-4f1f-a5ce-9a94ef363ef4",
-            "instanceId": "4f6a5135-d118-496a-8196-6310b1211410",
+            "completionId": "5a8378b0-6353-4513-ae6b-2cee6911898e",
+            "instanceId": "0ad94684-c722-4b13-84f7-ab1e445d5446",
             "kind": "resolution",
             "step": "crew-xp",
             "inputs": {
@@ -9150,11 +9150,11 @@
           }
         },
         {
-          "url": "/api/characters/e663e159-6d82-4052-895a-7cf97dc0c422/ops/flow.step.complete",
+          "url": "/api/characters/3a807188-f402-4432-822e-922d6e02ab17/ops/flow.step.complete",
           "headers": {
             "sec-ch-ua-platform": "\"Linux\"",
-            "referer": "http://127.0.0.1:44547/character/e663e159-6d82-4052-895a-7cf97dc0c422",
-            "idempotency-key": "3fcbda61-d6a2-4e52-8488-05994fa6d790",
+            "referer": "http://127.0.0.1:45263/character/3a807188-f402-4432-822e-922d6e02ab17",
+            "idempotency-key": "1043a6cc-7871-40de-a71b-430c922e9f49",
             "sec-ch-ua": "\"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
             "if-match": "12",
             "sec-ch-ua-mobile": "?0",
@@ -9162,8 +9162,8 @@
             "content-type": "application/json"
           },
           "body": {
-            "completionId": "3fcbda61-d6a2-4e52-8488-05994fa6d790",
-            "instanceId": "4f6a5135-d118-496a-8196-6310b1211410",
+            "completionId": "1043a6cc-7871-40de-a71b-430c922e9f49",
+            "instanceId": "0ad94684-c722-4b13-84f7-ab1e445d5446",
             "kind": "resolution",
             "step": "crew-rep",
             "inputs": {}

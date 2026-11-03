@@ -12,7 +12,8 @@ package Pitd_Transactions is
      (Plan : JSON_Value; Before, After : JSON_Value;
       Take_Snapshot : Boolean := True);
    procedure Stage_Receipt
-     (Plan, Receipt : JSON_Value; Character_Id : String; Payload_Hash : String);
+     (Plan, Receipt : JSON_Value; Character_Id : String; Payload_Hash : String;
+      Side_Effects : JSON_Array := Empty_Array);
    procedure Commit (Plan : JSON_Value);
    procedure Recover;
 

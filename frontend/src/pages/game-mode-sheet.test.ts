@@ -529,10 +529,14 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     mockApi(dto);
     const base = global.fetch as unknown as (url: string, init?: RequestInit) => Promise<unknown>;
     const FUND_OVERFLOW = "1 coin could not be stored";
+    let completed = false;
     global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
       if (url === `/api/characters/${CHARACTER_ID}/ops/flow.step.complete`) {
+        completed = true;
         return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, character: afterDto, applied: { op: "flow.step.complete" }, sideEffects: [FUND_OVERFLOW], error: null }) };
       }
+      if (completed && url === `/api/characters/${CHARACTER_ID}`) return { ok: true, status: 200, text: async () => JSON.stringify(afterDto) };
+      if (completed && url === `/api/characters/${CHARACTER_ID}/flow`) return { ok: true, status: 200, text: async () => JSON.stringify(flowDTO(afterDto)) };
       return base(url, init);
     }) as unknown as typeof fetch;
     mountCharacterDetailPage(root, CHARACTER_ID);
@@ -541,7 +545,39 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     share.value = "2";
     share.dispatchEvent(new Event("input", { bubbles: true }));
     (Array.from(root.querySelectorAll(".game-mode-resolution button")).find((b) => b.textContent === "Next") as HTMLButtonElement).click();
-    await vi.waitFor(() => expect(root.textContent).toContain("Stored 1 of 2 coins — satchel and stash are full"));
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-popup")?.textContent).toContain("Stored 1 of 2 coins — satchel and stash are full"));
+  });
+
+  it("Leave flow cancels a pending Payoff overflow notice timer", async () => {
+    vi.useFakeTimers();
+    try {
+      const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } });
+      const afterDto = characterDTO({ mode: "score", revision: 13, modeFlow: { kind: "resolution", step: "heat" } });
+      mockApi(dto);
+      const base = global.fetch as unknown as (url: string, init?: RequestInit) => Promise<unknown>;
+      let completed = false;
+      global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === `/api/characters/${CHARACTER_ID}/ops/flow.step.complete`) {
+          completed = true;
+          return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, character: afterDto, applied: { op: "flow.step.complete" }, sideEffects: ["1 coin could not be stored"], error: null }) };
+        }
+        if (completed && url === `/api/characters/${CHARACTER_ID}`) return { ok: true, status: 200, text: async () => JSON.stringify(afterDto) };
+        if (completed && url === `/api/characters/${CHARACTER_ID}/flow`) return { ok: true, status: 200, text: async () => JSON.stringify(flowDTO(afterDto)) };
+        return base(url, init);
+      }) as unknown as typeof fetch;
+      mountCharacterDetailPage(root, CHARACTER_ID);
+      await vi.waitFor(() => expect(root.querySelector(".game-mode-resolution")).not.toBeNull());
+      const share = root.querySelector<HTMLInputElement>('input[aria-label="My share coin amount"]')!;
+      share.value = "2";
+      share.dispatchEvent(new Event("input", { bubbles: true }));
+      (Array.from(root.querySelectorAll(".game-mode-resolution button")).find((b) => b.textContent === "Next") as HTMLButtonElement).click();
+      await vi.waitFor(() => expect(root.querySelector(".game-mode-popup")?.textContent).toContain("Stored 1 of 2 coins"));
+      const pending = vi.getTimerCount();
+      (Array.from(root.querySelectorAll(".game-mode-popup button")).find((b) => b.textContent === "Leave flow") as HTMLButtonElement).click();
+      expect(vi.getTimerCount()).toBe(pending - 1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("crew award editors retain clear labels and defer all awards to completion", async () => {

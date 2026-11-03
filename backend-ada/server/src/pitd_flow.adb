@@ -480,6 +480,15 @@ package body Pitd_Flow is
          end if;
          Result := Success_Result (Completion_Op, Character);
          Set_Field (Result, "receipt", JSON_Value'(Get (Stored, "receipt")));
+         if Has_Field (Stored, "sideEffects") then
+            declare Effects : constant JSON_Value := Get (Stored, "sideEffects"); begin
+               Set_Field (Result, "sideEffects", Effects);
+            end;
+         else
+            declare Effects : constant JSON_Array := Empty_Array; begin
+               Set_Field (Result, "sideEffects", Effects);
+            end;
+         end if;
          return Result;
       end if;
       if Expected_Revision = "" then return Invalid ("flow completion requires If-Match"); end if;
@@ -619,7 +628,7 @@ package body Pitd_Flow is
             Set_Field (V, "revision", Int_Field (Crew, "revision") + 1); Set_Field (Receipt_Value, "crew", V);
          end;
       else Set_Field (Receipt_Value, "crew", JSON_Null); end if;
-      Pitd_Transactions.Stage_Receipt (Plan, Receipt_Value, Str_Field (Character, "id"), Hash);
+      Pitd_Transactions.Stage_Receipt (Plan, Receipt_Value, Str_Field (Character, "id"), Hash, Side_Effects);
       Changed := True; Crew_Changed := Touches_Crew (B);
       Result := Success_Result (Completion_Op, Character);
       Set_Field (Result, "sideEffects", Side_Effects); Set_Field (Result, "receipt", Receipt_Value);

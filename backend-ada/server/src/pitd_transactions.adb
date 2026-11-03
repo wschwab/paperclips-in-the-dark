@@ -60,13 +60,15 @@ package body Pitd_Transactions is
    end Stage;
 
    procedure Stage_Receipt
-     (Plan, Receipt : JSON_Value; Character_Id : String; Payload_Hash : String) is
+     (Plan, Receipt : JSON_Value; Character_Id : String; Payload_Hash : String;
+      Side_Effects : JSON_Array := Empty_Array) is
       A : JSON_Array := Get (Plan, "receipts");
       Item : constant JSON_Value := Create_Object;
    begin
       Set_Field (Item, "characterId", Character_Id);
       Set_Field (Item, "receipt", Receipt);
       Set_Field (Item, "payloadHash", Payload_Hash);
+      Set_Field (Item, "sideEffects", Side_Effects);
       Append (A, Item);
       Set_Field (Plan, "receipts", A);
    end Stage_Receipt;

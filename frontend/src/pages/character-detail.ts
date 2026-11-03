@@ -483,6 +483,9 @@ export function mountCharacterDetailPage(
   let gmDesperateError: string | null = null;
   let isXpLoading = false;
   let coinNotice: string | null = null;
+  /** Payoff overflow notice shown inside the active popup; its timer is cancelled whenever notices clear or a new one replaces it. */
+  let payoffNotice: string | null = null;
+  let payoffNoticeTimer: ReturnType<typeof setTimeout> | undefined;
   let clocksNotice: string | null = null;
 
   // F2ab state
@@ -509,6 +512,9 @@ export function mountCharacterDetailPage(
     overindulgedNotice = false;
     abilityNotice = null;
     coinNotice = null;
+    payoffNotice = null;
+    clearTimeout(payoffNoticeTimer);
+    payoffNoticeTimer = undefined;
     clocksNotice = null;
     crewNotice = null;
     contactsNotice = null;
@@ -812,10 +818,12 @@ export function mountCharacterDetailPage(
         const unstored = fundOverflowCoins(result.sideEffects);
         const shared = typeof inputs.myShare === "number" ? inputs.myShare : 0;
         if (unstored > 0 && shared > 0) {
-          coinNotice = `Stored ${shared - unstored} of ${shared} coins — satchel and stash are full`;
-          setTimeout(() => {
+          clearTimeout(payoffNoticeTimer);
+          payoffNotice = `Stored ${shared - unstored} of ${shared} coins — satchel and stash are full`;
+          payoffNoticeTimer = setTimeout(() => {
+            payoffNoticeTimer = undefined;
             if (!cancelled) {
-              coinNotice = null;
+              payoffNotice = null;
               renderDetailWrapper();
             }
           }, 5000);
@@ -2344,6 +2352,7 @@ export function mountCharacterDetailPage(
         crewXpTrigger: linkedCrew ? extractExperienceTrigger(null, crewGameTypes, linkedCrew.crewTypeName) : null,
         loadoutChange: gmLoadoutChange,
         loadoutError: gmLoadoutChange !== null && error?.section === "gear" ? formatErrorSummary(error) : null,
+        flowNotice: payoffNotice,
         desperateError: gmDesperateError,
         planApproach: gmPlanApproach,
         crewNotice: gmCrewNotice,
