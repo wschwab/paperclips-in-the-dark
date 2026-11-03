@@ -918,6 +918,19 @@ export function dossierUpdate(
 export const OVERINDULGED_SIDEEFFECT =
   "overindulged — indulgence exceeded remaining stress";
 
+/**
+ * fund.gain reports coins the satchel and stash could not take as the
+ * sideEffect "N coin could not be stored" (flow completions carry it in their
+ * sideEffects). Returns N, or 0 when nothing overflowed.
+ */
+export function fundOverflowCoins(sideEffects: readonly string[]): number {
+  for (const effect of sideEffects) {
+    const match = /^(\d+) coin could not be stored$/.exec(effect);
+    if (match) return Number(match[1]);
+  }
+  return 0;
+}
+
 export interface StressClearResult {
   character: Character;
   overindulged: boolean;

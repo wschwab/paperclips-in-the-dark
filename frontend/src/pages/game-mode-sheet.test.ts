@@ -523,6 +523,27 @@ describe("GAME-MODE-03 approved surfaces (Luna review findings)", () => {
     confirmSpy.mockRestore();
   });
 
+  it("Payoff shows the satchel-full coin notice when its completion reports fund overflow", async () => {
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } });
+    const afterDto = characterDTO({ mode: "score", revision: 13, modeFlow: { kind: "resolution", step: "heat" } });
+    mockApi(dto);
+    const base = global.fetch as unknown as (url: string, init?: RequestInit) => Promise<unknown>;
+    const FUND_OVERFLOW = "1 coin could not be stored";
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === `/api/characters/${CHARACTER_ID}/ops/flow.step.complete`) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true, character: afterDto, applied: { op: "flow.step.complete" }, sideEffects: [FUND_OVERFLOW], error: null }) };
+      }
+      return base(url, init);
+    }) as unknown as typeof fetch;
+    mountCharacterDetailPage(root, CHARACTER_ID);
+    await vi.waitFor(() => expect(root.querySelector(".game-mode-resolution")).not.toBeNull());
+    const share = root.querySelector<HTMLInputElement>('input[aria-label="My share coin amount"]')!;
+    share.value = "2";
+    share.dispatchEvent(new Event("input", { bubbles: true }));
+    (Array.from(root.querySelectorAll(".game-mode-resolution button")).find((b) => b.textContent === "Next") as HTMLButtonElement).click();
+    await vi.waitFor(() => expect(root.textContent).toContain("Stored 1 of 2 coins — satchel and stash are full"));
+  });
+
   it("crew award editors retain clear labels and defer all awards to completion", async () => {
     await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "payoff" } }));
     await vi.waitFor(() => expect(root.querySelector('[data-crew-track="rep"]')).not.toBeNull());

@@ -92,6 +92,7 @@ import {
   getCrewGameData,
   getCharacterFlow,
   characterFlowStepComplete,
+  fundOverflowCoins,
   characterDesperateMark,
   characterGearSetLoadout,
 } from "../api/client.js";
@@ -806,6 +807,19 @@ export function mountCharacterDetailPage(
       (result) => {
         if (!result.character) { flowError = "The flow response did not include the updated scoundrel."; return; }
         currentCharacter = result.character;
+        // Payoff's own share fund.gain reports unstored coins in sideEffects;
+        // show the same satchel-full notice as the ordinary coin path.
+        const unstored = fundOverflowCoins(result.sideEffects);
+        const shared = typeof inputs.myShare === "number" ? inputs.myShare : 0;
+        if (unstored > 0 && shared > 0) {
+          coinNotice = `Stored ${shared - unstored} of ${shared} coins — satchel and stash are full`;
+          setTimeout(() => {
+            if (!cancelled) {
+              coinNotice = null;
+              renderDetailWrapper();
+            }
+          }, 5000);
+        }
         pendingCompletion = null;
         gmLoadoutChange = null;
         gmXpTrackerOpen = false;

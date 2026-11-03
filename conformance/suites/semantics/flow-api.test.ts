@@ -103,6 +103,17 @@ describe("FLOW-API-01 server guided score flow", () => {
     expect(await flow(character.id)).toMatchObject({ step: "heat" });
   });
 
+  testCase("FLOW-API-027", "Payoff reports fund overflow as a sideEffect when the satchel and stash cannot take the share", async () => {
+    const { character } = await at("payoff", true);
+    const gained = await op(character.id, "fund.gain", { coins: 1000 }, character.revision);
+    expect(gained.ok, JSON.stringify(gained)).toBe(true);
+    const filled = gained.character;
+    const fresh = await flow(character.id);
+    const response = await complete(character.id, filled.revision, completion(fresh, { myShare: 1 }));
+    expect(response.status, JSON.stringify(response.body)).toBe(200);
+    expect(response.body.sideEffects).toContain("1 coin could not be stored");
+  });
+
   testCase("FLOW-API-005", "a stale linked crew revision rejects the entire completion without character awards or navigation", async () => {
     const { character, crew, view } = await at("payoff", true);
     await api.post(`crews/${crew!.id}/ops/note.add`, { text: "Another player edited." }, { "If-Match": String(crew!.revision) });
