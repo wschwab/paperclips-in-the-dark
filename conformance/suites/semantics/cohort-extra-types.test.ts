@@ -501,6 +501,35 @@ describe("CREW-COHORTS-03 limit on update and import", () => {
   );
 
   testCase(
+    "CREW-COHORTS-03-WRITE-002",
+    "a campaign batch fields.update whose cohorts exceed CohortMaxTypes - 1 is refused and the crew is unchanged",
+    async () => {
+      const { id, revision } = await newCrewRevision();
+      const seeded = await api.post(
+        `crews/${id}/ops/cohort.add`,
+        { cohortKind: "gang", gangType: "Thugs", extraTypes: ["Rooks"] },
+        { "If-Match": String(revision) },
+      );
+      expect(seeded.status).toBe(200);
+      const rev2 = asRecord(asRecord(seeded.body)?.crew)?.revision;
+      const cohort = cohortsOf(seeded.body)[0];
+      if (typeof rev2 !== "number" || !cohort) throw new Error("no seeded cohort");
+      const overBound = { ...cohort, extraTypes: ["Rooks", "Stokers"] };
+      const batch = await api.post("campaign/batch", {
+        ops: [{ entity: "crew", id, op: "fields.update", args: { cohorts: [overBound] } }],
+      });
+      const result = await api.operation(batch);
+      expect(result.batch?.[0]?.ok).toBe(false);
+      expect(result.batch?.[0]?.error?.code).toBe("VALIDATION");
+      expect(batch.rawBody).not.toContain("INTERNAL");
+      const after = await api.get(`crews/${id}`);
+      expect(after.status).toBe(200);
+      expect(after.body).toMatchObject({ revision: rev2 });
+      expect(cohortsOf(after.body)[0]?.extraTypes).toEqual(["Rooks"]);
+    },
+  );
+
+  testCase(
     "CREW-COHORTS-03-REPAIR-003",
     "repair-preview refuses a caller-supplied extraTypes whose elements are not strings",
     async () => {

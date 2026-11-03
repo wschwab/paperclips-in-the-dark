@@ -2467,17 +2467,21 @@ if Kind = "crew" then
          Kind : constant String := Str_Field (Item, "kind");
          Id : constant String := Str_Field (Item, "id");
          Issues : constant JSON_Array := Reference_Issues (Kind, Id, E);
+         --  Batch members get the same cohort bound as the single-entity route.
+         Bound : constant JSON_Array :=
+           (if Kind = "crew" then Cohort_Type_Issues (E) else Empty_Array);
+         Refusal : constant JSON_Array := (if Length (Issues) > 0 then Issues else Bound);
          Valid : Boolean;
       begin
          if not Bool_Field (Item, "changed") then return; end if;
          Schema_Check (Kind, E, Valid);
          if not Valid then raise Program_Error with "batch result fails schema validation"; end if;
-         if Length (Issues) > 0 then
+         if Length (Refusal) > 0 then
             All_Ok := False;
             declare
                Output : constant JSON_Value := Get (Outs, Positive (Int_Field (Item, "lastIndex")));
                Failure : constant JSON_Value := Validation_Error
-                 (Str_Field (Output, "op"), Str_Field (Get (Issues, 1), "reason"), Issues);
+                 (Str_Field (Output, "op"), Str_Field (Get (Refusal, 1), "reason"), Refusal);
             begin
                Set_Field (Output, "ok", False); Set_Field (Output, "error", JSON_Value'(Get (Failure, "error")));
             end;
