@@ -1,0 +1,61 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run suites/semantics/flow-api.test.ts
+OK: canonical managed launcher
+[managed-run] runId=2026-11-03T02-25-51-623Z-66891ab9
+[managed-run] server=/tmp/flow-payoff-ws/backend-ada/server/bin/pitd
+[managed-run] cycles=1
+[managed-run] staticDir=/tmp/flow-payoff-ws/frontend/dist
+[managed-run] gamesDir=/tmp/flow-payoff-ws/data/games
+[managed-run] revision=fd231eb74368
+[managed-run] testCommand=--run suites/semantics/flow-api.test.ts
+[managed-run] seedSet=/tmp/flow-payoff-ws/conformance/fixtures/sc-o2-seeds,/tmp/flow-payoff-ws/conformance/fixtures/completeness-seeds,/tmp/flow-payoff-ws/conformance/fixtures/c5-seeds
+[managed-run] cycle=1/1
+[managed-run] dataDir=/tmp/pitd-managed/2026-11-03T02-25-51-623Z-66891ab9/data
+[managed-run] logFile=/tmp/pitd-managed/2026-11-03T02-25-51-623Z-66891ab9/server.log
+[managed-run] runDir=/tmp/pitd-managed/2026-11-03T02-25-51-623Z-66891ab9
+[managed-run] seed=/tmp/flow-payoff-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-03T02-25-51-623Z-66891ab9/data (dir)
+[managed-run] seed=/tmp/flow-payoff-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-03T02-25-51-623Z-66891ab9/data (dir)
+[managed-run] seed=/tmp/flow-payoff-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-03T02-25-51-623Z-66891ab9/data (dir)
+[managed-run] port=36251
+[managed-run] baseUrl=http://127.0.0.1:36251
+[managed-run] pid=2750006
+[managed-run] ready=http://127.0.0.1:36251
+[managed-run] vitestPid=2750073
+
+ RUN  v3.2.7 /tmp/flow-payoff-ws/conformance
+
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-001] pure inactive projection exposes the current revision and no current completion action 63ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-002] Score projection discovers Planning, typed completion inputs and shared guidance 86ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-003] Planning and Engagement complete via the same op without automatic dice or awards 220ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-004] Payoff atomically applies explicit crew and personal deltas and advances one cursor 177ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-027] Payoff reports fund overflow as a sideEffect when the satchel and stash cannot take the share 134ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-005] a stale linked crew revision rejects the entire completion without character awards or navigation 216ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-006] durable completion IDs and revisiting an awarded step cannot award twice 260ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-007] completion ID reuse with changed input is a proper non-success and preserves both entities 170ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-025] completion ID reuse with changed input under an Idempotency-Key is the same 400 as the headerless path 130ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-008] XP completion awards and clears expressions with cursor advance, while skip preserves expressions 344ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-009] invalid XP allocation fails before any award, clearing or step advance 129ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-010] undo from the scoundrel restores linked crew awards and cursor together 217ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-024] grouped undo refuses to restore a crew award snapshot whose second types exceed the settings bound 223ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-011] group undo cannot overwrite a later unrelated crew edit 257ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-012] optional final steps can be skipped into Downtime without crew writes or budget resets 172ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-013] missing character If-Match and touched crew revision are validation failures without writes 215ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-014] an observed stale cursor rejects without awarding even if character revision is current 171ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-015] group undo initiated at the crew restores the character cursor and personal share too 176ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-016] invalid later batch member rolls back an earlier guided award and receipt 217ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-017] the projected action schema validates typed required Planning inputs and explicit skip 89ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-018] two guided groups undo in reverse order with fresh monotonic revisions 352ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-019] two scoundrels racing one observed crew revision cannot both award the crew 302ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-020] legacy characters silently expose default flow progress without rewriting stored bytes 86ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-021] group undo reports a deleted secondary participant with a valid NOT_FOUND envelope 179ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-022] group undo cannot silently overwrite a degraded secondary participant 134ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-023] a Score character with no active cursor still exposes the Score entry steps so the scoundrel can re-enter 87ms
+ ✓ suites/semantics/flow-api.test.ts > FLOW-API-01 server guided score flow > [FLOW-API-026] an unparseable stored character is refused with INVALID_ENTITY on flow reads and completions, never a server fault 86ms
+
+ Test Files  1 passed (1)
+      Tests  27 passed (27)
+   Start at  04:25:51
+   Duration  5.28s (transform 58ms, setup 0ms, collect 284ms, tests 4.89s, environment 0ms, prepare 29ms)
+
+[managed-run] success; evidence removed (/tmp/pitd-managed/2026-11-03T02-25-51-623Z-66891ab9)
+exit 0
