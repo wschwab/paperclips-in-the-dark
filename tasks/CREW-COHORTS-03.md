@@ -133,10 +133,17 @@ Round 6 at `09748d40` was blocked by a codex usage limit. Sol 6.1 xhigh review i
 
 Evidence: cohort-extra-types 22/22 at the round-8 head. FLOW's non-flow idempotency mismatch is pinned to 409 (`conformance/suites/persistence/idempotency.test.ts`, 6/6).
 
-## Review round 9 (Sol 6.1 xhigh, pinned head 0fa89529): pending
+## Review round 9 (Sol 6.1 xhigh, pinned head 2104ad6d): FAIL, one P1 and one P2
+
+- P1: the round-8 bound gate covered only the single-entity route. `POST /api/campaign/batch` `fields.update` could persist an over-bound `extraTypes`. Fixed in `Validate_Final` (`pitd_callback.adb`) using `Cohort_Type_Issues`, and pinned by red test `CREW-COHORTS-03-WRITE-002` (was 200, now a per-item VALIDATION refusal with the crew unchanged).
+- P2: `flow.step.complete` writes the linked crew through `Pitd_Transactions.Commit` with only `Schema_Check`. Not reachable today, since `pitd_flow.adb` never mutates cohorts. Known residual, recorded here rather than gated.
+
+## Review round 10 (Sol 6.1 xhigh, pinned head 20c12483): pending
 
 The verdict is recorded here once the reviewer lands.
 
-## Gate record at head 0fa89529
+## Gate record at head 20c12483
 
-Logs `tasks/metrics/contract/FLOW-API-01-r4-*.log`: all 12 gates exit 0 (see `FLOW-API-01.md`, "Review rounds and current gate record"). Mutation 28/28 at `0fa89529` (`FLOW-API-01-r4-mutation.log`). Documented gap, unchanged: generated validators have no `maxItems` check; enforcement is in the normalizer, the write gate, and import apply.
+Logs `tasks/metrics/contract/FLOW-API-01-r5-*.log`: all 12 gates exit 0. Cohort suite 23/23 (WRITE-002 added). Mutation 28/28 at `20c12483` (`FLOW-API-01-r5-mutation.log`). Documented gap, unchanged: generated validators have no `maxItems` check; enforcement is in the normalizer, the write gate, batch validation, and import apply.
+
+
