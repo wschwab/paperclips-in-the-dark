@@ -1,0 +1,12 @@
+Working...
+VERDICT: PASS
+
+No P0/P1/P2 findings in the pinned `ba9d3c0a` scope.
+
+- **Placement — `frontend/src/pages/character-sections/gameMode.ts:593`:** Overflow feedback renders with `role="status"` inside the active Resolution dialog after Payoff advances to Heat—not under Coin. Chromium confirmed full visibility at both sizes: **y=329.7–371.2 px at 1440×1000**, **y=298.0–339.5 px at 390×844**.
+- **Timer — `frontend/src/pages/character-detail.ts:506–517,820–829`:** One Payoff timer handle; replacement and `clearNotices()` cancel it. The callback retains the `cancelled` guard. Live Payoff → Leave flow → ordinary coin gain confirmed the newer notice survived the old deadline and lasted **5.08 seconds**. No-overflow, zero-share, and Heat completions produced no overflow notice.
+- **Replay/undo/recovery — `backend-ada/server/src/pitd_transactions.adb:62–73,234–244,428–434`; `backend-ada/server/src/pitd_flow.adb:475–492,631–634`:** Effects persist on the wrapper, not the receipt. Fresh-process replay preserved overflow with the same HTTP `Idempotency-Key`; ordinary and legacy-wrapper replay returned `[]` without changing character state. Grouped undo compiled with the defaulted parameter and produced an undone receipt without receipt-level `sideEffects`. Recovery preserves complete wrapper items. `conformance/src/schemas.ts:75–86` is unchanged.
+- **Tests — `conformance/suites/semantics/flow-api.test.ts:117–127`; `frontend/src/pages/game-mode-sheet.test.ts:526–579`:** Non-vacuous: they exercise durable completion replay, popup-contained feedback, and pending-timer cancellation on Leave flow. `FLOW-API-028` does not send an HTTP idempotency header; that case was separately exercised live.
+- **Mutation pin — `conformance/fixtures/mutation-catalog.json:449`:** Matches the current `character-detail.ts` SHA-256: `959c833e3aaf05aebf4fa442896f3a24b1a08aa6c4a3b3fc5096a09bfa2a281b`.
+
+**Verification:** fresh isolated Ada build, frontend typecheck/build, **94/94** game-mode tests, **28/28** flow conformance tests, and the crash/restart oracle passed in **both cycles**. Reviewed sources match the pinned revision. No repository files edited.
