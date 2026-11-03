@@ -111,7 +111,7 @@ describe("FLOW-API-01 server guided score flow", () => {
     const fresh = await flow(character.id);
     const response = await complete(character.id, filled.revision, completion(fresh, { myShare: 1 }));
     expect(response.status, JSON.stringify(response.body)).toBe(200);
-    expect(response.body.sideEffects).toContain("1 coin could not be stored");
+    expect(response.body).toMatchObject({ sideEffects: expect.arrayContaining(["1 coin could not be stored"]) });
   });
 
   testCase("FLOW-API-005", "a stale linked crew revision rejects the entire completion without character awards or navigation", async () => {
