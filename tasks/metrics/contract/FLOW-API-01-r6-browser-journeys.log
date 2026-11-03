@@ -1,0 +1,43 @@
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:browser
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/browser-suite.mjs
+OK: internal harness delegating to managed launcher
+[browser-suite] building frontend (npm run build in frontend/)…
+npm notice run paperclips-frontend@0.1.0 build
+npm notice run tsc --noEmit && vite build
+vite v6.4.3 building for production...
+transforming...
+✓ 687 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   1.29 kB │ gzip:   0.50 kB
+dist/assets/index-CvwLx6QB.css   52.58 kB │ gzip:  10.24 kB
+dist/assets/index-vTV6LYXl.js   431.71 kB │ gzip: 127.54 kB
+✓ built in 1.07s
+[browser-suite] artifacts dir: /tmp/pitd-browser/2026-11-03T01-35-50-132Z-c9858d53
+[managed-browser-smoke] runId=2026-11-03T01-35-53-710Z-d0b09feb
+[managed-browser-smoke] server=/tmp/flow-combined-ws/backend-ada/server/bin/pitd
+[managed-browser-smoke] staticDir=/tmp/flow-combined-ws/frontend/dist
+[managed-browser-smoke] gamesDir=/tmp/flow-combined-ws/data/games
+[managed-browser-smoke] command=node /tmp/flow-combined-ws/conformance/scripts/browser-suite.mjs --child
+[managed-browser-smoke] dataDir=/tmp/pitd-managed/2026-11-03T01-35-53-710Z-d0b09feb/data
+[managed-browser-smoke] logFile=/tmp/pitd-managed/2026-11-03T01-35-53-710Z-d0b09feb/server.log
+[managed-browser-smoke] runDir=/tmp/pitd-managed/2026-11-03T01-35-53-710Z-d0b09feb
+[managed-browser-smoke] seed=/tmp/flow-combined-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-03T01-35-53-710Z-d0b09feb/data (dir)
+[managed-browser-smoke] seed=/tmp/flow-combined-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-03T01-35-53-710Z-d0b09feb/data (dir)
+[managed-browser-smoke] port=32979
+[managed-browser-smoke] baseUrl=http://127.0.0.1:32979
+[managed-browser-smoke] pid=2435803
+[managed-browser-smoke] ready=http://127.0.0.1:32979
+[managed-browser-smoke] commandPid=2435870
+[browser-suite] chromium: /home/x/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome (headless: true)
+[browser-suite] journey character-create-edit: PASS
+[browser-suite] journey clock: PASS
+[browser-suite] journey crew-create-trackers: PASS
+[browser-suite] journey import-repair: PASS
+[browser-suite] journey lifecycle: PASS
+[browser-suite] journey roster-recovery: PASS
+[managed-browser-smoke] success; evidence removed (/tmp/pitd-managed/2026-11-03T01-35-53-710Z-d0b09feb)
+[managed-browser-smoke] evidence removed (/tmp/pitd-managed/2026-11-03T01-35-53-710Z-d0b09feb)
+[browser-suite] PASS — launcher cleaned up ("success; evidence removed"), all journeys green
+[browser-suite] artifacts: /tmp/pitd-browser/2026-11-03T01-35-50-132Z-c9858d53
+exit 0

@@ -1,0 +1,39 @@
+==> building core
+Note: Building paperclips_core=0.1.0/paperclips_core.gpr...
+Success: Build finished successfully in 0.22 seconds.
+==> testing core
+Bind
+   [gprbind]      core_tests.bexch
+   [Ada]          core_tests.ali
+Link
+   [link]         core_tests.adb
+==> building server
+Note: Building paperclips_server=0.1.0/paperclips_server.gpr...
+Compile
+   [Ada]          pitd_callback.adb
+   [Ada]          pitd_normalize.adb
+   [Ada]          pitd_ops.adb
+   [Ada]          pitd_stored.adb
+   [Ada]          pitd_transactions.adb
+Bind
+   [gprbind]      pitd.bexch
+   [Ada]          pitd.ali
+Link
+   [link]         pitd.adb
+Success: Build finished successfully in 11.57 seconds.
+==> testing executable-relative launch defaults
+launch-path regression passed from /tmp
+  dataDir: /tmp/pitd-launch-paths.TLFGku/data
+  port: 38065
+  pid: 2404407
+==> testing SPA deep-link routes
+  dataDir: /tmp/pitd-spa.nS9yk4/data
+  port: 37879
+  pid: 2404497
+==> proving core
+Phase 1 of 3: generation of data representation information ...
+Phase 2 of 3: generation of Global contracts ...
+Phase 3 of 3: flow analysis and proof ...
+Success: all checks proved (246 checks).
+Summary logged in /tmp/flow-combined-ws/backend-ada/core/obj/gnatprove/gnatprove.out
+exit 0
