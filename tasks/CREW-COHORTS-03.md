@@ -118,3 +118,25 @@ Evidence: cohort-extra-types + published-limits 33/33 (round-4 build: 2 new reds
 ## Combined-head record (CREW on FLOW head, pinned `70423dc5`)
 
 Round 6 at `09748d40` was blocked by a codex usage limit. Sol 6.1 xhigh review is pending on the combined head `70423dc5`, and the CREW verdict is not claimed. Gates on the combined head are recorded in `FLOW-API-01.md` ("Combined-head gate record"): Ada CI, two-cycle, browser, vitest, build, Chromium, validators, and mutation 28/28 (P0 19/19, P1 9/9). Logs are under `tasks/metrics/contract/FLOW-API-01-combined-*.log`.
+
+## Review round 7 (Sol 6.1 xhigh, pinned head ffb78ab0): FAIL, addressed in `f320a85f`
+
+- P1 "repair-preview persists stored non-string extraTypes". Fixed: repair-preview classifies the document with `Cohort_Type_Issues` before the canonical branch and refuses 400 `INVALID_ENTRY`. Red: `CREW-COHORTS-03-REPAIR-006`, was 200.
+- P1 "grouped undo bypasses the cohort bound". Fixed: `Pitd_Transactions.Undo` refuses a restored crew whose cohorts exceed the bound; the grouped callback maps `INVALID_ENTRY` to 400. Red: `FLOW-API-024` (grouped path; a plain batch cannot reach it), was 200.
+- P2 "add/update admission does not validate extraTypes elements (500)". Fixed: `Extra_Types_Are_Strings` runs before `Check_Fields` on `cohort.add` and `cohort.update`, returning 400 `VALIDATION`. Red: `CREW-COHORTS-03-ADMIT-001`, was 500.
+
+## Review round 8 (Sol 6.1 xhigh, pinned head f21a6f00): FAIL, addressed in `2fb9e13a`
+
+- P1 "fields.update writes cohorts whose extraTypes exceed CohortMaxTypes - 1, after which the crew reads 422". Fixed: every crew mutation checks `Cohort_Type_Issues` on the mutated document before the schema check and write, refusing 400 `INVALID_ENTRY` with nothing written. Red: `CREW-COHORTS-03-WRITE-001`, was 200.
+- P2 "stored null extraTypes is canonicalized to [] at repair-preview and mints a token". Fixed: a null-only check on the raw stored document refuses 400 `INVALID_ENTRY`. Other non-array stored shapes stay needs-input, as REPAIR-002/003 require. Red: `CREW-COHORTS-03-REPAIR-007`, was 409.
+- P2 "duplicate conformance ID CREW-COHORTS-03-UNDO-001". Fixed: the round-4 test is renamed `CREW-COHORTS-03-UNDO-002`.
+
+Evidence: cohort-extra-types 22/22 at the round-8 head. FLOW's non-flow idempotency mismatch is pinned to 409 (`conformance/suites/persistence/idempotency.test.ts`, 6/6).
+
+## Review round 9 (Sol 6.1 xhigh, pinned head 0fa89529): pending
+
+The verdict is recorded here once the reviewer lands.
+
+## Gate record at head 0fa89529
+
+Logs `tasks/metrics/contract/FLOW-API-01-r4-*.log`: all 12 gates exit 0 (see `FLOW-API-01.md`, "Review rounds and current gate record"). Mutation 28/28 at `0fa89529` (`FLOW-API-01-r4-mutation.log`). Documented gap, unchanged: generated validators have no `maxItems` check; enforcement is in the normalizer, the write gate, and import apply.
