@@ -56,6 +56,11 @@ package Pitd_Normalize is
    --  without game settings resolved (unresolved settings give zero extras).
    function Cohort_Type_Issues (Doc : JSON_Value) return JSON_Array;
 
+   --  Element shape only: one issue per cohort whose array-typed extraTypes
+   --  holds a non-string element. Runs on the raw stored document, before the
+   --  settings clamp can drop the offending element.
+   function Cohort_Element_Issues (Doc : JSON_Value) return JSON_Array;
+
    --  SC-A2: the preview member carried by NORMALIZATION_REQUIRED and by
    --  preview 200 responses.
    function Preview_Result_Value

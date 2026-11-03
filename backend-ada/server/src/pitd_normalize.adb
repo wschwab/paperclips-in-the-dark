@@ -3102,7 +3102,6 @@ package body Pitd_Normalize is
                            Count      : constant Integer := Integer (Length (Extra_Arr));
                            Ptr        : constant String :=
                              "/cohorts/" & Trim_Image (I - 1) & "/extraTypes";
-                           Non_String : Boolean := False;
                         begin
                            if Count > Extra_Max then
                               declare
@@ -3117,21 +3116,6 @@ package body Pitd_Normalize is
                                  Append (Out_A, X);
                               end;
                            end if;
-                           for J in 1 .. Count loop
-                              if Get (Extra_Arr, J).Kind /= JSON_String_Type then
-                                 Non_String := True;
-                              end if;
-                           end loop;
-                           if Non_String then
-                              declare
-                                 X : JSON_Value := Create_Object;
-                              begin
-                                 Set_Field (X, "pointer", Ptr);
-                                 Set_Field (X, "reason", "extraTypes elements must be strings");
-                                 Set_Field (X, "expected", "an array of strings");
-                                 Append (Out_A, X);
-                              end;
-                           end if;
                         end;
                      end if;
                   end;
@@ -3139,8 +3123,57 @@ package body Pitd_Normalize is
             end;
          end loop;
       end;
+      declare
+         Element_Issues : constant JSON_Array := Cohort_Element_Issues (Doc);
+      begin
+         for K in 1 .. Length (Element_Issues) loop
+            Append (Out_A, Get (Element_Issues, K));
+         end loop;
+      end;
       return Out_A;
    end Cohort_Type_Issues;
+
+   function Cohort_Element_Issues (Doc : JSON_Value) return JSON_Array is
+      Out_A   : JSON_Array := Empty_Array;
+      Cohorts : constant JSON_Value := Get_At_Pointer (Doc, "/cohorts");
+   begin
+      if Cohorts.Kind /= JSON_Array_Type then
+         return Out_A;
+      end if;
+      declare
+         Arr : constant JSON_Array := Get (Cohorts);
+      begin
+         for I in 1 .. Length (Arr) loop
+            declare
+               Item : constant JSON_Value := Get (Arr, I);
+            begin
+               if Item.Kind = JSON_Object_Type and then Has_Field (Item, "extraTypes")
+                 and then Get (Item, "extraTypes").Kind = JSON_Array_Type
+               then
+                  declare
+                     Extra_Arr : constant JSON_Array := Get (Get (Item, "extraTypes"));
+                  begin
+                     for J in 1 .. Length (Extra_Arr) loop
+                        if Get (Extra_Arr, J).Kind /= JSON_String_Type then
+                           declare
+                              X : JSON_Value := Create_Object;
+                           begin
+                              Set_Field (X, "pointer",
+                                         "/cohorts/" & Trim_Image (I - 1) & "/extraTypes");
+                              Set_Field (X, "reason", "extraTypes elements must be strings");
+                              Set_Field (X, "expected", "an array of strings");
+                              Append (Out_A, X);
+                           end;
+                           exit;
+                        end if;
+                     end loop;
+                  end;
+               end if;
+            end;
+         end loop;
+      end;
+      return Out_A;
+   end Cohort_Element_Issues;
 
    --  True when any change entry in Changes has the given reason prefix
    --  (used to detect classified unknown-key removals).

@@ -1913,10 +1913,11 @@ if Kind = "crew" then
                         AWS.Messages.S422);
                   end;
                end if;
-               --  A stored null extraTypes is canonicalized to [] before the gate
-               --  sees it, which would hide a value undo and import refuse. Other
-               --  stored non-array shapes stay needs-input and are repaired by the
-               --  caller-supplied value, so only null is refused here.
+               --  A stored null extraTypes, or an array holding a non-string element,
+               --  is refused here: canonicalization would hide it (null becomes [],
+               --  and the settings clamp can drop the element). Other stored
+               --  non-array shapes stay needs-input and are repaired by the
+               --  caller-supplied value.
                declare
                   Null_Issues : JSON_Array := Empty_Array;
                begin
@@ -1943,6 +1944,13 @@ if Kind = "crew" then
                         end loop;
                      end;
                   end if;
+                  declare
+                     Element_Issues : constant JSON_Array := Cohort_Element_Issues (E);
+                  begin
+                     for K in 1 .. Length (Element_Issues) loop
+                        Append (Null_Issues, Get (Element_Issues, K));
+                     end loop;
+                  end;
                   if Length (Null_Issues) > 0 then
                      Release_Locks;
                      return Json_Response
@@ -2466,17 +2474,10 @@ if Kind = "crew" then
          E : constant JSON_Value := Get (Item, "document");
          Kind : constant String := Str_Field (Item, "kind");
          Id : constant String := Str_Field (Item, "id");
-         Issues : constant JSON_Array := Reference_Issues (Kind, Id, E);
-         --  Batch members get the same cohort bound as the single-entity route.
-         Bound : constant JSON_Array :=
-           (if Kind = "crew" then Cohort_Type_Issues (E) else Empty_Array);
-         Refusal : constant JSON_Array := (if Length (Issues) > 0 then Issues else Bound);
          Valid : Boolean;
-      begin
-         if not Bool_Field (Item, "changed") then return; end if;
-         Schema_Check (Kind, E, Valid);
-         if not Valid then raise Program_Error with "batch result fails schema validation"; end if;
-         if Length (Refusal) > 0 then
+
+         procedure Refuse (Refusal : JSON_Array) is
+         begin
             All_Ok := False;
             declare
                Output : constant JSON_Value := Get (Outs, Positive (Int_Field (Item, "lastIndex")));
@@ -2485,7 +2486,29 @@ if Kind = "crew" then
             begin
                Set_Field (Output, "ok", False); Set_Field (Output, "error", JSON_Value'(Get (Failure, "error")));
             end;
+         end Refuse;
+      begin
+         if not Bool_Field (Item, "changed") then return; end if;
+         --  Batch members get the same cohort bound as the single-entity route.
+         --  It runs before the schema check, which would raise on a non-string
+         --  extraTypes element instead of refusing it.
+         if Kind = "crew" then
+            declare
+               Bound : constant JSON_Array := Cohort_Type_Issues (E);
+            begin
+               if Length (Bound) > 0 then
+                  Refuse (Bound);
+                  return;
+               end if;
+            end;
          end if;
+         Schema_Check (Kind, E, Valid);
+         if not Valid then raise Program_Error with "batch result fails schema validation"; end if;
+         declare
+            Issues : constant JSON_Array := Reference_Issues (Kind, Id, E);
+         begin
+            if Length (Issues) > 0 then Refuse (Issues); end if;
+         end;
       end Validate_Final;
 
       procedure Stage_Final (Key : UTF8_String; Item : JSON_Value) is
