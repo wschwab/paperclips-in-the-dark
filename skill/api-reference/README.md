@@ -387,6 +387,7 @@ schema:
 Responses:
 
 - `200`: OperationResult
+- `400`: OperationResult
 - `500`: OperationResult
 
 ## listGames
@@ -1242,6 +1243,7 @@ schema:
 Responses:
 
 - `200`: OperationResult
+- `400`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
 - `500`: OperationResult
@@ -1271,6 +1273,7 @@ schema:
 Responses:
 
 - `200`: OperationResult
+- `400`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
 - `500`: OperationResult

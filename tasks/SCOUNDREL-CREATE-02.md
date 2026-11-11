@@ -104,3 +104,36 @@ that the attribute ratings equal the count of positive action ratings.
 No gate is claimed from design alone; counts above come from the recorded runs.
 All servers were managed launchers on independently selected free ports with
 temporary data directories; the default/9657 playtesting server was never used.
+
+## Independent review rounds
+
+**Round 1 — FAIL** at `73cb8234` (record:
+`tasks/metrics/frontend/SCOUNDREL-CREATE-02-sol-r1-verdict.txt`). The reviewer
+independently exercised HTTP and real Chromium and confirmed the rule, the draft
+semantics, legacy read identity, the frontend cutover, containment and the
+heading hierarchy, then raised three P2 defects:
+
+1. Finishing allocation left the sheet's creation-era action caps cached: Hunt
+   kept two dots although the server already reported `effectiveMax` 3, and only
+   a manual reload added the third. Fixed by refreshing the capability
+   projection on successful completion (`character-detail.ts`), with a red-first
+   vitest case and a new browser assertion that the rendered dot count equals the
+   server `effectiveMax` immediately after finishing, with no reload.
+2. A rejected pending-allocation write returned the mutated candidate in
+   `error.entity` (Skirmish 3 / XP 0) while storage and GET still held Skirmish 2
+   / XP 6. Fixed by cloning the incoming entity in `Mutate` and returning that
+   current DTO from the late allocation gate (`pitd_ops.adb`).
+3. Allocation validation failures were delivered as HTTP 200 although the body
+   and the contract say 400. Fixed by extending the HTTP-400 delivery to
+   `talent.allocation.complete`, `action.set-rating`, `attribute.levelup` and
+   their batch members (`pitd_callback.adb`); unrelated operations keep their
+   existing delivery.
+
+Red-first evidence for the fixes: the strengthened conformance suite failed
+2/4 tests (eight assertions: seven transport-status mismatches plus the mutated
+`error.entity`), and the frontend regression failed with `expected …(2) to have
+a length of 3 but got 2`. After the fixes: focused conformance 17/17, frontend
+1048/1048, Ada two-cycle 688 + 1 skipped per cycle, browser 6/6, Chromium 27/27
+with the new no-reload cap assertion, isolated mutation re-run with refreshed
+pins. Round 2 verdict is recorded at
+`tasks/metrics/frontend/SCOUNDREL-CREATE-02-sol-verdict.txt`.

@@ -519,13 +519,16 @@ paths:
         budget are advisory for every member. Sequential changes are atomic;
         failed batches leave assistance and bookkeeping unchanged. Existing
         batch revision/idempotency/undo and all-or-nothing conventions apply.
-        UNKNOWN-OP-01: a structurally admitted batch returns HTTP 200 with
-        ok:true/error:null to report evaluated member outcomes, not to claim
-        all members succeeded or writes committed. Unknown and schema-invalid
-        members both report ok:false with VALIDATION/status:400 and issues.
-        If any member fails, no entity, revision or history is written.
-        Clients must inspect every batch member; do not infer success from
-        the aggregate HTTP status or ok field alone.
+        UNKNOWN-OP-01: a structurally admitted batch normally returns HTTP 200
+        with ok:true/error:null to report evaluated member outcomes, not to
+        claim all members succeeded or writes committed. Exception: a member
+        VALIDATION from talent.allocation.complete, action.set-rating or
+        attribute.levelup delivers the aggregate with HTTP 400. Unrelated
+        member failures retain HTTP 200. Unknown and schema-invalid members
+        report ok:false with VALIDATION/status:400 and issues. If any member
+        fails, no entity, revision or history is written. Clients must inspect
+        every batch member; do not infer success from the aggregate HTTP
+        status or ok field alone.
       parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -581,6 +584,7 @@ paths:
                             not: { enum: [mode.set, mode.flow.set, flow.step.complete, downtime.spend, downtime.adjust, downtime.reset] }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }
 
   /games:
@@ -1389,6 +1393,7 @@ paths:
                 action: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }
@@ -1412,6 +1417,7 @@ paths:
                 rating: { type: integer, minimum: 0 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }

@@ -85,6 +85,15 @@
       "operationId": "actionSetRating",
       "method": "POST",
       "path": "/characters/{id}/ops/action.set-rating",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "actionSetRating",
+      "method": "POST",
+      "path": "/characters/{id}/ops/action.set-rating",
       "status": "404",
       "kind": "schema",
       "schemaName": "operationResult",
@@ -149,6 +158,15 @@
       "method": "POST",
       "path": "/characters/{id}/ops/attribute.levelup",
       "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "attributeLevelup",
+      "method": "POST",
+      "path": "/characters/{id}/ops/attribute.levelup",
+      "status": "400",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false
@@ -257,6 +275,15 @@
       "method": "POST",
       "path": "/campaign/batch",
       "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "batch",
+      "method": "POST",
+      "path": "/campaign/batch",
+      "status": "400",
       "kind": "schema",
       "schemaName": "operationResult",
       "collection": false

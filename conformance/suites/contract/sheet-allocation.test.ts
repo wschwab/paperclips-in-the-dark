@@ -2,7 +2,7 @@ import { expect } from "vitest";
 import { api } from "../../src/api.js";
 import { testCase } from "../../src/test-case.js";
 import { firstPlaybook, gameSetting } from "../../src/game-data.js";
-import { decode, Schemas, type OperationResultDto } from "../../src/schemas.js";
+import { assertResponseValid, decode, Schemas, type OperationResultDto } from "../../src/schemas.js";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -14,6 +14,11 @@ const names = setting.Attributes.flatMap(a => a.Actions.map(x => x.Name));
 const free = names.filter(n => !(n in defaults));
 const budget = setting.StartingActionDots!;
 const cap = setting.StartingActionDotMax!;
+const allocationEndpoints: Record<string, string> = {
+  "action.set-rating": "actionSetRating",
+  "attribute.levelup": "attributeLevelup",
+  "talent.allocation.complete": "talentAllocationComplete",
+};
 
 async function draft() {
   const response = await api.post("characters/pc", { gameStem: stem, playbook });
@@ -33,6 +38,7 @@ async function rejected(id: string, op: string, body: unknown) {
   // Check the whole current DTO, including revision, action ratings and XP.
   expect.soft(result.error?.entity).toEqual(before.body);
   expect.soft(response.status).toBe(400);
+  expect.soft(() => assertResponseValid(allocationEndpoints[op], response.status, response.body)).not.toThrow();
   expect((await api.get(`characters/${id}`)).rawBody).toBe(before.rawBody);
 }
 
@@ -127,5 +133,35 @@ testCase("CREATE02-LEVELUP", "levelup cannot bypass draft defaults and batch can
     expect(failure.error?.status).toBe(400);
   }
   expect.soft(response.status).toBe(400);
+  expect.soft(() => assertResponseValid("batch", response.status, response.body)).not.toThrow();
   expect((await api.get(`characters/${character.id}`)).rawBody).toBe(before.rawBody);
+});
+
+testCase("CREATE02-BATCH-RESPONSES", "allocation member responses match the contract without changing unrelated validation delivery", async () => {
+  const character = await draft();
+  const locked = Object.keys(defaults)[0];
+  const attribute = character.talent.attributes.find(a => a.actions.some(x => x.name === locked))!;
+  expect((await api.characterOp(character.id, "attribute-xp.add", {
+    attribute: attribute.name, delta: attribute.experience.max,
+  })).ok).toBe(true);
+  const current = await api.character(character.id);
+  const cases = [
+    { op: "talent.allocation.complete", args: {}, status: 400 },
+    { op: "action.set-rating", args: { action: locked, rating: defaults[locked] - 1 }, status: 400 },
+    { op: "attribute.levelup", args: { attribute: attribute.name, action: locked }, status: 400 },
+    { op: "trauma.add", args: { trauma: setting.Traumas[0] }, status: 200 },
+  ];
+  for (const { op, args, status } of cases) {
+    const response = await api.post("campaign/batch", { ops: [{
+      entity: "character", id: character.id, revision: current.revision, op, args,
+    }] });
+    const result = await api.operation(response);
+    expect(result.batch).toHaveLength(1);
+    expect(result.batch![0].ok).toBe(false);
+    expect(result.batch![0].error?.code).toBe("VALIDATION");
+    expect(result.batch![0].error?.status).toBe(400);
+    expect.soft(response.status).toBe(status);
+    expect.soft(() => assertResponseValid("batch", response.status, response.body)).not.toThrow();
+    expect(await api.character(character.id)).toEqual(current);
+  }
 });

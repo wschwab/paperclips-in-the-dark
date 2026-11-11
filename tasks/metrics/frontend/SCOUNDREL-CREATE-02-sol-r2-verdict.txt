@@ -1,0 +1,76 @@
+VERDICT: FAIL
+SCOUNDREL-CREATE-02 — independent GPT 6.1 Sol round-2 review of 01c872d5
+
+One remaining P2 blocks approval: round-1 finding 3 is fixed in HTTP delivery but not in the endpoint contract. The three requested runtime fixes otherwise passed independent checks.
+
+FINDING
+
+1. [P2] Newly delivered HTTP 400 responses are absent from the affected OpenAPI endpoints.
+   Locations: contract/openapi.yaml:1390-1394 (attributeLevelup), :1413-1417 (actionSetRating), :582-584 (batch), and :522-528 (batch description).
+   The two single-operation response tables declare 200/404/409/500, not 400. The batch table declares only 200/500, and its description explicitly promises HTTP 200 for structurally admitted batches with failed members. This now contradicts backend-ada/server/src/pitd_callback.adb:2319-2328 and :2651-2659,2698-2700.
+   Independently observed on managed http://127.0.0.1:42923:
+   - POST /api/characters/41da7a14-5957-41a1-88b6-31130e719232/ops/action.set-rating {action:"Skirmish",rating:0}: HTTP 400, error.code VALIDATION, error.status 400 (http-transcript.jsonl line 10).
+   - POST the same character's /ops/attribute.levelup {attribute:"Prowess",action:"Skirmish"}, with full Prowess XP: HTTP 400, VALIDATION/status 400 (line 17).
+   - POST /api/campaign/batch containing a single under-budget talent.allocation.complete member: HTTP 400, member VALIDATION/status 400 (line 20). Batch action.set-rating and attribute.levelup also return 400 (lines 23,26).
+   Ran the repository's assertResponseValid against these actual responses:
+     cd /tmp/sc02-sol-review2/repo/conformance
+     node --import tsx /tmp/sc02-sol-review2/contract-transport.mts
+   Exact diagnostic output:
+     no response schema for endpoint actionSetRating status 400
+     no response schema for endpoint attributeLevelup status 400
+     no response schema for endpoint batch status 400
+   Completion's own 400 response validates successfully; its declaration at contract/openapi.yaml:1429-1434 is correct. Diagnostic evidence: /tmp/sc02-sol-review2/contract-transport.json:1-29. The existing focused tests decode OperationResult and assert status but do not run endpoint/status validation (conformance/suites/contract/sheet-allocation.test.ts:26-36,118-130), explaining why 17/17 can pass with this gap.
+   Impact: documented/API-generated clients and the contract-derived conformance validator cannot recognize valid allocation-rejection responses; the batch prose also tells callers the wrong delivery rule.
+   Required fix: declare 400 on these three affected endpoints; document the allocation-validation exception to batch's HTTP-200 convention while preserving unrelated member delivery. Add endpoint/status validation to the affected regression paths and regenerate contract-derived artifacts through the existing generators as needed. This is the outstanding contract-consistency requirement from round-1 finding 3, not a request to change unrelated operations.
+
+ROUND-1 FIX VERIFICATION
+
+1. Cached caps — PASS.
+   Source: frontend/src/pages/character-detail.ts:1784-1798 calls refreshCaps on completion; the existing helper at :593-607 replaces the capability projection and rerenders.
+   Independently drove real Chromium through creation, Hunt 2 / Study 2 allocation, reload of the pending draft, and explicit completion at actual 390x844 dark and 1440x1000 light viewports on managed port 41143. Before completion Hunt had two buttons and server effectiveMax 2. Immediately after completion, without reload, the banner disappeared and Hunt offered buttons 1/2/3, matching server effectiveMax 3. A following reload left the recorded state unchanged at both widths.
+   Native browser API: browser.open({name:'sc02r2Live',url:'http://127.0.0.1:41143/character/create',viewport:{width:390,height:844},app:{tern:false,relay:false},headed:false}); second tab used width 1440,height 1000. Used select/click/reload/waitForSelector plus page.evaluate for DOM and HTTP observations. A large-screen click encountered a replaced element; focusing the completion button and pressing Enter completed the same pending draft without another reload.
+   Evidence: /tmp/sc02-sol-review2/live-small-reload.json:1-29; live-large-reload.json:1-29; inspected live-390-dark-cap3.png and live-1440-light-cap3.png. The fresh nine-journey matrix also asserted every rendered action-dot count equals the server effectiveMax immediately after completion (frontend/scripts/scoundrel-create-02-probe.mjs:121-133).
+
+2. Rejected candidate DTO — PASS.
+   Source: backend-ada/server/src/pitd_ops.adb:798-801 clones the incoming pending entity; :2398-2402 returns that clone from the late allocation gate rather than the modified candidate.
+   Independent HTTP probe compared the entire error.entity to the preceding GET, including revision, ratings and XP, then checked the following GET and stored bytes were unchanged. Covered default-locked setter, above-starting-cap setter, over-total-budget setter, default-locked level-up, above-starting-cap level-up, over-total-budget level-up, and single-member batch variants of completion/setter/level-up.
+   Examples: http-transcript.jsonl line 17 reports revision 2, Skirmish 2, Prowess XP 6; line 33 reports revision 4, Hunt 2, Insight XP 6; line 37 reports revision 5, Survey 0, Insight XP 6. These equal the pre-operation DTOs, not the incremented/XP-cleared candidates. Setter rejection is the independently verified second rejection kind (lines 10,13,40). Concise evidence: /tmp/sc02-sol-review2/http-excerpts.json and http-summary.json.
+
+3. HTTP delivery — runtime PASS; contract FAIL as finding 1 above.
+   All affected single-operation validations and each affected batch member type returned HTTP 400 with VALIDATION/status 400 (http-transcript.jsonl lines 7,10,13,17,20,23,26,33,37,40,44).
+   Unrelated delivery remains unchanged: validly shaped trauma.add without pending trauma returned HTTP 200 with VALIDATION/status 400 (line 28); an unknown batch member retained aggregate HTTP 200 with member VALIDATION/status 400 (line 29). Those pre-existing unrelated conventions were not expanded into new findings.
+
+UNAFFECTED BEHAVIOR RECHECKED
+
+Independent probe command, from /tmp/sc02-sol-review2/repo:
+  env TMPDIR=/tmp/sc02-sol-review2/tmp node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults --keep -- node /tmp/sc02-sol-review2/http-probe.mjs
+Result: HTTP_PROBE_PASS: 21 checks; 60 recorded requests; managed port 42923. Script and full responses are retained under /tmp/sc02-sol-review2/.
+
+- Derived attribute ratings: count-positive invariant asserted after ordinary /characters creation, draft and complete-map /characters/pc creation, up/down action changes, successful level-up, batch, undo, and import with deliberately false supplied attribute ratings. Probe transcript lines 3-5,30-31,35,42,46-49,51-57; assertions in the command above. Reference rule independently reread at blades-in-the-sheets/Models/Characters/TalentAttribute.cs:27-28.
+- Draft omission/defaults, locks, per-action cap, total budget, exact-budget completion and completion awarding nothing: checked by the probe command above; completion compared attributes/XP and dossier/playbook/monitor/fund/gear/session/rolodex against the pre-completion state. Focused sheet-allocation.test.ts:52-87 also passed.
+- Legacy read: removed allocationPending and attribute ratings only from an isolated ordinary character's current.json. GET returned 200, allocationPending false and derived ratings; revision stayed 1; export equaled GET; stored bytes and mtimeNs remained unchanged. Probe transcript lines 58-60; http-summary.json final check; focused sheet-allocation.test.ts:89-108 passed.
+- Strict frontend DTOs: frontend/src/schema/character.ts:140-149 requires attribute.rating and talent.allocationPending with no optional/default compatibility fallback. No frontend source change beyond the reviewed capability refresh was present between 73cb8234 and 01c872d5 except its regression test.
+- Heading hierarchy, server ratings, descriptions and containment: fresh matrix command below passed all 27 creation/pending/complete surface cases and nine interactions across 1440x1000, 768x1024, 390x844 and light/dark/high contrast. numeric.json records zero document/container/hint horizontal overflow, heading size 20px versus action-label size 13.12px, no cap mismatches and zero page errors. Source: talents.ts:44-48,85-88; components.css:1149-1158. Inspected fresh 1440-dark-creation.png, 1440-light-sheet-complete.png, 390-dark-sheet-complete.png, 768-high-sheet-pending.png and the two native completion screenshots. Full-page captures include the existing fixed Game Mode dock; no new visual blocker found in this round.
+
+INDEPENDENT GATES AND LIMITS
+
+All executable checks ran in /tmp/sc02-sol-review2/repo, a scratch source/dependency copy; no build output was directed into the reviewed workspace. The supplied Ada binary was used; no file under backend-ada/server/src was newer than it. No independent Ada compilation/proof claim is made.
+
+- frontend/: npm test -- --run && npx tsc --noEmit && npm run build
+  PASS: 45 files, 1048 tests; TypeScript and Vite production build green.
+- conformance/: env TMPDIR=/tmp/sc02-sol-review2/tmp node scripts/managed-run.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- run suites/contract/sheet-allocation.test.ts suites/contract/pc-creation.test.ts
+  PASS: 17/17, managed port 39833; launcher reported successful cleanup.
+- repo/: env TMPDIR=/tmp/sc02-sol-review2/tmp PITD_BROWSER_ARTIFACTS=/tmp/sc02-sol-review2/journeys node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- node conformance/scripts/browser-suite.mjs --child
+  PASS: six journeys, managed port 35543; artifacts in journeys/; launcher reported successful cleanup.
+- repo/: env TMPDIR=/tmp/sc02-sol-review2/tmp SCOUNDREL_EVIDENCE_OUT=/tmp/sc02-sol-review2/matrix node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- node frontend/scripts/scoundrel-create-02-probe.mjs
+  PASS: 27 surface cases, nine sheet-first journeys, managed port 35317; fresh screenshots and numeric.json in matrix/; launcher reported successful cleanup.
+- Reviewed workspace: /home/x/.agents/skills/impeccable/scripts/impeccable detect --json frontend/src/pages/character-create.ts frontend/src/pages/character-sections/talents.ts frontend/src/pages/character-detail.ts
+  Output: [].
+- Contract transport diagnostic command above: three undeclared response statuses, one valid completion status. This is the blocking evidence, not an all-green contract gate.
+- DID NOT rerun the full Ada two-cycle suite, SPARK, the 233-case tooling suite, the full mutation campaign or pin audit, metrics/traceability/reconciliation validators, conformance TypeScript, or docs build. Author-reported results for those gates are not claimed as independently reproduced here.
+
+Review-environment corrections: the first scratch conformance launch failed before tests because the copy filter excluded dependency dist directories. Dependencies were copied privately and the affected command then passed. The first independent HTTP helper used {name:...} instead of the documented {trauma:...}; its admission rejection was a reviewer error, corrected in scratch before the successful 60-request run. Initial transcript retained as http-transcript-initial-helper-error.jsonl. The diagnostic's first dereferenced .bin/tsx invocation failed to resolve its adjacent module; node --import tsx then ran successfully. Supplemental native-browser raw-method screenshot/viewport attempts timed out after the required small/large transition checks had already passed; they are not counted as extra verification.
+
+ISOLATION / DISPOSITION
+
+jj log/diff were read-only; 01c872d5 to the working revision differed only in tasks/SCOUNDREL-CREATE-02.md. No implementation, contract, tests, docs, evidence, metrics, mutation catalog or generated-artifact edit was made. Only scratch files and this verdict were intentionally written. All HTTP/browser backends were managed launchers with --seed-defaults, free loopback ports and temporary campaign data; port 9657 and its process were never used. Native Chromium tabs were released and the held port-41143 launcher was stopped through its owned service handle. No commits, pushes or jj mutations. Approval requires the narrowly scoped endpoint-contract correction and affected response validation to pass.
