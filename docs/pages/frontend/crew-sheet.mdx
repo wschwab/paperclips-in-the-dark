@@ -1,0 +1,328 @@
+---
+title: Crew sheet rules and settings
+---
+
+# Crew sheet rules and settings
+
+CREW-SHEET-02 separates a crew's favored operation (or cargo specialty), its
+hunting grounds, starting upgrade marks, and player-entered contacts. These are
+sheet data, not automatic score adjudication.
+
+## Settings interface
+
+Every `CrewTypes[]` object may optionally provide:
+
+```ts
+FavoredOperations?: string[]
+FavoredOperationLabel?: string
+FavoredOperationFreeText?: boolean
+StartingUpgrades?: { Name: string; BoxesMarked: number }[]
+Contacts?: { Name: string; Profession: string }[]
+LegacyNames?: string[]
+LegacyAbilityNames?: Record<string, string>
+LegacyUpgradeNames?: Record<string, string>
+LegacyFavoredOperations?: Record<string, string>
+```
+
+The game settings may also declare the crew and scoundrel starting defaults
+(`data/games/blades-in-the-dark.json`):
+
+```json
+"CrewStartingHold": "strong",
+"CrewStartingCoin": 2,
+"StartingSatchelCoins": 0
+```
+
+A valid `StartingSatchelCoins` above the settings' own
+`FundMaxima.SatchelMax` is clamped to that maximum at creation, so a stored
+satchel is never over capacity and a later `fund.gain` cannot report negative
+space and destroy owned coin; an absent or unusable value falls back to 0.
+
+All three keys are optional in `game-settings-schema.json`. A game file that
+omits them falls back to the canonical structural defaults — hold `strong`, coin
+`0`, satchel `0` — which is what the reference C# `Crew` constructor and
+`FundSatchel` actually do: `Hold = CrewHold.Strong`, no `Coin` initializer (0),
+satchel coins start at 0. Blades in the Dark ships the SRD's numbers instead
+(a new crew is Tier 0, strong hold, 0 rep, 2 coin; a new scoundrel has no
+starting coin). The former Ada literals — weak hold and 2 satchel coin — matched
+neither. Scum and Villainy and the French and Russian editions leave the keys
+absent and take the structural fallback; they are not covered by this change.
+
+`crew-settings-schema.json` permits omission of every field above, including for
+other games. A starting grant has a positive integer `BoxesMarked`; `Name`
+references that crew type's `Upgrades[]` catalog, whose `TotalBoxes` supplies the
+maximum. A grant is **not** a copy of the catalog entry: it has neither
+`TotalBoxes` nor `Description`. Scum and Villainy's existing grants are migrated
+to this shape without changing their selection; the two-box Shields grant stays
+two boxes. The `Contacts` setting is a list of private picker suggestions, not
+the saved crew's contact relationships. Like scoundrel Rolodex suggestions, it
+must not overwrite existing user contacts.
+
+The optional saved DTO string is `favoredOperation`; new/write-normalized crews
+use `""` when unset, while legacy reads remain unchanged. The write operation is
+`favored-operation.set` with `{ value: string }`. The descriptive selection does
+not restrict what scores a crew can attempt. See the official
+[crew creation SRD](https://bladesinthedark.com/crew).
+
+## Verified per-type defaults
+
+Every name below was re-read from the official **v8.2 crew sheets** themselves
+(one PDF per crew type, linked at the end of this page) and cross-checked
+against the [crew creation SRD](https://bladesinthedark.com/crew). The earlier
+[Player's Kit v8.2](https://bladesinthedark.com/sites/default/files/blades_playerkit_v8_2.pdf)
+reading, PDF pages 13–18, stands: the sheets' premarked circles agree with it.
+The website's generic [Crew Playbook](https://bladesinthedark.com/crew-playbook)
+contains examples, not six authoritative per-crew lists; those examples must not
+be distributed among crews as defaults.
+
+| Crew setting name | Special abilities (printed order; every type also prints Veteran) | Hunting-ground options | Starting upgrades (one mark each) |
+| --- | --- | --- | --- |
+| Assassins | Deadly; Crow's Veil; Emberdeath; No Traces; Patron; Predators; Vipers | Accident; Disappearance; Murder; Ransom | Insight Training; Prowess Training |
+| Bravos | Dangerous; Blood Brothers; Door Kickers; Fiends; Forged in the Fire; Patron; War Dogs | Battle; Extortion; Sabotage; Smash & Grab | Cohort (Gang or Expert); Prowess Training |
+| Cult | Chosen; Anointed; Bound in Darkness; Conviction; Glory Incarnate; Sealed in Blood; Zealotry | Acquisition; Augury; Consecration; Sacrifice | Cohort (Gang or Expert); Resolve Training |
+| Hawkers | Silver Tongues; Accord; The Good Stuff; Ghost Market; High Society; Hooked; Patron | Sale; Supply; Show of Force; Socialize | Secure Lair; Resolve Training |
+| Shadows | Everyone Steals; Ghost Echoes; Pack Rats; Patron; Second Story; Slippery; Synchronized | Burglary; Espionage; Robbery; Sabotage | Hidden Lair; Prowess Training |
+| Smugglers | Like Part of the Family; All Hands; Ghost Passage; Just Passing Through; Leverage; Reavers; Renegades | Arcane/weird; Arms; Contraband; Passengers (cargo types) | Vehicle; Prowess Training |
+
+`Veteran` — "Choose a special ability from another crew." — is printed with the
+seven type abilities on every sheet. Its name and description are shared, but
+`TimesTakeable` follows the printed circles: **3 for Assassins; 2 each for
+Bravos, Cult, Hawkers, Shadows and Smugglers**. These counts were visually
+verified by rasterizing PDF pages 13–18, respectively, of the official
+[Player's Kit v8.2](https://bladesinthedark.com/sites/default/files/blades_playerkit_v8_2.pdf);
+they are not a universal one-take limit.
+
+Each sheet also lists **five crew-specific upgrades**, stored in that type's
+`Upgrades[]` catalog:
+
+| Crew setting name | Crew-specific upgrades |
+| --- | --- |
+| Assassins | Assassin rigging; Ironhook Contacts; Elite Skulks; Elite Thugs; Hardened |
+| Bravos | Bravos rigging; Ironhook Contacts; Elite Rovers; Elite Thugs; Hardened |
+| Cult | Cult rigging; Ritual sanctum in lair; Elite Adepts; Elite Thugs; Ordained |
+| Hawkers | Hawker's rigging; Ironhook Contacts; Elite Rooks; Elite Thugs; Composed |
+| Shadows | Thief Rigging; Underground maps & passkeys; Elite Rooks; Elite Skulks; Steady |
+| Smugglers | Smuggler's rigging; Camouflage; Elite Rovers; Barge; Steady |
+
+**Ironhook Contacts** on Assassins, Bravos and Hawkers grants **+1 Tier in
+prison**, as printed on kit pages 13, 14 and 16. It is not limited to dealing
+with contacts. The [Crew Playbook SRD's Prison Contacts entry](https://bladesinthedark.com/crew-playbook)
+clarifies that the benefit applies to **any Tier-related element in prison,
+including the incarceration roll**; the catalog descriptions include that full
+benefit.
+
+The premarked boxes were read off the sheets' filled-circle glyphs (every one of
+the six sheets was legible; none had to be guessed) and agree with the earlier
+kit reading: Assassins mark both Insight and Prowess Training; Bravos, Shadows and
+Smugglers mark Prowess Training; Cult and Hawkers mark Resolve Training. Of the
+lair rows, Hawkers mark the first Secure Lair box, Shadows mark the single
+Hidden Lair box, and Smugglers mark the first of the two Vehicle boxes; no other
+lair box is premarked. Bravos and Cult mark no lair box at all: their second
+preset upgrade is the cohort the SRD names ("like Prowess Training and a gang of
+Thugs for the Bravos crew"), stored as the `Cohort (Gang or Expert)` catalog key.
+
+The non-Smugglers label is `Favored operation`. Smugglers use
+`FavoredOperationLabel: "Cargo type"` with the sheet's four cargo types, plus
+`FavoredOperationFreeText: true`. The stored `favoredOperation` string is free
+text for every crew type; the client renders the type's `FavoredOperations` as a
+fixed menu unless `FavoredOperationFreeText` is true, in which case it renders a
+text field that offers those entries as suggestions. The flag defaults to
+`false` and is set on Smugglers only, so a table can write a cargo the list does
+not contain. The
+[Smugglers sheet](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Smugglers.pdf)
+labels the area **cargo types**, unlike hunting grounds/sacred sites/sales
+territory on the other sheets; the label is display-only.
+
+The two preset upgrades are followed by two player-selected upgrades under the
+[crew creation rules](https://bladesinthedark.com/crew). Starting marks are not
+maximums: Hawkers start with only the first of Secure Lair's two boxes; likewise
+Smugglers start with only the first Vehicle box. Training is track-specific, so
+the catalog includes Insight, Prowess, Resolve and Playbook Training separately.
+The old unspecified `Training` catalog entry remains to preserve saved crews;
+new choices should use the named track entries.
+
+The existing `Cohort (Gang or Expert)` catalog key records the Bravos/Cult
+preset in `StartingUpgrades`. **Marking that key does not create a gang.**
+Actual Thugs/Adepts, their edges/flaws and other details are managed through the
+existing cohort flow. This metadata change does not add automatic cohort
+provisioning. The SRD separately prices recruiting a new cohort at two upgrades;
+the legacy one-box catalog key must not be mistaken for that recruitment price.
+
+## Hunting grounds are a separate field
+
+The [official SRD](https://bladesinthedark.com/crew) describes a small area
+(three or four blocks), which need not share the lair's district. A crew chooses
+a preferred operation there. Preparing that preferred operation on its hunting
+grounds gives an extra die to gather information and an extra downtime activity
+contributing to it. Acquiring turf can expand the area or its methods. None of
+this means the app should infer turf from the hunting-grounds text, automatically
+award downtime activities, or use a cargo specialty as a geographic location.
+The kit's Cult and Hawkers sheets use the labels sacred sites and sales
+territory respectively; these remain narrative descriptions of the area.
+
+## Vehicles and facilities
+
+The [Smugglers sheet](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Smugglers.pdf)
+has **two independent two-box Vehicle rows**, the first box of the first row
+premarked, plus Prowess Training. The settings represent those rows with distinct
+keys `Vehicle` and `Additional Vehicle` so marking one cannot silently improve
+or replace the other. This is not a preselected Boat House, a Carriage House, or
+a gang of Rovers. Both catalog descriptions provide table-defined tracking
+guidance: the table decides what each vehicle and its marks represent. Neither
+the sheet nor the [Crew Playbook SRD](https://bladesinthedark.com/crew-playbook)
+defines a generic "the second box improves it" rule for these Vehicle rows.
+No automatic improvement, speed bonus or armor bonus is inferred from a mark.
+
+[General upgrade rules](https://bladesinthedark.com/crew) independently define:
+
+- **Boat House**: a boat, dock and supply shack; its second upgrade adds armor
+  and cargo capacity.
+- **Carriage House**: a carriage, draft animals and stable; its second upgrade
+  adds armor and larger, swifter draft animals.
+
+Both facility catalogs remain available, including to Smugglers, and existing
+saved facility names remain valid. They are not aliases for `Vehicle`.
+Vehicle-cohort conversion is specifically the **Like Part of the Family**
+special ability on the Smugglers sheet, with quality equal to Tier plus one and
+vehicle-specific edges/flaws. Ordinary possession of a vehicle does not grant
+that ability or create a cohort. Its other ability, **Reavers**, explicitly
+confers vehicle armor in its stated circumstances; no such ability is implied
+by a starting upgrade mark.
+
+## Migration: legacy names
+
+The sheet names are canonical; crews saved before this change keep loading
+because every name they could have stored still resolves. Three kinds of legacy
+name are handled differently:
+
+- **Renamed crew type.** The sheet names the type **Cult**; crews stored as
+  `Cultists` keep that name on the wire and resolve to `Cult` through
+  `LegacyNames`. The client never rewrites the stored name; the server renames at
+  write time.
+- **Renamed catalog entries.** `LegacyUpgradeNames` maps a stored upgrade name to
+  the entry it was renamed to: Cult `Hardened` → `Ordained` (the sheet's +1 trauma
+  box upgrade) and Shadows/Smugglers `Composed` → `Steady` (the sheet's +1 stress
+  box upgrade). The legacy entry is not kept alongside its replacement, so a saved
+  mark resolves to the sheet name instead of double-counting.
+- **Renamed ability and operation names.** `LegacyAbilityNames` maps Assassins
+  `Death Veil` → `Crow's Veil` (the stored description was the second half of the
+  sheet's Crow's Veil). `LegacyFavoredOperations` maps the Smugglers entries
+  `Smuggling Arms`/`Smuggling Contraband`/`Smuggling Passengers` to the sheet's
+  `Arms`/`Contraband`/`Passengers`.
+
+Names that were **not on the sheet** are retained as catalog entries rather than
+mapped, so nothing a saved crew stored becomes unresolvable. Those entries say so
+in their `Description`. They are the old generic `Training`, `Hardened` and
+`Composed` rows on the crews whose sheet uses another name or lists no such
+upgrade, Hawkers' `Vice Den`, the
+`Quality:` rows (`Quality: Weapons`, `Quality: Implements (Arcane)`,
+`Quality: Supplies (Subterfuge)`, `Quality: Gear (Burglary & Climbing)`),
+`Boat House` and `Carriage House` (available to every type, including Smugglers),
+and the named training tracks. A name the catalog no longer knows is still
+rendered with its own row, so an unknown stored ability or upgrade never vanishes
+from a sheet.
+
+`data/games/crew-sheet.test.mjs` enforces the invariant: every upgrade name in the
+pre-change catalogs resolves for its crew type, either directly or through
+`LegacyUpgradeNames`.
+
+## Contacts and permission boundary
+
+Every shipped crew `Contacts` array is empty, including Scum and Villainy.
+Neither placeholder rows nor canonical named NPC suggestions ship in those
+arrays. Users can still enter their own contacts. The complete private restore
+inventory, including professions and provenance, lives only in the
+[setting content register](/contract/setting-content-register#crew-contact-private-restore-inventory).
+Restoration requires the permission decision; do not reintroduce the names in
+main game data or seed them into saved crews automatically.
+
+## Chromium evidence
+
+`conformance/scripts/crew-sheet-evidence.mjs` runs only through
+`conformance/scripts/managed-browser-smoke.mjs` (its own throwaway data dir and
+port; never a user server). It creates one Assassins and one Smugglers crew
+through the API, then in every state edits the favored operation (or cargo),
+saves it, reloads the page and re-reads it from the server.
+
+**18/18 passed**: 2 crew types × 1440×1000, 768×1024 and 390×844 × light, dark
+and high-contrast light. Each state asserts the applied `data-theme` /
+`data-contrast`, the saved value after a real reload, a visible starting-upgrade
+line, at least one lair-chart row, exactly one description per row, no stock
+contact picker on the public build, a visible custom contact field, the Vehicle
+row on Smugglers, and no horizontal overflow — `documentElement.scrollWidth`
+within `window.innerWidth`, and every measured container's `scrollWidth` within
+its `clientWidth` in both the read and the editing state. No page errors.
+
+Numeric record: `docs/public/evidence/crew-sheet-02/numeric.json`
+(18 records). Each record carries both the reading-state measurement
+(`numeric`) and the open-editor measurement (`editingNumeric`), each with the
+document's `innerWidth`/`scrollWidth` and every measured container's
+`clientWidth`, `scrollWidth`, bounding rectangle and computed layout, so the
+committed record proves the containment claim rather than only asserting it.
+Screenshots below: profile, upgrades, editing state and contacts for each state.
+
+### Blades in the Dark — Assassins (four favored-operation choices)
+
+| Viewport | Light | Dark | High contrast |
+| --- | --- | --- | --- |
+| 1440×1000 | <a href="/evidence/crew-sheet-02/assassins-1440-light-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-1440-light-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-1440-light-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-1440-light-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/assassins-1440-dark-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-1440-dark-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-1440-dark-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-1440-dark-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/assassins-1440-high-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-1440-high-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-1440-high-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-1440-high-contacts.png">contacts</a> |
+| 768×1024 | <a href="/evidence/crew-sheet-02/assassins-768-light-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-768-light-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-768-light-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-768-light-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/assassins-768-dark-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-768-dark-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-768-dark-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-768-dark-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/assassins-768-high-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-768-high-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-768-high-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-768-high-contacts.png">contacts</a> |
+| 390×844 | <a href="/evidence/crew-sheet-02/assassins-390-light-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-390-light-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-390-light-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-390-light-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/assassins-390-dark-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-390-dark-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-390-dark-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-390-dark-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/assassins-390-high-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/assassins-390-high-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/assassins-390-high-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/assassins-390-high-contacts.png">contacts</a> |
+
+### Blades in the Dark — Smugglers (cargo types, Vehicle starting mark)
+
+The Smugglers capture is the current one: cargo is a free-text field that offers
+the sheet's four cargo types as suggestions (`FavoredOperationFreeText: true`).
+The other five types render those settings as a fixed menu instead.
+
+| Viewport | Light | Dark | High contrast |
+| --- | --- | --- | --- |
+| 1440×1000 | <a href="/evidence/crew-sheet-02/smugglers-1440-light-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-light-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-light-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-light-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/smugglers-1440-dark-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-dark-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-dark-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-dark-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/smugglers-1440-high-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-high-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-high-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-1440-high-contacts.png">contacts</a> |
+| 768×1024 | <a href="/evidence/crew-sheet-02/smugglers-768-light-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-768-light-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-768-light-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-768-light-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/smugglers-768-dark-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-768-dark-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-768-dark-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-768-dark-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/smugglers-768-high-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-768-high-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-768-high-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-768-high-contacts.png">contacts</a> |
+| 390×844 | <a href="/evidence/crew-sheet-02/smugglers-390-light-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-390-light-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-390-light-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-390-light-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/smugglers-390-dark-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-390-dark-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-390-dark-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-390-dark-contacts.png">contacts</a> | <a href="/evidence/crew-sheet-02/smugglers-390-high-profile.png">profile</a> · <a href="/evidence/crew-sheet-02/smugglers-390-high-upgrades.png">upgrades</a> · <a href="/evidence/crew-sheet-02/smugglers-390-high-editing.png">editing</a> · <a href="/evidence/crew-sheet-02/smugglers-390-high-contacts.png">contacts</a> |
+
+The public build shows no stock contact picker in any capture; the picker path is
+covered by `frontend/src/pages/crew-sheet.test.ts` against restored private
+setting data.
+
+## Source and implementation provenance
+
+The read-only reference `Models/Settings/CrewGameSetting.cs` uses
+`CrewUpgradeSetting[] StartingUpgrades`, `ContactSetting[] Contacts` with
+`Name`/`Description`, and `string[] FavoredOperations`.
+`Models/Crews/CrewUpgrade.cs` starts marks at zero and bounds `Mark` using the
+catalog's `TotalBoxes`. `Models/Crews/Crew.cs` sets `Hold = CrewHold.Strong` in
+the `Crew` constructor and never initializes `Coin` (so it is 0);
+`Models/Characters/FundSatchel.cs` wraps a `BoundedInteger` that also starts at
+0, so a reference scoundrel begins with an empty satchel. The reference
+`UI/wwwroot/data/blades-in-the-dark-crews.json` contains placeholder contacts
+and noncanonical ability, operation and default assignments (for example,
+Assassins' Quality: Weapons plus cohort, and Smugglers' Boat House/Rigging
+listed as abilities). These were cross-checked rather than copied as rules
+authority; the six sheets are the authority for the lists above. The additive
+optional setting fields intentionally separate preset marks from catalog
+capacities, replace contact descriptions with the agreed `Profession` field, and
+record renamed names for saved crews. Reference files remain untouched.
+
+Sources:
+
+- [Official SRD: The Crew](https://bladesinthedark.com/crew) — crew creation
+  (Tier 0, strong hold, 0 rep, 2 coin), hunting grounds, general upgrades, cohort
+  recruitment.
+- [Official SRD: Crew Playbook](https://bladesinthedark.com/crew-playbook) — generic
+  template and example operations, not the per-type source.
+- [Official Player's Kit v8.2](https://bladesinthedark.com/sites/default/files/blades_playerkit_v8_2.pdf)
+  — PDF page 12 creation/general upgrades; pages 13–18 crew sheets.
+- [Official downloads](https://bladesinthedark.com/downloads) — publisher-hosted
+  individual sheets and the kit.
+- Official v8.2 crew sheets, one PDF per type, the authority for every list on
+  this page: [Assassins](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Assassins.pdf),
+  [Bravos](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Bravos.pdf),
+  [Cult](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Cult.pdf),
+  [Hawkers](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Hawkers.pdf),
+  [Shadows](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Shadows.pdf),
+  [Smugglers](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Smugglers.pdf).
+
+Rules attribution: John Harper, Blades in the Dark; SRD licensed
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Public availability
+of the kit is not treated as permission to ship setting NPC names.

@@ -124,6 +124,7 @@ export default defineConfig({
             { text: 'F2x — Crew XP', link: '/frontend/f2x-crew-xp' },
             { text: 'F2y — Contacts and factions', link: '/frontend/f2y-crew-contacts-factions' },
             { text: 'F2ac — Playtest features', link: '/frontend/f2ac-crew-sheet-features' },
+            { text: 'Crew setup and upgrade references', link: '/frontend/crew-sheet' },
           ],
         },
         { text: 'F2z — Layout', link: '/frontend/f2z-layout' },

@@ -3,7 +3,7 @@
  * the crew-detail page's render pass. DOM output is unchanged.
  */
 import { el } from "../../lib/dom.js";
-import { extractReputations } from "../crew-domain.js";
+import { crewTypeSetting, extractReputations } from "../crew-domain.js";
 import { CREW_FIELD_LABELS } from "../crew-domain.js";
 import type { RenderState } from "../crew-detail.js";
 
@@ -11,27 +11,49 @@ export function renderCrewProfileSection(state: RenderState): HTMLElement {
   const { c, handlers } = state;
   // -- Profile (F2u) --------------------------------------------------------
 
-  const profileFields = (["name", "lair", "huntingGrounds"] as const)
+  const type = crewTypeSetting(state.crewTypeData, state.crewTypesData, c.crewTypeName);
+  const favoredOptions = Array.isArray(type?.FavoredOperations)
+    ? type.FavoredOperations.filter((value): value is string => typeof value === "string") : [];
+  const favoredLabel = typeof type?.FavoredOperationLabel === "string" ? type.FavoredOperationLabel : CREW_FIELD_LABELS.favoredOperation;
+  const favoredFreeText = type?.FavoredOperationFreeText === true;
+  const profileFields = (["name", "lair", "huntingGrounds", "favoredOperation"] as const)
     .map((field) => {
-      const label = CREW_FIELD_LABELS[field];
-      // Reputation is a game-data dropdown (F2ac) and notes are a dedicated
-      // multi-note section, so the free-text fields are name/lair/hunting
-      // grounds only.
+      const label = field === "favoredOperation" ? favoredLabel : CREW_FIELD_LABELS[field];
+      // Keep the operation/cargo choice separate from the hunting location.
       const displayValue = c[field] || "(not set)";
       const isEditing = state.editingProfile?.field === field;
       if (isEditing) {
-        const input = el("input", {
-          type: "text",
-          value: state.editingProfile!.value,
-          "aria-label": label,
-          disabled: state.anyLoading,
-        }) as HTMLInputElement;
-        input.addEventListener("input", () => {
+        const value = state.editingProfile!.value;
+        // A type with options uses a fixed menu; a free-text type keeps typed
+        // input and offers the settings' options as suggestions only.
+        const useOptions = field === "favoredOperation" && favoredOptions.length > 0 && !favoredFreeText;
+        const input = useOptions
+          ? el("select", { "aria-label": label, disabled: state.anyLoading },
+              el("option", { value: "" }, "Not set"),
+              ...favoredOptions.map((option) => el("option", { value: option }, option)),
+              value && !favoredOptions.includes(value) ? el("option", { value }, value) : null,
+            ) as HTMLSelectElement
+          : el("input", {
+              type: "text",
+              "aria-label": label,
+              disabled: state.anyLoading,
+              ...(field === "favoredOperation" && favoredOptions.length > 0
+                ? { list: "favored-operation-suggestions" }
+                : {}),
+            }) as HTMLInputElement;
+        const suggestionList = !useOptions && field === "favoredOperation" && favoredOptions.length > 0
+          ? el("datalist", { id: "favored-operation-suggestions" },
+              ...favoredOptions.map((option) => el("option", { value: option })),
+            )
+          : null;
+        input.value = value;
+        input.addEventListener(useOptions ? "change" : "input", () => {
           if (state.editingProfile) state.editingProfile.value = input.value;
         });
         // F2aa: ENTER saves (same as the checkmark), ESC cancels, TAB moves
         // through input → ✓ → ✕ in natural document order.
         input.addEventListener("keydown", (ev) => {
+          if (!(ev instanceof KeyboardEvent)) return;
           if (ev.key === "Enter") {
             ev.preventDefault();
             handlers.onProfileSave();
@@ -57,6 +79,7 @@ export function renderCrewProfileSection(state: RenderState): HTMLElement {
           { className: "field-editing", "data-focus-key": `profile-${field}`, style: "display: flex; gap: 0.5em; align-items: center; margin: 0.25em 0;" },
           el("span", { className: "lbl" }, `${label}: `),
           input,
+          suggestionList,
           saveBtn,
           cancelBtn,
         );

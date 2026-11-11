@@ -15,7 +15,8 @@ and what remains open. The licence reasoning is in
 | `data/world/doskvol.json` | `factions` and `districts` emptied; `source` records the pull and the restore bookmark | Pulled pending permission (SETTING-PULL-01). Restore point: bookmark `setting-content`. |
 | `frontend/src/pages/crew-sections/doskvol-world.ts` | Stock faction picker and districts disclosure render only when world data is present | Pulled pending permission. The code paths remain for re-insertion. |
 | `frontend/src/pages/about-licence.ts` | Launch-screen About & licence aside; the setting-ownership line states the pull | Shipped by CREW-WORLD-02; copy updated by SETTING-PULL-01 |
-| `data/games/*.json` `Attributes[].Actions[].ShortDescription` | Existing edition-specific SRD action summaries, shown without hover on sheet Talent rows, including starting allocation | Reused by TALENT-HELP-01 and SCOUNDREL-CREATE-02; no new setting content. Blades source: [Actions & attributes](https://bladesinthedark.com/actions-attributes), John Harper, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). See [Talent action help](/frontend/talent-help). |
+| `data/games/*.json` `Attributes[].Actions[].ShortDescription` | Existing edition-specific SRD action summaries, now shown without hover in character creation and sheet Talent rows | Reused by TALENT-HELP-01; no new setting content. Blades source: [Actions & attributes](https://bladesinthedark.com/actions-attributes), John Harper, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). See [Talent action help](/frontend/talent-help). |
+| `data/games/blades-in-the-dark-crews.json` `SpecialAbilities[]`, `Upgrades[]`, `FavoredOperations[]`, `StartingUpgrades[]` | The six v8.2 sheets' ability, upgrade, hunting-ground and premarked-box lists, plus the general upgrades from the SRD crew page | Rules data, not setting names: the names are the game's own rule vocabulary and ship with the sheet citation on [Crew sheet rules and settings](/frontend/crew-sheet). Contacts stay empty (below). The only setting-flavoured entry is **Ironhook Contacts**, already covered by the Ironhook items in the retained list further down; the **Ghost Echoes** description is paraphrased to avoid naming the city. |
 
 Rules for shipped data:
 
@@ -63,7 +64,7 @@ Remaining setting names (not pulled):
 - Rolodex faction designations kept as the generic watch term: "Bluecoats" / "Синих Мундиров" in `data/games/blades-in-the-dark.json` (Darmot, Jeren entries), its French edition, and `rus-blades-in-the-dark.json`. Claim names "Bluecoat Intimidation" and "Bluecoat Confederates" (Bravos) in `data/games/blades-in-the-dark-crews.json` are kept on the same basis. The Russian Darmot designation was changed by the follow-up (see above). These are open for the same permission decision as the NPC names.
 - Test and seed fixtures: heritage text such as "The Dagger Isles" and "Iruvian" in conformance fixtures and seed characters, and stock names in frontend test mocks (for example "The Crows", "Ironhook Prison", "The Red Sashes", "Brightstone"). Test data only.
 - Further test and historical surfaces: `docs/pages/contract/c3-crew-contacts-factions.mdx` ("The Crows"); `docs/pages/contract/wave0/validator-spike.mdx` ("Iruvian", "Nightmarket", "The Bluecoats"); historical `tasks/metrics/ada/LOAD-CREATE-01-*.log` responses (Akoros, Duskwall); `tasks/metrics/frontend/CREW-REP-TURF-01-focused.log` (a DOM transcript with the full 48-faction, 12-district and 27-location lists); `tasks/metrics/frontend/CREW-WORLD-03-chromium.log` and `CREW-WORLD-03-chromium-managed.log` (district names); `tasks/metrics/frontend/CHAR-02.json` ("Iruvia"); and the CREW-WORLD-03 evidence screenshot `docs/public/evidence/crew-world-03/390-light-disclosure.png` (district and location names). Test and historical records; redaction is a candidate.
-- Retained rules and sample text naming the Deathlands and Sister Thorn's gang: "Safe passage in the Deathlands" (Cultists and Smugglers, Ancient Gate) in `data/games/blades-in-the-dark-crews.json`; "the poisonous miasma of the deathlands" (Survivor) in `data/games/blades-in-the-dark.json`; "Sister Thorn, deathlands scavenger gang" in its vice sources, with Russian equivalents in `rus-blades-in-the-dark.json`. These are region and gang names kept as rules text; open for the same permission decision.
+- Retained rules and sample text naming the Deathlands and Sister Thorn's gang: "Safe passage in the Deathlands" (Cult and Smugglers, Ancient Gate) in `data/games/blades-in-the-dark-crews.json`; "the poisonous miasma of the deathlands" (Survivor) in `data/games/blades-in-the-dark.json`; "Sister Thorn, deathlands scavenger gang" in its vice sources, with Russian equivalents in `rus-blades-in-the-dark.json`. These are region and gang names kept as rules text; open for the same permission decision.
 - Source copies, comments and historical records not listed above: `backend-zero/server/_prior-stalled/game_data.0:135` and `backend-zero/server/src/game_settings_compat.0:318` (Survivor "deathlands" text in Zig source); `frontend/src/styles/components.css:1743` (a "Doskvol" comment) and `tasks/metrics/frontend/CREW-CLAIMS-MAP-01-red.log:1715`; and the historical records `tasks/metrics/contract/CREW-WORLD-01-sol-6.1-verdict.txt`, `tasks/metrics/frontend/CREW-WORLD-03-red.log`, `tasks/metrics/frontend/CREW-WORLD-03.json`, `tasks/metrics/frontend/CREW-WORLD-03-sol-6.1-verdict.txt`, `tasks/metrics/frontend/CREW-WORLD-03-sol-6.1-proof.jsonl`, `tasks/metrics/frontend/SETTING-PULL-01-red.log` and `tasks/metrics/frontend/SETTING-PULL-01-sol-6.1-verdict.txt` (Whitecrown, Brightstone, Charterhall, Ironhook, Doskvol, Tycherosi, Leaky Bucket). Comments and historical records; redaction is a candidate.
 - `data/world/doskvol.json` holds (generic strong and weak labels) and the source note.
 - Unlisted surfaces, found on review, not pulled: the styleguide city sample (`frontend/src/pages/styleguide.ts`, "Doskvol") and the game-mode design mockups under `docs/public/mockups/game-mode/` (Skovlan, The Silver Stag, gondoliers). Both are design or sample surfaces, not app content; pull or keep is pending permission.
@@ -79,6 +80,74 @@ Remaining setting names (not pulled):
 | Conformance fixtures and frontend tests | Setting names in test data (for example Ironhook Prison, Bluecoats) | Test data only. Not user-facing. |
 | `tasks/metrics/contract/CREW-WORLD-01-frontend-red.log` | Captured test output containing setting names | Historical record. Redaction is a candidate. |
 | `docs/pages/contract/crew-world-sources.mdx` | Provenance, printed-page references, shipping scope and licence decision | Updated by CREW-WORLD-03 |
+
+## Crew contact private restore inventory
+
+CREW-SHEET-02 ships **empty `Contacts` arrays for every crew in every game**.
+The six Blades arrays previously contained only five placeholder rows apiece;
+those were not canonical contacts and must not be restored. The three Scum and
+Villainy arrays contained fifteen named entries, now withdrawn too. No contact
+names below are shipped in crew settings or automatically inserted into saved
+crews. Existing player-owned contacts and scoundrel Rolodex data are unchanged.
+
+Private restore shape: each crew type may supply
+`Contacts: [{ Name: string, Profession: string }]`. `Contacts` is optional in
+`crew-settings-schema.json`, as are favored-operation and starting-upgrade
+metadata. `Profession` replaces the old crew-setting `Description` key; omit
+the grammatical article when restoring the profession. This is a settings
+suggestion list analogous to scoundrel Rolodex settings, not an instruction to
+overwrite a user's saved contact relationships.
+
+### Blades in the Dark
+
+Authority: John Harper's official
+[Player's Kit v8.2](https://bladesinthedark.com/sites/default/files/blades_playerkit_v8_2.pdf),
+PDF pages 13–18, one crew sheet per page in the order below, re-verified
+against the publisher-hosted individual v8.2 crew sheets
+([Assassins](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Assassins.pdf),
+[Bravos](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Bravos.pdf),
+[Cult](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Cult.pdf),
+[Hawkers](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Hawkers.pdf),
+[Shadows](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Shadows.pdf),
+[Smugglers](https://bladesinthedark.com/sites/default/files/sheets/blades_sheets_v8_2_Smugglers.pdf)).
+Each sheet has **six** contacts; the generic SRD's five-contact template is not
+the edition's actual roster. Restore only in a private settings copy until
+permission is resolved. Each semicolon-delimited pair below is exactly
+`Name — Profession`. The sheet names the third type **Cult**; crews stored
+before the rename keep the legacy name `Cultists` on the wire.
+
+| Crew type | Complete private restore list |
+| --- | --- |
+| Assassins | Trev — gang boss; Lydra — deal broker; Irimina — vicious noble; Karlos — bounty hunter; Exeter — spirit warden; Sevoy — merchant lord |
+| Bravos | Meg — pit-fighter; Conway — bluecoat; Keller — blacksmith; Tomas — physicker; Walker — ward boss; Lutes — tavern owner |
+| Cult (stored legacy name: `Cultists`) | Gagan — academic; Adikin — occultist; Hutchins — antiquarian; Moriya — spirit trafficker; Mateas Kline — noble; Bennett — astronomer |
+| Hawkers | Rolan Wott — magistrate; Laroze — bluecoat; Lydra — deal broker; Hoxley — smuggler; Anya — dillettante; Marlo — gang boss |
+| Shadows | Dowler — explorer; Laroze — bluecoat; Amancio — deal broker; Fitz — collector; Adelaide Phroaig — noble; Rigney — tavern owner |
+| Smugglers | Elynn — dock worker; Rolan — drug dealer; Sera — arms dealer; Nyelle — spirit trafficker; Decker — anarchist; Esme — tavern owner |
+
+“Dillettante” above preserves the Hawkers sheet's printed spelling. Rolan Wott
+and Rolan belong to different crew lists; do not collapse them or mistake
+repeated names (Lydra, Laroze) for missing entries.
+
+### Scum and Villainy
+
+Provenance: exact pre-change `Contacts` entries in
+`data/games/scum-and-villainy-crews.json`, with only the `Description`-to-`Profession`
+shape change and removal of leading articles/trailing periods. These entries
+are preserved here for private restoration, **not newly verified against an
+official Scum and Villainy source**.
+
+| Crew type | Complete private restore list |
+| --- | --- |
+| Stardancer | T'kala — dockmaster; Alor — keen-eared barkeep; Heani — tugboat captain; Rakka — diplomat; Citani — reclusive info broker |
+| Cerberus | Stacy Weathers — ace reporter; Arlox — Ashen Knives Pasha; Ishi — weapons dealer; Lix — xeno tracker; Jezri — fixer |
+| Firedrake | Garin — Guild weapons engineer; Tyura — legendary assassin; Ada Black — famous performer; Tiko Lux — hotshot pilot; Ibo-one — ancient Cult mystic |
+
+This inventory contains all 36 official Blades suggestions and all 15 withdrawn
+Scum and Villainy suggestions. No private restore JSON containing the names is
+added under `data/games/`. For favored operations, hunting grounds, starting
+marks and the distinction between Smugglers vehicles and general facilities,
+see [Crew sheet rules and settings](/frontend/crew-sheet).
 
 ## Private research draft
 

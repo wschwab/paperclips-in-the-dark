@@ -16,6 +16,10 @@ package body Pitd_Capability is
    --  is definition-owned and is NOT claimable via claim.set.
    function Claim_Exists (E : JSON_Value; Claim_Id : String; Is_Lair : out Boolean) return Boolean is
       G : constant JSON_Value := Game (Str_Field (E, "gameStem") & "-crews");
+      --  CREW-SHEET-02: a stored legacy crew-type name resolves to the
+      --  canonical type entry, so its claims stay reachable.
+      Type_Name : constant String :=
+        Canonical_Crew_Type (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"));
    begin
       Is_Lair := False;
       if G.Kind /= JSON_Object_Type or else not Has_Field (G, "CrewTypes") then
@@ -24,7 +28,7 @@ package body Pitd_Capability is
       declare Types : constant JSON_Array := Get (G, "CrewTypes"); begin
          for I in 1 .. Length (Types) loop
             declare T : constant JSON_Value := Get (Types, I); begin
-               if Str_Field (T, "Name") = Str_Field (E, "crewTypeName")
+               if Str_Field (T, "Name") = Type_Name
                  and then Has_Field (T, "Claims")
                then
                   declare
@@ -77,6 +81,10 @@ package body Pitd_Capability is
    function Turf_Effect_Delta (E : JSON_Value) return Integer is
       Sum : Integer := 0;
       G : constant JSON_Value := Game (Str_Field (E, "gameStem") & "-crews");
+      --  CREW-SHEET-02: a stored legacy crew-type name resolves to the
+      --  canonical type entry.
+      Type_Name : constant String :=
+        Canonical_Crew_Type (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"));
       Owned : constant JSON_Array :=
         (if Has_Field (E, "claimedClaimIds") then Get (E, "claimedClaimIds")
          else Empty_Array);
@@ -87,7 +95,7 @@ package body Pitd_Capability is
       declare Types : constant JSON_Array := Get (G, "CrewTypes"); begin
          for I in 1 .. Length (Types) loop
             declare T : constant JSON_Value := Get (Types, I); begin
-               if Str_Field (T, "Name") = Str_Field (E, "crewTypeName")
+               if Str_Field (T, "Name") = Type_Name
                  and then Has_Field (T, "Claims")
                then
                   declare
@@ -179,37 +187,13 @@ package body Pitd_Capability is
       return Sum;
    end Committed_Bulk;
 
-   function Upgrade_Marked (E : JSON_Value; Name : String) return Integer is
-      U : constant JSON_Array :=
-        (if Has_Field (E, "upgrades") then Get (E, "upgrades") else Empty_Array);
-   begin
-      for I in 1 .. Length (U) loop
-         if Str_Field (Get (U, I), "name") = Name then
-            return Int_Field (Get (U, I), "boxesMarked", 0);
-         end if;
-      end loop;
-      return 0;
-   end Upgrade_Marked;
-
-   function Ability_Taken (E : JSON_Value; Name : String) return Integer is
-      A : constant JSON_Array :=
-        (if Has_Field (E, "specialAbilities") then Get (E, "specialAbilities")
-         else Empty_Array);
-   begin
-      for I in 1 .. Length (A) loop
-         if Str_Field (Get (A, I), "name") = Name then
-            return Int_Field (Get (A, I), "timesTaken", 0);
-         end if;
-      end loop;
-      return 0;
-   end Ability_Taken;
 
    function Character_Capabilities (E : JSON_Value) return JSON_Value is
       G       : constant JSON_Value := Game (Str_Field (E, "gameStem"));
       X       : JSON_Value := Create_Object;
       Out_A   : JSON_Array := Empty_Array;
       Total   : Integer := 0;
-      Marked  : Integer := 0;
+      Marked  : Long_Long_Integer := 0;
       Committed : Integer := 0;
       Mule_Raise : Integer := 0;
    begin
@@ -224,7 +208,7 @@ package body Pitd_Capability is
          Cap         : constant Integer :=
            (if Bool_Field (Get (E, "talent"), "allocationPending")
             then Int_Field (G, "StartingActionDotMax")
-            elsif Total > 0 and then Marked >= Total then Mastery_Cap else Base_Cap);
+            elsif Total > 0 and then Marked >= Long_Long_Integer (Total) then Mastery_Cap else Base_Cap);
          Attrs       : constant JSON_Array := Get (G, "Attributes");
       begin
          for I in 1 .. Length (Attrs) loop
@@ -247,7 +231,7 @@ package body Pitd_Capability is
                            Set_Field (Item, "effectiveMax",
                                       Integer'Min (Max_Rating, Cap));
                            Set_Field (Item, "masteryTotalBoxes", Total);
-                           Set_Field (Item, "masteryMarkedBoxes", Marked);
+                           Set_Field (Item, "masteryMarkedBoxes", Long_Integer (Marked));
                            Append (Out_A, Item);
                         end;
                      end loop;
@@ -383,10 +367,14 @@ package body Pitd_Capability is
       Set_Field (X, "crewId", Str_Field (E, "id"));
       if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes") then
          declare
+            --  CREW-SHEET-02: a stored legacy crew-type name resolves to the
+            --  canonical type entry, so the catalog still renders.
+            Canonical : constant String :=
+              Canonical_Crew_Type (G, Str_Field (E, "crewTypeName"));
             Types : constant JSON_Array := Get (G, "CrewTypes");
          begin
             for I in 1 .. Length (Types) loop
-               if Str_Field (Get (Types, I), "Name") = Str_Field (E, "crewTypeName") then
+               if Str_Field (Get (Types, I), "Name") = Canonical then
                   Type_Settings := Get (Types, I);
                end if;
             end loop;
@@ -402,12 +390,12 @@ package body Pitd_Capability is
                      Item  : JSON_Value := Create_Object;
                      Name  : constant String := Str_Field (Get (Up, I), "Name");
                      Total : constant Integer := Int_Field (Get (Up, I), "TotalBoxes", 0);
-                     Marked : constant Integer := Upgrade_Marked (E, Name);
+                     Marked : constant Long_Long_Integer := Upgrade_Marked (E, Name);
                   begin
                      Set_Field (Item, "name", Name);
                      Set_Field (Item, "totalBoxes", Total);
-                     Set_Field (Item, "marked", Marked);
-                     Set_Field (Item, "remaining", Total - Marked);
+                     Set_Field (Item, "marked", Long_Integer (Marked));
+                     Set_Field (Item, "remaining", Long_Integer (Long_Long_Integer (Total) - Marked));
                      Append (UO, Item);
                   end;
                end loop;
@@ -422,12 +410,12 @@ package body Pitd_Capability is
                      Item      : JSON_Value := Create_Object;
                      Name      : constant String := Str_Field (Get (SAs, I), "Name");
                      Max_Takes : constant Integer := Int_Field (Get (SAs, I), "TimesTakeable", 0);
-                     Taken     : constant Integer := Ability_Taken (E, Name);
+                     Taken     : constant Long_Long_Integer := Ability_Taken (E, Name);
                   begin
                      Set_Field (Item, "name", Name);
                      Set_Field (Item, "maxTakes", Max_Takes);
-                     Set_Field (Item, "taken", Taken);
-                     Set_Field (Item, "remaining", Max_Takes - Taken);
+                     Set_Field (Item, "taken", Long_Integer (Taken));
+                     Set_Field (Item, "remaining", Long_Integer (Long_Long_Integer (Max_Takes) - Taken));
                      Append (AO, Item);
                   end;
                end loop;

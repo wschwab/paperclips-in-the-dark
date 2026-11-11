@@ -304,12 +304,13 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
   testCase("LIFECYCLE-RETIRE-003", "retirement cleanup clears stress, harm, healing clock, armor and preserves dossier/playbook/trauma history/notes/gear/fund", async () => {
     const character = await newRawCharacter();
     let latest = character;
+    const gainedCoins = 3;
     for (const [op, body] of [
       ["stress.add", { delta: 6 }],
       ["harm.add", { intensity: "lesser", description: "Black eye" }],
       ["gear.add", { name: "Riot gear", bulk: 3 }],
       ["gear.set-commitment", { commitment: "light" }],
-      ["fund.gain", { coins: 3 }],
+      ["fund.gain", { coins: gainedCoins }],
       ["note.add", { text: "Memento" }],
       ["notebook.set", { text: "Sketches" }],
     ] as const) {
@@ -350,10 +351,18 @@ describe("lifecycle state machine (SC-O6 oracle)", () => {
     expect(c!.dossier.notes).toContain("Memento");
     expect(c!.notebook).toBe("Sketches");
     expect(c!.gear.commitment).toBe("light");
-    // fund.gain 3 on a fresh character (satchel 2): satchel caps at the
-    // settings maximum, the remainder overflows to stash — preserved verbatim.
-    expect(c!.fund.satchel.coins).toBe(gameSetting(BLADES).FundMaxima.SatchelMax);
-    expect(c!.fund.stash.coins).toBe(1);
+    // fund.gain gainedCoins on a fresh character (starting satchel fill from
+    // the game settings): the satchel caps at the settings maximum, any
+    // remainder overflows to stash — preserved verbatim. Derived from the
+    // created values so a settings change cannot silently invalidate the case.
+    const satchelMax = gameSetting(BLADES).FundMaxima.SatchelMax;
+    const stashMax = gameSetting(BLADES).FundMaxima.StashMax;
+    const satchelStart = character.fund.satchel.coins;
+    const stashStart = character.fund.stash.coins;
+    const intoSatchel = Math.min(gainedCoins, satchelMax - satchelStart);
+    const intoStash = Math.min(gainedCoins - intoSatchel, stashMax - stashStart);
+    expect(c!.fund.satchel.coins).toBe(satchelStart + intoSatchel);
+    expect(c!.fund.stash.coins).toBe(stashStart + intoStash);
   });
 
   testCase("LIFECYCLE-RETIRE-004", "voluntary and final-trauma retirement produce identical post-cleanup state (shared cleanup)", async () => {

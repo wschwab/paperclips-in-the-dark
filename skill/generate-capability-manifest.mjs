@@ -92,6 +92,7 @@ const HUMAN_CONTROL = {
   crewNoteRemove: "Reachable crew note-removal control (allowed after retirement).",
   crewNoteUpdate: "Reachable crew note-edit control (allowed after retirement).",
   factionSetStarting: "Reachable Save starting factions control through frontend API factionSetStarting; explicitly records both ally and rival from the crew's own tracked factions or clears choices, without spending coin or changing status.",
+  crewFavoredOperationSet: "Reachable favored-operation profile editor through frontend API crewFavoredOperationSet; chooses a crew-type option or records Smugglers cargo as free text, independently of hunting grounds.",
   characterModeSet: "Reachable per-scoundrel Free Play / Score / Downtime switcher; every mode remains selectable.",
   characterModeFlowSet: "Reachable Planning / Loadout / Engagement and Resolution Back/Next navigation; no prerequisite or automatic award.",
   characterDowntimeSpend: "Reachable downtime activity menu; soft budget never disables an activity.",
@@ -135,6 +136,7 @@ const TABLE = {
   crewNoteRemove: { disposition: "human", categories: ["sheet-management"] },
   crewNoteUpdate: { disposition: "human", categories: ["sheet-management"] },
   factionSetStarting: { disposition: "human", categories: ["sheet-management"] },
+  crewFavoredOperationSet: { disposition: "human", categories: ["sheet-management"] },
   // GAME-MODE-01: approved sheet assistance controls, available regardless of mode.
   characterModeSet: { disposition: "human", categories: ["sheet-management"] },
   characterModeFlowSet: { disposition: "human", categories: ["sheet-management"] },

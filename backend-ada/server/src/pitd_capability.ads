@@ -26,8 +26,6 @@ package Pitd_Capability is
    function Entity_Max_Rating (E : JSON_Value; Action : String) return Integer;
    function Has_Ability (E : JSON_Value; Name : String) return Boolean;
    function Committed_Bulk (E : JSON_Value) return Integer;
-   function Upgrade_Marked (E : JSON_Value; Name : String) return Integer;
-   function Ability_Taken (E : JSON_Value; Name : String) return Integer;
    function Character_Capabilities (E : JSON_Value) return JSON_Value;
    function Crew_Capabilities (E : JSON_Value) return JSON_Value;
 end Pitd_Capability;

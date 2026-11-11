@@ -491,21 +491,41 @@ describe("§ published limits (SC-O4)", () => {
         const maxima = gameSettings(stem).FundMaxima;
         expect(character.fund.satchel.max).toBe(maxima.SatchelMax); // FundMaxima.SatchelMax
         expect(character.fund.stash.max).toBe(maxima.StashMax); // FundMaxima.StashMax
-        const gain = await rawCharacterOp(character.id, "fund.gain", { coins: 6 });
-        expect(gain.applied?.requested).toBe(6);
-        expect(gain.applied?.effective).toBe(6);
-        expect(gain.character?.fund.satchel.coins).toBe(maxima.SatchelMax);
-        expect(gain.character?.fund.stash.coins).toBe((6 - maxima.SatchelMax) * maxima.StashToCoinRate);
-        const spend = await rawCharacterOp(character.id, "fund.spend", { coins: 2 });
-        expect(spend.character?.fund.satchel.coins).toBe(maxima.SatchelMax - 2);
-        expect(spend.character?.fund.stash.coins).toBe((6 - maxima.SatchelMax) * maxima.StashToCoinRate);
-        const liquidate = await rawCharacterOp(character.id, "fund.liquidate", { coins: 1 });
-        expect(liquidate.applied?.requested).toBe(1);
-        expect(liquidate.applied?.effective).toBe(1);
-        expect(liquidate.character?.fund.satchel.coins).toBe(maxima.SatchelMax - 1);
-        expect(liquidate.character?.fund.stash.coins).toBe(
-          (6 - maxima.SatchelMax) * maxima.StashToCoinRate - maxima.StashToCoinRate,
-        ); // StashToCoinRate stash -> 1 coin
+        // The created character supplies the settings-derived starting fills
+        // (StartingSatchelCoins, stash 0) so the arithmetic below stays exact
+        // under a settings change.
+        const satchelStart = character.fund.satchel.coins;
+        const stashStart = character.fund.stash.coins;
+        const gainCoins = 6;
+        // fund.gain fills the satchel to its maximum first, then the stash
+        // 1:1 with the remaining coins (the stash→coin rate applies only when
+        // spending or liquidating).
+        const satchelFilled = satchelStart + Math.min(gainCoins, maxima.SatchelMax - satchelStart);
+        const stashFilled = stashStart + Math.min(gainCoins - (satchelFilled - satchelStart), maxima.StashMax - stashStart);
+        const gain = await rawCharacterOp(character.id, "fund.gain", { coins: gainCoins });
+        expect(gain.applied?.requested).toBe(gainCoins);
+        expect(gain.applied?.effective).toBe(gainCoins);
+        expect(gain.character?.fund.satchel.coins).toBe(satchelFilled);
+        expect(gain.character?.fund.stash.coins).toBe(stashFilled);
+
+        // fund.spend takes satchel coins first; the stash covers the remainder
+        // at StashToCoinRate stash per coin.
+        const spendCoins = 2;
+        const spendFromSatchel = Math.min(spendCoins, satchelFilled);
+        const spendFromStash = spendCoins - spendFromSatchel;
+        const spend = await rawCharacterOp(character.id, "fund.spend", { coins: spendCoins });
+        const satchelAfterSpend = satchelFilled - spendFromSatchel;
+        const stashAfterSpend = stashFilled - spendFromStash * maxima.StashToCoinRate;
+        expect(spend.character?.fund.satchel.coins).toBe(satchelAfterSpend);
+        expect(spend.character?.fund.stash.coins).toBe(stashAfterSpend);
+
+        // fund.liquidate converts at the same rate, adding to the satchel.
+        const liquidateCoins = 1;
+        const liquidate = await rawCharacterOp(character.id, "fund.liquidate", { coins: liquidateCoins });
+        expect(liquidate.applied?.requested).toBe(liquidateCoins);
+        expect(liquidate.applied?.effective).toBe(liquidateCoins);
+        expect(liquidate.character?.fund.satchel.coins).toBe(satchelAfterSpend + liquidateCoins);
+        expect(liquidate.character?.fund.stash.coins).toBe(stashAfterSpend - liquidateCoins * maxima.StashToCoinRate); // StashToCoinRate stash -> 1 coin
       }
     },
   );

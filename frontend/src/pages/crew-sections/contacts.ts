@@ -1,6 +1,7 @@
 /** Contacts and manual faction records; optional stock controls appear only when world data is present. */
 import { el } from "../../lib/dom.js";
 import type { RenderState } from "../crew-detail.js";
+import { crewTypeSetting } from "../crew-domain.js";
 import { doskvolDistrictsDisclosure, stockFactionPicker } from "./doskvol-world.js";
 
 export function renderCrewContactsSection(state: RenderState): HTMLElement {
@@ -52,6 +53,26 @@ export function renderCrewContactsSection(state: RenderState): HTMLElement {
     title: "Add contact",
   }, state.isContactLoading ? "…" : "+");
   addContactBtn.addEventListener("click", handlers.onContactAdd);
+
+  // Optional private setting data supplies suggestions, never required entries.
+  const type = crewTypeSetting(state.crewTypeData, state.crewTypesData, c.crewTypeName);
+  const stockContacts = Array.isArray(type?.Contacts) ? type.Contacts.filter(
+    (value): value is { Name: string; Profession: string } =>
+      typeof value === "object" && value !== null && typeof value.Name === "string" && typeof value.Profession === "string",
+  ) : [];
+  const stockContactPicker = stockContacts.length > 0 ? el("select", {
+    "aria-label": "Stock crew contact", disabled: state.anyLoading,
+  }, el("option", { value: "" }, "Choose a contact"),
+    ...stockContacts.map((contact) => el("option", { value: contact.Name }, `${contact.Name}, ${contact.Profession}`)),
+  ) as HTMLSelectElement : null;
+  stockContactPicker?.addEventListener("change", () => {
+    const contact = stockContacts.find((entry) => entry.Name === stockContactPicker.value);
+    if (!contact) return;
+    state.contactDraft.name = contact.Name;
+    state.contactDraft.profession = contact.Profession;
+    (contactNameInput as HTMLInputElement).value = contact.Name;
+    (contactProfessionInput as HTMLInputElement).value = contact.Profession;
+  });
 
   const drafts = state.factionDrafts;
   const validation = el("p", { className: "faction-validation", role: "alert", hidden: !drafts.error }, drafts.error ?? "");
@@ -159,6 +180,7 @@ return el(
       contacts.length === 0
         ? el("p", {}, "(no contacts)")
         : el("div", { className: "contact-list" }, ...contactEntries),
+      stockContactPicker ? el("label", { className: "crew-stock-contact" }, "Setting contact", stockContactPicker) : null,
       el("div", { className: "contact-add-row", style: "display: flex; gap: 0.5em; margin-top: 0.5em; align-items: center;" },
         contactNameInput,
         contactProfessionInput,

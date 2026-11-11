@@ -1017,6 +1017,9 @@
 	"TurfMax": 6,
 	"CrewTierMax": 4,
 	"CrewStashBaseCapacity": 4,
+	"CrewStartingHold": "strong",
+	"CrewStartingCoin": 2,
+	"StartingSatchelCoins": 0,
 	"LoadMaxima": {
 		"MaxBulk": 9,
 		"CommitmentMaxBulk": {

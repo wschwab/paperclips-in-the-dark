@@ -30,15 +30,23 @@ async function batch(ops: BatchOp[]) {
 describe("campaign batch shared boundaries", () => {
   testCase("BATCH-ORDER-001", "lock sorting does not reverse dependent operations on the same character", async () => {
     const { a, b } = await orderedCharacters();
-    expect(a.fund.satchel.coins).toBe(2);
+    // The starting satchel fill comes from the game settings, so derive the
+    // pair's amounts from the created character: the gain must leave enough
+    // satchel for the spend, or the pair short-circuits on
+    // INSUFFICIENT_FUNDS instead of proving request order.
+    const startingSatchel = a.fund.satchel.coins;
+    const gained = 3;
+    const spent = gained;
+    const expectedSatchel = Math.min(startingSatchel + gained, a.fund.satchel.max) - spent;
+    expect(expectedSatchel).toBeGreaterThanOrEqual(0);
     const result = await batch([
-      item("character", a.id, "fund.gain", { coins: 3 }),
-      item("character", a.id, "fund.spend", { coins: 4 }),
+      item("character", a.id, "fund.gain", { coins: gained }),
+      item("character", a.id, "fund.spend", { coins: spent }),
       item("character", b.id, "note.add", { text: "Other character" }),
     ]);
     expect.soft(result.batch?.map((entry) => entry.ok)).toEqual([true, true, true]);
     expect.soft(result.batch?.map((entry) => entry.op)).toEqual(["fund.gain", "fund.spend", "note.add"]);
-    expect.soft((await api.character(a.id)).fund.satchel.coins).toBe(Math.min(a.fund.satchel.coins + 3, a.fund.satchel.max) - 4);
+    expect.soft((await api.character(a.id)).fund.satchel.coins).toBe(expectedSatchel);
     expect.soft((await api.character(b.id)).dossier.notes).toEqual(["Other character"]);
   });
 

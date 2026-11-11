@@ -62,6 +62,7 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   "deleteCharacter", "deleteCrew", "deleteClock",
   "undoCharacter", "undoCrew", "endScore", "retireCharacter", "traumaAdd", "traumaRemove",
   "importCharacter", "importCrew",
+  "crewFavoredOperationSet",
   "repairCharacterPreview", "repairCharacterApply", "repairCrewPreview", "repairCrewApply",
   "dossierUpdate", "noteAdd", "noteRemove", "noteUpdate", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove", "crewNoteUpdate",
   "stressFix",

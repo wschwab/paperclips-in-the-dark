@@ -1549,6 +1549,60 @@
       "collection": false
     },
     {
+      "operationId": "crewFavoredOperationSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/favored-operation.set",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewFavoredOperationSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/favored-operation.set",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewFavoredOperationSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/favored-operation.set",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewFavoredOperationSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/favored-operation.set",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewFavoredOperationSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/favored-operation.set",
+      "status": "422",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewFavoredOperationSet",
+      "method": "POST",
+      "path": "/crews/{id}/ops/favored-operation.set",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewFieldsUpdate",
       "method": "POST",
       "path": "/crews/{id}/ops/fields.update",

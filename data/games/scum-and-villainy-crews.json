@@ -222,54 +222,13 @@
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Smuggling Compartments",
-					"TotalBoxes": 1,
-					"Description": "Like a cargo hold (can carry a small shipment), but it won't show up on routine scans or visual inspections of the ship. At 3+ hull rating, has life support for smuggling people too."
-				},
-				{
-					"Name": "Cargo Hold",
-					"TotalBoxes": 1,
-					"Description": "Enough space on a ship to make a moderate (cred-earning) shipment. A cargo hold is evident when the ship is boarded, and no special precautions are taken to hide its contents."
-				},
-				{
-					"Name": "Jump Drive",
-					"TotalBoxes": 1,
-					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
-				},
-				{
-					"Name": "Galley",
-					"TotalBoxes": 1,
-					"Description": "A combined kitchen and serving area for meals. Greatly facilitates longer trips. Includes fresh food storage."
-				},
-				{
-					"Name": "Insight",
-					"TotalBoxes": 1,
-					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
-				}
+				{ "Name": "Smuggling Compartments", "BoxesMarked": 1 },
+				{ "Name": "Cargo Hold", "BoxesMarked": 1 },
+				{ "Name": "Jump Drive", "BoxesMarked": 1 },
+				{ "Name": "Galley", "BoxesMarked": 1 },
+				{ "Name": "Insight", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "T'kala",
-					"Description": "A dockmaster."
-				},
-				{
-					"Name": "Alor",
-					"Description": "A keen-eared barkeep."
-				},
-				{
-					"Name": "Heani",
-					"Description": "A tugboat captain."
-				},
-				{
-					"Name": "Rakka",
-					"Description": "A diplomat."
-				},
-				{
-					"Name": "Citani",
-					"Description": "A reclusive info broker."
-				}
-			],
+			"Contacts": [],
 			"Reputations": [
 				"Ambitious",
 				"Brutal",
@@ -496,54 +455,13 @@
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Long-Range Scanner",
-					"TotalBoxes": 1,
-					"Description": "Provides broad EM spectrum and gravimetric readings, giving the crew advance warning up to a dozen light-minutes away."
-				},
-				{
-					"Name": "Jump Drive",
-					"TotalBoxes": 1,
-					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
-				},
-				{
-					"Name": "Grappling Hooks",
-					"TotalBoxes": 1,
-					"Description": "Officially for latching onto asteroids and netting cargo, it's an array of nets, grappling lines, and arms that can tie together two vessels for towing or boarding. Legal."
-				},
-				{
-					"Name": "Brig",
-					"TotalBoxes": 1,
-					"Description": "Space jail. Not meant for long-term incarceration."
-				},
-				{
-					"Name": "Prowess",
-					"TotalBoxes": 1,
-					"Description": "May represent an appropriate place on your ship, relevant manuals, or expert mentors. Mark 2 xp in the appropriate category instead of 1 when taking the downtime train action."
-				}
+				{ "Name": "Long-Range Scanner", "BoxesMarked": 1 },
+				{ "Name": "Jump Drive", "BoxesMarked": 1 },
+				{ "Name": "Grappling Hooks", "BoxesMarked": 1 },
+				{ "Name": "Brig", "BoxesMarked": 1 },
+				{ "Name": "Prowess", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "Stacy Weathers",
-					"Description": "An ace reporter."
-				},
-				{
-					"Name": "Arlox",
-					"Description": "An Ashen Knives Pasha."
-				},
-				{
-					"Name": "Ishi",
-					"Description": "A weapons dealer."
-				},
-				{
-					"Name": "Lix",
-					"Description": "A xeno tracker."
-				},
-				{
-					"Name": "Jezri",
-					"Description": "A fixer."
-				}
-			],
+			"Contacts": [],
 			"Reputations": [
 				"Ambitious",
 				"Brutal",
@@ -780,59 +698,14 @@
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Targeting Computer",
-					"TotalBoxes": 1,
-					"Description": "Handles calculations and targeting for weapon systems without the crew. Roll comms rating when firing."
-				},
-				{
-					"Name": "Jump Drive",
-					"TotalBoxes": 1,
-					"Description": "A special engine that can activate the Ur gates that connect systems and translate the ship into hyperspace lanes."
-				},
-				{
-					"Name": "Particle Cannons",
-					"TotalBoxes": 1,
-					"Description": "Pew! Pew! Usually fixed in one direction on personal vessels. Often cross linked. Not legal without license."
-				},
-				{
-					"Name": "Crew Quarters",
-					"TotalBoxes": 1,
-					"Description": "You can sleep anywhere, but crew quarters are actually meant for it. Crew quarters afford privacy and comfort in a domain where such things are luxuries. Also you don't have to share, and you know the first mate snores."
-				},
-				{
-					"Name": "Shuttle",
-					"TotalBoxes": 1,
-					"Description": "A small spacecraft capable of carrying a few people from planet to orbit. Limited systems capacity—treat any system as quality zero vs. actual ships. Can attach to airlocks, but best stored in a landing bay if you don't want stray asteroids or particle cannon fire affecting it."
-				},
-				{
-					"Name": "Shields",
-					"TotalBoxes": 2,
-					"Description": "Particle sinks and EM deflectors. Overwhelmed by focused fire. Counts as armor against ship weapons and energy attacks. Largely absorbs blaster fire. Costs two upgrades instead of one."
-				}
+				{ "Name": "Targeting Computer", "BoxesMarked": 1 },
+				{ "Name": "Jump Drive", "BoxesMarked": 1 },
+				{ "Name": "Particle Cannons", "BoxesMarked": 1 },
+				{ "Name": "Crew Quarters", "BoxesMarked": 1 },
+				{ "Name": "Shuttle", "BoxesMarked": 1 },
+				{ "Name": "Shields", "BoxesMarked": 2 }
 			],
-			"Contacts": [
-				{
-					"Name": "Garin",
-					"Description": "A Guild weapons engineer."
-				},
-				{
-					"Name": "Tyura",
-					"Description": "A legendary assassin."
-				},
-				{
-					"Name": "Ada Black",
-					"Description": "A famous performer."
-				},
-				{
-					"Name": "Tiko Lux",
-					"Description": "A hotshot pilot."
-				},
-				{
-					"Name": "Ibo-one",
-					"Description": "An ancient Cult mystic."
-				}
-			],
+			"Contacts": [],
 			"Reputations": [
 				"Ambitious",
 				"Brutal",

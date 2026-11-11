@@ -13,6 +13,7 @@ import {
   getGame,
   factionRemove,
   crewFieldsUpdate,
+  crewFavoredOperationSet,
   crewRepAdd,
   crewHeatAdd,
   crewWantedAdd,
@@ -52,7 +53,7 @@ import {
   opErrorText,
 } from "./crew-domain.js";
 import type { CrewField } from "./crew-domain.js";
-import { claimsGraph, effectiveClaim, extractCrewClaims } from "./crew-domain.js";
+import { canonicalCatalogName, crewTypeSetting, claimsGraph, effectiveClaim, extractCrewClaims } from "./crew-domain.js";
 import { renderCrewProfileSection } from "./crew-sections/profile.js";
 import { renderCrewNotesSection } from "./crew-sections/notes.js";
 import { crewRepTurf, projectionFor, renderCrewTrackersSection } from "./crew-sections/trackers.js";
@@ -790,7 +791,7 @@ export function mountCrewDetailPage(
       if (!currentCrew || editingProfile !== null) return;
       editingProfile = {
         field,
-        value: currentCrew[field],
+        value: currentCrew[field] ?? "",
       };
       renderDetail();
     },
@@ -803,8 +804,10 @@ export function mountCrewDetailPage(
       clearNotices();
       renderDetail();
 
-      // fields.update takes partial fields — send only the changed one.
-      const program = crewFieldsUpdate(crewId, { [field]: value }, currentCrew.revision);
+      // Favored operation is independent of the hunting-grounds location.
+      const program = field === "favoredOperation"
+        ? crewFavoredOperationSet(crewId, value, currentCrew.revision)
+        : crewFieldsUpdate(crewId, { [field]: value }, currentCrew.revision);
       void Effect.runPromise(
         Effect.match(program, {
           onFailure: (err) => onOpFailure(err, () => { isProfileLoading = false; }),
@@ -1104,10 +1107,16 @@ export function mountCrewDetailPage(
     // clicking an empty box marks one box, clicking a filled box unmarks one.
     onChartBox: (name: string, index: number) => {
       if (!currentCrew || isUpgradeLoading) return;
-      const marked = currentCrew.upgrades.find((u) => u.name === name)?.boxesMarked ?? 0;
+      const type = crewTypeSetting(crewTypeData, crewTypesData, currentCrew.crewTypeName);
+      const catalogName = canonicalCatalogName(type, "LegacyUpgradeNames", name);
+      const owned = currentCrew.upgrades.filter((u) =>
+        canonicalCatalogName(type, "LegacyUpgradeNames", u.name) === catalogName);
+      name = owned.find((u) => u.name === name)?.name ?? owned[0]?.name ?? name;
+      const marked = owned.reduce((sum, u) => sum + u.boxesMarked, 0);
       if (index > marked) {
         runCrewOp((v) => { isUpgradeLoading = v; }, upgradeMark(crewId, name, currentCrew.revision));
       } else {
+        if (!advancementEditMode) return;
         runCrewOp((v) => { isUpgradeLoading = v; }, upgradeUnmark(crewId, name, currentCrew.revision));
       }
     },

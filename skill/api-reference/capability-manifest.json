@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 124,
+  "operationCount": 125,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -94,7 +94,7 @@
       "method": "GET",
       "path": "/games/{stem}/crews/{crewType}",
       "agentReference": "api-reference/README.md#getcrewtypesettings",
-      "summary": "full crew type settings"
+      "summary": "CREW-SHEET-02 (additive note): a crew type may publish an optional LegacyNames array of its older names. A request for a legacy name resolves to that canonical type's settings (200), exactly like the canonical name; only a name that is neither a canonical Name nor a listed legacy name is 404."
     },
     "listCharacters": {
       "disposition": "agent",
@@ -108,7 +108,7 @@
       "method": "POST",
       "path": "/characters",
       "agentReference": "api-reference/README.md#createcharacter",
-      "summary": "Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact.",
+      "summary": "Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact. CREW-SHEET-02 (additive note): the starting satchel coin count comes from the game settings StartingSatchelCoins (nonnegative Int32 integer); an absent or invalid value, including a number outside Int32 range, falls back to the canonical structural default 0 and never fails creation; a valid value above the settings' own FundMaxima.SatchelMax is clamped to that maximum at creation, so a stored satchel is never over capacity (CREW-SHEET-02 review fix).",
       "flagged": true
     },
     "createPcCharacter": {
@@ -649,7 +649,7 @@
       "method": "POST",
       "path": "/crews",
       "agentReference": "api-reference/README.md#createcrew",
-      "summary": "",
+      "summary": "Create a crew with favoredOperation empty and upgrades initialized from the selected crew type's optional StartingUpgrades [{Name, BoxesMarked}] settings. Starting upgrades are granted only at creation, never on legacy read, mutation, import, repair, or undo. CREW-SHEET-02 (additive note): starting hold and coin come from the game settings CrewStartingHold (weak|strong) and CrewStartingCoin (nonnegative Int32 integer); an absent or invalid value, including a number outside Int32 range, falls back to the canonical structural default (hold \\\"strong\\\", coin 0), never a literal and never a failed create. A crewType that is one of the type's listed LegacyNames is stored under the canonical name (the same write-time rename every mutation applies); an unknown name is kept verbatim.",
       "flagged": true
     },
     "getCrew": {
@@ -664,7 +664,7 @@
       "method": "GET",
       "path": "/crews/{id}/capabilities",
       "agentReference": "api-reference/README.md#getcrewcapabilities",
-      "summary": "Advisory crew capability projection: the full available upgrade catalog with total/marked/remaining boxes, the full available ability catalog with max/taken/remaining takes, effective turf, and the rep develop threshold. Never persisted in the entity DTO; mutations remain authoritative (UPGRADE_MAXED / ABILITY_MAXED)."
+      "summary": "Advisory crew capability projection: the full available upgrade catalog with total/marked/remaining boxes, the full available ability catalog with max/taken/remaining takes, effective turf, and the rep develop threshold. Never persisted in the entity DTO; mutations remain authoritative (UPGRADE_MAXED / ABILITY_MAXED). CREW-SHEET-02 (additive note): a crew whose stored crewTypeName is a legacy name listed in the type's optional LegacyNames array projects the canonical type's catalog; a stored ability/upgrade name that the type maps through its optional LegacyAbilityNames/LegacyUpgradeNames object counts toward the canonical catalog entry it was renamed to (the stored name is never rewritten). Alias-equivalent stored rows share one take limit and box total, in projections and mutations alike. Taking, marking, unmarking, or removing by either name resolves the same logical entry; another name never creates a second row for an owned entry."
     },
     "deleteCrew": {
       "disposition": "human",
@@ -957,6 +957,17 @@
         "sheet-management"
       ],
       "humanControl": "Reachable crew free-text editing control (name, lair, reputation, huntingGrounds, crewTypeName)."
+    },
+    "crewFavoredOperationSet": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/ops/favored-operation.set",
+      "agentReference": "api-reference/README.md#crewfavoredoperationset",
+      "summary": "Set the crew's favored operation, or cargo type for Smugglers. Free text; empty string clears it. New and write-normalized crews default to empty; legacy reads remain byte-identical.",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable favored-operation profile editor through frontend API crewFavoredOperationSet; chooses a crew-type option or records Smugglers cargo as free text, independently of hunting grounds."
     },
     "listClocks": {
       "disposition": "agent",

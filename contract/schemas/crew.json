@@ -68,7 +68,8 @@
       "$ref": "common.json#/$defs/timestamp"
     },
     "crewTypeName": {
-      "type": "string"
+      "type": "string",
+      "description": "CREW-SHEET-02: a crew created before a settings rename keeps its stored legacy type name on read (the wire is byte-identical to disk). Per-type settings lookups, the crew capability catalog, and every mutating write resolve the stored name through the canonical type's optional LegacyNames array; the write persists the canonical name (idempotent). An unknown name is kept verbatim."
     },
     "name": {
       "type": "string"
@@ -81,6 +82,11 @@
     },
     "huntingGrounds": {
       "type": "string"
+    },
+    "favoredOperation": {
+      "type": "string",
+      "default": "",
+      "description": "CREW-SHEET-02: free-text favored operation (Smugglers: cargo type). Optional for legacy stored reads; create and write normalization fill an empty string. No catalog restriction."
     },
     "tier": {
       "type": "integer",

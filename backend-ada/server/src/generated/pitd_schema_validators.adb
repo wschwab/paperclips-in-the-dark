@@ -615,7 +615,7 @@ package body Pitd_Schema_Validators is
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|stash|stashCapacity|notes|turf|contacts|factions|claimedClaimIds|claimOverrides|";
 
    Allowed_Crew : constant String :=
-     Required_Crew & "|startingFactions|";
+     Required_Crew & "|favoredOperation|startingFactions|";
 
    Required_Special_Ability : constant String :=
      "|name|timesTaken|";
@@ -1232,6 +1232,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "lair", Check_Str'Access);
       Check_Prop (V, Ptr, "reputation", Check_Str'Access);
       Check_Prop (V, Ptr, "huntingGrounds", Check_Str'Access);
+      Check_Prop (V, Ptr, "favoredOperation", Check_Str'Access);
       Check_Prop (V, Ptr, "tier", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "hold", Check_Enum_Hold'Access);
       Check_Prop (V, Ptr, "heat", Check_Bounded_Integer'Access);
@@ -1573,6 +1574,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "lair", Check_Str'Access);
       Check_Prop (V, "", "reputation", Check_Str'Access);
       Check_Prop (V, "", "huntingGrounds", Check_Str'Access);
+      Check_Prop (V, "", "favoredOperation", Check_Str'Access);
       Check_Prop (V, "", "tier", Check_Int_Min_0'Access);
       Check_Prop (V, "", "hold", Check_Enum_Hold'Access);
       Check_Prop (V, "", "heat", Check_Bounded_Integer'Access);

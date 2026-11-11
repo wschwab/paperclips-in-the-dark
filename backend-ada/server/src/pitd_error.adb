@@ -59,6 +59,14 @@ package body Pitd_Error is
       return D;
    end Limit_Details;
 
+   function Ownership_Limit_Details (Limit : Integer; Current : Long_Long_Integer) return JSON_Value is
+      D : JSON_Value := Create_Object;
+   begin
+      Set_Field (D, "limit", Limit);
+      Set_Field (D, "current", Long_Integer (Current));
+      return D;
+   end Ownership_Limit_Details;
+
    function Funds_Details (Available, Needed : Integer) return JSON_Value is
       D : JSON_Value := Create_Object;
    begin
@@ -231,14 +239,14 @@ package body Pitd_Error is
    end Armor_Not_Available_Error;
 
    function Ability_Maxed_Error
-     (Op, Message : String; Limit, Current : Integer; Entity : JSON_Value)
+     (Op, Message : String; Limit : Integer; Current : Long_Long_Integer; Entity : JSON_Value)
       return JSON_Value
    is
    begin
       return Error_Value
         (Op, "ABILITY_MAXED", 200, Message, False,
          "The ability is at its take limit; no more times can be taken.",
-         Limit_Details (Limit, Current), Entity);
+         Ownership_Limit_Details (Limit, Current), Entity);
    end Ability_Maxed_Error;
 
    function Cannot_Level_Up_Error
@@ -264,14 +272,14 @@ package body Pitd_Error is
    end Rating_Maxed_Error;
 
    function Upgrade_Maxed_Error
-     (Op, Message : String; Limit, Current : Integer; Entity : JSON_Value)
+     (Op, Message : String; Limit : Integer; Current : Long_Long_Integer; Entity : JSON_Value)
       return JSON_Value
    is
    begin
       return Error_Value
         (Op, "UPGRADE_MAXED", 200, Message, False,
          "The upgrade is at its total box count; no more boxes can be marked.",
-         Limit_Details (Limit, Current), Entity);
+         Ownership_Limit_Details (Limit, Current), Entity);
    end Upgrade_Maxed_Error;
 
    function Insufficient_Funds_Error

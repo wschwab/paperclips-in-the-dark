@@ -86,9 +86,7 @@ export function extractReputations(
     );
   }
   if (Array.isArray(crewTypesData)) {
-    const found = crewTypesData.find(
-      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
-    );
+    const found = findCrewType(crewTypesData, crewTypeName);
     if (found && Array.isArray(found.Reputations)) {
       return (found.Reputations as unknown[]).filter(
         (r): r is string => typeof r === "string",
@@ -96,6 +94,59 @@ export function extractReputations(
     }
   }
   return [];
+}
+
+/**
+ * CREW-SHEET-02: resolve a crew's stored type name to its crew-type entry.
+ *
+ * The settings may rename a crew type (Cultists → Cult) and the server renames
+ * at write time, but crews stored before the rename keep the old name on the
+ * wire. Exact Name match wins; otherwise an entry whose optional LegacyNames
+ * list contains the stored name is the canonical entry. Purely a lookup — the
+ * stored name is never rewritten client-side (the sheet still shows it).
+ */
+export function findCrewType(
+  crewTypesData: readonly Record<string, unknown>[] | null,
+  crewTypeName: string,
+): Record<string, unknown> | null {
+  if (!Array.isArray(crewTypesData)) return null;
+  const types = crewTypesData.filter(
+    (ct): ct is Record<string, unknown> => typeof ct === "object" && ct !== null,
+  );
+  const exact = types.find((ct) => ct.Name === crewTypeName);
+  if (exact) return exact;
+  return (
+    types.find(
+      (ct) => Array.isArray(ct.LegacyNames) && (ct.LegacyNames as unknown[]).includes(crewTypeName),
+    ) ?? null
+  );
+}
+
+/**
+ * CREW-SHEET-02: map a stored legacy catalog name to the entry it was renamed
+ * to, using a crew-type setting's `{ "<legacy>": "<canonical>" }` map
+ * (LegacyAbilityNames / LegacyUpgradeNames / LegacyFavoredOperations). Names
+ * that are not mapped (or have no map) resolve to themselves, so unknown
+ * names keep their own row instead of vanishing.
+ */
+export function canonicalCatalogName(
+  crewType: Record<string, unknown> | null,
+  mapKey: string,
+  name: string,
+): string {
+  const map = crewType?.[mapKey];
+  if (!map || typeof map !== "object" || Array.isArray(map)) return name;
+  const mapped = (map as Record<string, unknown>)[name];
+  return typeof mapped === "string" && mapped.length > 0 ? mapped : name;
+}
+
+/** Optional crew-type display data, preferring the detail endpoint. */
+export function crewTypeSetting(
+  crewTypeData: Record<string, unknown> | null,
+  crewTypesData: readonly Record<string, unknown>[] | null,
+  crewTypeName: string,
+): Record<string, unknown> | null {
+  return crewTypeData ?? findCrewType(crewTypesData, crewTypeName);
 }
 
 /**
@@ -226,9 +277,7 @@ export function extractCrewAbilities(
     return crewTypeData.SpecialAbilities as Array<Record<string, unknown>>;
   }
   if (Array.isArray(crewTypesData)) {
-    const found = crewTypesData.find(
-      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
-    );
+    const found = findCrewType(crewTypesData, crewTypeName);
     if (found && Array.isArray(found.SpecialAbilities)) {
       return found.SpecialAbilities as Array<Record<string, unknown>>;
     }
@@ -250,9 +299,7 @@ export function extractCrewUpgrades(
     return crewTypeData.Upgrades as Array<Record<string, unknown>>;
   }
   if (Array.isArray(crewTypesData)) {
-    const found = crewTypesData.find(
-      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
-    );
+    const found = findCrewType(crewTypesData, crewTypeName);
     if (found && Array.isArray(found.Upgrades)) {
       return found.Upgrades as Array<Record<string, unknown>>;
     }
@@ -282,9 +329,7 @@ export function extractCrewClaims(
     return crewTypeData.Claims as Record<string, unknown>;
   }
   if (Array.isArray(crewTypesData)) {
-    const found = crewTypesData.find(
-      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
-    );
+    const found = findCrewType(crewTypesData, crewTypeName);
     if (found && typeof (found as Record<string, unknown>).Claims === "object") {
       return (found as Record<string, unknown>).Claims as Record<string, unknown>;
     }
@@ -352,9 +397,7 @@ export function extractExperienceTrigger(
     return crewTypeData.ExperienceTrigger;
   }
   if (Array.isArray(crewTypesData)) {
-    const found = crewTypesData.find(
-      (ct) => ct && typeof ct === "object" && ct.Name === crewTypeName,
-    );
+    const found = findCrewType(crewTypesData, crewTypeName);
     if (found && typeof found.ExperienceTrigger === "string") {
       return found.ExperienceTrigger;
     }
@@ -392,13 +435,13 @@ export function describeCrewRestore(before: Crew, after: Crew): string {
   return "the previous state";
 }
 
-/** Editable free-text crew fields (contract fields.update). Reputation is a
- * game-data dropdown (F2ac) and notes are a dedicated multi-note section
- * (C4/F2ac), so neither is a free-text profile field here. */
-export type CrewField = "name" | "lair" | "huntingGrounds";
+/** Editable profile fields; favored operation uses its dedicated operation,
+ * while the other fields use fields.update. Reputation has its own picker. */
+export type CrewField = "name" | "lair" | "huntingGrounds" | "favoredOperation";
 
 export const CREW_FIELD_LABELS: Record<CrewField, string> = {
   name: "Name",
   lair: "Lair",
   huntingGrounds: "Hunting grounds",
+  favoredOperation: "Favored operation",
 };

@@ -9,19 +9,19 @@
 			"ExperienceTrigger": "Execute a successful murder, ransom, or assassination operation.",
 			"SpecialAbilities": [
 				{
-					"Name": "Predators",
-					"TimesTakeable": 1,
-					"Description": "When you use a stealth or deception plan to commit murder, take +1d to the engagement roll."
-				},
-				{
 					"Name": "Deadly",
 					"TimesTakeable": 1,
 					"Description": "Each PC may add +1 action rating to Hunt, Prowl, or Skirmish (up to a max rating of 3)."
 				},
 				{
-					"Name": "Death Veil",
+					"Name": "Crow's Veil",
 					"TimesTakeable": 1,
-					"Description": "Due to hard-won experience or occult ritual, you don't take extra heat when killing is involved on a score."
+					"Description": "Due to hard-won experience or occult ritual, your activities are hidden from the notice of the death-seeker crows. You don't take extra heat when killing is involved on a score."
+				},
+				{
+					"Name": "Emberdeath",
+					"TimesTakeable": 1,
+					"Description": "You know the arcane method to destroy a living victim's spirit at the moment you kill them. Take 3 stress to channel electroplasmic energy from the ghost field to disintegrate the spirit and the dead body in a shower of sparking embers."
 				},
 				{
 					"Name": "No Traces",
@@ -34,14 +34,19 @@
 					"Description": "When you advance your Tier, it costs half the coin it normally would."
 				},
 				{
-					"Name": "War Dogs",
+					"Name": "Predators",
 					"TimesTakeable": 1,
-					"Description": "When you're at war (-3 faction status), your crew does not suffer -1 hold and PCs still get two downtime activities, instead of just one."
+					"Description": "When you use stealth or subterfuge to commit murder, take +1d to the engagement roll."
 				},
 				{
-					"Name": "Forged in the Fire",
+					"Name": "Vipers",
 					"TimesTakeable": 1,
-					"Description": "Each PC has been toughened by cruel experience. You get +1d to resistance rolls."
+					"Description": "When you acquire or craft poisons, you get +1 result level to your roll. When you employ a poison, you are specially prepared to be immune to its effects."
+				},
+				{
+					"Name": "Veteran",
+					"TimesTakeable": 3,
+					"Description": "Choose a special ability from another crew."
 				}
 			],
 			"Upgrades": [
@@ -50,11 +55,13 @@
 					"TotalBoxes": 1,
 					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
 				},
-				{
-					"Name": "Training",
-					"TotalBoxes": 1,
-					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
-				},
+				{ "Name": "Training", "TotalBoxes": 1, "Description": "Legacy unspecified-track training. Retained for saved crews; choose a named training track for new upgrades." },
+				{ "Name": "Insight Training", "TotalBoxes": 1, "Description": "Training Insight during downtime grants 2 xp instead of 1." },
+				{ "Name": "Prowess Training", "TotalBoxes": 1, "Description": "Training Prowess during downtime grants 2 xp instead of 1." },
+				{ "Name": "Resolve Training", "TotalBoxes": 1, "Description": "Training Resolve during downtime grants 2 xp instead of 1." },
+				{ "Name": "Playbook Training", "TotalBoxes": 1, "Description": "Training playbook xp during downtime grants 2 xp instead of 1." },
+				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "A boat, dock, and supply shack. The second box adds armor and cargo capacity." },
+				{ "Name": "Carriage House", "TotalBoxes": 2, "Description": "A carriage, draft animals, and stable. The second box adds armor and larger, swifter draft animals." },
 				{
 					"Name": "Secure Lair",
 					"TotalBoxes": 2,
@@ -99,49 +106,37 @@
 				{
 					"Name": "Composed",
 					"TotalBoxes": 3,
-					"Description": "Each PC gets +1 stress box."
+					"Description": "Legacy generic +1 stress box upgrade, retained so saved crews keep loading; the Assassins sheet lists no stress upgrade."
+				},
+				{
+					"Name": "Assassin rigging",
+					"TotalBoxes": 1,
+					"Description": "Two free load of weapons or gear."
+				},
+				{
+					"Name": "Ironhook Contacts",
+					"TotalBoxes": 1,
+					"Description": "Your crew's Tier is effectively +1 higher in prison. This applies to any Tier-related element in prison, including the incarceration roll."
+				},
+				{
+					"Name": "Elite Skulks",
+					"TotalBoxes": 1,
+					"Description": "Your Skulks cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Elite Thugs",
+					"TotalBoxes": 1,
+					"Description": "Your Thugs cohorts are elite: +1d when they roll for that type."
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Quality: Weapons",
-					"TotalBoxes": 2,
-					"Description": "Each upgrade improves the quality rating of all the PCs' weapons."
-				},
-				{
-					"Name": "Cohort (Gang or Expert)",
-					"TotalBoxes": 1,
-					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
-				}
+				{ "Name": "Insight Training", "BoxesMarked": 1 },
+				{ "Name": "Prowess Training", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "Placeholder Contact 1",
-					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 2",
-					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 3",
-					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 4",
-					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 5",
-					"Description": "[TODO: Fill in from core book \u2014 Assassin contacts]"
-				}
-			],
-			"FavoredOperations": [
-				"Murder",
-				"Ransom",
-				"Extortion",
-				"Sabotage"
-			],
+			"Contacts": [],
+			"FavoredOperations": ["Accident", "Disappearance", "Murder", "Ransom"],
+			"FavoredOperationLabel": "Favored operation",
+			"LegacyAbilityNames": { "Death Veil": "Crow's Veil" },
 			"Reputations": [
 				"Ambitious",
 				"Brutal",
@@ -381,29 +376,19 @@
 			"ExperienceTrigger": "Execute a successful operation involving battle, extortion, or a show of force.",
 			"SpecialAbilities": [
 				{
-					"Name": "Deadly",
+					"Name": "Dangerous",
 					"TimesTakeable": 1,
-					"Description": "Each PC may add +1 action rating to Hunt, Prowl, or Skirmish (up to a max rating of 3)."
+					"Description": "Each PC may add +1 action rating to Hunt, Skirmish, or Wreck (up to a max rating of 3)."
 				},
 				{
-					"Name": "Forged in the Fire",
+					"Name": "Blood Brothers",
 					"TimesTakeable": 1,
-					"Description": "Each PC has been toughened by cruel experience. You get +1d to resistance rolls."
+					"Description": "When you fight alongside your cohorts in combat, they get +1d for teamwork rolls (setup and group actions). All of your cohorts get the Thugs type for free (if they're already Thugs, add another type)."
 				},
 				{
-					"Name": "War Dogs",
+					"Name": "Door Kickers",
 					"TimesTakeable": 1,
-					"Description": "When you're at war (-3 faction status), your crew does not suffer -1 hold and PCs still get two downtime activities, instead of just one."
-				},
-				{
-					"Name": "Fearsome",
-					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book \u2014 Bravos special ability]"
-				},
-				{
-					"Name": "Patron",
-					"TimesTakeable": 1,
-					"Description": "When you advance your Tier, it costs half the coin it normally would."
+					"Description": "When you execute an assault plan, take +1d to the engagement roll."
 				},
 				{
 					"Name": "Fiends",
@@ -411,9 +396,24 @@
 					"Description": "Fear is as good as respect. You may count each wanted level as if it were turf."
 				},
 				{
-					"Name": "All Hands",
+					"Name": "Forged in the Fire",
 					"TimesTakeable": 1,
-					"Description": "During downtime, one of your cohorts may perform a downtime activity for the crew to acquire an asset, reduce heat, or work on a long-term project."
+					"Description": "Each PC has been toughened by cruel experience. You get +1d to resistance rolls."
+				},
+				{
+					"Name": "Patron",
+					"TimesTakeable": 1,
+					"Description": "When you advance your Tier, it costs half the coin it normally would."
+				},
+				{
+					"Name": "War Dogs",
+					"TimesTakeable": 1,
+					"Description": "When you're at war (-3 faction status), your crew does not suffer -1 hold and PCs still get two downtime activities, instead of just one."
+				},
+				{
+					"Name": "Veteran",
+					"TimesTakeable": 2,
+					"Description": "Choose a special ability from another crew."
 				}
 			],
 			"Upgrades": [
@@ -422,11 +422,12 @@
 					"TotalBoxes": 1,
 					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
 				},
-				{
-					"Name": "Training",
-					"TotalBoxes": 1,
-					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
-				},
+				{ "Name": "Training", "TotalBoxes": 1, "Description": "Legacy unspecified-track training. Retained for saved crews; choose a named training track for new upgrades." },
+				{ "Name": "Insight Training", "TotalBoxes": 1, "Description": "Training Insight during downtime grants 2 xp instead of 1." },
+				{ "Name": "Resolve Training", "TotalBoxes": 1, "Description": "Training Resolve during downtime grants 2 xp instead of 1." },
+				{ "Name": "Playbook Training", "TotalBoxes": 1, "Description": "Training playbook xp during downtime grants 2 xp instead of 1." },
+				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "A boat, dock, and supply shack. The second box adds armor and cargo capacity." },
+				{ "Name": "Carriage House", "TotalBoxes": 2, "Description": "A carriage, draft animals, and stable. The second box adds armor and larger, swifter draft animals." },
 				{
 					"Name": "Prowess Training",
 					"TotalBoxes": 1,
@@ -476,49 +477,36 @@
 				{
 					"Name": "Composed",
 					"TotalBoxes": 3,
-					"Description": "Each PC gets +1 stress box."
+					"Description": "Legacy generic +1 stress box upgrade, retained so saved crews keep loading; the Bravos sheet lists no stress upgrade."
+				},
+				{
+					"Name": "Bravos rigging",
+					"TotalBoxes": 1,
+					"Description": "Two free load of weapons or armor."
+				},
+				{
+					"Name": "Ironhook Contacts",
+					"TotalBoxes": 1,
+					"Description": "Your crew's Tier is effectively +1 higher in prison. This applies to any Tier-related element in prison, including the incarceration roll."
+				},
+				{
+					"Name": "Elite Rovers",
+					"TotalBoxes": 1,
+					"Description": "Your Rovers cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Elite Thugs",
+					"TotalBoxes": 1,
+					"Description": "Your Thugs cohorts are elite: +1d when they roll for that type."
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Prowess Training",
-					"TotalBoxes": 1,
-					"Description": "If you have Prowess Training, when you train Prowess during downtime, you mark 2 xp on the Prowess track (instead of just 1)."
-				},
-				{
-					"Name": "Cohort (Gang or Expert)",
-					"TotalBoxes": 1,
-					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Thugs."
-				}
+				{ "Name": "Cohort (Gang or Expert)", "BoxesMarked": 1 },
+				{ "Name": "Prowess Training", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "Placeholder Contact 1",
-					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 2",
-					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 3",
-					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 4",
-					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 5",
-					"Description": "[TODO: Fill in from core book \u2014 Bravos contacts]"
-				}
-			],
-			"FavoredOperations": [
-				"Battle",
-				"Extortion",
-				"Sabotage",
-				"Show of Force"
-			],
+			"Contacts": [],
+			"FavoredOperations": ["Battle", "Extortion", "Sabotage", "Smash & Grab"],
+			"FavoredOperationLabel": "Favored operation",
 			"Reputations": [
 				"Ambitious",
 				"Brutal",
@@ -778,45 +766,51 @@
 			}
 		},
 		{
-			"Name": "Cultists",
+			"Name": "Cult",
+			"LegacyNames": ["Cultists"],
 			"Hook": "You're devoted to a strange power\u2014occult secrets and forbidden rituals are your trade.",
 			"Description": "Cultists use occult rituals, dark blessings, and supernatural threats to advance their esoteric agenda.",
 			"ExperienceTrigger": "Execute a successful operation involving consecration, sacrifice, or occult power.",
 			"SpecialAbilities": [
+				{
+					"Name": "Chosen",
+					"TimesTakeable": 1,
+					"Description": "Each PC may add +1 action rating to Attune, Study, or Sway (up to a max rating of 3)."
+				},
 				{
 					"Name": "Anointed",
 					"TimesTakeable": 1,
 					"Description": "You gain +1d to resistance rolls against supernatural threats. You get +1d to healing rolls when you have supernatural harm."
 				},
 				{
-					"Name": "Fiends",
+					"Name": "Bound in Darkness",
 					"TimesTakeable": 1,
-					"Description": "Fear is as good as respect. You may count each wanted level as if it were turf."
+					"Description": "You may use teamwork with any cult member, regardless of the distance separating you. By taking 1 stress, your whispered message is heard by every cultist."
 				},
 				{
-					"Name": "Patron",
+					"Name": "Conviction",
 					"TimesTakeable": 1,
-					"Description": "When you advance your Tier, it costs half the coin it normally would."
+					"Description": "Each PC gains an additional Vice: Worship. When you indulge this vice and bring a pleasing sacrifice, you don't overindulge if you clear excess stress. In addition, your deity will assist any one action roll you make, from now until you indulge this vice again."
 				},
 				{
-					"Name": "Forged in the Fire",
+					"Name": "Glory Incarnate",
 					"TimesTakeable": 1,
-					"Description": "Each PC has been toughened by cruel experience. You get +1d to resistance rolls."
+					"Description": "Your deity sometimes manifests in the physical world. This can be a great boon, but the priorities and values of a god are not those of mortals."
 				},
 				{
-					"Name": "Temple",
+					"Name": "Sealed in Blood",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book \u2014 Cultists special ability]"
+					"Description": "Each human sacrifice yields -3 stress cost for any ritual you perform."
 				},
 				{
-					"Name": "Dark Pact",
+					"Name": "Zealotry",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book \u2014 Cultists special ability]"
+					"Description": "Your cohorts have abandoned their reason to devote themselves to the cult. They will undertake any service, no matter how dangerous or strange. They gain +1d to rolls against enemies of the faith."
 				},
 				{
-					"Name": "Strange Sight",
-					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book \u2014 Cultists special ability]"
+					"Name": "Veteran",
+					"TimesTakeable": 2,
+					"Description": "Choose a special ability from another crew."
 				}
 			],
 			"Upgrades": [
@@ -825,11 +819,13 @@
 					"TotalBoxes": 1,
 					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
 				},
-				{
-					"Name": "Training",
-					"TotalBoxes": 1,
-					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
-				},
+				{ "Name": "Training", "TotalBoxes": 1, "Description": "Legacy unspecified-track training. Retained for saved crews; choose a named training track for new upgrades." },
+				{ "Name": "Insight Training", "TotalBoxes": 1, "Description": "Training Insight during downtime grants 2 xp instead of 1." },
+				{ "Name": "Prowess Training", "TotalBoxes": 1, "Description": "Training Prowess during downtime grants 2 xp instead of 1." },
+				{ "Name": "Resolve Training", "TotalBoxes": 1, "Description": "Training Resolve during downtime grants 2 xp instead of 1." },
+				{ "Name": "Playbook Training", "TotalBoxes": 1, "Description": "Training playbook xp during downtime grants 2 xp instead of 1." },
+				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "A boat, dock, and supply shack. The second box adds armor and cargo capacity." },
+				{ "Name": "Carriage House", "TotalBoxes": 2, "Description": "A carriage, draft animals, and stable. The second box adds armor and larger, swifter draft animals." },
 				{
 					"Name": "Secure Lair",
 					"TotalBoxes": 2,
@@ -867,56 +863,44 @@
 					"Description": "Your crew has access to master level training. You may advance your PCs' action ratings to 4."
 				},
 				{
-					"Name": "Hardened",
-					"TotalBoxes": 3,
-					"Description": "Each PC gets +1 trauma box."
-				},
-				{
 					"Name": "Composed",
 					"TotalBoxes": 3,
-					"Description": "Each PC gets +1 stress box."
+					"Description": "Legacy generic +1 stress box upgrade, retained so saved crews keep loading; the Cult sheet lists no stress upgrade."
+				},
+				{
+					"Name": "Cult rigging",
+					"TotalBoxes": 1,
+					"Description": "Two free load of documents or implements."
+				},
+				{
+					"Name": "Ritual sanctum in lair",
+					"TotalBoxes": 1,
+					"Description": "Your lair includes a ritual sanctum for your arcane work."
+				},
+				{
+					"Name": "Elite Adepts",
+					"TotalBoxes": 1,
+					"Description": "Your Adepts cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Elite Thugs",
+					"TotalBoxes": 1,
+					"Description": "Your Thugs cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Ordained",
+					"TotalBoxes": 3,
+					"Description": "Each PC gets +1 trauma box."
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Quality: Implements (Arcane)",
-					"TotalBoxes": 2,
-					"Description": "Each upgrade improves the quality rating of all the PCs' arcane implements."
-				},
-				{
-					"Name": "Cohort (Gang or Expert)",
-					"TotalBoxes": 1,
-					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Adepts."
-				}
+				{ "Name": "Cohort (Gang or Expert)", "BoxesMarked": 1 },
+				{ "Name": "Resolve Training", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "Placeholder Contact 1",
-					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 2",
-					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 3",
-					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 4",
-					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 5",
-					"Description": "[TODO: Fill in from core book \u2014 Cultists contacts]"
-				}
-			],
-			"FavoredOperations": [
-				"Consecration",
-				"Sacrifice",
-				"Occult Ritual",
-				"Acquisition"
-			],
+			"Contacts": [],
+			"FavoredOperations": ["Acquisition", "Augury", "Consecration", "Sacrifice"],
+			"FavoredOperationLabel": "Favored operation",
+			"LegacyUpgradeNames": { "Hardened": "Ordained" },
 			"Reputations": [
 				"Ambitious",
 				"Brutal",
@@ -1174,24 +1158,34 @@
 			"ExperienceTrigger": "Execute a successful operation involving product supply, sale, or acquisition of new clients or contraband sources.",
 			"SpecialAbilities": [
 				{
+					"Name": "Silver Tongues",
+					"TimesTakeable": 1,
+					"Description": "Each PC may add +1 action rating to Command, Consort, or Sway (up to a max rating of 3)."
+				},
+				{
+					"Name": "Accord",
+					"TimesTakeable": 1,
+					"Description": "Sometimes friends are as good as territory. You may count up to three +3 faction statuses you hold as if they are turf."
+				},
+				{
+					"Name": "The Good Stuff",
+					"TimesTakeable": 1,
+					"Description": "Your merchandise is exquisite. The product quality is equal to your Tier+2. When you deal with a crew or faction, the GM will tell you who among them is hooked on your product."
+				},
+				{
+					"Name": "Ghost Market",
+					"TimesTakeable": 1,
+					"Description": "Through arcane ritual or hard-won experience, you have discovered how to prepare your product for sale to ghosts and/or demons. They do not pay in coin."
+				},
+				{
 					"Name": "High Society",
 					"TimesTakeable": 1,
 					"Description": "It's all about who you know. Take -1 heat during downtime and +1d to gather information about the city's elite."
 				},
 				{
-					"Name": "Pitch",
+					"Name": "Hooked",
 					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers special ability]"
-				},
-				{
-					"Name": "Renown",
-					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers special ability]"
-				},
-				{
-					"Name": "Trust",
-					"TimesTakeable": 1,
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers special ability]"
+					"Description": "Your gang members use your product. Add the savage, unreliable, or wild flaw to your gangs to give them +1 quality."
 				},
 				{
 					"Name": "Patron",
@@ -1199,14 +1193,9 @@
 					"Description": "When you advance your Tier, it costs half the coin it normally would."
 				},
 				{
-					"Name": "Pack Rats",
-					"TimesTakeable": 1,
-					"Description": "Your lair is a jumble of stolen items. When you roll to acquire an asset, take +1d."
-				},
-				{
-					"Name": "Just Passing Through",
-					"TimesTakeable": 1,
-					"Description": "During downtime, take -1 heat. When your heat is 4 or less, you get +1d to deceive people when you pass yourselves off as ordinary citizens."
+					"Name": "Veteran",
+					"TimesTakeable": 2,
+					"Description": "Choose a special ability from another crew."
 				}
 			],
 			"Upgrades": [
@@ -1215,11 +1204,13 @@
 					"TotalBoxes": 1,
 					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
 				},
-				{
-					"Name": "Training",
-					"TotalBoxes": 1,
-					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
-				},
+				{ "Name": "Training", "TotalBoxes": 1, "Description": "Legacy unspecified-track training. Retained for saved crews; choose a named training track for new upgrades." },
+				{ "Name": "Insight Training", "TotalBoxes": 1, "Description": "Training Insight during downtime grants 2 xp instead of 1." },
+				{ "Name": "Prowess Training", "TotalBoxes": 1, "Description": "Training Prowess during downtime grants 2 xp instead of 1." },
+				{ "Name": "Resolve Training", "TotalBoxes": 1, "Description": "Training Resolve during downtime grants 2 xp instead of 1." },
+				{ "Name": "Playbook Training", "TotalBoxes": 1, "Description": "Training playbook xp during downtime grants 2 xp instead of 1." },
+				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "A boat, dock, and supply shack. The second box adds armor and cargo capacity." },
+				{ "Name": "Carriage House", "TotalBoxes": 2, "Description": "A carriage, draft animals, and stable. The second box adds armor and larger, swifter draft animals." },
 				{
 					"Name": "Secure Lair",
 					"TotalBoxes": 2,
@@ -1259,7 +1250,7 @@
 				{
 					"Name": "Hardened",
 					"TotalBoxes": 3,
-					"Description": "Each PC gets +1 trauma box."
+					"Description": "Legacy generic +1 trauma box upgrade, retained so saved crews keep loading; the Hawkers sheet lists no trauma upgrade."
 				},
 				{
 					"Name": "Composed",
@@ -1270,48 +1261,35 @@
 					"Name": "Vice Den",
 					"TotalBoxes": 1,
 					"Description": "During downtime, roll dice equal to your Tier. You earn coin equal to the highest result, minus your heat."
+				},
+				{
+					"Name": "Hawker's rigging",
+					"TotalBoxes": 1,
+					"Description": "One carried item is concealed and has no load."
+				},
+				{
+					"Name": "Ironhook Contacts",
+					"TotalBoxes": 1,
+					"Description": "Your crew's Tier is effectively +1 higher in prison. This applies to any Tier-related element in prison, including the incarceration roll."
+				},
+				{
+					"Name": "Elite Rooks",
+					"TotalBoxes": 1,
+					"Description": "Your Rooks cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Elite Thugs",
+					"TotalBoxes": 1,
+					"Description": "Your Thugs cohorts are elite: +1d when they roll for that type."
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Vice Den",
-					"TotalBoxes": 1,
-					"Description": "During downtime, roll dice equal to your Tier. You earn coin equal to the highest result, minus your heat."
-				},
-				{
-					"Name": "Cohort (Gang or Expert)",
-					"TotalBoxes": 1,
-					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Rooks."
-				}
+				{ "Name": "Secure Lair", "BoxesMarked": 1 },
+				{ "Name": "Resolve Training", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "Placeholder Contact 1",
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 2",
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 3",
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 4",
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 5",
-					"Description": "[TODO: Fill in from core book \u2014 Hawkers contacts]"
-				}
-			],
-			"FavoredOperations": [
-				"Sale",
-				"Supply",
-				"Socialize",
-				"Acquisition"
-			],
+			"Contacts": [],
+			"FavoredOperations": ["Sale", "Supply", "Show of Force", "Socialize"],
+			"FavoredOperationLabel": "Favored operation",
 			"Reputations": [
 				"Ambitious",
 				"Brutal",
@@ -1565,24 +1543,14 @@
 			"ExperienceTrigger": "Execute a successful burglary, robbery, or espionage operation.",
 			"SpecialAbilities": [
 				{
-					"Name": "Second Story",
+					"Name": "Everyone Steals",
 					"TimesTakeable": 1,
-					"Description": "When you execute a clandestine infiltration, you get +1d to the engagement roll."
+					"Description": "Each PC may add +1 action rating to Prowl, Finesse, or Tinker (up to a max rating of 3)."
 				},
 				{
-					"Name": "Synchronized",
+					"Name": "Ghost Echoes",
 					"TimesTakeable": 1,
-					"Description": "When you perform a group action, you may count multiple 6s from different rolls as a critical success."
-				},
-				{
-					"Name": "No Traces",
-					"TimesTakeable": 1,
-					"Description": "When you keep an operation quiet or make it look like an accident, you get half the rep value of the target (round up) instead of zero. When you end downtime with zero heat, take +1 rep."
-				},
-				{
-					"Name": "Patron",
-					"TimesTakeable": 1,
-					"Description": "When you advance your Tier, it costs half the coin it normally would."
+					"Description": "From weird experience or occult ritual, all crew members gain the ability to see and interact with the ghostly structures, streets, and objects within the city's ghost-field echo."
 				},
 				{
 					"Name": "Pack Rats",
@@ -1590,14 +1558,29 @@
 					"Description": "Your lair is a jumble of stolen items. When you roll to acquire an asset, take +1d."
 				},
 				{
-					"Name": "Deadly",
+					"Name": "Patron",
 					"TimesTakeable": 1,
-					"Description": "Each PC may add +1 action rating to Hunt, Prowl, or Skirmish (up to a max rating of 3)."
+					"Description": "When you advance your Tier, it costs half the coin it normally would."
 				},
 				{
-					"Name": "Just Passing Through",
+					"Name": "Second Story",
 					"TimesTakeable": 1,
-					"Description": "During downtime, take -1 heat. When your heat is 4 or less, you get +1d to deceive people when you pass yourselves off as ordinary citizens."
+					"Description": "When you execute a clandestine infiltration, you get +1d to the engagement roll."
+				},
+				{
+					"Name": "Slippery",
+					"TimesTakeable": 1,
+					"Description": "When you roll entanglements, roll twice and keep the one you want. When you reduce heat on the crew, take +1d."
+				},
+				{
+					"Name": "Synchronized",
+					"TimesTakeable": 1,
+					"Description": "When you perform a group action, you may count multiple 6s from different rolls as a critical success."
+				},
+				{
+					"Name": "Veteran",
+					"TimesTakeable": 2,
+					"Description": "Choose a special ability from another crew."
 				}
 			],
 			"Upgrades": [
@@ -1606,11 +1589,13 @@
 					"TotalBoxes": 1,
 					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
 				},
-				{
-					"Name": "Training",
-					"TotalBoxes": 1,
-					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
-				},
+				{ "Name": "Training", "TotalBoxes": 1, "Description": "Legacy unspecified-track training. Retained for saved crews; choose a named training track for new upgrades." },
+				{ "Name": "Insight Training", "TotalBoxes": 1, "Description": "Training Insight during downtime grants 2 xp instead of 1." },
+				{ "Name": "Prowess Training", "TotalBoxes": 1, "Description": "Training Prowess during downtime grants 2 xp instead of 1." },
+				{ "Name": "Resolve Training", "TotalBoxes": 1, "Description": "Training Resolve during downtime grants 2 xp instead of 1." },
+				{ "Name": "Playbook Training", "TotalBoxes": 1, "Description": "Training playbook xp during downtime grants 2 xp instead of 1." },
+				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "A boat, dock, and supply shack. The second box adds armor and cargo capacity." },
+				{ "Name": "Carriage House", "TotalBoxes": 2, "Description": "A carriage, draft animals, and stable. The second box adds armor and larger, swifter draft animals." },
 				{
 					"Name": "Secure Lair",
 					"TotalBoxes": 2,
@@ -1650,54 +1635,42 @@
 				{
 					"Name": "Hardened",
 					"TotalBoxes": 3,
-					"Description": "Each PC gets +1 trauma box."
+					"Description": "Legacy generic +1 trauma box upgrade, retained so saved crews keep loading; the Shadows sheet lists no trauma upgrade."
 				},
 				{
-					"Name": "Composed",
+					"Name": "Thief Rigging",
+					"TotalBoxes": 1,
+					"Description": "Two free load of tools or gear."
+				},
+				{
+					"Name": "Underground maps & passkeys",
+					"TotalBoxes": 1,
+					"Description": "You have easy passage through the underground canals, tunnels, and basements of the city."
+				},
+				{
+					"Name": "Elite Rooks",
+					"TotalBoxes": 1,
+					"Description": "Your Rooks cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Elite Skulks",
+					"TotalBoxes": 1,
+					"Description": "Your Skulks cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Steady",
 					"TotalBoxes": 3,
 					"Description": "Each PC gets +1 stress box."
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Quality: Gear (Burglary & Climbing)",
-					"TotalBoxes": 2,
-					"Description": "Each upgrade improves the quality rating of all the PCs' burglary and climbing gear."
-				},
-				{
-					"Name": "Cohort (Gang or Expert)",
-					"TotalBoxes": 1,
-					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Skulks."
-				}
+				{ "Name": "Hidden Lair", "BoxesMarked": 1 },
+				{ "Name": "Prowess Training", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "Placeholder Contact 1",
-					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 2",
-					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 3",
-					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 4",
-					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 5",
-					"Description": "[TODO: Fill in from core book \u2014 Shadows contacts]"
-				}
-			],
-			"FavoredOperations": [
-				"Burglary",
-				"Robbery",
-				"Espionage",
-				"Acquisition"
-			],
+			"Contacts": [],
+			"FavoredOperations": ["Burglary", "Espionage", "Robbery", "Sabotage"],
+			"FavoredOperationLabel": "Favored operation",
+			"LegacyUpgradeNames": { "Composed": "Steady" },
 			"Reputations": [
 				"Ambitious",
 				"Brutal",
@@ -1952,39 +1925,44 @@
 			"ExperienceTrigger": "Execute a smuggling operation or acquire new clients or contraband sources.",
 			"SpecialAbilities": [
 				{
-					"Name": "Boat House",
-					"TimesTakeable": 2,
-					"Description": "You have a boat, a dock on a waterway, and a small shack to store boating supplies. A second upgrade improves the boat with armor and more cargo capacity."
-				},
-				{
-					"Name": "Rigging",
+					"Name": "Like Part of the Family",
 					"TimesTakeable": 1,
-					"Description": "You get 2 free load in two of the equipment categories (weapons, implements, supplies, gear, documents, and tools)."
-				},
-				{
-					"Name": "Underground Maps and Passkeys",
-					"TimesTakeable": 1,
-					"Description": "You have easy passage through the underground canals, tunnels, and basements of the city."
-				},
-				{
-					"Name": "Camouflage",
-					"TimesTakeable": 1,
-					"Description": "Your vehicles are perfectly concealed when at rest. They blend in as part of the environment, or as an uninteresting civilian vehicle."
-				},
-				{
-					"Name": "Patron",
-					"TimesTakeable": 1,
-					"Description": "When you advance your Tier, it costs half the coin it normally would."
-				},
-				{
-					"Name": "No Traces",
-					"TimesTakeable": 1,
-					"Description": "When you keep an operation quiet or make it look like an accident, you get half the rep value of the target (round up) instead of zero. When you end downtime with zero heat, take +1 rep."
+					"Description": "Create one of your vehicles as a cohort, using the vehicle edges and flaws. Its quality is equal to your Tier +1."
 				},
 				{
 					"Name": "All Hands",
 					"TimesTakeable": 1,
 					"Description": "During downtime, one of your cohorts may perform a downtime activity for the crew to acquire an asset, reduce heat, or work on a long-term project."
+				},
+				{
+					"Name": "Ghost Passage",
+					"TimesTakeable": 1,
+					"Description": "From harsh experience or occult ritual, all crew members become immune to possession by spirits, but may choose to carry a second ghost as a passenger within their body."
+				},
+				{
+					"Name": "Just Passing Through",
+					"TimesTakeable": 1,
+					"Description": "During downtime, take -1 heat. When your heat is 4 or less, you get +1d to deceive people when you pass yourselves off as ordinary citizens."
+				},
+				{
+					"Name": "Leverage",
+					"TimesTakeable": 1,
+					"Description": "Your crew supplies contraband for other factions. Your success is good for them. Whenever you gain rep, gain +1 rep."
+				},
+				{
+					"Name": "Reavers",
+					"TimesTakeable": 1,
+					"Description": "When you go into conflict aboard a vehicle, you gain +1 effect for vehicle damage and speed. Your vehicle gains armor."
+				},
+				{
+					"Name": "Renegades",
+					"TimesTakeable": 1,
+					"Description": "Each PC may add +1 action rating to Finesse, Prowl, or Skirmish (up to a max rating of 3)."
+				},
+				{
+					"Name": "Veteran",
+					"TimesTakeable": 2,
+					"Description": "Choose a special ability from another crew."
 				}
 			],
 			"Upgrades": [
@@ -1993,21 +1971,15 @@
 					"TotalBoxes": 1,
 					"Description": "A cohort is a gang or a single expert NPC who works for your crew."
 				},
-				{
-					"Name": "Training",
-					"TotalBoxes": 1,
-					"Description": "If you have a Training upgrade, you earn 2 xp (instead of 1) when you train a given xp track during downtime."
-				},
-				{
-					"Name": "Boat House",
-					"TotalBoxes": 2,
-					"Description": "You have a boat, a dock on a waterway, and a small shack to store boating supplies. A second upgrade improves the boat with armor and more cargo capacity."
-				},
-				{
-					"Name": "Carriage House",
-					"TotalBoxes": 2,
-					"Description": "You have a carriage, and draft animals to pull it, and a stable. A second upgrade improves the carriage with armor and larger, swifter steeds."
-				},
+				{ "Name": "Training", "TotalBoxes": 1, "Description": "Legacy unspecified-track training. Retained for saved crews; choose a named training track for new upgrades." },
+				{ "Name": "Boat House", "TotalBoxes": 2, "Description": "A boat, dock, and supply shack. The second box adds armor and cargo capacity. This facility is distinct from the Smugglers' Vehicle upgrade." },
+				{ "Name": "Carriage House", "TotalBoxes": 2, "Description": "A carriage, draft animals, and stable. The second box adds armor and larger, swifter draft animals. This facility is distinct from the Smugglers' Vehicle upgrade." },
+				{ "Name": "Insight Training", "TotalBoxes": 1, "Description": "Training Insight during downtime grants 2 xp instead of 1." },
+				{ "Name": "Prowess Training", "TotalBoxes": 1, "Description": "Training Prowess during downtime grants 2 xp instead of 1." },
+				{ "Name": "Resolve Training", "TotalBoxes": 1, "Description": "Training Resolve during downtime grants 2 xp instead of 1." },
+				{ "Name": "Playbook Training", "TotalBoxes": 1, "Description": "Training playbook xp during downtime grants 2 xp instead of 1." },
+				{ "Name": "Vehicle", "TotalBoxes": 2, "Description": "Tracks the first of the sheet's two independent two-box Vehicle rows; its first box is marked at creation. The table decides what the vehicle and its marks represent; no automatic improvement or speed or armor bonus is defined." },
+				{ "Name": "Additional Vehicle", "TotalBoxes": 2, "Description": "Tracks the second of the sheet's two independent two-box Vehicle rows, separately from the starting Vehicle row. The table decides what the vehicle and its marks represent; no automatic improvement or speed or armor bonus is defined." },
 				{
 					"Name": "Secure Lair",
 					"TotalBoxes": 2,
@@ -2042,54 +2014,48 @@
 				{
 					"Name": "Hardened",
 					"TotalBoxes": 3,
-					"Description": "Each PC gets +1 trauma box."
+					"Description": "Legacy generic +1 trauma box upgrade, retained so saved crews keep loading; the Smugglers sheet lists no trauma upgrade."
 				},
 				{
-					"Name": "Composed",
+					"Name": "Smuggler's rigging",
+					"TotalBoxes": 1,
+					"Description": "Two items carried are perfectly concealed."
+				},
+				{
+					"Name": "Camouflage",
+					"TotalBoxes": 1,
+					"Description": "Your vehicles are perfectly concealed when at rest. They blend in as part of the environment, or as an uninteresting civilian vehicle."
+				},
+				{
+					"Name": "Elite Rovers",
+					"TotalBoxes": 1,
+					"Description": "Your Rovers cohorts are elite: +1d when they roll for that type."
+				},
+				{
+					"Name": "Barge",
+					"TotalBoxes": 1,
+					"Description": "A barge adds mobility for your lair."
+				},
+				{
+					"Name": "Steady",
 					"TotalBoxes": 3,
 					"Description": "Each PC gets +1 stress box."
 				}
 			],
 			"StartingUpgrades": [
-				{
-					"Name": "Boat House",
-					"TotalBoxes": 2,
-					"Description": "You have a boat, a dock on a waterway, and a small shack to store boating supplies."
-				},
-				{
-					"Name": "Cohort (Gang or Expert)",
-					"TotalBoxes": 1,
-					"Description": "A cohort is a gang or a single expert NPC who works for your crew. Start with a gang of Rovers."
-				}
+				{ "Name": "Vehicle", "BoxesMarked": 1 },
+				{ "Name": "Prowess Training", "BoxesMarked": 1 }
 			],
-			"Contacts": [
-				{
-					"Name": "Placeholder Contact 1",
-					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 2",
-					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 3",
-					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 4",
-					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
-				},
-				{
-					"Name": "Placeholder Contact 5",
-					"Description": "[TODO: Fill in from core book \u2014 Smugglers contacts]"
-				}
-			],
-			"FavoredOperations": [
-				"Smuggling Arms",
-				"Smuggling Contraband",
-				"Smuggling Passengers",
-				"Transport"
-			],
+			"Contacts": [],
+			"FavoredOperations": ["Arcane/weird", "Arms", "Contraband", "Passengers"],
+			"FavoredOperationLabel": "Cargo type",
+			"FavoredOperationFreeText": true,
+			"LegacyUpgradeNames": { "Composed": "Steady" },
+			"LegacyFavoredOperations": {
+				"Smuggling Arms": "Arms",
+				"Smuggling Contraband": "Contraband",
+				"Smuggling Passengers": "Passengers"
+			},
 			"Reputations": [
 				"Ambitious",
 				"Brutal",

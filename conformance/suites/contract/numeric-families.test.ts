@@ -165,20 +165,29 @@ describe("§ numeric operation families (SC-O4)", () => {
       // remainder as a sideEffect, never silently drop coin — §5.1.8).
       // coin.add/heat.add are declared signed-delta family — their signed
       // coverage lives in NUM-SIGNED-001. Every bound below is
-      // settings-derived. Fresh character: satchel 2 / SatchelMax 4, stash 0.
+      // settings-derived, and the created character supplies the starting
+      // satchel fill (StartingSatchelCoins) and stash.
       const character = await rawCreateCharacter(BLADES);
       const satchelMax = gameSettings(BLADES).FundMaxima.SatchelMax;
       const stashMax = gameSettings(BLADES).FundMaxima.StashMax;
+      const created = await api.character(character.id);
+      const satchelStart = created.fund.satchel.coins;
+      const stashStart = created.fund.stash.coins;
 
-      const gain = await api.characterOp(character.id, "fund.gain", { coins: 5 });
-      expect(gain.applied?.requested).toBe(5);
-      expect(gain.applied?.effective).toBe(5);
-      expect(gain.character?.fund.satchel.coins).toBe(satchelMax); // 2+2, capped
-      expect(gain.character?.fund.stash.coins).toBe(3); // overflow into stash
+      const gained = 5;
+      const intoSatchel = Math.min(gained, satchelMax - satchelStart);
+      const intoStash = Math.min(gained - intoSatchel, stashMax - stashStart);
+      const gain = await api.characterOp(character.id, "fund.gain", { coins: gained });
+      expect(gain.applied?.requested).toBe(gained);
+      expect(gain.applied?.effective).toBe(gained);
+      expect(gain.character?.fund.satchel.coins).toBe(satchelStart + intoSatchel); // satchel fills first, capped at SatchelMax
+      expect(gain.character?.fund.stash.coins).toBe(stashStart + intoStash); // remainder overflows into stash
 
       // Overflow past satchel+stash room: the dropped remainder is reported,
-      // never silently lost. Held: satchel 4 + stash 3; room = StashMax - 3.
-      const room = stashMax - 3;
+      // never silently lost. Held: satchel satchelMax + stash heldStash;
+      // room = StashMax - heldStash.
+      const heldStash = stashStart + intoStash;
+      const room = stashMax - heldStash;
       const overflow = await api.characterOp(character.id, "fund.gain", { coins: satchelMax + stashMax + 2 });
       expect(overflow.applied?.effective).toBe(room);
       expect(overflow.character?.fund.stash.coins).toBe(stashMax);

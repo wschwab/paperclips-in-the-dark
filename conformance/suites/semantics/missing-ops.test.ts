@@ -58,9 +58,13 @@ describe("§5.1 missing ops: cohorts, crew coin/stash/tier/xp", () => {
 
   testCase("SEMANTICS-CREW-FUND-001", "crew coin.add / stash.add / tier.add report applied deltas; stash clamps at derived capacity; tier floors at 0", async () => {
     const crew = await newCrew();
+    // The crew's starting coin comes from the game settings
+    // (CrewStartingCoin), so derive the delta expectation from the created
+    // crew rather than a fixed total.
+    const startingCoin = crew.coin;
     const coin = await api.crewOp(crew.id, "coin.add", { delta: 5 });
     expect(coin.ok).toBe(true);
-    expect(coin.crew?.coin).toBe(5);
+    expect(coin.crew?.coin).toBe(startingCoin + 5);
     expect(coin.applied.requested).toBe(5);
     expect(coin.applied.effective).toBe(5);
 

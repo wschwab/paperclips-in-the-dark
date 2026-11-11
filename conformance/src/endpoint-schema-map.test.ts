@@ -29,7 +29,7 @@ describe("endpoint schema map", () => {
     // FLOW-API-01 adds GET flow + atomic completion (116 → 118).
     // NOTES-EDIT-01 adds character and crew note.update (118 → 120).
     // SCOUNDREL-CREATE-02 adds the Talent allocation completion op (120 → 121).
-    expect(routes.length).toBe(121);
+    expect(routes.length).toBe(122);
     // Every declared operation appears in the map under its operationId.
     for (const route of routes) {
       const methods = Object.keys(spec.paths[route]).filter((m) =>

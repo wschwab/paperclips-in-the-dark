@@ -824,10 +824,12 @@ package body Pitd_Callback is
       elsif P3="crews" then
          declare N:constant String:=To_String(Games_Root)&"/"&P2&"-crews.json";V:JSON_Value;begin if not Ada.Directories.Exists(N) then return Fail(AWS.Messages.S404,"games.crews","NOT_FOUND");end if;V:=Read(Read_File(N));if P4="" then return Json_Response(V);end if;
             --  BUG-007: a known crew type returns its settings (200), not 404.
+            --  CREW-SHEET-02: a stored legacy type name (a CrewTypes[].LegacyNames
+            --  entry) resolves to the canonical type's settings.
             if Has_Field (V, "CrewTypes") then
-               declare A:constant JSON_Array:=Get(V,"CrewTypes");begin
+               declare A:constant JSON_Array:=Get(V,"CrewTypes");R:constant String:=Canonical_Crew_Type(V,P4);begin
                   for I in 1..Length(A) loop
-                     if Str_Field(Get(A,I),"Name")=P4 then return Json_Response(Get(A,I));end if;
+                     if Str_Field(Get(A,I),"Name")=R then return Json_Response(Get(A,I));end if;
                   end loop;
                end;
             end if;
@@ -2932,7 +2934,13 @@ if Kind = "crew" then
          "CrewStashBaseCapacity|LoadMaxima|" &
          "ActionCap|SessionExpressionMax|DevelopCoinCostMultiplier|" &
          "ClockPurposes|StartingAbility|ExtraDescription|" &
-         "StartingActionDots|StartingActionDotMax|DowntimeSettings|",
+         "StartingActionDots|StartingActionDotMax|DowntimeSettings|" &
+         --  CREW-SHEET-02: crew/character creation settings.  Deliberately
+         --  NOT type-checked at startup: an invalid value falls back to the
+         --  canonical structural default at create time
+         --  (Pitd_Ops.New_Crew/New_Character), so a bad settings value can
+         --  never crash the server.
+         "CrewStartingHold|CrewStartingCoin|StartingSatchelCoins|",
          Where);
       S_Require_Str (V, "Name", Where);
       S_Require_Arr (V, "Playbooks", Where);
@@ -3151,8 +3159,10 @@ if Kind = "crew" then
                S_No_Extra
                  (T,
                   "|Name|Hook|Description|ExperienceTrigger|SpecialAbilities|" &
-                  "Upgrades|StartingUpgrades|Contacts|FavoredOperations|" &
-                  "Reputations|Claims|",
+                  "Upgrades|StartingUpgrades|Contacts|FavoredOperations|FavoredOperationLabel|" &
+                  "FavoredOperationFreeText|Reputations|Claims|" &
+                  --  CREW-SHEET-02: legacy-name resolution data.
+                  "LegacyNames|LegacyAbilityNames|LegacyUpgradeNames|LegacyFavoredOperations|",
                   Where);
                S_Require_Str (T, "Name", Where);
                S_Require_Str (T, "Hook", Where);
@@ -3222,7 +3232,7 @@ if Kind = "crew" then
                end;
                if Has_Field (T, "StartingUpgrades") then
                   declare
-                     SUps : constant JSON_Array := Get (T, "StartingUpgrades");
+                     SUps : constant JSON_Array := S_Arr (T, "StartingUpgrades", Where);
                   begin
                      for J in 1 .. Length (SUps) loop
                         declare UP : constant JSON_Value := Get (SUps, J); begin
@@ -3230,7 +3240,30 @@ if Kind = "crew" then
                               Settings_Error
                                 (Where, "StartingUpgrades[" & Trim_Image (J) & "] must be an object");
                            end if;
+                           S_No_Extra (UP, "|Name|BoxesMarked|", Where);
                            S_Require_Str (UP, "Name", Where);
+                           declare
+                              Marked : constant Integer := S_Int (UP, "BoxesMarked", Where);
+                              Ups : constant JSON_Array := S_Arr (T, "Upgrades", Where);
+                              Found : Boolean := False;
+                           begin
+                              for K in 1 .. Length (Ups) loop
+                                 if S_Str (Get (Ups, K), "Name", Where) = S_Str (UP, "Name", Where) then
+                                    Found := True;
+                                    if Marked < 1 or else Marked > S_Int (Get (Ups, K), "TotalBoxes", Where) then
+                                       Settings_Error (Where, "StartingUpgrades BoxesMarked must fit the upgrade's TotalBoxes");
+                                    end if;
+                                 end if;
+                              end loop;
+                              if not Found then
+                                 Settings_Error (Where, "StartingUpgrades Name must reference this crew type's Upgrades");
+                              end if;
+                              for K in 1 .. J - 1 loop
+                                 if S_Str (Get (SUps, K), "Name", Where) = S_Str (UP, "Name", Where) then
+                                    Settings_Error (Where, "StartingUpgrades names must be unique");
+                                 end if;
+                              end loop;
+                           end;
                         end;
                      end loop;
                   end;
@@ -3246,6 +3279,16 @@ if Kind = "crew" then
                         end if;
                      end loop;
                   end;
+               end if;
+               if Has_Field (T, "FavoredOperationLabel") then
+                  S_Require_Str (T, "FavoredOperationLabel", Where);
+               end if;
+               --  CREW-SHEET-02: Smugglers' favored operation is free text
+               --  (cargo type) rather than a bounded select.
+               if Has_Field (T, "FavoredOperationFreeText")
+                 and then Get (T, "FavoredOperationFreeText").Kind /= JSON_Boolean_Type
+               then
+                  Settings_Error (Where, "FavoredOperationFreeText must be a boolean");
                end if;
                if Has_Field (T, "FavoredOperations") then
                   declare
@@ -3270,6 +3313,54 @@ if Kind = "crew" then
                      end loop;
                   end;
                end if;
+               --  CREW-SHEET-02: LegacyNames is the list of older names of
+               --  this same crew type; the three maps are
+               --  {"<legacy>": "<canonical>"} objects.  An absent (or empty)
+               --  list/map is the no-rename case.
+               if Has_Field (T, "LegacyNames") then
+                  declare
+                     LNs : constant JSON_Array := S_Arr (T, "LegacyNames", Where);
+                  begin
+                     for J in 1 .. Length (LNs) loop
+                        if Get (LNs, J).Kind /= JSON_String_Type then
+                           Settings_Error (Where, "LegacyNames must contain strings only");
+                        end if;
+                     end loop;
+                  end;
+               end if;
+               declare
+                  procedure Check_Legacy_Map (Map_Name : String) is
+                  begin
+                     if not Has_Field (T, Map_Name) then return; end if;
+                     declare
+                        M : constant JSON_Value := Get (T, Map_Name);
+                     begin
+                        if M.Kind /= JSON_Object_Type then
+                           Settings_Error
+                             (Where, Map_Name
+                              & " must be an object mapping legacy names to canonical names");
+                        end if;
+                        declare
+                           procedure Check_Pair (Key : UTF8_String; Value : JSON_Value) is
+                           begin
+                              if Key = "" or else Value.Kind /= JSON_String_Type
+                                or else String'(Get (Value)) = ""
+                              then
+                                 Settings_Error
+                                   (Where, Map_Name
+                                    & " entries must map a non-empty legacy name to a non-empty canonical name");
+                              end if;
+                           end;
+                        begin
+                           Map_JSON_Object (M, Check_Pair'Access);
+                        end;
+                     end;
+                  end Check_Legacy_Map;
+               begin
+                  Check_Legacy_Map ("LegacyAbilityNames");
+                  Check_Legacy_Map ("LegacyUpgradeNames");
+                  Check_Legacy_Map ("LegacyFavoredOperations");
+               end;
                if Has_Field (T, "Claims") then
                   declare
                      C : constant JSON_Value := Get (T, "Claims");

@@ -691,6 +691,21 @@
 			"type": "integer",
 			"minimum": 0
 		},
+		"CrewStartingHold": {
+			"type": "string",
+			"enum": [
+				"weak",
+				"strong"
+			]
+		},
+		"CrewStartingCoin": {
+			"type": "integer",
+			"minimum": 0
+		},
+		"StartingSatchelCoins": {
+			"type": "integer",
+			"minimum": 0
+		},
 		"LoadMaxima": {
 			"$ref": "#/definitions/LoadMaximaSetting"
 		},

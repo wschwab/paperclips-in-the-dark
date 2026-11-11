@@ -50,20 +50,29 @@
 				"Description"
 			]
 		},
+		"StartingCrewUpgradeSetting": {
+			"type": "object",
+			"properties": {
+				"Name": { "type": "string" },
+				"BoxesMarked": { "type": "integer", "minimum": 1 }
+			},
+			"additionalProperties": false,
+			"required": ["Name", "BoxesMarked"]
+		},
 		"CrewContactSetting": {
 			"type": "object",
 			"properties": {
 				"Name": {
 					"type": "string"
 				},
-				"Description": {
+				"Profession": {
 					"type": "string"
 				}
 			},
 			"additionalProperties": false,
 			"required": [
 				"Name",
-				"Description"
+				"Profession"
 			]
 		},
 		"ClaimEffectSetting": {
@@ -210,7 +219,7 @@
 				"StartingUpgrades": {
 					"type": "array",
 					"items": {
-						"$ref": "#/definitions/CrewUpgradeSetting"
+						"$ref": "#/definitions/StartingCrewUpgradeSetting"
 					}
 				},
 				"Contacts": {
@@ -224,6 +233,27 @@
 					"items": {
 						"type": "string"
 					}
+				},
+				"FavoredOperationLabel": {
+					"type": "string"
+				},
+				"FavoredOperationFreeText": {
+					"type": "boolean"
+				},
+				"LegacyNames": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"LegacyAbilityNames": {
+					"$ref": "#/definitions/LegacyNameMap"
+				},
+				"LegacyUpgradeNames": {
+					"$ref": "#/definitions/LegacyNameMap"
+				},
+				"LegacyFavoredOperations": {
+					"$ref": "#/definitions/LegacyNameMap"
 				},
 				"Reputations": {
 					"type": "array",
@@ -244,6 +274,11 @@
 				"SpecialAbilities",
 				"Upgrades"
 			]
+		},
+		"LegacyNameMap": {
+			"type": "object",
+			"propertyNames": { "minLength": 1 },
+			"additionalProperties": { "type": "string", "minLength": 1 }
 		},
 		"CohortTrait": {
 			"type": "object",

@@ -202,7 +202,7 @@ package body Pitd_Normalize is
    Allowed_Downtime_Activity : constant String := "|activity|description|";
    Allowed_Crew : constant String :=
      "|kind|id|gameStem|gameName|language|revision|formatVersion|createdAt|" &
-     "updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|tier|hold|" &
+     "updatedAt|crewTypeName|name|lair|reputation|huntingGrounds|favoredOperation|tier|hold|" &
     "heat|wanted|rep|experience|specialAbilities|upgrades|cohorts|coin|" &
     "stash|stashCapacity|notes|turf|contacts|factions|claimedClaimIds|" &
     "claimOverrides|startingFactions|";
@@ -2302,11 +2302,40 @@ package body Pitd_Normalize is
       Set_Field (O, "formatVersion", N_Format_Version (V, C));
       Set_Field (O, "createdAt", N_Timestamp (V, "createdAt", "/createdAt", C));
       Set_Field (O, "updatedAt", N_Timestamp (V, "updatedAt", "/updatedAt", C));
-      Set_Field (O, "crewTypeName", N_Str (V, "crewTypeName", "/crewTypeName", "", C));
+      --  CREW-SHEET-02: a stored legacy crew-type name normalizes to its
+      --  canonical name through the type's LegacyNames array.  The mapping is
+      --  deterministic and lossless, so it is deliberately NOT a repair
+      --  change: legacy crews stay admissible (no 422) and every write
+      --  boundary — op writes (Pitd_Common.Require_Entity_Write), import,
+      --  and repair — persists the canonical name.  Idempotent: a canonical
+      --  name resolves to itself.  An unknown name is kept verbatim.
+      declare
+         CV : constant JSON_Value := N_Str (V, "crewTypeName", "/crewTypeName", "", C);
+      begin
+         if CV.Kind = JSON_String_Type then
+            declare
+               Stored : constant String := String'(Get (CV));
+               Canon  : constant String :=
+                 Canonical_Crew_Type (To_String (Stem), Stored);
+            begin
+               Set_Field (O, "crewTypeName",
+                          (if Canon = Stored then CV else Create (Canon)));
+            end;
+         else
+            Set_Field (O, "crewTypeName", CV);
+         end if;
+      end;
       Set_Field (O, "name", N_Str (V, "name", "/name", "", C));
       Set_Field (O, "lair", N_Str (V, "lair", "/lair", "", C));
       Set_Field (O, "reputation", N_Str (V, "reputation", "/reputation", "", C));
       Set_Field (O, "huntingGrounds", N_Str (V, "huntingGrounds", "/huntingGrounds", "", C));
+      --  Optional on legacy reads: absence is admissible, not a repair.
+      --  The normalized write/import document still carries the default.
+      if Has_Field (V, "favoredOperation") then
+         Set_Field (O, "favoredOperation", N_Str (V, "favoredOperation", "/favoredOperation", "", C));
+      else
+         Set_Field (O, "favoredOperation", "");
+      end if;
       --  CONTRACT-04: tier clamps to [0, CrewTierMax] (D5 clamp semantics,
       --  same shape as turf).  CrewTierMax is startup-required for every
       --  supported game; when it is absent or unresolvable here the

@@ -70,7 +70,7 @@ package Pitd_Error is
    function Armor_Not_Available_Error
      (Op, Message : String; Entity : JSON_Value) return JSON_Value;
    function Ability_Maxed_Error
-     (Op, Message : String; Limit, Current : Integer; Entity : JSON_Value)
+     (Op, Message : String; Limit : Integer; Current : Long_Long_Integer; Entity : JSON_Value)
       return JSON_Value;
    function Cannot_Level_Up_Error
      (Op, Message : String; Limit, Current : Integer; Entity : JSON_Value)
@@ -79,7 +79,7 @@ package Pitd_Error is
      (Op, Message : String; Limit, Current : Integer; Entity : JSON_Value)
       return JSON_Value;
    function Upgrade_Maxed_Error
-     (Op, Message : String; Limit, Current : Integer; Entity : JSON_Value)
+     (Op, Message : String; Limit : Integer; Current : Long_Long_Integer; Entity : JSON_Value)
       return JSON_Value;
    function Insufficient_Funds_Error
      (Op, Message : String; Available, Needed : Integer; Entity : JSON_Value)

@@ -1304,6 +1304,15 @@ export function crewFieldsUpdate(
   return crewMutate(id, "fields.update", revision, fields);
 }
 
+/** Record the crew's favored operation, or Smugglers' chosen cargo. */
+export function crewFavoredOperationSet(
+  id: string,
+  value: string,
+  revision: number,
+): Effect.Effect<Crew & CrewOpHistory, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "favored-operation.set", revision, { value });
+}
+
 /** Derived snapshot-history metadata carried by every entity operation
  * envelope (never stored): whether an undo is available and how many
  * snapshots are retained. */

@@ -17,9 +17,18 @@ describe("§5.1.8 fund gains expose partial capacity", () => {
 
   testCase("SEMANTICS-FUND-002", "spending uses satchel before stash liquidation", async () => {
     const character = await newCharacter();
+    // The satchel's starting fill comes from the game settings (Blades: 0), so
+    // fund it first and then spend what it holds instead of assuming a start.
     const beforeSatchel = character.fund.satchel.coins;
-    const result = await api.characterOp(character.id, "fund.spend", { coins: 1 });
+    let funded = 0;
+    if (beforeSatchel === 0) {
+      const gain = await api.characterOp(character.id, "fund.gain", { coins: 1 });
+      expect(gain.ok).toBe(true);
+      funded = 1;
+    }
+    const spend = 1;
+    const result = await api.characterOp(character.id, "fund.spend", { coins: spend });
     expect(result.ok).toBe(true);
-    expect(result.character?.fund.satchel.coins).toBe(Math.max(0, beforeSatchel - 1));
+    expect(result.character?.fund.satchel.coins).toBe(Math.max(0, beforeSatchel + funded - spend));
   });
 });

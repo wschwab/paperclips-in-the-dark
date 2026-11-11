@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 124
+Operations: 125
 
 ## Conventions
 
@@ -228,6 +228,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/crews/{id}/ops/coin.add` | [`coinAdd`](#coinadd) | true |
 | POST | `/crews/{id}/ops/stash.add` | [`stashAdd`](#stashadd) | true |
 | POST | `/crews/{id}/ops/fields.update` | [`crewFieldsUpdate`](#crewfieldsupdate) | true |
+| POST | `/crews/{id}/ops/favored-operation.set` | [`crewFavoredOperationSet`](#crewfavoredoperationset) | true |
 | GET | `/clocks` | [`listClocks`](#listclocks) | — |
 | POST | `/clocks` | [`createClock`](#createclock) | false |
 | GET | `/clocks/{id}` | [`getClock`](#getclock) | — |
@@ -503,7 +504,7 @@ Responses:
 
 `GET /games/{stem}/crews/{crewType}`
 
-full crew type settings
+CREW-SHEET-02 (additive note): a crew type may publish an optional LegacyNames array of its older names. A request for a legacy name resolves to that canonical type's settings (200), exactly like the canonical name; only a name that is neither a canonical Name nor a listed legacy name is 404.
 
 Parameters: `stem`, `crewType`
 
@@ -538,7 +539,7 @@ Responses:
 
 `POST /characters`
 
-Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact.
+Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact. CREW-SHEET-02 (additive note): the starting satchel coin count comes from the game settings StartingSatchelCoins (nonnegative Int32 integer); an absent or invalid value, including a number outside Int32 range, falls back to the canonical structural default 0 and never fails creation; a valid value above the settings' own FundMaxima.SatchelMax is clamped to that maximum at creation, so a stored satchel is never over capacity (CREW-SHEET-02 review fix).
 
 Parameters: `idempotencyKey`
 
@@ -2210,6 +2211,8 @@ Responses:
 
 `POST /crews`
 
+Create a crew with favoredOperation empty and upgrades initialized from the selected crew type's optional StartingUpgrades [{Name, BoxesMarked}] settings. Starting upgrades are granted only at creation, never on legacy read, mutation, import, repair, or undo. CREW-SHEET-02 (additive note): starting hold and coin come from the game settings CrewStartingHold (weak|strong) and CrewStartingCoin (nonnegative Int32 integer); an absent or invalid value, including a number outside Int32 range, falls back to the canonical structural default (hold \"strong\", coin 0), never a literal and never a failed create. A crewType that is one of the type's listed LegacyNames is stored under the canonical name (the same write-time rename every mutation applies); an unknown name is kept verbatim.
+
 Parameters: `idempotencyKey`
 
 Snapshot: `false`
@@ -2253,7 +2256,7 @@ Responses:
 
 `GET /crews/{id}/capabilities`
 
-Advisory crew capability projection: the full available upgrade catalog with total/marked/remaining boxes, the full available ability catalog with max/taken/remaining takes, effective turf, and the rep develop threshold. Never persisted in the entity DTO; mutations remain authoritative (UPGRADE_MAXED / ABILITY_MAXED).
+Advisory crew capability projection: the full available upgrade catalog with total/marked/remaining boxes, the full available ability catalog with max/taken/remaining takes, effective turf, and the rep develop threshold. Never persisted in the entity DTO; mutations remain authoritative (UPGRADE_MAXED / ABILITY_MAXED). CREW-SHEET-02 (additive note): a crew whose stored crewTypeName is a legacy name listed in the type's optional LegacyNames array projects the canonical type's catalog; a stored ability/upgrade name that the type maps through its optional LegacyAbilityNames/LegacyUpgradeNames object counts toward the canonical catalog entry it was renamed to (the stored name is never rewritten). Alias-equivalent stored rows share one take limit and box total, in projections and mutations alike. Taking, marking, unmarking, or removing by either name resolves the same logical entry; another name never creates a second row for an owned entry.
 
 Parameters: `id`
 
@@ -3207,6 +3210,36 @@ Responses:
 - `200`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
+- `500`: OperationResult
+
+## crewFavoredOperationSet
+
+`POST /crews/{id}/ops/favored-operation.set`
+
+Set the crew's favored operation, or cargo type for Smugglers. Free text; empty string clears it. New and write-normalized crews default to empty; legacy reads remain byte-identical.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  additionalProperties: false
+  required: [value]
+  properties:
+    value: { type: string }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `422`: OperationResult
 - `500`: OperationResult
 
 ## listClocks

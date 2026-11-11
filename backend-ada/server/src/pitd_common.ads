@@ -166,14 +166,49 @@ package Pitd_Common is
    end record;
    function Settings_Int (S : Settings_Ref; Key : String; Fallback : Integer) return Integer;
 
+   --  CREW-SHEET-02: a string setting with a fallback.  A missing key or a
+   --  wrong-typed value (never a guess) yields the fallback, so an invalid
+   --  game file cannot crash a create.
+   function Settings_Str (S : Settings_Ref; Key : String; Fallback : String) return String;
+
+   --  CREW-SHEET-02: a nonnegative-integer setting.  Missing, non-integer,
+   --  or negative values yield the fallback (documented in-code policy for
+   --  invalid settings: fall back, never raise).
+   function Settings_Nonnegative (S : Settings_Ref; Key : String; Fallback : Integer) return Integer;
+
+   --  CREW-SHEET-02 legacy names.  A crew-type name resolves to itself when
+   --  it matches a CrewTypes[].Name exactly; otherwise the type whose
+   --  optional LegacyNames array contains it is its canonical rename.  An
+   --  unknown name (no exact match, no legacy entry) resolves to itself and
+   --  is never dropped or rejected.  The Catalog overload serves callers
+   --  holding the raw catalog file; the Stem overload reads the validated
+   --  settings cache (Game (Stem & "-crews")).
+   function Canonical_Crew_Type (Catalog : JSON_Value; Name : String) return String;
+   function Canonical_Crew_Type (Stem, Name : String) return String;
+
+   --  CREW-SHEET-02: a stored legacy ability/upgrade/favored-operation name
+   --  maps through the crew type's optional map setting (Map_Name is
+   --  "LegacyAbilityNames", "LegacyUpgradeNames", or
+   --  "LegacyFavoredOperations"), whose value is {"<legacy>": "<canonical>"}.
+   --  This is a LOOKUP for game-data and box/ability bookkeeping only: the
+   --  stored name is never rewritten, so unknown names keep their own row
+   --  and remain operable.  Absent map, absent entry, or wrong-typed map ->
+   --  the name unchanged.
+   function Canonical_Legacy_Name (Stem, Crew_Type, Map_Name, Name : String) return String;
+
    --  Game-derived domain helpers (no game-domain literals at call sites).
+   --  Alias-equivalent ownership totals use 64 bits: each admitted row is
+   --  Int32, but the logical entry can span multiple stored names.
+   --  JSON array lengths also fit Int32, so their sum fits signed Int64.
+   function Upgrade_Marked (E : JSON_Value; Name : String) return Long_Long_Integer;
+   function Ability_Taken (E : JSON_Value; Name : String) return Long_Long_Integer;
    function Can_Take_More (Kind, Name : String; E : JSON_Value; Times_Taken : Integer) return Boolean;
    function Ability_Take_Limit (Kind, Name : String; E : JSON_Value) return Integer;
    function Upgrade_Total_Boxes (E : JSON_Value; Name : String) return Integer;
    function Crew_Stash_Capacity (E : JSON_Value) return Integer;
    function Armor_Available (E : JSON_Value; Which : String) return Boolean;
    function Ability_Description (Kind, Name : String; E : JSON_Value) return String;
-   procedure Mastery_State (E : JSON_Value; Total, Marked : out Integer);
+   procedure Mastery_State (E : JSON_Value; Total : out Integer; Marked : out Long_Long_Integer);
    function Rating_Cap (E : JSON_Value) return Integer;
 
    --  Stored assistance defaults fill omissions only; malformed existing

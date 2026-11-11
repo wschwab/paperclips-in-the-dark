@@ -85,6 +85,7 @@ export const Crew = Schema.Struct({
   lair: Schema.String,
   reputation: Schema.String,
   huntingGrounds: Schema.String,
+  favoredOperation: Schema.optional(Schema.String),
   tier: Schema.Number.pipe(Schema.int(), Schema.greaterThanOrEqualTo(0)),
   hold: Hold,
   heat: BoundedInteger,

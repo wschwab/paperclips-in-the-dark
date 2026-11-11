@@ -677,6 +677,12 @@ paths:
       parameters:
         - { name: stem, in: path, required: true, schema: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" } }
         - { name: crewType, in: path, required: true, schema: { type: string } }
+      description: >
+        CREW-SHEET-02 (additive note): a crew type may publish an optional
+        LegacyNames array of its older names. A request for a legacy name
+        resolves to that canonical type's settings (200), exactly like the
+        canonical name; only a name that is neither a canonical Name nor a
+        listed legacy name is 404.
       responses:
         "200":
           description: full crew type settings
@@ -702,7 +708,7 @@ paths:
     post:
       operationId: createCharacter
       x-snapshot: false
-      description: "Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact."
+      description: "Create a scoundrel. CONTRACT-CONTACTS-01 (human-authorized 2026-10-08): the new scoundrel's contacts are preloaded from its playbook's Rolodex friends at closeness contact. CREW-SHEET-02 (additive note): the starting satchel coin count comes from the game settings StartingSatchelCoins (nonnegative Int32 integer); an absent or invalid value, including a number outside Int32 range, falls back to the canonical structural default 0 and never fails creation; a valid value above the settings' own FundMaxima.SatchelMax is clamped to that maximum at creation, so a stored satchel is never over capacity (CREW-SHEET-02 review fix)."
       parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -2225,6 +2231,7 @@ paths:
     post:
       operationId: createCrew
       x-snapshot: false
+      description: "Create a crew with favoredOperation empty and upgrades initialized from the selected crew type's optional StartingUpgrades [{Name, BoxesMarked}] settings. Starting upgrades are granted only at creation, never on legacy read, mutation, import, repair, or undo. CREW-SHEET-02 (additive note): starting hold and coin come from the game settings CrewStartingHold (weak|strong) and CrewStartingCoin (nonnegative Int32 integer); an absent or invalid value, including a number outside Int32 range, falls back to the canonical structural default (hold \"strong\", coin 0), never a literal and never a failed create. A crewType that is one of the type's listed LegacyNames is stored under the canonical name (the same write-time rename every mutation applies); an unknown name is kept verbatim."
       parameters: [{ $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -2262,7 +2269,16 @@ paths:
         catalog with total/marked/remaining boxes, the full available ability
         catalog with max/taken/remaining takes, effective turf, and the rep
         develop threshold. Never persisted in the entity DTO; mutations remain
-        authoritative (UPGRADE_MAXED / ABILITY_MAXED).
+        authoritative (UPGRADE_MAXED / ABILITY_MAXED). CREW-SHEET-02
+        (additive note): a crew whose stored crewTypeName is a legacy name
+        listed in the type's optional LegacyNames array projects the
+        canonical type's catalog; a stored ability/upgrade name that the type
+        maps through its optional LegacyAbilityNames/LegacyUpgradeNames
+        object counts toward the canonical catalog entry it was renamed to
+        (the stored name is never rewritten). Alias-equivalent stored rows share
+        one take limit and box total, in projections and mutations alike.
+        Taking, marking, unmarking, or removing by either name resolves the same
+        logical entry; another name never creates a second row for an owned entry.
       parameters:
         - { $ref: "#/components/parameters/id" }
       responses:
@@ -3050,6 +3066,29 @@ paths:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/favored-operation.set:
+    post:
+      operationId: crewFavoredOperationSet
+      x-snapshot: true
+      description: "Set the crew's favored operation, or cargo type for Smugglers. Free text; empty string clears it. New and write-normalized crews default to empty; legacy reads remain byte-identical."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [value]
+              properties:
+                value: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "422": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }
 
   # ------------------------------------------------------------ clocks

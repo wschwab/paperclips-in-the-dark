@@ -833,6 +833,28 @@ package body Pitd_Common is
       if Length (Issues) > 0 then
          raise Reference_Error with Str_Field (Get (Issues, 1), "reason");
       end if;
+      --  CREW-SHEET-02: optional in legacy reads, canonical on every write.
+      --  Never initialize type starting upgrades here: those are create-only.
+      if Kind = "crew" and then not Has_Field (Doc, "favoredOperation") then
+         Set_Field (Doc, "favoredOperation", "");
+      end if;
+      --  CREW-SHEET-02: a stored crew whose crewTypeName is a legacy name is
+      --  renamed to the canonical type at every mutating write (idempotent —
+      --  a canonical name resolves to itself).  An unknown name is kept
+      --  verbatim, never dropped.  Ability/upgrade/favored-operation names
+      --  are NOT rewritten: they stay listed and resolve through the type's
+      --  optional legacy maps for game-data lookups only.
+      if Kind = "crew" and then Doc.Kind = JSON_Object_Type then
+         declare
+            Stem   : constant String := Str_Field (Doc, "gameStem");
+            Stored : constant String := Str_Field (Doc, "crewTypeName");
+            Canon  : constant String := Canonical_Crew_Type (Stem, Stored);
+         begin
+            if Canon /= Stored then
+               Set_Field (Doc, "crewTypeName", Canon);
+            end if;
+         end;
+      end if;
    end Require_Entity_Write;
 
    procedure Initialize_Campaign (Entity : JSON_Value) is
@@ -1388,20 +1410,165 @@ package body Pitd_Common is
                P := E + 1;
             end;
          end loop;
-         if V.Kind = JSON_Int_Type then return Integer'(Get (V)); end if;
+         if V.Kind = JSON_Int_Type then
+            declare
+               N : constant Long_Long_Integer := Get (V);
+            begin
+               if N in Long_Long_Integer (Integer'First) .. Long_Long_Integer (Integer'Last) then
+                  return Integer (N);
+               end if;
+            end;
+         end if;
          return Fallback;
       end Settings_Int;
+
+   --  CREW-SHEET-02: string settings share the dotted-path walk above, but
+   --  only a string value is accepted; anything else is the fallback.
+   function Settings_Str (S : Settings_Ref; Key : String; Fallback : String) return String is
+      V : JSON_Value := S.G;
+      P : Integer := Key'First;
+   begin
+      if V.Kind /= JSON_Object_Type or else Key'Length = 0 then return Fallback; end if;
+      loop
+         declare
+            E : Integer := P;
+         begin
+            while E <= Key'Last and then Key (E) /= '.' loop E := E + 1; end loop;
+            declare
+               Part : constant String := Key (P .. E - 1);
+            begin
+               if not Has_Field (V, Part) then return Fallback; end if;
+               V := Get (V, Part);
+               if V.Kind /= JSON_Object_Type and then E <= Key'Last then return Fallback; end if;
+            end;
+            exit when E > Key'Last;
+            P := E + 1;
+         end;
+      end loop;
+      if V.Kind = JSON_String_Type then return String'(Get (V)); end if;
+      return Fallback;
+   end Settings_Str;
+
+   --  CREW-SHEET-02: invalid settings fall back instead of raising; a
+   --  negative or wrong-typed value is never used as a starting amount.
+   function Settings_Nonnegative (S : Settings_Ref; Key : String; Fallback : Integer) return Integer is
+      V : constant Integer := Settings_Int (S, Key, Fallback);
+   begin
+      if V < 0 then return Fallback; end if;
+      return V;
+   end Settings_Nonnegative;
+
+   --  CREW-SHEET-02: exact CrewTypes[].Name wins; otherwise the first type
+   --  whose LegacyNames array contains the name is the canonical rename.
+   function Canonical_Crew_Type (Catalog : JSON_Value; Name : String) return String is
+   begin
+      if Catalog.Kind /= JSON_Object_Type
+        or else not Has_Field (Catalog, "CrewTypes")
+        or else Get (Catalog, "CrewTypes").Kind /= JSON_Array_Type
+      then
+         return Name;
+      end if;
+      declare
+         Types : constant JSON_Array := Get (Catalog, "CrewTypes");
+      begin
+         for I in 1 .. Length (Types) loop
+            if Get (Types, I).Kind = JSON_Object_Type
+              and then Str_Field (Get (Types, I), "Name") = Name
+            then
+               return Name;
+            end if;
+         end loop;
+         for I in 1 .. Length (Types) loop
+            declare
+               T : constant JSON_Value := Get (Types, I);
+            begin
+               if T.Kind = JSON_Object_Type
+                 and then Has_Field (T, "LegacyNames")
+                 and then Get (T, "LegacyNames").Kind = JSON_Array_Type
+               then
+                  declare
+                     LNs : constant JSON_Array := Get (T, "LegacyNames");
+                  begin
+                     for J in 1 .. Length (LNs) loop
+                        if Get (LNs, J).Kind = JSON_String_Type
+                          and then String'(Get (Get (LNs, J))) = Name
+                        then
+                           return Str_Field (T, "Name");
+                        end if;
+                     end loop;
+                  end;
+               end if;
+            end;
+         end loop;
+      end;
+      return Name;
+   end Canonical_Crew_Type;
+
+   function Canonical_Crew_Type (Stem, Name : String) return String is
+   begin
+      return Canonical_Crew_Type (Game (Stem & "-crews"), Name);
+   end Canonical_Crew_Type;
+
+   --  CREW-SHEET-02: the crew type is resolved first (a legacy type name
+   --  finds its canonical entry, and therefore its maps), then the name is
+   --  looked up in the map setting.  Lookup only — never a rewrite.
+   function Canonical_Legacy_Name (Stem, Crew_Type, Map_Name, Name : String) return String is
+      G : constant JSON_Value := Game (Stem & "-crews");
+   begin
+      if G.Kind /= JSON_Object_Type
+        or else not Has_Field (G, "CrewTypes")
+        or else Get (G, "CrewTypes").Kind /= JSON_Array_Type
+        or else Name = ""
+      then
+         return Name;
+      end if;
+      declare
+         Canonical : constant String := Canonical_Crew_Type (G, Crew_Type);
+         Types     : constant JSON_Array := Get (G, "CrewTypes");
+      begin
+         for I in 1 .. Length (Types) loop
+            declare
+               T : constant JSON_Value := Get (Types, I);
+            begin
+               if T.Kind = JSON_Object_Type
+                 and then Str_Field (T, "Name") = Canonical
+                 and then Has_Field (T, Map_Name)
+               then
+                  declare
+                     M : constant JSON_Value := Get (T, Map_Name);
+                  begin
+                     if M.Kind = JSON_Object_Type
+                       and then Has_Field (M, Name)
+                       and then Get (M, Name).Kind = JSON_String_Type
+                     then
+                        return String'(Get (M, Name));
+                     end if;
+                  end;
+                  return Name;
+               end if;
+            end;
+         end loop;
+      end;
+      return Name;
+   end Canonical_Legacy_Name;
 
       --  A8: ability.take is validated against the playbook/crew-type
    --  SpecialAbilities game data (TimesTakeable).  Unknown ability or
    --  missing game data keeps the historical permissive behavior.
    function Can_Take_More (Kind, Name : String; E : JSON_Value; Times_Taken : Integer) return Boolean is
       Group : constant String := (if Kind = "crew" then "CrewTypes" else "Playbooks");
+      Stem : constant String := Str_Field (E, "gameStem");
       Type_Name : constant String :=
-        (if Kind = "crew" then Str_Field (E, "crewTypeName")
+        (if Kind = "crew" then Canonical_Crew_Type (Stem, Str_Field (E, "crewTypeName"))
          else Str_Field (Get (E, "playbook"), "name"));
+      --  CREW-SHEET-02: a stored/legacy ability name resolves to the
+      --  canonical game-data entry through LegacyAbilityNames.
+      Query : constant String :=
+        (if Kind = "crew"
+         then Canonical_Legacy_Name (Stem, Type_Name, "LegacyAbilityNames", Name)
+         else Name);
       G : constant JSON_Value :=
-        Game (Str_Field (E, "gameStem") & (if Kind = "crew" then "-crews" else ""));
+        Game (Stem & (if Kind = "crew" then "-crews" else ""));
    begin
       if G.Kind /= JSON_Object_Type or else not Has_Field (G, Group) then return True; end if;
       declare
@@ -1414,7 +1581,7 @@ package body Pitd_Common is
                      Ab : constant JSON_Array := Get (T, "SpecialAbilities");
                   begin
                      for J in 1 .. Length (Ab) loop
-                        if Str_Field (Get (Ab, J), "Name") = Name then
+                        if Str_Field (Get (Ab, J), "Name") = Query then
                            return Times_Taken < Int_Field (Get (Ab, J), "TimesTakeable", Integer'Last);
                         end if;
                      end loop;
@@ -1431,11 +1598,16 @@ package body Pitd_Common is
    --  historical permissive behavior (no limit).
    function Ability_Take_Limit (Kind, Name : String; E : JSON_Value) return Integer is
       Group : constant String := (if Kind = "crew" then "CrewTypes" else "Playbooks");
+      Stem : constant String := Str_Field (E, "gameStem");
       Type_Name : constant String :=
-        (if Kind = "crew" then Str_Field (E, "crewTypeName")
+        (if Kind = "crew" then Canonical_Crew_Type (Stem, Str_Field (E, "crewTypeName"))
          else Str_Field (Get (E, "playbook"), "name"));
+      Query : constant String :=
+        (if Kind = "crew"
+         then Canonical_Legacy_Name (Stem, Type_Name, "LegacyAbilityNames", Name)
+         else Name);
       G : constant JSON_Value :=
-        Game (Str_Field (E, "gameStem") & (if Kind = "crew" then "-crews" else ""));
+        Game (Stem & (if Kind = "crew" then "-crews" else ""));
    begin
       if G.Kind /= JSON_Object_Type or else not Has_Field (G, Group) then return Integer'Last; end if;
       declare
@@ -1448,7 +1620,7 @@ package body Pitd_Common is
                      Ab : constant JSON_Array := Get (T, "SpecialAbilities");
                   begin
                      for J in 1 .. Length (Ab) loop
-                        if Str_Field (Get (Ab, J), "Name") = Name then
+                        if Str_Field (Get (Ab, J), "Name") = Query then
                            return Int_Field (Get (Ab, J), "TimesTakeable", Integer'Last);
                         end if;
                      end loop;
@@ -1460,10 +1632,67 @@ package body Pitd_Common is
       return Integer'Last;
    end Ability_Take_Limit;
 
+   function Upgrade_Marked (E : JSON_Value; Name : String) return Long_Long_Integer is
+      U : constant JSON_Array :=
+        (if Has_Field (E, "upgrades") then Get (E, "upgrades") else Empty_Array);
+      Canonical : constant String := Canonical_Legacy_Name
+        (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+         "LegacyUpgradeNames", Name);
+      Total : Long_Long_Integer := 0;
+   begin
+      for I in 1 .. Length (U) loop
+         declare
+            Stored : constant String := Str_Field (Get (U, I), "name");
+         begin
+            --  CREW-SHEET-02: a stored legacy upgrade name counts toward the
+            --  canonical catalog entry it was renamed to (the stored name is
+            --  never rewritten).
+            if Canonical_Legacy_Name (Str_Field (E, "gameStem"),
+                                      Str_Field (E, "crewTypeName"),
+                                      "LegacyUpgradeNames", Stored) = Canonical
+            then
+               Total := Total + Long_Long_Integer (Int_Field (Get (U, I), "boxesMarked", 0));
+            end if;
+         end;
+      end loop;
+      return Total;
+   end Upgrade_Marked;
+
+   function Ability_Taken (E : JSON_Value; Name : String) return Long_Long_Integer is
+      A : constant JSON_Array :=
+        (if Has_Field (E, "specialAbilities") then Get (E, "specialAbilities")
+         else Empty_Array);
+      Canonical : constant String := Canonical_Legacy_Name
+        (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+         "LegacyAbilityNames", Name);
+      Total : Long_Long_Integer := 0;
+   begin
+      for I in 1 .. Length (A) loop
+         declare
+            Stored : constant String := Str_Field (Get (A, I), "name");
+         begin
+            --  CREW-SHEET-02: a stored legacy ability name counts toward the
+            --  canonical catalog entry it was renamed to.
+            if Canonical_Legacy_Name (Str_Field (E, "gameStem"),
+                                      Str_Field (E, "crewTypeName"),
+                                      "LegacyAbilityNames", Stored) = Canonical
+            then
+               Total := Total + Long_Long_Integer (Int_Field (Get (A, I), "timesTaken", 0));
+            end if;
+         end;
+      end loop;
+      return Total;
+   end Ability_Taken;
    --  SC-A3: the crew upgrade's TotalBoxes from game data for the frozen
    --  UPGRADE_MAXED limit details; missing game data falls back to 4.
    function Upgrade_Total_Boxes (E : JSON_Value; Name : String) return Integer is
-      G : constant JSON_Value := Game (Str_Field (E, "gameStem") & "-crews");
+      Stem : constant String := Str_Field (E, "gameStem");
+      --  CREW-SHEET-02: a stored/legacy upgrade name resolves to the
+      --  canonical game-data entry through LegacyUpgradeNames.
+      Query : constant String :=
+        Canonical_Legacy_Name (Stem, Str_Field (E, "crewTypeName"),
+                               "LegacyUpgradeNames", Name);
+      G : constant JSON_Value := Game (Stem & "-crews");
    begin
       if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes") then
          declare
@@ -1476,7 +1705,7 @@ package body Pitd_Common is
                         Ups : constant JSON_Array := Get (T, "Upgrades");
                      begin
                         for J in 1 .. Length (Ups) loop
-                           if Str_Field (Get (Ups, J), "Name") = Name then
+                           if Str_Field (Get (Ups, J), "Name") = Query then
                               return Int_Field (Get (Ups, J), "TotalBoxes", 4);
                            end if;
                         end loop;
@@ -1501,61 +1730,48 @@ package body Pitd_Common is
       S    : constant Settings_Ref := (To_Unbounded_String (Stem), Game (Stem));
       Cap  : Integer := Settings_Int (S, "CrewStashBaseCapacity", 0);
       G    : constant JSON_Value := Game (Stem & "-crews");
+      Crew_Type : constant String :=
+        Canonical_Crew_Type (Stem, Str_Field (E, "crewTypeName"));
    begin
-      if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes")
-        and then Has_Field (E, "upgrades")
-      then
+      if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes") then
          declare
-            Ups : constant JSON_Array := Get (E, "upgrades");
+            Types : constant JSON_Array := Get (G, "CrewTypes");
          begin
-            for I in 1 .. Length (Ups) loop
+            for I in 1 .. Length (Types) loop
                declare
-                  U      : constant JSON_Value := Get (Ups, I);
-                  Marked : constant Integer := Int_Field (U, "boxesMarked", 0);
-                  Name   : constant String := Str_Field (U, "name");
+                  T : constant JSON_Value := Get (Types, I);
                begin
-                  if Marked >= 1 and then Name'Length > 0 then
+                  if Str_Field (T, "Name") = Crew_Type
+                    and then Has_Field (T, "Upgrades")
+                  then
                      declare
-                        Types : constant JSON_Array := Get (G, "CrewTypes");
+                        Upgrades : constant JSON_Array := Get (T, "Upgrades");
                      begin
-                        for J in 1 .. Length (Types) loop
+                        for J in 1 .. Length (Upgrades) loop
                            declare
-                              T : constant JSON_Value := Get (Types, J);
+                              D : constant JSON_Value := Get (Upgrades, J);
                            begin
-                             if Has_Field (T, "Upgrades") then
-                               declare
-                                 GD : constant JSON_Array := Get (T, "Upgrades");
-                               begin
-                                 for K in 1 .. Length (GD) loop
-                                   declare
-                                     D : constant JSON_Value := Get (GD, K);
-                                   begin
-                                     if Str_Field (D, "Name") = Name
-                                       and then Has_Field (D, "StashCapacities")
-                                     then
+                              if Has_Field (D, "StashCapacities") then
+                                 declare
+                                    Steps : constant JSON_Array := Get (D, "StashCapacities");
+                                    Marked : constant Long_Long_Integer :=
+                                      Upgrade_Marked (E, Str_Field (D, "Name"));
+                                 begin
+                                    if Marked > 0 and then Length (Steps) > 0 then
+                                       --  Clamp before adding the 1-based offset.
                                        declare
-                                         Steps : constant JSON_Array :=
-                                           Get (D, "StashCapacities");
-                                         --  GNAT arrays are 1-based: marked
-                                         --  boxes m indexes element m+1,
-                                         --  clamped to the last entry.
-                                         Idx : constant Integer :=
-                                           Integer'Min (Marked + 1,
-                                                        Length (Steps));
-                                         SV : constant JSON_Value :=
-                                           Get (Steps, Idx);
+                                          Idx : constant Integer := Integer
+                                            (Long_Long_Integer'Min
+                                              (Marked, Long_Long_Integer (Length (Steps) - 1))) + 1;
+                                          SV : constant JSON_Value := Get (Steps, Idx);
                                        begin
-                                         if SV.Kind = JSON_Int_Type
-                                           and then Integer'(Get (SV)) > Cap
-                                         then
-                                           Cap := Integer'(Get (SV));
-                                         end if;
+                                          if SV.Kind = JSON_Int_Type then
+                                             Cap := Integer'Max (Cap, Integer'(Get (SV)));
+                                          end if;
                                        end;
-                                     end if;
-                                   end;
-                                 end loop;
-                               end;
-                             end if;
+                                    end if;
+                                 end;
+                              end if;
                            end;
                         end loop;
                      end;
@@ -1627,11 +1843,18 @@ package body Pitd_Common is
    --  Missing game data / unknown ability keeps the historical empty string.
    function Ability_Description (Kind, Name : String; E : JSON_Value) return String is
       Group : constant String := (if Kind = "crew" then "CrewTypes" else "Playbooks");
+      Stem  : constant String := Str_Field (E, "gameStem");
       Type_Name : constant String :=
-        (if Kind = "crew" then Str_Field (E, "crewTypeName")
+        (if Kind = "crew" then Canonical_Crew_Type (Stem, Str_Field (E, "crewTypeName"))
          else Str_Field (Get (E, "playbook"), "name"));
+      --  CREW-SHEET-02: a stored/legacy ability name resolves to the
+      --  canonical game-data entry through LegacyAbilityNames.
+      Query : constant String :=
+        (if Kind = "crew"
+         then Canonical_Legacy_Name (Stem, Type_Name, "LegacyAbilityNames", Name)
+         else Name);
       G : constant JSON_Value :=
-        Game (Str_Field (E, "gameStem") & (if Kind = "crew" then "-crews" else ""));
+        Game (Stem & (if Kind = "crew" then "-crews" else ""));
    begin
       if G.Kind /= JSON_Object_Type or else not Has_Field (G, Group) then return ""; end if;
       declare
@@ -1644,7 +1867,7 @@ package body Pitd_Common is
                      Ab : constant JSON_Array := Get (T, "SpecialAbilities");
                   begin
                      for J in 1 .. Length (Ab) loop
-                        if Str_Field (Get (Ab, J), "Name") = Name then
+                        if Str_Field (Get (Ab, J), "Name") = Query then
                            return Str_Field (Get (Ab, J), "Description");
                         end if;
                      end loop;
@@ -1659,7 +1882,7 @@ package body Pitd_Common is
    --  SC-A5: Mastery upgrade state for a character's crew (TotalBoxes from
    --  the crew-type game data, boxes actually marked on the crew entity).
    --  Crewless characters report 0/0 (no Mastery derivation possible).
-   procedure Mastery_State (E : JSON_Value; Total, Marked : out Integer) is
+   procedure Mastery_State (E : JSON_Value; Total : out Integer; Marked : out Long_Long_Integer) is
       Crew_Id : constant String := Str_Field (Get (E, "dossier"), "crewId");
    begin
       Total := 0;
@@ -1670,8 +1893,12 @@ package body Pitd_Common is
       begin
          if Crew.Kind /= JSON_Object_Type then return; end if;
          declare
-            G : constant JSON_Value :=
-              Game (Str_Field (Crew, "gameStem") & "-crews");
+            Crew_Stem : constant String := Str_Field (Crew, "gameStem");
+            --  CREW-SHEET-02: a stored legacy crew-type name resolves to its
+            --  canonical type entry (and so to its Upgrades[]).
+            Crew_Type : constant String :=
+              Canonical_Crew_Type (Crew_Stem, Str_Field (Crew, "crewTypeName"));
+            G : constant JSON_Value := Game (Crew_Stem & "-crews");
          begin
             if G.Kind = JSON_Object_Type and then Has_Field (G, "CrewTypes") then
                declare
@@ -1679,7 +1906,7 @@ package body Pitd_Common is
                begin
                   for I in 1 .. Length (Types) loop
                      declare T : constant JSON_Value := Get (Types, I); begin
-                        if Str_Field (T, "Name") = Str_Field (Crew, "crewTypeName")
+                        if Str_Field (T, "Name") = Crew_Type
                           and then Has_Field (T, "Upgrades")
                         then
                            declare
@@ -1697,15 +1924,7 @@ package body Pitd_Common is
                end;
             end if;
          end;
-         if Has_Field (Crew, "upgrades") then
-            declare Up : constant JSON_Array := Get (Crew, "upgrades"); begin
-               for I in 1 .. Length (Up) loop
-                  if Str_Field (Get (Up, I), "name") = "Mastery" then
-                     Marked := Int_Field (Get (Up, I), "boxesMarked", 0);
-                  end if;
-               end loop;
-            end;
-         end if;
+         Marked := Upgrade_Marked (Crew, "Mastery");
       end;
    end Mastery_State;
 
@@ -1722,13 +1941,13 @@ package body Pitd_Common is
    function Rating_Cap (E : JSON_Value) return Integer is
       G     : constant JSON_Value := Game (Str_Field (E, "gameStem"));
       Total : Integer;
-      Marked : Integer;
+      Marked : Long_Long_Integer;
    begin
       Mastery_State (E, Total, Marked);
       if G.Kind /= JSON_Object_Type or else not Has_Field (G, "ActionCap") then
          return 0;
       end if;
-      return (if Total > 0 and then Marked >= Total
+      return (if Total > 0 and then Marked >= Long_Long_Integer (Total)
               then Int_Field (Get (G, "ActionCap"), "Mastery", 0)
               else Int_Field (Get (G, "ActionCap"), "Base", 0));
    end Rating_Cap;

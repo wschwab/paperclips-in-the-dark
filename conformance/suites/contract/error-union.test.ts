@@ -505,7 +505,18 @@ function branches(): Branch[] {
       note: "fund.liquidate with a full satchel",
       run: async () => {
         const { id } = await createRawCharacter();
-        await api.post(`characters/${id}/ops/fund.gain`, { coins: 2 });
+        const character = await readCharacter(id);
+        const satchel = asRecord(asRecord(character?.fund)?.satchel);
+        // Bounds come from the entity's own settings-derived max and current
+        // fill (StartingSatchelCoins), never a hardcoded starting amount.
+        const satchelMax = asNumber(satchel?.max);
+        const satchelCoins = asNumber(satchel?.coins);
+        if (satchelMax == null || satchelCoins == null) {
+          throw new Error("SATCHEL_FULL probe: entity satchel max/coins missing");
+        }
+        if (satchelMax > satchelCoins) {
+          await api.post(`characters/${id}/ops/fund.gain`, { coins: satchelMax - satchelCoins });
+        }
         return api.post(`characters/${id}/ops/fund.liquidate`, { coins: 1 });
       },
     },

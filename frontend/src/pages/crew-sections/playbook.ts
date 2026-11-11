@@ -3,6 +3,8 @@
  * the crew-detail page's render pass. DOM output is unchanged.
  */
 import { el } from "../../lib/dom.js";
+import { crewTypeSetting } from "../crew-domain.js";
+import { canonicalCatalogName } from "../crew-domain.js";
 import { extractCrewAbilities } from "../crew-domain.js";
 import { extractCrewUpgrades } from "../crew-domain.js";
 import { upgradeTotalBoxes } from "../crew-domain.js";
@@ -35,6 +37,11 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
       state.crewTypesData,
       c.crewTypeName,
     );
+    const type = crewTypeSetting(state.crewTypeData, state.crewTypesData, c.crewTypeName);
+    const startingUpgrades = Array.isArray(type?.StartingUpgrades)
+      ? type.StartingUpgrades.filter((upgrade): upgrade is { Name: string; BoxesMarked: number } =>
+          typeof upgrade === "object" && upgrade !== null && typeof upgrade.Name === "string" && typeof upgrade.BoxesMarked === "number")
+      : [];
 
     // SC-F3: take/box limits come from the server-computed capability catalog
     // (the client never joins settings + DTO state to find an enforced cap).
@@ -45,11 +52,23 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
 
     // -- Special abilities --------------------------------------------------
 
-    const takenByName = new Map(c.specialAbilities.map((a) => [a.name, a]));
+    // CREW-SHEET-02: a stored name may be a pre-rename (legacy) name of a
+    // catalog entry — the type's LegacyAbilityNames/LegacyUpgradeNames map
+    // points at the canonical one. Stored identities are retained; only
+    // catalog lookups follow the map.
+    const upgradeCatalogName = (name: string) =>
+      canonicalCatalogName(type, "LegacyUpgradeNames", name);
+
+    const takenByName = new Map<string, number>();
+    for (const a of c.specialAbilities) {
+      const name = canonicalCatalogName(type, "LegacyAbilityNames", a.name);
+      takenByName.set(name, (takenByName.get(name) ?? 0) + a.timesTaken);
+    }
     const abilityTimesTakeable = (sa: Record<string, unknown>) =>
       typeof sa.TimesTakeable === "number" ? sa.TimesTakeable : 1;
     const abilityDescription = (name: string) => {
-      const sa = specialAbilities.find((x) => String(x.Name) === name);
+      const catalog = canonicalCatalogName(type, "LegacyAbilityNames", name);
+      const sa = specialAbilities.find((x) => String(x.Name) === catalog);
       return sa && typeof sa.Description === "string" && sa.Description.length > 0
         ? sa.Description
         : "No description available.";
@@ -65,7 +84,7 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
       : specialAbilities.filter((sa) => {
           const name = String(sa.Name);
           const taken = takenByName.get(name);
-          return !taken || taken.timesTaken < abilityTimesTakeable(sa);
+          return (taken ?? 0) < abilityTimesTakeable(sa);
         });
 
     const abilityEntries = c.specialAbilities.map((a) =>
@@ -142,21 +161,35 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
 
     // -- Upgrades ------------------------------------------------------------
 
-    const markedByName = new Map(c.upgrades.map((u) => [u.name, u.boxesMarked]));
-    const findUpgrade = (name: string) =>
-      upgradesData.find((u) => String(u.Name) === name);
+    const markedByName = new Map<string, number>();
+    for (const u of c.upgrades) {
+      const name = upgradeCatalogName(u.name);
+      markedByName.set(name, (markedByName.get(name) ?? 0) + u.boxesMarked);
+    }
+    const findUpgrade = (name: string) => {
+      const catalog = upgradeCatalogName(name);
+      return upgradesData.find((u) => String(u.Name) === catalog);
+    };
 
     // Total boxes per upgrade come from the capability catalog (SC-F3),
     // falling back to crew-type game data when the projection is unavailable.
-    const totalFor = (name: string): number =>
-      upgradeCapByName.get(name)?.totalBoxes ?? upgradeTotalBoxes(findUpgrade(name));
+    // A stored name the catalog no longer knows still gets its own row, with
+    // a total never below the boxes already marked (never "2 / 1").
+    const totalFor = (name: string): number => {
+      const catalog = upgradeCatalogName(name);
+      const fromCaps = upgradeCapByName.get(catalog)?.totalBoxes;
+      if (typeof fromCaps === "number") return fromCaps;
+      const game = findUpgrade(name);
+      if (game) return upgradeTotalBoxes(game);
+      return Math.max(markedByName.get(catalog) ?? 0, 1);
+    };
 
     // List rows come from the DTO (name + boxesMarked); total and description
     // come from the capability catalog / game data — never hardcoded.
     const upgradeEntries = c.upgrades.map((u) => {
       const game = findUpgrade(u.name);
       const total = totalFor(u.name);
-      const atMax = u.boxesMarked >= total;
+      const atMax = (markedByName.get(upgradeCatalogName(u.name)) ?? 0) >= total;
       // CREW-04: unmarking a box only exists in advancement-edit mode.
       const unmarkBtn = state.advancementEdit
         ? el("button", {
@@ -237,7 +270,7 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
             marked: markedByName.get(String(u.Name)) ?? 0,
           })),
           ...c.upgrades
-            .filter((u) => !upgradesData.some((g) => String(g.Name) === u.name))
+            .filter((u) => !upgradesData.some((g) => String(g.Name) === upgradeCatalogName(u.name)))
             .map((u) => ({
               name: u.name,
               total: Math.max(u.boxesMarked, 1),
@@ -262,17 +295,21 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
             ? (state.advancementEdit ? `Unmark ${row.name}` : `${row.name} box ${i}`)
             : `Mark ${row.name}`,
         });
-        box.addEventListener("click", () => handlers.onChartBox(row.name, i));
+        const storedName = c.upgrades.find((u) => upgradeCatalogName(u.name) === row.name)?.name ?? row.name;
+        box.addEventListener("click", () => handlers.onChartBox(storedName, i));
         boxes.push(box);
       }
       return el("div", {
         className: "chart-row",
         "data-upgrade": row.name,
-        style: "display: flex; align-items: center; gap: 0.6em; margin: 0.25em 0;",
+        style: "display: flex; flex-wrap: wrap; align-items: center; gap: 0.6em; margin: 0.6em 0;",
       },
         el("span", { className: "lbl", style: "min-width: 8em;" }, row.name),
         el("span", { className: "chart-boxes", style: "display: inline-flex; gap: 4px;" }, ...boxes),
         el("span", { className: "chart-count" }, `${row.marked} / ${row.total}`),
+        el("p", { className: "upgrade-description serif", style: "flex-basis: 100%; margin: 0;" },
+          upgradeDescription(findUpgrade(row.name), row.name),
+        ),
       );
     });
 
@@ -294,6 +331,11 @@ export function renderCrewPlaybookSection(state: RenderState): HTMLElement {
       abilityDetails,
       el("div", { className: "crew-upgrades" },
         el("h3", { className: "lbl", style: "margin-top: 1em;" }, "Upgrades"),
+        startingUpgrades.length > 0 ? el("p", { className: "crew-starting-upgrades rules-note" },
+          el("strong", {}, "Starting upgrades: "),
+          startingUpgrades.map((upgrade) => `${upgrade.Name} (${upgrade.BoxesMarked} / ${totalFor(upgrade.Name)})`).join(", "),
+          ". Granted to new crews; existing crews retain their recorded boxes.",
+        ) : null,
         c.upgrades.length === 0
           ? el("p", {}, "(none)")
           : el("div", { style: "display: flex; flex-direction: column;" }, ...upgradeEntries),

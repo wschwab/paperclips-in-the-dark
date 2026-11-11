@@ -247,6 +247,7 @@ const Crew = Schema.Struct({
   lair: Schema.String,
   reputation: Schema.String,
   huntingGrounds: Schema.String,
+  favoredOperation: Schema.optional(Schema.String),
   tier: NonNegativeInt,
   hold: Hold,
   heat: BoundedInteger,

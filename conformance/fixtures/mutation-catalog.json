@@ -33,7 +33,7 @@
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "frontend/src/schema/clock.ts — ClockInput decoder; relatedClockIds: Schema.Array(Uuid) becomes optionalWith(default []) (reverse of the Wave 2C fix)"
+      "target": "frontend/src/schema/clock.ts \u2014 ClockInput decoder; relatedClockIds: Schema.Array(Uuid) becomes optionalWith(default []) (reverse of the Wave 2C fix)"
     },
     {
       "expectedTestIds": [
@@ -51,7 +51,7 @@
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "frontend/src/schema/clock.ts — onExcessProperty: \"error\" flipped to \"ignore\" in the clock decoders (drop excess-key rejection)"
+      "target": "frontend/src/schema/clock.ts \u2014 onExcessProperty: \"error\" flipped to \"ignore\" in the clock decoders (drop excess-key rejection)"
     },
     {
       "expectedTestIds": [
@@ -66,11 +66,11 @@
       "mutation": "Truncate Collect_Removal_Keys at 512 entries",
       "observableFailure": "an import/repair preview no longer discloses every data-dropping property beyond the buffer, violating no-silent-data-loss; the UNKNOWN-KEY near-limit cases assert exact disclosure at 512/513/600 keys",
       "restorationHash": {
-        "backend-ada/server/src/pitd_normalize.adb": "600d70054ed41772eafdb6675e2d2aea599cff4f07a97d7e7091f4563ec64d78"
+        "backend-ada/server/src/pitd_normalize.adb": "6dc67ca95eb4406fd0c7e7451613f46854ace8b206f07d851f41be971df5c4f0"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_normalize.adb — Collect_Removal_Keys; add a length < 512 gate before Append so unknown-key removal reporting truncates (AUD-003)"
+      "target": "backend-ada/server/src/pitd_normalize.adb \u2014 Collect_Removal_Keys; add a length < 512 gate before Append so unknown-key removal reporting truncates (AUD-003)"
     },
     {
       "expectedTestIds": [
@@ -85,11 +85,11 @@
       "mutation": "Change INVALID_ENTITY status from 422 to 500",
       "observableFailure": "degraded-entity direct access returns 500 instead of the frozen 422 typed client error, breaking the error union and typed recovery",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
+        "backend-ada/server/src/pitd_callback.adb": "719de2ea0b0e40ceeac9f3932bb9f59122bb1e6e75c81418626aed1aea0f2f25"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — Invalid_Entity_Result; the S422 status becomes S500 so the INVALID_ENTITY typed error is misclassified as internal"
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 Invalid_Entity_Result; the S422 status becomes S500 so the INVALID_ENTITY typed error is misclassified as internal"
     },
     {
       "expectedTestIds": [
@@ -100,14 +100,14 @@
       "id": "M06",
       "intendedCatchingLayer": "conformance persistence (round-trip identity + admission byte-identity)",
       "layer": "backend-ada",
-      "mutation": "Inject an inline revision bump (Set_Field revision+1) plus Write_Entity immediately after the parse inside Classify_Stored — a revision-bumping persistence write during the pure read path (Stamp is declared later in the body, so the mutant inlines the bump)",
+      "mutation": "Inject an inline revision bump (Set_Field revision+1) plus Write_Entity immediately after the parse inside Classify_Stored \u2014 a revision-bumping persistence write during the pure read path (Stamp is declared later in the body, so the mutant inlines the bump)",
       "observableFailure": "reads mutate stored bytes and bump revisions, so character GET vs ?download=1 stop being byte-identical and seeded degraded files are rewritten by mere access (locked rule 7: reads never write)",
       "restorationHash": {
         "backend-ada/server/src/pitd_stored.adb": "550741d5d5ee64fc9b9abb6abee4251339a2e165be8d3ff47fd7415079d41250"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_stored.adb — Classify_Stored, the ONE read/parse/admission path shared by GET, history reads, mutations, capabilities, and roster projection; inject revision bump and Write_Entity after the single parse, before canonicalization. Purely read-only baseline (never writes, never repairs)."
+      "target": "backend-ada/server/src/pitd_stored.adb \u2014 Classify_Stored, the ONE read/parse/admission path shared by GET, history reads, mutations, capabilities, and roster projection; inject revision bump and Write_Entity after the single parse, before canonicalization. Purely read-only baseline (never writes, never repairs)."
     },
     {
       "expectedTestIds": [
@@ -120,11 +120,11 @@
       "mutation": "Skip the If-Match check block (if False then) so stale revisions mutate anyway",
       "observableFailure": "a stale writer overwrites recent changes with no STALE_REVISION; concurrent edits are lost silently",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
+        "backend-ada/server/src/pitd_callback.adb": "719de2ea0b0e40ceeac9f3932bb9f59122bb1e6e75c81418626aed1aea0f2f25"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — Handle_Entity If-Match / stale-revision enforcement (SC-A3 CONC-REV-004)"
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 Handle_Entity If-Match / stale-revision enforcement (SC-A3 CONC-REV-004)"
     },
     {
       "expectedTestIds": [
@@ -137,11 +137,11 @@
       "mutation": "Skip the pre-mutation snapshot (replaced by null)",
       "observableFailure": "snapshot-worthy mutations create no history entry, so undo has nothing to restore",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
+        "backend-ada/server/src/pitd_callback.adb": "719de2ea0b0e40ceeac9f3932bb9f59122bb1e6e75c81418626aed1aea0f2f25"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — the server mutation handler's snapshot-before-write: if Snapshots (Op) then Snapshot (Kind, Id, Op, Before) on every x-snapshot:true operation"
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 the server mutation handler's snapshot-before-write: if Snapshots (Op) then Snapshot (Kind, Id, Op, Before) on every x-snapshot:true operation"
     },
     {
       "expectedTestIds": [
@@ -155,11 +155,11 @@
       "mutation": "Skip snapshot consumption on undo (Delete_File replaced by null)",
       "observableFailure": "undo stops consuming snapshots, so a second undo replays stale state and history grows without bound",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
+        "backend-ada/server/src/pitd_callback.adb": "719de2ea0b0e40ceeac9f3932bb9f59122bb1e6e75c81418626aed1aea0f2f25"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — Handle_Entity undo handler: restore then Ada.Directories.Delete_File (Path) consumes the newest snapshot"
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 Handle_Entity undo handler: restore then Ada.Directories.Delete_File (Path) consumes the newest snapshot"
     },
     {
       "expectedTestIds": [
@@ -175,7 +175,7 @@
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/core/src/paperclips_core-bounded_integers.adb — Bounded_Integers.Add overflow branch: Applied := Item.Maximum - Item.Current. RETARGETED: the servers Core_Clamp_Add wraps this Add; the original monitors.Add_Stress target is not on the HTTP path."
+      "target": "backend-ada/core/src/paperclips_core-bounded_integers.adb \u2014 Bounded_Integers.Add overflow branch: Applied := Item.Maximum - Item.Current. RETARGETED: the servers Core_Clamp_Add wraps this Add; the original monitors.Add_Stress target is not on the HTTP path."
     },
     {
       "expectedTestIds": [
@@ -188,11 +188,11 @@
       "mutation": "Auto-add trauma on overflow: the pending raise is replaced by directly appending a trauma to monitor.trauma.traumas",
       "observableFailure": "traumaPending never raises while the traumas history silently grows; LIFECYCLE-STRESS-001 asserts the pending flag and typed attention",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
+        "backend-ada/server/src/pitd_ops.adb": "9d552850024fada824d4ef34ecfb00811e2caddef733448d31b7accaed08d17f"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — stress.add arm: landing at max from below raises the pending-trauma flag (Set_Field (E, \"traumaPending\", True); LIFECYCLE-STRESS-001/002). RETARGETED to the live HTTP-path arm."
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 stress.add arm: landing at max from below raises the pending-trauma flag (Set_Field (E, \"traumaPending\", True); LIFECYCLE-STRESS-001/002). RETARGETED to the live HTTP-path arm."
     },
     {
       "expectedTestIds": [
@@ -204,11 +204,11 @@
       "mutation": "Clear retirement during trauma removal: the arm additionally sets isRetired false",
       "observableFailure": "trauma.remove on a retired character flips isRetired to false, silently reversing retirement",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
+        "backend-ada/server/src/pitd_ops.adb": "9d552850024fada824d4ef34ecfb00811e2caddef733448d31b7accaed08d17f"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — trauma.remove arm: the correction path is allowed on retired characters and must never recompute isRetired. RETARGETED to the live HTTP-path arm; the original core Remove_Trauma target is not on the HTTP path."
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 trauma.remove arm: the correction path is allowed on retired characters and must never recompute isRetired. RETARGETED to the live HTTP-path arm; the original core Remove_Trauma target is not on the HTTP path."
     },
     {
       "expectedTestIds": [
@@ -224,7 +224,7 @@
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/core/src/paperclips_core-clocks.adb — Progress rollover branch (Q24/FV-006): Item.Overflow := Item.Overflow + (Amount - Applied)"
+      "target": "backend-ada/core/src/paperclips_core-clocks.adb \u2014 Progress rollover branch (Q24/FV-006): Item.Overflow := Item.Overflow + (Amount - Applied)"
     },
     {
       "expectedTestIds": [
@@ -236,11 +236,11 @@
       "mutation": "Skip the W5 owner-clock reassignment (elsif False then)",
       "observableFailure": "deleting a character/crew orphans its standalone clocks instead of reassigning them to campaign ownership with bumped revisions",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
+        "backend-ada/server/src/pitd_callback.adb": "719de2ea0b0e40ceeac9f3932bb9f59122bb1e6e75c81418626aed1aea0f2f25"
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — Handle_Entity delete handler, W5 owner-deletion branch: standalone clocks owned by the deleted entity are reassigned to campaign ownership in the same snapshot"
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 Handle_Entity delete handler, W5 owner-deletion branch: standalone clocks owned by the deleted entity are reassigned to campaign ownership in the same snapshot"
     },
     {
       "expectedTestIds": [
@@ -252,11 +252,11 @@
       "mutation": "Skip the W4 unlink sweep (if False then)",
       "observableFailure": "a deleted clock's id remains in other clocks' relatedClockIds, leaving stale relationship references",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
+        "backend-ada/server/src/pitd_callback.adb": "719de2ea0b0e40ceeac9f3932bb9f59122bb1e6e75c81418626aed1aea0f2f25"
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — Handle_Entity delete handler, W4 unlink-on-delete branch (the declare block after Sides: JSON_Array := Empty_Array): a deleted clock's id is removed from every remaining clock's relatedClockIds. ANCHOR CORRECTED: the old anchor matched the validation dispatch instead of the W4 branch."
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 Handle_Entity delete handler, W4 unlink-on-delete branch (the declare block after Sides: JSON_Array := Empty_Array): a deleted clock's id is removed from every remaining clock's relatedClockIds. ANCHOR CORRECTED: the old anchor matched the validation dispatch instead of the W4 branch."
     },
     {
       "expectedTestIds": [
@@ -268,11 +268,11 @@
       "mutation": "Hardcode the tier.add CrewTierMax settings lookup to 3",
       "observableFailure": "the enforced tier ceiling disagrees with the loaded game-settings JSON (Blades CrewTierMax), so a differently-configured game is mis-bounded",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
+        "backend-ada/server/src/pitd_ops.adb": "9d552850024fada824d4ef34ecfb00811e2caddef733448d31b7accaed08d17f"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — tier.add op-time cap: the CrewTierMax settings lookup gates the tier ceiling. RETARGETED: the creation-template StressMax lookup is normalized away before persistence, so that variant was unobservable; tier.add enforces the settings maximum at op time."
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 tier.add op-time cap: the CrewTierMax settings lookup gates the tier ceiling. RETARGETED: the creation-template StressMax lookup is normalized away before persistence, so that variant was unobservable; tier.add enforces the settings maximum at op time."
     },
     {
       "expectedTestIds": [
@@ -291,7 +291,7 @@
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "frontend/src/lib/focus.ts — captureFocusTarget/applyFocusTarget focus restoration across wholesale re-renders (FV-012)"
+      "target": "frontend/src/lib/focus.ts \u2014 captureFocusTarget/applyFocusTarget focus restoration across wholesale re-renders (FV-012)"
     },
     {
       "expectedTestIds": [
@@ -307,7 +307,7 @@
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "frontend/src/styles/components.css — .action-dots.is-interactive button.action-dot::before rule (A11Y-01 24px hit-affordance contract)"
+      "target": "frontend/src/styles/components.css \u2014 .action-dots.is-interactive button.action-dot::before rule (A11Y-01 24px hit-affordance contract)"
     },
     {
       "expectedTestIds": [
@@ -324,7 +324,7 @@
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "frontend/src/main.ts — render() route resolution: '/' redirects to /roster via window.history.replaceState (F2aa)"
+      "target": "frontend/src/main.ts \u2014 render() route resolution: '/' redirects to /roster via window.history.replaceState (F2aa)"
     },
     {
       "expectedTestIds": [
@@ -337,11 +337,11 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "5ab118affa12c0b9b3cbc59ba9137d08136bbf592f230d63b036106bdb95748f"
+        "frontend/src/api/client.ts": "c4ad581e004148b84441b72cbca1d31ac6a07f94f647a9f2330575f4d6141530"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "frontend/src/api/client.ts — fetchJson transport classification (FV-023), the malformed-200-JSON site throw new DecodeError(new Error(\"malformed JSON response\")). IMPLEMENTATION CORRECTED: only this site is mutated; the earlier blanket DecodeError→ApiError rename duplicated class ApiError and killed at compile time, which is not a behavioral delta."
+      "target": "frontend/src/api/client.ts \u2014 fetchJson transport classification (FV-023), the malformed-200-JSON site throw new DecodeError(new Error(\"malformed JSON response\")). IMPLEMENTATION CORRECTED: only this site is mutated; the earlier blanket DecodeError\u2192ApiError rename duplicated class ApiError and killed at compile time, which is not a behavioral delta."
     },
     {
       "expectedTestIds": [
@@ -358,7 +358,7 @@
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "conformance/src/endpoint-schema-map.ts — getResponseDisposition: unknown endpoint operationIds must throw (the frozen response oracle's strict mapping)"
+      "target": "conformance/src/endpoint-schema-map.ts \u2014 getResponseDisposition: unknown endpoint operationIds must throw (the frozen response oracle's strict mapping)"
     },
     {
       "expectedTestIds": [
@@ -376,7 +376,7 @@
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "conformance/scripts/default-data-guard.mjs — runGuard verdict: byte drift (added/removed/changed rows) must fail the run with exit 1 (RV-00 default-campaign write protection)"
+      "target": "conformance/scripts/default-data-guard.mjs \u2014 runGuard verdict: byte drift (added/removed/changed rows) must fail the run with exit 1 (RV-00 default-campaign write protection)"
     },
     {
       "expectedTestIds": [
@@ -392,7 +392,7 @@
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "conformance/scripts/managed-run.mjs — readiness poll dataDir identity check: resolve(health.dataDir) === resolve(expectedDataDir) gates readiness (SC-O0)"
+      "target": "conformance/scripts/managed-run.mjs \u2014 readiness poll dataDir identity check: resolve(health.dataDir) === resolve(expectedDataDir) gates readiness (SC-O0)"
     },
     {
       "expectedTestIds": [
@@ -411,7 +411,7 @@
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "frontend/src/pages/roster.ts — RosterPlate degraded lane: const degraded = all.filter((row) => !row.isReadable) (E11 total collections: degraded rows stay reachable and deletable)"
+      "target": "frontend/src/pages/roster.ts \u2014 RosterPlate degraded lane: const degraded = all.filter((row) => !row.isReadable) (E11 total collections: degraded rows stay reachable and deletable)"
     },
     {
       "expectedTestIds": [
@@ -430,7 +430,7 @@
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "frontend/src/pages/roster.ts — ROSTER_PAGE_SIZE = 100 bounded render window (PERF-02; DOM budget ROSTER_DOM_BUDGET_NODES = 2000)"
+      "target": "frontend/src/pages/roster.ts \u2014 ROSTER_PAGE_SIZE = 100 bounded render window (PERF-02; DOM budget ROSTER_DOM_BUDGET_NODES = 2000)"
     },
     {
       "expectedTestIds": [
@@ -450,7 +450,7 @@
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "frontend/src/pages/character-detail.ts — CHAR-03 section-local error routing: if (error && error.section) routes op failures into the originating [data-section] host with role=alert"
+      "target": "frontend/src/pages/character-detail.ts \u2014 CHAR-03 section-local error routing: if (error && error.section) routes op failures into the originating [data-section] host with role=alert"
     },
     {
       "expectedTestIds": [
@@ -464,11 +464,11 @@
       "mutation": "Claim-operation coverage removed: all three dispatch arms become dead (elsif False), so claim ops fall through to the unknown-op failure",
       "observableFailure": "claim.set/customize/reset stop acquiring, customizing, and relinquishing claims; the conformance claim oracle cases fail",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
+        "backend-ada/server/src/pitd_ops.adb": "9d552850024fada824d4ef34ecfb00811e2caddef733448d31b7accaed08d17f"
       },
       "severity": "P0",
       "status": "not-run",
-      "target": "backend-ada/server/src/pitd_callback.adb — the crew claim dispatch chain (elsif Op = \"claim.set\" / \"claim.customize\" / \"claim.reset\" then), the only place claim operations are handled; contract openapi.yaml crewClaimSet/crewClaimCustomize/crewClaimReset"
+      "target": "backend-ada/server/src/pitd_callback.adb \u2014 the crew claim dispatch chain (elsif Op = \"claim.set\" / \"claim.customize\" / \"claim.reset\" then), the only place claim operations are handled; contract openapi.yaml crewClaimSet/crewClaimCustomize/crewClaimReset"
     },
     {
       "expectedTestIds": [
@@ -478,18 +478,18 @@
       "intendedCatchingLayer": "conformance tooling (journey enumeration completeness) + the loader's REQUIRED_IDS registry",
       "layer": "conformance",
       "mutation": "Browser journey skipped: the enumeration filter silently drops one journey module (lifecycle.journey.mjs)",
-      "observableFailure": "the loaded journey set diverges from REQUIRED_IDS and from the modules on disk, so the loader throws and TOOLING-BROWSER-009 fails — a skipped journey can never pass silently",
+      "observableFailure": "the loaded journey set diverges from REQUIRED_IDS and from the modules on disk, so the loader throws and TOOLING-BROWSER-009 fails \u2014 a skipped journey can never pass silently",
       "restorationHash": {
         "conformance/scripts/browser-journeys.mjs": "23e178bceab6b30685cf0fffe2609d581370066bf532863f3843fffee16b1c1d"
       },
       "severity": "P1",
       "status": "not-run",
-      "target": "conformance/scripts/browser-journeys.mjs — loadJourneys enumeration filter over conformance/suites-browser/*.journey.mjs with the REQUIRED_IDS completeness registry (BROWSER-02, spec §16 AR-005)"
+      "target": "conformance/scripts/browser-journeys.mjs \u2014 loadJourneys enumeration filter over conformance/suites-browser/*.journey.mjs with the REQUIRED_IDS completeness registry (BROWSER-02, spec \u00a716 AR-005)"
     }
   ],
   "schema": {
     "$id": "ta00-mutation-catalog-v2",
-    "description": "MUT-02 complete mutant catalog: the 20 Wave-3 intents (M01-M20) plus the eight §16 AR-001 mutants (M21-M28). Each entry is a controlled single-change mutation whose observable failure a named stable test ID must detect by delta against a green layer baseline. Corrections: M06 now injects a revision-bumping write (the old write-back of an unchanged entity was unobservable); M15's anchor now targets the W4 unlink branch (the old anchor matched the validation dispatch); M20 mutates only the malformed-JSON classification site (the old blanket rename duplicated class ApiError and died at compile time, not from behavior).",
+    "description": "MUT-02 complete mutant catalog: the 20 Wave-3 intents (M01-M20) plus the eight \u00a716 AR-001 mutants (M21-M28). Each entry is a controlled single-change mutation whose observable failure a named stable test ID must detect by delta against a green layer baseline. Corrections: M06 now injects a revision-bumping write (the old write-back of an unchanged entity was unobservable); M15's anchor now targets the W4 unlink branch (the old anchor matched the validation dispatch); M20 mutates only the malformed-JSON classification site (the old blanket rename duplicated class ApiError and died at compile time, not from behavior).",
     "fields": {
       "expectedTestIds": "stable test IDs (bracket testCase IDs, matrix IDs, or inventory slugs) that must NEWLY fail versus the green layer baseline for the kill to count",
       "id": "stable identifier, M01..M28",

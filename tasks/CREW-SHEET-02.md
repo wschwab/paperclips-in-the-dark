@@ -51,3 +51,12 @@
 +All seven were fixed red-first (each with its own failing case first) and every requested gate was rerun green at `f0d8a18d`: frontend 1068/1068 with tsc and build; managed Ada two-cycle 699 passed / 1 skipped per cycle; managed browser suite 6/6 journeys; Chromium matrix 18/18 with both reading-state and editing-state numeric records; native data tests 27/27; docs build; the three audit validators; mutation campaign 28/28 (P0 19/19, P1 9/9).
 +
 +The required repeat review by the same model, provider and effort could not run: `openai-codex` returned `usage_limit_reached` (HTTP 429, retry-after ≈ 9.6 days) on the round-2 attempt. `tasks/metrics/frontend/CREW-SHEET-02-sol-verdict.txt` therefore still holds the round-1 FAIL, and the card is **not complete** until a same-model PASS verdict replaces it after the provider's reset.
+
+## Final review outcome
+
+The card was rebased onto `main` (which by then carried SCOUNDREL-CREATE-02) as one implementation commit, and the independent `openai-codex/gpt-6.1-sol` xhigh review was repeated on the merged result:
+
+- Round 1 (`4ee19f6b`) FAIL, seven findings; round 2 (`4b6d552f`) FAIL, three alias-aggregation findings; round 3 (`0a6b7296`) FAIL, one finding (an over-cap `StartingSatchelCoins` could destroy owned coin); round 4 (`c34dc01f`) **PASS**.
+- Fixes in the later rounds: overflow-safe shared 64-bit alias totals used by capabilities, mutations, Mastery and Vault effects; fallback chart rendering and eligibility sum alias-equivalent ownership so a displayed empty box can never decrement ownership; chart decrements guarded by advancement-edit mode; a starting satchel above the settings' own maximum clamped at creation.
+- Final gates at the pinned commit: frontend 1076/1076 with tsc and build; conformance tooling/oracle 240/240; managed Ada two-cycle 718 passed / 1 skipped per cycle; browser suite 6/6; Chromium matrix 18/18 with reading and editing numeric records; native data tests 27/27; docs build; the three audit validators with 0 errors and 0 warnings; mutation campaign 28/28 with pins refreshed.
+- `tasks/metrics/frontend/CREW-SHEET-02-sol-verdict.txt` holds the round-4 PASS.

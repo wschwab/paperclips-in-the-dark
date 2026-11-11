@@ -54,6 +54,7 @@ package body Pitd_Ops is
         or else Op = "cohort.update"
 or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
         or else Op = "fields.update"
+        or else Op = "favored-operation.set"
         or else Op = "update"
         or else Op = "contact.add" or else Op = "contact.remove"
         or else Op = "contact.closeness"
@@ -185,7 +186,17 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
       Set_Field (Gear, "isCommitmentLocked", False);
       Set_Field (Gear, "maxBulk", Settings_Int (S, "LoadMaxima.MaxBulk", 0));
       Set_Field (C, "gear", Gear);
-      Set_Field (Fund, "satchel", Tracker ("coins", 2, Settings_Int (S, "FundMaxima.SatchelMax", 0)));
+      --  A configured starting satchel above the settings' own SatchelMax is
+      --  clamped at creation, never stored over capacity (an over-cap satchel
+      --  makes the next fund.gain report negative effective space and destroy
+      --  owned coin). CREW-SHEET-02 review finding: normalize at the boundary.
+      declare
+         Satchel_Max : constant Integer := Settings_Int (S, "FundMaxima.SatchelMax", 0);
+         Start_Satchel : constant Integer :=
+           Integer'Min (Settings_Nonnegative (S, "StartingSatchelCoins", 0), Integer'Max (Satchel_Max, 0));
+      begin
+         Set_Field (Fund, "satchel", Tracker ("coins", Start_Satchel, Satchel_Max));
+      end;
       Set_Field (Fund, "stash", Tracker ("coins", 0, Settings_Int (S, "FundMaxima.StashMax", 0)));
       Set_Field (C, "fund", Fund);
       Set_Field (C, "contacts", Empty_Array);
@@ -253,27 +264,73 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
    function New_Crew (Stem, Crew_Type : String) return JSON_Value is
       G : constant JSON_Value := Game (Stem);
       S : constant Settings_Ref := (To_Unbounded_String (Stem), G);
+      --  CREW-SHEET-02: creation is a write, so a legacy type name is stored
+      --  under its canonical name (the same rename every mutating write
+      --  applies); the catalog lookup below therefore uses the canonical
+      --  name.  An unknown name is kept verbatim, never rejected.
+      Canonical_Type : constant String := Canonical_Crew_Type (Stem, Crew_Type);
+      --  CREW-SHEET-02: hold and coin come from the validated game settings,
+      --  never from a literal.  An absent, wrong-typed, or out-of-vocabulary
+      --  setting falls back to the canonical structural default (hold
+      --  "strong", coin 0) instead of crashing the create.
+      Start_Hold : constant String := Settings_Str (S, "CrewStartingHold", "strong");
+      Start_Coin : constant Integer := Settings_Nonnegative (S, "CrewStartingCoin", 0);
       C : JSON_Value := New_Game_Entity ("crew", Stem, G);
    begin
-      Set_Field (C, "crewTypeName", Crew_Type);
+      Set_Field (C, "crewTypeName", Canonical_Type);
       Set_Field (C, "name", "");
       Set_Field (C, "lair", "");
       Set_Field (C, "reputation", "");
       Set_Field (C, "huntingGrounds", "");
+      Set_Field (C, "favoredOperation", "");
       Set_Field (C, "tier", Integer'(0));
-      Set_Field (C, "hold", "weak");
+      Set_Field (C, "hold",
+                 (if Start_Hold = "weak" or else Start_Hold = "strong"
+                  then Start_Hold else "strong"));
       Set_Field (C, "heat", Tracker ("current", 0, Settings_Int (S, "CrewTrackerMaxima.HeatMax", 0)));
       Set_Field (C, "wanted", Tracker ("current", 0, Settings_Int (S, "CrewTrackerMaxima.WantedMax", 0)));
       Set_Field (C, "rep", Tracker ("current", 0, Settings_Int (S, "CrewTrackerMaxima.RepMax", 0)));
       Set_Field (C, "experience", Tracker ("points", 0, Settings_Int (S, "XpTrackMaxima.Crew", 0)));
       Set_Field (C, "specialAbilities", Empty_Array);
-      Set_Field (C, "upgrades", Empty_Array);
+      declare
+         Catalog : constant JSON_Value := Game (Stem & "-crews");
+         Upgrades : JSON_Array := Empty_Array;
+      begin
+         if Catalog.Kind = JSON_Object_Type and then Has_Field (Catalog, "CrewTypes") then
+            declare
+               Types : constant JSON_Array := Get (Catalog, "CrewTypes");
+            begin
+               for I in 1 .. Length (Types) loop
+                  declare
+                     T : constant JSON_Value := Get (Types, I);
+                  begin
+                     if Str_Field (T, "Name") = Canonical_Type and then Has_Field (T, "StartingUpgrades") then
+                        declare
+                           Starting : constant JSON_Array := Get (T, "StartingUpgrades");
+                        begin
+                           for J in 1 .. Length (Starting) loop
+                              declare
+                                 U : JSON_Value := Create_Object;
+                              begin
+                                 Set_Field (U, "name", Str_Field (Get (Starting, J), "Name"));
+                                 Set_Field (U, "boxesMarked", Int_Field (Get (Starting, J), "BoxesMarked"));
+                                 Append (Upgrades, U);
+                              end;
+                           end loop;
+                        end;
+                     end if;
+                  end;
+               end loop;
+            end;
+         end if;
+         Set_Field (C, "upgrades", Upgrades);
+      end;
       Set_Field (C, "cohorts", Empty_Array);
       Set_Field (C, "contacts", Empty_Array);
       Set_Field (C, "factions", Empty_Array);
-      Set_Field (C, "coin", Integer'(0));
+      Set_Field (C, "coin", Start_Coin);
       Set_Field (C, "stash", Integer'(0));
-      Set_Field (C, "stashCapacity", Settings_Int (S, "CrewStashBaseCapacity", 0));
+      Set_Field (C, "stashCapacity", Crew_Stash_Capacity (C));
       Set_Field (C, "turf", Integer'(0));
       Set_Field (C, "notes", Empty_Array);
       Set_Field (C, "claimedClaimIds", Empty_Array);
@@ -761,6 +818,8 @@ elsif Op = "clock.progress" then
             return False;
          end if;
          return True;
+      elsif Op = "favored-operation.set" and then Kind = "crew" then
+         return Check_Fields (B, Spec_List'(1 => Spec ("value", JSON_String_Type)), Bad);
       elsif Op = "fields.update" then
          if not Has_Any_Field (B) then Bad := To_Unbounded_String ("fields.update requires at least one field"); return False; end if;
          return True;
@@ -1424,17 +1483,32 @@ elsif Op = "harm.add" then
             Field:constant String:=(if Kind="character" then "abilities" else "specialAbilities");
             A:constant JSON_Array:=Get(P,Field);O:JSON_Array:=A;
             Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;
+            Canonical : constant String :=
+              (if Kind = "crew" then Canonical_Legacy_Name
+                 (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+                  "LegacyAbilityNames", Name) else Name);
          begin
+            if Kind = "crew" and then Ability_Taken (E, Name) >=
+              Long_Long_Integer (Ability_Take_Limit (Kind, Name, E))
+            then
+               return Ability_Maxed_Error
+                 (Op, "ability is already taken to its limit",
+                  Ability_Take_Limit (Kind, Name, E), Ability_Taken (E, Name), E);
+            end if;
             for I in 1..Length(A) loop
-               if Str_Field(Get(A,I),"name")=Name then
+               if (if Kind = "crew" then Canonical_Legacy_Name
+                     (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+                      "LegacyAbilityNames", Str_Field (Get (A, I), "name"))
+                   else Str_Field (Get (A, I), "name")) = Canonical then
                   Found:=True;
                   if not Can_Take_More(Kind,Name,E,Int_Field(Get(A,I),"timesTaken")) then
                      return Ability_Maxed_Error
                        (Op, "ability is already taken to its limit",
                         Ability_Take_Limit (Kind, Name, E),
-                        Int_Field (Get(A,I),"timesTaken"), E);
+                        Long_Long_Integer (Int_Field (Get(A,I),"timesTaken")), E);
                   end if;
                   Set_Field(Get(A,I),"timesTaken",Int_Field(Get(A,I),"timesTaken")+1);
+                  exit;
                end if;
             end loop;
             if not Found then declare X:JSON_Value:=Create_Object;begin
@@ -1454,9 +1528,16 @@ elsif Op = "harm.add" then
             Field:constant String:=(if Kind="character" then "abilities" else "specialAbilities");
             A:constant JSON_Array:=(if Has_Field(P,Field) then Get(P,Field) else Empty_Array);
             O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;
+            Canonical : constant String :=
+              (if Kind = "crew" then Canonical_Legacy_Name
+                 (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+                  "LegacyAbilityNames", Name) else Name);
          begin
             for I in 1..Length(A) loop
-               if Str_Field(Get(A,I),"name")=Name then Found:=True;
+               if (if Kind = "crew" then Canonical_Legacy_Name
+                     (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+                      "LegacyAbilityNames", Str_Field (Get (A, I), "name"))
+                   else Str_Field (Get (A, I), "name")) = Canonical then Found:=True;
                else Append(O,Get(A,I));end if;
             end loop;
             if not Found then return Not_Found_Error(Op,"ability not found",E);end if;
@@ -2104,12 +2185,60 @@ elsif Op = "harm.add" then
             end if;
             return Success_Result (Op, E, Requested, Effective);
          end;
-      elsif Op="upgrade.mark" or else Op="upgrade.unmark" then declare A:constant JSON_Array:=Get(E,"upgrades");O:JSON_Array:=Empty_Array;Name:constant String:=Str_Field(B,"name");Found:Boolean:=False;begin for I in 1..Length(A) loop declare X:constant JSON_Value:=Get(A,I);begin if Str_Field(X,"name")=Name then Found:=True;if Op="upgrade.mark" and then Int_Field(X,"boxesMarked")>=Upgrade_Total_Boxes(E,Name) then return Upgrade_Maxed_Error(Op,"upgrade is at its total box count",Upgrade_Total_Boxes(E,Name),Int_Field(X,"boxesMarked"),E);end if;declare N:constant Integer:=Int_Field(X,"boxesMarked")+(if Op="upgrade.mark" then 1 else -1);begin if N>0 then Set_Field(X,"boxesMarked",N);Append(O,X);end if;end;else Append(O,X);end if;end;end loop;if Op="upgrade.mark" and then not Found then declare X:JSON_Value:=Create_Object;begin Set_Field(X,"name",Name);Set_Field(X,"boxesMarked",Integer'(1));Append(O,X);end;end if;Set_Field(E,"upgrades",O);
+      elsif Op = "upgrade.mark" or else Op = "upgrade.unmark" then
+         declare
+            A : constant JSON_Array := Get (E, "upgrades");
+            O : JSON_Array := Empty_Array;
+            Name : constant String := Str_Field (B, "name");
+            Canonical : constant String := Canonical_Legacy_Name
+              (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+               "LegacyUpgradeNames", Name);
+            Marked : constant Long_Long_Integer := Upgrade_Marked (E, Name);
+            Total : constant Integer := Upgrade_Total_Boxes (E, Name);
+            Found : Boolean := False;
+         begin
+            if Op = "upgrade.mark" and then Marked >= Long_Long_Integer (Total) then
+               return Upgrade_Maxed_Error
+                 (Op, "upgrade is at its total box count", Total, Marked, E);
+            end if;
+            for I in 1 .. Length (A) loop
+               declare
+                  X : constant JSON_Value := Get (A, I);
+               begin
+                  if not Found and then Canonical_Legacy_Name
+                    (Str_Field (E, "gameStem"), Str_Field (E, "crewTypeName"),
+                     "LegacyUpgradeNames", Str_Field (X, "name")) = Canonical
+                  then
+                     Found := True;
+                     declare
+                        N : constant Integer := Int_Field (X, "boxesMarked") +
+                          (if Op = "upgrade.mark" then 1 else -1);
+                     begin
+                        if N > 0 then
+                           Set_Field (X, "boxesMarked", N);
+                           Append (O, X);
+                        end if;
+                     end;
+                  else
+                     Append (O, X);
+                  end if;
+               end;
+            end loop;
+            if Op = "upgrade.mark" and then not Found then
+               declare X : JSON_Value := Create_Object; begin
+                  Set_Field (X, "name", Name);
+                  Set_Field (X, "boxesMarked", Integer'(1));
+                  Append (O, X);
+               end;
+            end if;
+            Set_Field (E, "upgrades", O);
          --  CONTRACT-04: marks changed, so the derived vault capacity moves
          --  with them.  An existing stash above a reduced capacity stays
          --  readable (never silently drop coin); the next stash.add
          --  reconciles downward.
          Set_Field(E,"stashCapacity",Crew_Stash_Capacity(E));end;
+      elsif Op = "favored-operation.set" and then Kind = "crew" then
+         Set_Field (E, "favoredOperation", Str_Field (B, "value"));
       elsif Op = "fields.update" then
          declare procedure Copy_Field (Name : UTF8_String; Value : JSON_Value) is begin if Has_Field(E,Name) then Set_Field(E,Name,Clone(Value)); end if; end; begin Map_JSON_Object(B,Copy_Field'Access); end;
       elsif Op = "update" then
