@@ -1,0 +1,84 @@
+VERDICT: PASS
+SCOUNDREL-CREATE-02 — independent GPT 6.1 Sol round-3 review of 30d7d2a9
+
+FINDINGS
+
+No remaining defect found in the requested scope. The round-2 contract/status mismatch is fixed, and the affected allocation and Chromium paths passed independent rechecks below.
+
+CONTRACT FIX — PASS
+
+1. The three affected endpoints now declare HTTP 400 through the existing OpResult response: batch at contract/openapi.yaml:585-588, attributeLevelup at :1394-1399, actionSetRating at :1418-1423. Completion retains its existing 400 declaration at :1435-1440.
+2. Batch prose explicitly limits the exception to VALIDATION from talent.allocation.complete, action.set-rating and attribute.levelup, while unrelated member failures retain HTTP 200 (contract/openapi.yaml:522-531). This matches the single-operation delivery at backend-ada/server/src/pitd_callback.adb:2319-2328 and batch delivery at :2651-2659,2698-2700.
+3. Independently exercised real responses on managed http://127.0.0.1:35869 with command C2. Recorded 61 requests; the repository's actual assertResponseValid accepted all 22 selected endpoint/status responses. Evidence: /tmp/sc02-sol-review3/contract-transport.json; http-transcript.jsonl, one request per line:
+   - Line 7: under-budget talent.allocation.complete, HTTP 400, VALIDATION/status 400.
+   - Lines 10/13/40: locked, over-cap and over-budget action.set-rating, HTTP 400, VALIDATION/status 400.
+   - Lines 17/33/37: locked, over-cap and over-budget attribute.levelup with full XP, HTTP 400, VALIDATION/status 400.
+   - Lines 20/23/26: batches containing completion/setter/level-up rejection respectively, aggregate HTTP 400; each member has VALIDATION/status 400.
+   - Line 61: unrelated trauma.add batch rejection retains aggregate HTTP 200, ok:true/error:null; member ok:false, VALIDATION/status 400. Single trauma.add and unknown-member batch controls also retain HTTP 200 (lines 28/29). These existing unrelated conventions were not changed or expanded into findings.
+4. Proved the new assertions detect the pre-fix defect, without editing the reviewed workspace. Read-only `jj file show -r 01c872d5 contract/openapi.yaml` supplied /tmp/sc02-sol-review3/pre-fix-openapi.yaml. C2 imports a separate copy of the repository's validator/schema modules with that old contract and validates the SAME actual HTTP bodies. Nine expected failures reproduced exactly:
+     no response schema for endpoint actionSetRating status 400
+     no response schema for endpoint attributeLevelup status 400
+     no response schema for endpoint batch status 400
+   Completion and unrelated 200 controls validate under both contracts. Current endpoint/status validation is not a mock or generic DTO-only check: conformance/src/schemas.ts:655-680 selects the declared disposition and validates it. The strengthened regressions invoke it for all three single operations at conformance/suites/contract/sheet-allocation.test.ts:17-21,31-42,67-70,121; batch validation at :135-136,140-165 covers each affected member and the trauma control. The focused suite passes 18/18 (C1).
+5. Parsed-spec comparison in C2 checked every operation's response declarations. Only actionSetRating, attributeLevelup and batch changed; all 119 unrelated operation response tables are unchanged. Removing those three new 400 entries and restoring only the batch description makes the entire parsed current spec deep-equal to the pre-fix spec. Evidence: /tmp/sc02-sol-review3/contract-transport.json and contract-transport.mts:14-27.
+6. Ran all three artifact generators with scratch outputs, then byte-compared against the reviewed artifacts (C3). Contract coverage, agent API reference and capability manifest match exactly. The manifest is also byte-identical to revision 01c872d5, SHA-256 42f6520ad2e27cc912bf2c380a666988b54510256d3fcdb8631e2ff4b71147b7. Evidence: /tmp/sc02-sol-review3/generated-artifacts.json and artifact-baseline.json.
+
+ALLOCATION / PERSISTENCE RECHECK — PASS
+
+Command C2 runs the independent HTTP probe, not only the repository tests. Its 21 semantic checks and 60 requests, plus the added unrelated batch control, are retained in /tmp/sc02-sol-review3/http-probe.mjs, http-summary.json and http-transcript.jsonl.
+
+- Derived attribute rating is the count of actions with positive ratings, not their sum: reference blades-in-the-sheets/Models/Characters/TalentAttribute.cs:27-28; backend derivation backend-ada/server/src/pitd_common.adb:598-626. C2 asserts it after ordinary creation, omitted-actionRatings draft creation, complete-map creation, increases/decreases, successful level-up, batch, undo and import with deliberately false supplied attribute ratings (http-probe.mjs:21-24,61-68,100-134; transcript lines 3-5,47-57).
+- Omitting actionRatings creates a durable defaults-only pending PC. Default locks, settings-derived per-action cap and total budget are enforced while pending, including level-up and batch attempts. C2 checks exact-budget completion and that it changes neither attribute ratings/XP nor dossier, playbook, monitor, fund, gear, session or rolodex; completion does not award resources. It then verifies ordinary above-starting-cap edits and default reduction are permitted. Evidence: http-probe.mjs:64-105; C1 CREATE02-DRAFT/LEVELUP and complete-map cases. Guard/completion source: pitd_common.adb:540-595; pitd_ops.adb:1248-1274.
+- Every rejected setter/level-up/completion path and each single-member batch variant compares the ENTIRE error.entity to the preceding GET, then compares following GET and stored bytes to their pre-operation values (http-probe.mjs:35-46). This includes full-XP locked, cap and total-budget level-up cases, not merely the error code. Source preserves the incoming DTO at pitd_ops.adb:796-801 and returns it from the late gate at :2398-2402. Transcript lines 17/33/37 retain current ratings, XP and revision rather than an uncommitted candidate.
+- Canonical detail bytes equal current.json. A legacy stored record missing only allocationPending and attribute ratings reads with pending:false and derived ratings, without repair, revision change, byte change or mtimeNs change; export equals the read view. Evidence: http-probe.mjs:135-150; transcript lines 58-60; http-summary.json final check. Overlay source: backend-ada/server/src/pitd_stored.adb:197-231,247-263.
+
+FRONTEND / REAL CHROMIUM RECHECK — PASS
+
+- Creation remains playbook-only, with dot allocation on the sheet: frontend/src/pages/character-create.ts:184-206,337-350. Strict required fields remain at frontend/src/schema/character.ts:140-149. C5 accepted a real GET DTO and rejected missing/null allocationPending and attribute.rating (five cases), with no compatibility fallback.
+- Talents renders the server attribute.rating, larger attribute headings and always-visible description paragraphs: frontend/src/pages/character-sections/talents.ts:44-48,54-88; frontend/src/styles/components.css:1149-1158. Completion refreshes the server capability projection at character-detail.ts:1784-1798 via :593-607.
+- C4 passed 27 creation/pending/completed surface cases and nine sheet-first journeys at actual Chromium viewports 1440x1000, 768x1024 and 390x844, each in light/dark/high contrast. The probe creates without actionRatings, reloads the pending draft, explicitly completes it, and checks every rendered action-dot count against server effectiveMax WITHOUT a subsequent reload (frontend/scripts/scoundrel-create-02-probe.mjs:29-39,64-82,95-133).
+- Fresh numeric evidence: /tmp/sc02-sol-review3/matrix/numeric.json and numeric-summary.json. Maximum document/container/hint horizontal overflow: 0px; attribute headings 20px versus action labels 13.12px; no cap mismatches or page errors. Geometry includes actual innerWidth, clientWidth/scrollWidth, bounding rectangles and computed styles (probe :46-60).
+- Independently drove a separate native Chromium tab through creation, Hunt 2 / Study 2 allocation, pending reload and completion at 390x844 dark on managed port 34223. Before completion: pending:true, total 7, Hunt buttons 1/2, server cap 2. After completion: pending:false, no banner, Hunt buttons 1/2/3, server cap 3, heading Insight 2. performance.timeOrigin remained 1794421418395.2, proving no completion-time reload. Clicking Hunt 3 then succeeded, retaining Insight rating 2 and the same timeOrigin. Evidence: /tmp/sc02-sol-review3/native-transition.json and native-gameplay.json; observed GET /api/characters/e5829288-98b8-4903-8d12-0129c8807e39 and its /capabilities. Native API: browser.open({name:'sc02r3Native',url:'http://127.0.0.1:34223/character/create',viewport:{width:390,height:844},app:{tern:false,relay:false},headed:false}), followed by select/click/reload/focus/press/waitForSelector and page.evaluate observations.
+- Visually inspected fresh 1440-light-creation.png, 390-dark-sheet-complete.png and 768-high-sheet-pending.png; native-size crops crop-390-light-sheet-pending.png, crop-768-high-sheet-pending.png and crop-1440-light-sheet-complete.png; and native-390-dark-complete.png, all under /tmp/sc02-sol-review3/. Headings, dots and descriptions are readable and contained. The existing fixed Game Mode dock appears in full-page captures; the native viewport independently shows Hunt/Study descriptions above it. No new visual blocker found. C6 detector returned [].
+
+EXACT INDEPENDENT COMMANDS / SCOPE
+
+All executable checks used the private source/dependency copy /tmp/sc02-sol-review3/repo; build and generated outputs stayed under /tmp/sc02-sol-review3/. The supplied Ada executable was used, not rebuilt. No server source file was newer than that executable (artifact-baseline.json); this freshness check is not a compilation/proof claim.
+
+C1 — cwd /tmp/sc02-sol-review3/repo/conformance:
+  env TMPDIR=/tmp/sc02-sol-review3/tmp node scripts/managed-run.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- run suites/contract/sheet-allocation.test.ts suites/contract/pc-creation.test.ts
+  PASS: 18/18, managed port 45555; launcher reported successful cleanup.
+
+C2 — same conformance cwd:
+  env TMPDIR=/tmp/sc02-sol-review3/tmp node scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults --keep -- node --import tsx /tmp/sc02-sol-review3/contract-transport.mts
+  PASS: 21 semantic checks/60 initial requests plus one batch control; 22 actual response validations; nine expected pre-fix failures. Managed port 35869; server stopped, --keep retained only isolated scratch data/evidence.
+
+C3 — same conformance cwd:
+  node --import tsx scripts/generate-contract-coverage.mts --out /tmp/sc02-sol-review3/contract-coverage.json && cmp generated/contract-coverage.json /tmp/sc02-sol-review3/contract-coverage.json && node ../skill/generate-api-reference.mjs --out /tmp/sc02-sol-review3/api-reference && cmp ../skill/api-reference/README.md /tmp/sc02-sol-review3/api-reference/README.md && node ../skill/generate-capability-manifest.mjs --out /tmp/sc02-sol-review3/capability-manifest.json && cmp ../skill/api-reference/capability-manifest.json /tmp/sc02-sol-review3/capability-manifest.json
+  PASS: all byte comparisons equal.
+
+C4 — cwd /tmp/sc02-sol-review3/repo:
+  env TMPDIR=/tmp/sc02-sol-review3/tmp SCOUNDREL_EVIDENCE_OUT=/tmp/sc02-sol-review3/matrix node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- node frontend/scripts/scoundrel-create-02-probe.mjs
+  PASS: 27 surface cases, nine journeys, managed port 46539; launcher reported successful cleanup.
+
+C5 — conformance cwd:
+  node --import tsx /tmp/sc02-sol-review3/decoder-smoke.mts
+  PASS: five strict decoder cases.
+
+C6 — reviewed workspace cwd:
+  /home/x/.agents/skills/impeccable/scripts/impeccable detect --json frontend/src/pages/character-create.ts frontend/src/pages/character-sections/talents.ts frontend/src/pages/character-detail.ts
+  PASS: [].
+
+C7 — cwd /tmp/sc02-sol-review3/repo/frontend:
+  npx tsc --noEmit && npm run build
+  PASS: TypeScript and Vite production build.
+
+Did NOT independently rerun frontend's full 1048-test suite, Ada compilation/SPARK or full two-cycle conformance, the 233-case tooling suite, separate six-journey browser suite, full 28-mutant campaign or pin audit, metrics/traceability/reconciliation validators, conformance TypeScript, or docs build. Those author-reported gates are not claimed as reproduced in round 3. The affected acceptance paths were exercised by C1-C7 and the separate native browser interaction above.
+
+Review-helper corrections, not implementation defects: the first C2 invocation used repository-root cwd, where --import tsx could not resolve the conformance-local dependency; the corrected conformance-cwd invocation passed. The native press helper initially rejected (selector,key); retrying only that step as press('Enter',{selector:'[data-talent-allocation-complete]'}) completed the path. No application change was needed.
+
+ISOLATION / DISPOSITION
+
+Read prior verdicts and required specification/card/contract documents before review. Read-only `jj show -r 30d7d2a9 --summary`, `jj diff --from 01c872d5 --to 30d7d2a9 --stat`, and `jj diff --from 30d7d2a9 --to @ --stat` scoped the revision; the latter showed only existing screenshot/numeric evidence differences, not source/contract/test changes. Those evidence changes were left untouched.
+
+All review servers used managed launchers with --seed-defaults, free loopback ports and temporary campaign data. No request, binding, kill or restart touched port 9657. The native-browser launcher ran `env TMPDIR=/tmp/sc02-sol-review3/tmp node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- node /tmp/sc02-sol-review3/hold-browser.mjs`; after browser.close, the owned scratch stop sentinel let it exit normally. Service sc02SolRound3Browser exited 0 and reported evidence removal. No implementation/docs/card/metrics/catalog/generated-artifact edits, commits, pushes or jj mutations were performed; intentional writes were confined to scratch and this verdict.

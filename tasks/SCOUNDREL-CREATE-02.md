@@ -79,19 +79,19 @@ row and no completion control. After implementation those regressions pass.
 
 | Gate | Result |
 | --- | --- |
-| Frontend vitest | 1047/1047 tests, 45 files |
+| Frontend vitest | 1048/1048 tests, 45 files |
 | Frontend TypeScript + production build | pass |
 | Ada build (generated validator + sources) | pass; `pitd` rebuilt, no source newer than binary |
-| Ada two-cycle managed conformance | 688 passed + 1 intentionally isolated recovery case skipped, per cycle, on managed ports 45901 and the second cycle |
+| Ada two-cycle managed conformance | 689 passed + 1 intentionally isolated recovery case skipped, per cycle |
 | Conformance tooling | 233/233 |
 | Conformance TypeScript | pass |
 | Browser journeys (managed) | 6/6 |
-| Chromium matrix probe | 27/27 surface/viewport/theme cases and 9 sheet-first journeys |
-| Mutation campaign (isolated, pins refreshed) | 28/28 killed — P0 19/19, P1 9/9, green baseline, no survivors |
+| Chromium matrix probe | 27/27 surface/viewport/theme cases and 9 sheet-first journeys, including the no-reload post-completion cap assertion |
+| Mutation campaign (isolated, pins refreshed) | 28/28 killed — P0 19/19, P1 9/9, green baseline, no survivors (revision `01c872d5`; the later contract-only edit changed no pinned file) |
 | Validators (metrics 193 files, traceability 231/231, reconciliation) | pass |
 | Docs build | pass, 171 files generated |
 | Impeccable detector on changed UI sources | no findings |
-| Independent Sol 6.1 xhigh review | see commit record |
+| Independent Sol 6.1 xhigh review | **PASS** (round 3, revision `30d7d2a9`); rounds 1 and 2 were FAIL, both fixed |
 
 Chromium evidence: `docs/public/evidence/scoundrel-create-02/` — creation,
 pending-allocation sheet and completed sheet at 1440×1000, 768×1024 and
@@ -135,5 +135,32 @@ Red-first evidence for the fixes: the strengthened conformance suite failed
 a length of 3 but got 2`. After the fixes: focused conformance 17/17, frontend
 1048/1048, Ada two-cycle 688 + 1 skipped per cycle, browser 6/6, Chromium 27/27
 with the new no-reload cap assertion, isolated mutation re-run with refreshed
-pins. Round 2 verdict is recorded at
-`tasks/metrics/frontend/SCOUNDREL-CREATE-02-sol-verdict.txt`.
+pins (28/28, revision `01c872d5`).
+
+**Round 2 — FAIL** at `01c872d5` (record:
+`tasks/metrics/frontend/SCOUNDREL-CREATE-02-sol-r2-verdict.txt`). All three
+round-1 runtime fixes passed independent verification; the remaining P2 was that
+the newly delivered HTTP 400 allocation rejections were not declared on the
+affected endpoints: `attributeLevelup` and `actionSetRating` listed only
+200/404/409/500, and `batch` listed only 200/500 while its prose promised HTTP
+200 for admitted batches with failed members. The repository's own
+response validator therefore rejected real responses with
+`no response schema for endpoint … status 400`. Fixed by declaring `400 →
+OpResult` on those three operations, stating the allocation-validation exception
+in the batch description while preserving the aggregate HTTP 200 convention for
+unrelated member failures, and extending the regression suite to validate actual
+responses through the existing endpoint/status validator (red first: 3 failed,
+2 passed with eight missing-schema assertions). Contract-derived artifacts were
+regenerated; the capability manifest stayed byte-identical. After the fix:
+focused conformance 18/18, Ada two-cycle 689 + 1 skipped per cycle, tooling
+233/233, browser 6/6, Chromium 27/27, pins unchanged (contract-only edit).
+
+**Round 3 — PASS** at `30d7d2a9`
+(`tasks/metrics/frontend/SCOUNDREL-CREATE-02-sol-verdict.txt`): no remaining
+findings. The reviewer validated 22 real responses against the declared
+endpoint/status schemas on its own managed server, reproduced the nine pre-fix
+validator failures against the pre-fix contract (read via `jj file show`), proved
+that only those three operations' response tables changed, byte-compared all
+three regenerated artifacts, and confirmed in a native Chromium tab that
+completion raises the action controls to the server cap with no reload
+(`performance.timeOrigin` unchanged).

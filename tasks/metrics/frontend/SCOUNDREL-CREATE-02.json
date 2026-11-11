@@ -8,17 +8,17 @@
   "wallClockMinutes": 0,
   "tokens": 0,
   "passRateAtFirstDoneClaim": "No done claim; red-first oracles failed before implementation (backend 2 failed, frontend 3 failed).",
-  "passRateAfterReview": "Pending independent pinned review. Exercised: frontend 1047/1047 (45 files), tsc+build, Ada build, Ada two-cycle 688 passed + 1 isolated skip per cycle, tooling 233/233, conformance tsc, browser 6/6, Chromium 27/27 with 9 journeys, isolated mutation 28/28 (P0 19/19, P1 9/9), metrics 193 files, traceability 231/231, reconciliation 0 errors, docs 171 files.",
+  "passRateAfterReview": "PASS at 30d7d2a9 (independent openai-codex/gpt-6.1-sol xhigh round 3; rounds 1 and 2 FAIL, both fixed red-first). Exercised: frontend 1048/1048 (45 files), tsc+build, Ada build, Ada two-cycle 689 passed + 1 isolated skip per cycle, focused conformance 18/18, tooling 233/233, conformance tsc, browser 6/6, Chromium 27/27 with 9 journeys, isolated mutation 28/28 (P0 19/19, P1 9/9) at 01c872d5, metrics 193 files, traceability 231/231, reconciliation 0 errors, docs 171 files.",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
-  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
+  "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 3, "human": 1 },
   "defectCatchingLayer": ["Red-first frontend and conformance oracles", "Ada two-cycle and full conformance", "Real Chromium viewport/theme journeys", "Isolated 28-mutant campaign", "Independent pinned Sol xhigh review"],
-  "notes": "User authorized additive attribute-rating contract and frozen conformance/browser updates. Durable draft-PC allocation moves dots to sheet with settings-derived budget/default locks. Rule verified against reference TalentAttribute.cs:27-28 and official SRD first-column rule. Isolated /tmp/scoundrel-create-02-ws, no default/9657 server use.",
+  "notes": "User authorized additive attribute-rating contract and frozen conformance/browser updates. Durable draft-PC allocation moves dots to sheet with settings-derived budget/default locks. Rule verified against reference TalentAttribute.cs:27-28 and official SRD first-column rule. Isolated /tmp/scoundrel-create-02-ws; default/9657 server never used. Review found 3 P2 defects (stale caps after completion, mutated error.entity on rejected pending writes, HTTP 200 for allocation validations) plus 1 contract-declaration gap; all fixed red-first and re-reviewed to PASS.",
   "metricsMethodology": {
     "method": "Observed command outputs and evidence; no gate claim before exercise. Wall-clock and token totals unavailable, represented as 0.",
-    "source": "Task card, gate command logs, docs/public/evidence/scoundrel-create-02/, independent verdict.",
+    "source": "Task card, gate command logs, docs/public/evidence/scoundrel-create-02/, mutation-results.json, independent verdict files r1/r2/r3.",
     "locNote": "Exact implementation LOC not measured.",
     "scaffoldingLocNote": "Exact reproducible-probe LOC not measured."
   },
-  "status": "Implementation and integrated acceptance in progress."
+  "status": "Complete: playbook-only creation, durable on-sheet starting allocation with settings-derived budget, computed attribute ratings, and larger attribute headings; all requested gates passed; independent pinned Sol xhigh PASS."
 }
