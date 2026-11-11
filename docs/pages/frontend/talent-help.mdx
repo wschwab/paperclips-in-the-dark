@@ -1,0 +1,56 @@
+---
+title: Talent action help
+---
+
+# Talent action help
+
+**TALENT-HELP-01** makes the existing action descriptions readable while assigning
+Talents during character creation and on the character sheet. Here, **Talents**
+means the action dots (Hunt, Study, Survey, Tinker, Finesse, and the other actions),
+not the pick-one playbook. Playbooks already have their own game-data blurbs.
+
+Each action row now shows its short description directly below the dots. No hover,
+extra click, or ability to edit the character is required to read it. The sheet's
+existing dot tooltip remains available. Descriptions are informational only:
+they do not select an action, change a rating, spend dots, or resolve rolls.
+
+## Data and licence
+
+Both surfaces use `Attributes[].Actions[].ShortDescription` from the selected
+edition's existing game settings, served through the existing game-data endpoint.
+The same field already supplied the sheet's hover tooltip. No new API field,
+contract edit, backend change, game-data duplication, or setting text is needed.
+Missing or blank summaries are omitted rather than replaced with invented help.
+
+The Blades summaries are existing SRD rules content, attributed to John Harper,
+[Blades in the Dark SRD](https://bladesinthedark.com/actions-attributes), under
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Existing translated
+and Scum & Villainy editions retain their own action names and summaries. This
+change adds no Doskvol setting content; see the
+[setting content register](/contract/setting-content-register).
+
+## Evidence and reproduction
+
+Real Chromium checked both creation and sheet at 1440×1000, 768×1024, and
+390×844, each in light, dark, and high-contrast themes: **18 cases**. Every
+published Blades action's rendered summary was compared with the served game
+settings, remained visible without hover, and passed document, container, and
+hint overflow checks. The probe also selects a playbook to check that creation
+help survives the locked-default-dot refresh.
+
+<a href="/evidence/talent-help-01/numeric.json">Numeric evidence</a> records viewport widths,
+container and hint bounds, client/scroll widths, computed overflow and min-width,
+and browser errors. Screenshots are under `/evidence/talent-help-01/`, named
+`{width}-{light|dark|high}-{creation|sheet}.png`.
+
+To reproduce without touching the playtesting server:
+
+```sh
+cd frontend && npm run build
+cd ../conformance
+node scripts/managed-browser-smoke.mjs -- node ../frontend/scripts/talent-help-01-probe.mjs
+```
+
+The managed launcher chooses an unused loopback port, uses a fresh temporary data
+directory, and cleans up only its own server process. The default dev server is
+not used or restarted.

@@ -2,6 +2,7 @@
  * renderTalentsSection (ARCH-02): talents section controller, extracted verbatim from the
  * character-detail page's render pass. DOM output is unchanged.
  */
+import { actionDescription } from "../character-domain.js";
 import { el } from "../../lib/dom.js";
 import { actionDots } from "../../components/action-dots.js";
 import { xpBoxes } from "./shared.js";
@@ -12,19 +13,6 @@ export function renderTalentsSection(ctx: SectionCtx): HTMLElement {
   // -- Talents + XP. Score XP (session tracks, End downtime) moved to the XP Tracker (XP-TRACKER-04). --
 
 return   (() => {
-    const actionDescription = (attribute: string, action: string): string | null => {
-      const attrs = Array.isArray(gameData?.Attributes)
-        ? (gameData!.Attributes as Array<Record<string, unknown>>)
-        : [];
-      const attr = attrs.find((a) => a.Name === attribute);
-      const actions = attr && Array.isArray(attr.Actions)
-        ? (attr.Actions as Array<Record<string, unknown>>)
-        : [];
-      const act = actions.find((x) => x.Name === action);
-      return act && typeof act.ShortDescription === "string"
-        ? act.ShortDescription
-        : null;
-    };
 
     const attributeGroups = c.talent.attributes.map((attr) =>
       el("div", { className: "talent-attribute", "data-attribute": attr.name, style: "margin-bottom: 1em;" },
@@ -35,7 +23,7 @@ return   (() => {
         // already cover every value and clearing, and removing them cuts
         // tab stops from the densest card on the sheet.
         ...attr.actions.map((action) => {
-          const desc = actionDescription(attr.name, action.name);
+          const desc = actionDescription(gameData, attr.name, action.name);
           // SC-F3/P21: the enforced cap is the server-computed effective cap
           // (min of the raw max and the crew-Mastery-derived cap); the UI
           // never offers a dot the server would reject with RATING_MAXED.
@@ -57,10 +45,14 @@ return   (() => {
             "data-action": action.name,
             style: "display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; margin: 0.25em 0;",
           },
-            // F2aa: one clean name per action — the underlined .action-name
-            // inside the dots component carries the tooltip now.
+            // Keep the dot tooltip and expose the same help without requiring hover.
             dots,
             el("span", {}, `${action.rating}/${effectiveMax}`),
+            desc ? el("p", {
+              className: "chargen-hint",
+              "data-action-help": action.name,
+              style: "flex-basis: 100%; margin: 0;",
+            }, desc) : null,
           );
         }),
 

@@ -235,6 +235,23 @@ describe("playbook picker descriptions (PLAYBOOK-BLURBS-01)", () => {
   });
 });
 
+describe("Talent help (TALENT-HELP-01)", () => {
+  it("shows settings-sourced action help next to each creation dot row", () => {
+    const root = document.createElement("div");
+    const settings = {
+      ...SETTINGS_WITH_BUDGET,
+      Attributes: [{ Name: "Insight", Actions: [
+        { Name: "Hunt", ShortDescription: "Track a target or shoot from a distance." },
+        { Name: "Study", ShortDescription: "Examine details and interpret evidence." },
+      ] }],
+    };
+    mountCharacterCreatePage(root, baseDeps({ settings }));
+    expect(root.querySelector('[data-action-help="Hunt"]')?.textContent).toBe("Track a target or shoot from a distance.");
+    expect(root.querySelector('[data-action-help="Study"]')?.textContent).toBe("Examine details and interpret evidence.");
+    expect(root.querySelector('[data-action-help="Hunt"]')?.closest(".chargen-action")?.querySelector(".action-dots")).not.toBeNull();
+  });
+});
+
 describe("PC chargen flow", () => {
   let root: HTMLElement;
 

@@ -2480,6 +2480,21 @@ describe("character-detail page", () => {
       error: null,
     });
 
+    it("shows touch-readable action help on sheet rows (TALENT-HELP-01)", async () => {
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce(ok(talentDTO()))
+        .mockResolvedValueOnce(ok(TALENT_GAME_DATA))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok({}));
+      mountCharacterDetailPage(root, CHARACTER_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('.talent-action-row[data-action="Hunt"] [data-action-help="Hunt"]')?.textContent)
+          .toBe("When you Hunt, you carefully track a target.");
+      });
+    });
+
     // CHAR-06: XP trackers get the same heavy-box furniture as the stress
     // track — boxes derive from the DTO max, clicks send computed deltas
     // over the same attribute-xp.add op, and accessible names stay on the

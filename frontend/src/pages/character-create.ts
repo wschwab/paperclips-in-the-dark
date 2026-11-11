@@ -8,7 +8,7 @@ import {
   dossierUpdate,
   type PickerOption,
 } from "../api/client.js";
-import { namedOptionLabel } from "./character-domain.js";
+import { actionDescription, namedOptionLabel } from "./character-domain.js";
 import {
   actionGroupsFromSettings,
   pcAllocationReady,
@@ -265,7 +265,13 @@ function buildPcChargenForm(
       "div",
       { className: "chargen-group", "data-attribute": group.attribute },
       el("h3", { className: "chargen-attribute" }, group.attribute),
-      ...group.actions.map((action) => dotHosts[action]),
+      ...group.actions.map((action) => {
+        const description = actionDescription(settings, group.attribute, action);
+        return el("div", { className: "chargen-action" },
+          dotHosts[action],
+          description ? el("p", { className: "chargen-hint", "data-action-help": action }, description) : null,
+        );
+      }),
     ),
   );
 

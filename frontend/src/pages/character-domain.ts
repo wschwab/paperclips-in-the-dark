@@ -121,6 +121,21 @@ export function gameDataDescription(
   return typeof desc === "string" ? desc : null;
 }
 
+/** Action help comes from the selected edition, never from a UI-owned glossary. */
+export function actionDescription(
+  gameData: Record<string, unknown> | null,
+  attribute: string,
+  action: string,
+): string | null {
+  const attributes = Array.isArray(gameData?.Attributes) ? gameData.Attributes : [];
+  const group = attributes.find((entry) => entry && typeof entry === "object" && entry.Name === attribute);
+  const actions = group && Array.isArray(group.Actions) ? group.Actions : [];
+  const entry = actions.find((value: Record<string, unknown>) => value && typeof value === "object" && value.Name === action);
+  return typeof entry?.ShortDescription === "string" && entry.ShortDescription.trim()
+    ? entry.ShortDescription
+    : null;
+}
+
 /** Picker option text, as in Blades in the Sheets: "Name - Description". With no game-data description the bare name stands, so nothing is invented. */
 export function namedOptionLabel(name: string, description: string | null): string {
   return description ? `${name} - ${description}` : name;
