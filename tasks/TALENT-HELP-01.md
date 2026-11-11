@@ -53,5 +53,21 @@ on managed port 43379; owned server PID 2642851 was cleaned up by the launcher.
 Talent probe: 18/18 surface/viewport/theme cases passed on managed port 35645;
 owned server PID 2650584 was cleaned up. No horizontal overflow or page errors.
 
-Final data guards, validators, docs build and pinned independent review are
-recorded in the task metrics and verdict alongside this card.
+## Final acceptance
+
+- Full frontend vitest: **1049/1049 tests, 44/44 files passed**.
+- TypeScript and production build passed; data guards **4/4** passed.
+- Browser conformance **6/6 journeys** and supplied Chromium matrix **18/18** passed.
+- Metrics **192 files, 0 errors**; traceability **231/231** checks; audit
+  reconciliation **0 errors, 0 warnings**.
+- Docs build passed with **169 files generated**. An initial evidence-JSON link
+  was rejected by the docs link checker; using the existing HTML evidence-link
+  pattern fixed it. Metrics initially required a scaffolding LOC note; corrected.
+- Independent **GPT 6.1 Sol / openai-codex / xhigh: PASS**, pinned to
+  `112b9f792afc98b4937136c27f67e52c2023cea5`, no findings. Reviewer inspected all
+  18 supplied screenshots, repeated the 18-case matrix, checked scrolling past
+  the fixed dock, touch/keyboard interactions, persistence and missing/blank
+  descriptions; independently ran **181/181 focused tests** and frontend/docs
+  builds. Verdict: `tasks/metrics/frontend/TALENT-HELP-01-sol-verdict.txt`.
+- Final follow-up contains only this acceptance record, task metrics, and the
+  independent verdict; the reviewed implementation and screenshots are unchanged.

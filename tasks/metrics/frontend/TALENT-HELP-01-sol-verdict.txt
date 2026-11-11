@@ -1,0 +1,35 @@
+VERDICT: PASS
+Pinned commit: 112b9f792afc98b4937136c27f67e52c2023cea5
+Reviewer: GPT 6.1 Sol / openai-codex / xhigh.
+Scope: TALENT-HELP-01 action-dot descriptions, not playbook help.
+
+Findings: No blocking or nonblocking implementation findings.
+
+Source and documentation inspected
+- Read the supplied AGENTS.md instructions and PAPERCLIPS.md, including domain, settings sourcing, frontend accessibility and acceptance obligations.
+- Reviewed the pinned diff and extracted pinned frontend, game data, docs and evidence to /tmp/talent-help-01-s0d5fy3c. All browser runs served a fresh production build of that pinned frontend, not the live checkout's dist.
+- frontend/src/pages/character-domain.ts:125-136 looks up the matching attribute/action ShortDescription and omits absent/whitespace-only values.
+- frontend/src/pages/character-create.ts:268-273 renders help beneath each dot row, outside the host replaced during playbook refresh. Existing playbook labels/default locks and settings-derived allocation caps remain unchanged.
+- frontend/src/pages/character-sections/talents.ts:26-55 preserves tooltip, effective caps and dot handlers while adding visible help paragraphs.
+- Inspected added creation/sheet regression assertions, all four edition data guards, docs/pages/frontend/talent-help.mdx and the setting-content-register update. The pinned change contains no backend, contract or game-data edits, no new maxima, and no Doskvol content.
+
+Visual and numeric evidence
+- Actually viewed image-rendered crops from all 18 committed PNGs under docs/public/evidence/talent-help-01/: creation and sheet at 1440x1000, 768x1024 and 390x844, each light/dark/high contrast. Inspected supplied numeric.json and independently generated screenshots/geometry.
+- Fresh matrix: 18/18 passed; all 12 descriptions per surface exactly match served settings, remain available without hover, and fit document/container/hint bounds. Zero horizontal overflow and zero page errors.
+- Help is readable, distinctly below its action row, and wraps without clipping. Measured sheet text is 16px with 24px line height; foreground/background contrast is 14.15:1 light/high and 12.13:1 dark. No new interactive controls or tab stops.
+- Evidence caveat resolved: the fixed Game Mode dock overlaps portions of supplied small-screen full-page captures. Independently wheel-scrolled every action on all 18 surfaces: all 216 hint centers were unobscured. Viewed additional 390/768 lower-sheet viewport captures confirming Consort/Sway are readable above the dock.
+
+Independently exercised Chromium paths
+- Ran a temporary-output copy of the pinned matrix probe through conformance/scripts/managed-browser-smoke.mjs, then separate reviewer interaction/boundary checks. Fresh artifacts: /tmp/talent-help-01-s0d5fy3c/fresh-evidence/{numeric.json,independent.json,scroll-checks.json,*.png}; reviewer scripts are alongside that directory.
+- Creation: selected Cutter; verified its option text against Hook and locked Skirmish defaults; synthesized touch set/terminal-clear, real Tab/End keyboard input and visible focus; completed allocation, submitted, navigated to the sheet and verified persisted playbook/action ratings through the API.
+- Sheet: synthesized touch, ArrowRight and Enter-clear persisted expected Hunt changes; help survived rerenders. Existing 24x24 expanded hit area passed four edge hit-tests around the 16px dot.
+- Intercepted settings only in the isolated browser to remove Hunt's description and make Study whitespace-only. Both routes omitted those hints while retaining the other ten.
+- Isolated launchers used ports 39433 and 36561 with temporary campaign data, reporting cleanup of owned server PIDs 2690941 and 2716626. Browser contexts/processes closed in finally blocks. Default dev server untouched. Touch evidence is Chromium emulation, not a physical-device test.
+
+Fresh checks
+- Pinned frontend npm run build: TypeScript and Vite production build passed.
+- Focused vitest: character-create, character-detail and talent-help data guards: 181/181 tests, 3/3 files passed.
+- Temporary pinned docs npm run build: passed, including static generation (169 files).
+- Changed-source Impeccable detector: no findings.
+
+Only this verdict file was written inside the repository; implementation, docs, committed screenshots and numeric evidence were not modified. No commit or push performed.

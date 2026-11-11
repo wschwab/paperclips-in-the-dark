@@ -8,7 +8,7 @@
   "wallClockMinutes": 0,
   "tokens": 0,
   "passRateAtFirstDoneClaim": "No done claim before review; red-first focused run had 2 expected failures, then 2/2 passed.",
-  "passRateAfterReview": "Pending pinned independent review; full initial frontend 1045/1045, tsc and build passed; browser 6/6; Chromium help probe 18/18.",
+  "passRateAfterReview": "PASS at pinned 112b9f792afc98b4937136c27f67e52c2023cea5: frontend 1049/1049 (44 files), tsc/build, browser 6/6, supplied Chromium 18/18, metrics 192 files, traceability 231/231, audit 0 errors/warnings, docs 169 files. Independent Sol xhigh: no findings, fresh Chromium 18/18, focused vitest 181/181, frontend/docs builds passed.",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 0, "human": 0 },
@@ -20,5 +20,5 @@
     "locNote": "Exact implementation LOC not measured.",
     "scaffoldingLocNote": "Exact repeatable browser-probe LOC not measured."
   },
-  "status": "Implementation and initial browser gates passed; remaining acceptance and independent review in progress."
+  "status": "Complete: action help visible during creation and on sheet; all requested applicable gates passed; independent pinned Sol xhigh PASS."
 }
