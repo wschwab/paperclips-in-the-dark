@@ -79,19 +79,19 @@ row and no completion control. After implementation those regressions pass.
 
 | Gate | Result |
 | --- | --- |
-| Frontend vitest | 1048/1048 tests, 45 files |
+| Frontend vitest | 1054/1054 tests, 45 files |
 | Frontend TypeScript + production build | pass |
 | Ada build (generated validator + sources) | pass; `pitd` rebuilt, no source newer than binary |
-| Ada two-cycle managed conformance | 689 passed + 1 intentionally isolated recovery case skipped, per cycle |
-| Conformance tooling | 233/233 |
+| Ada two-cycle managed conformance | 700 passed + 1 intentionally isolated recovery case skipped, per cycle |
+| Conformance tooling | 240/240 |
 | Conformance TypeScript | pass |
 | Browser journeys (managed) | 6/6 |
 | Chromium matrix probe | 27/27 surface/viewport/theme cases and 9 sheet-first journeys, including the no-reload post-completion cap assertion |
-| Mutation campaign (isolated, pins refreshed) | 28/28 killed — P0 19/19, P1 9/9, green baseline, no survivors (revision `01c872d5`; the later contract-only edit changed no pinned file) |
-| Validators (metrics 193 files, traceability 231/231, reconciliation) | pass |
-| Docs build | pass, 171 files generated |
+| Mutation campaign (isolated, pins refreshed) | 28/28 killed — P0 19/19, P1 9/9, green baseline, no survivors at the rebased revision `a23a1297` |
+| Validators (metrics, traceability, reconciliation) | this change's records pass; 14 metrics errors are pre-existing on main in other workers' cards (`BUGFIX-1111.json`, `NOTES-EDIT-01.json`) and reproduce from `f48ee745` |
+| Docs build | pass, 173 files generated |
 | Impeccable detector on changed UI sources | no findings |
-| Independent Sol 6.1 xhigh review | **PASS** (round 3, revision `30d7d2a9`); rounds 1 and 2 were FAIL, both fixed |
+| Independent Sol 6.1 xhigh review | **PASS** (round 4 at `a23a1297`, after the rebase onto main); rounds 1 and 2 were FAIL, both fixed |
 
 Chromium evidence: `docs/public/evidence/scoundrel-create-02/` — creation,
 pending-allocation sheet and completed sheet at 1440×1000, 768×1024 and
@@ -155,12 +155,33 @@ regenerated; the capability manifest stayed byte-identical. After the fix:
 focused conformance 18/18, Ada two-cycle 689 + 1 skipped per cycle, tooling
 233/233, browser 6/6, Chromium 27/27, pins unchanged (contract-only edit).
 
-**Round 3 — PASS** at `30d7d2a9`
-(`tasks/metrics/frontend/SCOUNDREL-CREATE-02-sol-verdict.txt`): no remaining
-findings. The reviewer validated 22 real responses against the declared
+**Round 3 — PASS** at `30d7d2a9` (superseded in the verdict file by round 4): no
+remaining findings. The reviewer validated 22 real responses against the declared
 endpoint/status schemas on its own managed server, reproduced the nine pre-fix
 validator failures against the pre-fix contract (read via `jj file show`), proved
 that only those three operations' response tables changed, byte-compared all
 three regenerated artifacts, and confirmed in a native Chromium tab that
 completion raises the action controls to the server cap with no reload
 (`performance.timeOrigin` unchanged).
+
+**Rebase and round 4 — PASS** at `a23a1297`. `main` advanced while this change
+was under review (BUGFIX-1111 "isolate conformance runs from live servers; make
+history maintenance atomic", NOTES-EDIT-01 and follow-ups), so the stack was
+rebased onto `f48ee745` as the user requires before pushing. Six files conflicted:
+`backend-ada/server/src/pitd_common.adb`, `conformance/fixtures/mutation-catalog.json`,
+`conformance/src/endpoint-schema-map.test.ts`, `frontend/src/api/client.test.ts`
+and the two generated `skill/api-reference/` files. Resolutions kept both sides —
+the history-maintenance procedures and the Talent-allocation helpers now coexist
+in `pitd_common.adb` (the first rebase attempt compiled-failed on missing
+BUGFIX-1111 bodies, which is why the file was rebuilt from `main` plus this
+change's three additions), the route-count assertion became 121
+(118 → 120 by NOTES-EDIT-01 → 121 by this change), the client test imports both
+sets of wrappers, and the generated artifacts were regenerated from the merged
+contract. Contract-derived artifacts (coverage, API reference, capability
+manifest, Ada validators) were re-generated and verified reproducible; the
+mutation pins were refreshed (14 entries) and the full campaign re-run. A
+conformance type error surfaced by the merge (`error.entity` on a union branch
+that does not declare it) was fixed with `in` narrowing, and `skill/SKILL.md`'s
+operation counts were corrected to the generated truth (91 agent / 33 human of
+124 operations). Round 4 confirmed merge fidelity symbol by symbol, artifact
+reproducibility, the counts, the behavioural rechecks and all gates.

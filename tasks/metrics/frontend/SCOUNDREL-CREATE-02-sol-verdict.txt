@@ -1,84 +1,183 @@
 VERDICT: PASS
-SCOUNDREL-CREATE-02 — independent GPT 6.1 Sol round-3 review of 30d7d2a9
+SCOUNDREL-CREATE-02 — independent GPT 6.1 Sol round-4 review (rebase confirmation) of a23a1297
 
-FINDINGS
+SCOPE
 
-No remaining defect found in the requested scope. The round-2 contract/status mismatch is fixed, and the affected allocation and Chromium paths passed independent rechecks below.
+Revision a23a1297 (single parent 0ae9aa44; stack a7c3f1aa..a23a1297 now based on f48ee745 = BUGFIX-1111).
+This round confirms the rebase/merge is faithful and that the rebased revision still passes. The
+round-3 design PASS at 30d7d2a9 is on record (preserved at /tmp/sc02-sol-review4/round3-verdict-preserved.txt)
+and is not re-litigated.
 
-CONTRACT FIX — PASS
+MERGE FIDELITY — PASS
 
-1. The three affected endpoints now declare HTTP 400 through the existing OpResult response: batch at contract/openapi.yaml:585-588, attributeLevelup at :1394-1399, actionSetRating at :1418-1423. Completion retains its existing 400 declaration at :1435-1440.
-2. Batch prose explicitly limits the exception to VALIDATION from talent.allocation.complete, action.set-rating and attribute.levelup, while unrelated member failures retain HTTP 200 (contract/openapi.yaml:522-531). This matches the single-operation delivery at backend-ada/server/src/pitd_callback.adb:2319-2328 and batch delivery at :2651-2659,2698-2700.
-3. Independently exercised real responses on managed http://127.0.0.1:35869 with command C2. Recorded 61 requests; the repository's actual assertResponseValid accepted all 22 selected endpoint/status responses. Evidence: /tmp/sc02-sol-review3/contract-transport.json; http-transcript.jsonl, one request per line:
-   - Line 7: under-budget talent.allocation.complete, HTTP 400, VALIDATION/status 400.
-   - Lines 10/13/40: locked, over-cap and over-budget action.set-rating, HTTP 400, VALIDATION/status 400.
-   - Lines 17/33/37: locked, over-cap and over-budget attribute.levelup with full XP, HTTP 400, VALIDATION/status 400.
-   - Lines 20/23/26: batches containing completion/setter/level-up rejection respectively, aggregate HTTP 400; each member has VALIDATION/status 400.
-   - Line 61: unrelated trauma.add batch rejection retains aggregate HTTP 200, ok:true/error:null; member ok:false, VALIDATION/status 400. Single trauma.add and unknown-member batch controls also retain HTTP 200 (lines 28/29). These existing unrelated conventions were not changed or expanded into findings.
-4. Proved the new assertions detect the pre-fix defect, without editing the reviewed workspace. Read-only `jj file show -r 01c872d5 contract/openapi.yaml` supplied /tmp/sc02-sol-review3/pre-fix-openapi.yaml. C2 imports a separate copy of the repository's validator/schema modules with that old contract and validates the SAME actual HTTP bodies. Nine expected failures reproduced exactly:
-     no response schema for endpoint actionSetRating status 400
-     no response schema for endpoint attributeLevelup status 400
-     no response schema for endpoint batch status 400
-   Completion and unrelated 200 controls validate under both contracts. Current endpoint/status validation is not a mock or generic DTO-only check: conformance/src/schemas.ts:655-680 selects the declared disposition and validates it. The strengthened regressions invoke it for all three single operations at conformance/suites/contract/sheet-allocation.test.ts:17-21,31-42,67-70,121; batch validation at :135-136,140-165 covers each affected member and the trauma control. The focused suite passes 18/18 (C1).
-5. Parsed-spec comparison in C2 checked every operation's response declarations. Only actionSetRating, attributeLevelup and batch changed; all 119 unrelated operation response tables are unchanged. Removing those three new 400 entries and restoring only the batch description makes the entire parsed current spec deep-equal to the pre-fix spec. Evidence: /tmp/sc02-sol-review3/contract-transport.json and contract-transport.mts:14-27.
-6. Ran all three artifact generators with scratch outputs, then byte-compared against the reviewed artifacts (C3). Contract coverage, agent API reference and capability manifest match exactly. The manifest is also byte-identical to revision 01c872d5, SHA-256 42f6520ad2e27cc912bf2c380a666988b54510256d3fcdb8631e2ff4b71147b7. Evidence: /tmp/sc02-sol-review3/generated-artifacts.json and artifact-baseline.json.
+1. Topology. `jj log -r 'ancestors(a23a1297,10)|ancestors(main,10)'` shows main = 70d7d0e5 with the chain
+   f48ee745 -> a16f58e9 -> 38970ac5 -> 70d7d0e5, while the SCOUNDREL stack branches off f48ee745:
+   a7c3f1aa -> b8663d82 -> 500bdd73 -> 0ae9aa44 -> a23a1297. Author timestamps: a23a1297 20:31 (committed
+   20:47); main's three newer commits were authored later (a16f58e9 21:03, 38970ac5 21:07, 70d7d0e5 21:10),
+   so f48ee745 was main's tip when the rebase was performed (see Observation 2).
+2. No conflict markers anywhere: `git grep -nE '^(<{7}|>{7}|\|{7})' a23a1297 -- .` -> 0 files;
+   `jj resolve --list` -> "No conflicts found at this revision".
+3. Nothing dropped from either side. Automated line-survival check (scratch
+   /tmp/sc02-sol-review4/merge-fidelity.py re-reads every line each side ADDED and looks for it in the
+   final tree):
+   - BUGFIX-1111 side (`git diff 696830a3 f48ee745`): 24 files, 952 substantive added lines, 8 absent at
+     a23a1297 — all explained: 6 are pitd_callback.adb mutation pins (refreshed, see 5) and 2 are
+     skill/SKILL.md operation counts (121 -> 124, see COUNTS).
+   - SCOUNDREL side (`git diff f48ee745 0ae9aa44`): 48 files, 9050 substantive added lines, 28 absent —
+     all explained: 14 pins, 9 evidence UUIDs, 2 counts (122 -> 124), 1 reworded test assertion (4), and
+     2 pitd_common.adb lines superseded by BUGFIX-1111's function Snapshot / Delete_Snapshot_File path.
+4. The six conflicted files. Only two were touched by both sides (pitd_common.adb, mutation-catalog.json);
+   for the other four (endpoint-schema-map.test.ts, frontend/src/api/client.test.ts, api-reference
+   README.md, capability-manifest.json) `git diff --name-only 696830a3 f48ee745 -- <file>` is empty, so
+   no BUGFIX-1111 content could be lost there.
+   - backend-ada/server/src/pitd_common.adb: the rebase commit (`jj diff --from 0ae9aa44 --to a23a1297`,
+     14 files, 225 insertions / 52 deletions) merges BUGFIX-1111's history maintenance — Unlink_Hook /
+     Unlink_Arm test hooks, Consume_Snapshot_Best_Effort delegation, Delete_Snapshot_File single-deletion
+     path with best-effort prune, Snapshot_File_Count + Rebuild_Index when disk exceeds the retention
+     bound, and function Snapshot returning the new id — while keeping SCOUNDREL's
+     Pending_Allocation_Valid, Refresh_Talent_Ratings, Ensure_Talent_Defaults and Write_Repair_Preview
+     hooks. Symbol counts at a23a1297: Delete_Snapshot_File 4, Consume_Snapshot_Best_Effort 6,
+     Rebuild_Index 11, Snapshot_File_Count 3, Unlink_Hook 6, Unlink_Arm 4, Discard_Snapshot 7,
+     Pending_Allocation_Valid 8, Refresh_Talent_Ratings 8, Ensure_Talent_Defaults 5,
+     Write_Repair_Preview 4. No duplication: Ensure_Talent_Defaults is defined exactly once
+     (pitd_common.adb:706-720, before its caller Write_Entity).
+   - conformance/suites/contract/sheet-allocation.test.ts: the merged assertion narrowed from
+     `expect.soft(result.error?.entity)` to the union-narrowed local `entity` (lines 39-43) — the same
+     whole-DTO comparison; the 400 status, schema-validation and raw-body-unchanged assertions are intact
+     (also CREATE02-BATCH-RESPONSES at lines 140-165 still asserts 400 for allocation members against
+     HTTP 200 for an unrelated trauma.add member).
+   - SCOUNDREL's callback delivery and frontend changes are present: frontend/src/pages/character-create.ts
+     no longer references actionRatings (0 matches, clean cutover);
+     frontend/src/pages/character-sections/talents.ts:10-60 drives the completion control, the unspent
+     count and the settings cap from allocationPending; frontend/src/lib/chargen.ts derives every number
+     from StartingActionDots / StartingActionDotMax / DefaultActionPoints (no embedded game maximum).
+5. Mutation pins refreshed correctly: every one of the 28 catalog `restorationHash` pins equals the
+   sha256 of the committed a23a1297 content (0 mismatches); the same check against f48ee745 shows 15
+   mismatches across exactly the 7 files this change modified (pitd_callback.adb [M05,M07,M08,M09,M14,M15],
+   pitd_normalize.adb [M04], pitd_ops.adb [M11,M12,M16,M27], pitd_stored.adb [M06],
+   frontend/src/api/client.ts [M20], frontend/src/pages/character-detail.ts [M26],
+   frontend/src/styles/components.css [M18]).
+6. BUGFIX-1111 behaviour survived on the rebased binary: [BUGFIX-1111-UNDO-001], [BUGFIX-1111-PRUNE-001]
+   and [BUGFIX-1111-WRITE-001] (suites/persistence/history-failure-atomicity.test.ts) pass in both cycles
+   of my two-cycle run, as do the BUGFIX-1111 tooling suites
+   (target-guard / managed-run / managed-browser-smoke / data-guard).
 
-ALLOCATION / PERSISTENCE RECHECK — PASS
+REGENERATED ARTIFACTS — PASS (independently regenerated with `--out` into scratch, byte-compared)
 
-Command C2 runs the independent HTTP probe, not only the repository tests. Its 21 semantic checks and 60 requests, plus the added unrelated batch control, are retained in /tmp/sc02-sol-review3/http-probe.mjs, http-summary.json and http-transcript.jsonl.
+Re-ran each generator against the merged contract/schemas and compared with `cmp`:
+  node skill/generate-api-reference.mjs --out <scratch>          -> skill/api-reference/README.md IDENTICAL
+  node skill/generate-capability-manifest.mjs --out <scratch>    -> capability-manifest.json IDENTICAL
+  node skill/generate-completeness.mjs --out <scratch>           -> frontend/src/schema/generated/completeness.ts IDENTICAL
+  node skill/generate-ada-validators.mjs --out <scratch>         -> pitd_schema_validators.ads and .adb IDENTICAL
+  node --import tsx conformance/scripts/generate-contract-coverage.mts --out <scratch>
+                                                                 -> conformance/generated/contract-coverage.json IDENTICAL
+The tooling suite independently asserts the same (src/generators.test.ts [TOOLING-GEN-001..004], [ORACLE-01]).
 
-- Derived attribute rating is the count of actions with positive ratings, not their sum: reference blades-in-the-sheets/Models/Characters/TalentAttribute.cs:27-28; backend derivation backend-ada/server/src/pitd_common.adb:598-626. C2 asserts it after ordinary creation, omitted-actionRatings draft creation, complete-map creation, increases/decreases, successful level-up, batch, undo and import with deliberately false supplied attribute ratings (http-probe.mjs:21-24,61-68,100-134; transcript lines 3-5,47-57).
-- Omitting actionRatings creates a durable defaults-only pending PC. Default locks, settings-derived per-action cap and total budget are enforced while pending, including level-up and batch attempts. C2 checks exact-budget completion and that it changes neither attribute ratings/XP nor dossier, playbook, monitor, fund, gear, session or rolodex; completion does not award resources. It then verifies ordinary above-starting-cap edits and default reduction are permitted. Evidence: http-probe.mjs:64-105; C1 CREATE02-DRAFT/LEVELUP and complete-map cases. Guard/completion source: pitd_common.adb:540-595; pitd_ops.adb:1248-1274.
-- Every rejected setter/level-up/completion path and each single-member batch variant compares the ENTIRE error.entity to the preceding GET, then compares following GET and stored bytes to their pre-operation values (http-probe.mjs:35-46). This includes full-XP locked, cap and total-budget level-up cases, not merely the error code. Source preserves the incoming DTO at pitd_ops.adb:796-801 and returns it from the late gate at :2398-2402. Transcript lines 17/33/37 retain current ratings, XP and revision rather than an uncommitted candidate.
-- Canonical detail bytes equal current.json. A legacy stored record missing only allocationPending and attribute ratings reads with pending:false and derived ratings, without repair, revision change, byte change or mtimeNs change; export equals the read view. Evidence: http-probe.mjs:135-150; transcript lines 58-60; http-summary.json final check. Overlay source: backend-ada/server/src/pitd_stored.adb:197-231,247-263.
+COUNTS — PASS
 
-FRONTEND / REAL CHROMIUM RECHECK — PASS
+- contract/openapi.yaml at a23a1297: 121 paths, 124 operations. At the rebase base f48ee745: 120 paths,
+  123 operations; the merge adds exactly talentAllocationComplete (/characters/{id}/ops/talent.allocation.complete)
+  and removes no operation or path.
+- conformance/src/endpoint-schema-map.test.ts:32 asserts `routes.length` toBe 121 and matches the merged
+  contract's 121 paths; [ENDPOINT-MAP-001] (every path covered) passes.
+- capability-manifest.json: operationCount 124 with 124 dispositions (agent 91, human 33), 1:1 with the
+  contract's operation set; README "Operations: 124"; skill/SKILL.md "91 of 124" and "33 of 124";
+  TOOLING-SKILL-001/002 pass.
+- conformance/generated/contract-coverage.json: 534 rows, 0 unresolved; the round-2 fix survived — 400 is
+  declared and mapped for actionSetRating, attributeLevelup, batch and talentAllocationComplete, while
+  trauma.add keeps its 200-first delivery.
 
-- Creation remains playbook-only, with dot allocation on the sheet: frontend/src/pages/character-create.ts:184-206,337-350. Strict required fields remain at frontend/src/schema/character.ts:140-149. C5 accepted a real GET DTO and rejected missing/null allocationPending and attribute.rating (five cases), with no compatibility fallback.
-- Talents renders the server attribute.rating, larger attribute headings and always-visible description paragraphs: frontend/src/pages/character-sections/talents.ts:44-48,54-88; frontend/src/styles/components.css:1149-1158. Completion refreshes the server capability projection at character-detail.ts:1784-1798 via :593-607.
-- C4 passed 27 creation/pending/completed surface cases and nine sheet-first journeys at actual Chromium viewports 1440x1000, 768x1024 and 390x844, each in light/dark/high contrast. The probe creates without actionRatings, reloads the pending draft, explicitly completes it, and checks every rendered action-dot count against server effectiveMax WITHOUT a subsequent reload (frontend/scripts/scoundrel-create-02-probe.mjs:29-39,64-82,95-133).
-- Fresh numeric evidence: /tmp/sc02-sol-review3/matrix/numeric.json and numeric-summary.json. Maximum document/container/hint horizontal overflow: 0px; attribute headings 20px versus action labels 13.12px; no cap mismatches or page errors. Geometry includes actual innerWidth, clientWidth/scrollWidth, bounding rectangles and computed styles (probe :46-60).
-- Independently drove a separate native Chromium tab through creation, Hunt 2 / Study 2 allocation, pending reload and completion at 390x844 dark on managed port 34223. Before completion: pending:true, total 7, Hunt buttons 1/2, server cap 2. After completion: pending:false, no banner, Hunt buttons 1/2/3, server cap 3, heading Insight 2. performance.timeOrigin remained 1794421418395.2, proving no completion-time reload. Clicking Hunt 3 then succeeded, retaining Insight rating 2 and the same timeOrigin. Evidence: /tmp/sc02-sol-review3/native-transition.json and native-gameplay.json; observed GET /api/characters/e5829288-98b8-4903-8d12-0129c8807e39 and its /capabilities. Native API: browser.open({name:'sc02r3Native',url:'http://127.0.0.1:34223/character/create',viewport:{width:390,height:844},app:{tern:false,relay:false},headed:false}), followed by select/click/reload/focus/press/waitForSelector and page.evaluate observations.
-- Visually inspected fresh 1440-light-creation.png, 390-dark-sheet-complete.png and 768-high-sheet-pending.png; native-size crops crop-390-light-sheet-pending.png, crop-768-high-sheet-pending.png and crop-1440-light-sheet-complete.png; and native-390-dark-complete.png, all under /tmp/sc02-sol-review3/. Headings, dots and descriptions are readable and contained. The existing fixed Game Mode dock appears in full-page captures; the native viewport independently shows Hunt/Study descriptions above it. No new visual blocker found. C6 detector returned [].
+BEHAVIOURAL SPOT-CHECKS ON THE REBASED BINARY — PASS (66/66 checks)
 
-EXACT INDEPENDENT COMMANDS / SCOPE
+Independent HTTP probe (/tmp/sc02-sol-review4/probe.mts through managed-browser-smoke.mjs --seed-defaults,
+free loopback port, temporary data; snapshot-http-probe.log):
+- draft creation by omitting actionRatings -> 200, allocationPending true, playbook defaults only;
+- defaulted actions locked (reduction rejected); settings cap and total budget enforced while pending;
+- exact-budget completion -> 200, clears allocationPending, changes no XP, resources or attributes;
+- every rejected allocation write / level-up / completion -> HTTP 400 with VALIDATION/400 and error.entity
+  equal to the preceding GET DTO (canonical comparison), following GET bytes and stored bytes unchanged
+  (64 of the checks, incl. second completion and a post-completion reduction being allowed);
+- unrelated trauma.add keeps HTTP 200 transport with an ok:false VALIDATION/400 body that validates
+  against the declared traumaAdd/200 schema; batch with an allocation member -> HTTP 400 validating
+  against the batch schema; batch with an unrelated member -> HTTP 200 aggregate;
+- legacy record without allocationPending/ratings reads with pending false and derived ratings, keeps the
+  stored revision, export equals the read view, and writes nothing (bytes + mtime unchanged);
+- derived attribute rating is the count of positive ratings; a complete-map creation still works.
 
-All executable checks used the private source/dependency copy /tmp/sc02-sol-review3/repo; build and generated outputs stayed under /tmp/sc02-sol-review3/. The supplied Ada executable was used, not rebuilt. No server source file was newer than that executable (artifact-baseline.json); this freshness check is not a compilation/proof claim.
+GATES ON THE REBASED REVISION (a23a1297)
 
-C1 — cwd /tmp/sc02-sol-review3/repo/conformance:
-  env TMPDIR=/tmp/sc02-sol-review3/tmp node scripts/managed-run.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- run suites/contract/sheet-allocation.test.ts suites/contract/pc-creation.test.ts
-  PASS: 18/18, managed port 45555; launcher reported successful cleanup.
+Isolation note: the workspace was busy with my own mutation campaign while most of these ran, so every
+gate was additionally re-run against a pristine extraction of a23a1297 (`git archive a23a1297`,
+/tmp/sc02-sol-review4/repo, Ada server rebuilt from it in 12.5s) and therefore cannot have been affected
+by a mutant applied concurrently. All launchers were the managed ones (free port, temporary data dir).
 
-C2 — same conformance cwd:
-  env TMPDIR=/tmp/sc02-sol-review3/tmp node scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults --keep -- node --import tsx /tmp/sc02-sol-review3/contract-transport.mts
-  PASS: 21 semantic checks/60 initial requests plus one batch control; 22 actual response validations; nine expected pre-fix failures. Managed port 35869; server stopped, --keep retained only isolated scratch data/evidence.
+- Frontend vitest: 1054 passed (1054) — snapshot-frontend-vitest.log; the workspace run agrees
+  (1054/1054, conf-frontend-vitest.log). Frontend tsc --noEmit: exit 0. Production build: exit 0.
+- Browser journeys: [browser-suite] PASS — character-create-edit, clock, crew-create-trackers,
+  import-repair, lifecycle, roster-recovery all PASS (snapshot-browser.log).
+- Chromium 3x3 matrix: "PASS: 27 surface/viewport/theme cases; 9 sheet-first allocation journeys"
+  (snapshot-matrix2.log). The probe includes the round-3 finding-1 fix: after completion the rendered
+  dots equal the server's effectiveActionCaps without a reload
+  (frontend/scripts/scoundrel-create-02-probe.mjs:106-131). (A first attempt failed only because I
+  launched it before the snapshot's frontend/dist existed — TimeoutError waiting for `#pc-playbook`.)
+- Focused conformance (sheet-allocation + pc-creation): 2 files, 18 passed (snapshot-focused.log).
+- Ada two-cycle (on the snapshot binary, no other job active): both cycles 79 passed | 1 skipped files,
+  700 passed | 1 skipped tests, exit 0 (snapshot-two-cycle.log).
+- Tooling suite: 240 passed (240) at a23a1297 (conf-tooling2.log). The pristine snapshot reports 238/240
+  only because a `git archive` tree has no jj/git metadata: the two failures are [TOOLING-MANAGED-026]
+  ("falls back to the current jj revision", `jj log` exits 1) and [TOOLING-SOL-006d] (provenance), both of
+  which pass in the real repository.
+- Isolated mutation campaign (my own run, `npm run test:mutation` with default TMPDIR): 28/28 KILLED
+  (P0 19/19, P1 9/9), exit 0, "[mutation-harness] post-campaign source verification PASS (all files
+  restored to baseline)" (conf-mutation2.log). The harness artifact now records my run: revision
+  a23a1297cedb, baselineStatus green, 28/28 (agent-docs/test-audit/mutation-results.json, raw output
+  mutation-raw-2026-11-11T20-13-47-326Z.txt). The author's own campaign artifact for the same revision
+  (mutation-results.json as committed at 19:22:45Z, raw output ...T19-22-45-283Z.txt) also reports 28/28
+  with baseline green.
+- Docs build: 173 files generated, exit 0 (docs-build2.log).
+- Metrics validator: `node agent-docs/test-audit/validate-metrics.js` -> 195 files, 14 errors; all 14 are
+  in other workers' files (see Observation 1) and none in tasks/metrics/frontend/SCOUNDREL-CREATE-02.json.
 
-C3 — same conformance cwd:
-  node --import tsx scripts/generate-contract-coverage.mts --out /tmp/sc02-sol-review3/contract-coverage.json && cmp generated/contract-coverage.json /tmp/sc02-sol-review3/contract-coverage.json && node ../skill/generate-api-reference.mjs --out /tmp/sc02-sol-review3/api-reference && cmp ../skill/api-reference/README.md /tmp/sc02-sol-review3/api-reference/README.md && node ../skill/generate-capability-manifest.mjs --out /tmp/sc02-sol-review3/capability-manifest.json && cmp ../skill/api-reference/capability-manifest.json /tmp/sc02-sol-review3/capability-manifest.json
-  PASS: all byte comparisons equal.
+OBSERVATIONS (not findings)
 
-C4 — cwd /tmp/sc02-sol-review3/repo:
-  env TMPDIR=/tmp/sc02-sol-review3/tmp SCOUNDREL_EVIDENCE_OUT=/tmp/sc02-sol-review3/matrix node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- node frontend/scripts/scoundrel-create-02-probe.mjs
-  PASS: 27 surface cases, nine journeys, managed port 46539; launcher reported successful cleanup.
-
-C5 — conformance cwd:
-  node --import tsx /tmp/sc02-sol-review3/decoder-smoke.mts
-  PASS: five strict decoder cases.
-
-C6 — reviewed workspace cwd:
-  /home/x/.agents/skills/impeccable/scripts/impeccable detect --json frontend/src/pages/character-create.ts frontend/src/pages/character-sections/talents.ts frontend/src/pages/character-detail.ts
-  PASS: [].
-
-C7 — cwd /tmp/sc02-sol-review3/repo/frontend:
-  npx tsc --noEmit && npm run build
-  PASS: TypeScript and Vite production build.
-
-Did NOT independently rerun frontend's full 1048-test suite, Ada compilation/SPARK or full two-cycle conformance, the 233-case tooling suite, separate six-journey browser suite, full 28-mutant campaign or pin audit, metrics/traceability/reconciliation validators, conformance TypeScript, or docs build. Those author-reported gates are not claimed as reproduced in round 3. The affected acceptance paths were exercised by C1-C7 and the separate native browser interaction above.
-
-Review-helper corrections, not implementation defects: the first C2 invocation used repository-root cwd, where --import tsx could not resolve the conformance-local dependency; the corrected conformance-cwd invocation passed. The native press helper initially rejected (selector,key); retrying only that step as press('Enter',{selector:'[data-talent-allocation-complete]'}) completed the path. No application change was needed.
+1. Metrics validator: the 14 errors at a23a1297 are tasks/metrics/contract/BUGFIX-1111.json (2 missing
+   required fields) and tasks/metrics/frontend/NOTES-EDIT-01.json (12). The identical 14 errors reproduce
+   from the rebase base f48ee745, and this change touches neither file (`git diff --name-only f48ee745
+   a23a1297 -- tasks/metrics/` lists only the four SCOUNDREL-CREATE-02 files). main's tip is clean only
+   because 38970ac5 (authored 21:07, after the rebase) added the missing fields. Not a finding against
+   SCOUNDREL-CREATE-02.
+2. The branch sits on f48ee745, three commits behind main (70d7d0e5: CREW-SHEET-02 record, metrics schema
+   fields, NOTES-EDIT-01 crew note labels). `jj diff --from main --to a23a1297` (100 files, 10713
+   insertions, 1104 deletions) therefore appears to drop tasks/CREW-SHEET-02.md and
+   tasks/metrics/frontend/CREW-SHEET-02.json and to revert main's metrics fix — a normal forward-merge
+   obligation for a branch whose base predates those commits, not a rebase defect: those three commits
+   were authored after the rebase was performed. Relative to its own base the rebase is clean:
+   `jj diff --from f48ee745 --to a23a1297` = 76 files, 10681 insertions, 960 deletions (the SCOUNDREL
+   change), and `jj diff --from 0ae9aa44 --to a23a1297` = 14 files, 225 insertions, 52 deletions.
+3. The card and tasks/metrics/frontend/SCOUNDREL-CREATE-02.json still record the pre-rebase numbers
+   (revision 30d7d2a9: frontend 1048/1048, Ada two-cycle 689 + 1 skip, tooling 233/233, docs 171 files,
+   mutation 28/28 at 01c872d5). They were not updated by the rebase commit; the round-4 numbers
+   (1054/1054, 700 + 1 skip, 240/240, 173 files, 28/28 at a23a1297) are recorded here and in the harness
+   artifact. Cosmetic staleness in a metrics record, not a gate failure.
+4. Pre-existing, on main, unrelated to this change: at main's tip SKILL.md says "90 of 121 operations"
+   while its generated reference and manifest say 123, so [TOOLING-SKILL-001] would fail there; the
+   rebased revision is internally consistent (91/124 in SKILL.md, 124 in the manifest and reference) and
+   passes. docs/pages/conformance/bugfix-1111.mdx:95-96 likewise still describes BUGFIX-1111's own
+   121-operation moment. Neither file is part of this change's diff.
+5. Harness interference observed and excluded: an Ada two-cycle run started while the mutation campaign
+   was rebuilding mutated binaries into the shared backend-ada/server/bin/pitd failed its second cycle
+   with 16 crew-summary schema failures — exactly mutant M01 ("Omit the canUndo/historyCount projection
+   entirely from Crew_Summary"); cycle 1 of that run was green. All gates reported above were re-run with
+   no competing job (workspace) or on the pristine snapshot.
 
 ISOLATION / DISPOSITION
 
-Read prior verdicts and required specification/card/contract documents before review. Read-only `jj show -r 30d7d2a9 --summary`, `jj diff --from 01c872d5 --to 30d7d2a9 --stat`, and `jj diff --from 30d7d2a9 --to @ --stat` scoped the revision; the latter showed only existing screenshot/numeric evidence differences, not source/contract/test changes. Those evidence changes were left untouched.
-
-All review servers used managed launchers with --seed-defaults, free loopback ports and temporary campaign data. No request, binding, kill or restart touched port 9657. The native-browser launcher ran `env TMPDIR=/tmp/sc02-sol-review3/tmp node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- node /tmp/sc02-sol-review3/hold-browser.mjs`; after browser.close, the owned scratch stop sentinel let it exit normally. Service sc02SolRound3Browser exited 0 and reported evidence removal. No implementation/docs/card/metrics/catalog/generated-artifact edits, commits, pushes or jj mutations were performed; intentional writes were confined to scratch and this verdict.
+All servers were started through the managed launchers (managed-run.mjs / managed-browser-smoke.mjs) with
+--seed-defaults, a kernel-assigned free loopback port and temporary campaign data; no request, binding,
+kill or restart touched port 9657. No implementation, docs, evidence, card, metrics, catalog or
+generated-artifact edits; no commits, pushes or jj mutations (only read-only git/jj commands). Two
+disclosures: (a) running the mutation gate rewrote the gitignored audit artifact
+agent-docs/test-audit/mutation-results.json — the author's previous content is preserved on disk as
+mutation-raw-2026-11-11T19-22-45-283Z.txt and is cited above; (b) docs/node_modules was installed to run
+the docs build and is gitignored (`jj st` clean; the only tracked change in the working copy is this
+verdict file).

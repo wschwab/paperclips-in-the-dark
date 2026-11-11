@@ -8,7 +8,7 @@
   "wallClockMinutes": 0,
   "tokens": 0,
   "passRateAtFirstDoneClaim": "No done claim; red-first oracles failed before implementation (backend 2 failed, frontend 3 failed).",
-  "passRateAfterReview": "PASS at 30d7d2a9 (independent openai-codex/gpt-6.1-sol xhigh round 3; rounds 1 and 2 FAIL, both fixed red-first). Exercised: frontend 1048/1048 (45 files), tsc+build, Ada build, Ada two-cycle 689 passed + 1 isolated skip per cycle, focused conformance 18/18, tooling 233/233, conformance tsc, browser 6/6, Chromium 27/27 with 9 journeys, isolated mutation 28/28 (P0 19/19, P1 9/9) at 01c872d5, metrics 193 files, traceability 231/231, reconciliation 0 errors, docs 171 files.",
+  "passRateAfterReview": "PASS at a23a1297 (independent openai-codex/gpt-6.1-sol xhigh round 4, after the rebase onto main; rounds 1 and 2 FAIL, both fixed red-first). Exercised on the rebased revision: frontend 1054/1054 (45 files), tsc+build, Ada build, Ada two-cycle 700 passed + 1 isolated skip per cycle, focused conformance 18/18, tooling 240/240, conformance tsc, browser 6/6, Chromium 27/27 with 9 journeys, isolated mutation 28/28 (P0 19/19, P1 9/9) with refreshed pins, docs 173 files. Traceability 231/231 and reconciliation clean; 14 metrics errors are pre-existing on main in other workers' cards (BUGFIX-1111, NOTES-EDIT-01).",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectsCaughtBy": { "compiler": 0, "conformance": 0, "review": 3, "human": 1 },
