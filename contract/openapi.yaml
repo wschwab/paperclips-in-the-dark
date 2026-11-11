@@ -2137,6 +2137,28 @@ paths:
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/note.update:
+    post:
+      operationId: noteUpdate
+      x-snapshot: true
+      description: "NOTES-EDIT-01 additive op (2026-08-12): replace the text of the note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove; allowed on retired characters (note edits remain allowed)."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [index, text]
+              additionalProperties: false
+              properties:
+                index: { type: integer, minimum: 0 }
+                text: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
   /characters/{id}/end-downtime:
     post:
       operationId: endDowntime
@@ -2545,6 +2567,28 @@ paths:
               additionalProperties: false
               properties:
                 index: { type: integer, minimum: 0 }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /crews/{id}/ops/note.update:
+    post:
+      operationId: crewNoteUpdate
+      x-snapshot: true
+      description: "NOTES-EDIT-01 additive op (2026-08-12): replace the text of the crew note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [index, text]
+              additionalProperties: false
+              properties:
+                index: { type: integer, minimum: 0 }
+                text: { type: string, minLength: 1 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }

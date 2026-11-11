@@ -1118,6 +1118,15 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+/* NOTES-EDIT-01: note edit/save/cancel/remove controls are touch-sized (44px min). */
+.note-edit-control {
+  min-height: 44px;
+  min-width: 44px;
+}
+.note-edit-actions {
+  display: flex;
+  gap: 0.5em;
+}
 .field-read,
 .field-editing {
   min-width: 0;

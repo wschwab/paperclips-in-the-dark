@@ -3033,6 +3033,68 @@ describe("crew-detail page", () => {
         expect.objectContaining({ body: JSON.stringify({ index: 1 }) }),
       );
     });
+
+    it("edits a note in place and saves it via note.update with its index", async () => {
+      const edited = crewDTO({ revision: 6, notes: ["First note", "Edited note", "Third note"] });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ notes: ["First note", "Second note", "Third note"] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewOpOk(edited, "note.update")));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit note 1"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit note 1"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]')).not.toBeNull();
+      });
+      const textarea = root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]') as HTMLTextAreaElement;
+      textarea.value = "Edited note";
+      textarea.dispatchEvent(new Event("input"));
+      (root.querySelector('button[title="Save note 1"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          `/api/crews/${CREW_ID}/ops/note.update`,
+          expect.objectContaining({ body: JSON.stringify({ index: 1, text: "Edited note" }) }),
+        );
+      });
+      await vi.waitFor(() => {
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]')).toBeNull();
+      });
+    });
+
+    it("cancelling a crew note edit sends no request", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce(ok(crewDTO({ notes: ["First note", "Second note"] })))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()))
+        .mockResolvedValueOnce(ok(crewDTO()));
+
+      mountCrewDetailPage(root, CREW_ID);
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('button[title="Edit note 0"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Edit note 0"]') as HTMLButtonElement).click();
+      await vi.waitFor(() => {
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 0"]')).not.toBeNull();
+      });
+      (root.querySelector('button[title="Cancel note 0 edit"]') as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 0"]')).toBeNull();
+      });
+      expect((global.fetch as Mock).mock.calls.some((c) => String(c[0]).endsWith("/ops/note.update"))).toBe(false);
+    });
   });
 
   // -- F2ac: Cohort conditional dropdowns ------------------------------------

@@ -41,7 +41,7 @@ package body Pitd_Ops is
         or else Op = "ability.take" or else Op = "ability.remove"
         or else Op = "fund.gain" or else Op = "fund.spend" or else Op = "fund.liquidate"
         or else Op = "dossier.update"
-        or else Op = "note.add" or else Op = "note.remove"
+        or else Op = "note.add" or else Op = "note.remove" or else Op = "note.update"
         or else Op = "heat.add" or else Op = "wanted.add" or else Op = "rep.add"
         or else Op = "coin.add" or else Op = "stash.add" or else Op = "tier.add"
         or else Op = "turf.add" or else Op = "xp.add" or else Op = "xp.clear"
@@ -541,6 +541,8 @@ elsif Op = "clock.create" then
          return Check_Fields (B, Spec_List'(1 => Spec ("text", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "note.remove" then
          return Check_Fields (B, Spec_List'(1 => Spec ("index", JSON_Int_Type, MnI => 0)), Bad);
+      elsif Op = "note.update" then
+         return Check_Fields (B, Spec_List'(1 => Spec ("index", JSON_Int_Type, MnI => 0), 2 => Spec ("text", JSON_String_Type, MnL => 1)), Bad);
       elsif Op = "session.set" then
          if not Has_Any_Field (B) then Bad := To_Unbounded_String("session.set requires at least one expression field"); return False; end if;
          return Check_Fields (B, (Spec ("playbookExpressions", JSON_Int_Type, MnI => 0, Rq => False),
@@ -826,7 +828,7 @@ elsif Op = "clock.progress" then
 begin
       --  SC-A8: the RETIRED gate is the frozen allow/deny lists
       --  (lifecycle-matrix § 6).  On a retired character only the
-      --  allow-list proceeds: dossier.update, note.add/remove, notebook.set,
+      --  allow-list proceeds: dossier.update, note.add/remove/update, notebook.set,
       --  trauma.remove (the trauma-history correction path — never
       --  recomputes isRetired), plus the direct entity ops handled before
       --  Mutate (undo/delete/import) and all reads. Assistance-only
@@ -834,6 +836,7 @@ begin
       if Kind = "character" and then Bool_Field (E, "isRetired")
         and then Op /= "dossier.update" and then Op /= "note.add"
         and then Op /= "note.remove" and then Op /= "notebook.set"
+        and then Op /= "note.update"
         and then Op /= "trauma.remove"
         and then Op /= "mode.set" and then Op /= "mode.flow.set"
       then return Retired_Error (Op, "character is retired", E); end if;
@@ -1564,6 +1567,25 @@ elsif Op = "harm.add" then
                end loop;
                if not Found then return Not_Found_Error (Op,"note index out of range",E); end if;
             end if;
+            Set_Field (P,"notes",O);
+         end;
+      elsif Op = "note.update" then
+         declare
+            P : constant JSON_Value := (if Kind = "character" then Get (E,"dossier") else E);
+            A : constant JSON_Array := (if Has_Field (P,"notes") then Get (P,"notes") else Empty_Array);
+            O : JSON_Array := Empty_Array;
+            Idx : constant Natural := Natural (Int_Field (B,"index"));
+            Found : Boolean := False;
+         begin
+            for I in 1 .. Length (A) loop
+               if I - 1 = Idx then
+                  Append (O, Create (Str_Field (B,"text")));
+                  Found := True;
+               else
+                  Append (O, Get (A,I));
+               end if;
+            end loop;
+            if not Found then return Not_Found_Error (Op,"note index out of range",E); end if;
             Set_Field (P,"notes",O);
          end;
       elsif Op = "heat.add" or else Op = "wanted.add" or else Op = "rep.add" then

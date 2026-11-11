@@ -7,7 +7,8 @@ freeze via the dedicated contract-change task (tasks/C4-playtest-contract.md).
 ## Changes
 
 1. **Multiple notes** — `character.dossier.notes` and `crew.notes` are now
-   `string[]`. Ops `note.add {text}` and `note.remove {index}` exist for both
+   `string[]`. Ops `note.add {text}`, `note.update {index, text}` (in-place edit,
+   NOTES-EDIT-01), and `note.remove {index}` exist for both
    characters and crews (NOT_FOUND for out-of-range index). Rationale: the
    human asked for several notes per sheet, functionally identical on both.
 2. **Crew turf** — crew DTO gains `turf` (int 0..6, required). Op

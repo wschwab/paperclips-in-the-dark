@@ -48,6 +48,70 @@ describe("§C4 playtest contract changes", () => {
     expect(bad.error?.code).toBe("NOT_FOUND");
   });
 
+  testCase("NOTES-EDIT-01-001", "character note.update replaces the text at a 0-based index; bad index is NOT_FOUND and empty text is rejected", async () => {
+    const character = await newCharacter();
+    await api.characterOp(character.id, "note.add", { text: "First" });
+    const added = await api.characterOp(character.id, "note.add", { text: "Second" });
+    expect(added.ok).toBe(true);
+
+    const updated = await api.characterOp(character.id, "note.update", { index: 0, text: "Edited" });
+    expect(updated.ok).toBe(true);
+    expect(updated.character?.dossier.notes).toEqual(["Edited", "Second"]);
+    expect(updated.character?.revision).toBeGreaterThan(added.character!.revision);
+
+    const missing = await api.characterOp(character.id, "note.update", { index: 9, text: "x" });
+    expect(missing.ok).toBe(false);
+    expect(missing.error?.code).toBe("NOT_FOUND");
+
+    const empty = await api.characterOp(character.id, "note.update", { index: 0, text: "" });
+    expect(empty.ok).toBe(false);
+    expect(empty.error?.code).toBe("VALIDATION");
+  });
+
+  testCase("NOTES-EDIT-01-002", "character note.update is undone by the sheet undo to the prior text", async () => {
+    const character = await newCharacter();
+    await api.characterOp(character.id, "note.add", { text: "Original" });
+    const updated = await api.characterOp(character.id, "note.update", { index: 0, text: "Changed" });
+    expect(updated.character?.dossier.notes).toEqual(["Changed"]);
+
+    const undone = await api.operation(await api.post(`characters/${character.id}/undo`, {}, { "If-Match": String(updated.character!.revision) }));
+    expect(undone.ok).toBe(true);
+    expect(undone.character?.dossier.notes).toEqual(["Original"]);
+  });
+
+  testCase("NOTES-EDIT-01-003", "a retired character can still edit a note (locked lifecycle rule: note edits remain allowed)", async () => {
+    const character = await newCharacter();
+    const seeded = await api.characterOp(character.id, "note.add", { text: "Before retirement" });
+    const retired = await api.operation(await api.post(`characters/${character.id}/retire`, { confirm: true }, { "If-Match": String(seeded.character!.revision) }));
+    expect(retired.ok).toBe(true);
+
+    const edited = await api.characterOp(character.id, "note.update", { index: 0, text: "After retirement" });
+    expect(edited.ok).toBe(true);
+    expect(edited.character?.dossier.notes).toEqual(["After retirement"]);
+  });
+
+  testCase("NOTES-EDIT-01-004", "crew note.update replaces the text at a 0-based index; bad index is NOT_FOUND and empty text is rejected", async () => {
+    const crew = await newCrew();
+    await api.crewOp(crew.id, "note.add", { text: "First" });
+    await api.crewOp(crew.id, "note.add", { text: "Second" });
+
+    const updated = await api.crewOp(crew.id, "note.update", { index: 1, text: "Edited" });
+    expect(updated.ok).toBe(true);
+    expect(updated.crew?.notes).toEqual(["First", "Edited"]);
+
+    const missing = await api.crewOp(crew.id, "note.update", { index: 5, text: "x" });
+    expect(missing.ok).toBe(false);
+    expect(missing.error?.code).toBe("NOT_FOUND");
+
+    const empty = await api.crewOp(crew.id, "note.update", { index: 0, text: "" });
+    expect(empty.ok).toBe(false);
+    expect(empty.error?.code).toBe("VALIDATION");
+
+    const undone = await api.operation(await api.post(`crews/${crew.id}/undo`, {}, { "If-Match": String(updated.crew!.revision) }));
+    expect(undone.ok).toBe(true);
+    expect(undone.crew?.notes).toEqual(["First", "Second"]);
+  });
+
   testCase("SEMANTICS-TURF-001", "crew turf.add adds with 0..6 clamp; negative removes", async () => {
     const crew = await newCrew();
     expect(crew.turf).toBe(0);

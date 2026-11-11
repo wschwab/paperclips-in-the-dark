@@ -1630,6 +1630,42 @@
       "collection": false
     },
     {
+      "operationId": "crewNoteUpdate",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.update",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewNoteUpdate",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.update",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewNoteUpdate",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.update",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "crewNoteUpdate",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.update",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "crewXpAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/xp.add",
@@ -3571,6 +3607,42 @@
       "operationId": "noteRemove",
       "method": "POST",
       "path": "/characters/{id}/ops/note.remove",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "noteUpdate",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.update",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "noteUpdate",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.update",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "noteUpdate",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.update",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "noteUpdate",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.update",
       "status": "500",
       "kind": "schema",
       "schemaName": "operationResult",

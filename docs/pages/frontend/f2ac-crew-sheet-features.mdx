@@ -24,6 +24,7 @@ This page documents the UI work (part 2): everything lives in
 | Rep & Turf | Develop button | chained ops (below) | — |
 | Notes | textarea + Add note | `note.add` | `{text}` |
 | Notes | Remove note N | `note.remove` | `{index}` (0-based) |
+| Notes | Edit note N → Save / Cancel | `note.update` | `{index, text}` (0-based; empty text disables Save) |
 | Cohorts | gang/expert `<select>` (+ custom text) | `cohort.add` / `cohort.update` | kind-typed field |
 
 ## 1. Reputation dropdown

@@ -1115,6 +1115,16 @@ export function noteRemove(
   return characterMutate(id, "note.remove", revision, { index });
 }
 
+/** Replace the text of the character's note at the 0-based index (contract /ops/note.update). */
+export function noteUpdate(
+  id: string,
+  index: number,
+  text: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "note.update", revision, { index, text });
+}
+
 /** Replace the character's free-text notebook (contract /ops/notebook.set). */
 export function notebookSet(
   id: string,
@@ -1436,6 +1446,16 @@ export function crewNoteRemove(
   revision: number,
 ): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
   return crewMutate(id, "note.remove", revision, { index });
+}
+
+/** Replace the text of the crew note at the 0-based index (out of range → NOT_FOUND; empty text → VALIDATION). */
+export function crewNoteUpdate(
+  id: string,
+  index: number,
+  text: string,
+  revision: number,
+): Effect.Effect<Crew, ApiError | DecodeError | StaleRevisionError> {
+  return crewMutate(id, "note.update", revision, { index, text });
 }
 
 /** Crew turf delta (C4: clamped 0..6 server-side; each turf lowers the rep

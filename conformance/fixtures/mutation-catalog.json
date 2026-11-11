@@ -188,7 +188,7 @@
       "mutation": "Auto-add trauma on overflow: the pending raise is replaced by directly appending a trauma to monitor.trauma.traumas",
       "observableFailure": "traumaPending never raises while the traumas history silently grows; LIFECYCLE-STRESS-001 asserts the pending flag and typed attention",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "435034a8b4da7594b75d30ae1b61e3bcaa18738cc5a9ebcfc00ea003412e37f1"
+        "backend-ada/server/src/pitd_ops.adb": "85aa284d189fee6f77cd69e96413e7e14a61ddde5e8533fe3ccc3a33ebd99c71"
       },
       "severity": "P0",
       "status": "not-run",
@@ -204,7 +204,7 @@
       "mutation": "Clear retirement during trauma removal: the arm additionally sets isRetired false",
       "observableFailure": "trauma.remove on a retired character flips isRetired to false, silently reversing retirement",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "435034a8b4da7594b75d30ae1b61e3bcaa18738cc5a9ebcfc00ea003412e37f1"
+        "backend-ada/server/src/pitd_ops.adb": "85aa284d189fee6f77cd69e96413e7e14a61ddde5e8533fe3ccc3a33ebd99c71"
       },
       "severity": "P0",
       "status": "not-run",
@@ -268,7 +268,7 @@
       "mutation": "Hardcode the tier.add CrewTierMax settings lookup to 3",
       "observableFailure": "the enforced tier ceiling disagrees with the loaded game-settings JSON (Blades CrewTierMax), so a differently-configured game is mis-bounded",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "435034a8b4da7594b75d30ae1b61e3bcaa18738cc5a9ebcfc00ea003412e37f1"
+        "backend-ada/server/src/pitd_ops.adb": "85aa284d189fee6f77cd69e96413e7e14a61ddde5e8533fe3ccc3a33ebd99c71"
       },
       "severity": "P0",
       "status": "not-run",
@@ -287,7 +287,7 @@
       "mutation": "Omit focus recovery (captureFocusTarget returns null, applyFocusTarget returns false)",
       "observableFailure": "after a mutation re-render keyboard focus drops to <body> instead of staying on (or returning to) the initiating control",
       "restorationHash": {
-        "frontend/src/lib/focus.ts": "b84d34603f4c00321a95024759a66edb78f082945df0c16c8b8a1548c746fbea"
+        "frontend/src/lib/focus.ts": "bab301cbe09f21d70f66dee1a62840c401b5bb594b5e6d56d95189233eae0f62"
       },
       "severity": "P1",
       "status": "not-run",
@@ -303,7 +303,7 @@
       "mutation": "Reduce the interactive action-dot 24x24 hit affordance (::before pseudo-element) to 8x8",
       "observableFailure": "interactive action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "b1471f3d040f2b1cbbfd2360eee6556428eedf461a4015add4f4a8047ce82bc5"
+        "frontend/src/styles/components.css": "d55e95ad1791306924f8a2bdb6f51ba34ef4bec9b3a796389e0a10dc67edc32f"
       },
       "severity": "P1",
       "status": "not-run",
@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "f7becb6ec2aded9578de7b5103a068175685bfd4cf4e74803cbf517c2631bd9e"
+        "frontend/src/api/client.ts": "f8e5144958bae05ea19683e9b2bd188f2aef5d54fe93ec7f6e12dd567d69419b"
       },
       "severity": "P0",
       "status": "not-run",
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "959c833e3aaf05aebf4fa442896f3a24b1a08aa6c4a3b3fc5096a09bfa2a281b"
+        "frontend/src/pages/character-detail.ts": "fc910ddb62b54d0a72296ab2f5639c7719cbd4be82e2c8a23fe490b18c825e83"
       },
       "severity": "P1",
       "status": "not-run",
@@ -464,7 +464,7 @@
       "mutation": "Claim-operation coverage removed: all three dispatch arms become dead (elsif False), so claim ops fall through to the unknown-op failure",
       "observableFailure": "claim.set/customize/reset stop acquiring, customizing, and relinquishing claims; the conformance claim oracle cases fail",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "435034a8b4da7594b75d30ae1b61e3bcaa18738cc5a9ebcfc00ea003412e37f1"
+        "backend-ada/server/src/pitd_ops.adb": "85aa284d189fee6f77cd69e96413e7e14a61ddde5e8533fe3ccc3a33ebd99c71"
       },
       "severity": "P0",
       "status": "not-run",

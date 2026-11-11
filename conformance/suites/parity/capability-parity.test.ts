@@ -63,7 +63,7 @@ const REQUIRED_HUMAN_OPS: readonly string[] = [
   "undoCharacter", "undoCrew", "endScore", "retireCharacter", "traumaAdd", "traumaRemove",
   "importCharacter", "importCrew",
   "repairCharacterPreview", "repairCharacterApply", "repairCrewPreview", "repairCrewApply",
-  "dossierUpdate", "noteAdd", "noteRemove", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove",
+  "dossierUpdate", "noteAdd", "noteRemove", "noteUpdate", "notebookSet", "crewFieldsUpdate", "crewNoteAdd", "crewNoteRemove", "crewNoteUpdate",
   "stressFix",
   "characterModeSet", "characterModeFlowSet", "characterDowntimeSpend", "characterDowntimeAdjust",
   // FLOW-API-01 human-authorized replacement (2026-11-01):

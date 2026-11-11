@@ -77,6 +77,7 @@ import {
   deleteClock,
   noteAdd,
   noteRemove,
+  noteUpdate,
   notebookSet,
   contactAdd,
   contactCloseness,
@@ -493,6 +494,7 @@ export function mountCharacterDetailPage(
   let isCrewsLoading = false;
   let crewNotice: string | null = null;
   let isNotesLoading = false;
+  let noteEdit: { index: number; text: string } | null = null;
   let notesNotice: string | null = null;
   let isNotebookLoading = false;
   let notebookNotice: string | null = null;
@@ -1386,6 +1388,32 @@ export function mountCharacterDetailPage(
         program,
         (character) => {
           currentCharacter = character;
+          renderDetailWrapper();
+        },
+        () => { isNotesLoading = false; },
+      );
+    },
+    onNoteEditStart: (index: number) => {
+      if (!currentCharacter || isNotesLoading) return;
+      noteEdit = { index, text: currentCharacter.dossier.notes[index] ?? "" };
+      renderDetailWrapper();
+    },
+    onNoteEditCancel: () => {
+      noteEdit = null;
+      renderDetailWrapper();
+    },
+    onNoteEditSave: (index: number, text: string) => {
+      if (!currentCharacter || isNotesLoading) return;
+      isNotesLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      const program = noteUpdate(characterId, index, text, currentCharacter.revision);
+      runCharacterMutate(
+        "notes",
+        program,
+        (character) => {
+          currentCharacter = character;
+          noteEdit = null;
           renderDetailWrapper();
         },
         () => { isNotesLoading = false; },
@@ -2366,6 +2394,7 @@ export function mountCharacterDetailPage(
       isCrewsLoading,
       crewNotice,
       isNotesLoading,
+      noteEdit,
       notesNotice,
       isNotebookLoading,
       notebookNotice,

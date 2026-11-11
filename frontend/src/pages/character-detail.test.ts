@@ -4157,6 +4157,82 @@ describe("F2ab Notes", () => {
       expect(removeCall![1].headers["If-Match"]).toBe("12");
     });
   });
+  it("edits a note in place and saves it via note.update with its index and If-Match", async () => {
+    const afterEdit = characterDTO({
+      revision: 13,
+      dossier: { ...characterDTO().dossier, notes: ["First note", "Edited note"] },
+    });
+    const editOk = { ok: true, character: afterEdit, applied: { op: "note.update" }, sideEffects: [], error: null };
+
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO({
+        dossier: { ...characterDTO().dossier, notes: ["First note", "Second note"] },
+      })))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}))
+      .mockResolvedValueOnce(ok(editOk));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('.character-notes button[title^="Edit note"]')).toHaveLength(2);
+    });
+    (root.querySelector('button[title="Edit note 2"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('.character-notes textarea[aria-label="Edit note 2"]')).not.toBeNull();
+    });
+    const textarea = root.querySelector('.character-notes textarea[aria-label="Edit note 2"]') as HTMLTextAreaElement;
+    textarea.value = "Edited note";
+    textarea.dispatchEvent(new Event("input"));
+    (root.querySelector('button[title="Save note 2"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      const calls = (global.fetch as Mock).mock.calls;
+      const editCall = calls.find((c) => String(c[0]).endsWith("/ops/note.update"));
+      expect(editCall).toBeTruthy();
+      expect(editCall![1].body).toBe(JSON.stringify({ index: 1, text: "Edited note" }));
+      expect(editCall![1].headers["If-Match"]).toBe("12");
+    });
+    await vi.waitFor(() => {
+      expect(root.querySelector('.character-notes textarea[aria-label="Edit note 2"]')).toBeNull();
+    });
+    expect(root.querySelector(".character-notes")?.textContent).toContain("Edited note");
+  });
+
+  it("cancelling an in-place note edit sends no request and keeps the saved text", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(ok(characterDTO({
+        dossier: { ...characterDTO().dossier, notes: ["First note", "Second note"] },
+      })))
+      .mockResolvedValueOnce(ok(GAME_DATA))
+      .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+      .mockResolvedValueOnce(ok([]))
+      .mockResolvedValueOnce(ok(CREWS_DATA))
+      .mockResolvedValueOnce(ok({}));
+
+    mountCharacterDetailPage(root, CHARACTER_ID);
+
+    await vi.waitFor(() => {
+      expect(root.querySelectorAll('.character-notes button[title^="Edit note"]')).toHaveLength(2);
+    });
+    (root.querySelector('button[title="Edit note 1"]') as HTMLButtonElement).click();
+    await vi.waitFor(() => {
+      expect(root.querySelector('.character-notes textarea[aria-label="Edit note 1"]')).not.toBeNull();
+    });
+    (root.querySelector('button[title="Cancel note 1 edit"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('.character-notes textarea[aria-label="Edit note 1"]')).toBeNull();
+    });
+    expect((global.fetch as Mock).mock.calls.some((c) => String(c[0]).endsWith("/ops/note.update"))).toBe(false);
+    expect(root.querySelector(".character-notes")?.textContent).toContain("First note");
+  });
 });
 
 describe("F2ab Crew membership", () => {

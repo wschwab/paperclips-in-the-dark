@@ -8,6 +8,7 @@ import { OpError,
   NETWORK_ERROR_COPY,
   getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, createPcCharacter, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError, stressFix } from "./client.js";
 import { OVERINDULGED_SIDEEFFECT } from "./client.js";
+import { noteUpdate, crewNoteUpdate } from "./client.js";
 
 const goldenCharacter = JSON.parse(
   readFileSync(new URL("../../../conformance/fixtures/golden-character.json", import.meta.url), "utf8"),
@@ -2310,6 +2311,41 @@ describe("noteAdd", () => {
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(StaleRevisionError);
     }
+  });
+});
+
+describe("noteUpdate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/characters/{id}/ops/note.update with the 0-based index, new text and If-Match", async () => {
+    const afterUpdate = makeChar({
+      revision: 13,
+      dossier: { ...makeChar().dossier, notes: ["Edited note"] },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(harmOpOk(afterUpdate, "note.update")),
+    });
+
+    const result = await Effect.runPromise(
+      noteUpdate("c46ba7cb-993b-4fc7-974d-fb95eacd5446", 0, "Edited note", 12),
+    );
+    expect(result.dossier.notes).toEqual(["Edited note"]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/characters/c46ba7cb-993b-4fc7-974d-fb95eacd5446/ops/note.update",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "12",
+        },
+        body: JSON.stringify({ index: 0, text: "Edited note" }),
+      },
+    );
   });
 });
 
@@ -6645,6 +6681,36 @@ describe("crewNoteAdd", () => {
     if (result._tag === "Left") {
       expect(result.left).toBeInstanceOf(StaleRevisionError);
     }
+  });
+});
+
+describe("crewNoteUpdate", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts to /api/crews/{id}/ops/note.update with the 0-based index, new text and If-Match", async () => {
+    const edited = makeCrew({ revision: 6, notes: ["first", "edited"] });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify(crewOpOk(edited, "note.update")),
+    });
+
+    const result = await Effect.runPromise(crewNoteUpdate(CREW_ID_F2Y, 1, "edited", 5));
+    expect(result.notes).toEqual(["first", "edited"]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `/api/crews/${CREW_ID_F2Y}/ops/note.update`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "If-Match": "5",
+        },
+        body: JSON.stringify({ index: 1, text: "edited" }),
+      },
+    );
   });
 });
 

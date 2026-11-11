@@ -19,6 +19,7 @@ All eight features are red-green tested at both the API client and page layer.
 | `harmHeal` (changed) | `ops/harm.heal` | ✓ | Now takes `(id, intensity, description, revision)`; body `{intensity, description}` per C4 targeting |
 | `noteAdd` | `ops/note.add` | ✓ | `{ text }` — append to `dossier.notes[]` |
 | `noteRemove` | `ops/note.remove` | ✓ | `{ index }` — 0-based; out of range → `NOT_FOUND` |
+| `noteUpdate` | `ops/note.update` | ✓ | `{ index, text }` — 0-based; in-place Edit → Save/Cancel; out of range → `NOT_FOUND`; empty text → `VALIDATION` (NOTES-EDIT-01) |
 | `listCrews` | `GET /crews` | — | Decodes `CrewSummary[]` for the membership selector |
 
 Schema: `dossier.vice` gains `purveyor {name, description}` (matches the

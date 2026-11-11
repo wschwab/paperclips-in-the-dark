@@ -36,6 +36,7 @@ import {
   crewXpClear,
   crewNoteAdd,
   crewNoteRemove,
+  crewNoteUpdate,
   crewTurfAdd,
   getCrewCapabilities,
   StaleRevisionError,
@@ -146,6 +147,7 @@ export interface RenderState {
   factionDrafts: FactionDrafts;
   cohortDrafts: CohortDrafts;
   noteDraft: { text: string };
+  noteEdit: { index: number; text: string } | null;
   contactDraft: { name: string; profession: string };
   /** Unsaved reputation choice from the dropdown; null shows the saved reputation. */
   reputationDraft: { value: string | null };
@@ -193,6 +195,9 @@ export interface RenderState {
     onDevelop: () => void;
     onNoteAdd: () => void;
     onNoteRemove: (index: number) => void;
+    onNoteEditStart: (index: number) => void;
+    onNoteEditCancel: () => void;
+    onNoteEditSave: (index: number, text: string) => void;
     onHeatDelta: (delta: number) => void;
     onHeatTrack: (next: number) => void;
     onWantedDelta: (delta: number) => void;
@@ -335,6 +340,7 @@ export function mountCrewDetailPage(
   let isXpLoading = false;
   let isTurfLoading = false;
   let isNoteLoading = false;
+  let noteEdit: { index: number; text: string } | null = null;
   let isDevelopLoading = false;
   let crewTypeData: Record<string, unknown> | null = null;
   let crewTypesData: readonly Record<string, unknown>[] | null = null;
@@ -545,6 +551,7 @@ export function mountCrewDetailPage(
       factionDrafts,
       cohortDrafts,
       noteDraft,
+      noteEdit,
       contactDraft,
       reputationDraft,
       isProfileLoading,
@@ -853,6 +860,28 @@ export function mountCrewDetailPage(
       runCrewOp(
         (v) => { isNoteLoading = v; },
         crewNoteRemove(crewId, index, currentCrew.revision),
+      );
+    },
+
+    onNoteEditStart: (index: number) => {
+      if (!currentCrew || isNoteLoading) return;
+      noteEdit = { index, text: currentCrew.notes[index] ?? "" };
+      renderDetail();
+    },
+
+    onNoteEditCancel: () => {
+      noteEdit = null;
+      renderDetail();
+    },
+
+    onNoteEditSave: (index: number, text: string) => {
+      if (!currentCrew || isNoteLoading) return;
+      runCrewOp(
+        (v) => { isNoteLoading = v; },
+        crewNoteUpdate(crewId, index, text, currentCrew.revision),
+        undefined,
+        undefined,
+        () => { noteEdit = null; },
       );
     },
 

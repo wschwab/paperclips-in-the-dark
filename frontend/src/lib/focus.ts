@@ -66,7 +66,9 @@ function isFocusableCandidate(node: Element): node is HTMLElement {
 function allFocusables(scope: HTMLElement): HTMLElement[] {
   const out: HTMLElement[] = [];
   for (const el of scope.querySelectorAll(FOCUSABLE_SELECTOR)) {
-    if (isFocusableCandidate(el)) out.push(el);
+    // data-focus-aside: secondary affordance (e.g. per-note Edit) kept out of the
+    // structural ordinal so list/add restores stay stable; reached via its data-focus-key.
+    if (isFocusableCandidate(el) && !el.hasAttribute("data-focus-aside")) out.push(el);
   }
   return out;
 }
@@ -88,7 +90,7 @@ export function captureFocusTarget(root: HTMLElement): FocusTarget | null {
   const key = active.closest<HTMLElement>("[data-focus-key]")?.getAttribute("data-focus-key") ?? null;
   const focusables = allFocusables(scope);
   const ordinal = focusables.indexOf(active);
-  if (ordinal === -1) return null;
+  if (ordinal === -1 && key === null) return null;
   return {
     section: sectionEl ? sectionEl.getAttribute("data-section") : null,
     key,

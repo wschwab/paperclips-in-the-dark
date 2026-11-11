@@ -56,6 +56,8 @@ const negativeCases: NegativeCase[] = [
   { id: "CONTRACT-VALIDATION-CHARACTER-CONTACT-ADD-EXTRA-FIELD-001", target: "character", path: "characters/{id}/ops/contact.add", body: { name: "x", entry: "y" }, note: "character contact.add with a rolodex-era field (additionalProperties:false)" },
   { id: "CONTRACT-VALIDATION-CHARACTER-NOTE-ADD-EMPTY-001", target: "character", path: "characters/{id}/ops/note.add", body: {}, note: "note.add {} (text required)" },
   { id: "CONTRACT-VALIDATION-CHARACTER-NOTE-REMOVE-NEGATIVE-001", target: "character", path: "characters/{id}/ops/note.remove", body: { index: -1 }, note: "note.remove with negative index (minimum 0)" },
+  { id: "CONTRACT-VALIDATION-CHARACTER-NOTE-UPDATE-NEGATIVE-001", target: "character", path: "characters/{id}/ops/note.update", body: { index: -1, text: "x" }, note: "note.update with negative index (minimum 0)" },
+  { id: "CONTRACT-VALIDATION-CHARACTER-NOTE-UPDATE-EMPTY-001", target: "character", path: "characters/{id}/ops/note.update", body: { index: 0, text: "" }, note: "note.update with empty text (minLength 1)" },
   { id: "CONTRACT-VALIDATION-CHARACTER-SESSION-SET-EMPTY-001", target: "character", path: "characters/{id}/ops/session.set", body: {}, note: "session.set {} (minProperties 1)" },
   { id: "CONTRACT-VALIDATION-CHARACTER-SESSION-SET-NEGATIVE-001", target: "character", path: "characters/{id}/ops/session.set", body: { playbookExpressions: -1 }, note: "session.set with negative expression (minimum 0)" },
   { id: "CONTRACT-VALIDATION-CHARACTER-DOSSIER-UPDATE-EMPTY-001", target: "character", path: "characters/{id}/ops/dossier.update", body: {}, note: "dossier.update {} (minProperties 1)" },
@@ -74,6 +76,8 @@ const negativeCases: NegativeCase[] = [
   { id: "CONTRACT-VALIDATION-CREW-UPGRADE-MARK-EMPTY-001", target: "crew", path: "crews/{id}/ops/upgrade.mark", body: {}, note: "upgrade.mark {} (name required)" },
   { id: "CONTRACT-VALIDATION-CREW-FIELDS-UPDATE-EMPTY-001", target: "crew", path: "crews/{id}/ops/fields.update", body: {}, note: "fields.update {} (minProperties 1)" },
   { id: "CONTRACT-VALIDATION-CREW-NOTE-REMOVE-NEGATIVE-001", target: "crew", path: "crews/{id}/ops/note.remove", body: { index: -1 }, note: "crew note.remove with negative index" },
+  { id: "CONTRACT-VALIDATION-CREW-NOTE-UPDATE-NEGATIVE-001", target: "crew", path: "crews/{id}/ops/note.update", body: { index: -1, text: "x" }, note: "crew note.update with negative index" },
+  { id: "CONTRACT-VALIDATION-CREW-NOTE-UPDATE-EMPTY-001", target: "crew", path: "crews/{id}/ops/note.update", body: { index: 0, text: "" }, note: "crew note.update with empty text (minLength 1)" },
 
   // ---- clock ops ----
   { id: "CONTRACT-VALIDATION-CLOCK-PROGRESS-EMPTY-001", target: "clock", path: "clocks/{id}/ops/clock.progress", body: {}, note: "clock.progress {} (segments required)" },

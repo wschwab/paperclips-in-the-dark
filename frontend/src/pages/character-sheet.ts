@@ -149,6 +149,7 @@ export interface RenderState {
   isCrewsLoading: boolean;
   crewNotice: string | null;
   isNotesLoading: boolean;
+  noteEdit: { index: number; text: string } | null;
   notesNotice: string | null;
   // CONTRACT-05 Contacts state
   isContactsLoading: boolean;
@@ -207,6 +208,9 @@ export interface RenderState {
     onTraumaFromStress: () => void;
     onNoteAdd: () => void;
     onNoteRemove: (index: number) => void;
+    onNoteEditStart: (index: number) => void;
+    onNoteEditCancel: () => void;
+    onNoteEditSave: (index: number, text: string) => void;
     onNotebookSave: () => void;
     onCrewJoin: () => void;
     /** CONTRACT-05: per-scoundrel contacts. */
