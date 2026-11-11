@@ -36,7 +36,11 @@ async function rejected(id: string, op: string, body: unknown) {
   expect(result.error?.code).toBe("VALIDATION");
   expect(result.error?.status).toBe(400);
   // Check the whole current DTO, including revision, action ratings and XP.
-  expect.soft(result.error?.entity).toEqual(before.body);
+  // The decoded error union is not uniform: only the branches that carry a
+  // current entity declare `entity`, so narrow before reading it.
+  const error = result.error;
+  const entity = error && "entity" in error ? error.entity : undefined;
+  expect.soft(entity).toEqual(before.body);
   expect.soft(response.status).toBe(400);
   expect.soft(() => assertResponseValid(allocationEndpoints[op], response.status, response.body)).not.toThrow();
   expect((await api.get(`characters/${id}`)).rawBody).toBe(before.rawBody);

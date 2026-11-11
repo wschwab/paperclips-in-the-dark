@@ -85,7 +85,7 @@
       "mutation": "Change INVALID_ENTITY status from 422 to 500",
       "observableFailure": "degraded-entity direct access returns 500 instead of the frozen 422 typed client error, breaking the error union and typed recovery",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "2059fe178c5f526cac4fc5f1130dc2249b3c73bf10e3494f0cbe4992220e9a0c"
+        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
       },
       "severity": "P0",
       "status": "not-run",
@@ -120,7 +120,7 @@
       "mutation": "Skip the If-Match check block (if False then) so stale revisions mutate anyway",
       "observableFailure": "a stale writer overwrites recent changes with no STALE_REVISION; concurrent edits are lost silently",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "2059fe178c5f526cac4fc5f1130dc2249b3c73bf10e3494f0cbe4992220e9a0c"
+        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
       },
       "severity": "P0",
       "status": "not-run",
@@ -137,7 +137,7 @@
       "mutation": "Skip the pre-mutation snapshot (replaced by null)",
       "observableFailure": "snapshot-worthy mutations create no history entry, so undo has nothing to restore",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "2059fe178c5f526cac4fc5f1130dc2249b3c73bf10e3494f0cbe4992220e9a0c"
+        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
       },
       "severity": "P0",
       "status": "not-run",
@@ -155,7 +155,7 @@
       "mutation": "Skip snapshot consumption on undo (Delete_File replaced by null)",
       "observableFailure": "undo stops consuming snapshots, so a second undo replays stale state and history grows without bound",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "2059fe178c5f526cac4fc5f1130dc2249b3c73bf10e3494f0cbe4992220e9a0c"
+        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
       },
       "severity": "P0",
       "status": "not-run",
@@ -188,7 +188,7 @@
       "mutation": "Auto-add trauma on overflow: the pending raise is replaced by directly appending a trauma to monitor.trauma.traumas",
       "observableFailure": "traumaPending never raises while the traumas history silently grows; LIFECYCLE-STRESS-001 asserts the pending flag and typed attention",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "0707eeb4d21a3115614daa7730e62e3953d02dc9c32e10ae29964a6e9832c0d7"
+        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
       },
       "severity": "P0",
       "status": "not-run",
@@ -204,7 +204,7 @@
       "mutation": "Clear retirement during trauma removal: the arm additionally sets isRetired false",
       "observableFailure": "trauma.remove on a retired character flips isRetired to false, silently reversing retirement",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "0707eeb4d21a3115614daa7730e62e3953d02dc9c32e10ae29964a6e9832c0d7"
+        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
       },
       "severity": "P0",
       "status": "not-run",
@@ -236,7 +236,7 @@
       "mutation": "Skip the W5 owner-clock reassignment (elsif False then)",
       "observableFailure": "deleting a character/crew orphans its standalone clocks instead of reassigning them to campaign ownership with bumped revisions",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "2059fe178c5f526cac4fc5f1130dc2249b3c73bf10e3494f0cbe4992220e9a0c"
+        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
       },
       "severity": "P1",
       "status": "not-run",
@@ -252,7 +252,7 @@
       "mutation": "Skip the W4 unlink sweep (if False then)",
       "observableFailure": "a deleted clock's id remains in other clocks' relatedClockIds, leaving stale relationship references",
       "restorationHash": {
-        "backend-ada/server/src/pitd_callback.adb": "2059fe178c5f526cac4fc5f1130dc2249b3c73bf10e3494f0cbe4992220e9a0c"
+        "backend-ada/server/src/pitd_callback.adb": "9b09627d70ad9c773cfaa0c1daee1e260111032ed20455eb00c10a77df06b418"
       },
       "severity": "P1",
       "status": "not-run",
@@ -268,7 +268,7 @@
       "mutation": "Hardcode the tier.add CrewTierMax settings lookup to 3",
       "observableFailure": "the enforced tier ceiling disagrees with the loaded game-settings JSON (Blades CrewTierMax), so a differently-configured game is mis-bounded",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "0707eeb4d21a3115614daa7730e62e3953d02dc9c32e10ae29964a6e9832c0d7"
+        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
       },
       "severity": "P0",
       "status": "not-run",
@@ -287,7 +287,7 @@
       "mutation": "Omit focus recovery (captureFocusTarget returns null, applyFocusTarget returns false)",
       "observableFailure": "after a mutation re-render keyboard focus drops to <body> instead of staying on (or returning to) the initiating control",
       "restorationHash": {
-        "frontend/src/lib/focus.ts": "b84d34603f4c00321a95024759a66edb78f082945df0c16c8b8a1548c746fbea"
+        "frontend/src/lib/focus.ts": "bab301cbe09f21d70f66dee1a62840c401b5bb594b5e6d56d95189233eae0f62"
       },
       "severity": "P1",
       "status": "not-run",
@@ -303,7 +303,7 @@
       "mutation": "Reduce the interactive action-dot 24x24 hit affordance (::before pseudo-element) to 8x8",
       "observableFailure": "interactive action dots lose their 24x24 CSS-px hit affordance; the A11Y-01 CSS contract test fails",
       "restorationHash": {
-        "frontend/src/styles/components.css": "f157f2008e03cabb86d819b6566a1def2fadce48d5796c19ac9f703867d433ff"
+        "frontend/src/styles/components.css": "695663c0f82f41d88ba0fd1cb7b84501f95def54b790aac28e8f77173840a22c"
       },
       "severity": "P1",
       "status": "not-run",
@@ -337,7 +337,7 @@
       "mutation": "Reclassify malformed 200 JSON as a status-0 network ApiError",
       "observableFailure": "malformed server JSON surfaces as a status-0 network error instead of the distinct DecodeError, breaking typed error copy and recovery",
       "restorationHash": {
-        "frontend/src/api/client.ts": "ac7d63bbf3693a117cb5a95e1aa1e5706cffc1a9001bc7d7297b27a11b7fbd6e"
+        "frontend/src/api/client.ts": "5ab118affa12c0b9b3cbc59ba9137d08136bbf592f230d63b036106bdb95748f"
       },
       "severity": "P0",
       "status": "not-run",
@@ -446,7 +446,7 @@
       "mutation": "Section-local error routing removed: the routing condition never fires, so every error falls to the sheet-bottom legacy alert",
       "observableFailure": "failed ops no longer surface inside their section; the stress/gear alerts render at the sheet bottom instead, breaking CHAR-03 routing, scroll guard, and continuity records",
       "restorationHash": {
-        "frontend/src/pages/character-detail.ts": "a9923d2887eb912dc2128430e688f7a29f1ae1c075e8912f1dd2ad38f5d30683"
+        "frontend/src/pages/character-detail.ts": "3f4affc7cd1baea41773609d4e36677ea42353cfef86d0f91488aa7303186cd5"
       },
       "severity": "P1",
       "status": "not-run",
@@ -464,7 +464,7 @@
       "mutation": "Claim-operation coverage removed: all three dispatch arms become dead (elsif False), so claim ops fall through to the unknown-op failure",
       "observableFailure": "claim.set/customize/reset stop acquiring, customizing, and relinquishing claims; the conformance claim oracle cases fail",
       "restorationHash": {
-        "backend-ada/server/src/pitd_ops.adb": "0707eeb4d21a3115614daa7730e62e3953d02dc9c32e10ae29964a6e9832c0d7"
+        "backend-ada/server/src/pitd_ops.adb": "3919d88c1a1c52319fa7ae985192ca79c36d89b0167b4ba4a69508bd5f3a9c00"
       },
       "severity": "P0",
       "status": "not-run",

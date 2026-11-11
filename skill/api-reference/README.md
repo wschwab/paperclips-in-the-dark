@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 122
+Operations: 124
 
 ## Conventions
 
@@ -186,6 +186,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/downtime.reset` | [`characterDowntimeReset`](#characterdowntimereset) | true |
 | POST | `/characters/{id}/ops/note.add` | [`noteAdd`](#noteadd) | true |
 | POST | `/characters/{id}/ops/note.remove` | [`noteRemove`](#noteremove) | true |
+| POST | `/characters/{id}/ops/note.update` | [`noteUpdate`](#noteupdate) | true |
 | POST | `/characters/{id}/end-downtime` | [`endDowntime`](#enddowntime) | true |
 | GET | `/crews` | [`listCrews`](#listcrews) | — |
 | POST | `/crews` | [`createCrew`](#createcrew) | false |
@@ -206,6 +207,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/crews/{id}/ops/xp.add` | [`crewXpAdd`](#crewxpadd) | true |
 | POST | `/crews/{id}/ops/note.add` | [`crewNoteAdd`](#crewnoteadd) | true |
 | POST | `/crews/{id}/ops/note.remove` | [`crewNoteRemove`](#crewnoteremove) | true |
+| POST | `/crews/{id}/ops/note.update` | [`crewNoteUpdate`](#crewnoteupdate) | true |
 | POST | `/crews/{id}/ops/turf.add` | [`turfAdd`](#turfadd) | true |
 | POST | `/crews/{id}/ops/xp.clear` | [`crewXpClear`](#crewxpclear) | true |
 | POST | `/crews/{id}/ops/ability.take` | [`crewAbilityTake`](#crewabilitytake) | true |
@@ -2130,6 +2132,35 @@ Responses:
 - `409`: OperationResult
 - `500`: OperationResult
 
+## noteUpdate
+
+`POST /characters/{id}/ops/note.update`
+
+NOTES-EDIT-01 additive op (2026-08-12): replace the text of the note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove; allowed on retired characters (note edits remain allowed).
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [index, text]
+  additionalProperties: false
+  properties:
+    index: { type: integer, minimum: 0 }
+    text: { type: string, minLength: 1 }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `500`: OperationResult
+
 ## endDowntime
 
 `POST /characters/{id}/end-downtime`
@@ -2590,6 +2621,35 @@ schema:
   additionalProperties: false
   properties:
     index: { type: integer, minimum: 0 }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `500`: OperationResult
+
+## crewNoteUpdate
+
+`POST /crews/{id}/ops/note.update`
+
+NOTES-EDIT-01 additive op (2026-08-12): replace the text of the crew note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema:
+  type: object
+  required: [index, text]
+  additionalProperties: false
+  properties:
+    index: { type: integer, minimum: 0 }
+    text: { type: string, minLength: 1 }
 ```
 
 Responses:

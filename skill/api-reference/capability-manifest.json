@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 122,
+  "operationCount": 124,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -619,6 +619,17 @@
       ],
       "humanControl": "Reachable note-removal control (allowed after retirement)."
     },
+    "noteUpdate": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/characters/{id}/ops/note.update",
+      "agentReference": "api-reference/README.md#noteupdate",
+      "summary": "NOTES-EDIT-01 additive op (2026-08-12): replace the text of the note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove; allowed on retired characters (note edits remain allowed).",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable note-edit control (allowed after retirement)."
+    },
     "endDowntime": {
       "disposition": "agent",
       "method": "POST",
@@ -787,6 +798,17 @@
         "sheet-management"
       ],
       "humanControl": "Reachable crew note-removal control (allowed after retirement)."
+    },
+    "crewNoteUpdate": {
+      "disposition": "human",
+      "method": "POST",
+      "path": "/crews/{id}/ops/note.update",
+      "agentReference": "api-reference/README.md#crewnoteupdate",
+      "summary": "NOTES-EDIT-01 additive op (2026-08-12): replace the text of the crew note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove.",
+      "categories": [
+        "sheet-management"
+      ],
+      "humanControl": "Reachable crew note-edit control (allowed after retirement)."
     },
     "turfAdd": {
       "disposition": "agent",
