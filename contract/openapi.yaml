@@ -723,6 +723,10 @@ paths:
         (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated
         sibling createCharacter stays unchanged for experienced characters
         and NPCs; stored characters are never retroactively validated.
+        Omitting actionRatings creates a draft with only playbook default dots
+        and talent.allocationPending true. Allocation then occurs through
+        action.set-rating and talent.allocation.complete on the sheet.
+        Supplying actionRatings retains the completed-PC validation below.
         Validation is settings-derived only (never constants): sum of
         actionRatings must equal the game's StartingActionDots exactly, every
         rating must be <= the game's StartingActionDotMax, and playbook must
@@ -748,7 +752,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [gameStem, playbook, actionRatings]
+              required: [gameStem, playbook]
               additionalProperties: false
               properties:
                 gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
@@ -783,7 +787,7 @@ paths:
         - { $ref: "#/components/parameters/download" }
       responses:
         "200":
-          description: "Canonical character DTO, byte-identical to current.json; no derived budget/suggestion fields. Reads never write. Migration fills absent mode/flow/downtime defaults without rejecting legacy documents solely for those omissions."
+          description: "Canonical character DTO, byte-identical to current.json; no derived budget/suggestion fields. Reads never write. Migration fills absent mode/flow/downtime defaults without rejecting legacy documents solely for those omissions. The same legacy read view supplies an absent talent.allocationPending as false and each attribute's derived rating, without writing storage, changing the revision, or altering detail/export identity."
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Character" }
@@ -1393,6 +1397,7 @@ paths:
       operationId: actionSetRating
       x-snapshot: true
       description: "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED. Absolute-setter family: requested = the requested target rating; effective = the stored target rating; a clamp (requested ≠ effective) is reported in the result."
+      x-allocation-rule: "While talent.allocationPending, defaulted actions are fixed, other ratings must not exceed StartingActionDotMax, and total dots must not exceed StartingActionDots; violations return VALIDATION."
       parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
       requestBody:
         required: true
@@ -1407,6 +1412,23 @@ paths:
                 rating: { type: integer, minimum: 0 }
       responses:
         "200": { $ref: "#/components/responses/OpResult" }
+        "404": { $ref: "#/components/responses/OpResult" }
+        "409": { $ref: "#/components/responses/OpResult" }
+        "500": { $ref: "#/components/responses/OpResult" }
+  /characters/{id}/ops/talent.allocation.complete:
+    post:
+      operationId: talentAllocationComplete
+      x-snapshot: true
+      description: "Requires talent.allocationPending and exactly the game's StartingActionDots total, otherwise VALIDATION. Atomically clears allocationPending without awarding XP or spending resources."
+      parameters: [{ $ref: "#/components/parameters/id" }, { $ref: "#/components/parameters/ifMatch" }, { $ref: "#/components/parameters/idempotencyKey" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: false }
+      responses:
+        "200": { $ref: "#/components/responses/OpResult" }
+        "400": { $ref: "#/components/responses/OpResult" }
         "404": { $ref: "#/components/responses/OpResult" }
         "409": { $ref: "#/components/responses/OpResult" }
         "500": { $ref: "#/components/responses/OpResult" }

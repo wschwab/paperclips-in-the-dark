@@ -139,11 +139,13 @@ const Action = Schema.Struct({
 
 const Attribute = Schema.Struct({
   name: Schema.String,
+  rating: Schema.Number.pipe(Schema.int(), Schema.nonNegative()),
   experience: Experience,
   actions: Schema.Array(Action),
 });
 
 const Talent = Schema.Struct({
+  allocationPending: Schema.Boolean,
   attributes: Schema.Array(Attribute),
 });
 

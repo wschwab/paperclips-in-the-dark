@@ -195,10 +195,45 @@ package body Pitd_Stored is
       --  context for parse/normalization failures.
       begin
          E := Read (Bytes);
+         if Kind = "character" and then E.Kind = JSON_Object_Type
+           and then Has_Field (E, "talent")
+           and then Get (E, "talent").Kind = JSON_Object_Type
+         then
+            --  Legacy read view (same convention as the game-mode defaults
+            --  below): a stored character written before the Talent
+            --  allocation fields existed is served with allocationPending
+            --  false and each attribute's derived rating, purely in memory —
+            --  no storage write, no revision change, and detail/export share
+            --  the same view. Canonical writes always persist both fields.
+            declare
+               Talent : constant JSON_Value := Get (E, "talent");
+               Legacy : Boolean := not Has_Field (Talent, "allocationPending");
+            begin
+               if Has_Field (Talent, "attributes")
+                 and then Get (Talent, "attributes").Kind = JSON_Array_Type
+               then
+                  declare
+                     Attrs : constant JSON_Array := Get (Talent, "attributes");
+                  begin
+                     for I in 1 .. Length (Attrs) loop
+                        if Get (Attrs, I).Kind = JSON_Object_Type
+                          and then not Has_Field (Get (Attrs, I), "rating")
+                        then
+                           Legacy := True;
+                        end if;
+                     end loop;
+                  end;
+               end if;
+               if Legacy then
+                  Ensure_Talent_Defaults (E);
+                  Game_Mode_Defaults_Added := True;
+               end if;
+            end;
+         end if;
          Ctx := Pitd_Normalize.Canonicalize (Kind, Id, E);
          if Kind = "character" and then E.Kind = JSON_Object_Type then
             Game_Mode_Defaults_Added :=
-              not Has_Field (E, "mode") or else not Has_Field (E, "modeFlow")
+              Game_Mode_Defaults_Added or else not Has_Field (E, "mode") or else not Has_Field (E, "modeFlow")
               or else not Has_Field (E, "downtime") or else not Has_Field (E, "flowProgress");
             if Game_Mode_Defaults_Added then
                Ensure_Game_Mode_Defaults (E);

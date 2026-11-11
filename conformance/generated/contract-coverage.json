@@ -4261,6 +4261,51 @@
       "collection": false
     },
     {
+      "operationId": "talentAllocationComplete",
+      "method": "POST",
+      "path": "/characters/{id}/ops/talent.allocation.complete",
+      "status": "200",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "talentAllocationComplete",
+      "method": "POST",
+      "path": "/characters/{id}/ops/talent.allocation.complete",
+      "status": "400",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "talentAllocationComplete",
+      "method": "POST",
+      "path": "/characters/{id}/ops/talent.allocation.complete",
+      "status": "404",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "talentAllocationComplete",
+      "method": "POST",
+      "path": "/characters/{id}/ops/talent.allocation.complete",
+      "status": "409",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
+      "operationId": "talentAllocationComplete",
+      "method": "POST",
+      "path": "/characters/{id}/ops/talent.allocation.complete",
+      "status": "500",
+      "kind": "schema",
+      "schemaName": "operationResult",
+      "collection": false
+    },
+    {
       "operationId": "tierAdd",
       "method": "POST",
       "path": "/crews/{id}/ops/tier.add",

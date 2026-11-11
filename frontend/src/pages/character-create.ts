@@ -8,20 +8,11 @@ import {
   dossierUpdate,
   type PickerOption,
 } from "../api/client.js";
-import { actionDescription, namedOptionLabel } from "./character-domain.js";
-import {
-  actionGroupsFromSettings,
-  pcAllocationReady,
-  pcBudgetFromSettings,
-  playbookDefaultsFromSettings,
-  unspentDots,
-  type ChargenGroup,
-  type PcBudget,
-} from "../lib/chargen.js";
+import { namedOptionLabel } from "./character-domain.js";
+import { pcBudgetFromSettings } from "../lib/chargen.js";
 import { el, setChildren } from "../lib/dom.js";
 import type { Character } from "../schema/character.js";
 import type { Crew } from "../schema/crew.js";
-import { actionDots } from "../components/action-dots.js";
 
 /** Everything the create hub needs up front; main.ts loads these in parallel. */
 export interface CharacterCreateDeps {
@@ -153,16 +144,10 @@ function renderLegacyForm(gameStem: string, playbooks: PickerOption[]): HTMLElem
 // PC chargen (CONTRACT-01 stage 3)
 // ---------------------------------------------------------------------------
 
-interface PcChargenRefs {
-  form: HTMLFormElement;
-  counter: HTMLElement;
-  unspentEl: HTMLElement;
-  submitBtn: HTMLButtonElement;
-}
 
 /**
  * DEC-01 §6 ruling: the required-field state visible before submission.
- * Chargen collects only playbook + action dots, so EVERY one of these is
+ * Creation collects only a playbook, so EVERY one of these is
  * still outstanding on the fresh sheet at submit time. Keys mirror
  * lib/completion-cues.ts so this pre-create list and the sheet-side
  * prompts stay aligned.
@@ -196,154 +181,28 @@ function renderRequiredAfterCreate(): HTMLElement {
     ),
   );
 }
-/**
- * Build the validated PC flow: playbook select first, then per-action dot
- * pickers grouped by attribute, both budget numbers visible, and a Create
- * button gated on "exactly 0 unspent AND every rating ≤ cap". The chosen
- * playbook's DefaultActionPoints prefill from settings as LOCKED dots
- * (DEC-01 ruling); switching playbooks re-derives them from scratch.
- */
+/** Create the durable draft first; all Talent allocation happens on its sheet. */
 function buildPcChargenForm(
   playbooks: PickerOption[],
-  budget: PcBudget,
-  groups: ChargenGroup[],
-  settings: Record<string, unknown>,
-  onSubmit: (playbook: string, ratings: Record<string, number>) => void,
-): PcChargenRefs {
-  let selectedPlaybook = "";
-  const ratings: Record<string, number> = {};
-  const allActions = groups.flatMap((g) => g.actions);
-
-  const playbookSelect = el(
-    "select",
-    { id: "pc-playbook", className: "form-input", required: true },
+  onSubmit: (playbook: string) => void,
+): HTMLFormElement {
+  const select = el("select", { id: "pc-playbook", className: "form-input", required: true },
     el("option", { value: "" }, "Select a playbook..."),
     ...playbooks.map((pb) => el("option", { value: pb.name }, namedOptionLabel(pb.name, pb.description))),
   );
-
-  const unspentEl = el("span", { "data-chargen-unspent": "" }, String(budget.startingActionDots));
-  const counter = el(
-    "p",
-    { className: "chargen-counter", role: "status" },
-    "Unspent Talent dots: ",
-    unspentEl,
-    " of ",
-    el("span", { "data-chargen-budget": "" }, String(budget.startingActionDots)),
-    ` (per-action max ${budget.startingActionDotMax})`,
-  );
-
-  // Per-action hosts so a playbook switch can rebuild the pickers from
-  // scratch: the dots keep internal state, and stale fills would silently
-  // invert the next click into a "clear" (review-caught defect).
-  const dotHosts: Record<string, HTMLElement> = {};
-  for (const group of groups) {
-    for (const action of group.actions) {
-      dotHosts[action] = el("div", { className: "chargen-dots" });
-    }
-  }
-  const mountActionDots = (action: string, locked: boolean): HTMLElement => {
-    const host = dotHosts[action];
-    host.replaceChildren(
-      actionDots({
-        name: action,
-        max: budget.startingActionDotMax,
-        value: ratings[action] ?? 0,
-        locked,
-        title: locked ? "Fixed by the playbook's DefaultActionPoints" : undefined,
-        onChange: (next) => {
-          ratings[action] = next;
-          refresh();
-        },
-      }),
-    );
-    return host;
-  };
-  for (const action of allActions) mountActionDots(action, false);
-
-  const groupEls = groups.map((group) =>
-    el(
-      "div",
-      { className: "chargen-group", "data-attribute": group.attribute },
-      el("h3", { className: "chargen-attribute" }, group.attribute),
-      ...group.actions.map((action) => {
-        const description = actionDescription(settings, group.attribute, action);
-        return el("div", { className: "chargen-action" },
-          dotHosts[action],
-          description ? el("p", { className: "chargen-hint", "data-action-help": action }, description) : null,
-        );
-      }),
-    ),
-  );
-
-  const submitBtn = el(
-    "button",
-    { type: "submit", className: "btn-primary", disabled: true },
-    "Create Scoundrel",
-  );
-
-  const form = el(
-    "form",
-    { className: "pc-chargen-form" },
-    el(
-      "div",
-      { className: "form-group" },
-      el("label", { htmlFor: "pc-playbook" }, "Playbook *"),
-      playbookSelect,
-    ),
-    el(
-      "div",
-      { className: "chargen-groups" },
-      el("p", { className: "chargen-hint" }, "Pick a playbook — its default dots prefill and lock; distribute the rest."),
-      ...groupEls,
-    ),
-    counter,
+  const submit = el("button", { type: "submit", className: "btn-primary", disabled: true }, "Create Scoundrel");
+  select.addEventListener("change", () => { submit.disabled = !select.value; });
+  const form = el("form", { className: "pc-chargen-form" },
+    el("div", { className: "form-group" }, el("label", { htmlFor: "pc-playbook" }, "Playbook *"), select),
+    el("p", { className: "notice" }, "Choose a playbook to open your sheet. Its default Talent dots are included; allocate the rest there."),
     renderRequiredAfterCreate(),
-    el(
-      "div",
-      { className: "form-actions" },
-      submitBtn,
-      el("a", { href: "/roster", className: "btn-secondary" }, "Cancel"),
-    ),
+    el("div", { className: "form-actions" }, submit, el("a", { href: "/roster", className: "btn-secondary" }, "Cancel")),
   );
-
-  // Refresh the derived UI: counter numbers and the disabled-button rule
-  // (exactly 0 unspent AND every rating ≤ StartingActionDotMax AND a
-  // playbook chosen). Pickers clamp to the cap, so over-allocation cannot
-  // be entered — under-allocation shows as unspent > 0 either way.
-  function refresh(): void {
-    unspentEl.textContent = String(unspentDots(budget, ratings));
-    submitBtn.disabled = !pcAllocationReady(budget, selectedPlaybook, ratings);
-  }
-
-  playbookSelect.addEventListener("change", () => {
-    selectedPlaybook = playbookSelect.value;
-    // A fresh playbook means a fresh allocation — never carry dots across.
-    // Its DefaultActionPoints come from the settings payload (DEC-01
-    // ruling): prefilled, LOCKED, and counted against the same
-    // StartingActionDots budget, so unspent shows budget − defaults
-    // immediately.
-    for (const action of allActions) delete ratings[action];
-    const defaults = playbookDefaultsFromSettings(settings, selectedPlaybook);
-    for (const [action, points] of Object.entries(defaults)) {
-      ratings[action] = points;
-    }
-    for (const action of allActions) {
-      mountActionDots(action, action in defaults);
-    }
-    refresh();
-  });
-
   form.addEventListener("submit", (ev) => {
     ev.preventDefault();
-    if (!pcAllocationReady(budget, selectedPlaybook, ratings)) return;
-    // V4: send EVERY published action; untouched actions are explicit 0.
-    const finalRatings: Record<string, number> = {};
-    for (const action of allActions) finalRatings[action] = ratings[action] ?? 0;
-    onSubmit(selectedPlaybook, finalRatings);
+    if (select.value) onSubmit(select.value);
   });
-
-  refresh();
-  return { form, counter, unspentEl, submitBtn };
+  return form;
 }
 
 // ---------------------------------------------------------------------------
@@ -466,8 +325,7 @@ export function mountCharacterCreatePage(
   let phaseTwo: PhaseTwo | null = null;
   root.setAttribute("aria-live", "polite");
   const budget = pcBudgetFromSettings(settings);
-  const groups = actionGroupsFromSettings(settings);
-  const pcFlowReady = budget !== null && groups !== null;
+  const pcFlowReady = budget !== null;
 
   const page = el(
     "section",
@@ -476,13 +334,13 @@ export function mountCharacterCreatePage(
   );
 
   // -- Validated PC chargen --------------------------------------------------
-  if (pcFlowReady && budget && groups) {
-    const refs = buildPcChargenForm(playbooks, budget, groups, settings, (playbook, ratings) => {
+  if (pcFlowReady) {
+    const form = buildPcChargenForm(playbooks, (playbook) => {
       if (cancelled) return;
       phaseTwo = null;
       root.setAttribute("aria-busy", "true");
       setChildren(root, renderLoading());
-      const program = createPcCharacter(gameStem, playbook, ratings);
+      const program = createPcCharacter(gameStem, playbook);
       void Effect.runPromise(
         Effect.match(program, {
           onSuccess: finish,
@@ -490,7 +348,7 @@ export function mountCharacterCreatePage(
         }),
       );
     });
-    page.append(refs.form);
+    page.append(form);
   } else {
     page.append(
       el(

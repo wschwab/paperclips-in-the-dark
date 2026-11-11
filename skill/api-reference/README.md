@@ -4,7 +4,7 @@
 
 Base URL: `http://localhost:9657/api`
 
-Operations: 123
+Operations: 122
 
 ## Conventions
 
@@ -153,6 +153,7 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/attribute-xp.clear` | [`attributeXpClear`](#attributexpclear) | true |
 | POST | `/characters/{id}/ops/attribute.levelup` | [`attributeLevelup`](#attributelevelup) | true |
 | POST | `/characters/{id}/ops/action.set-rating` | [`actionSetRating`](#actionsetrating) | true |
+| POST | `/characters/{id}/ops/talent.allocation.complete` | [`talentAllocationComplete`](#talentallocationcomplete) | true |
 | POST | `/characters/{id}/ops/ability.take` | [`abilityTake`](#abilitytake) | true |
 | POST | `/characters/{id}/ops/ability.remove` | [`abilityRemove`](#abilityremove) | true |
 | POST | `/characters/{id}/ops/gear.add` | [`gearAdd`](#gearadd) | true |
@@ -185,7 +186,6 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/characters/{id}/ops/downtime.reset` | [`characterDowntimeReset`](#characterdowntimereset) | true |
 | POST | `/characters/{id}/ops/note.add` | [`noteAdd`](#noteadd) | true |
 | POST | `/characters/{id}/ops/note.remove` | [`noteRemove`](#noteremove) | true |
-| POST | `/characters/{id}/ops/note.update` | [`noteUpdate`](#noteupdate) | true |
 | POST | `/characters/{id}/end-downtime` | [`endDowntime`](#enddowntime) | true |
 | GET | `/crews` | [`listCrews`](#listcrews) | — |
 | POST | `/crews` | [`createCrew`](#createcrew) | false |
@@ -206,7 +206,6 @@ Codes that demand explicit human attention or explanation (lifecycle-matrix §2.
 | POST | `/crews/{id}/ops/xp.add` | [`crewXpAdd`](#crewxpadd) | true |
 | POST | `/crews/{id}/ops/note.add` | [`crewNoteAdd`](#crewnoteadd) | true |
 | POST | `/crews/{id}/ops/note.remove` | [`crewNoteRemove`](#crewnoteremove) | true |
-| POST | `/crews/{id}/ops/note.update` | [`crewNoteUpdate`](#crewnoteupdate) | true |
 | POST | `/crews/{id}/ops/turf.add` | [`turfAdd`](#turfadd) | true |
 | POST | `/crews/{id}/ops/xp.clear` | [`crewXpClear`](#crewxpclear) | true |
 | POST | `/crews/{id}/ops/ability.take` | [`crewAbilityTake`](#crewabilitytake) | true |
@@ -563,7 +562,7 @@ Responses:
 
 `POST /characters/pc`
 
-Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes, except that actions carrying the chosen playbook's DefaultActionPoints may be omitted and take the default. Per-playbook DefaultActionPoints are enforced from settings (DEC-01 ruling; GameSettingExtensions reference): the final allocation = defaults ∪ submissions — a submitted value for a defaulted action must MATCH the default, a conflicting value => VALIDATION naming the action and the default; budget (StartingActionDots) and cap (StartingActionDotMax) checks run against the overlaid final map. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).
+Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Omitting actionRatings creates a draft with only playbook default dots and talent.allocationPending true. Allocation then occurs through action.set-rating and talent.allocation.complete on the sheet. Supplying actionRatings retains the completed-PC validation below. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes, except that actions carrying the chosen playbook's DefaultActionPoints may be omitted and take the default. Per-playbook DefaultActionPoints are enforced from settings (DEC-01 ruling; GameSettingExtensions reference): the final allocation = defaults ∪ submissions — a submitted value for a defaulted action must MATCH the default, a conflicting value => VALIDATION naming the action and the default; budget (StartingActionDots) and cap (StartingActionDotMax) checks run against the overlaid final map. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).
 
 Parameters: `idempotencyKey`
 
@@ -574,7 +573,7 @@ Request body schema:
 ```yaml
 schema:
   type: object
-  required: [gameStem, playbook, actionRatings]
+  required: [gameStem, playbook]
   additionalProperties: false
   properties:
     gameStem: { type: string, pattern: "^[A-Za-z0-9À-ɏ-]+$" }
@@ -618,7 +617,7 @@ None
 
 Responses:
 
-- `200`: Canonical character DTO, byte-identical to current.json; no derived budget/suggestion fields. Reads never write. Migration fills absent mode/flow/downtime defaults without rejecting legacy documents solely for those omissions.
+- `200`: Canonical character DTO, byte-identical to current.json; no derived budget/suggestion fields. Reads never write. Migration fills absent mode/flow/downtime defaults without rejecting legacy documents solely for those omissions. The same legacy read view supplies an absent talent.allocationPending as false and each attribute's derived rating, without writing storage, changing the revision, or altering detail/export identity.
 - `404`: OperationResult
 - `422`: OperationResult
 - `500`: OperationResult
@@ -1272,6 +1271,30 @@ schema:
 Responses:
 
 - `200`: OperationResult
+- `404`: OperationResult
+- `409`: OperationResult
+- `500`: OperationResult
+
+## talentAllocationComplete
+
+`POST /characters/{id}/ops/talent.allocation.complete`
+
+Requires talent.allocationPending and exactly the game's StartingActionDots total, otherwise VALIDATION. Atomically clears allocationPending without awarding XP or spending resources.
+
+Parameters: `id`, `ifMatch`, `idempotencyKey`
+
+Snapshot: `true`
+
+Request body schema:
+
+```yaml
+schema: { type: object, additionalProperties: false }
+```
+
+Responses:
+
+- `200`: OperationResult
+- `400`: OperationResult
 - `404`: OperationResult
 - `409`: OperationResult
 - `500`: OperationResult
@@ -2104,35 +2127,6 @@ Responses:
 - `409`: OperationResult
 - `500`: OperationResult
 
-## noteUpdate
-
-`POST /characters/{id}/ops/note.update`
-
-NOTES-EDIT-01 additive op (2026-08-12): replace the text of the note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove; allowed on retired characters (note edits remain allowed).
-
-Parameters: `id`, `ifMatch`, `idempotencyKey`
-
-Snapshot: `true`
-
-Request body schema:
-
-```yaml
-schema:
-  type: object
-  required: [index, text]
-  additionalProperties: false
-  properties:
-    index: { type: integer, minimum: 0 }
-    text: { type: string, minLength: 1 }
-```
-
-Responses:
-
-- `200`: OperationResult
-- `404`: OperationResult
-- `409`: OperationResult
-- `500`: OperationResult
-
 ## endDowntime
 
 `POST /characters/{id}/end-downtime`
@@ -2593,35 +2587,6 @@ schema:
   additionalProperties: false
   properties:
     index: { type: integer, minimum: 0 }
-```
-
-Responses:
-
-- `200`: OperationResult
-- `404`: OperationResult
-- `409`: OperationResult
-- `500`: OperationResult
-
-## crewNoteUpdate
-
-`POST /crews/{id}/ops/note.update`
-
-NOTES-EDIT-01 additive op (2026-08-12): replace the text of the crew note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove.
-
-Parameters: `id`, `ifMatch`, `idempotencyKey`
-
-Snapshot: `true`
-
-Request body schema:
-
-```yaml
-schema:
-  type: object
-  required: [index, text]
-  additionalProperties: false
-  properties:
-    index: { type: integer, minimum: 0 }
-    text: { type: string, minLength: 1 }
 ```
 
 Responses:

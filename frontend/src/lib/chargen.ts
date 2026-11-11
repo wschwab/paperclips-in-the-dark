@@ -1,10 +1,7 @@
 /**
- * CONTRACT-01 stage 3 — pure PC-chargen math derived from game settings.
- *
- * Every number comes from the raw game-settings payload (`getGame`);
- * nothing here embeds a game maximum (spec §5.5). Kept framework-free so
- * the budget parsing, unspent-counter math, and submit gating are directly
- * unit-testable.
+ * Pure, settings-derived starting Talent allocation math.
+ * Shared by the on-sheet draft controls and their unit tests; no game
+ * maximum is embedded here.
  */
 
 export interface PcBudget {
@@ -64,37 +61,6 @@ export function playbookDefaultsFromSettings(
   return {};
 }
 
-/** One attribute group for the chargen pickers: attribute name + ordered actions. */
-export interface ChargenGroup {
-  attribute: string;
-  actions: string[];
-}
-
-/**
- * Attribute groups from raw game-settings `Attributes` (Insight/Prowess/
- * Resolve in Blades). null when the payload does not publish well-formed
- * Attributes — callers keep only the unvalidated path rather than guessing.
- */
-export function actionGroupsFromSettings(
-  settings: Record<string, unknown> | null | undefined,
-): ChargenGroup[] | null {
-  if (!settings || !Array.isArray(settings["Attributes"])) return null;
-  const groups: ChargenGroup[] = [];
-  for (const attr of settings["Attributes"] as unknown[]) {
-    if (typeof attr !== "object" || attr === null) return null;
-    if (!("Name" in attr) || typeof attr.Name !== "string") return null;
-    if (!("Actions" in attr) || !Array.isArray(attr.Actions)) return null;
-    const actionNames: string[] = [];
-    for (const action of attr.Actions) {
-      if (typeof action !== "object" || action === null) return null;
-      if (!("Name" in action) || typeof action.Name !== "string") return null;
-      actionNames.push(action.Name);
-    }
-    if (actionNames.length === 0) return null;
-    groups.push({ attribute: attr.Name, actions: actionNames });
-  }
-  return groups.length > 0 ? groups : null;
-}
 
 /** Sum of selected ratings (unselected actions count as 0). */
 export function sumRatings(ratings: Record<string, number>): number {
@@ -111,8 +77,8 @@ export function unspentDots(budget: PcBudget, ratings: Record<string, number>): 
 }
 
 /**
- * Create-button rule: a playbook is chosen AND unspent is EXACTLY 0 AND
- * every rating sits within the settings-derived per-action cap.
+ * Finish-allocation rule: a playbook is chosen, unspent is exactly zero,
+ * and every rating is within the settings-derived creation cap.
  */
 export function pcAllocationReady(
   budget: PcBudget,

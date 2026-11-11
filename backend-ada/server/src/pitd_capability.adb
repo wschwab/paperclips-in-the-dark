@@ -222,7 +222,9 @@ package body Pitd_Capability is
          Base_Cap    : constant Integer := Int_Field (Get (G, "ActionCap"), "Base", 0);
          Mastery_Cap : constant Integer := Int_Field (Get (G, "ActionCap"), "Mastery", 0);
          Cap         : constant Integer :=
-           (if Total > 0 and then Marked >= Total then Mastery_Cap else Base_Cap);
+           (if Bool_Field (Get (E, "talent"), "allocationPending")
+            then Int_Field (G, "StartingActionDotMax")
+            elsif Total > 0 and then Marked >= Total then Mastery_Cap else Base_Cap);
          Attrs       : constant JSON_Array := Get (G, "Attributes");
       begin
          for I in 1 .. Length (Attrs) loop

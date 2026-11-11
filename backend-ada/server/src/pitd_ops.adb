@@ -36,6 +36,7 @@ package body Pitd_Ops is
         or else Op = "harm.add" or else Op = "harm.remove" or else Op = "harm.heal"
         or else Op = "playbook-xp.add" or else Op = "playbook-xp.clear"
         or else Op = "action.set-rating"
+        or else Op = "talent.allocation.complete"
         or else Op = "attribute-xp.add" or else Op = "attribute-xp.clear"
         or else Op = "attribute.levelup"
         or else Op = "ability.take" or else Op = "ability.remove"
@@ -172,6 +173,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
       Set_Field (Monitor, "armor", Armor);
       Set_Field (C, "monitor", Monitor);
       Set_Field (Talent, "attributes", Empty_Array);
+      Set_Field (Talent, "allocationPending", False);
       Set_Field (C, "talent", Talent);
       Set_Field (Book, "name", Playbook);
       Set_Field (Book, "experience", Tracker ("points", 0, Settings_Int (S, "XpTrackMaxima.Playbook", 0)));
@@ -212,7 +214,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
                         end loop;
                      end;
                   end if;
-                  Set_Field (A, "actions", Acts); Append (Out_A, A);
+                  Set_Field (A, "rating", Integer'(0)); Set_Field (A, "actions", Acts); Append (Out_A, A);
                end;
             end loop;
             Set_Field (Get (C, "talent"), "attributes", Out_A);
@@ -448,7 +450,7 @@ or else Op = "upgrade.mark" or else Op = "upgrade.unmark"
          --  resolves to loaded game settings.
          return Check_Fields (B, (Spec ("gameStem", JSON_String_Type),
                                   Spec ("playbook", JSON_String_Type, MnL => 1),
-                                  Spec ("actionRatings", JSON_Object_Type)), Bad);
+                                  Spec ("actionRatings", JSON_Object_Type, Rq => False)), Bad);
       elsif Op = "crew.create" then
          return Check_Fields (B, (Spec ("gameStem", JSON_String_Type),
                                   Spec ("crewType", JSON_String_Type)), Bad);
@@ -705,7 +707,7 @@ elsif Op = "clock.create" then
             return False;
          end if;
          return True;
-      elsif Op = "downtime.reset" then
+      elsif Op = "downtime.reset" or else Op = "talent.allocation.complete" then
          return Check_Fields (B, Spec_List'(1 .. 0 => <>), Bad);
       elsif Op = "end-score" then
          --  W15: the body is optional — a missing or empty body is valid;
@@ -764,6 +766,7 @@ elsif Op = "clock.progress" then
          return True;
       elsif Op = "ability.take" or else Op = "ability.remove"
         or else Op = "action.set-rating" or else Op = "attribute.levelup"
+        or else Op = "talent.allocation.complete"
         or else Op = "attribute-xp.add" or else Op = "attribute-xp.clear"
         or else Op = "playbook-xp.add" or else Op = "playbook-xp.clear"
         or else Op = "gear.clear-commitments" or else Op = "gear.lock"
@@ -1239,6 +1242,33 @@ elsif Op = "harm.add" then
          end if;
          Set_Field(Target,"points",Integer(New_Value)); Effective:=(if Requested >= 0 then Integer(Applied) else -Integer(Applied)); return Success_Result(Op,E,Requested,Effective);
       elsif Op = "playbook-xp.clear" then declare X : constant JSON_Value := Get(Get(E,"playbook"),"experience"); begin Set_Field(X,"points",Integer'(0)); end;
+      elsif Op = "talent.allocation.complete" then
+         if Kind /= "character" then
+            return Validation_Error (Op, "character-only operation",
+                                     Root_Issues ("character-only operation"), E);
+         end if;
+         declare
+            Talent : constant JSON_Value := Get (E, "talent");
+            Attrs : constant JSON_Array := Get (Talent, "attributes");
+            G : constant JSON_Value := Game (Str_Field (E, "gameStem"));
+            Total : Long_Long_Integer := 0;
+         begin
+            for I in 1 .. Length (Attrs) loop
+               declare Actions : constant JSON_Array := Get (Get (Attrs, I), "actions"); begin
+                  for J in 1 .. Length (Actions) loop
+                     Total := Total + Long_Long_Integer (Int_Field (Get (Actions, J), "rating"));
+                  end loop;
+               end;
+            end loop;
+            if not Pending_Allocation_Valid (E)
+              or else not Bool_Field (Talent, "allocationPending")
+              or else Total /= Long_Long_Integer (Int_Field (G, "StartingActionDots"))
+            then
+               return Validation_Error (Op, "pending allocation requires exactly StartingActionDots",
+                                        Root_Issues ("pending allocation requires exactly StartingActionDots"), E);
+            end if;
+            Set_Field (Talent, "allocationPending", False);
+         end;
       elsif Op = "action.set-rating" then
          declare
             Attrs : constant JSON_Array := Get(Get(E,"talent"),"attributes");
@@ -1249,6 +1279,49 @@ elsif Op = "harm.add" then
             if Rating < 0 then
                return Validation_Error (Op, "invalid action rating",
                                         Root_Issues ("invalid action rating"), E);
+            end if;
+            if Bool_Field (Get (E, "talent"), "allocationPending") then
+               declare
+                  G : constant JSON_Value := Game (Str_Field (E, "gameStem"));
+                  PBs : constant JSON_Array := Get (G, "Playbooks");
+                  Total : Long_Long_Integer := Long_Long_Integer (Rating);
+                  Locked : Boolean := False;
+               begin
+                  for I in 1 .. Length (PBs) loop
+                     declare PB : constant JSON_Value := Get (PBs, I); begin
+                        if Str_Field (PB, "Name") = Str_Field (Get (E, "playbook"), "name")
+                          and then Has_Field (PB, "DefaultActionPoints")
+                        then
+                           declare Defaults : constant JSON_Array := Get (PB, "DefaultActionPoints"); begin
+                              for J in 1 .. Length (Defaults) loop
+                                 declare D : constant JSON_Value := Get (Defaults, J); begin
+                                    if Str_Field (D, "Action") = Name
+                                      and then Int_Field (D, "Points") > 0
+                                    then
+                                       Locked := True;
+                                    end if;
+                                 end;
+                              end loop;
+                           end;
+                        end if;
+                     end;
+                  end loop;
+                  for I in 1 .. Length (Attrs) loop
+                     declare Actions : constant JSON_Array := Get (Get (Attrs, I), "actions"); begin
+                        for J in 1 .. Length (Actions) loop
+                           if Str_Field (Get (Actions, J), "name") /= Name then
+                              Total := Total + Long_Long_Integer (Int_Field (Get (Actions, J), "rating"));
+                           end if;
+                        end loop;
+                     end;
+                  end loop;
+                  if Locked or else Rating > Int_Field (G, "StartingActionDotMax")
+                    or else Total > Long_Long_Integer (Int_Field (G, "StartingActionDots"))
+                  then
+                     return Validation_Error (Op, "starting allocation violates locked defaults, StartingActionDotMax or StartingActionDots",
+                                              Root_Issues ("invalid starting allocation"), E);
+                  end if;
+               end;
             end if;
             for I in 1..Length(Attrs) loop
                declare Acts:constant JSON_Array:=Get(Get(Attrs,I),"actions");begin
@@ -2337,6 +2410,11 @@ elsif Op = "harm.add" then
             end;
          end if;
       else return Validation_Error (Op,"unknown operation",Root_Issues ("unknown operation"),E);
+      end if;
+      if Kind = "character" then Refresh_Talent_Ratings (E); end if;
+      if Kind = "character" and then not Pending_Allocation_Valid (E) then
+         return Validation_Error (Op, "invalid pending Talent allocation",
+                                  Root_Issues ("invalid pending Talent allocation"), E);
       end if;
       --  BUG-006: armor availability is derived; refresh the stored flags
       --  after any gear or ability mutation.

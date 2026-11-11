@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "skill/generate-capability-manifest.mjs",
   "generatedFrom": "contract/openapi.yaml",
-  "operationCount": 123,
+  "operationCount": 122,
   "dispositions": {
     "health": {
       "disposition": "agent",
@@ -116,7 +116,7 @@
       "method": "POST",
       "path": "/characters/pc",
       "agentReference": "api-reference/README.md#createpccharacter",
-      "summary": "Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes, except that actions carrying the chosen playbook's DefaultActionPoints may be omitted and take the default. Per-playbook DefaultActionPoints are enforced from settings (DEC-01 ruling; GameSettingExtensions reference): the final allocation = defaults ∪ submissions — a submitted value for a defaulted action must MATCH the default, a conflicting value => VALIDATION naming the action and the default; budget (StartingActionDots) and cap (StartingActionDotMax) checks run against the overlaid final map. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).",
+      "summary": "Dedicated PC creation path WITH server-side Talent validation (CONTRACT-01 / DEC-01 human ruling 2026-08-24). The unvalidated sibling createCharacter stays unchanged for experienced characters and NPCs; stored characters are never retroactively validated. Omitting actionRatings creates a draft with only playbook default dots and talent.allocationPending true. Allocation then occurs through action.set-rating and talent.allocation.complete on the sheet. Supplying actionRatings retains the completed-PC validation below. Validation is settings-derived only (never constants): sum of actionRatings must equal the game's StartingActionDots exactly, every rating must be <= the game's StartingActionDotMax, and playbook must exist in the game's Playbooks. actionRatings property names must exactly match every action name published by the game's Attributes, except that actions carrying the chosen playbook's DefaultActionPoints may be omitted and take the default. Per-playbook DefaultActionPoints are enforced from settings (DEC-01 ruling; GameSettingExtensions reference): the final allocation = defaults ∪ submissions — a submitted value for a defaulted action must MATCH the default, a conflicting value => VALIDATION naming the action and the default; budget (StartingActionDots) and cap (StartingActionDotMax) checks run against the overlaid final map. Failure => VALIDATION (400) naming the violated rule and the numbers. A game whose settings omit StartingActionDots or StartingActionDotMax has not published a PC allocation budget: NOT_FOUND (404) naming the absent keys. Unknown game stem keeps the shared create semantics: GAME_NOT_FOUND as a 200-status domain failure (SC-A3).",
       "flagged": true
     },
     "getCharacter": {
@@ -339,6 +339,13 @@
       "path": "/characters/{id}/ops/action.set-rating",
       "agentReference": "api-reference/README.md#actionsetrating",
       "summary": "Direct set, enforcing the same effective cap as attribute.levelup (shared-cap rule): the server-computed minimum of the raw max (game settings ActionPointMaximum) and the Mastery-derived cap (game settings ActionCap Base/Mastery, crew-state-derived). The exact value is published per action as effectiveActionCap by GET /api/characters/{id}/capabilities; exceeding it → RATING_MAXED. Absolute-setter family: requested = the requested target rating; effective = the stored target rating; a clamp (requested ≠ effective) is reported in the result."
+    },
+    "talentAllocationComplete": {
+      "disposition": "agent",
+      "method": "POST",
+      "path": "/characters/{id}/ops/talent.allocation.complete",
+      "agentReference": "api-reference/README.md#talentallocationcomplete",
+      "summary": "Requires talent.allocationPending and exactly the game's StartingActionDots total, otherwise VALIDATION. Atomically clears allocationPending without awarding XP or spending resources."
     },
     "abilityTake": {
       "disposition": "agent",
@@ -612,17 +619,6 @@
       ],
       "humanControl": "Reachable note-removal control (allowed after retirement)."
     },
-    "noteUpdate": {
-      "disposition": "human",
-      "method": "POST",
-      "path": "/characters/{id}/ops/note.update",
-      "agentReference": "api-reference/README.md#noteupdate",
-      "summary": "NOTES-EDIT-01 additive op (2026-08-12): replace the text of the note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove; allowed on retired characters (note edits remain allowed).",
-      "categories": [
-        "sheet-management"
-      ],
-      "humanControl": "Reachable note-edit control (allowed after retirement)."
-    },
     "endDowntime": {
       "disposition": "agent",
       "method": "POST",
@@ -791,17 +787,6 @@
         "sheet-management"
       ],
       "humanControl": "Reachable crew note-removal control (allowed after retirement)."
-    },
-    "crewNoteUpdate": {
-      "disposition": "human",
-      "method": "POST",
-      "path": "/crews/{id}/ops/note.update",
-      "agentReference": "api-reference/README.md#crewnoteupdate",
-      "summary": "NOTES-EDIT-01 additive op (2026-08-12): replace the text of the crew note at 0-based index. Index out of range → NOT_FOUND; empty text → VALIDATION. Undoable like note.add/note.remove.",
-      "categories": [
-        "sheet-management"
-      ],
-      "humanControl": "Reachable crew note-edit control (allowed after retirement)."
     },
     "turfAdd": {
       "disposition": "agent",

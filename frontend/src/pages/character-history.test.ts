@@ -50,7 +50,7 @@ const characterDTO = {
       hasSpecial: false,
     },
   },
-  talent: { attributes: [] },
+  talent: { allocationPending: false, attributes: [] },
   playbook: { name: "Spider", experience: { points: 0, max: 8 }, abilities: [] },
   gear: {
     loadout: [],

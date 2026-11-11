@@ -101,6 +101,8 @@ package Pitd_Common is
    --  INVALID_ENTITY, so it needs no crew lock and must not raise.
    function Stored_Dossier_Crew_Id (Character_Id : String) return String;
    procedure Write_Entity (Kind, Id : String; Entity : JSON_Value);
+   procedure Refresh_Talent_Ratings (Entity : JSON_Value);
+   function Pending_Allocation_Valid (Entity : JSON_Value) return Boolean;
    --  Contract-pending exception: confirmed repair preserves previewed links.
    --  It still requires the caller's primary mutex and matching identity.
    procedure Write_Repair_Preview (Kind, Id : String; Entity : JSON_Value);
@@ -182,6 +184,11 @@ package Pitd_Common is
    procedure Begin_Flow_Instance (E : JSON_Value; Kind : String);
    function Default_Downtime (E : JSON_Value) return JSON_Value;
    procedure Ensure_Game_Mode_Defaults (E : JSON_Value);
+   --  Canonical Talent shape for a legacy document: absent allocationPending
+   --  becomes false and every attribute's derived rating is recomputed. Used
+   --  by the legacy read view and by undo of a pre-field snapshot; never by a
+   --  normal mutation, which always writes the canonical document it read.
+   procedure Ensure_Talent_Defaults (E : JSON_Value);
    --  Response-only projection; never changes E or grants eligibility.
    procedure Add_Game_Mode_Assistance (R, E : JSON_Value);
 

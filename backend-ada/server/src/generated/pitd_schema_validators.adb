@@ -547,12 +547,12 @@ package body Pitd_Schema_Validators is
    Allowed_Armor : constant String := Required_Armor;
 
    Required_Talent : constant String :=
-     "|attributes|";
+     "|attributes|allocationPending|";
 
    Allowed_Talent : constant String := Required_Talent;
 
    Required_Attribute : constant String :=
-     "|name|experience|actions|";
+     "|name|experience|actions|rating|";
 
    Allowed_Attribute : constant String := Required_Attribute;
 
@@ -969,6 +969,7 @@ package body Pitd_Schema_Validators is
    procedure Check_Attribute (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Attribute, Allowed_Attribute);
+      Check_Prop (V, Ptr, "rating", Check_Int_Min_0'Access);
       Check_Prop (V, Ptr, "name", Check_Str'Access);
       Check_Prop (V, Ptr, "experience", Check_Experience'Access);
       Check_Prop (V, Ptr, "actions", Check_Actions'Access);
@@ -982,6 +983,7 @@ package body Pitd_Schema_Validators is
    procedure Check_Talent (V : JSON_Value; Ptr : String) is
    begin
       Check_Object (V, Ptr, Required_Talent, Allowed_Talent);
+      Check_Prop (V, Ptr, "allocationPending", Check_Bool'Access);
       Check_Prop (V, Ptr, "attributes", Check_Attributes'Access);
    end Check_Talent;
 

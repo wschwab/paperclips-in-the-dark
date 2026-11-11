@@ -68,7 +68,7 @@ function characterDTO(overrides: Record<string, unknown> = {}) {
         hasSpecial: false,
       },
     },
-    talent: { attributes: [] },
+    talent: { allocationPending: false, attributes: [] },
     playbook: {
       name: "Spider",
       experience: { points: 4, max: 8 },
@@ -2397,40 +2397,41 @@ describe("character-detail page", () => {
     /** Character DTO with a populated talent section. */
     function talentDTO(overrides: Record<string, unknown> = {}) {
       return characterDTO({
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 2, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 1, maxRating: 4 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-            {
-              name: "Prowess",
-              experience: { points: 6, max: 6 },
-              actions: [
-                { name: "Finesse", rating: 2, maxRating: 4 },
-                { name: "Prowl", rating: 0, maxRating: 4 },
-                { name: "Skirmish", rating: 1, maxRating: 4 },
-                { name: "Wreck", rating: 0, maxRating: 4 },
-              ],
-            },
-            {
-              name: "Resolve",
-              experience: { points: 0, max: 6 },
-              actions: [
-                { name: "Attune", rating: 0, maxRating: 4 },
-                { name: "Command", rating: 2, maxRating: 4 },
-                { name: "Consort", rating: 1, maxRating: 4 },
-                { name: "Sway", rating: 0, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 2, max: 6 }, actions: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+          { name: "Prowess", rating: [
+            { name: "Finesse", rating: 2, maxRating: 4 },
+            { name: "Prowl", rating: 0, maxRating: 4 },
+            { name: "Skirmish", rating: 1, maxRating: 4 },
+            { name: "Wreck", rating: 0, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 6, max: 6 }, actions: [
+            { name: "Finesse", rating: 2, maxRating: 4 },
+            { name: "Prowl", rating: 0, maxRating: 4 },
+            { name: "Skirmish", rating: 1, maxRating: 4 },
+            { name: "Wreck", rating: 0, maxRating: 4 },
+          ] },
+          { name: "Resolve", rating: [
+            { name: "Attune", rating: 0, maxRating: 4 },
+            { name: "Command", rating: 2, maxRating: 4 },
+            { name: "Consort", rating: 1, maxRating: 4 },
+            { name: "Sway", rating: 0, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+            { name: "Attune", rating: 0, maxRating: 4 },
+            { name: "Command", rating: 2, maxRating: 4 },
+            { name: "Consort", rating: 1, maxRating: 4 },
+            { name: "Sway", rating: 0, maxRating: 4 },
+          ] },
+        ] },
         ...overrides,
       });
     }
@@ -2535,21 +2536,20 @@ describe("character-detail page", () => {
     it("XP box click posts attribute-xp.add with the computed delta", async () => {
       const updated = talentDTO({
         revision: 13,
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 4, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 1, maxRating: 4 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-            ...talentDTO().talent.attributes.slice(1),
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 4, max: 6 }, actions: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+          ...talentDTO().talent.attributes.slice(1),
+        ] },
       });
       global.fetch = vi
         .fn()
@@ -2748,20 +2748,19 @@ describe("character-detail page", () => {
     it("clicking an action dot issues actionSetRating with the dot index", async () => {
       const raised = talentDTO({
         revision: 13,
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 2, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 3, maxRating: 4 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 3, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 2, max: 6 }, actions: [
+            { name: "Hunt", rating: 3, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+        ] },
       });
 
       global.fetch = vi
@@ -2802,37 +2801,35 @@ describe("character-detail page", () => {
     it("action dots adjust the rating via actionSetRating", async () => {
       const plusResp = talentDTO({
         revision: 13,
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 2, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 2, maxRating: 4 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 2, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 2, max: 6 }, actions: [
+            { name: "Hunt", rating: 2, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+        ] },
       });
       const minusResp = talentDTO({
         revision: 14,
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 2, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 1, maxRating: 4 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 2, max: 6 }, actions: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+        ] },
       });
 
       global.fetch = vi
@@ -2884,20 +2881,19 @@ describe("character-detail page", () => {
       // request for 4 comes back clamped to 3.
       const clamped = talentDTO({
         revision: 13,
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 2, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 3, maxRating: 3 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 3, maxRating: 3 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 2, max: 6 }, actions: [
+            { name: "Hunt", rating: 3, maxRating: 3 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+        ] },
       });
 
       global.fetch = vi
@@ -2927,37 +2923,35 @@ describe("character-detail page", () => {
     it("attribute XP tracker adds and clears XP via attributeXpAdd/attributeXpClear", async () => {
       const added = talentDTO({
         revision: 13,
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 3, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 1, maxRating: 4 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 3, max: 6 }, actions: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+        ] },
       });
       const cleared = talentDTO({
         revision: 14,
-        talent: {
-          attributes: [
-            {
-              name: "Insight",
-              experience: { points: 0, max: 6 },
-              actions: [
-                { name: "Hunt", rating: 1, maxRating: 4 },
-                { name: "Study", rating: 2, maxRating: 4 },
-                { name: "Survey", rating: 0, maxRating: 4 },
-                { name: "Tinker", rating: 1, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Insight", rating: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+            { name: "Hunt", rating: 1, maxRating: 4 },
+            { name: "Study", rating: 2, maxRating: 4 },
+            { name: "Survey", rating: 0, maxRating: 4 },
+            { name: "Tinker", rating: 1, maxRating: 4 },
+          ] },
+        ] },
       });
 
       global.fetch = vi
@@ -3005,20 +2999,19 @@ describe("character-detail page", () => {
     it("levelup posts the selected action via attributeLevelup when the XP track is full", async () => {
       const leveled = talentDTO({
         revision: 13,
-        talent: {
-          attributes: [
-            {
-              name: "Prowess",
-              experience: { points: 0, max: 6 },
-              actions: [
-                { name: "Finesse", rating: 3, maxRating: 4 },
-                { name: "Prowl", rating: 0, maxRating: 4 },
-                { name: "Skirmish", rating: 1, maxRating: 4 },
-                { name: "Wreck", rating: 0, maxRating: 4 },
-              ],
-            },
-          ],
-        },
+        talent: { allocationPending: false, attributes: [
+          { name: "Prowess", rating: [
+            { name: "Finesse", rating: 3, maxRating: 4 },
+            { name: "Prowl", rating: 0, maxRating: 4 },
+            { name: "Skirmish", rating: 1, maxRating: 4 },
+            { name: "Wreck", rating: 0, maxRating: 4 },
+          ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+            { name: "Finesse", rating: 3, maxRating: 4 },
+            { name: "Prowl", rating: 0, maxRating: 4 },
+            { name: "Skirmish", rating: 1, maxRating: 4 },
+            { name: "Wreck", rating: 0, maxRating: 4 },
+          ] },
+        ] },
       });
 
       global.fetch = vi

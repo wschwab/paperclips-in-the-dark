@@ -349,6 +349,11 @@ package body Pitd_Callback is
       Entity_Held : Boolean := False;
       Entity_Id : constant String := Str_Field (E, "id");
    begin
+      if Kind = "character" then Refresh_Talent_Ratings (E); end if;
+      if Kind = "character" and then not Pending_Allocation_Valid (E) then
+         return Fail (AWS.Messages.S400, Op, "VALIDATION",
+                      Message => "playbook defaults exceed starting allocation bounds");
+      end if;
       Schema_Check (Kind, E, Created_Ok);
       if not Created_Ok then
          return Fail (AWS.Messages.S500, Op, "INTERNAL",
@@ -537,6 +542,7 @@ package body Pitd_Callback is
             end;
 
             --  V4/V5/V2/V1 over actionRatings; every bound and default
+            if Has_Field (B, "actionRatings") then
             --  comes from settings (DEC-01: DefaultActionPoints enforced).
             declare
                Budget  : constant Integer := Integer'(Get (G, "StartingActionDots"));
@@ -723,6 +729,7 @@ package body Pitd_Callback is
                        & ": starting allocation must equal the budget exactly");
                end if;
             end;
+            end if;
 
             --  Validation passed: build through the shared template, apply
             --  the FINAL starting ratings (defaults ∪ submissions; V4/V5
@@ -735,7 +742,9 @@ package body Pitd_Callback is
                --  Re-derived from the request body: the validation block's
                --  locals are out of scope here; V4/V5 already proved
                --  completeness and default matching.
-               R         : constant JSON_Value := Get (B, "actionRatings");
+               R         : constant JSON_Value :=
+                 (if Has_Field (B, "actionRatings") then Get (B, "actionRatings")
+                  else Create_Object);
                Out_Attrs : JSON_Array := Empty_Array;
                Old_Attrs : constant JSON_Array :=
                  Get (Get (E, "talent"), "attributes");
@@ -770,6 +779,8 @@ package body Pitd_Callback is
                   end;
                end loop;
                Set_Field (Get (E, "talent"), "attributes", Out_Attrs);
+               Set_Field (Get (E, "talent"), "allocationPending",
+                          not Has_Field (B, "actionRatings"));
 
                return Persist_Create
                  (Request, "/api/characters/pc", "character", Op, E);
@@ -1611,7 +1622,10 @@ if Kind = "crew" then
                   end if;
                   Set_Field (Restored, "revision", Int_Field (E, "revision") + 1);
                   Set_Field (Restored, "updatedAt", Now);
-                  if Kind = "character" then Ensure_Game_Mode_Defaults (Restored); end if;
+                  if Kind = "character" then
+                     Ensure_Game_Mode_Defaults (Restored);
+                     Ensure_Talent_Defaults (Restored);
+                  end if;
                   declare Name : constant String := To_String (Best); begin
                      if not Pitd_Transactions.Undo_Single
                        (Kind, Id, Name (Name'First .. Name'Last - 5), E, Restored)
@@ -1860,6 +1874,13 @@ if Kind = "crew" then
                               AWS.Messages.S400);
                         end if;
                      end;
+                     if Kind = "character" and then not Pending_Allocation_Valid (Doc) then
+                        Release_Locks;
+                        return Json_Response
+                          (Validation_Error ("import", "invalid pending Talent allocation",
+                                             Root_Issues ("invalid pending Talent allocation"), E),
+                           AWS.Messages.S400);
+                     end if;
                      --  atomic apply: clear history, take exactly ONE
                      --  baseline snapshot, then write current.json
                      if E.Kind = JSON_Object_Type then

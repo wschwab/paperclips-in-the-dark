@@ -589,18 +589,13 @@ export function createCharacter(gameStem: string, playbook: string): Effect.Effe
 }
 
 /**
- * Dedicated PC creation path with server-side Talent validation
- * (CONTRACT-01 / DEC-01): POST /api/characters/pc with the FINAL starting
- * action ratings (any playbook DefaultActionPoints contribution is already
- * included in them). The server validates against game settings — sum ===
- * StartingActionDots exactly, every rating ≤ StartingActionDotMax — and
- * rejects violations with VALIDATION (400) / NOT_FOUND (404, budget keys
- * absent), surfacing here as typed OpErrors like every sibling create.
+ * Create a PC draft with locked playbook defaults when ratings are omitted.
+ * Explicit ratings retain the exactly-budget completed-PC creation path.
  */
 export function createPcCharacter(
   gameStem: string,
   playbook: string,
-  actionRatings: Record<string, number>,
+  actionRatings?: Record<string, number>,
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return Effect.gen(function* () {
     const opResult = yield* fetchOperation("/api/characters/pc", {
@@ -1696,6 +1691,13 @@ export function actionSetRating(
   revision: number,
 ): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
   return characterMutate(id, "action.set-rating", revision, { action, rating });
+}
+
+export function talentAllocationComplete(
+  id: string,
+  revision: number,
+): Effect.Effect<Character, ApiError | DecodeError | StaleRevisionError> {
+  return characterMutate(id, "talent.allocation.complete", revision, {});
 }
 
 export function attributeXpAdd(

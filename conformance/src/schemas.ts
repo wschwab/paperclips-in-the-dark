@@ -186,9 +186,11 @@ const Character = Schema.Struct({
     armor: Armor,
   }),
   talent: Schema.Struct({
+    allocationPending: Schema.Boolean,
     attributes: Schema.Array(
       Schema.Struct({
         name: Schema.String,
+        rating: NonNegativeInt,
         experience: Experience,
         actions: Schema.Array(
           Schema.Struct({ name: Schema.String, rating: NonNegativeInt, maxRating: PositiveInt }),

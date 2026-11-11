@@ -39,16 +39,19 @@ export async function run(page, ctx) {
   await page.locator('.pc-chargen-form').waitFor();
   matrixEntries.push(...await matrix('character-create', '/character/create', '.pc-chargen-form', ['.character-create', '.pc-chargen-form']));
   await page.locator('#pc-playbook').selectOption({ index: 1 });
-  // Increment one unlocked action dot at a time, using rendered settings-
-  // derived controls rather than embedding a game budget or action cap.
-  while (Number(await page.locator('[data-chargen-unspent]').textContent()) > 0) {
-    const next = page.locator('.chargen-dots button:not(:disabled)[aria-pressed="false"]').first();
-    assert.equal(await next.count(), 1, 'remaining budget needs an unlocked action dot');
-    await next.click();
-  }
   await Promise.all([page.waitForURL(/\/character\/[0-9a-f-]{36}$/), page.locator('.pc-chargen-form button[type="submit"]').click()]);
   const pcPath = new URL(page.url()).pathname;
   await page.locator('.character-detail').waitFor();
+  // Allocation is persisted on the sheet, never in the creation form.
+  while (Number(await page.locator('[data-talent-unspent]').textContent()) > 0) {
+    const next = page.locator('.talent-action-row button.action-dot[aria-pressed="false"]').first();
+    assert.equal(await next.count(), 1, 'remaining budget needs an unlocked action dot');
+    const before = Number(await page.locator('[data-talent-unspent]').textContent());
+    await next.click();
+    await page.waitForFunction(previous => Number(document.querySelector('[data-talent-unspent]')?.textContent) < previous, before);
+  }
+  await page.getByRole('button', { name: 'Finish Talent allocation', exact: true }).click();
+  await page.locator('[data-talent-allocation-complete]').waitFor({ state: 'detached' });
   assert.deepEqual(posts, ['/api/characters/pc']);
   ctx.checkpoint('empty-create-pc', 1);
 

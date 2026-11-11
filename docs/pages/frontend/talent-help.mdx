@@ -4,10 +4,10 @@ title: Talent action help
 
 # Talent action help
 
-**TALENT-HELP-01** makes the existing action descriptions readable while assigning
-Talents during character creation and on the character sheet. Here, **Talents**
-means the action dots (Hunt, Study, Survey, Tinker, Finesse, and the other actions),
-not the pick-one playbook. Playbooks already have their own game-data blurbs.
+**TALENT-HELP-01** introduced visible action descriptions. **SCOUNDREL-CREATE-02**
+moved all action-dot assignment onto the sheet, so creation now asks only for a
+playbook. Here, **Talents** means the action dots (Hunt, Study, Survey, Tinker,
+Finesse, and the other actions), not the pick-one playbook.
 
 Each action row now shows its short description directly below the dots. No hover,
 extra click, or ability to edit the character is required to read it. The sheet's
@@ -16,10 +16,10 @@ they do not select an action, change a rating, spend dots, or resolve rolls.
 
 ## Data and licence
 
-Both surfaces use `Attributes[].Actions[].ShortDescription` from the selected
+The sheet uses `Attributes[].Actions[].ShortDescription` from the selected
 edition's existing game settings, served through the existing game-data endpoint.
-The same field already supplied the sheet's hover tooltip. No new API field,
-contract edit, backend change, game-data duplication, or setting text is needed.
+The same field already supplied its hover tooltip. No game-data duplication or
+new setting text is needed.
 Missing or blank summaries are omitted rather than replaced with invented help.
 
 The Blades summaries are existing SRD rules content, attributed to John Harper,
@@ -29,7 +29,7 @@ and Scum & Villainy editions retain their own action names and summaries. This
 change adds no Doskvol setting content; see the
 [setting content register](/contract/setting-content-register).
 
-## Evidence and reproduction
+## Historical TALENT-HELP-01 evidence
 
 Real Chromium checked both creation and sheet at 1440×1000, 768×1024, and
 390×844, each in light, dark, and high-contrast themes: **18 cases**. Every
@@ -43,13 +43,10 @@ container and hint bounds, client/scroll widths, computed overflow and min-width
 and browser errors. Screenshots are under `/evidence/talent-help-01/`, named
 `{width}-{light|dark|high}-{creation|sheet}.png`.
 
-To reproduce without touching the playtesting server:
-
-```sh
-cd frontend && npm run build
-cd ../conformance
-node scripts/managed-browser-smoke.mjs -- node ../frontend/scripts/talent-help-01-probe.mjs
-```
+Those captures record the original pre-cutover UI. The obsolete creation-dot
+probe was removed by SCOUNDREL-CREATE-02. Current behavior, API changes, evidence
+and reproduction are documented in
+[Sheet-first scoundrel creation](/contract/scoundrel-create-02).
 
 The managed launcher chooses an unused loopback port, uses a fresh temporary data
 directory, and cleans up only its own server process. The default dev server is

@@ -76,6 +76,7 @@
     }
   },
   "talent": {
+    "allocationPending": false,
     "attributes": [
       {
         "name": "Insight",
@@ -104,7 +105,8 @@
             "rating": 0,
             "maxRating": 4
           }
-        ]
+        ],
+        "rating": 3
       },
       {
         "name": "Prowess",
@@ -133,7 +135,8 @@
             "rating": 0,
             "maxRating": 4
           }
-        ]
+        ],
+        "rating": 1
       },
       {
         "name": "Resolve",
@@ -162,7 +165,8 @@
             "rating": 1,
             "maxRating": 4
           }
-        ]
+        ],
+        "rating": 2
       }
     ]
   },

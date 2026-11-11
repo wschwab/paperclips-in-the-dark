@@ -465,11 +465,11 @@ const mutations = {
       const changed = replaceExactlyOnce(
         content,
         `         E := Read (Bytes);
-         Ctx := Pitd_Normalize.Canonicalize (Kind, Id, E);`,
+         if Kind = "character" and then E.Kind = JSON_Object_Type`,
         `         E := Read (Bytes);
          Set_Field (E, "revision", Int_Field (E, "revision") + 1);
          Write_Entity (Kind, Id, E); -- MUTANT M06: revision-bumping write during classification
-         Ctx := Pitd_Normalize.Canonicalize (Kind, Id, E);`,
+         if Kind = "character" and then E.Kind = JSON_Object_Type`,
         "M06 Classify_Stored",
       );
       writeFileSync(file, changed);

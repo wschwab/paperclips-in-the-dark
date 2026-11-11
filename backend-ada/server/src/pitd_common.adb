@@ -1,8 +1,6 @@
 with Ada.Calendar;
 with Ada.Calendar.Formatting;
 with Ada.Directories;
-with Ada.Exceptions;
-with Ada.IO_Exceptions;
 with Ada.Task_Identification;
 with Ada.Strings.Fixed;
 with Ada.Strings.Unbounded;
@@ -172,37 +170,6 @@ package body Pitd_Common is
          end if;
       end Check;
    end Crash_Hook;
-
-   --  BUGFIX-1111: --test-hooks unlink probe.  POST /api/test-hooks/fail-unlink
-   --  {entity, id} arms a one-shot failure of the next history-file deletion
-   --  for that entity, so the retention and undo failure paths can be
-   --  exercised on a filesystem that allows unlink.  Only reachable when the
-   --  server was started with --test-hooks.
-   protected Unlink_Hook is
-      procedure Arm (Entity_Id : String);
-      procedure Check (Target : String; Fail : out Boolean);
-   private
-      Armed : Boolean := False;
-      Id    : Unbounded_String := Null_Unbounded_String;
-   end Unlink_Hook;
-
-   protected body Unlink_Hook is
-      procedure Arm (Entity_Id : String) is
-      begin
-         Armed := True;
-         Id := To_Unbounded_String (Entity_Id);
-      end Arm;
-
-      procedure Check (Target : String; Fail : out Boolean) is
-      begin
-         Fail := False;
-         if Armed and then Ada.Strings.Fixed.Index (Target, "/" & To_String (Id) & "/") > 0 then
-            --  one-shot: the armed failure fires on exactly one deletion
-            Armed := False;
-            Fail := True;
-         end if;
-      end Check;
-   end Unlink_Hook;
 
    --  SC-A5: game settings are loaded once at startup (Configure), validated
    --  structurally against data/games/game-settings-schema.json and
@@ -559,14 +526,15 @@ package body Pitd_Common is
    end Publish_Transaction_Snapshot;
 
    procedure Consume_Transaction_Snapshot (Kind, Id, Snapshot_Id : String) is
+      Name : constant String := Entity_Dir (Kind, Id) & "/history/" & Snapshot_Id & ".json";
    begin
       if not Entity_Lock_Registry.Owned (Id) or else not Safe (Snapshot_Id) then
          raise Program_Error with "transaction snapshot consumption requires entity lock";
       end if;
-      --  BUGFIX-1111: deletion is best-effort.  Failing the publish here would
-      --  either abort a completed undo (the reported defect) or, on the
-      --  fail-closed commit path, exit the server for a retention failure.
-      Consume_Snapshot_Best_Effort (Kind, Id, Snapshot_Id);
+      if Ada.Directories.Exists (Name) then
+         Ada.Directories.Delete_File (Name);
+         Sync_Directory (Ada.Directories.Containing_Directory (Name));
+      end if;
    end Consume_Transaction_Snapshot;
 
    --  BUGFIX-1111: the ONE deletion path for history snapshot files, so the
@@ -625,14 +593,97 @@ package body Pitd_Common is
       end;
    end Rebuild_Index_Best_Effort;
 
+   function Pending_Allocation_Valid (Entity : JSON_Value) return Boolean is
+      Talent : constant JSON_Value := Get (Entity, "talent");
+      G : constant JSON_Value := Game (Str_Field (Entity, "gameStem"));
+      Attrs : constant JSON_Array := Get (Talent, "attributes");
+      Defaults : JSON_Value := Create_Object;
+      Seen : JSON_Value := Create_Object;
+      All_Defaults : Boolean := True;
+      procedure Check_Default (Name : UTF8_String; Value : JSON_Value) is
+      begin
+         if not Has_Field (Seen, Name) then All_Defaults := False; end if;
+      end Check_Default;
+      Total : Long_Long_Integer := 0;
+   begin
+      if not Bool_Field (Talent, "allocationPending") then return True; end if;
+      if not Has_Field (G, "StartingActionDots")
+        or else not Has_Field (G, "StartingActionDotMax")
+      then return False; end if;
+      declare PBs : constant JSON_Array := Get (G, "Playbooks"); begin
+         for I in 1 .. Length (PBs) loop
+            declare PB : constant JSON_Value := Get (PBs, I); begin
+               if Str_Field (PB, "Name") = Str_Field (Get (Entity, "playbook"), "name")
+                 and then Has_Field (PB, "DefaultActionPoints")
+               then
+                  declare Dots : constant JSON_Array := Get (PB, "DefaultActionPoints"); begin
+                     for J in 1 .. Length (Dots) loop
+                        declare D : constant JSON_Value := Get (Dots, J); begin
+                           if Int_Field (D, "Points") > 0 then
+                              Set_Field (Defaults, Str_Field (D, "Action"), Int_Field (D, "Points"));
+                           end if;
+                        end;
+                     end loop;
+                  end;
+               end if;
+            end;
+         end loop;
+      end;
+      for I in 1 .. Length (Attrs) loop
+         declare Actions : constant JSON_Array := Get (Get (Attrs, I), "actions"); begin
+            for J in 1 .. Length (Actions) loop
+               declare
+                  A : constant JSON_Value := Get (Actions, J);
+                  Name : constant String := Str_Field (A, "name");
+                  Rating : constant Integer := Int_Field (A, "rating");
+               begin
+                  if Rating < 0 or else Rating > Int_Field (G, "StartingActionDotMax")
+                    or else (Has_Field (Defaults, Name)
+                             and then Rating /= Int_Field (Defaults, Name))
+                  then return False; end if;
+                  Total := Total + Long_Long_Integer (Rating);
+                  Set_Field (Seen, Name, True);
+               end;
+            end loop;
+         end;
+      end loop;
+      Map_JSON_Object (Defaults, Check_Default'Access);
+      return All_Defaults and then Total <= Long_Long_Integer (Int_Field (G, "StartingActionDots"));
+   end Pending_Allocation_Valid;
+
+   procedure Refresh_Talent_Ratings (Entity : JSON_Value) is
+      Talent : constant JSON_Value := Get (Entity, "talent");
+      Attrs : constant JSON_Array := Get (Talent, "attributes");
+   begin
+      for I in 1 .. Length (Attrs) loop
+         declare
+            A : constant JSON_Value := Get (Attrs, I);
+            Actions : constant JSON_Array := Get (A, "actions");
+            Rating : Natural := 0;
+         begin
+            for J in 1 .. Length (Actions) loop
+               if Int_Field (Get (Actions, J), "rating") > 0 then
+                  Rating := Rating + 1;
+               end if;
+            end loop;
+            Set_Field (A, "rating", Integer (Rating));
+         end;
+      end loop;
+   end Refresh_Talent_Ratings;
+
    procedure Write_Entity (Kind, Id : String; Entity : JSON_Value) is
    begin
+      if Kind = "character" then Refresh_Talent_Ratings (Entity); end if;
+      if Kind = "character" and then not Pending_Allocation_Valid (Entity) then
+         raise Program_Error with "invalid pending Talent allocation";
+      end if;
       Require_Entity_Write (Kind, Id, Entity);
       Atomic_Write (Current_File (Kind, Id), Entity);
    end Write_Entity;
 
    procedure Write_Repair_Preview (Kind, Id : String; Entity : JSON_Value) is
    begin
+      if Kind = "character" then Refresh_Talent_Ratings (Entity); end if;
       Require_Entity_Lock (Kind, Id, Entity);
       Atomic_Write (Current_File (Kind, Id), Entity);
    end Write_Repair_Preview;
@@ -820,53 +871,12 @@ package body Pitd_Common is
          declare
             N : constant String := Base & "/" & To_String (Names (I));
          begin
-            if Ada.Directories.Exists (N) then
-               begin
-                  Delete_Snapshot_File (N);
-               exception
-                  when E : others =>
-                     --  BUGFIX-1111: retention is best-effort.  A filesystem
-                     --  that refuses unlink must not fail the write that
-                     --  triggered the prune (nor leave that write half-done
-                     --  with an extra snapshot behind).
-                     Ada.Text_IO.Put_Line
-                       (Ada.Text_IO.Standard_Error,
-                        "history prune skipped (unlink failed): " & N & " — "
-                        & Ada.Exceptions.Exception_Message (E));
-               end;
-            end if;
+            if Ada.Directories.Exists (N) then Ada.Directories.Delete_File (N); end if;
          end;
       end loop;
    end Prune_History;
 
-   --  BUGFIX-1111: number of retained snapshot files in a history directory
-   --  (the sidecar and the baseline are not snapshots).  Retention is
-   --  best-effort, so this disk truth can exceed Max_History_Snapshots and
-   --  the derived index must be rebuilt from it rather than capped.
-   function Snapshot_File_Count (Base : String) return Natural is
-      Search : Ada.Directories.Search_Type;
-      Item   : Ada.Directories.Directory_Entry_Type;
-      Count  : Natural := 0;
-   begin
-      if not Ada.Directories.Exists (Base) then return 0; end if;
-      Ada.Directories.Start_Search
-        (Search, Base, "*.json",
-         (Ada.Directories.Ordinary_File => True, others => False));
-      while Ada.Directories.More_Entries (Search) loop
-         Ada.Directories.Get_Next_Entry (Search, Item);
-         declare
-            N : constant String := Ada.Directories.Simple_Name (Item);
-         begin
-            if N /= "_index.json" and then not Is_Baseline_Snapshot (N) then
-               Count := Count + 1;
-            end if;
-         end;
-      end loop;
-      Ada.Directories.End_Search (Search);
-      return Count;
-   end Snapshot_File_Count;
-
-   function Snapshot (Kind, Id, Op : String; Entity : JSON_Value) return String is
+   procedure Snapshot (Kind, Id, Op : String; Entity : JSON_Value) is
       H   : JSON_Value := Create_Object;
       M   : JSON_Value := Create_Object;
       Sid : constant String := New_Snapshot_Id;
@@ -879,14 +889,6 @@ package body Pitd_Common is
       Set_Field (H, "entity", Clone (Entity));
       Atomic_Write (Hist & "/" & Sid & ".json", H);
       Prune_History (Kind, Id);
-      --  BUGFIX-1111: the sidecar append below mirrors the retention bound, so
-      --  it can only describe disk when the prune succeeded.  A best-effort
-      --  prune failure leaves the oldest files in place; rebuild the index
-      --  from disk then, so history matches the files that exist.
-      if Snapshot_File_Count (Hist) > Max_History_Snapshots then
-         Rebuild_Index (Kind, Id);
-         return Sid;
-      end if;
       --  OPT-002: append the compact header to the sidecar index (newest
       --  first) so History can avoid re-reading full snapshot bodies.
       declare
@@ -925,8 +927,7 @@ package body Pitd_Common is
             end;
          end;
       end;
-      return Sid;
-   end Snapshot;
+end Snapshot;
 
    --  SC-A8 / FV-028: create takes exactly one baseline snapshot so a
    --  fresh entity's first undo is not NO_HISTORY.  The baseline is a
@@ -1699,6 +1700,22 @@ package body Pitd_Common is
       end if;
    end Ensure_Game_Mode_Defaults;
 
+   procedure Ensure_Talent_Defaults (E : JSON_Value) is
+   begin
+      if E.Kind /= JSON_Object_Type then return; end if;
+      if not Has_Field (E, "talent") or else Get (E, "talent").Kind /= JSON_Object_Type then
+         return;
+      end if;
+      declare
+         Talent : constant JSON_Value := Get (E, "talent");
+      begin
+         if not Has_Field (Talent, "allocationPending") then
+            Set_Field (Talent, "allocationPending", False);
+         end if;
+      end;
+      Refresh_Talent_Ratings (E);
+   end Ensure_Talent_Defaults;
+
    procedure Add_Game_Mode_Assistance (R, E : JSON_Value) is
       Mode : constant String := Str_Field (E, "mode");
       Flow : constant JSON_Value := Obj_Field (E, "modeFlow");
@@ -1774,11 +1791,6 @@ package body Pitd_Common is
    begin
       Crash_Hook.Check (Target, Crash);
    end Crash_Check;
-
-   procedure Unlink_Arm (Entity_Id : String) is
-   begin
-      Unlink_Hook.Arm (Entity_Id);
-   end Unlink_Arm;
 
    function Cache_Game (Stem : String; Settings : JSON_Value) return Boolean is
    begin

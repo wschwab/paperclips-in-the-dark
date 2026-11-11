@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  actionGroupsFromSettings,
   pcAllocationReady,
   pcBudgetFromSettings,
   playbookDefaultsFromSettings,
@@ -52,27 +51,6 @@ describe("pcBudgetFromSettings", () => {
   });
 });
 
-describe("actionGroupsFromSettings", () => {
-  it("extracts attribute groups in settings order", () => {
-    expect(actionGroupsFromSettings(SETTINGS)).toEqual([
-      { attribute: "Insight", actions: ["Hunt", "Study", "Survey", "Tinker"] },
-      { attribute: "Prowess", actions: ["Finesse", "Prowl", "Skirmish", "Wreck"] },
-      { attribute: "Resolve", actions: ["Attune", "Command", "Consort", "Sway"] },
-    ]);
-  });
-
-  it("returns null when Attributes carries an empty action list or bad shapes", () => {
-    expect(actionGroupsFromSettings({})).toBeNull();
-    expect(actionGroupsFromSettings({ Attributes: [] })).toBeNull();
-    expect(actionGroupsFromSettings({ Attributes: [{ Actions: [{ Name: "Hunt" }] }] })).toBeNull();
-    expect(
-      actionGroupsFromSettings({ Attributes: [{ Name: "Insight", Actions: [] }] }),
-    ).toBeNull();
-    expect(
-      actionGroupsFromSettings({ Attributes: [{ Name: "Insight", Actions: [{}] }] }),
-    ).toBeNull();
-  });
-});
 
 describe("unspent Talent counter math", () => {
   const budget = { startingActionDots: 7, startingActionDotMax: 2 };
@@ -140,7 +118,7 @@ describe("playbookDefaultsFromSettings", () => {
   });
 });
 
-describe("PC create disabled-button rule", () => {
+describe("PC finish-allocation disabled-button rule", () => {
   const budget = { startingActionDots: 7, startingActionDotMax: 2 };
   const cases: Array<[string, string, Record<string, number>, boolean]> = [
     ["disabled without a playbook", "", { Hunt: 2, Study: 2, Survey: 2, Tinker: 1 }, false],

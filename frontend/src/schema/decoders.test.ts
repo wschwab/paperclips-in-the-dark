@@ -654,6 +654,22 @@ describe("recursive strictness matrix (FV-027 P27B)", () => {
     expect(Either.isLeft(decodeCharacterEither(missingId))).toBe(true);
   });
 
+  it("requires durable Talent state and the server attribute rating projection", () => {
+    const { allocationPending: _pending, ...missingPending } = goldenCharacter.talent;
+    expect(Either.isLeft(decodeCharacterEither({ ...goldenCharacter, talent: missingPending }))).toBe(true);
+    const first = goldenCharacter.talent.attributes[0];
+    const { rating: _rating, ...missingRating } = first;
+    const talentWithAttribute = (attribute: Record<string, unknown>) => ({
+      ...goldenCharacter,
+      talent: { ...goldenCharacter.talent, attributes: [attribute] },
+    });
+    expect(Either.isLeft(decodeCharacterEither(talentWithAttribute(missingRating)))).toBe(true);
+    for (const rating of [-1, 0.5, "1", null]) {
+      expect(Either.isLeft(decodeCharacterEither(talentWithAttribute({ ...first, rating })))).toBe(true);
+    }
+    expect(Either.isRight(decodeCharacterEither(talentWithAttribute({ ...first, rating: 1 })))).toBe(true);
+  });
+
   it("rejects a wrong primitive type", () => {
     expect(
       Either.isLeft(decodeCharacterEither({ ...goldenCharacter, isRetired: "yes" })),

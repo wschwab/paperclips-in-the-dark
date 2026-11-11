@@ -49,7 +49,7 @@ function characterDTO(overrides: Record<string, unknown> = {}) {
       harm: { lesser: [], moderate: [], severe: [], fatal: [], healingClock: { segments: 0, size: 6, rollover: 0 } },
       armor: { standardUsed: false, heavyUsed: false, specialUsed: false, hasStandard: true, hasHeavy: false, hasSpecial: false },
     },
-    talent: { attributes: [] },
+    talent: { allocationPending: false, attributes: [] },
     playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
     gear: {
       loadout: [{ name: "Fine lockpicks", bulk: 0 }],
@@ -1062,9 +1062,9 @@ function cleanupRoot() {
 
 // XP-TRACKER-04: the Score-only XP Tracker and the Scoundrel XP completion (xp.resolve).
 const XP_ATTRS = [
-  { name: "Insight", experience: { points: 1, max: 6 }, actions: [] },
-  { name: "Prowess", experience: { points: 2, max: 6 }, actions: [] },
-  { name: "Resolve", experience: { points: 3, max: 6 }, actions: [] },
+  { name: "Insight", rating: 0, experience: { points: 1, max: 6 }, actions: [] },
+  { name: "Prowess", rating: 0, experience: { points: 2, max: 6 }, actions: [] },
+  { name: "Resolve", rating: 0, experience: { points: 3, max: 6 }, actions: [] },
 ];
 const SESSION_TWO = { playbookExpressions: 2, characterExpressions: 1, struggleExpressions: 1, max: 2, desperateMarks: [] };
 
@@ -1076,7 +1076,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("the tracker holds Desperate action XP and the three expression tracks in the sheet's stress structure", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     const panel = root.querySelector('[data-section="xp-tracker"]')!;
     expect(panel).not.toBeNull();
     expect(panel.textContent).toContain("+ Desperate action XP");
@@ -1089,7 +1089,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("the compact tab opens the bottom sheet (aria-expanded), Escape closes it and returns focus to the tab", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     const tab = root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!;
     expect(tab.getAttribute("aria-expanded")).toBe("false");
     tab.click();
@@ -1108,7 +1108,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("the allocation screen shows the counters as the GM total, and remaining XP updates live", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     expect(root.querySelector(".xp-alloc-live")?.textContent).toBe("Available 4 XP · Remaining 4 XP");
     (root.querySelector('button[aria-label="Add 1 Insight allocation"]') as HTMLButtonElement).click();
     await vi.waitFor(() => {
@@ -1117,7 +1117,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("completion is disabled until every XP is placed, then enabled", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     const complete = () => Array.from(root.querySelectorAll<HTMLButtonElement>(".xp-alloc button")).find((b) => b.textContent === "Complete Scoundrel XP")!;
     expect(complete().disabled).toBe(true);
     for (const name of ["Playbook", "Insight", "Prowess", "Resolve"]) {
@@ -1131,7 +1131,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("a track beyond its room blocks completion and says by how much", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     // Insight has 1 of 6: room 5. Six allocations overflow by one.
     for (let i = 0; i < 6; i++) {
       (root.querySelector('button[aria-label="Add 1 Insight allocation"]') as HTMLButtonElement).click();
@@ -1145,7 +1145,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("Adjust unlocks the GM total, and a zero total is allowed with the counters warning", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     const total = root.querySelector<HTMLInputElement>('input[aria-label="GM total XP"]')!;
     expect(total.disabled).toBe(true);
     root.querySelector<HTMLInputElement>('.xp-alloc-total input[type="checkbox"]')!.click();
@@ -1162,7 +1162,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("Complete posts one flow.step.complete with the XP total and allocations under the current revision", async () => {
-    const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } });
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "resolution", step: "scoundrel-xp" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } });
     const { calls } = await mountWith(dto);
     for (const name of ["Playbook", "Insight", "Prowess", "Resolve"]) {
       (root.querySelector(`button[aria-label="Add 1 ${name} allocation"]`) as HTMLButtonElement).click();
@@ -1183,7 +1183,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("the compact sheet traps Tab and Shift+Tab inside the dialog (XP-TRACKER-04 review R2)", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
     await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
     const sheet = root.querySelector<HTMLElement>('[data-section="xp-tracker-sheet"]')!;
@@ -1199,7 +1199,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("while the compact sheet is open, the sheet and the mode panel behind it are inert (XP-TRACKER-04 review R2)", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
     await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
     expect(root.querySelector(".character-detail")!.hasAttribute("inert")).toBe(true);
@@ -1207,7 +1207,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("widening to the wide layout closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1)", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
     await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
     const original = window.innerWidth;
@@ -1225,7 +1225,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("leaving Score closes the compact sheet and releases the sheet behind it (XP-TRACKER-04 review R1)", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
     await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
     Array.from(root.querySelectorAll<HTMLButtonElement>(".mode-switch button")).find((b) => b.textContent === "Free Play")!.click();
@@ -1240,7 +1240,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
     outside.textContent = "Global header";
     document.body.prepend(outside);
     try {
-      await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+      await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
       root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
       await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
       expect(outside.hasAttribute("inert")).toBe(true);
@@ -1252,7 +1252,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("Escape still closes the compact sheet after focus was lost to the page (blocked background click, XP-TRACKER-04 round 3 R2)", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
     await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
     (document.activeElement as HTMLElement).blur();
@@ -1261,7 +1261,7 @@ describe("XP Tracker and Scoundrel XP completion (XP-TRACKER-04)", () => {
   });
 
   it("focus that leaves the open compact sheet returns to its Close button (XP-TRACKER-04 round 3 R2)", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
     await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
     const close = root.querySelector<HTMLButtonElement>(".xp-tracker-close")!;
@@ -1323,7 +1323,7 @@ describe("DESPERATE-LOG-01 XP Tracker tally and desperate.mark control", () => {
   });
 
   it("the marks list is rendered from the server's response, not from the request", async () => {
-    const dto = characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } });
+    const dto = characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } });
     const updated = { ...dto, revision: dto.revision + 1, session: { ...dto.session, desperateMarks: ["Prowess", "Prowess"] } };
     await mountWith(dto);
     const original = global.fetch;
@@ -1380,7 +1380,7 @@ describe("LOADOUT-ATOMIC-01 Sol P2: a rejected confirmation is shown inside the 
 
 describe("DESPERATE-LOG-01 Sol P2: a refused mark is shown inside the open XP Tracker", () => {
   it("keeps the tracker open and says why the mark was refused, with no write", async () => {
-    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { attributes: XP_ATTRS } }));
+    await mountWith(characterDTO({ mode: "score", modeFlow: { kind: "none", step: "" }, session: SESSION_TWO, talent: { allocationPending: false, attributes: XP_ATTRS } }));
     root.querySelector<HTMLButtonElement>(".xp-tracker-tab")!.click();
     await vi.waitFor(() => expect(root.querySelector('[data-section="xp-tracker-sheet"]')).not.toBeNull());
     const failure = {

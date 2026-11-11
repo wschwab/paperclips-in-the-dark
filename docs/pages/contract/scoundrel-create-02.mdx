@@ -1,0 +1,72 @@
+---
+title: Sheet-first scoundrel creation and attribute ratings
+---
+
+# Sheet-first scoundrel creation and attribute ratings
+
+**SCOUNDREL-CREATE-02** moves starting Talent allocation onto the character sheet.
+The creation screen asks only for the playbook, just as the crew flow starts with
+its type. Talent means action dots; the visible action descriptions introduced by
+[TALENT-HELP-01](/frontend/talent-help) stay on the sheet.
+
+## Rule checked against the reference and SRD
+
+An attribute's rating is the **number of its actions with at least one dot**, not
+the sum of all their dots. For example, Hunt 2 and Study 1 give Insight rating 2;
+raising Hunt from 2 to 3 does not increase Insight.
+
+The reference implementation is explicit:
+`blades-in-the-sheets/Models/Characters/TalentAttribute.cs`, lines 27–28, computes
+`ActionsByName.Values.Count(a => a.Rating > 0)`. The official
+[SRD: Actions & Attributes](https://bladesinthedark.com/actions-attributes) says
+that attribute rating equals the number of dots in the **first column** under
+that attribute. Those are the same rule. This app displays the rating as reference
+information; it does not roll resistance dice or resolve rules.
+
+SRD rules attribution: John Harper, *Blades in the Dark*,
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). No setting text is added.
+
+## Authorized contract before / after
+
+The user authorized additive contract work and changes to frozen conformance and
+browser tests for this card.
+
+| Surface | Before | After |
+| --- | --- | --- |
+| `POST /api/characters/pc` | `actionRatings` required; the final allocation had to equal the settings budget at creation | Omitting `actionRatings` starts a draft with playbook defaults and zero other dots. Sending a complete map retains the existing validated, already-complete API path. |
+| `talent.allocationPending` | Absent | Durable creation state: true for a draft PC, false for complete PC and experienced/NPC creation. Legacy records default false. |
+| Draft action writes | No persistent creation phase | Defaulted actions remain fixed; other action writes respect the settings starting cap and total starting budget until explicit completion. |
+| `talent.allocation.complete` | Absent | Explicit atomic completion validates exact starting budget and ends draft restrictions. No XP, resources, or automatic gameplay advancement. |
+| `talent.attributes[].rating` | Absent | Computed read-only count of actions with positive rating; no game maximum embedded in the schema. |
+
+Both budget values come from the selected edition's `StartingActionDots` and
+`StartingActionDotMax`; defaults come from the selected playbook's
+`DefaultActionPoints`. The sheet shows the unspent count and a completion control.
+Completing creation is explicit, so a later gameplay reduction does not silently
+re-enter creation. Draft state survives reload and is visible to API clients; it
+is not guessed from low ratings or kept only in browser storage.
+
+## Projection and persistence
+
+Attribute rating follows the existing write-derived canonical-field convention
+used for armor availability. It is recomputed from action data rather than
+trusted from import input. This keeps detail/export byte identity and
+pure-read behavior intact for canonical current records. Legacy records missing
+the additive fields receive an in-memory view overlay, following the existing
+assistance-field migration convention: no storage write or revision change,
+the same view for detail/export, and no forced repair solely for these additions.
+Writes persist the derived fields. Action changes, level-up, import and undo
+recompute the rating rather than trusting a supplied value.
+
+## Clean cutover
+
+The intermediate creation screen no longer renders action dots, their hints, or
+the allocation counter. Remaining character work happens on the sheet, where
+attribute headings are larger than action labels and include their computed
+rating. Conformance and browser journeys now exercise creation first, then sheet
+allocation and completion; complete-map API clients remain supported as a distinct
+existing API use case, not a duplicate UI flow.
+
+The task card records red-first evidence, the precise changed fixtures and
+contract/generated artifacts, gate counts and independent review. Browser evidence
+is stored under `docs/public/evidence/scoundrel-create-02/`.

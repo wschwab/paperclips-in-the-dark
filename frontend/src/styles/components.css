@@ -1137,6 +1137,35 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* Talent allocation lives on the persisted scoundrel sheet. */
+.talent-allocation {
+  min-width: 0;
+  margin-block: 1rem 1.5rem;
+  padding-block: 1rem;
+  border-block: 1px solid var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.talent-allocation p,
+.talent-allocation ul {
+  max-width: 70ch;
+  margin-block: 0.75rem;
+}
+.talent-allocation button {
+  max-width: 100%;
+  white-space: normal;
+}
+.talent-attribute-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  margin-block: 1.25rem 0.5rem;
+}
+.talent-attribute-heading [data-attribute-rating] {
+  font-variant-numeric: tabular-nums;
+}
 /* FV-008: the membership row renders the current crew name as a value
  * span — wrap it like every other user-entered value. */
 .crew-membership .crew-name {

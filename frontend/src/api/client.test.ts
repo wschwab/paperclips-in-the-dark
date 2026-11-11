@@ -8,7 +8,7 @@ import { OpError,
   NETWORK_ERROR_COPY,
   getRoster, getCharacter, getCrew, getCharacterCapabilities, getCrewCapabilities, getCharacterHistory, getCrewHistory, getPlaybookList, createCharacter, getCrewTypeList, createCrew, stressAdd, undoCharacter, undoCrew, retireCharacter, endScore, deleteCharacter, dossierUpdate, stressClear, traumaAdd, traumaRemove, getGame, harmAdd, harmHeal, harmRemove, harmHealingClock, armorSet, crewContactAdd, crewContactRemove, factionSetStatus, factionRemove, crewFieldsUpdate, crewRepAdd, crewHeatAdd, crewWantedAdd, crewTierAdd, crewHoldSet, crewCoinAdd, crewStashAdd, crewAbilityTake, crewAbilityRemove, upgradeMark, upgradeUnmark, getCrewType, getCrewTypes, actionSetRating, attributeXpAdd, attributeXpClear, attributeLevelup, sessionSet, getPlaybook, playbookXpAdd, playbookXpClear, abilityTake, abilityRemove, gearAdd, gearRemove, gearCommit, gearUncommit, gearLock, gearUnlock, gearSetCommitment, gearClearCommitments, fundGain, fundSpend, fundLiquidate, listClocks, createClock, clockProgress, clockReset, deleteClock, createPcCharacter, noteAdd, noteRemove, listCrews, cohortAdd, cohortRemove, cohortUpdate, crewXpAdd, crewXpClear, crewNoteAdd, crewNoteRemove, crewTurfAdd, getCrewGameData, ApiError, DecodeError, StaleRevisionError, stressFix } from "./client.js";
 import { OVERINDULGED_SIDEEFFECT } from "./client.js";
-import { noteUpdate, crewNoteUpdate } from "./client.js";
+import { noteUpdate, crewNoteUpdate, talentAllocationComplete } from "./client.js";
 
 const goldenCharacter = JSON.parse(
   readFileSync(new URL("../../../conformance/fixtures/golden-character.json", import.meta.url), "utf8"),
@@ -170,7 +170,7 @@ describe("getCharacter", () => {
           hasSpecial: false,
         },
       },
-      talent: { attributes: [] },
+      talent: { allocationPending: false, attributes: [] },
       playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
       gear: {
         loadout: [],
@@ -576,7 +576,7 @@ describe("createCharacter", () => {
           hasSpecial: false,
         },
       },
-      talent: { attributes: [] },
+      talent: { allocationPending: false, attributes: [] },
       playbook: { name: "Cutter", experience: { points: 0, max: 8 }, abilities: [] },
       gear: { loadout: [], availableGear: [], commitment: "none", isCommitmentLocked: false, maxBulk: 6 },
       fund: { satchel: { coins: 0, max: 12 }, stash: { coins: 0, max: 16 } },
@@ -868,7 +868,7 @@ describe("stressAdd", () => {
           hasSpecial: false,
         },
       },
-      talent: { attributes: [] },
+      talent: { allocationPending: false, attributes: [] },
       playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
       gear: {
         loadout: [],
@@ -1245,7 +1245,7 @@ function makeChar(overrides: Record<string, unknown> = {}) {
         hasSpecial: false,
       },
     },
-    talent: { attributes: [] },
+    talent: { allocationPending: false, attributes: [] },
     playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
     gear: {
       loadout: [],
@@ -1741,7 +1741,7 @@ describe("undoCharacter", () => {
           hasSpecial: false,
         },
       },
-      talent: { attributes: [] },
+      talent: { allocationPending: false, attributes: [] },
       playbook: { name: "Spider", experience: { points: 4, max: 8 }, abilities: [] },
       gear: {
         loadout: [],
@@ -3886,40 +3886,41 @@ describe("getCrewTypes", () => {
 function talentChar(overrides: Record<string, unknown> = {}) {
   return makeChar({
     revision: 13,
-    talent: {
-      attributes: [
-        {
-          name: "Insight",
-          experience: { points: 2, max: 6 },
-          actions: [
-            { name: "Hunt", rating: 1, maxRating: 4 },
-            { name: "Study", rating: 2, maxRating: 4 },
-            { name: "Survey", rating: 0, maxRating: 4 },
-            { name: "Tinker", rating: 1, maxRating: 4 },
-          ],
-        },
-        {
-          name: "Prowess",
-          experience: { points: 6, max: 6 },
-          actions: [
-            { name: "Finesse", rating: 2, maxRating: 4 },
-            { name: "Prowl", rating: 0, maxRating: 4 },
-            { name: "Skirmish", rating: 1, maxRating: 4 },
-            { name: "Wreck", rating: 0, maxRating: 4 },
-          ],
-        },
-        {
-          name: "Resolve",
-          experience: { points: 0, max: 6 },
-          actions: [
-            { name: "Attune", rating: 0, maxRating: 4 },
-            { name: "Command", rating: 2, maxRating: 4 },
-            { name: "Consort", rating: 1, maxRating: 4 },
-            { name: "Sway", rating: 0, maxRating: 4 },
-          ],
-        },
-      ],
-    },
+    talent: { allocationPending: false, attributes: [
+      { name: "Insight", rating: [
+        { name: "Hunt", rating: 1, maxRating: 4 },
+        { name: "Study", rating: 2, maxRating: 4 },
+        { name: "Survey", rating: 0, maxRating: 4 },
+        { name: "Tinker", rating: 1, maxRating: 4 },
+      ].filter((action) => action.rating > 0).length, experience: { points: 2, max: 6 }, actions: [
+        { name: "Hunt", rating: 1, maxRating: 4 },
+        { name: "Study", rating: 2, maxRating: 4 },
+        { name: "Survey", rating: 0, maxRating: 4 },
+        { name: "Tinker", rating: 1, maxRating: 4 },
+      ] },
+      { name: "Prowess", rating: [
+        { name: "Finesse", rating: 2, maxRating: 4 },
+        { name: "Prowl", rating: 0, maxRating: 4 },
+        { name: "Skirmish", rating: 1, maxRating: 4 },
+        { name: "Wreck", rating: 0, maxRating: 4 },
+      ].filter((action) => action.rating > 0).length, experience: { points: 6, max: 6 }, actions: [
+        { name: "Finesse", rating: 2, maxRating: 4 },
+        { name: "Prowl", rating: 0, maxRating: 4 },
+        { name: "Skirmish", rating: 1, maxRating: 4 },
+        { name: "Wreck", rating: 0, maxRating: 4 },
+      ] },
+      { name: "Resolve", rating: [
+        { name: "Attune", rating: 0, maxRating: 4 },
+        { name: "Command", rating: 2, maxRating: 4 },
+        { name: "Consort", rating: 1, maxRating: 4 },
+        { name: "Sway", rating: 0, maxRating: 4 },
+      ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+        { name: "Attune", rating: 0, maxRating: 4 },
+        { name: "Command", rating: 2, maxRating: 4 },
+        { name: "Consort", rating: 1, maxRating: 4 },
+        { name: "Sway", rating: 0, maxRating: 4 },
+      ] },
+    ] },
     ...overrides,
   });
 }
@@ -3931,20 +3932,19 @@ describe("actionSetRating", () => {
 
   it("posts to /api/characters/{id}/ops/action.set-rating with action, rating, and If-Match", async () => {
     const updated = talentChar({
-      talent: {
-        attributes: [
-          {
-            name: "Insight",
-            experience: { points: 2, max: 6 },
-            actions: [
-              { name: "Hunt", rating: 3, maxRating: 4 },
-              { name: "Study", rating: 2, maxRating: 4 },
-              { name: "Survey", rating: 0, maxRating: 4 },
-              { name: "Tinker", rating: 1, maxRating: 4 },
-            ],
-          },
-        ],
-      },
+      talent: { allocationPending: false, attributes: [
+        { name: "Insight", rating: [
+          { name: "Hunt", rating: 3, maxRating: 4 },
+          { name: "Study", rating: 2, maxRating: 4 },
+          { name: "Survey", rating: 0, maxRating: 4 },
+          { name: "Tinker", rating: 1, maxRating: 4 },
+        ].filter((action) => action.rating > 0).length, experience: { points: 2, max: 6 }, actions: [
+          { name: "Hunt", rating: 3, maxRating: 4 },
+          { name: "Study", rating: 2, maxRating: 4 },
+          { name: "Survey", rating: 0, maxRating: 4 },
+          { name: "Tinker", rating: 1, maxRating: 4 },
+        ] },
+      ] },
     });
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -4028,20 +4028,19 @@ describe("attributeXpAdd", () => {
 
   it("posts to /api/characters/{id}/ops/attribute-xp.add with attribute, delta, and If-Match", async () => {
     const updated = talentChar({
-      talent: {
-        attributes: [
-          {
-            name: "Insight",
-            experience: { points: 3, max: 6 },
-            actions: [
-              { name: "Hunt", rating: 1, maxRating: 4 },
-              { name: "Study", rating: 2, maxRating: 4 },
-              { name: "Survey", rating: 0, maxRating: 4 },
-              { name: "Tinker", rating: 1, maxRating: 4 },
-            ],
-          },
-        ],
-      },
+      talent: { allocationPending: false, attributes: [
+        { name: "Insight", rating: [
+          { name: "Hunt", rating: 1, maxRating: 4 },
+          { name: "Study", rating: 2, maxRating: 4 },
+          { name: "Survey", rating: 0, maxRating: 4 },
+          { name: "Tinker", rating: 1, maxRating: 4 },
+        ].filter((action) => action.rating > 0).length, experience: { points: 3, max: 6 }, actions: [
+          { name: "Hunt", rating: 1, maxRating: 4 },
+          { name: "Study", rating: 2, maxRating: 4 },
+          { name: "Survey", rating: 0, maxRating: 4 },
+          { name: "Tinker", rating: 1, maxRating: 4 },
+        ] },
+      ] },
     });
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -4123,20 +4122,19 @@ describe("attributeXpClear", () => {
 
   it("posts to /api/characters/{id}/ops/attribute-xp.clear with attribute and If-Match", async () => {
     const updated = talentChar({
-      talent: {
-        attributes: [
-          {
-            name: "Insight",
-            experience: { points: 0, max: 6 },
-            actions: [
-              { name: "Hunt", rating: 1, maxRating: 4 },
-              { name: "Study", rating: 2, maxRating: 4 },
-              { name: "Survey", rating: 0, maxRating: 4 },
-              { name: "Tinker", rating: 1, maxRating: 4 },
-            ],
-          },
-        ],
-      },
+      talent: { allocationPending: false, attributes: [
+        { name: "Insight", rating: [
+          { name: "Hunt", rating: 1, maxRating: 4 },
+          { name: "Study", rating: 2, maxRating: 4 },
+          { name: "Survey", rating: 0, maxRating: 4 },
+          { name: "Tinker", rating: 1, maxRating: 4 },
+        ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+          { name: "Hunt", rating: 1, maxRating: 4 },
+          { name: "Study", rating: 2, maxRating: 4 },
+          { name: "Survey", rating: 0, maxRating: 4 },
+          { name: "Tinker", rating: 1, maxRating: 4 },
+        ] },
+      ] },
     });
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -4202,20 +4200,19 @@ describe("attributeLevelup", () => {
 
   it("posts to /api/characters/{id}/ops/attribute.levelup with attribute, action, and If-Match", async () => {
     const updated = talentChar({
-      talent: {
-        attributes: [
-          {
-            name: "Prowess",
-            experience: { points: 0, max: 6 },
-            actions: [
-              { name: "Finesse", rating: 3, maxRating: 4 },
-              { name: "Prowl", rating: 0, maxRating: 4 },
-              { name: "Skirmish", rating: 1, maxRating: 4 },
-              { name: "Wreck", rating: 0, maxRating: 4 },
-            ],
-          },
-        ],
-      },
+      talent: { allocationPending: false, attributes: [
+        { name: "Prowess", rating: [
+          { name: "Finesse", rating: 3, maxRating: 4 },
+          { name: "Prowl", rating: 0, maxRating: 4 },
+          { name: "Skirmish", rating: 1, maxRating: 4 },
+          { name: "Wreck", rating: 0, maxRating: 4 },
+        ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+          { name: "Finesse", rating: 3, maxRating: 4 },
+          { name: "Prowl", rating: 0, maxRating: 4 },
+          { name: "Skirmish", rating: 1, maxRating: 4 },
+          { name: "Wreck", rating: 0, maxRating: 4 },
+        ] },
+      ] },
     });
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -7140,6 +7137,34 @@ function pcOpOk(characterOverrides: Record<string, unknown> = {}) {
 describe("createPcCharacter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("omits actionRatings when creating a durable allocation draft", async () => {
+    const draft = {
+      ...goldenCharacter,
+      talent: { ...(goldenCharacter.talent as Record<string, unknown>), allocationPending: true },
+    };
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => JSON.stringify(pcOpOk(draft)) });
+    const result = await Effect.runPromise(createPcCharacter("blades-in-the-dark", "Cutter"));
+    expect(result.talent.allocationPending).toBe(true);
+    expect(JSON.parse(vi.mocked(global.fetch).mock.calls[0][1]!.body as string)).toEqual({
+      gameStem: "blades-in-the-dark", playbook: "Cutter",
+    });
+  });
+
+  it("completes allocation through the empty-body revision-guarded operation", async () => {
+    const completed = {
+      ...goldenCharacter,
+      talent: { ...(goldenCharacter.talent as Record<string, unknown>), allocationPending: false },
+    };
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => JSON.stringify(pcOpOk(completed)) });
+    const result = await Effect.runPromise(talentAllocationComplete(String(goldenCharacter.id), Number(goldenCharacter.revision)));
+    expect(result.talent.allocationPending).toBe(false);
+    expect(global.fetch).toHaveBeenCalledWith(`/api/characters/${goldenCharacter.id}/ops/talent.allocation.complete`, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json", "If-Match": String(goldenCharacter.revision) },
+      body: "{}",
+    });
   });
 
   // Wire assertions, table-driven: method, URL, headers, and exact JSON body

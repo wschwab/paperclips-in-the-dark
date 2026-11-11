@@ -230,6 +230,7 @@ export interface RenderState {
     onHarmHealingClock: () => void;
     onArmorSet: (armor: string, used: boolean) => void;
     onActionSetRating: (attribute: string, action: string, next: number) => void;
+    onTalentAllocationComplete: () => void;
     onAttributeXpDelta: (attribute: string, delta: number) => void;
     onAttributeXpClear: (attribute: string) => void;
     onAttributeLevelup: (attribute: string) => void;

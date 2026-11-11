@@ -73,40 +73,41 @@ function characterDTO(overrides: Record<string, unknown> = {}): Record<string, u
         hasSpecial: false,
       },
     },
-    talent: {
-      attributes: [
-        {
-          name: "Insight",
-          experience: { points: 0, max: 6 },
-          actions: [
-            { name: "Hunt", rating: 1, maxRating: 4 },
-            { name: "Study", rating: 2, maxRating: 4 },
-            { name: "Survey", rating: 2, maxRating: 4 },
-            { name: "Tinker", rating: 0, maxRating: 4 },
-          ],
-        },
-        {
-          name: "Prowess",
-          experience: { points: 0, max: 6 },
-          actions: [
-            { name: "Finesse", rating: 1, maxRating: 4 },
-            { name: "Prowl", rating: 0, maxRating: 4 },
-            { name: "Skirmish", rating: 0, maxRating: 4 },
-            { name: "Wreck", rating: 0, maxRating: 4 },
-          ],
-        },
-        {
-          name: "Resolve",
-          experience: { points: 0, max: 6 },
-          actions: [
-            { name: "Attune", rating: 0, maxRating: 4 },
-            { name: "Command", rating: 0, maxRating: 4 },
-            { name: "Consort", rating: 0, maxRating: 4 },
-            { name: "Sway", rating: 0, maxRating: 4 },
-          ],
-        },
-      ],
-    },
+    talent: { allocationPending: false, attributes: [
+      { name: "Insight", rating: [
+        { name: "Hunt", rating: 1, maxRating: 4 },
+        { name: "Study", rating: 2, maxRating: 4 },
+        { name: "Survey", rating: 2, maxRating: 4 },
+        { name: "Tinker", rating: 0, maxRating: 4 },
+      ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+        { name: "Hunt", rating: 1, maxRating: 4 },
+        { name: "Study", rating: 2, maxRating: 4 },
+        { name: "Survey", rating: 2, maxRating: 4 },
+        { name: "Tinker", rating: 0, maxRating: 4 },
+      ] },
+      { name: "Prowess", rating: [
+        { name: "Finesse", rating: 1, maxRating: 4 },
+        { name: "Prowl", rating: 0, maxRating: 4 },
+        { name: "Skirmish", rating: 0, maxRating: 4 },
+        { name: "Wreck", rating: 0, maxRating: 4 },
+      ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+        { name: "Finesse", rating: 1, maxRating: 4 },
+        { name: "Prowl", rating: 0, maxRating: 4 },
+        { name: "Skirmish", rating: 0, maxRating: 4 },
+        { name: "Wreck", rating: 0, maxRating: 4 },
+      ] },
+      { name: "Resolve", rating: [
+        { name: "Attune", rating: 0, maxRating: 4 },
+        { name: "Command", rating: 0, maxRating: 4 },
+        { name: "Consort", rating: 0, maxRating: 4 },
+        { name: "Sway", rating: 0, maxRating: 4 },
+      ].filter((action) => action.rating > 0).length, experience: { points: 0, max: 6 }, actions: [
+        { name: "Attune", rating: 0, maxRating: 4 },
+        { name: "Command", rating: 0, maxRating: 4 },
+        { name: "Consort", rating: 0, maxRating: 4 },
+        { name: "Sway", rating: 0, maxRating: 4 },
+      ] },
+    ] },
     playbook: { name: "Cutter", experience: { points: 0, max: 8 }, abilities: [] },
     gear: { loadout: [], availableGear: [], commitment: "none", isCommitmentLocked: false, maxBulk: 6 },
     fund: { satchel: { coins: 0, max: 12 }, stash: { coins: 0, max: 16 } },
@@ -235,192 +236,35 @@ describe("playbook picker descriptions (PLAYBOOK-BLURBS-01)", () => {
   });
 });
 
-describe("Talent help (TALENT-HELP-01)", () => {
-  it("shows settings-sourced action help next to each creation dot row", () => {
+describe("playbook-only PC creation", () => {
+  it("creates immediately after choosing a playbook, omitting actionRatings", async () => {
     const root = document.createElement("div");
-    const settings = {
-      ...SETTINGS_WITH_BUDGET,
-      Attributes: [{ Name: "Insight", Actions: [
-        { Name: "Hunt", ShortDescription: "Track a target or shoot from a distance." },
-        { Name: "Study", ShortDescription: "Examine details and interpret evidence." },
-      ] }],
-    };
-    mountCharacterCreatePage(root, baseDeps({ settings }));
-    expect(root.querySelector('[data-action-help="Hunt"]')?.textContent).toBe("Track a target or shoot from a distance.");
-    expect(root.querySelector('[data-action-help="Study"]')?.textContent).toBe("Examine details and interpret evidence.");
-    expect(root.querySelector('[data-action-help="Hunt"]')?.closest(".chargen-action")?.querySelector(".action-dots")).not.toBeNull();
-  });
-});
-
-describe("PC chargen flow", () => {
-  let root: HTMLElement;
-
-  beforeEach(() => {
-    root = document.createElement("div");
-    vi.clearAllMocks();
+    const created = characterDTO();
+    global.fetch = vi.fn().mockResolvedValue(ok(createdResp(created)));
+    const onCreated = vi.fn();
+    mountCharacterCreatePage(root, baseDeps({ onCreated }));
+    expect(root.querySelector(".action-dots")).toBeNull();
+    expect(root.querySelector("[data-chargen-unspent]")).toBeNull();
+    const select = root.querySelector<HTMLSelectElement>("#pc-playbook")!;
+    const submit = root.querySelector<HTMLButtonElement>('.pc-chargen-form button[type="submit"]')!;
+    expect(submit.disabled).toBe(true);
+    select.value = "Cutter";
+    select.dispatchEvent(new Event("change"));
+    expect(submit.disabled).toBe(false);
+    root.querySelector("form")!.dispatchEvent(new Event("submit", { cancelable: true }));
+    await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(created));
+    expect(JSON.parse((global.fetch as Mock).mock.calls[0][1].body)).toEqual({
+      gameStem: "blades-in-the-dark", playbook: "Cutter",
+    });
   });
 
   function pickPlaybook(value: string) {
     const select = root.querySelector<HTMLSelectElement>("#pc-playbook")!;
     select.value = value;
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    select.dispatchEvent(new Event("change"));
   }
-
-  function dot(action: string, index: number): HTMLButtonElement {
-    const btn = root.querySelector<HTMLButtonElement>(
-      `.pc-chargen-form button[aria-label="${action} ${index}"]`,
-    );
-    if (!btn) throw new Error(`dot not found: ${action} ${index}`);
-    return btn;
-  }
-
-  function unspent(): number {
-    const el = root.querySelector<HTMLElement>("[data-chargen-unspent]")!;
-    return Number(el.textContent);
-  }
-
-  function submitBtn(): HTMLButtonElement {
-    return root.querySelector<HTMLButtonElement>(".pc-chargen-form button[type=submit]")!;
-  }
-
-  function submitPc() {
-    root.querySelector<HTMLFormElement>(".pc-chargen-form")!.dispatchEvent(
-      new Event("submit", { bubbles: true, cancelable: true }),
-    );
-  }
-
-  /** Allocate the full budget within the per-action cap: 2+2+2+1 = 7. */
-  function allocateAll() {
-    dot("Hunt", 2).click();
-    dot("Study", 2).click();
-    dot("Survey", 2).click();
-    dot("Tinker", 1).click();
-  }
-
-  it("renders per-action pickers grouped by attribute for every published action", () => {
-    mountCharacterCreatePage(root, baseDeps());
-    expect(root.querySelector("h1")?.textContent).toBe("Create Scoundrel");
-    expect(root.querySelector('.pc-chargen-form button[type="submit"]')?.textContent).toBe("Create Scoundrel");
-    expect(root.querySelector("details.create-unvalidated summary")?.textContent).toBe("Advanced: create without validation (experienced scoundrel / NPC)");
-
-    const groups = Array.from(root.querySelectorAll<HTMLElement>(".chargen-group"));
-    expect(groups.map((g) => g.getAttribute("data-attribute"))).toEqual([
-      "Insight",
-      "Prowess",
-      "Resolve",
-    ]);
-    // 3 attributes × 4 actions, each showing StartingActionDotMax dots.
-    const rows = root.querySelectorAll(".pc-chargen-form .action");
-    expect(rows.length).toBe(12);
-    for (const row of rows) {
-      expect(row.querySelectorAll(".action-dot").length).toBe(2);
-    }
-  });
-
-  it("prefills and locks the chosen playbook's DefaultActionPoints (DEC-01)", () => {
-    mountCharacterCreatePage(root, baseDeps());
-    expect(root.querySelector("[data-chargen-budget]")!.textContent).toBe("7");
-    expect(unspent()).toBe(7);
-
-    pickPlaybook("Cutter");
-    // Cutter's Skirmish 2 + Command 1 come from settings, already spent.
-    expect(unspent()).toBe(4);
-    // Locked rows render non-interactive spans — the fixed dots cannot be
-    // clicked away.
-    const skirmishRow = root.querySelector<HTMLElement>(
-      '.pc-chargen-form .action-dots[aria-label="Skirmish rating 2 of 2"]',
-    );
-    expect(skirmishRow).not.toBeNull();
-    expect(skirmishRow!.querySelectorAll("span.action-dot[data-fill='1']").length).toBe(2);
-    expect(skirmishRow!.querySelectorAll("button").length).toBe(0);
-
-    dot("Hunt", 2).click();
-    dot("Study", 1).click();
-    expect(unspent()).toBe(1);
-    dot("Survey", 1).click();
-    expect(unspent()).toBe(0);
-
-    // Un-picking a chosen unlocked dot returns the point.
-    dot("Survey", 1).click();
-    expect(unspent()).toBe(1);
-    expect(submitBtn().disabled).toBe(true);
-  });
-
-  it("keeps Create disabled until a playbook is chosen AND unspent is exactly zero", () => {
-    mountCharacterCreatePage(root, baseDeps());
-
-    // Dots without a playbook stay blocked…
-    allocateAll();
-    expect(unspent()).toBe(0);
-    expect(submitBtn().disabled).toBe(true);
-    // …and choosing a playbook resets the allocation to its defaults
-    // (fresh sheet): Cutter leaves exactly 4 dots to distribute.
-    pickPlaybook("Cutter");
-    expect(unspent()).toBe(4);
-    expect(submitBtn().disabled).toBe(true);
-
-    dot("Hunt", 2).click();
-    dot("Study", 2).click();
-    expect(unspent()).toBe(0);
-    expect(submitBtn().disabled).toBe(false);
-  });
-
-  it("re-derives defaults when the playbook changes and never carries dots across", () => {
-    mountCharacterCreatePage(root, baseDeps());
-    pickPlaybook("Cutter");
-    dot("Hunt", 2).click();
-    dot("Study", 2).click();
-    expect(unspent()).toBe(0);
-
-    pickPlaybook("Spider");
-    // Fresh allocation: Spider's Consort 2 + Study 1 replace Cutter's set;
-    // the manually picked Hunt/Study dots did not survive the switch.
-    expect(unspent()).toBe(4);
-    expect(
-      root.querySelector('.pc-chargen-form .action-dots[aria-label="Hunt rating 0 of 2"]'),
-    ).not.toBeNull();
-    const consortRow = root.querySelector<HTMLElement>(
-      '.pc-chargen-form .action-dots[aria-label="Consort rating 2 of 2"]',
-    );
-    expect(consortRow!.querySelectorAll("button").length).toBe(0);
-  });
-
-
-  it("POSTs the full final-ratings map to /api/characters/pc and delivers the DTO", async () => {
-    const created = characterDTO();
-    global.fetch = vi.fn().mockResolvedValue(ok(createdResp(created)));
-    const onCreated = vi.fn();
-    mountCharacterCreatePage(root, baseDeps({ onCreated }));
-
-    pickPlaybook("Cutter");
-    // Defaults are locked in; distribute the remaining four dots.
-    dot("Hunt", 2).click();
-    dot("Study", 2).click();
-    dot("Study", 1).click(); // terminal-dot click steps back down to 1
-    dot("Finesse", 1).click();
-    expect(unspent()).toBe(0);
-    submitPc();
-
-    await vi.waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith("/api/characters/pc", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          gameStem: "blades-in-the-dark",
-          playbook: "Cutter",
-          actionRatings: {
-            Hunt: 2, Study: 1, Survey: 0, Tinker: 0,
-            Finesse: 1, Prowl: 0, Skirmish: 2, Wreck: 0,
-            Attune: 0, Command: 1, Consort: 0, Sway: 0,
-          },
-        }),
-      });
-      expect(onCreated).toHaveBeenCalledWith(created);
-    });
-  });
+  let root: HTMLElement;
+  beforeEach(() => { root = document.createElement("div"); });
 
   it("hides the PC flow when settings publish no budget, keeping only the unvalidated path", () => {
     mountCharacterCreatePage(root, baseDeps({ settings: SETTINGS_NO_BUDGET }));

@@ -6,6 +6,7 @@ with GNATCOLL.JSON;
 with Pitd_Common;
 with Pitd_Error;
 
+
 package body Pitd_Normalize is
    pragma SPARK_Mode (Off);
 
@@ -182,8 +183,8 @@ package body Pitd_Normalize is
      "|standardUsed|heavyUsed|specialUsed|hasStandard|hasHeavy|hasSpecial|";
    Allowed_Dossier : constant String :=
      "|name|crewId|alias|look|notes|background|heritage|vice|";
-   Allowed_Talent : constant String := "|attributes|";
-   Allowed_Attribute : constant String := "|name|experience|actions|";
+   Allowed_Talent : constant String := "|attributes|allocationPending|";
+   Allowed_Attribute : constant String := "|name|experience|actions|rating|";
    Allowed_Action : constant String := "|name|rating|maxRating|";
    Allowed_Experience : constant String := "|points|max|";
    Allowed_Playbook : constant String := "|name|experience|abilities|";
@@ -1251,6 +1252,32 @@ package body Pitd_Normalize is
                                                 "XpTrackMaxima.Attribute", 6, C));
       Set_Field (X, "actions", N_Items (V, "actions", "actionsByName",
                                         Ptr & "/actions", S, C, Action_Item'Access));
+      declare
+         Actions : constant JSON_Array := Get (X, "actions");
+         Rating : Natural := 0;
+      begin
+         for I in 1 .. Length (Actions) loop
+            if Int_Field (Get (Actions, I), "rating") > 0 then
+               Rating := Rating + 1;
+            end if;
+         end loop;
+         Set_Field (X, "rating", Integer (Rating));
+      end;
+      declare
+         Absent : constant Boolean := not Has_Field (V, "rating");
+         Prev   : constant JSON_Value := Get (V, "rating");
+         Repl   : constant JSON_Value := Get (X, "rating");
+      begin
+         if Absent then
+            Add_Change (C, Ptr & "/rating", "derived rating", Prev, Repl,
+                        "Missing required property " & Ptr
+                        & "/rating: filled with the count of positive action ratings");
+         elsif Prev /= Repl then
+            Add_Change (C, Ptr & "/rating", "derived rating", Prev, Repl,
+                        "Property " & Ptr
+                        & "/rating is derived: set to the count of positive action ratings");
+         end if;
+      end;
       return X;
    end Attribute_Item;
 
@@ -1677,6 +1704,8 @@ package body Pitd_Normalize is
       end if;
       Set_Field (X, "attributes", N_Items (Src, "attributes", "attributesByName",
                                            "/talent/attributes", S, C, Attribute_Item'Access));
+      Set_Field (X, "allocationPending",
+                 N_Bool (Src, "allocationPending", "/talent/allocationPending", C));
       if Missing then
          Add_Change (C, "/talent", "missing/null fill", JSON_Null, Clone (X),
                      "Missing required property /talent: filled with canonical empty talent");
@@ -2892,6 +2921,16 @@ package body Pitd_Normalize is
          R := Canonicalize (Kind, Id, Entity_V);
       end if;
       Doc := Get (R, "document");
+      if Kind = "character" and then Has_Field (Doc, "talent") then
+         declare
+            Pending : constant Boolean :=
+              Stored.Kind = JSON_Object_Type
+              and then Has_Field (Stored, "talent")
+              and then Bool_Field (Get (Stored, "talent"), "allocationPending");
+         begin
+            Set_Field (Get (Doc, "talent"), "allocationPending", Pending);
+         end;
+      end if;
       Needs := Get (R, "needsInputPointers");
       All_Issues := Get (R, "issues");
       declare

@@ -50,6 +50,7 @@ import {
   harmHealingClock,
   armorSet,
   actionSetRating,
+  talentAllocationComplete,
   attributeXpAdd,
   attributeXpClear,
   attributeLevelup,
@@ -1807,6 +1808,19 @@ export function mountCharacterDetailPage(
     },
 
     // -- F2o: Talents + XP + Score XP handlers ------------------------------
+
+    onTalentAllocationComplete: () => {
+      if (!currentCharacter || isTalentsLoading) return;
+      isTalentsLoading = true;
+      clearNotices();
+      renderDetailWrapper();
+      runCharacterMutate(
+        "talents",
+        talentAllocationComplete(characterId, currentCharacter.revision),
+        (updated) => { currentCharacter = updated; renderDetailWrapper(); },
+        () => { isTalentsLoading = false; },
+      );
+    },
 
     onActionSetRating: (attribute: string, action: string, next: number) => {
       if (!currentCharacter || isTalentsLoading) return;

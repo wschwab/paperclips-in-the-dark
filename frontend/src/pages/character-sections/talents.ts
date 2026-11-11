@@ -1,22 +1,51 @@
 /**
- * renderTalentsSection (ARCH-02): talents section controller, extracted verbatim from the
- * character-detail page's render pass. DOM output is unchanged.
+ * Talent ratings, durable starting allocation, and ordinary attribute XP.
+ * Creation constraints apply only while the server marks allocation pending.
  */
 import { actionDescription } from "../character-domain.js";
 import { el } from "../../lib/dom.js";
 import { actionDots } from "../../components/action-dots.js";
 import { xpBoxes } from "./shared.js";
 import type { SectionCtx } from "./context.js";
+import { pcBudgetFromSettings, playbookDefaultsFromSettings, pcAllocationReady, unspentDots } from "../../lib/chargen.js";
 
 export function renderTalentsSection(ctx: SectionCtx): HTMLElement {
   const { state, c, handlers, gameData, gameplayDisabled, effCapByName } = ctx;
+  const pending = c.talent.allocationPending === true;
+  const budget = pcBudgetFromSettings(gameData);
+  const defaults = playbookDefaultsFromSettings(gameData, c.playbook.name);
+  const ratings = Object.fromEntries(c.talent.attributes.flatMap((attr) => attr.actions.map((a) => [a.name, a.rating])));
+  const unspent = budget ? unspentDots(budget, ratings) : 0;
+  const allocationBanner = pending ? (() => {
+    const finish = el("button", {
+      type: "button", className: "btn-primary", "data-talent-allocation-complete": "",
+      disabled: gameplayDisabled || !budget || !pcAllocationReady(budget, c.playbook.name, ratings),
+    }, state.isTalentsLoading ? "Finishing…" : "Finish Talent allocation");
+    finish.addEventListener("click", () => handlers.onTalentAllocationComplete());
+    return el("div", { className: "talent-allocation", "data-talent-allocation": "", "aria-label": "Talent allocation pending" },
+      el("h3", {}, "Finish your Talent allocation"),
+      el("p", { className: "notice" }, "Your draft is saved. Allocate the remaining dots, then finish to unlock ordinary gameplay ratings."),
+      budget ? el("p", { role: "status" }, "Unspent Talent dots: ",
+        el("strong", { "data-talent-unspent": "" }, String(unspent)),
+        ` of ${budget.startingActionDots} · per-action max ${budget.startingActionDotMax}`,
+      ) : el("p", { className: "notice" }, "Game settings must load before you can finish allocation."),
+      el("ul", {},
+        el("li", {}, "Playbook default actions stay fixed."),
+        el("li", {}, "Spend every remaining Talent dot on the other actions."),
+        el("li", {}, "Finish allocation explicitly when no dots remain."),
+      ),
+      finish,
+    );
+  })() : null;
   // -- Talents + XP. Score XP (session tracks, End downtime) moved to the XP Tracker (XP-TRACKER-04). --
 
 return   (() => {
 
     const attributeGroups = c.talent.attributes.map((attr) =>
       el("div", { className: "talent-attribute", "data-attribute": attr.name, style: "margin-bottom: 1em;" },
-        el("h3", { className: "lbl" }, attr.name),
+        el("h3", { className: "talent-attribute-heading" }, attr.name, " ",
+          el("span", { "data-attribute-rating": attr.name, "aria-label": `${attr.name} rating` },
+            String(attr.rating))),
 
         // Action rows: dot rows (click dot N → set rating N; click filled
         // terminal → clear). The −/+ pair was redundant (F-30) — the dots
@@ -27,14 +56,17 @@ return   (() => {
           // SC-F3/P21: the enforced cap is the server-computed effective cap
           // (min of the raw max and the crew-Mastery-derived cap); the UI
           // never offers a dot the server would reject with RATING_MAXED.
-          const effectiveMax = effCapByName.get(action.name)?.effectiveMax ?? action.maxRating;
+          const effectiveMax = pending && budget
+            ? Math.min(budget.startingActionDotMax, action.rating + Math.max(0, unspent))
+            : (effCapByName.get(action.name)?.effectiveMax ?? action.maxRating);
           const dots = actionDots({
             name: action.name,
             value: action.rating,
             max: effectiveMax,
-            title: desc ?? undefined,
-            // Retired → dots become display-only (no onChange ⇒ non-interactive).
-            onChange: gameplayDisabled
+            title: pending && action.name in defaults ? "Fixed by the playbook's DefaultActionPoints" : desc ?? undefined,
+            locked: pending && action.name in defaults,
+            // Pending controls are usable only with their settings-derived budget.
+            onChange: gameplayDisabled || (pending && !budget)
               ? undefined
               : (next) => handlers.onActionSetRating(attr.name, action.name, next),
           });
@@ -47,6 +79,7 @@ return   (() => {
           },
             // Keep the dot tooltip and expose the same help without requiring hover.
             dots,
+            pending && action.name in defaults ? el("span", { className: "lbl" }, "Playbook default · fixed") : null,
             el("span", {}, `${action.rating}/${effectiveMax}`),
             desc ? el("p", {
               className: "chargen-hint",
@@ -58,6 +91,7 @@ return   (() => {
 
         // Attribute XP tracker: points/max with +/−, clear, and levelup
         (() => {
+          if (pending) return null;
           const xp = attr.experience;
           const minusBtn = el("button", {
             type: "button",
@@ -125,6 +159,7 @@ return   (() => {
 
     return el("div", { className: "character-talents", "data-section": "talents" },
       el("h2", {}, "Talents"),
+      allocationBanner,
       ...attributeGroups,
       state.clampNotice
         ? el("p", { className: "notice", style: "margin-top: 0.5em;" }, state.clampNotice)

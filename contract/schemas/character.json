@@ -292,10 +292,16 @@
     "talent": {
       "type": "object",
       "required": [
-        "attributes"
+        "attributes",
+        "allocationPending"
       ],
       "additionalProperties": false,
       "properties": {
+        "allocationPending": {
+          "type": "boolean",
+          "readOnly": true,
+          "description": "Server-owned PC starting allocation state. Legacy documents default false; imports cannot change this state."
+        },
         "attributes": {
           "type": "array",
           "items": {
@@ -303,10 +309,17 @@
             "required": [
               "name",
               "experience",
-              "actions"
+              "actions",
+              "rating"
             ],
             "additionalProperties": false,
             "properties": {
+              "rating": {
+                "type": "integer",
+                "minimum": 0,
+                "readOnly": true,
+                "description": "Count of this attribute's actions with a positive rating (first-column dots), derived at every write."
+              },
               "name": {
                 "type": "string"
               },
