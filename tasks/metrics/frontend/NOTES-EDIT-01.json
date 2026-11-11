@@ -1,0 +1,27 @@
+{
+  "task": "NOTES-EDIT-01",
+  "track": "frontend",
+  "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator; note edit in place on crew and character sheets, note.update op)",
+  "reviewAgent": "Sol 6.1 xhigh loop: pending; see tasks/metrics/frontend/NOTES-EDIT-01-sol-verdict.txt",
+  "date": "2026-11-11",
+  "scope": "Additive note.update {index, text} for characters and crews; Edit -> Save/Cancel on both sheets; undo covers the edit; Chromium evidence at 3 viewports x 3 themes.",
+  "commits": {
+    "implementation": "dc1e8476",
+    "endpointMapPin": "719c2ac5"
+  },
+  "gates": {
+    "frontendVitest": "1055 passed",
+    "frontendBuild": "clean",
+    "frontendTsc": "clean",
+    "adaSuite": "692 passed, 1 skipped, 0 failed (test:ada, managed)",
+    "browserJourneys": "6 PASS (test:browser, managed)",
+    "toolingSuite": "232 passed after endpoint map pin 118 -> 120",
+    "evidencePaths": "OK",
+    "mutation": "28/28 killed (P0 19/19, P1 9/9); baseline green on backend-ada, conformance, frontend",
+    "chromiumProbe": "36 screenshots: 3 viewports x 3 themes x 4 states; touch targets >= 44x44 for Edit, Save, Cancel"
+  },
+  "incidents": [
+    "Unmanaged conformance runs used the default http://localhost:9657 (vitest.config.ts, api.ts, report.ts, bin/conformance.mjs). These were my gate 'conf unit' run (npm run test:run) and a direct tooling vitest run. Whether either reached a live server on 9657 is not verified. The user reported that a recent run wrote fixture entities into the live campaign. All later conformance runs used managed runners only."
+  ],
+  "iterationNotes": "Red-first: the note.update and UI tests were written before the implementation. Fixes during the round: focus restoration in lib/focus.ts (Edit buttons kept out of the ordinal via data-focus-aside); a duplicated disabled attribute removed; the Edit button class added after a stale dist build (the managed server serves frontend/dist, so the probe reran after rebuild); endpoint map pin moved 118 -> 120."
+}
