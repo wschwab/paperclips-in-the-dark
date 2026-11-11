@@ -15,7 +15,7 @@
     "frontendTsc": "clean",
     "adaSuite": "692 passed, 1 skipped, 0 failed (test:ada, managed)",
     "browserJourneys": "6 PASS (test:browser, managed)",
-    "toolingSuite": "232 passed after endpoint map pin 118 -> 120",
+    "toolingSuite": "233 passed in 18 files after endpoint map pin 118 -> 120",
     "evidencePaths": "OK",
     "mutation": "28/28 killed (P0 19/19, P1 9/9); baseline green on backend-ada, conformance, frontend",
     "chromiumProbe": "36 screenshots: 3 viewports x 3 themes x 4 states; touch targets >= 44x44 for Edit, Save, Cancel"

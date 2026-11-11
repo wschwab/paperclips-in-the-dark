@@ -1,0 +1,51 @@
+VERDICT: PASS
+(Round 1, openai-codex/gpt-6.1-sol xhigh. The run logged one usage_limit_reached retry event, then completed and returned the verdict below.)
+
+
+Deliverable verified end-to-end against a live managed Ada server and a real Chromium. No P0. Findings below; the P1 is an evidence/process issue, not a defect in this change, which is why it does not flip the verdict (the change's own gates reproduce green under managed launchers — I re-ran them).
+
+## Verified (evidence, not narrative)
+
+**1. Contract + Ada — confirmed**
+- `contract/openapi.yaml:2140-2161` (`noteUpdate`, `/characters/{id}/ops/note.update`) and `:2575-2596` (`crewNoteUpdate`): body `{index integer min 0, text string minLength 1}`, both required, `additionalProperties:false`; responses 200/404/409/500 → `OpResult`; `x-snapshot: true` on both.
+- `backend-ada/server/src/pitd_ops.adb:44` (Snapshots), `:544-545` (Check_Fields `MnI=>0`, `MnL=>1`), `:839` (retired allow-list, comment at `:831` updated), `:1572-1590` (apply branch: same `P/A/O` shape as `note.add/remove`, replaces `I-1`, `Not_Found_Error (Op,"note index out of range",E)`).
+- Undo: snapshot-listed, prior text restored — reproduced live (`NOTES-EDIT-01-002`, `-004`). Empty text → VALIDATION with zero mutation, negative index → VALIDATION: `CONTRACT-VALIDATION-{CHARACTER,CREW}-NOTE-UPDATE-{NEGATIVE,EMPTY}-001` all pass against the live server.
+- No other Ada enumeration needs `note.update`; `pitd_common.adb:1573-1608` `suggestedOps` is contract-declared "coarse"/advisory and pinned only as `string[]` (`conformance/suites/semantics/game-mode.test.ts:87-88`), so its omission is correct, not a gap.
+
+**2. Frontend wiring — confirmed, including the "disconnected construction" risk**
+- `client.ts:1119-1126`, `:1452-1459` use `characterMutate`/`crewMutate` with `"note.update"`.
+- `character-detail.ts`: `noteEdit` state `:497`; handlers `onNoteEditStart/Cancel/Save` at `:1396-1421` are members of the single `handlers` literal (`:1042`); `wrappedHandlers = continuity.wrapHandlers(handlers)` (`:2336`) is a generic `Object.keys` proxy (`mutation-continuity.ts:467-479`) so no key is dropped; `handlers: { ...wrappedHandlers, gm: gmHandlers }` (`:2445`); `ctx = sectionCtx(state)` (`:233`) → `renderNotesSection(ctx)` (`:294`). Live click-through works, so the wired object is the rendered one.
+- `crew-detail.ts`: `RenderState` fields `:150`, `:198-200`; handlers `:866-886`; `runCrewOp` (`:463-500`) invokes `afterSuccess` only in `onSuccess` → `noteEdit = null` on success only.
+- Failure path does **not** clear the editor: character passes `clearLoading` as `runCharacterMutate`'s 4th arg (`:1411-1420`) → `runMutation`→`failMutation` (`mutation-transport.ts:63-81`, `:83-97`). Crew relies on `afterSuccess`. Both correct; neither path is test-pinned (P2 below).
+
+**3. Renderers additive; focus fix sound**
+- `character-sections/notes.ts:14-42,83-121`; `crew-sections/notes.ts:23-36,84-119`: Edit carries `note-edit-control`, `data-focus-aside`, `data-focus-key`; Save disabled on `area.value.trim() === ""`; editor `li` carries `data-focus-key`. DOM delta vs base is only the Edit button and the editor row.
+- `focus.ts:71` (aside excluded), `:93` (`null` only when `ordinal === -1 && key === null`), `:115` (key-first restore). No regression path: every other `data-focus-key` row (dossier/named/vice/cohort/profile) contains listed focusables, and roster rows (`tabindex=-1`, unkeyed) still return `null`.
+- The aside exclusion is load-bearing and exercised: the ordinal-sensitive FV-012 notes tests (`character-detail.test.ts:5331,5353,5380,5405`; `crew-detail.test.ts:3790,3810`) pass and would shift by the preceding Edit buttons without it.
+- Live: Edit → textarea focused and seeded with the current text; Cancel → focus back on the Edit button; Save → focus back on the Edit button; both sheets, 390×844 and 1440×1000; no horizontal overflow (`scrollWidth == innerWidth`).
+
+**4. Tests non-vacuous** — `c4-playtest.test.ts:51-113` (op behavior, revision advance, NOT_FOUND, VALIDATION, undo restore, retired-allowed); `character-detail.test.ts:4160-4235`, `crew-detail.test.ts:3037-3097` (exact path/body/`If-Match`, editor closes, cancel sends nothing); `client.test.ts:2317-2350,6687-6715`; parity list `capability-parity.test.ts:66`; endpoint pin `endpoint-schema-map.test.ts:30-31` (118→120). All reproduce green live.
+
+**5. Evidence** — `docs/public/evidence/notes-edit-01/` has exactly 36 PNGs; widths are 1440/768/390 with fullPage heights (real viewports, not emulation). Probe (`conformance/scripts/notes-edit-01-chromium-probe.mjs`) asserts `BASE_URL` (managed-only by construction), `assertTouchTarget` ≥44×44, and `errors.length === 0`. I re-ran it through `managed-browser-smoke.mjs`: `{"ok":true,"viewports":3,"themes":3}`, 36 PNGs.
+
+**6. Mutation** — `conformance/fixtures/mutation-catalog.json` differs from `main` only in 8 re-pinned `restorationHash` values (same 28 ids, none added/removed); I recomputed all 28 hashes against current bytes — all match. Log: 28/28 killed, baselines green (Ada 692 / conformance 233 / frontend 1055), `MUTATION_EXIT=0`, post-campaign verification PASS.
+
+**Independent re-runs I performed:** frontend `client.test.ts` 286 pass; `character-detail.test.ts`+`crew-detail.test.ts` 277 pass; managed `-t NOTES-EDIT-01` 4 pass; managed `capability-parity` 4 pass; managed `-t NOTE-UPDATE` 4 pass; tooling suite 18 files/233 pass; managed browser journeys 6/6 PASS; managed chromium probe ok. Independent probe: `/tmp/notes-edit-01-review-focus.mjs` (evidence `/tmp/notes-edit-01-review-evidence/`).
+
+## Findings
+
+**P1 — Unmanaged conformance runs against a live campaign (disclosed, unresolved).** `tasks/metrics/frontend/NOTES-EDIT-01.json` incidents: the `test:run` gate run and a direct tooling vitest run bypassed the guard chain and defaulted to `http://localhost:9657` (`conformance/vitest.config.ts:8` supplies that default; `test:run`/`test:tooling` do not chain `default-data-guard.mjs`), and the human reports fixture entities written into the live campaign. Pre-existing footgun, not introduced here, but: (a) cleanup of the polluting entities is recorded nowhere, and (b) the default remains a silent trap. Concrete fix: require `CONFORMANCE_BASE_URL` explicitly (no default) or route `test:run`/`test:tooling` through the guards; then record the cleanup.
+
+**P2 — Probe under-asserts what the card claims.** `tasks/NOTES-EDIT-01.md` states "touch targets >= 44x44 for Edit, Save, Cancel"; the probe asserts character Edit/Save/Cancel and crew **Save only** (`notes-edit-01-chromium-probe.mjs:71-74,81`) — crew Edit and crew Cancel are unasserted. Behavior is in fact correct: my independent probe measured all six ≥44×44 (`.note-edit-control` covers both sheets). Fix is one line per locator in the probe.
+
+**P2 — "Cancel note N(+1) edit" is sheet-specific.** True for characters (`character-sections/notes.ts:109`, 1-based `idx+1`); the crew uses the 0-based index (`crew-sections/notes.ts:110`, `Cancel note 0 edit`), consistent with the crew's existing `Remove note ${idx}`. Not a defect, but the claim as written generalizes incorrectly.
+
+**P2 — Mutation evidence is regression coverage, not new-code coverage.** The 28 mutants are the standing MUT-02 set (ids identical to `main`); none targets `note.update` (no mutant for the apply branch, the `data-focus-aside` exclusion, or the edit-state machine). "28/28 killed" shows no existing test was weakened — which I confirmed — but new-code coverage rests on `NOTES-EDIT-01-001..004` + page/client tests, which I verified are non-vacuous.
+
+**P2 — Untested failure path.** No test pins "noteEdit survives a failed/stale save" (character `:1411-1420`, crew `:879-885`). Code is correct; the edge is unpinned.
+
+**P2 — Recorded tooling count is off by one.** Metrics say `toolingSuite: 232 passed`; the suite is 18 files / **233** tests (all green).
+
+**P2 — Dead class + a11y inconsistency.** `note-editing` (`character-sections/notes.ts:115`, `crew-sections/notes.ts:115`) has no CSS rule, test, or selector — dead weight. Character Edit buttons expose the accessible name "Edit" on every row (title only), while the crew supplies `aria-label="Edit note N"` (`crew-sections/notes.ts:31`); matching the crew fixes repeated-name SR output.
+
+**P2 — Save does not clear the editor on failure** — *negative finding, as requested*: verified it does not (see §2). Listed only to record that the specific hazard in the brief is absent.

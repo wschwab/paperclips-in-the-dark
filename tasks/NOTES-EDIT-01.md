@@ -1,9 +1,9 @@
 # NOTES-EDIT-01: edit notes in place (crew and character sheets)
 
-Status: implementation complete; Sol 6.1 xhigh review pending.
+Status: implemented; Sol 6.1 xhigh round 1 verdict PASS (see tasks/metrics/frontend/NOTES-EDIT-01-sol-verdict.txt).
 
 ## Outcome
-- Users can edit an existing note on the Crew sheet and the Scoundrel sheet. Edit opens a textarea; Save and Cancel are 44px touch targets. Save is disabled when the trimmed text is empty.
+- Users can edit an existing note on the Crew sheet and the Scoundrel sheet. Edit opens a textarea. Save and Cancel are 44px touch targets on the character sheet; the probe asserts crew Save. Save is disabled when the trimmed text is empty.
 - Contract: additive `note.update {index, text}` for characters and crews (0-based index; NOT_FOUND out of range; VALIDATION on empty text). Both are snapshotted, so undo restores the prior text. Retired characters may still edit notes (lifecycle rule).
 - Shared focus fix: `frontend/src/lib/focus.ts` skips `data-focus-aside` controls, so the new Edit buttons do not shift the FV-012 focus ordinal.
 
@@ -16,7 +16,13 @@ Status: implementation complete; Sol 6.1 xhigh review pending.
 ## Open risk
 Two unmanaged conformance runs defaulted to `http://localhost:9657`. This is noted in the metrics incidents. All later conformance runs used the managed runners only.
 
+## Open follow-ups (Sol round 1 P2, not blocking)
+- Unpinned failure path: a failed or stale save must keep the editor open. Code is correct (character `runCharacterMutate` clearLoading, crew `afterSuccess` only on success); no test pins it.
+- Dead class `note-editing` in both `notes.ts` renderers; no rule or selector uses it.
+- Character Edit buttons use title only; the crew uses `aria-label="Edit note N"`. Matching the crew would help screen readers.
+- Probe does not assert crew Edit or crew Cancel touch sizes.
+- Mutation campaign (28/28) is the standing MUT-02 set; no mutant targets `note.update` or the focus exclusion.
+
 ## Remaining
-- Sol 6.1 xhigh review loop until PASS, verdict in `tasks/metrics/frontend/NOTES-EDIT-01-sol-verdict.txt`.
 - Rebase onto current `main`, then push to origin and rad-agent.
 - Forget the workspace.
