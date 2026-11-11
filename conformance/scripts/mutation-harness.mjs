@@ -500,12 +500,14 @@ const mutations = {
     apply: (repoRoot) => {
       const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
       let content = readFileSync(file, "utf8");
-      if (!content.includes("if Snapshots (Op) then Snapshot (Kind, Id, Op, Before); end if;")) {
+      // BUGFIX-1111: the snapshot call now feeds a rollback binding.
+      const anchor = '(if Snapshots (Op) then Snapshot (Kind, Id, Op, Before) else "");';
+      if (!content.includes(anchor)) {
         throw new Error("M08: Could not find snapshot call");
       }
       content = content.replace(
-        "if Snapshots (Op) then Snapshot (Kind, Id, Op, Before); end if;",
-        "null; -- MUTANT M08: skipped pre-mutation snapshot"
+        anchor,
+        '""; -- MUTANT M08: skipped pre-mutation snapshot'
       );
       writeFileSync(file, content);
       return "Skipped pre-mutation snapshot on x-snapshot:true operation";
@@ -518,11 +520,12 @@ const mutations = {
     apply: (repoRoot) => {
       const file = join(repoRoot, "backend-ada/server/src/pitd_callback.adb");
       let content = readFileSync(file, "utf8");
-      // The undo handler deletes the snapshot file: Ada.Directories.Delete_File (Path);
-      // which is at line ~7122 inside the undo handler
-      const pattern = /Ada\.Directories\.Delete_File \(Path\);/;
+      // The undo handler consumes the snapshot file through the shared
+      // best-effort path (BUGFIX-1111); skipping it leaves the snapshot in
+      // history so a second undo replays stale state.
+      const pattern = /Consume_Snapshot_Best_Effort\s*\n\s*\(Kind, Id, Name \(Name'First \.\. Name'Last - 5\)\);/;
       if (!pattern.test(content)) {
-        throw new Error("M09: Could not find Delete_File (Path) in undo handler");
+        throw new Error("M09: Could not find snapshot consumption in undo handler");
       }
       content = content.replace(pattern, "null; -- MUTANT M09: skip snapshot consumption");
       writeFileSync(file, content);

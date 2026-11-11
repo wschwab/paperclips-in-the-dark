@@ -72,6 +72,7 @@ export default defineConfig({
         { text: 'Final verdict', link: '/contract/gate-evidence/final-verdict' },
         { text: 'Wave 7 craft verdict', link: '/contract/gate-evidence/wave7-craft-verdict' },
         { text: 'Conformance report JSON', link: '/conformance/report-json' },
+        { text: 'BUGFIX-1111 — test-run isolation and history atomicity', link: '/conformance/bugfix-1111' },
       ],
     },
     {

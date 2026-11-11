@@ -668,7 +668,8 @@ package body Pitd_Schema_Validators is
    Required_Health : constant String :=
      "|status|implementation|version|dataDir|";
 
-   Allowed_Health : constant String := Required_Health;
+   Allowed_Health : constant String :=
+     Required_Health & "|testHooks|";
 
    Required_Character_Summary : constant String :=
      "|kind|id|name|alias|playbook|gameStem|crewId|stress|traumas|isRetired|isDeadish|revision|isReadable|isRepairable|isComplete|deleteToken|canUndo|historyCount|";
@@ -1303,6 +1304,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, Ptr, "implementation", Check_Enum_Health_Implementation'Access);
       Check_Prop (V, Ptr, "version", Check_Str'Access);
       Check_Prop (V, Ptr, "dataDir", Check_Str'Access);
+      Check_Prop (V, Ptr, "testHooks", Check_Bool'Access);
    end Check_Health;
 
    procedure Check_Character_Summary (V : JSON_Value; Ptr : String) is
@@ -1620,6 +1622,7 @@ package body Pitd_Schema_Validators is
       Check_Prop (V, "", "implementation", Check_Enum_Health_Implementation'Access);
       Check_Prop (V, "", "version", Check_Str'Access);
       Check_Prop (V, "", "dataDir", Check_Str'Access);
+      Check_Prop (V, "", "testHooks", Check_Bool'Access);
    end Validate_Health;
 
    procedure Validate_History_Entry (V : JSON_Value) is

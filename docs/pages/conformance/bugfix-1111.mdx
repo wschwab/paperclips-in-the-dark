@@ -1,0 +1,103 @@
+---
+title: BUGFIX-1111 — test-run isolation and history failure atomicity
+description: Why a conformance run can no longer touch a server it did not start, and how history maintenance now fails
+---
+
+# BUGFIX-1111
+
+Fixes for four items of the 2026-11-11 playtest bug report. Two of them were
+observed against a live campaign; both are now structurally impossible rather
+than merely avoided by convention.
+
+## 1. A conformance run never touches a server it did not start
+
+**Observed.** Between 15:49:28 and 15:51:52 UTC on 2026-11-11, 454 characters,
+187 crews and 192 clocks were written into a live campaign's data directory,
+along with `flow-groups/`, `flow-receipts/` and `transactions/` entries. The
+run had no explicit target, so the conformance runner fell back to
+`http://localhost:9657` — the campaign server's port — and drove it as if it
+owned it.
+
+**Fix.** There is no default target anywhere in the conformance tooling:
+
+- `conformance/bin/conformance.mjs` requires `--against <url>` (or
+  `CONFORMANCE_BASE_URL` / `BASE_URL`) and exits `2` before spawning Vitest
+  when none is given;
+- `conformance/src/api.ts` requires an explicit target (constructor argument or
+  `CONFORMANCE_BASE_URL`) and throws `MissingTargetError` otherwise;
+- `conformance/src/report.ts` takes the target as a required argument, so a
+  report can no longer claim to describe `http://localhost:9657`;
+- `conformance/vitest.config.ts` captures the caller's target into
+  `CONFORMANCE_BASE_URL` (Vite reserves `BASE_URL`) and defaults to the empty
+  string, never to a port.
+
+**Second rule: the target must announce test hooks.** Every entry point —
+the CLI runner and the API client used by the suites — refuses to send a
+request until `GET /api/health` reports `testHooks: true`. A campaign server
+started without `--test-hooks` never reports it, so a run against one stops
+with an explicit message instead of mutating it. The check is one-shot per
+process and the refusal is cached.
+
+### Contract change (authorized)
+
+`contract/schemas/campaign.json#/$defs/health` gained one additive, optional
+property; `backend-ada/server/src/generated/pitd_schema_validators.*` were
+regenerated from it (all other generated artifacts are byte-identical).
+
+| | before | after |
+| --- | --- | --- |
+| health properties | `status`, `implementation`, `version`, `dataDir` | the same plus `testHooks` (boolean, optional) |
+| Ada `/api/health` | four fields | the same plus `"testHooks": <--test-hooks>` |
+| conformance `Schemas.Health` | four fields | the same plus optional `testHooks` |
+
+The property is optional so that a server which predates it still validates
+against the contract; the conformance guard treats a missing field as "test
+hooks disabled" and refuses it.
+
+## 2. Undo and retention no longer half-apply (items 5 and 6)
+
+**Observed** on a filesystem that allows create, write and rename but refuses
+unlink: `POST /api/crews/{id}/undo` restored the crew and then returned
+`500 INTERNAL`, because the consumed snapshot could not be deleted. Later,
+once `historyCount` reached 48, every snapshot-worthy write returned
+`500 INTERNAL` and each failed attempt left one more snapshot file behind.
+
+**Fix — retention is best-effort.** `Prune_History` deletes the oldest
+snapshots through one shared deletion path; a refused unlink is logged to the
+server log and the write proceeds. When retention could not remove anything,
+`Snapshot` rebuilds the sidecar index from the files that exist, so the
+reported `historyCount` and `GET .../history` keep describing disk instead of
+claiming a retention that did not happen.
+
+**Fix — a failed write leaves no snapshot.** The write paths take their
+snapshot through a value that is discarded when the accompanying entity write
+raises, so history never records an operation that did not land. This covers
+the operation path, `campaign.batch`, import and repair.
+
+**Fix — undo completes or fails before changing the entity.** The single-entity
+undo path consumes its snapshot best-effort: if the unlink is refused the
+restore still completes, the snapshot is kept, and the index is rebuilt from
+disk, so the response is `200` with history that matches the files present. A
+failed restore still returns an error with the entity unchanged. Snapshot
+consumption during a grouped (flow) undo is best-effort for the same reason —
+a retention failure must never abort a publish or trip the fail-closed commit
+path.
+
+**Test seam.** `POST /api/test-hooks/fail-unlink` (armed only with
+`--test-hooks`) makes the next history-file deletion for one entity fail, so
+all of the above is exercised on a normal filesystem. Regression coverage:
+`conformance/suites/persistence/history-failure-atomicity.test.ts`
+(`BUGFIX-1111-UNDO-001`, `-PRUNE-001`, `-WRITE-001`), all three red against a
+build that has the probe but not the fixes.
+
+## 3. `skill/SKILL.md` counts (item 7)
+
+The skill claimed 86 of 110 operations were agent-facing and 24 human, while
+the generated reference reports 121 operations. The counts now read 90 agent
+and 31 human of 121, and `conformance/src/skill-counts.test.ts`
+(`TOOLING-SKILL-001`) derives them from
+`skill/api-reference/capability-manifest.json` and the generated reference, so
+they cannot drift again. `TOOLING-SKILL-002` requires every `pitd` launch flag
+parsed in `backend-ada/server/src/pitd.adb` to be documented; the skill's
+launch section now covers `--games` (game-settings directory) and
+`--test-hooks`.

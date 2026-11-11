@@ -1578,7 +1578,6 @@ if Kind = "crew" then
                   return Json_Response (No_History_Error ("undo", "no history", E));
                end if;
                declare
-                  Path     : constant String := Base & "/" & To_String (Best);
                   Restored : constant JSON_Value := Undo_Doc;
                begin
                   declare Missing : constant String := Missing_Reference (Kind, Restored); begin
@@ -1618,8 +1617,13 @@ if Kind = "crew" then
                        (Kind, Id, Name (Name'First .. Name'Last - 5), E, Restored)
                      then
                         Write_Entity (Kind, Id, Restored);
-                        Ada.Directories.Delete_File (Path);
-                        Rebuild_Index (Kind, Id);
+                        --  BUGFIX-1111: the restore has happened; a filesystem
+                        --  that refuses unlink must not turn a completed undo
+                        --  into a 500.  The snapshot is kept, the index is
+                        --  rebuilt from disk, so historyCount stays truthful.
+                        Consume_Snapshot_Best_Effort
+                          (Kind, Id, Name (Name'First .. Name'Last - 5));
+                        Rebuild_Index_Best_Effort (Kind, Id);
                      end if;
                   end;
                   Release_Locks;
@@ -1873,8 +1877,17 @@ if Kind = "crew" then
                         end if;
                         Ada.Directories.Create_Path (Hist);
                      end;
-                     Snapshot (Kind, Id, "import", Doc);
-                     Write_Entity (Kind, Id, Doc);
+                     declare
+                        Sid : constant String := Snapshot (Kind, Id, "import", Doc);
+                     begin
+                        Write_Entity (Kind, Id, Doc);
+                     exception
+                        when others =>
+                           --  BUGFIX-1111: the import write failed, so its
+                           --  snapshot must not survive it.
+                           Discard_Snapshot (Kind, Id, Sid);
+                           raise;
+                     end;
                      Release_Locks;
                      return Json_Response (Success_Result ("import", Doc));
                   end;
@@ -2258,8 +2271,16 @@ if Kind = "crew" then
                   Set_Field (Doc, "updatedAt", Now);
                   --  one snapshot (repair is a snapshot-worthy write), then
                   --  the atomic write of the previewed result
-                  Snapshot (Kind, Id, "repair", E);
-                  Write_Repair_Preview (Kind, Id, Doc);
+                  declare
+                     Sid : constant String := Snapshot (Kind, Id, "repair", E);
+                  begin
+                     Write_Repair_Preview (Kind, Id, Doc);
+                  exception
+                     when others =>
+                        --  BUGFIX-1111: a failed write leaves no snapshot.
+                        Discard_Snapshot (Kind, Id, Sid);
+                        raise;
+                  end;
                   Release_Locks;
                   return Json_Response (Success_Result ("repair", Doc));
                end;
@@ -2331,9 +2352,21 @@ if Kind = "crew" then
                --  BUG-008: snapshot only for ops declared x-snapshot:true in
                --  contract/openapi.yaml.
                Require_Entity_Write (Kind, Id, E);
-               if Snapshots (Op) then Snapshot (Kind, Id, Op, Before); end if;
-               Stamp (E);
-               Write_Entity (Kind, Id, E);
+               --  BUGFIX-1111: a snapshot is only truthful if the write it
+               --  accompanies lands.  A failed write must leave no snapshot
+               --  file behind (and, with retention now best-effort, a failed
+               --  prune must not abort the write).
+               declare
+                  Sid : constant String :=
+                    (if Snapshots (Op) then Snapshot (Kind, Id, Op, Before) else "");
+               begin
+                  Stamp (E);
+                  Write_Entity (Kind, Id, E);
+               exception
+                  when others =>
+                     if Sid /= "" then Discard_Snapshot (Kind, Id, Sid); end if;
+                     raise;
+               end;
                Set_Field (R, Kind, E);
                Set_History_Metadata (R, Kind, Id);
                if Header (Request, "Idempotency-Key") /= "" then
@@ -2643,8 +2676,18 @@ if Kind = "crew" then
                end loop;
                for I in 1 .. Length (A) loop
                   declare P : constant JSON_Value := Get (A, I); begin
-                     Snapshot (Str_Field (P, "kind"), Str_Field (P, "id"), "campaign.batch", Get (P, "before"));
-                     Write_Entity (Str_Field (P, "kind"), Str_Field (P, "id"), Get (P, "after"));
+                     declare
+                        P_Kind : constant String := Str_Field (P, "kind");
+                        P_Id   : constant String := Str_Field (P, "id");
+                        Sid    : constant String := Snapshot (P_Kind, P_Id, "campaign.batch", Get (P, "before"));
+                     begin
+                        Write_Entity (P_Kind, P_Id, Get (P, "after"));
+                     exception
+                        when others =>
+                           --  BUGFIX-1111: a failed write leaves no snapshot.
+                           Discard_Snapshot (P_Kind, P_Id, Sid);
+                           raise;
+                     end;
                   end;
                end loop;
             end;
@@ -3357,7 +3400,7 @@ if Kind = "crew" then
    function Handle (Request : AWS.Status.Data) return AWS.Response.Data is
       URI:constant String:=AWS.Status.URI(Request);Path:constant String:=Path_Only(URI);Response:AWS.Response.Data;
    begin
-      if Path="/api/health" then declare V:JSON_Value:=Create_Object;begin Set_Field(V,"status","ok");Set_Field(V,"implementation","ada");Set_Field(V,"version","0.2.0");Set_Field(V,"dataDir",To_String(Data_Root));Response:=Json_Response(V);end;
+      if Path="/api/health" then declare V:JSON_Value:=Create_Object;begin Set_Field(V,"status","ok");Set_Field(V,"implementation","ada");Set_Field(V,"version","0.2.0");Set_Field(V,"dataDir",To_String(Data_Root));Set_Field(V,"testHooks",Hooks);Response:=Json_Response(V);end;
       elsif Path="/api/capabilities" then declare V:JSON_Value:=Create_Object;begin Set_Field(V,"maxPayloadBytes",Integer(Max_Import));Set_Field(V,"maxHistorySnapshots",Integer(Max_History_Snapshots));Set_Field(V,"maxBatchOperations",Integer(Max_Batch_Operations));Response:=Json_Response(V);end;
       elsif Path="/api/campaign" then Response:=Json_Text(Read_File(To_String(Data_Root)&"/campaign.json"));
       elsif Path="/api/campaign/batch" then
@@ -3429,6 +3472,30 @@ if Kind = "crew" then
                  Str_Field (B, "id") /= ""
                then
                   Crash_Arm (Str_Field (B, "id"));
+                  Response := AWS.Response.Build (AWS.MIME.Text_Plain, "", AWS.Messages.S204);
+               else
+                  Response := AWS.Response.Build (AWS.MIME.Text_Plain, "", AWS.Messages.S400);
+               end if;
+            end;
+         end if;
+      elsif Path="/api/test-hooks/fail-unlink" then
+         --  BUGFIX-1111: unlink-failure probe.  Armed only when the server
+         --  runs with --test-hooks; the hook fails the NEXT history-file
+         --  deletion for the named entity, so retention and undo failure
+         --  paths can be exercised on a filesystem that allows unlink.
+         --  Returns 204 when armed, 501 otherwise.
+         if not Hooks then
+            Response := AWS.Response.Build (AWS.MIME.Text_Plain, "", AWS.Messages.S501);
+         else
+            declare
+               B : constant JSON_Value := Parse_Body
+                 (To_String (AWS.Status.Binary_Data (Request)));
+            begin
+               if B.Kind = JSON_Object_Type and then
+                 (Str_Field (B, "entity") = "character" or else Str_Field (B, "entity") = "crew") and then
+                 Str_Field (B, "id") /= ""
+               then
+                  Unlink_Arm (Str_Field (B, "id"));
                   Response := AWS.Response.Build (AWS.MIME.Text_Plain, "", AWS.Messages.S204);
                else
                   Response := AWS.Response.Build (AWS.MIME.Text_Plain, "", AWS.Messages.S400);

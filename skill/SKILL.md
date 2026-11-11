@@ -11,8 +11,8 @@ Use the service as a sheet manager. Make game decisions only when the user suppl
 
 Every contract `operationId` appears exactly once in the generated [api-reference/capability-manifest.json](api-reference/capability-manifest.json), with one of three dispositions:
 
-- `agent` — documented for agent use (per-operation reference entry in the README); no reachable human control required. 86 of 110 operations.
-- `human` — destructive, lifecycle, or designated sheet-management operations that require a reachable human UI control (24 of 110): entity create/delete/import/repair, batch, retire, end-score, end-downtime, undo, trauma resolution/correction, and dossier/notebook/note editing. When a human-required control is present, never bypass it; drive the workflow through the user's confirmation and the guardrails (preview tokens, `If-Match`, `confirm: true`).
+- `agent` — documented for agent use (per-operation reference entry in the README); no reachable human control required. 90 of 121 operations.
+- `human` — destructive, lifecycle, or designated sheet-management operations that require a reachable human UI control (31 of 121): entity create/delete/import/repair, batch, retire, end-score, end-downtime, undo, trauma resolution/correction, and dossier/notebook/note editing. When a human-required control is present, never bypass it; drive the workflow through the user's confirmation and the guardrails (preview tokens, `If-Match`, `confirm: true`).
 - `exempt` — none currently. Exemptions require explicit contract-author approval with a reason in the manifest; never assume one.
 
 ## Discover the server
@@ -28,8 +28,10 @@ backend-ada/server/bin/pitd --port 9657 --data ./campaign-data --static ./fronte
 The process must run with the repository root as its working directory because game data and the default static path are resolved relative to it. Flags:
 
 - `--port <number>` selects the HTTP port; default `9657`.
-- `--data <directory>` selects persistent campaign data; default `./campaign-data`.
-- `--static <directory>` selects frontend assets; default `./frontend/dist`.
+- `--data <directory>` selects persistent campaign data; default `<repo>/campaign-data`.
+- `--static <directory>` selects frontend assets; default `<repo>/frontend/dist`.
+- `--games <directory>` selects the game-settings directory (playbooks, crew types, settings the API reads through `GET /api/games`); default `<repo>/data/games`. Point it at another directory to serve a different setting without editing the repository.
+- `--test-hooks` enables the test-only probe routes under `/api/test-hooks` and reports `testHooks: true` in `/api/health`. Never start a campaign server with it; the conformance runner refuses a target that does not report it.
 
 Wait for `/api/health` to succeed before issuing campaign requests. Do not start another server when a healthy compatible instance is already listening.
 

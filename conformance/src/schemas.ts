@@ -469,6 +469,11 @@ const Health = Schema.Struct({
   implementation: Schema.Literal("ada", "zero"),
   version: Schema.String,
   dataDir: Schema.String,
+  // BUGFIX-1111: additive field (contract/schemas/campaign.json#/$defs/health).
+  // The target guard refuses a server that does not report test hooks; the
+  // field stays optional so a server that predates it still decodes here and
+  // is then rejected with the guard's explicit message.
+  testHooks: Schema.optional(Schema.Boolean),
 });
 
 const CharacterSummary = Schema.Struct({

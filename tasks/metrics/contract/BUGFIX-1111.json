@@ -1,0 +1,44 @@
+{
+  "task": "BUGFIX-1111",
+  "track": "contract",
+  "implementationAgent": "boundless/deepseek-v4.1-flash (omp, orchestrator-owned)",
+  "reviewAgent": "pending (independent review required before push)",
+  "date": "2026-11-11",
+  "iterationsToGreen": 3,
+  "wallClockMinutes": 45,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "items 5/6 conformance suite 0/3 against a pre-fix scratch build carrying only the fail-unlink probe; target-guard TARGET-003 red before the fallback removal; TOOLING-SKILL-001 red against the stale 86/110 counts",
+  "passRateAfterReview": "240/240 conformance tooling tests; managed Ada conformance run green in both cycles (687 passed, 1 skipped per cycle); browser suite 6/6 journeys PASS; mutation campaign 28/28 killed (P0 19/19, P1 9/9) with post-campaign source verification PASS; Ada ci.sh green including gnatprove (246 checks); conformance tsc --noEmit clean; frontend build clean; vocs docs build clean; evidence-path validator OK",
+  "defectsCaughtBy": {
+    "compiler": 4,
+    "focusedTests": 5,
+    "independentReview": 0,
+    "human": 0,
+    "conformance": 4,
+    "review": 0
+  },
+  "defectCatchingLayer": [
+    "Ada compiler (function result cannot be ignored; generated validators regenerated)",
+    "conformance tooling tests (target guard, skill counts)",
+    "managed conformance run against a pre-fix scratch build",
+    "mutation campaign (M08/M09 anchors retargeted to the new write and undo seams)"
+  ],
+  "implementationLoc": 0,
+  "scaffoldingLoc": 0,
+  "notes": "Item 1: conformance/scripts/target-guard.mjs is the single rule shared by bin/conformance.mjs, vitest.config.ts and src/api.ts; no default target anywhere, and every entry point refuses a target whose /api/health does not report testHooks:true. Authorized additive contract change to campaign.json#/$defs/health (optional testHooks) with regenerated Ada validators; conformance Schemas.Health extended (found by the red run: effect decode uses onExcessProperty:error, so the new field broke api.health()). Items 5/6: retention and snapshot consumption share one deletion path; retention is best-effort and rebuilds the sidecar from disk when it could not prune, write paths discard a snapshot whose entity write failed, and the single-entity undo consumes its snapshot best-effort so a refused unlink completes the restore with truthful history. POST /api/test-hooks/fail-unlink is the test seam. Item 7: SKILL.md counts derived from the generated manifest by TOOLING-SKILL-001, launch flags checked by TOOLING-SKILL-002. Live-data incident response (inventory, backup, exact-PID stop, move of 454 characters/187 crews/192 clocks to sheets-archive, detached relaunch) recorded in tasks/BUGFIX-1111.md; the three real entities are byte-identical to the pre-cleanup backup.",
+  "gates": {
+    "conformanceTooling": "PASS 240/240 (20 files)",
+    "conformanceTypecheck": "PASS (tsc --noEmit)",
+    "frontendBuild": "PASS (tsc --noEmit && vite build)",
+    "adaBuild": "PASS (alr --non-interactive build)",
+    "adaTwoCycleManagedRun": "PASS cycles 1/2 and 2/2 (687 passed, 1 skipped each)",
+    "browserSuite": "PASS 6/6 journeys, launcher cleanup asserted",
+    "adaCi": "PASS (core build+tests, launch paths, SPA routes, gnatprove 246 checks)",
+    "mutationCampaign": "PASS 28/28 killed (P0 19/19, P1 9/9); catalog anchors for pitd_callback.adb refreshed and M08/M09 retargeted",
+    "evidenceValidator": "PASS (validate-evidence-paths: OK)",
+    "docsBuild": "PASS (vocs build, 171 files)"
+  },
+  "followUps": [
+    "Two characters appeared in the live data dir after the cleanup (63330166-74a1-4713-8947-db2c934818ea 'Knock', f614914c-8761-4834-8f55-331a2a44c525 'Plumb', created 2026-11-11T16:42:31Z, 50 ms apart, both attached to the real crew). They carry no conformance fixture id or name, so they were NOT moved; ownership unconfirmed (user play vs. a peer driving the live API)."
+  ]
+}

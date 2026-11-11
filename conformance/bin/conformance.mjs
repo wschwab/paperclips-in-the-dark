@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { assertTestHooksEnabled, resolveCliTarget } from "../scripts/target-guard.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -22,7 +23,26 @@ if (reportFormat !== "json") {
   console.error("only --report json is supported");
   process.exit(2);
 }
-const against = valueAfter("--against") ?? process.env.BASE_URL ?? "http://localhost:9657";
+
+// BUGFIX-1111 (bug report item 1): no default target, and no run against a
+// server that did not announce test hooks. The previous
+// `http://localhost:9657` fallback pointed a test run at a live campaign
+// server and wrote hundreds of fixture entities into its data directory.
+const against = resolveCliTarget({ againstFlag: valueAfter("--against") });
+if (against === "") {
+  console.error(
+    "no conformance target: pass --against <url> (or set CONFORMANCE_BASE_URL / BASE_URL). " +
+      "There is no default server: a run must never mutate a data directory it did not create.",
+  );
+  process.exit(2);
+}
+try {
+  await assertTestHooksEnabled(against);
+} catch (error) {
+  console.error(`refusing target ${against}: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(2);
+}
+
 const work = mkdtempSync(resolve(tmpdir(), "pitd-conformance-"));
 const output = resolve(work, "vitest.json");
 const vitest = resolve(root, "node_modules/vitest/vitest.mjs");

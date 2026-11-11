@@ -113,21 +113,43 @@ package Pitd_Common is
    procedure Publish_Transaction_Snapshot
      (Kind, Id, Snapshot_Id, Op, Taken_At : String; Entity : JSON_Value);
    procedure Consume_Transaction_Snapshot (Kind, Id, Snapshot_Id : String);
+   --  BUGFIX-1111: remove one history snapshot without failing the caller.
+   --  A filesystem that refuses unlink (the Cowork sandbox mount) must not
+   --  turn a completed undo into a server defect, and must not abort the
+   --  publish that consumes a snapshot; the caller rebuilds the index from
+   --  disk afterwards, so the reported history counts always match the files
+   --  that exist.
+   procedure Consume_Snapshot_Best_Effort (Kind, Id, Snapshot_Id : String);
 
    --  SC-A2: --test-hooks crash probe (REPAIR-ATOMIC-004); armed by the
    --  test-hooks route, fired inside Atomic_Write.
    procedure Crash_Arm (Entity_Id : String);
    procedure Crash_Check (Target : String; Crash : out Boolean);
 
+   --  BUGFIX-1111: --test-hooks unlink probe; armed by the test-hooks route,
+   --  fired by the next history-file deletion for that entity.
+   procedure Unlink_Arm (Entity_Id : String);
+
    --  History metadata — the ONE canonical path for snapshot creation,
    --  listing, retention, and the derived counts.  Summaries and routes
    --  must both go through these (no summary computes its own).
    procedure Prune_History (Kind, Id : String);
-   procedure Snapshot (Kind, Id, Op : String; Entity : JSON_Value);
+   --  BUGFIX-1111: returns the snapshot id, so a caller whose accompanying
+   --  entity write fails can discard the snapshot it just created instead of
+   --  leaving history claiming an operation that never landed.
+   function Snapshot (Kind, Id, Op : String; Entity : JSON_Value) return String;
+   --  BUGFIX-1111: remove a just-created snapshot after a failed write
+   --  (best-effort: the failure path must not raise a second error) and
+   --  rebuild the index so history matches disk.
+   procedure Discard_Snapshot (Kind, Id, Snapshot_Id : String);
    Baseline_Snapshot_Name : constant String := "00000000000000000-baseline.json";
    function Is_Baseline_Snapshot (Name : String) return Boolean;
    procedure Write_Baseline_Snapshot (Kind, Id, Op : String; Entity : JSON_Value);
    procedure Rebuild_Index (Kind, Id : String);
+   --  BUGFIX-1111: the index is derived data (History rescans the snapshot
+   --  files when it is missing or stale), so rebuilding it must never fail a
+   --  write or undo that already landed.
+   procedure Rebuild_Index_Best_Effort (Kind, Id : String);
    function History_Count (Kind, Id : String) return Natural;
    procedure Set_History_Metadata (Result : JSON_Value; Kind, Id : String);
    function History (Kind, Id : String) return JSON_Array;

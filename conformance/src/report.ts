@@ -77,7 +77,10 @@ function errorOf(assertion: VitestAssertion): string | undefined {
 
 export function normalizeVitestJson(
   input: VitestJson,
-  against = process.env.CONFORMANCE_BASE_URL ?? process.env.BASE_URL ?? "http://localhost:9657",
+  // BUGFIX-1111 (bug report item 1): the target is a required fact about the
+  // run, never a default. A report must not claim to describe
+  // `http://localhost:9657` just because no target was given.
+  against: string,
 ): ConformanceReport {
   const results: StableTestResult[] = [];
   for (const file of input.testResults ?? []) {

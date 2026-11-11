@@ -23,7 +23,11 @@
         "status": { "const": "ok" },
         "implementation": { "enum": ["ada", "zero"] },
         "version": { "type": "string" },
-        "dataDir": { "type": "string" }
+        "dataDir": { "type": "string" },
+        "testHooks": {
+          "type": "boolean",
+          "description": "True when the server was started with --test-hooks. Optional for compatibility: a server that omits it is treated as having test hooks disabled, so the conformance runner refuses to drive it (BUGFIX-1111)."
+        }
       }
     },
     "characterSummary": {

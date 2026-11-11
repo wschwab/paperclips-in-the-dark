@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import { assertTestHooksEnabled, requireTarget } from "../scripts/target-guard.mjs";
 import { decode, Schemas, type CharacterDto, type ClockDto, type CrewDto, type OperationResultDto } from "./schemas.js";
 
 export interface HttpResponse {
@@ -41,11 +42,29 @@ function requestErrorDetail(error: unknown): string {
 
 export class PitdApi {
   readonly baseUrl: string;
-  constructor(baseUrl = process.env.CONFORMANCE_BASE_URL ?? process.env.BASE_URL ?? "http://localhost:9657") {
-    this.baseUrl = apiRoot(baseUrl);
+  readonly target: string;
+  #verified: Promise<void> | undefined;
+
+  constructor(baseUrl?: string) {
+    // BUGFIX-1111 (bug report item 1): an explicit target is mandatory. The
+    // previous default (`http://localhost:9657`) let a test run mutate a live
+    // campaign server's data directory.
+    this.target = baseUrl ?? requireTarget();
+    this.baseUrl = apiRoot(this.target);
+  }
+
+  /**
+   * BUGFIX-1111: verify once, before the first request, that the target
+   * announces test hooks in /api/health. A server that was not started with
+   * --test-hooks is refused rather than driven (and mutated).
+   */
+  #ensureVerified(): Promise<void> {
+    this.#verified ??= assertTestHooksEnabled(this.target).then(() => undefined);
+    return this.#verified;
   }
 
   async request(method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<HttpResponse> {
+    await this.#ensureVerified();
     const url = `${this.baseUrl}/${path.replace(/^\/+/, "")}`;
     const requestHeaders = new Headers({ accept: "application/json", ...headers });
     const init: RequestInit = { method, headers: requestHeaders };
