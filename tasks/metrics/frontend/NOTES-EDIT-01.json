@@ -4,6 +4,35 @@
   "implementationAgent": "anthropic/claude-haiku-5-5 (omp coordinator; note edit in place on crew and character sheets, note.update op)",
   "reviewAgent": "Sol 6.1 xhigh loop: pending; see tasks/metrics/frontend/NOTES-EDIT-01-sol-verdict.txt",
   "date": "2026-11-11",
+  "iterationsToGreen": 2,
+  "wallClockMinutes": 54,
+  "tokens": null,
+  "passRateAtFirstDoneClaim": "first full gate pass: frontend vitest 1055/1055; Ada 692/692 (1 skipped); browser 6/6; tooling 232/233 (ENDPOINT-MAP-001 pin 118 vs 120); unmanaged test:run gate red against default 9657 target (not a valid result)",
+  "passRateAfterReview": "frontend vitest 1055/1055 and targeted 277/277 after last edits; Ada 692/692 (1 skipped); tooling 233/233; browser 6/6; mutation 28/28; Sol 6.1 round 1 PASS",
+  "implementationLoc": 817,
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": {
+    "compiler": 0,
+    "conformance": 1,
+    "review": 2,
+    "human": 0,
+    "focusedTests": 1,
+    "browserProbe": 2
+  },
+  "defectCatchingLayer": [
+    "conformance tooling: ENDPOINT-MAP-001 endpoint count pin",
+    "focused FV-012 frontend tests: focus ordinal shift from Edit buttons",
+    "Chromium probe: Edit button below 44px target; stale frontend/dist served by managed server",
+    "Sol 6.1 round 1 review: tooling count (232 vs 233) and card touch-target claim"
+  ],
+  "notes": "Tokens are not accounted for this card (null). wallClockMinutes is a lower bound: minutes from the implementation commit (dc1e8476, 17:56:56) to the final review-record push (696830a3, 18:51:07); the start of the workspace is not recorded in the jj op log. implementationLoc counts inserted lines reported by jj diff --stat over backend-ada/server/src, contract, frontend/src, conformance suites/scripts/src/generated/fixtures, skill, and docs/pages between e8e6af4f and dc1e8476 (includes generated artifacts). iterationsToGreen counts mutation-campaign attempts: first red on the conformance tooling baseline (endpoint pin), second green. defectsCaughtBy counts are a classification of the iteration notes and Sol findings above, not an independent audit.",
+  "metricsMethodology": {
+    "method": "Derived from recorded jj commit timestamps, jj diff --stat, gate output recorded in this file and the card, the mutation log, and the iteration notes. Schema fields added by the metrics fix; no recorded facts changed.",
+    "source": "jj log/op log (default tree), jj diff --stat e8e6af4f..dc1e8476, tasks/metrics/frontend/NOTES-EDIT-01-r1-mutation.log, tasks/metrics/frontend/NOTES-EDIT-01-sol-verdict.txt",
+    "locNote": "Inserted lines from jj diff --stat over the listed implementation paths; includes generated artifacts (capability manifest, contract coverage). Not a hand-written-only count.",
+    "scaffoldingLocNote": "No scaffolding classification was recorded for this card; the Chromium probe and evidence are retained, not throwaway."
+  },
+  "status": "Implemented; Sol 6.1 round 1 PASS; pushed to origin and rad-agent",
   "scope": "Additive note.update {index, text} for characters and crews; Edit -> Save/Cancel on both sheets; undo covers the edit; Chromium evidence at 3 viewports x 3 themes.",
   "commits": {
     "implementation": "dc1e8476",

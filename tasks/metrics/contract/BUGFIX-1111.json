@@ -40,5 +40,10 @@
   },
   "followUps": [
     "Two characters appeared in the live data dir after the cleanup (63330166-74a1-4713-8947-db2c934818ea 'Knock', f614914c-8761-4834-8f55-331a2a44c525 'Plumb', created 2026-11-11T16:42:31Z, 50 ms apart, both attached to the real crew). They carry no conformance fixture id or name, so they were NOT moved; ownership unconfirmed (user play vs. a peer driving the live API)."
-  ]
+  ],
+  "metricsMethodology": {
+    "method": "Schema fields added by the metrics fix from the recorded content of this file; no recorded facts changed. Tokens are not accounted (null).",
+    "source": "tasks/metrics/contract/BUGFIX-1111.json recorded gates and followUps"
+  },
+  "status": "Gates green; independent review pending (reviewAgent pending)"
 }
