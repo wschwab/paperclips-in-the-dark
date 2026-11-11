@@ -14,7 +14,7 @@ export function renderCrewNotesSection(state: RenderState): HTMLElement {
   // legacy single-string values; conversion lives only in the import/repair
   // migration path).
   // Multi-line textarea + per-entry remove; add/remove go through
-  // note.add / note.remove (index-based removal, 0-based to match the op).
+  // note.add / note.remove (index-based removal). Labels are 1-based; op indexes are 0-based.
   const notesEntries = c.notes;
   const noteList = notesEntries.length > 0
     ? el(
@@ -28,8 +28,8 @@ export function renderCrewNotesSection(state: RenderState): HTMLElement {
             type: "button",
             className: "note-edit-control",
             disabled: state.anyLoading,
-            "aria-label": `Edit note ${idx}`,
-            title: `Edit note ${idx}`,
+            "aria-label": `Edit note ${idx + 1}`,
+            title: `Edit note ${idx + 1}`,
             "data-focus-aside": "true",
             "data-focus-key": `note-edit-${idx}`,
           }, "Edit");
@@ -37,8 +37,8 @@ export function renderCrewNotesSection(state: RenderState): HTMLElement {
           const removeBtn = el("button", {
             type: "button",
             disabled: state.anyLoading,
-            "aria-label": `Remove note ${idx}`,
-            title: `Remove note ${idx}`,
+            "aria-label": `Remove note ${idx + 1}`,
+            title: `Remove note ${idx + 1}`,
           }, "✕");
           removeBtn.addEventListener("click", () => handlers.onNoteRemove(idx));
           return el(
@@ -88,7 +88,7 @@ function renderCrewNoteEditor(
 ): HTMLElement {
   const { handlers } = state;
   const area = el("textarea", {
-    "aria-label": `Edit note ${idx}`,
+    "aria-label": `Edit note ${idx + 1}`,
     rows: 3,
     disabled: state.anyLoading,
   }) as HTMLTextAreaElement;
@@ -96,7 +96,7 @@ function renderCrewNoteEditor(
   const save = el("button", {
     type: "button",
     className: "note-edit-control",
-    title: `Save note ${idx}`,
+    title: `Save note ${idx + 1}`,
     disabled: state.anyLoading || area.value.trim() === "",
   }, "Save");
   area.addEventListener("input", () => {
@@ -107,7 +107,7 @@ function renderCrewNoteEditor(
   const cancel = el("button", {
     type: "button",
     className: "note-edit-control",
-    title: `Cancel note ${idx} edit`,
+    title: `Cancel note ${idx + 1} edit`,
     disabled: state.anyLoading,
   }, "Cancel");
   cancel.addEventListener("click", () => handlers.onNoteEditCancel());

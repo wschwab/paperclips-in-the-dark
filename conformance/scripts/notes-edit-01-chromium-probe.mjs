@@ -75,11 +75,13 @@ try {
       await page.goto(`${base}/crew/${crew.id}`);
       await page.locator('.crew-notes').waitFor();
       await setTheme(page, theme);
+      await assertTouchTarget(page.locator('button[title="Edit note 1"]'), `crew Edit ${tag}`);
       await page.locator('button[title="Edit note 1"]').click();
       await page.locator('.crew-notes textarea[aria-label="Edit note 1"]').waitFor();
       await page.locator('.crew-notes textarea[aria-label="Edit note 1"]').fill('Edited crew note');
       await assertTouchTarget(page.locator('button[title="Save note 1"]'), `crew Save ${tag}`);
       await page.screenshot({ path: `${out}/crew-edit-${tag}.png`, fullPage: true });
+      await assertTouchTarget(page.locator('button[title="Cancel note 1 edit"]'), `crew Cancel ${tag}`);
       await page.locator('button[title="Cancel note 1 edit"]').click();
       await page.locator('.crew-notes textarea[aria-label="Edit note 1"]').waitFor({ state: 'detached' });
       await page.screenshot({ path: `${out}/crew-cancelled-${tag}.png`, fullPage: true });

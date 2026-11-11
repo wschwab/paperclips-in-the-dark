@@ -2972,8 +2972,8 @@ describe("crew-detail page", () => {
       expect(entries[1]?.textContent).toContain("Second note");
       expect(root.querySelector('textarea[aria-label="New note"]')).not.toBeNull();
       expect(root.querySelector('button[title="Add note"]')).not.toBeNull();
-      expect(root.querySelector('button[title="Remove note 0"]')).not.toBeNull();
       expect(root.querySelector('button[title="Remove note 1"]')).not.toBeNull();
+      expect(root.querySelector('button[title="Remove note 2"]')).not.toBeNull();
     });
 
     it("adds a note via note.add and renders it", async () => {
@@ -3020,13 +3020,13 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector('button[title="Remove note 1"]')).not.toBeNull();
+        expect(root.querySelector('button[title="Remove note 2"]')).not.toBeNull();
       });
-      (root.querySelector('button[title="Remove note 1"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Remove note 2"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
         expect(root.querySelectorAll(".note-list .note-entry").length).toBe(2);
-        expect(root.querySelector('button[title="Remove note 1"]')).not.toBeNull();
+        expect(root.querySelector('button[title="Remove note 2"]')).not.toBeNull();
       });
       expect(global.fetch).toHaveBeenCalledWith(
         `/api/crews/${CREW_ID}/ops/note.remove`,
@@ -3048,17 +3048,17 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector('button[title="Edit note 1"]')).not.toBeNull();
+        expect(root.querySelector('button[title="Edit note 2"]')).not.toBeNull();
       });
-      (root.querySelector('button[title="Edit note 1"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Edit note 2"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]')).not.toBeNull();
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 2"]')).not.toBeNull();
       });
-      const textarea = root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]') as HTMLTextAreaElement;
+      const textarea = root.querySelector('.crew-notes textarea[aria-label="Edit note 2"]') as HTMLTextAreaElement;
       textarea.value = "Edited note";
       textarea.dispatchEvent(new Event("input"));
-      (root.querySelector('button[title="Save note 1"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Save note 2"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
@@ -3067,7 +3067,7 @@ describe("crew-detail page", () => {
         );
       });
       await vi.waitFor(() => {
-        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]')).toBeNull();
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 2"]')).toBeNull();
       });
     });
 
@@ -3082,16 +3082,16 @@ describe("crew-detail page", () => {
       mountCrewDetailPage(root, CREW_ID);
 
       await vi.waitFor(() => {
-        expect(root.querySelector('button[title="Edit note 0"]')).not.toBeNull();
+        expect(root.querySelector('button[title="Edit note 1"]')).not.toBeNull();
       });
-      (root.querySelector('button[title="Edit note 0"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Edit note 1"]') as HTMLButtonElement).click();
       await vi.waitFor(() => {
-        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 0"]')).not.toBeNull();
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]')).not.toBeNull();
       });
-      (root.querySelector('button[title="Cancel note 0 edit"]') as HTMLButtonElement).click();
+      (root.querySelector('button[title="Cancel note 1 edit"]') as HTMLButtonElement).click();
 
       await vi.waitFor(() => {
-        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 0"]')).toBeNull();
+        expect(root.querySelector('.crew-notes textarea[aria-label="Edit note 1"]')).toBeNull();
       });
       expect((global.fetch as Mock).mock.calls.some((c) => String(c[0]).endsWith("/ops/note.update"))).toBe(false);
     });
@@ -3785,9 +3785,9 @@ describe("FV-012 focus restoration", () => {
     (root.querySelector('button[title="Add note"]') as HTMLButtonElement).click();
 
     await vi.waitFor(() => {
-      expect(root.querySelector('button[aria-label="Remove note 0"]')).not.toBeNull();
+      expect(root.querySelector('button[aria-label="Remove note 1"]')).not.toBeNull();
     });
-    expect(document.activeElement).toBe(root.querySelector('button[aria-label="Remove note 0"]'));
+    expect(document.activeElement).toBe(root.querySelector('button[aria-label="Remove note 1"]'));
   });
 
   it("moves focus to the next note's remove button after deleting a middle note", async () => {
@@ -3800,14 +3800,14 @@ describe("FV-012 focus restoration", () => {
     await vi.waitFor(() => {
       expect(root.querySelectorAll('button[aria-label^="Remove note"]')).toHaveLength(3);
     });
-    const rm = root.querySelector('button[aria-label="Remove note 1"]') as HTMLButtonElement;
+    const rm = root.querySelector('button[aria-label="Remove note 2"]') as HTMLButtonElement;
     rm.focus();
     rm.click();
 
     await vi.waitFor(() => {
       expect(root.querySelectorAll('button[aria-label^="Remove note"]')).toHaveLength(2);
     });
-    expect(document.activeElement).toBe(root.querySelector('button[aria-label="Remove note 1"]'));
+    expect(document.activeElement).toBe(root.querySelector('button[aria-label="Remove note 2"]'));
   });
 
   it("moves focus to the saved field's Edit button after a profile save", async () => {

@@ -69,7 +69,7 @@ STALE_REVISION / op-error path).
 Notes move out of the free-text profile fields into their own section: the
 DTO `notes` string[] (legacy single string still decodes) renders as a
 `.note-list` of `.note-entry` rows, each with a `Remove note N` button
-(0-based index, matching the op). A multi-line `<textarea>` (`aria-label`
+(label 1-based like the character sheet; the op index is 0-based). A multi-line `<textarea>` (`aria-label`
 "New note") plus an "Add note" button posts `note.add {text}`.
 
 ## 4. Cohort conditional dropdowns
