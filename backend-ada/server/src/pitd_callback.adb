@@ -2335,9 +2335,12 @@ if Kind = "crew" then
             end;
             R := Mutate (Kind, Op, E, B);
             --  Atomic apply-validation failures carry their issue pointers
-            --  with HTTP 400. Other domain errors retain their existing delivery.
+            --  with HTTP 400, including starting-allocation rejections.
+            --  Other domain errors retain their existing delivery.
             if (Op = "xp.resolve" or else Op = "gear.set-loadout" or else Op = "desperate.mark"
-                or else Op = "faction.set-starting")
+                or else Op = "faction.set-starting"
+                or else Op = "talent.allocation.complete"
+                or else Op = "action.set-rating" or else Op = "attribute.levelup")
               and then not Bool_Field (R, "ok")
               and then Has_Field (R, "error")
               and then Str_Field (Get (R, "error"), "code") = "VALIDATION"
@@ -2445,6 +2448,7 @@ if Kind = "crew" then
       Held : Boolean := False;
       All_Ok : Boolean := True;
       Has_Flow : Boolean := False;
+      Allocation_Validation_Failed : Boolean := False;
       Admission_Error : JSON_Value := JSON_Null;
 
       procedure Release_Locks is
@@ -2677,6 +2681,15 @@ if Kind = "crew" then
                if Changed then Set_Field (Item, "changed", True); Set_Field (Item, "lastIndex", I); end if;
                if Crew_Changed then Set_Field (Crew_Item, "changed", True); Set_Field (Crew_Item, "lastIndex", I); end if;
             else All_Ok := False; Set_Field (Output, "error", JSON_Value'(Get (Result, "error"))); end if;
+            --  Allocation member validations use the same HTTP 400 delivery
+            --  as single writes; unrelated batch failures keep their delivery.
+            if (Op = "talent.allocation.complete" or else Op = "action.set-rating"
+                or else Op = "attribute.levelup")
+              and then not Bool_Field (Result, "ok")
+              and then Str_Field (Get (Result, "error"), "code") = "VALIDATION"
+            then
+               Allocation_Validation_Failed := True;
+            end if;
             Append (Outs, Output);
          end;
       end loop;
@@ -2725,7 +2738,9 @@ if Kind = "crew" then
                String'(Write (V, Compact => False)) & ASCII.LF);
          end if;
          Release_Locks;
-         return Json_Response (V);
+         return Json_Response
+           (V, (if Allocation_Validation_Failed then AWS.Messages.S400
+                else AWS.Messages.S200));
       end;
    exception
       when others => Release_Locks; raise;

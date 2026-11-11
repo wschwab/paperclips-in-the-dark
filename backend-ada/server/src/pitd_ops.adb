@@ -795,6 +795,12 @@ elsif Op = "clock.progress" then
       Requested : Integer := Integer'First; Effective : Integer := Integer'First;
       New_Value, Applied : Natural := 0;
       Target : JSON_Value;
+      --  The late allocation gate must report the current DTO, not a
+      --  tentative level-up with an incremented rating and cleared XP.
+      Before_Allocation : constant JSON_Value :=
+        (if Kind = "character"
+           and then Bool_Field (Get (E, "talent"), "allocationPending")
+         then Clone (E) else JSON_Null);
 
       --  SC-A3: shared retirement cleanup (Q33 / LIFECYCLE-RETIRE-004),
       --  used by the explicit retire op and by resolving the max-th trauma:
@@ -2414,7 +2420,8 @@ elsif Op = "harm.add" then
       if Kind = "character" then Refresh_Talent_Ratings (E); end if;
       if Kind = "character" and then not Pending_Allocation_Valid (E) then
          return Validation_Error (Op, "invalid pending Talent allocation",
-                                  Root_Issues ("invalid pending Talent allocation"), E);
+                                  Root_Issues ("invalid pending Talent allocation"),
+                                  Before_Allocation);
       end if;
       --  BUG-006: armor availability is derived; refresh the stored flags
       --  after any gear or ability mutation.

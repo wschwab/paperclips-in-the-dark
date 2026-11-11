@@ -7917,7 +7917,7 @@
       "width": 1440,
       "height": 1000,
       "theme": "light",
-      "id": "b2795b37-a23f-47d1-8594-726a5a638e52",
+      "id": "281632a0-2793-45ac-8f08-622627120264",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -7932,6 +7932,68 @@
         {
           "name": "Resolve",
           "rating": 1
+        }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
         }
       ]
     },
@@ -7939,7 +8001,7 @@
       "width": 1440,
       "height": 1000,
       "theme": "dark",
-      "id": "11ab6120-6ef1-4455-8771-8515f0814478",
+      "id": "8ca92bbc-5827-45a5-8a20-91b3b4320197",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -7954,6 +8016,68 @@
         {
           "name": "Resolve",
           "rating": 1
+        }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
         }
       ]
     },
@@ -7961,7 +8085,7 @@
       "width": 1440,
       "height": 1000,
       "theme": "high",
-      "id": "9917f141-823c-47d0-8a89-311f19519d17",
+      "id": "7bdc8110-0613-4546-8ee7-29105e833c71",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -7976,6 +8100,68 @@
         {
           "name": "Resolve",
           "rating": 1
+        }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
         }
       ]
     },
@@ -7983,7 +8169,7 @@
       "width": 768,
       "height": 1024,
       "theme": "light",
-      "id": "21571627-8622-4661-82d0-211374c912ab",
+      "id": "86204167-1672-4ac4-8625-a5194b217938",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -7998,6 +8184,68 @@
         {
           "name": "Resolve",
           "rating": 1
+        }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
         }
       ]
     },
@@ -8005,7 +8253,7 @@
       "width": 768,
       "height": 1024,
       "theme": "dark",
-      "id": "39c251d6-383c-4393-8391-2c2f32337ace",
+      "id": "7573210e-62b1-4bf8-8639-51358e126059",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -8021,13 +8269,75 @@
           "name": "Resolve",
           "rating": 1
         }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
+        }
       ]
     },
     {
       "width": 768,
       "height": 1024,
       "theme": "high",
-      "id": "3950a173-7392-4a35-84a7-0a1832432a29",
+      "id": "0f71b153-f322-4e81-87f1-58169e621e8c",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -8042,6 +8352,68 @@
         {
           "name": "Resolve",
           "rating": 1
+        }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
         }
       ]
     },
@@ -8049,7 +8421,7 @@
       "width": 390,
       "height": 844,
       "theme": "light",
-      "id": "96aea197-02f1-4693-8543-2b6053b43292",
+      "id": "362962ef-d382-4d82-81bb-f8319faa961f",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -8064,6 +8436,68 @@
         {
           "name": "Resolve",
           "rating": 1
+        }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
         }
       ]
     },
@@ -8071,7 +8505,7 @@
       "width": 390,
       "height": 844,
       "theme": "dark",
-      "id": "ca765178-41a5-4980-84c6-891c99214997",
+      "id": "85bb296b-f825-4892-826a-9f4fc0183846",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -8087,13 +8521,75 @@
           "name": "Resolve",
           "rating": 1
         }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
+        }
       ]
     },
     {
       "width": 390,
       "height": 844,
       "theme": "high",
-      "id": "fea4913b-24a7-45a1-8118-fb17e90b2991",
+      "id": "198e670a-255a-459b-8d34-2717edb30952",
       "total": 7,
       "pending": false,
       "attributes": [
@@ -8108,6 +8604,68 @@
         {
           "name": "Resolve",
           "rating": 1
+        }
+      ],
+      "renderedCaps": [
+        {
+          "action": "Hunt",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Study",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Survey",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Tinker",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Finesse",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Prowl",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Skirmish",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Wreck",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Attune",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Command",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Consort",
+          "rendered": 3,
+          "effectiveMax": 3
+        },
+        {
+          "action": "Sway",
+          "rendered": 3,
+          "effectiveMax": 3
         }
       ]
     }

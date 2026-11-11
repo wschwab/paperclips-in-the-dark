@@ -118,8 +118,19 @@ try {
     assert.equal(c.talent.allocationPending, false);
     for (const attribute of c.talent.attributes) assert.equal(attribute.rating, attribute.actions.filter(action => action.rating > 0).length);
     assert(await page.locator(`.talent-action-row[data-action="${playbook.DefaultActionPoints[0].Action}"] button.action-dot`).count() > 0, "default locks end with creation");
+    // SCOUNDREL-CREATE-02 review fix: finishing allocation must show the
+    // server's ordinary caps immediately, without a manual reload.
+    const capabilities = await (await fetch(`${base}/api/characters/${id}/capabilities`)).json();
+    const caps = new Map(capabilities.effectiveActionCaps.map(cap => [cap.action, cap.effectiveMax]));
+    const renderedCaps = [];
+    for (const action of actions) {
+      const buttons = await page.locator(`.talent-action-row[data-action="${action.Name}"] button.action-dot`).count();
+      assert.equal(buttons, caps.get(action.Name), `${action.Name}: rendered dots must match the server effective cap without a reload`);
+      renderedCaps.push({ action: action.Name, rendered: buttons, effectiveMax: caps.get(action.Name) });
+    }
+    assert(renderedCaps.some(cap => cap.effectiveMax > game.StartingActionDotMax), "expected an ordinary cap above the creation cap after completion");
     await capture("sheet-complete", '[data-section="talents"]');
-    interactions.push({ width, height, theme, id, total: total(c), pending: c.talent.allocationPending, attributes: c.talent.attributes.map(({ name, rating }) => ({ name, rating })) });
+    interactions.push({ width, height, theme, id, total: total(c), pending: c.talent.allocationPending, attributes: c.talent.attributes.map(({ name, rating }) => ({ name, rating })), renderedCaps });
     await context.close();
   }
 } finally {

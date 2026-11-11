@@ -1,0 +1,87 @@
+VERDICT: FAIL
+SCOUNDREL-CREATE-02 — independent Sol review of revision 73cb8234
+
+Three reproducible defects prevent approval. Persistence rejects the invalid draft writes; finding 2 concerns the response's purported current state, not a persisted allocation bypass.
+
+FINDINGS
+
+1. [P2] Completing allocation leaves the sheet's creation-era action caps cached.
+   Location: frontend/src/pages/character-detail.ts:1784-1794, especially :1792.
+   The completion callback updates currentCharacter and rerenders but does not call the existing refreshCaps helper (:593-607). renderTalentsSection subsequently uses the cached effective cap for ordinary gameplay (frontend/src/pages/character-sections/talents.ts:59-61).
+   Independently observed in real Chromium at 390x844, dark theme, on managed http://127.0.0.1:35543/character/ff15b171-8861-4458-8225-a4717b365226:
+   - Create Cutter, allocate Hunt 2 and Study 2, reload the still-pending draft, then finish allocation.
+   - The allocation banner disappears, but Hunt has only buttons "Hunt 1" and "Hunt 2".
+   - A concurrent GET /api/characters/ff15b171-8861-4458-8225-a4717b365226/capabilities returns Hunt effectiveMax:3, maxRating:4.
+   - Reload adds "Hunt 3"; clicking it succeeds and displays Hunt 3/3, Insight 2.
+   Evidence: /tmp/sc02-sol-review/frontend-stale-cap.json:1-23; live-390-dark-Hunt.png and live-390-dark-after-reload-rating3.png in that directory. Browser API sequence: browser.open({name:'sc02Independent',url:'http://127.0.0.1:35543/character/create',viewport:{width:390,height:844},app:{tern:false,relay:false},headed:false}), select Cutter, click creation/allocation controls, then inspect buttons and fetch capabilities through tab.run.
+   Fix: refresh the server capability projection on successful allocation completion before retaining ordinary gameplay controls. Exercise the no-reload transition above; checking only that default buttons reappear misses this defect.
+
+2. [P2] Rejected draft level-ups return an uncommitted candidate as error.entity.
+   Location: backend-ada/server/src/pitd_ops.adb:2392-2395, following the rating increment / XP clear at :1408-1409.
+   Pending-allocation validation runs after modifying E and passes that modified E to Validation_Error. The constructor clones it into error.entity (backend-ada/server/src/pitd_error.adb:27-28,93-101). The contract requires this member to be the CURRENT entity DTO (contract/schemas/operation-result.json:163-169).
+   Observed HTTP examples on managed port 39963; transcript /tmp/sc02-sol-review/http-transcript.jsonl, with concise extraction in findings-evidence.json:
+   - Line 26: POST characters/4b59619a-976e-4b29-8870-2f8c97148926/ops/attribute.levelup {attribute:"Prowess",action:"Skirmish"}. Before: revision 2, default Skirmish 2, Prowess XP 6. Response: ok:false, VALIDATION, but error.entity says revision 2, Skirmish 3, XP 0. Following GET still says Skirmish 2, XP 6, revision 2; stored bytes unchanged.
+   - Line 34: free Hunt at creation cap 2 similarly appears as Hunt 3 / XP 0 in the rejected response, while GET retains Hunt 2 / XP 6.
+   - Line 44: at total budget 7, rejected Survey level-up reports total 8, Insight rating 3, XP 0 in error.entity; following GET retains total 7, Insight 2, XP 6, same revision 4.
+   Fix: validate the proposed pending allocation before mutating action/XP, or return the pre-operation entity on rejection. Preserve both storage and response-state atomicity. The existing rejected helper checks only ok/code and stored bytes (conformance/suites/contract/sheet-allocation.test.ts:26-32), so the current tests miss this.
+
+3. [P2] Draft validation failures are delivered as HTTP 200 instead of 400.
+   Location: backend-ada/server/src/pitd_callback.adb:2318-2325,2366-2368.
+   The special HTTP-400 mapping omits talent.allocation.complete and the new pending-allocation failures. The generic response defaults to HTTP 200, even though Validation_Error declares status 400 (pitd_error.adb:93-101). The new completion route documents its 400 response at contract/openapi.yaml:1422,1429-1434; operation-result.json:158,758 defines status as the delivery status.
+   Observed HTTP: transcript line 22, POST /api/characters/4b59619a-976e-4b29-8870-2f8c97148926/ops/talent.allocation.complete {}, while only the default dots are allocated, returns HTTP 200 with {ok:false,error:{code:"VALIDATION",status:400,...}}. Repeating completion after completion also returns this mismatch (line 51). Pending lock/cap/budget failures show the same mismatch.
+   Fix: deliver these validations with HTTP 400 and cover transport status as well as the error code. Keep the affected endpoint response declarations consistent.
+
+VERIFIED BEHAVIOR AND SOURCE
+
+Rule and derivation:
+- Read /home/x/code/paperclips-in-the-dark/blades-in-the-sheets/Models/Characters/TalentAttribute.cs:27-28: ActionsByName.Values.Count(a => a.Rating > 0).
+- Read https://bladesinthedark.com/actions-attributes, "Attribute Ratings": rating equals dots in the first column. This matches the implemented count, not a sum of ratings.
+- pitd_common.adb:598-626 recomputes attribute ratings at canonical writes. pitd_callback.adb:352 refreshes create results; :1624-1634 refreshes undo; :1873-1898 validates/persists imports. pitd_normalize.adb:1245-1281 derives imported attribute ratings rather than trusting supplied values. Successful setters up/down, level-up, batch, import, undo, and both create routes were independently exercised over HTTP with count-positive assertions.
+
+Draft semantics:
+- pitd_callback.adb:544-732 retains complete-map validation; :740-783 creates defaults-only pending PCs when actionRatings is omitted. pitd_ops.adb:175-176 keeps ordinary /characters creation non-pending.
+- Starting limits/default locks come from settings in pitd_common.adb:540-595 and pitd_ops.adb:1280-1319; UI math reads settings in frontend/src/lib/chargen.ts:20-61,75-92. No copied game maximum was found in these new allocation checks/math.
+- Real requests confirmed defaults-only durable drafts; rejection of incomplete/under-budget/over-cap/null complete-map requests; immutable defaults; cap and total-budget rejection; level-up and batch attempts cannot persist violations; completion requires the exact budget; completion changes neither attributes/XP nor fund/playbook/monitor/session/gear state; undo can restore pending state; imports cannot toggle pending state or evade default locks; completed characters permit default reductions and ordinary above-starting-cap edits. The sheet's immediate post-completion controls remain defective as finding 1 describes.
+- HTTP probes: from /tmp/sc02-sol-review/repo, run:
+  env TMPDIR=/tmp/sc02-sol-review/tmp node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults --keep -- node /tmp/sc02-sol-review/http-probe.mjs
+  First run: six probe groups passed; two stopped on reviewer helper assumptions (batch items do not contain character; normalized import tokens are under error.details). Only those two groups were retried after correcting the scratch helper, and both passed. There are 89 recorded requests across the two runs, on ports 39963 and 40209. These helper corrections were not implementation fixes. HTTP contract defects 2 and 3 are established by the recorded responses above.
+
+Read identity:
+- pitd_stored.adb:197-231 overlays missing talent additions in memory; :247-263 admits that legacy view. pitd_callback.adb:1180-1182 uses raw stored bytes for canonical detail and the overlaid view only for legacy records.
+- HTTP/disk check: canonical GET and ?download=1 each exactly matched current.json. After removing allocationPending and attribute ratings from an isolated stored character, GET returned 200, pending:false, recomputed ratings, revision 1; export matched that view. Storage bytes and mtimeNs were unchanged. Evidence: http-transcript.jsonl lines 64-69 and /tmp/sc02-sol-review/identity.json. No repair was required solely for these omissions.
+
+Frontend and Chromium:
+- frontend/src/pages/character-create.ts:184-206,337-350 asks only for playbook and omits dot allocation; talents.ts:19-38 renders pending guidance, unspent count, explicit completion; :44-88 renders server ratings and always-visible descriptions.
+- frontend/src/schema/character.ts:140-149 requires rating and allocationPending; neither field has an optional/default compatibility fallback. components.css:1149-1155 enlarges attribute headings.
+- Independently ran, from the scratch repository:
+  env TMPDIR=/tmp/sc02-sol-review/tmp SCOUNDREL_EVIDENCE_OUT=/tmp/sc02-sol-review/fresh node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults --keep -- node frontend/scripts/scoundrel-create-02-probe.mjs
+  Result: 27 surface/viewport/theme cases and nine sheet-first journeys passed. Actual viewports: 1440x1000, 768x1024, 390x844; light, dark, high contrast. Each journey created without actionRatings, allocated on the sheet, reloaded pending state, and completed explicitly.
+- Fresh numeric evidence: /tmp/sc02-sol-review/fresh/numeric.json and numeric-summary.json. Maximum document, container, and hint horizontal overflow: 0px. Attribute headings: 20px; action labels: 13.12px. Computed overflow, min-width and display are recorded; page errors: zero.
+- Inspected committed screenshots using image tools, including original 1440-dark-creation.png, 390-light-sheet-pending.png, 768-high-sheet-complete.png, and contact crops covering all sizes/themes/states. Inspected corresponding fresh captures/contact sheets under /tmp/sc02-sol-review/. The fixed Game Mode dock overlaps portions of small-screen full-page captures; separate native Chromium scrolling confirmed Hunt, Wreck and Sway descriptions unobstructed at viewport center via elementFromPoint, with fresh viewport screenshots live-390-dark-Hunt.png, live-390-dark-Wreck.png, live-390-dark-Sway.png. Settled dark controls were also inspected live. No additional visual blocker found beyond stale caps.
+- Impeccable detector command in scratch: /home/x/.agents/skills/impeccable/scripts/impeccable detect --json frontend/src/pages/character-create.ts frontend/src/pages/character-sections/talents.ts — output [].
+
+INDEPENDENT GATES
+
+All builds/checks below used /tmp/sc02-sol-review/repo, a source copy without VCS metadata. Frontend/conformance dependencies were copied; docs/node_modules was symlinked to the real repository's docs dependencies. Outputs went to scratch, not reviewed generated artifacts.
+
+- frontend/: npm test -- --run && npx tsc --noEmit && npm run build
+  PASS: 45 files, 1047 tests; TypeScript and Vite production build passed.
+- docs/: npm run build
+  PASS: 171 files generated.
+- conformance/: env TMPDIR=/tmp/sc02-sol-review/tmp node scripts/managed-run.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- run suites/contract/sheet-allocation.test.ts suites/contract/pc-creation.test.ts
+  PASS: 17/17 tests on managed port 43333.
+- repo root: env TMPDIR=/tmp/sc02-sol-review/tmp PITD_BROWSER_ARTIFACTS=/tmp/sc02-sol-review/journeys node conformance/scripts/managed-browser-smoke.mjs --server /tmp/scoundrel-create-02-ws/backend-ada/server/bin/pitd --seed-defaults -- node conformance/scripts/browser-suite.mjs --child
+  PASS: six journeys, no reported problems, managed port 40555; /tmp/sc02-sol-review/journeys/journey-results.json.
+  Initial child invocation omitted PITD_BROWSER_ARTIFACTS and was rejected before journeys; the corrected invocation above passed.
+- conformance/: npm run test:tooling
+  NOT FULLY GREEN in the scratch copy: 16/18 files passed; TOOLING-MANAGED-026 and TOOLING-SOL-006d failed because their revision discovery assumes jj metadata, which the scratch copy intentionally lacks (managed-run.test.ts:663-671; sol-finding-1-3.test.ts:190-210). These are review-environment limitations, not findings against this change. I do not claim an independent 233/233 tooling pass.
+- conformance/: npm run typecheck
+  PASS, run separately because the tooling failure short-circuited the original && chain.
+- repo root: node agent-docs/test-audit/validate-metrics.js && node agent-docs/test-audit/validate-finding-traceability.js && node agent-docs/test-audit/reconcile-audit.js
+  PASS: 193 metrics files, 231/231 traceability checks, reconciliation zero errors/warnings.
+- Mutation spot-check, not a campaign rerun: SHA-256 compared every restorationHash entry to the reviewed workspace bytes; 28 mutants, 18 unique source files, zero mismatches (/tmp/sc02-sol-review/pin-check.json). The author's agent-docs/test-audit/mutation-results.json records baseline green, 28/28 killed, zero survivors, revision f417a459de17; that is recorded author evidence, not an independently rerun result.
+- Did NOT independently rerun Ada compilation/SPARK, the full 688-case two-cycle suite, or the full mutation campaign. Used the supplied Ada binary; no server source file was newer than it. The focused conformance and independent real HTTP paths above were exercised against it.
+
+ISOLATION / DISPOSITION
+
+All review HTTP/browser servers were managed launchers with --seed-defaults, selected free loopback ports and temporary data; none used port 9657. The separately held native-browser server was the same managed launcher on port 35543 and was stopped by its owned service handle after browser.close. Launcher completion messages confirmed cleanup/stopping for the finite runs; --keep retained only scratch evidence for successful diagnostic runs. No implementation fix, commit, push, or VCS mutation was performed. Required next action: fix findings 1-3, add behavior assertions for those transitions/errors, and repeat the affected acceptance checks and independent review.

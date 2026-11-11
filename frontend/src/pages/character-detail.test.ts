@@ -2481,6 +2481,66 @@ describe("character-detail page", () => {
       error: null,
     });
 
+    it("refreshes action capabilities after completing Talent allocation without a reload", async () => {
+      const talent = {
+        allocationPending: true,
+        attributes: [{
+          name: "Insight", rating: 1, experience: { points: 0, max: 6 },
+          actions: [{ name: "Hunt", rating: 2, maxRating: 4 }],
+        }],
+      };
+      const pending = talentDTO({ talent });
+      const completed = talentDTO({
+        revision: 13,
+        talent: { ...talent, allocationPending: false },
+      });
+      const capabilities = (effectiveMax: number) => ({
+        characterId: CHARACTER_ID,
+        effectiveActionCaps: [{
+          action: "Hunt", maxRating: 4, effectiveMax,
+          masteryTotalBoxes: 3, masteryMarkedBoxes: 0,
+        }],
+        harmCapacities: [],
+        loadLimits: [],
+        availableAbilityTakes: [],
+      });
+      const capsUrl = `/api/characters/${CHARACTER_ID}/capabilities`;
+      const fetchMock = vi.fn()
+        .mockResolvedValueOnce(ok(pending))
+        .mockResolvedValueOnce(ok({
+          ...TALENT_GAME_DATA, StartingActionDots: 2, StartingActionDotMax: 2,
+        }))
+        .mockResolvedValueOnce(ok(PLAYBOOK_DATA))
+        .mockResolvedValueOnce(ok([]))
+        .mockResolvedValueOnce(ok(CREWS_DATA))
+        .mockResolvedValueOnce(ok(capabilities(2)))
+        .mockResolvedValueOnce(ok(charOpOk(completed, "talent.allocation.complete")))
+        .mockResolvedValueOnce(ok(capabilities(3)));
+      global.fetch = fetchMock;
+
+      mountCharacterDetailPage(root, CHARACTER_ID);
+      await vi.waitFor(() => {
+        expect(root.querySelector('.talent-action-row[data-action="Hunt"]')?.textContent).toContain("2/2");
+        expect(root.querySelector<HTMLButtonElement>("[data-talent-allocation-complete]")?.disabled).toBe(false);
+      });
+      expect(fetchMock.mock.calls.filter(([url]) => url === capsUrl)).toHaveLength(1);
+      (root.querySelector("[data-talent-allocation-complete]") as HTMLButtonElement).click();
+
+      await vi.waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          `/api/characters/${CHARACTER_ID}/ops/talent.allocation.complete`,
+          expect.objectContaining({ method: "POST" }),
+        );
+        expect(root.querySelector("[data-talent-allocation]")).toBeNull();
+      });
+      await vi.waitFor(() => {
+        const huntRow = root.querySelector('.talent-action-row[data-action="Hunt"]')!;
+        expect(huntRow.querySelectorAll(".action-dot")).toHaveLength(3);
+        expect(huntRow.textContent).toContain("2/3");
+        expect(fetchMock.mock.calls.filter(([url]) => url === capsUrl)).toHaveLength(2);
+      });
+    });
+
     it("shows touch-readable action help on sheet rows (TALENT-HELP-01)", async () => {
       global.fetch = vi.fn()
         .mockResolvedValueOnce(ok(talentDTO()))

@@ -1817,7 +1817,11 @@ export function mountCharacterDetailPage(
       runCharacterMutate(
         "talents",
         talentAllocationComplete(characterId, currentCharacter.revision),
-        (updated) => { currentCharacter = updated; renderDetailWrapper(); },
+        (updated) => {
+          currentCharacter = updated;
+          refreshCaps();
+          renderDetailWrapper();
+        },
         () => { isTalentsLoading = false; },
       );
     },

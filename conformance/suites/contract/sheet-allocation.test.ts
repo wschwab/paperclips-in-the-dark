@@ -25,9 +25,14 @@ async function draft() {
 }
 async function rejected(id: string, op: string, body: unknown) {
   const before = await api.get(`characters/${id}`);
-  const result = await api.characterOp(id, op, body);
+  const response = await api.post(`characters/${id}/ops/${op}`, body);
+  const result = await api.operation(response);
   expect(result.ok).toBe(false);
   expect(result.error?.code).toBe("VALIDATION");
+  expect(result.error?.status).toBe(400);
+  // Check the whole current DTO, including revision, action ratings and XP.
+  expect.soft(result.error?.entity).toEqual(before.body);
+  expect.soft(response.status).toBe(400);
   expect((await api.get(`characters/${id}`)).rawBody).toBe(before.rawBody);
 }
 
@@ -110,10 +115,17 @@ testCase("CREATE02-LEVELUP", "levelup cannot bypass draft defaults and batch can
   await rejected(character.id, "attribute.levelup", { attribute: attribute.name, action: locked });
   const before = await api.get(`characters/${character.id}`);
   const current = await api.character(character.id);
-  const result = await api.operation(await api.post("campaign/batch", { ops: free.map(action => ({
+  const response = await api.post("campaign/batch", { ops: free.map(action => ({
     entity: "character", id: character.id, revision: current.revision,
     op: "action.set-rating", args: { action, rating: cap },
-  })) }));
+  })) });
+  const result = await api.operation(response);
   expect(result.batch?.some(item => item.ok === false)).toBe(true);
+  const failures = result.batch!.filter(item => !item.ok);
+  for (const failure of failures) {
+    expect(failure.error?.code).toBe("VALIDATION");
+    expect(failure.error?.status).toBe(400);
+  }
+  expect.soft(response.status).toBe(400);
   expect((await api.get(`characters/${character.id}`)).rawBody).toBe(before.rawBody);
 });
