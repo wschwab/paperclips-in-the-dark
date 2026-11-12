@@ -52,6 +52,15 @@ regression discovers the actual hashed bundle from normal built index.html.
 - Impeccable mechanical detector: no findings on the three changed UI modules.
 
 Documentation: `docs/pages/frontend/stale-client.mdx`, linked from the sidebar.
-Independent review, mutation results and final validation are recorded in the
-metrics and verdict files when those gates finish; this card does not claim
-release approval before those results exist.
+Independent Sol 6.1 / openai-codex / xhigh review returned **PASS**, including
+all 18 screenshots and independent HTTP, reload, Retry and no-write browser
+checks. Verdict: `tasks/metrics/frontend/STALE-CLIENT-01-sol-verdict.txt`.
+
+Docs build, metrics, finding-traceability, audit-reconciliation and evidence-path
+validators passed. The full mutation campaign on implementation commit
+`ac5cd376f591` killed **28/28** mutants (P0 **19/19**, P1 **9/9**), with green
+baselines and byte-exact post-campaign source restoration. Campaign evidence:
+`tasks/metrics/frontend/STALE-CLIENT-01-mutation-results.log` and
+`STALE-CLIENT-01-mutation-raw.log` in the same directory.
+
+Status: **complete — public acceptance and independent review passed**.

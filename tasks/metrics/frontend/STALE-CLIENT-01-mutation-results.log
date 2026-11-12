@@ -1,0 +1,978 @@
+{
+  "schema": "mutation-results/1",
+  "revision": "ac5cd376f591",
+  "timestamp": "2026-11-12T13:41:05.203Z",
+  "command": {
+    "cmd": "npm run test:mutation",
+    "cwd": "/tmp/stale-client-ws",
+    "timeout": 86400000
+  },
+  "environment": {
+    "node": "v26.13.1",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "baselineStatus": "green",
+  "seeds": {
+    "name": "seed-defaults",
+    "trees": [
+      "conformance/fixtures/sc-o2-seeds",
+      "conformance/fixtures/completeness-seeds",
+      "conformance/fixtures/c5-seeds"
+    ]
+  },
+  "catalogIds": [
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "M05",
+    "M06",
+    "M07",
+    "M08",
+    "M09",
+    "M10",
+    "M11",
+    "M12",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
+    "M17",
+    "M18",
+    "M19",
+    "M20",
+    "M21",
+    "M22",
+    "M23",
+    "M24",
+    "M25",
+    "M26",
+    "M27",
+    "M28"
+  ],
+  "totalMutants": 28,
+  "killedCount": 28,
+  "survivedCount": 0,
+  "killRateBySeverity": {
+    "P0": {
+      "total": 19,
+      "killed": 19,
+      "survived": 0,
+      "notKilled": []
+    },
+    "P1": {
+      "total": 9,
+      "killed": 9,
+      "survived": 0,
+      "notKilled": []
+    },
+    "P2": {
+      "total": 0,
+      "killed": 0,
+      "survived": 0,
+      "notKilled": []
+    }
+  },
+  "perCaseStatuses": [
+    {
+      "id": "M01",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CREW-METADATA-002",
+        "CREW-METADATA-003"
+      ],
+      "newFailureIds": [
+        "CREW-METADATA-002",
+        "CREW-METADATA-003"
+      ]
+    },
+    {
+      "id": "M04",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "UNKNOWN-KEY-513",
+        "UNKNOWN-KEY-600"
+      ],
+      "newFailureIds": [
+        "UNKNOWN-KEY-513",
+        "UNKNOWN-KEY-600"
+      ]
+    },
+    {
+      "id": "M05",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "ADMIT-MUTATION-012",
+        "ADMIT-PARSE-001",
+        "ADMIT-ROOT-002",
+        "REPAIR-TOKEN-001"
+      ],
+      "newFailureIds": [
+        "ADMIT-MUTATION-012",
+        "ADMIT-PARSE-001",
+        "ADMIT-ROOT-002",
+        "REPAIR-TOKEN-001"
+      ]
+    },
+    {
+      "id": "M06",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "PERSISTENCE-ROUND-TRIP-001",
+        "PERSISTENCE-ROUND-TRIP-002"
+      ],
+      "newFailureIds": [
+        "PERSISTENCE-ROUND-TRIP-001",
+        "PERSISTENCE-ROUND-TRIP-002"
+      ]
+    },
+    {
+      "id": "M07",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "PERSISTENCE-REVISION-001",
+        "PERSISTENCE-REVISION-004"
+      ],
+      "newFailureIds": [
+        "PERSISTENCE-REVISION-001",
+        "PERSISTENCE-REVISION-004"
+      ]
+    },
+    {
+      "id": "M08",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "LIFECYCLE-ENDSCORE-003",
+        "PERSISTENCE-HISTORY-001"
+      ],
+      "newFailureIds": [
+        "LIFECYCLE-ENDSCORE-003",
+        "PERSISTENCE-HISTORY-001"
+      ]
+    },
+    {
+      "id": "M09",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CORRECTIONS-FIX-007",
+        "PERSISTENCE-HISTORY-002"
+      ],
+      "newFailureIds": [
+        "CORRECTIONS-FIX-007",
+        "PERSISTENCE-HISTORY-002"
+      ]
+    },
+    {
+      "id": "M10",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "SEMANTICS-BOUNDED-INTEGER-001"
+      ],
+      "newFailureIds": [
+        "SEMANTICS-BOUNDED-INTEGER-001"
+      ]
+    },
+    {
+      "id": "M11",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "LIFECYCLE-STRESS-001",
+        "LIFECYCLE-STRESS-002"
+      ],
+      "newFailureIds": [
+        "LIFECYCLE-STRESS-001",
+        "LIFECYCLE-STRESS-002"
+      ]
+    },
+    {
+      "id": "M12",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "LIFECYCLE-RETIRE-008"
+      ],
+      "newFailureIds": [
+        "LIFECYCLE-RETIRE-008"
+      ]
+    },
+    {
+      "id": "M13",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLOCK-ROLLOVER-006"
+      ],
+      "newFailureIds": [
+        "CLOCK-ROLLOVER-006"
+      ]
+    },
+    {
+      "id": "M14",
+      "layer": "backend-ada",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLOCK-REASSIGN-011"
+      ],
+      "newFailureIds": [
+        "CLOCK-REASSIGN-011"
+      ]
+    },
+    {
+      "id": "M15",
+      "layer": "backend-ada",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLOCK-UNLINK-010"
+      ],
+      "newFailureIds": [
+        "CLOCK-UNLINK-010"
+      ]
+    },
+    {
+      "id": "M16",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CREW-PROGRESSION-TIER-001"
+      ],
+      "newFailureIds": [
+        "CREW-PROGRESSION-TIER-001"
+      ]
+    },
+    {
+      "id": "M27",
+      "layer": "backend-ada",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLAIM-CUSTOMIZE-002",
+        "CLAIM-RESET-003",
+        "CLAIM-SET-001"
+      ],
+      "newFailureIds": [
+        "CLAIM-CUSTOMIZE-002",
+        "CLAIM-RESET-003",
+        "CLAIM-SET-001"
+      ]
+    },
+    {
+      "id": "M02",
+      "layer": "frontend",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-schema-decoders-test-ts-schema-decoders-against-golden-fixtures-rejects-a-current-clock-missing-required-property-relatedclockids"
+      ],
+      "newFailureIds": [
+        "frontend-src-schema-decoders-test-ts-schema-decoders-against-golden-fixtures-rejects-a-current-clock-missing-required-property-relatedclockids"
+      ]
+    },
+    {
+      "id": "M03",
+      "layer": "frontend",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-schema-decoders-test-ts-recursive-strictness-matrix-fv-027-p27b-rejects-an-unknown-nested-key-on-a-clock-m03-killer"
+      ],
+      "newFailureIds": [
+        "frontend-src-schema-decoders-test-ts-recursive-strictness-matrix-fv-027-p27b-rejects-an-unknown-nested-key-on-a-clock-m03-killer"
+      ]
+    },
+    {
+      "id": "M17",
+      "layer": "frontend",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-stress-add-button-after-a-successful-stress-add",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-undo-button-after-a-successful-undo",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-moves-focus-to-the-newly-added-note-s-remove-button-new-item-control",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-returns-focus-to-the-stress-add-button-after-a-failed-422-stress-add"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-stress-add-button-after-a-successful-stress-add",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-undo-button-after-a-successful-undo",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-moves-focus-to-the-newly-added-note-s-remove-button-new-item-control",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-returns-focus-to-the-stress-add-button-after-a-failed-422-stress-add"
+      ]
+    },
+    {
+      "id": "M18",
+      "layer": "frontend",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-components-action-dots-test-ts-actiondots-a11y-a11y-01-interactive-rows-renders-a-24-24-css-px-hit-affordance-for-interactive-dots-css-contract"
+      ],
+      "newFailureIds": [
+        "frontend-src-components-action-dots-test-ts-actiondots-a11y-a11y-01-interactive-rows-renders-a-24-24-css-px-hit-affordance-for-interactive-dots-css-contract"
+      ]
+    },
+    {
+      "id": "M19",
+      "layer": "frontend",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-main-test-ts-app-router-f2aa-mounts-the-roster-on-direct-roster-navigation",
+        "frontend-src-main-test-ts-app-router-f2aa-redirects-to-roster-and-mounts-the-roster-page"
+      ],
+      "newFailureIds": [
+        "frontend-src-main-test-ts-app-router-f2aa-mounts-the-roster-on-direct-roster-navigation",
+        "frontend-src-main-test-ts-app-router-f2aa-redirects-to-roster-and-mounts-the-roster-page"
+      ]
+    },
+    {
+      "id": "M20",
+      "layer": "frontend",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-api-client-test-ts-fetchjson-transport-classification-fv-023-classifies-malformed-200-json-as-decodeerror-never-a-status-0-apierror-without-leaking-parser-text"
+      ],
+      "newFailureIds": [
+        "frontend-src-api-client-test-ts-fetchjson-transport-classification-fv-023-classifies-malformed-200-json-as-decodeerror-never-a-status-0-apierror-without-leaking-parser-text"
+      ]
+    },
+    {
+      "id": "M24",
+      "layer": "frontend",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-a-repairable-row-as-data-recovery-class-repairable-with-repair-delete-and-visible-explanation",
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-an-unreadable-row-as-data-recovery-class-unreadable-delete-only-with-re-import-guidance",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-keeps-degraded-rows-visible-and-controllable-under-a-query-that-matches-nothing",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-shows-delete-only-controls-for-an-unreadable-character-and-deletes-it-via-its-deletetoken"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-a-repairable-row-as-data-recovery-class-repairable-with-repair-delete-and-visible-explanation",
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-an-unreadable-row-as-data-recovery-class-unreadable-delete-only-with-re-import-guidance",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-keeps-degraded-rows-visible-and-controllable-under-a-query-that-matches-nothing",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-shows-delete-only-controls-for-an-unreadable-character-and-deletes-it-via-its-deletetoken"
+      ]
+    },
+    {
+      "id": "M25",
+      "layer": "frontend",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-bounds-the-initial-render-at-1000-rows-one-page-of-readable-rows-all-degraded-rows-full-set-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-restores-the-paged-view-when-the-query-is-cleared",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-search-reaches-readable-rows-outside-the-rendered-window-and-reports-match-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-show-more-reveals-the-next-batch-moves-focus-to-it-and-announces-progress-in-the-status-region"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-bounds-the-initial-render-at-1000-rows-one-page-of-readable-rows-all-degraded-rows-full-set-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-restores-the-paged-view-when-the-query-is-cleared",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-search-reaches-readable-rows-outside-the-rendered-window-and-reports-match-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-show-more-reveals-the-next-batch-moves-focus-to-it-and-announces-progress-in-the-status-region"
+      ]
+    },
+    {
+      "id": "M26",
+      "layer": "frontend",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-char-03-perf-03-a-failed-op-settles-a-continuity-record-routed-to-its-section",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-keeps-exactly-one-assistive-technology-global-summary-and-never-duplicates-the-visual-error-at-the-sheet-bottom",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-gear-op-failure-into-the-gear-section-wrong-section-mutant-kill",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-stress-failure-into-the-stress-section-as-a-role-alert-with-recovery-text",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-scrolls-a-routed-alert-into-view-only-when-it-is-fully-off-screen-after-attach"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-char-03-perf-03-a-failed-op-settles-a-continuity-record-routed-to-its-section",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-keeps-exactly-one-assistive-technology-global-summary-and-never-duplicates-the-visual-error-at-the-sheet-bottom",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-gear-op-failure-into-the-gear-section-wrong-section-mutant-kill",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-stress-failure-into-the-stress-section-as-a-role-alert-with-recovery-text",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-scrolls-a-routed-alert-into-view-only-when-it-is-fully-off-screen-after-attach"
+      ]
+    },
+    {
+      "id": "M21",
+      "layer": "conformance",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "ORACLE-CAL-015"
+      ],
+      "newFailureIds": [
+        "ORACLE-CAL-015"
+      ]
+    },
+    {
+      "id": "M22",
+      "layer": "conformance",
+      "severity": "P0",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "TOOLING-DG-011",
+        "TOOLING-DG-012",
+        "TOOLING-DG-014"
+      ],
+      "newFailureIds": [
+        "TOOLING-DG-011",
+        "TOOLING-DG-012",
+        "TOOLING-DG-014"
+      ]
+    },
+    {
+      "id": "M23",
+      "layer": "conformance",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "TOOLING-MANAGED-017"
+      ],
+      "newFailureIds": [
+        "TOOLING-MANAGED-017"
+      ]
+    },
+    {
+      "id": "M28",
+      "layer": "conformance",
+      "severity": "P1",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "TOOLING-BROWSER-009"
+      ],
+      "newFailureIds": [
+        "TOOLING-BROWSER-009"
+      ]
+    }
+  ],
+  "rawOutputPath": "/tmp/stale-client-ws/agent-docs/test-audit/mutation-raw-2026-11-12T13-41-05-200Z.txt",
+  "results": [
+    {
+      "id": "M01",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CREW-METADATA-002",
+        "CREW-METADATA-003"
+      ],
+      "newFailureIds": [
+        "CREW-METADATA-002",
+        "CREW-METADATA-003"
+      ],
+      "runState": "test-failure",
+      "output": "f22\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data (dir)\n[managed-run] port=34725\n[managed-run] baseUrl=http://127.0.0.1:34725\n[managed-run] pid=1039131\n[managed-run] ready=http://127.0.0.1:34725\n[managed-run] vitestPid=1039198\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22 dataDir=/tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data port=34725\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-08-28-375Z-6f262f22-server.log\n"
+    },
+    {
+      "id": "M02",
+      "severity": "P0",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-schema-decoders-test-ts-schema-decoders-against-golden-fixtures-rejects-a-current-clock-missing-required-property-relatedclockids"
+      ],
+      "newFailureIds": [
+        "frontend-src-schema-decoders-test-ts-schema-decoders-against-golden-fixtures-rejects-a-current-clock-missing-required-property-relatedclockids"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1187368) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1187371) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1187369) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1187365) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1187313) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1187363) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M03",
+      "severity": "P0",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-schema-decoders-test-ts-recursive-strictness-matrix-fv-027-p27b-rejects-an-unknown-nested-key-on-a-clock-m03-killer"
+      ],
+      "newFailureIds": [
+        "frontend-src-schema-decoders-test-ts-recursive-strictness-matrix-fv-027-p27b-rejects-an-unknown-nested-key-on-a-clock-m03-killer"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1190065) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1190060) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1190592) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1190589) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1189992) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1190058) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M04",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "UNKNOWN-KEY-513",
+        "UNKNOWN-KEY-600"
+      ],
+      "newFailureIds": [
+        "UNKNOWN-KEY-513",
+        "UNKNOWN-KEY-600"
+      ],
+      "runState": "test-failure",
+      "output": "a38\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data (dir)\n[managed-run] port=38535\n[managed-run] baseUrl=http://127.0.0.1:38535\n[managed-run] pid=1049137\n[managed-run] ready=http://127.0.0.1:38535\n[managed-run] vitestPid=1049204\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38 dataDir=/tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data port=38535\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-10-07-375Z-407e7a38-server.log\n"
+    },
+    {
+      "id": "M05",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "ADMIT-MUTATION-012",
+        "ADMIT-PARSE-001",
+        "ADMIT-ROOT-002",
+        "REPAIR-TOKEN-001"
+      ],
+      "newFailureIds": [
+        "ADMIT-MUTATION-012",
+        "ADMIT-PARSE-001",
+        "ADMIT-ROOT-002",
+        "REPAIR-TOKEN-001"
+      ],
+      "runState": "test-failure",
+      "output": "b2a\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data (dir)\n[managed-run] port=41025\n[managed-run] baseUrl=http://127.0.0.1:41025\n[managed-run] pid=1059307\n[managed-run] ready=http://127.0.0.1:41025\n[managed-run] vitestPid=1059374\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a dataDir=/tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data port=41025\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-11-49-510Z-1ed88b2a-server.log\n"
+    },
+    {
+      "id": "M06",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "PERSISTENCE-ROUND-TRIP-001",
+        "PERSISTENCE-ROUND-TRIP-002"
+      ],
+      "newFailureIds": [
+        "PERSISTENCE-ROUND-TRIP-001",
+        "PERSISTENCE-ROUND-TRIP-002"
+      ],
+      "runState": "test-failure",
+      "output": "fec\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data (dir)\n[managed-run] port=45373\n[managed-run] baseUrl=http://127.0.0.1:45373\n[managed-run] pid=1069224\n[managed-run] ready=http://127.0.0.1:45373\n[managed-run] vitestPid=1069291\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec dataDir=/tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data port=45373\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-13-30-467Z-18688fec-server.log\n"
+    },
+    {
+      "id": "M07",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "PERSISTENCE-REVISION-001",
+        "PERSISTENCE-REVISION-004"
+      ],
+      "newFailureIds": [
+        "PERSISTENCE-REVISION-001",
+        "PERSISTENCE-REVISION-004"
+      ],
+      "runState": "test-failure",
+      "output": "d91\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data (dir)\n[managed-run] port=44125\n[managed-run] baseUrl=http://127.0.0.1:44125\n[managed-run] pid=1076699\n[managed-run] ready=http://127.0.0.1:44125\n[managed-run] vitestPid=1076766\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91 dataDir=/tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data port=44125\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-14-36-186Z-4a008d91-server.log\n"
+    },
+    {
+      "id": "M08",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "LIFECYCLE-ENDSCORE-003",
+        "PERSISTENCE-HISTORY-001"
+      ],
+      "newFailureIds": [
+        "LIFECYCLE-ENDSCORE-003",
+        "PERSISTENCE-HISTORY-001"
+      ],
+      "runState": "test-failure",
+      "output": "cba\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data (dir)\n[managed-run] port=35731\n[managed-run] baseUrl=http://127.0.0.1:35731\n[managed-run] pid=1087128\n[managed-run] ready=http://127.0.0.1:35731\n[managed-run] vitestPid=1087195\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba dataDir=/tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data port=35731\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-16-25-392Z-07780cba-server.log\n"
+    },
+    {
+      "id": "M09",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CORRECTIONS-FIX-007",
+        "PERSISTENCE-HISTORY-002"
+      ],
+      "newFailureIds": [
+        "CORRECTIONS-FIX-007",
+        "PERSISTENCE-HISTORY-002"
+      ],
+      "runState": "test-failure",
+      "output": "4b2\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data (dir)\n[managed-run] port=33665\n[managed-run] baseUrl=http://127.0.0.1:33665\n[managed-run] pid=1097256\n[managed-run] ready=http://127.0.0.1:33665\n[managed-run] vitestPid=1097323\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2 dataDir=/tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data port=33665\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-18-10-477Z-1a9584b2-server.log\n"
+    },
+    {
+      "id": "M10",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "SEMANTICS-BOUNDED-INTEGER-001"
+      ],
+      "newFailureIds": [
+        "SEMANTICS-BOUNDED-INTEGER-001"
+      ],
+      "runState": "test-failure",
+      "output": "492\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data (dir)\n[managed-run] port=44581\n[managed-run] baseUrl=http://127.0.0.1:44581\n[managed-run] pid=1107283\n[managed-run] ready=http://127.0.0.1:44581\n[managed-run] vitestPid=1107350\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492 dataDir=/tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data port=44581\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-19-52-815Z-01477492-server.log\n"
+    },
+    {
+      "id": "M11",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "LIFECYCLE-STRESS-001",
+        "LIFECYCLE-STRESS-002"
+      ],
+      "newFailureIds": [
+        "LIFECYCLE-STRESS-001",
+        "LIFECYCLE-STRESS-002"
+      ],
+      "runState": "test-failure",
+      "output": "fd7\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data (dir)\n[managed-run] port=39153\n[managed-run] baseUrl=http://127.0.0.1:39153\n[managed-run] pid=1116959\n[managed-run] ready=http://127.0.0.1:39153\n[managed-run] vitestPid=1117026\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7 dataDir=/tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data port=39153\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-21-30-768Z-86689fd7-server.log\n"
+    },
+    {
+      "id": "M12",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "LIFECYCLE-RETIRE-008"
+      ],
+      "newFailureIds": [
+        "LIFECYCLE-RETIRE-008"
+      ],
+      "runState": "test-failure",
+      "output": "49a\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data (dir)\n[managed-run] port=42159\n[managed-run] baseUrl=http://127.0.0.1:42159\n[managed-run] pid=1126895\n[managed-run] ready=http://127.0.0.1:42159\n[managed-run] vitestPid=1126962\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a dataDir=/tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data port=42159\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-23-13-450Z-d9dee49a-server.log\n"
+    },
+    {
+      "id": "M13",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLOCK-ROLLOVER-006"
+      ],
+      "newFailureIds": [
+        "CLOCK-ROLLOVER-006"
+      ],
+      "runState": "test-failure",
+      "output": "b15\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data (dir)\n[managed-run] port=42809\n[managed-run] baseUrl=http://127.0.0.1:42809\n[managed-run] pid=1136720\n[managed-run] ready=http://127.0.0.1:42809\n[managed-run] vitestPid=1136789\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15 dataDir=/tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data port=42809\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-24-52-076Z-81b6db15-server.log\n"
+    },
+    {
+      "id": "M16",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CREW-PROGRESSION-TIER-001"
+      ],
+      "newFailureIds": [
+        "CREW-PROGRESSION-TIER-001"
+      ],
+      "runState": "test-failure",
+      "output": "15a\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data (dir)\n[managed-run] port=33351\n[managed-run] baseUrl=http://127.0.0.1:33351\n[managed-run] pid=1167561\n[managed-run] ready=http://127.0.0.1:33351\n[managed-run] vitestPid=1167628\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a dataDir=/tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data port=33351\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-30-05-584Z-5dec515a-server.log\n"
+    },
+    {
+      "id": "M20",
+      "severity": "P0",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-api-client-test-ts-fetchjson-transport-classification-fv-023-classifies-malformed-200-json-as-decodeerror-never-a-status-0-apierror-without-leaking-parser-text"
+      ],
+      "newFailureIds": [
+        "frontend-src-api-client-test-ts-fetchjson-transport-classification-fv-023-classifies-malformed-200-json-as-decodeerror-never-a-status-0-apierror-without-leaking-parser-text"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1200497) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1200500) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1200493) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1200498) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1200443) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1200492) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M21",
+      "severity": "P0",
+      "layer": "conformance",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "ORACLE-CAL-015"
+      ],
+      "newFailureIds": [
+        "ORACLE-CAL-015"
+      ],
+      "runState": "test-failure",
+      "output": "[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed crews/a.json (2 bytes, 44136fa355b3...)\n  + added   crews/b.json (2 bytes, 44136fa355b3...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\n[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: true -> false\n[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed shape (2 bytes, 44136fa355b3...)\n  + added   shape\n  + added   shape/child (1 bytes, 2d711642b726...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\n[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed shape\n  - removed shape/child (1 bytes, 2d711642b726...)\n  + added   shape (2 bytes, 44136fa355b3...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 npx\nnpm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1219235) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M22",
+      "severity": "P0",
+      "layer": "conformance",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "TOOLING-DG-011",
+        "TOOLING-DG-012",
+        "TOOLING-DG-014"
+      ],
+      "newFailureIds": [
+        "TOOLING-DG-011",
+        "TOOLING-DG-012",
+        "TOOLING-DG-014"
+      ],
+      "runState": "test-failure",
+      "output": "[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: true -> false\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 npx\nnpm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1231728) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M24",
+      "severity": "P0",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-a-repairable-row-as-data-recovery-class-repairable-with-repair-delete-and-visible-explanation",
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-an-unreadable-row-as-data-recovery-class-unreadable-delete-only-with-re-import-guidance",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-keeps-degraded-rows-visible-and-controllable-under-a-query-that-matches-nothing",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-shows-delete-only-controls-for-an-unreadable-character-and-deletes-it-via-its-deletetoken"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-a-repairable-row-as-data-recovery-class-repairable-with-repair-delete-and-visible-explanation",
+        "frontend-src-pages-roster-test-ts-recovery-01-degraded-row-classification-and-roster-level-import-classifies-an-unreadable-row-as-data-recovery-class-unreadable-delete-only-with-re-import-guidance",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-keeps-degraded-rows-visible-and-controllable-under-a-query-that-matches-nothing",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-shows-delete-only-controls-for-an-unreadable-character-and-deletes-it-via-its-deletetoken"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1203094) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1203092) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1203096) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1203098) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1203047) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1203091) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M27",
+      "severity": "P0",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLAIM-CUSTOMIZE-002",
+        "CLAIM-RESET-003",
+        "CLAIM-SET-001"
+      ],
+      "newFailureIds": [
+        "CLAIM-CUSTOMIZE-002",
+        "CLAIM-RESET-003",
+        "CLAIM-SET-001"
+      ],
+      "runState": "test-failure",
+      "output": "952\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data (dir)\n[managed-run] port=43055\n[managed-run] baseUrl=http://127.0.0.1:43055\n[managed-run] pid=1177579\n[managed-run] ready=http://127.0.0.1:43055\n[managed-run] vitestPid=1177646\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952 dataDir=/tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data port=43055\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-31-49-852Z-8c30d952-server.log\n"
+    },
+    {
+      "id": "M14",
+      "severity": "P1",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLOCK-REASSIGN-011"
+      ],
+      "newFailureIds": [
+        "CLOCK-REASSIGN-011"
+      ],
+      "runState": "test-failure",
+      "output": "9da\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data (dir)\n[managed-run] port=34371\n[managed-run] baseUrl=http://127.0.0.1:34371\n[managed-run] pid=1146982\n[managed-run] ready=http://127.0.0.1:34371\n[managed-run] vitestPid=1147056\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da dataDir=/tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data port=34371\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-26-32-637Z-134cc9da-server.log\n"
+    },
+    {
+      "id": "M15",
+      "severity": "P1",
+      "layer": "backend-ada",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "CLOCK-UNLINK-010"
+      ],
+      "newFailureIds": [
+        "CLOCK-UNLINK-010"
+      ],
+      "runState": "test-failure",
+      "output": "5a3\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data (dir)\n[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data (dir)\n[managed-run] port=41749\n[managed-run] baseUrl=http://127.0.0.1:41749\n[managed-run] pid=1157235\n[managed-run] ready=http://127.0.0.1:41749\n[managed-run] vitestPid=1157302\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada\nnpm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)\n[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3 dataDir=/tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data port=41749\n[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-28-19-469Z-664c75a3-server.log\n"
+    },
+    {
+      "id": "M17",
+      "severity": "P1",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-stress-add-button-after-a-successful-stress-add",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-undo-button-after-a-successful-undo",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-moves-focus-to-the-newly-added-note-s-remove-button-new-item-control",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-returns-focus-to-the-stress-add-button-after-a-failed-422-stress-add"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-stress-add-button-after-a-successful-stress-add",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-keeps-focus-on-the-undo-button-after-a-successful-undo",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-moves-focus-to-the-newly-added-note-s-remove-button-new-item-control",
+        "frontend-src-pages-character-detail-test-ts-fv-012-focus-restoration-returns-focus-to-the-stress-add-button-after-a-failed-422-stress-add"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1192652) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1192650) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1193213) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1192571) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1193214) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1192647) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M18",
+      "severity": "P1",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-components-action-dots-test-ts-actiondots-a11y-a11y-01-interactive-rows-renders-a-24-24-css-px-hit-affordance-for-interactive-dots-css-contract"
+      ],
+      "newFailureIds": [
+        "frontend-src-components-action-dots-test-ts-actiondots-a11y-a11y-01-interactive-rows-renders-a-24-24-css-px-hit-affordance-for-interactive-dots-css-contract"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1195192) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1195202) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1195196) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1195199) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1195147) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1195191) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M19",
+      "severity": "P1",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-main-test-ts-app-router-f2aa-mounts-the-roster-on-direct-roster-navigation",
+        "frontend-src-main-test-ts-app-router-f2aa-redirects-to-roster-and-mounts-the-roster-page"
+      ],
+      "newFailureIds": [
+        "frontend-src-main-test-ts-app-router-f2aa-mounts-the-roster-on-direct-roster-navigation",
+        "frontend-src-main-test-ts-app-router-f2aa-redirects-to-roster-and-mounts-the-roster-page"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1197800) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1197799) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1197802) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1197803) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1197745) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1197797) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M23",
+      "severity": "P1",
+      "layer": "conformance",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "TOOLING-MANAGED-017"
+      ],
+      "newFailureIds": [
+        "TOOLING-MANAGED-017"
+      ],
+      "runState": "test-failure",
+      "output": "[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed crews/a.json (2 bytes, 44136fa355b3...)\n  + added   crews/b.json (2 bytes, 44136fa355b3...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\n[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: true -> false\n[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed shape (2 bytes, 44136fa355b3...)\n  + added   shape\n  + added   shape/child (1 bytes, 2d711642b726...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\n[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed shape\n  - removed shape/child (1 bytes, 2d711642b726...)\n  + added   shape (2 bytes, 44136fa355b3...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 npx\nnpm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1243951) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M25",
+      "severity": "P1",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-bounds-the-initial-render-at-1000-rows-one-page-of-readable-rows-all-degraded-rows-full-set-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-restores-the-paged-view-when-the-query-is-cleared",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-search-reaches-readable-rows-outside-the-rendered-window-and-reports-match-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-show-more-reveals-the-next-batch-moves-focus-to-it-and-announces-progress-in-the-status-region"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-bounds-the-initial-render-at-1000-rows-one-page-of-readable-rows-all-degraded-rows-full-set-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-restores-the-paged-view-when-the-query-is-cleared",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-search-reaches-readable-rows-outside-the-rendered-window-and-reports-match-counts",
+        "frontend-src-pages-roster-test-ts-roster-page-f2aa-show-more-reveals-the-next-batch-moves-focus-to-it-and-announces-progress-in-the-status-region"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1205663) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1205665) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1205667) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1205668) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1205610) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1205662) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M26",
+      "severity": "P1",
+      "layer": "frontend",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-char-03-perf-03-a-failed-op-settles-a-continuity-record-routed-to-its-section",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-keeps-exactly-one-assistive-technology-global-summary-and-never-duplicates-the-visual-error-at-the-sheet-bottom",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-gear-op-failure-into-the-gear-section-wrong-section-mutant-kill",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-stress-failure-into-the-stress-section-as-a-role-alert-with-recovery-text",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-scrolls-a-routed-alert-into-view-only-when-it-is-fully-off-screen-after-attach"
+      ],
+      "newFailureIds": [
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-char-03-perf-03-a-failed-op-settles-a-continuity-record-routed-to-its-section",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-keeps-exactly-one-assistive-technology-global-summary-and-never-duplicates-the-visual-error-at-the-sheet-bottom",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-gear-op-failure-into-the-gear-section-wrong-section-mutant-kill",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-routes-a-stress-failure-into-the-stress-section-as-a-role-alert-with-recovery-text",
+        "frontend-src-pages-character-detail-test-ts-char-03-section-local-error-routing-scrolls-a-routed-alert-into-view-only-when-it-is-fully-off-screen-after-attach"
+      ],
+      "runState": "test-failure",
+      "output": "JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-frontend@0.1.0 npx\nnpm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1208236) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1208237) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1208234) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1208239) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1208188) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n(node:1208232) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "id": "M28",
+      "severity": "P1",
+      "layer": "conformance",
+      "status": "killed",
+      "killed": true,
+      "killedBy": [
+        "TOOLING-BROWSER-009"
+      ],
+      "newFailureIds": [
+        "TOOLING-BROWSER-009"
+      ],
+      "runState": "test-failure",
+      "output": "[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed crews/a.json (2 bytes, 44136fa355b3...)\n  + added   crews/b.json (2 bytes, 44136fa355b3...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\n[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: false -> true\n[default-data-guard] root existence changed: true -> false\n[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed shape (2 bytes, 44136fa355b3...)\n  + added   shape\n  + added   shape/child (1 bytes, 2d711642b726...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\n[default-data-guard] WRITE GUARD VIOLATION: default data changed by child\n  - removed shape\n  - removed shape/child (1 bytes, 2d711642b726...)\n  + added   shape (2 bytes, 44136fa355b3...)\n[default-data-guard] campaign-data changed; guard never restores or deletes entries\nJSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n\nnpm notice run paperclips-in-the-dark-conformance@1.0.0 npx\nnpm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json\n(node:1256711) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    }
+  ]
+}

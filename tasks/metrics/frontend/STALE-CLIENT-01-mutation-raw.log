@@ -1,0 +1,489 @@
+f22
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data (dir)
+[managed-run] port=34725
+[managed-run] baseUrl=http://127.0.0.1:34725
+[managed-run] pid=1039131
+[managed-run] ready=http://127.0.0.1:34725
+[managed-run] vitestPid=1039198
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22 dataDir=/tmp/pitd-managed/2026-11-12T13-08-28-375Z-6f262f22/data port=34725
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-08-28-375Z-6f262f22-server.log
+
+a38
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data (dir)
+[managed-run] port=38535
+[managed-run] baseUrl=http://127.0.0.1:38535
+[managed-run] pid=1049137
+[managed-run] ready=http://127.0.0.1:38535
+[managed-run] vitestPid=1049204
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38 dataDir=/tmp/pitd-managed/2026-11-12T13-10-07-375Z-407e7a38/data port=38535
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-10-07-375Z-407e7a38-server.log
+
+b2a
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data (dir)
+[managed-run] port=41025
+[managed-run] baseUrl=http://127.0.0.1:41025
+[managed-run] pid=1059307
+[managed-run] ready=http://127.0.0.1:41025
+[managed-run] vitestPid=1059374
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a dataDir=/tmp/pitd-managed/2026-11-12T13-11-49-510Z-1ed88b2a/data port=41025
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-11-49-510Z-1ed88b2a-server.log
+
+fec
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data (dir)
+[managed-run] port=45373
+[managed-run] baseUrl=http://127.0.0.1:45373
+[managed-run] pid=1069224
+[managed-run] ready=http://127.0.0.1:45373
+[managed-run] vitestPid=1069291
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec dataDir=/tmp/pitd-managed/2026-11-12T13-13-30-467Z-18688fec/data port=45373
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-13-30-467Z-18688fec-server.log
+
+d91
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data (dir)
+[managed-run] port=44125
+[managed-run] baseUrl=http://127.0.0.1:44125
+[managed-run] pid=1076699
+[managed-run] ready=http://127.0.0.1:44125
+[managed-run] vitestPid=1076766
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91 dataDir=/tmp/pitd-managed/2026-11-12T13-14-36-186Z-4a008d91/data port=44125
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-14-36-186Z-4a008d91-server.log
+
+cba
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data (dir)
+[managed-run] port=35731
+[managed-run] baseUrl=http://127.0.0.1:35731
+[managed-run] pid=1087128
+[managed-run] ready=http://127.0.0.1:35731
+[managed-run] vitestPid=1087195
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba dataDir=/tmp/pitd-managed/2026-11-12T13-16-25-392Z-07780cba/data port=35731
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-16-25-392Z-07780cba-server.log
+
+4b2
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data (dir)
+[managed-run] port=33665
+[managed-run] baseUrl=http://127.0.0.1:33665
+[managed-run] pid=1097256
+[managed-run] ready=http://127.0.0.1:33665
+[managed-run] vitestPid=1097323
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2 dataDir=/tmp/pitd-managed/2026-11-12T13-18-10-477Z-1a9584b2/data port=33665
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-18-10-477Z-1a9584b2-server.log
+
+492
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data (dir)
+[managed-run] port=44581
+[managed-run] baseUrl=http://127.0.0.1:44581
+[managed-run] pid=1107283
+[managed-run] ready=http://127.0.0.1:44581
+[managed-run] vitestPid=1107350
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492 dataDir=/tmp/pitd-managed/2026-11-12T13-19-52-815Z-01477492/data port=44581
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-19-52-815Z-01477492-server.log
+
+fd7
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data (dir)
+[managed-run] port=39153
+[managed-run] baseUrl=http://127.0.0.1:39153
+[managed-run] pid=1116959
+[managed-run] ready=http://127.0.0.1:39153
+[managed-run] vitestPid=1117026
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7 dataDir=/tmp/pitd-managed/2026-11-12T13-21-30-768Z-86689fd7/data port=39153
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-21-30-768Z-86689fd7-server.log
+
+49a
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data (dir)
+[managed-run] port=42159
+[managed-run] baseUrl=http://127.0.0.1:42159
+[managed-run] pid=1126895
+[managed-run] ready=http://127.0.0.1:42159
+[managed-run] vitestPid=1126962
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a dataDir=/tmp/pitd-managed/2026-11-12T13-23-13-450Z-d9dee49a/data port=42159
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-23-13-450Z-d9dee49a-server.log
+
+b15
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data (dir)
+[managed-run] port=42809
+[managed-run] baseUrl=http://127.0.0.1:42809
+[managed-run] pid=1136720
+[managed-run] ready=http://127.0.0.1:42809
+[managed-run] vitestPid=1136789
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15 dataDir=/tmp/pitd-managed/2026-11-12T13-24-52-076Z-81b6db15/data port=42809
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-24-52-076Z-81b6db15-server.log
+
+9da
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data (dir)
+[managed-run] port=34371
+[managed-run] baseUrl=http://127.0.0.1:34371
+[managed-run] pid=1146982
+[managed-run] ready=http://127.0.0.1:34371
+[managed-run] vitestPid=1147056
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da dataDir=/tmp/pitd-managed/2026-11-12T13-26-32-637Z-134cc9da/data port=34371
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-26-32-637Z-134cc9da-server.log
+
+5a3
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data (dir)
+[managed-run] port=41749
+[managed-run] baseUrl=http://127.0.0.1:41749
+[managed-run] pid=1157235
+[managed-run] ready=http://127.0.0.1:41749
+[managed-run] vitestPid=1157302
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3 dataDir=/tmp/pitd-managed/2026-11-12T13-28-19-469Z-664c75a3/data port=41749
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-28-19-469Z-664c75a3-server.log
+
+15a
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data (dir)
+[managed-run] port=33351
+[managed-run] baseUrl=http://127.0.0.1:33351
+[managed-run] pid=1167561
+[managed-run] ready=http://127.0.0.1:33351
+[managed-run] vitestPid=1167628
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a dataDir=/tmp/pitd-managed/2026-11-12T13-30-05-584Z-5dec515a/data port=33351
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-30-05-584Z-5dec515a-server.log
+
+952
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/sc-o2-seeds -> /tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/completeness-seeds -> /tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data (dir)
+[managed-run] seed=/tmp/stale-client-ws/conformance/fixtures/c5-seeds -> /tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data (dir)
+[managed-run] port=43055
+[managed-run] baseUrl=http://127.0.0.1:43055
+[managed-run] pid=1177579
+[managed-run] ready=http://127.0.0.1:43055
+[managed-run] vitestPid=1177646
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 test:ada
+npm notice run node scripts/default-data-guard.mjs -- node conformance/scripts/workflow-isolation-guard.mjs -- node conformance/scripts/managed-run.mjs --seed-defaults -- --run --exclude suites/__sc_o0_blocker__.test.ts --exclude suites/persistence/flow-api-recovery.test.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+[managed-run] TEST FAILED: vitest exited with code 1 (cycle 1)
+[managed-run] failure data removed: runDir=/tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952 dataDir=/tmp/pitd-managed/2026-11-12T13-31-49-852Z-8c30d952/data port=43055
+[managed-run] retainedLog=/tmp/stale-client-ws/agent-docs/test-audit/managed-run-logs/2026-11-12T13-31-49-852Z-8c30d952-server.log
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1187368) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1187371) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1187369) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1187365) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1187313) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1187363) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1190065) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1190060) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1190592) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1190589) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1189992) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1190058) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1192652) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1192650) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1193213) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1192571) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1193214) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1192647) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1195192) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1195202) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1195196) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1195199) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1195147) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1195191) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1197800) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1197799) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1197802) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1197803) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1197745) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1197797) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1200497) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1200500) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1200493) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1200498) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1200443) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1200492) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1203094) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1203092) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1203096) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1203098) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1203047) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1203091) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1205663) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1205665) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1205667) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1205668) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1205610) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1205662) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-frontend@0.1.0 npx
+npm notice run 'vitest' run --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1208236) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1208237) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1208234) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1208239) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1208188) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1208232) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed crews/a.json (2 bytes, 44136fa355b3...)
+  + added   crews/b.json (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: true -> false
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape (2 bytes, 44136fa355b3...)
+  + added   shape
+  + added   shape/child (1 bytes, 2d711642b726...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape
+  - removed shape/child (1 bytes, 2d711642b726...)
+  + added   shape (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 npx
+npm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1219235) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: true -> false
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 npx
+npm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1231728) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed crews/a.json (2 bytes, 44136fa355b3...)
+  + added   crews/b.json (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: true -> false
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape (2 bytes, 44136fa355b3...)
+  + added   shape
+  + added   shape/child (1 bytes, 2d711642b726...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape
+  - removed shape/child (1 bytes, 2d711642b726...)
+  + added   shape (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 npx
+npm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1243951) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed crews/a.json (2 bytes, 44136fa355b3...)
+  + added   crews/b.json (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: false -> true
+[default-data-guard] root existence changed: true -> false
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape (2 bytes, 44136fa355b3...)
+  + added   shape
+  + added   shape/child (1 bytes, 2d711642b726...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+[default-data-guard] WRITE GUARD VIOLATION: default data changed by child
+  - removed shape
+  - removed shape/child (1 bytes, 2d711642b726...)
+  + added   shape (2 bytes, 44136fa355b3...)
+[default-data-guard] campaign-data changed; guard never restores or deletes entries
+JSON report written to /tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+
+npm notice run paperclips-in-the-dark-conformance@1.0.0 npx
+npm notice run 'vitest' run --config vitest.tooling.config.ts --reporter=json --outputFile=/tmp/stale-client-ws/agent-docs/test-audit/.mutation-report-1014698.json
+(node:1256711) Warning: mkdtemp() templates ending with X are not portable. For details see: https://nodejs.org/api/fs.html
+(Use `node --trace-warnings ...` to show where the warning was created)

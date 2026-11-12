@@ -8,17 +8,17 @@
   "wallClockMinutes": 0,
   "tokens": 0,
   "passRateAtFirstDoneClaim": "No completion claim before acceptance. Frontend red 4 failed/4 passed; HTML header red 10 failed/6 passed. Existing conformance typecheck exposed two crew-sheet test typing errors, fixed without changing expectations.",
-  "passRateAfterReview": "Independent Sol review is running; no PASS claim yet.",
+  "passRateAfterReview": "Independent Sol 6.1/openai-codex/xhigh PASS, with all 18 screenshots inspected and independently exercised HTTP/browser recovery; no blocking findings. Mutation campaign at ac5cd376f591 killed 28/28 (P0 19/19, P1 9/9) and restored all sources byte-exactly.",
   "implementationLoc": "unknown",
   "scaffoldingLoc": "unknown",
   "defectsCaughtBy": { "compiler": 2, "conformance": 10, "review": 0, "human": 1 },
   "defectCatchingLayer": ["Red-first vitest", "Red-first managed Ada header regression", "TypeScript", "Managed Chromium browser journeys and 18-state recovery matrix"],
-  "notes": "HTML revalidates with Cache-Control:no-cache; assets unchanged. Initial character/crew DecodeError offers full-document Reload. Strict decoders and generic Retry behavior unchanged. Observed gates: frontend 1084/1084 with tsc/build; Ada two-cycle 734 passed/1 skipped each; tooling 240/240; conformance tsc passed after two narrow pre-existing test type corrections; browser journeys 6/6; Chromium matrix 18/18. Mutation pins refreshed; campaign and final validators follow independent review.",
+  "notes": "HTML revalidates with Cache-Control:no-cache; assets unchanged. Initial character/crew DecodeError offers full-document Reload. Strict decoders and generic Retry behavior unchanged. Frontend 1084/1084 with tsc/build; Ada two-cycle 734 passed/1 skipped each; tooling 240/240; conformance tsc passed after two narrow pre-existing test type corrections; browser journeys 6/6; Chromium matrix 18/18; docs build, metrics/traceability/reconciliation and evidence-path validators passed. Refreshed mutation pins; 28/28 mutants killed at ac5cd376f591 with green backend/frontend/tooling baselines and byte-exact restoration.",
   "metricsMethodology": {
     "method": "Observed command outputs; unmeasured wall-clock and tokens use 0, not estimates.",
-    "source": "frontend vitest/build, managed-run two-cycle output, tooling/typecheck, browser-suite, docs/public/evidence/stale-client-01/numeric.json and screenshots, independent verdict file",
+    "source": "frontend vitest/build, managed-run two-cycle output, tooling/typecheck, browser-suite, docs/public/evidence/stale-client-01/numeric.json and screenshots, STALE-CLIENT-01-sol-verdict.txt, STALE-CLIENT-01-mutation-results.log and STALE-CLIENT-01-mutation-raw.log",
     "locNote": "Exact implementation LOC not measured.",
     "scaffoldingLocNote": "Exact scaffolding LOC not measured."
   },
-  "status": "Acceptance in progress: independent Sol review, mutation campaign and final validators not yet claimed."
+  "status": "Complete: implementation, independent Sol PASS and all requested public acceptance gates passed. Publication and private deployment are integration-owner actions, not test claims."
 }
