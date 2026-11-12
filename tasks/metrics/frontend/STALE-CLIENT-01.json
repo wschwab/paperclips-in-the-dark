@@ -1,0 +1,24 @@
+{
+  "task": "STALE-CLIENT-01",
+  "track": "frontend",
+  "implementationAgent": "parent integration owner plus StaleHeaders (Ada/conformance) and StaleSheetUI (frontend/vitest)",
+  "reviewAgent": "openai-codex/gpt-6.1-sol (independent omp, xhigh)",
+  "date": "2026-11-12",
+  "iterationsToGreen": 1,
+  "wallClockMinutes": 0,
+  "tokens": 0,
+  "passRateAtFirstDoneClaim": "No completion claim before acceptance. Frontend red 4 failed/4 passed; HTML header red 10 failed/6 passed. Existing conformance typecheck exposed two crew-sheet test typing errors, fixed without changing expectations.",
+  "passRateAfterReview": "Independent Sol review is running; no PASS claim yet.",
+  "implementationLoc": "unknown",
+  "scaffoldingLoc": "unknown",
+  "defectsCaughtBy": { "compiler": 2, "conformance": 10, "review": 0, "human": 1 },
+  "defectCatchingLayer": ["Red-first vitest", "Red-first managed Ada header regression", "TypeScript", "Managed Chromium browser journeys and 18-state recovery matrix"],
+  "notes": "HTML revalidates with Cache-Control:no-cache; assets unchanged. Initial character/crew DecodeError offers full-document Reload. Strict decoders and generic Retry behavior unchanged. Observed gates: frontend 1084/1084 with tsc/build; Ada two-cycle 734 passed/1 skipped each; tooling 240/240; conformance tsc passed after two narrow pre-existing test type corrections; browser journeys 6/6; Chromium matrix 18/18. Mutation pins refreshed; campaign and final validators follow independent review.",
+  "metricsMethodology": {
+    "method": "Observed command outputs; unmeasured wall-clock and tokens use 0, not estimates.",
+    "source": "frontend vitest/build, managed-run two-cycle output, tooling/typecheck, browser-suite, docs/public/evidence/stale-client-01/numeric.json and screenshots, independent verdict file",
+    "locNote": "Exact implementation LOC not measured.",
+    "scaffoldingLocNote": "Exact scaffolding LOC not measured."
+  },
+  "status": "Acceptance in progress: independent Sol review, mutation campaign and final validators not yet claimed."
+}

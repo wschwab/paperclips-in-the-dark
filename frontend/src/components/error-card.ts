@@ -3,7 +3,7 @@
  *
  * Replaces the raw schema-trace dump that pages previously rendered in place
  * of a whole screen. A sheet that fails to load now shows a plain-language
- * headline, a Retry button, a way back to the roster, and the technical detail
+ * headline, a recovery button, a way back to the roster, and the technical detail
  * folded into a collapsed <details> so it never appears as primary content.
  *
  * All pages (character / crew detail, history, roster) share this surface so
@@ -20,12 +20,15 @@ export interface ErrorCardOptions {
   backLabel?: string;
   /** Called when the user hits Retry. */
   onRetry?: () => void;
+  /** Reloads the document for an outdated client, instead of retrying in place. */
+  onReload?: () => void;
   /** Technical detail, folded into a collapsed <details> by default. */
   detail?: string;
 }
 
 export function errorCard(opts: ErrorCardOptions): HTMLElement {
   const backLabel = opts.backLabel ?? "Back to roster";
+  const onRecover = opts.onReload ?? opts.onRetry;
   const section = el(
     "section",
     { className: "error-card" },
@@ -37,8 +40,8 @@ export function errorCard(opts: ErrorCardOptions): HTMLElement {
     el(
       "div",
       { className: "error-card-actions" },
-      opts.onRetry
-        ? el("button", { className: "btn-primary" }, "Retry")
+      onRecover
+        ? el("button", { className: "btn-primary" }, opts.onReload ? "Reload" : "Retry")
         : null,
       el("a", { className: "btn-secondary", href: opts.backHref ?? "/roster" }, backLabel),
     ),
@@ -51,8 +54,8 @@ export function errorCard(opts: ErrorCardOptions): HTMLElement {
         )
       : null,
   );
-  if (opts.onRetry) {
-    section.querySelector("button")?.addEventListener("click", () => opts.onRetry?.());
+  if (onRecover) {
+    section.querySelector("button")?.addEventListener("click", onRecover);
   }
   return section;
 }

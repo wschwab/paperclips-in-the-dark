@@ -1,0 +1,102 @@
+PASS
+
+STALE-CLIENT-01 independent source and mandatory UI release-review gate
+Model: gpt-6.1-sol
+Provider: openai-codex
+Reasoning effort: xhigh
+Review date: 2026-11-12
+Comparison base: 7150ebf4
+Owned BASE_URL: http://127.0.0.1:45497
+Owned PITD_DATA_DIR: /tmp/pitd-managed/2026-11-12T12-58-32-085Z-78fcebe6/data
+
+Findings
+--------
+No release-blocking implementation, behavioral, or responsive-layout findings in the requested scope. PASS applies to this independent review gate, not to later gates whose final results were not available in the reviewed evidence.
+
+Sources inspected
+-----------------
+- Supplied global/repository AGENTS.md rules and PAPERCLIPS.md.
+- Read-only jj diff against 7150ebf4, including all textual implementation changes.
+- backend-ada/server/src/pitd_callback.adb:3632-3661: GET/HEAD static routing, exact index-file branch and extensionless SPA fallback.
+- conformance/suites/contract/stale-client-headers.test.ts: all 16 cases and fixture discovery.
+- frontend/src/components/error-card.ts: complete component.
+- frontend/src/pages/character-detail.ts:2482-2543: initial load and failure classification.
+- frontend/src/pages/crew-detail.ts:1225-1288: initial load and failure classification.
+- frontend/src/pages/stale-client.test.ts: all eight parameterized cases, including generic HTTP/transport Retry assertions.
+- frontend/src/api/client.ts: DecodeError, fetchJson, getCharacter and getCrew. Malformed successful JSON becomes DecodeError; strict onExcessProperty:error decoding remains intact.
+- frontend/src/styles/components.css:1493-1525,1710-1748: incumbent button/error-card styles, wrapping and disclosure containment.
+- conformance/scripts/stale-client-evidence.mjs: complete capture/reload script.
+- docs/pages/frontend/stale-client.mdx and docs/vocs.config.ts sidebar addition.
+- tasks/STALE-CLIENT-01.md and tasks/metrics/frontend/STALE-CLIENT-01.json.
+- conformance/suites/semantics/crew-sheet.test.ts: both changed accesses. settingValue/type assertions preserve the existing satchel expectation, revision header value, import status expectation and subsequent capability checks; no expectation weakening.
+- conformance/fixtures/mutation-catalog.json: changes are restoration-hash refreshes only. Independently calculated SHA-256 values match the refreshed pins:
+  callback: 4fbd1f292116e7455373b2e84d11639a14d7c7e13d11dca6a0975b2010af72da
+  character-detail: f7270a489fcc5b939d7bc733a3e01aa913083fe7f1a995797b16ca716c45c2b5
+
+No decoder, DTO, contract, persistence, repair or migration implementation changed. The HTML policy is added only in the index-file and SPA-fallback branches; hashed-asset handling remains on its existing branch. Error-card classes/styles are retained. Reload calls window.location.reload(), while ordinary failures retain startLoad.
+
+Screenshot and numeric evidence inspected
+-----------------------------------------
+Read docs/public/evidence/stale-client-01/numeric.json and actually decoded/viewed every following PNG under the same directory:
+1. character-1440-light.png
+2. character-1440-dark.png
+3. character-1440-high.png
+4. character-768-light.png
+5. character-768-dark.png
+6. character-768-high.png
+7. character-390-light.png
+8. character-390-dark.png
+9. character-390-high.png
+10. crew-1440-light.png
+11. crew-1440-dark.png
+12. crew-1440-high.png
+13. crew-768-light.png
+14. crew-768-dark.png
+15. crew-768-high.png
+16. crew-390-light.png
+17. crew-390-dark.png
+18. crew-390-high.png
+
+All 18 show the requested headline, Reload, Back to roster and collapsed Technical detail without clipping or overlap. Headline wrapping and the mobile header/theme-control wrapping remain contained. Numeric records contain 18 states, errors:[], and reloadRecovered:true in every state. All document widths equal the real viewport width. Card/action clientWidth and scrollWidth agree:
+- 1440x1000: card 640 at x=400..1040; actions 600 at x=420..1020.
+- 768x1024: card 640 at x=64..704; actions 600 at x=84..684.
+- 390x844: card 390 at x=0..390; actions 350 at x=20..370.
+The records distinguish light, dark and high-contrast-light correctly. Supplied captures occur immediately after theme toggles; they are not used alone as settled-color proof. Independent captures below waited for fonts and finite animations to settle.
+
+Independent actions and observations
+------------------------------------
+Used a fresh managed Chromium tab against the supplied owned BASE_URL; no additional backend was started. Health identified Ada 0.2.0, testHooks:true and the exact owned data directory above. Did not contact port 9657 or any default-port server.
+
+Created exactly two disposable fixtures through this server's API:
+- POST /api/characters, blades-in-the-dark/Lurk: 2114f17a-d292-4567-8455-d1c530429420.
+- POST /api/crews, blades-in-the-dark/Smugglers: 5880b16a-0210-4603-8266-08943581b759.
+Fixtures remain in the launcher's temporary campaign for launcher-owned cleanup.
+
+Independently fetched GET and HEAD for /, /index.html, both fixture deep links and /roster. All ten returned 200 text/html with exactly Cache-Control:no-cache; GET bodies matched index HTML and HEAD bodies were empty. Discovered /assets/index-IP4SmM9R.js from the actual index: GET/HEAD returned 200 text/javascript without Cache-Control, preserving the existing policy. Missing asset/API controls returned their expected plain-text/JSON 404s without the HTML header.
+
+Wrote and executed independent browser scenarios in the tool runtime, rather than rerunning the evidence script. Intercepted only each fixture's initial GET:
+- Character and crew, 1440x1000 dark: HTTP 200 canonical DTO plus independentReviewerUnknownField.
+- Character and crew, 390x844 high-contrast-light: HTTP 200 malformed JSON.
+- Both sheet types, HTTP 500 at desktop dark and aborted transport at mobile high contrast.
+All eight cases passed. Decode cases showed the exact text:
+This page is out of date — refresh to load the latest version
+They offered Reload, not Retry. Technical detail started closed, opened on demand and contained the injected unknown-property/malformed-JSON diagnostic. Back to roster retained its correct label and /roster target. After removing response injection, clicking Reload produced exactly one main-document navigation, changed performance.timeOrigin and recovered the appropriate .character-detail/.crew-profile surface. All four generic error cases retained Retry; clicking it recovered through GET without a document navigation or timeOrigin change.
+
+Additionally, for each sheet at 390x844, completely removed network interception before clicking Reload while retaining a passive request log. Both recovered with a document GET and a changed time origin:
+- Character: 1794488581937 -> 1794488583944.6.
+- Crew: 1794488585963.2 -> 1794488587702.9.
+Re-entered each decode-error card and clicked the actual Back to roster link; both reached /roster and rendered the roster.
+
+Observed zero browser mutation requests during all error/recovery/back-navigation checks. Only the two explicitly authorized API fixture creates were writes. Compared fixture current.json and baseline-history file hashes, sizes, mtimes and file lists before/after: all unchanged. Both current revisions remained 1. This independently covers the no-writes-on-reads/recovery requirement, not merely a DOM assertion.
+
+Independently measured actual Chromium 1440x1000 and 390x844 viewports, with details both collapsed and expanded. documentElement.scrollWidth equaled innerWidth; card, headline, actions and detail remained within the viewport; every measured scrollWidth was <= clientWidth. Desktop card/actions were 640/600 wide; mobile 390/350. Card display:flex/flex-direction:column, actions display:flex/flex-direction:row, card min-width:0px, overflow-x:visible, no grid tracks. No clipping was used to hide overflow. Captured and visually inspected independent settled desktop-dark and mobile-high-contrast error surfaces. Stable Reload colors were dark text on paper fill in dark mode and paper text on dark fill in high contrast. No pageerror events occurred in the eight main cases.
+
+Ran the read-only Impeccable detector on the three changed UI modules: output [].
+
+Gate scope and limitations
+--------------------------
+Recorded prior gates were inspected, not rerun: frontend 1084/1084 plus tsc/build; managed Ada two-cycle 734 passed/1 ordinary skip per cycle; tooling 240/240; conformance tsc; browser journeys 6/6; original browser evidence matrix 18/18. The independent work above verifies the affected browser path and HTTP behavior directly.
+
+Docs source uses the corrected existing HTML-link convention, but the docs-build rerun was pending at handoff and is not claimed PASS here. Mutation-campaign and final-validator completion were not established by the reviewed task/metrics; they are not claimed PASS. Matching mutation hashes is not a mutation-campaign result. Public-main release still requires those separately recorded gates.
+
+This review inspected the supplied full 18-state visual matrix and independently exercised desktop dark/mobile high contrast; it did not rerun the full matrix, builds, full suites or formatters. No implementation/tests/docs/user campaign data/bookmarks or backend lifecycle were changed. The review-owned browser tab was closed; launcher-owned server cleanup was left to the parent. The only repository file written by this review is this verdict.

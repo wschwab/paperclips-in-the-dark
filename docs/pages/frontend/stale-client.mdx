@@ -1,0 +1,69 @@
+---
+title: Stale-client recovery
+---
+
+# Stale-client recovery (STALE-CLIENT-01)
+
+A server upgrade does not replace JavaScript already running in an open tab.
+The frontend decodes sheet DTOs strictly: an older client can reject new fields
+even when the character or crew endpoint returns HTTP 200. During the original
+investigation, the pre-allocation character decoder rejected
+`talent.allocationPending` in all four current scoundrel responses, while its
+crew decoder accepted the existing crew. Fresh Chromium loaded the current
+bundle and rendered both direct links and roster navigation correctly. A stale
+client explained that pattern, but the user's original cached script was not
+captured, so the original browser's cause was not conclusively established.
+
+## HTTP cache policy
+
+The Ada server sends `Cache-Control: no-cache` for `index.html`, the site root,
+and extensionless SPA fallback HTML such as `/character/<id>` and `/crew/<id>`.
+This permits storing HTML but requires revalidation before reuse. It does not
+mean `no-store`, and it does not reload an already-open page automatically.
+Hashed assets retain their existing serving policy; they are not given a new
+long-lived cache policy by this change.
+
+The change is HTTP presentation behavior, not a DTO or persisted-format change.
+No campaign migration, automatic repair, or writes on reads are required.
+
+## Sheet recovery
+
+When the initial character or crew response fails to decode, the existing error
+card instead says:
+
+> This page is out of date — refresh to load the latest version
+
+Its **Reload** button reloads the full document, allowing the browser to obtain
+current HTML and JavaScript. **Back to roster** remains available, and technical
+details remain collapsed until requested. Retrying only the API request in the
+same old JavaScript would not resolve a schema mismatch.
+
+A decode error is evidence of an incompatible response, not proof that every
+failure is a stale tab. If reloading does not resolve it, inspect the technical
+detail and response rather than modifying or repairing saved campaign files.
+Transport and ordinary server failures retain their existing Retry behavior.
+The strict decoder is not weakened, and the UI makes no automatic data writes.
+
+## Repeatable browser evidence
+
+Run `conformance/scripts/stale-client-evidence.mjs` only through the isolated
+`managed-browser-smoke.mjs` launcher. It creates test entities in the launcher's
+temporary campaign, injects a new unknown DTO field into GET responses, checks
+the recovery card and containment at 1440×1000, 768×1024 and 390×844 in light,
+dark and high-contrast light, then removes the injection and verifies that Reload
+performs a document navigation and recovers the sheet.
+
+Screenshots and numeric records are under
+<a href="/evidence/stale-client-01/numeric.json">the numeric evidence record</a>.
+Each surface uses `<character|crew>-<width>-<light|dark|high>.png` in that directory.
+The matrix passed **18/18** states (both sheet types), including a document
+reload and recovery in every state, with no horizontal overflow or page errors.
+
+| Viewport | Light | Dark | High contrast |
+| --- | --- | --- | --- |
+| 1440×1000 | <a href="/evidence/stale-client-01/character-1440-light.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-1440-light.png">Crew</a> | <a href="/evidence/stale-client-01/character-1440-dark.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-1440-dark.png">Crew</a> | <a href="/evidence/stale-client-01/character-1440-high.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-1440-high.png">Crew</a> |
+| 768×1024 | <a href="/evidence/stale-client-01/character-768-light.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-768-light.png">Crew</a> | <a href="/evidence/stale-client-01/character-768-dark.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-768-dark.png">Crew</a> | <a href="/evidence/stale-client-01/character-768-high.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-768-high.png">Crew</a> |
+| 390×844 | <a href="/evidence/stale-client-01/character-390-light.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-390-light.png">Crew</a> | <a href="/evidence/stale-client-01/character-390-dark.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-390-dark.png">Crew</a> | <a href="/evidence/stale-client-01/character-390-high.png">Scoundrel</a> · <a href="/evidence/stale-client-01/crew-390-high.png">Crew</a> |
+
+The review verdict is recorded in
+`tasks/metrics/frontend/STALE-CLIENT-01-sol-verdict.txt`.

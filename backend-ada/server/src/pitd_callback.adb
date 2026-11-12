@@ -3643,10 +3643,16 @@ if Kind = "crew" then
               Ada.Directories.Kind (N) = Ada.Directories.Ordinary_File
             then
                Response := AWS.Response.File (AWS.MIME.Content_Type (N), N);
+               if N = Index_File then
+                  AWS.Response.Set.Add_Header
+                    (Response, "Cache-Control", "no-cache");
+               end if;
             elsif Ada.Strings.Fixed.Index (Path, ".") = 0 and then
               Ada.Directories.Exists (Index_File)
             then
                Response := AWS.Response.File (AWS.MIME.Text_HTML, Index_File);
+               AWS.Response.Set.Add_Header
+                 (Response, "Cache-Control", "no-cache");
             else
                Response := AWS.Response.Acknowledge
                  (AWS.Messages.S404, "Not found", AWS.MIME.Text_Plain);

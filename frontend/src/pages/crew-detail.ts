@@ -1263,9 +1263,13 @@ export function mountCrewDetailPage(
           setChildren(
             root,
             errorCard({
-              headline: "This crew sheet could not be loaded.",
+              headline: err instanceof DecodeError
+                ? "This page is out of date — refresh to load the latest version"
+                : "This crew sheet could not be loaded.",
               detail: msg,
-              onRetry: startLoad,
+              ...(err instanceof DecodeError
+                ? { onReload: () => window.location.reload() }
+                : { onRetry: startLoad }),
             }),
           );
         },

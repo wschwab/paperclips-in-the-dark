@@ -232,7 +232,7 @@ describe("CREW-SHEET-02 favored operation and starting upgrades", () => {
     try {
       const created = await api.post("characters", { gameStem: stem, playbook: firstPlaybook(BLADES) });
       expect.soft(created.status, created.rawBody).toBe(200);
-      const character = created.body.character;
+      const character = settingValue(created.body, "character") as { id: string; fund: { satchel: { coins: number } } };
       expect(character.fund.satchel.coins).toBe(satchelMax);
       const id = character.id;
       const spent = await api.characterOp(id, "fund.spend", { coins: satchelMax });
@@ -411,7 +411,7 @@ describe("CREW-SHEET-02 favored operation and starting upgrades", () => {
       const entity = { ...settingValue(created.body, "crew") as Record<string, unknown>, upgrades: [{ name: "Old Mastery", boxesMarked: 2 }, { name: "Mastery", boxesMarked: 2 }, { name: "Old Vault", boxesMarked: 1 }, { name: "Vault", boxesMarked: 1 }] };
       const preview = await api.post(`crews/${crew.id}/import?preview=1`, { entity });
       const token = settingValue(preview.body, "previewToken") ?? settingValue(settingValue(preview.body, "error"), "token");
-      const imported = await api.post(`crews/${crew.id}/import`, { entity, previewToken: token, confirm: true }, revisionHeader(entity.revision as number));
+      const imported = await api.post(`crews/${crew.id}/import`, { entity, previewToken: token, confirm: true }, revisionHeader(settingValue(entity, "revision") as number));
       expect(imported.status, imported.rawBody).toBe(200);
       const caps = await api.get(`crews/${crew.id}/capabilities`);
       expect(caps.status, caps.rawBody).toBe(200);

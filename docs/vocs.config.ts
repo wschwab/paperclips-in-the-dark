@@ -83,6 +83,7 @@ export default defineConfig({
         { text: 'F2 — Sheet plan', link: '/frontend/f2-sheet-plan' },
         { text: 'Operational behavior', link: '/frontend/operational-behavior' },
         { text: 'Roster recovery and import', link: '/frontend/recovery-import' },
+        { text: 'Stale-client recovery', link: '/frontend/stale-client' },
         {
           text: 'Pages and flows',
           collapsed: true,
